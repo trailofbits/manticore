@@ -11,12 +11,14 @@ class OSException(Exception):
 
 @wrapt.decorator
 def unimplemented(wrapped, _instance, args, kwargs):
-    cpu = getattr(getattr(_instance, 'parent', None), 'current', None)
-    addr = None if cpu is None else cpu.read_register('PC')
-    logger.warning(f"Unimplemented system call%s: %s(%s)",
-                   '' if addr is None else ' at ' + hex(addr),
-                   wrapped.__name__,
-                   ', '.join(hex(a) for a in args))
+    cpu = getattr(getattr(_instance, "parent", None), "current", None)
+    addr = None if cpu is None else cpu.read_register("PC")
+    logger.warning(
+        f"Unimplemented system call%s: %s(%s)",
+        "" if addr is None else " at " + hex(addr),
+        wrapped.__name__,
+        ", ".join(hex(a) for a in args),
+    )
     return wrapped(*args, **kwargs)
 
 
@@ -32,7 +34,7 @@ class SyscallNotImplemented(OSException):
 
 
 class ConcretizeSyscallArgument(OSException):
-    def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
+    def __init__(self, reg_num, message="Concretizing syscall argument", policy="SAMPLED"):
         self.reg_num = reg_num
         self.message = message
         self.policy = policy

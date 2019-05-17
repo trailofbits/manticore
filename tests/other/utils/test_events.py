@@ -4,14 +4,14 @@ from manticore.utils.event import Eventful
 
 
 class A(Eventful):
-    _published_events = {'eventA'}
+    _published_events = {"eventA"}
 
     def do_stuff(self):
-        self._publish("eventA", 1, 'a')
+        self._publish("eventA", 1, "a")
 
 
 class B(Eventful):
-    _published_events = {'eventB'}
+    _published_events = {"eventB"}
 
     def __init__(self, child, **kwargs):
         super().__init__(**kwargs)
@@ -19,7 +19,7 @@ class B(Eventful):
         self.forward_events_from(child)
 
     def do_stuff(self):
-        self._publish("eventB", 2, 'b')
+        self._publish("eventB", 2, "b")
 
 
 class C:
@@ -42,11 +42,11 @@ class ManticoreDriver(unittest.TestCase):
         self.assertSequenceEqual([len(s) for s in (b._signals, b._forwards)], (0, 0))
 
         c = C()
-        b.subscribe('eventA', c.callback)
+        b.subscribe("eventA", c.callback)
         self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 1))
         self.assertSequenceEqual([len(s) for s in (b._signals, b._forwards)], (1, 0))
 
-        b.subscribe('eventB', c.callback)
+        b.subscribe("eventB", c.callback)
         self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 1))
         self.assertSequenceEqual([len(s) for s in (b._signals, b._forwards)], (2, 0))
 
@@ -62,11 +62,11 @@ class ManticoreDriver(unittest.TestCase):
         b = B(a)
         c = C()
 
-        b.subscribe('eventA', c.callback)
-        b.subscribe('eventB', c.callback)
+        b.subscribe("eventA", c.callback)
+        b.subscribe("eventB", c.callback)
 
         a.do_stuff()
-        self.assertSequenceEqual(c.received, [(1, 'a')])
+        self.assertSequenceEqual(c.received, [(1, "a")])
 
         b.do_stuff()
-        self.assertSequenceEqual(c.received, [(1, 'a'), (2, 'b')])
+        self.assertSequenceEqual(c.received, [(1, "a"), (2, "b")])

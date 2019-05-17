@@ -4,25 +4,23 @@ from binascii import unhexlify
 
 import rlp
 import sha3
-from rlp.sedes import (
-    CountableList,
-    BigEndianInt,
-    Binary,
-)
+from rlp.sedes import CountableList, BigEndianInt, Binary
 
-from manticore.core.smtlib import ConstraintSet, Z3Solver  # Ignore unused import in non-symbolic tests!
+from manticore.core.smtlib import (
+    ConstraintSet,
+    Z3Solver,
+)  # Ignore unused import in non-symbolic tests!
 from manticore.core.smtlib.visitors import to_constant
 from manticore.platforms import evm
 from manticore.utils import config
 from manticore.core.state import Concretize
 
 
-
 class Log(rlp.Serializable):
     fields = [
-        ('address', Binary.fixed_length(20, allow_empty=True)),
-        ('topics', CountableList(BigEndianInt(32))),
-        ('data', Binary())
+        ("address", Binary.fixed_length(20, allow_empty=True)),
+        ("topics", CountableList(BigEndianInt(32))),
+        ("data", Binary()),
     ]
 
 
@@ -36,9 +34,9 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        consts = config.get_group('evm')
-        consts.oog = 'pedantic'
-        evm.DEFAULT_FORK = 'frontier'
+        consts = config.get_group("evm")
+        consts.oog = "pedantic"
+        evm.DEFAULT_FORK = "frontier"
 
     @classmethod
     def tearDownClass(cls):
@@ -46,23 +44,26 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
 
     def _test_run(self, world):
         result = None
-        returndata = b''
+        returndata = b""
         try:
             while True:
                 try:
                     world.current_vm.execute()
                 except Concretize as e:
                     value = self._solve(world.constraints, e.expression)
-                    class fake_state:pass
+
+                    class fake_state:
+                        pass
+
                     fake_state = fake_state()
                     fake_state.platform = world
                     e.setstate(fake_state, value)
         except evm.EndTx as e:
             result = e.result
-            if result in ('RETURN', 'REVERT'):
+            if result in ("RETURN", "REVERT"):
                 returndata = self._solve(world.constraints, e.data)
         except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+            self.fail("This tests should not initiate an internal tx (no CALLs allowed)")
         return result, returndata
 
     def _solve(self, constraints, val):
@@ -70,7 +71,6 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         # We constrain all values to single values!
         self.assertEqual(len(results), 1)
         return results[0]
-
 
     def test_push2(self):
         """
@@ -80,56 +80,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH2 0xeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('61eeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("61eeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -140,21 +150,34 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('61eeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("61eeff600355")
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0xEEFF
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -179,56 +202,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP12
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600c600b600a6009600860076006600560046003600260018b600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600c600b600a6009600860076006600560046003600260018b600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -239,21 +272,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600c600b600a6009600860076006600560046003600260018b600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600c600b600a6009600860076006600560046003600260018b600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x0c)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x0C
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79958)
@@ -269,56 +316,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60036002600160039255')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60036002600160039255")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -329,21 +386,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036002600160039255'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("60036002600160039255"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79985)
@@ -356,56 +427,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH14 0x2233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6d2233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6d2233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -416,21 +497,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6d2233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6d2233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x2233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x2233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -443,56 +539,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH20 0xccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('73ccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("73ccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -503,21 +609,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('73ccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("73ccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -545,56 +666,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP15
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600f600e600d600c600b600a60096008600760066005600460036002600160039e55')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600f600e600d600c600b600a60096008600760066005600460036002600160039e55")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -605,21 +736,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600f600e600d600c600b600a60096008600760066005600460036002600160039e55'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600f600e600d600c600b600a60096008600760066005600460036002600160039e55"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x0f)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x0F)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79949)
@@ -642,56 +787,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP10
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600a60096008600760066005600460036002600189600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600a60096008600760066005600460036002600189600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -702,21 +857,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600a60096008600760066005600460036002600189600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600a60096008600760066005600460036002600189600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x0a)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x0A
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79964)
@@ -729,56 +898,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH6 0xaabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('65aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("65aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -789,21 +968,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('65aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("65aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xaabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xAABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -820,56 +1014,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP4
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600460036002600183600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600460036002600183600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -880,21 +1084,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600460036002600183600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600460036002600183600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x04)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x04
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79982)
@@ -907,56 +1125,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH17 0xff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('70ff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("70ff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -967,21 +1195,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('70ff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("70ff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -994,56 +1237,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH1 0xff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60ff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60ff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1054,21 +1307,34 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60ff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("60ff600355")
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0xFF
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -1079,56 +1345,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         File: push32Undefined.json
         sha256sum: b8c65e9991d99a9f16441629773a994d3a859d715fc06337b87e63b630390e12
         Code:     
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f010203600055')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7f010203600055")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1139,19 +1415,30 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f010203600055'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("7f010203600055")
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 99997)
@@ -1164,56 +1451,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH4 0xccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('63ccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("63ccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1224,21 +1521,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('63ccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("63ccddeeff600355")
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -1251,56 +1562,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH25 0x778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('78778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("78778899aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1311,21 +1632,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('78778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("78778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -1338,56 +1674,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH18 0xeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('71eeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("71eeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1398,21 +1744,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('71eeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("71eeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -1431,56 +1792,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP6
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60066005600460036002600185600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60066005600460036002600185600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1491,21 +1862,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60066005600460036002600185600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("60066005600460036002600185600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x06)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x06
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79976)
@@ -1518,56 +1903,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH32 0x102030000000000000000000000000000000000000000000000000000000000
                   PUSH1 0x0
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f0102030000000000000000000000000000000000000000000000000000000000600055')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7f0102030000000000000000000000000000000000000000000000000000000000600055"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1578,21 +1975,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f0102030000000000000000000000000000000000000000000000000000000000600055'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7f0102030000000000000000000000000000000000000000000000000000000000600055"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0102030000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x00)),
+            0x0102030000000000000000000000000000000000000000000000000000000000,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -1606,56 +2018,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP2
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff81600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff81600355"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1666,10 +2090,10 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # If test end in exception check it here
-        self.assertTrue(result == 'THROW')
+        self.assertTrue(result == "THROW")
 
     def test_dup5(self):
         """
@@ -1684,56 +2108,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP5
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6005600460036002600184600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6005600460036002600184600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1744,21 +2178,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6005600460036002600184600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6005600460036002600184600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x05)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x05
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79979)
@@ -1771,56 +2219,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH28 0x445566778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7b445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7b445566778899aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1831,21 +2289,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7b445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7b445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -1858,56 +2331,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH19 0xddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('72ddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("72ddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -1918,21 +2401,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('72ddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("72ddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -1966,56 +2464,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x1
                   PUSH1 0x3
                   PUSH2 0x1ff3
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600560026001600c575050005b9060016116575050005b035b0360005260016003611ff3')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "600560026001600c575050005b9060016116575050005b035b0360005260016003611ff3"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2026,19 +2536,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600560026001600c575050005b9060016116575050005b035b0360005260016003611ff3'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600560026001600c575050005b9060016116575050005b035b0360005260016003611ff3"),
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 99964)
@@ -2052,56 +2574,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP2
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039155')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039155"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2112,10 +2646,10 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # If test end in exception check it here
-        self.assertTrue(result == 'THROW')
+        self.assertTrue(result == "THROW")
 
     def test_swap8(self):
         """
@@ -2133,56 +2667,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP8
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6008600760066005600460036002600160039755')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6008600760066005600460036002600160039755")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2193,21 +2737,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6008600760066005600460036002600160039755'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6008600760066005600460036002600160039755"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x08)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79970)
@@ -2220,56 +2778,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH5 0xbbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('64bbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("64bbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2280,21 +2848,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('64bbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("64bbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xbbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xBBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -2323,56 +2906,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP16
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6010600f600e600d600c600b600a6009600860076006600560046003600260018f600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "6010600f600e600d600c600b600a6009600860076006600560046003600260018f600355"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2383,21 +2978,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6010600f600e600d600c600b600a6009600860076006600560046003600260018f600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6010600f600e600d600c600b600a6009600860076006600560046003600260018f600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x10)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x10
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79946)
@@ -2411,56 +3020,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP1
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff80600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff80600355"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2471,21 +3092,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff80600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff80600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x10112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79991)
@@ -2506,56 +3142,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP8
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6008600760066005600460036002600187600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6008600760066005600460036002600187600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2566,21 +3212,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6008600760066005600460036002600187600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6008600760066005600460036002600187600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x08)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x08
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79970)
@@ -2593,56 +3253,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH27 0x5566778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7a5566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7a5566778899aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2653,21 +3323,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7a5566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7a5566778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x5566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x5566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -2680,56 +3365,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH29 0x33445566778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7c33445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7c33445566778899aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2740,21 +3435,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7c33445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7c33445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x33445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x33445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -2769,56 +3479,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP2
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6002600181600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6002600181600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2829,21 +3549,34 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600181600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("6002600181600355")
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x02)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x02
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79988)
@@ -2856,56 +3589,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH9 0x778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('68778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("68778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -2916,21 +3659,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('68778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("68778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -2959,56 +3717,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP16
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6010600f600e600d600c600b600a60096008600760066005600460036002600160039f55')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "6010600f600e600d600c600b600a60096008600760066005600460036002600160039f55"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3019,21 +3789,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6010600f600e600d600c600b600a60096008600760066005600460036002600160039f55'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6010600f600e600d600c600b600a60096008600760066005600460036002600160039f55"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x10)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x10)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79946)
@@ -3046,56 +3830,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH8 0x8899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('678899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("678899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3106,21 +3900,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('678899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("678899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x8899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x8899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -3133,56 +3942,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH31 0x112233445566778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7e112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7e112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3193,21 +4014,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7e112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7e112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x112233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -3220,56 +4056,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH16 0x10112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6f10112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6f10112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3280,21 +4126,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6f10112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6f10112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x10112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x10112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -3308,56 +4169,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   SELFDESTRUCT
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7fff10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3368,19 +4241,28 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xbbccddeeff00112233445566778899aabbccddee
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xbbccddeeff00112233445566778899aabbccddee)), 0)
-        self.assertEqual(solve(world.get_balance(0xbbccddeeff00112233445566778899aabbccddee)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xbbccddeeff00112233445566778899aabbccddee), unhexlify(''))
+        self.assertEqual(solve(world.get_nonce(0xBBCCDDEEFF00112233445566778899AABBCCDDEE)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xBBCCDDEEFF00112233445566778899AABBCCDDEE)),
+            100000000000000000000000,
+        )
+        self.assertEqual(world.get_code(0xBBCCDDEEFF00112233445566778899AABBCCDDEE), unhexlify(""))
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 99997)
@@ -3391,56 +4273,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         File: push1_missingStack.json
         sha256sum: 83b63953c825b5488709da1d4e74cc1230eb561867fd1a21fb42471e63e99af0
         Code:     
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3451,19 +4343,28 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("60"))
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 99997)
@@ -3483,56 +4384,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP7
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600760066005600460036002600160039655')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600760066005600460036002600160039655")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3543,21 +4454,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600760066005600460036002600160039655'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600760066005600460036002600160039655"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x07)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79973)
@@ -3581,56 +4506,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP11
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600b600a60096008600760066005600460036002600160039a55')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600b600a60096008600760066005600460036002600160039a55")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3641,21 +4576,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600b600a60096008600760066005600460036002600160039a55'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600b600a60096008600760066005600460036002600160039a55"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x0b)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x0B)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79961)
@@ -3679,56 +4628,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP11
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600b600a6009600860076006600560046003600260018a600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600b600a6009600860076006600560046003600260018a600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3739,21 +4698,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600b600a6009600860076006600560046003600260018a600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600b600a6009600860076006600560046003600260018a600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x0b)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x0B
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79961)
@@ -3778,56 +4751,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP12
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600c600b600a60096008600760066005600460036002600160039b55')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600c600b600a60096008600760066005600460036002600160039b55")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3838,21 +4821,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600c600b600a60096008600760066005600460036002600160039b55'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600c600b600a60096008600760066005600460036002600160039b55"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x0c)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x0C)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79958)
@@ -3865,56 +4862,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH12 0x445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6b445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6b445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -3925,21 +4932,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6b445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6b445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -3961,56 +4983,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP9
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60096008600760066005600460036002600160039855')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60096008600760066005600460036002600160039855")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4021,21 +5053,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60096008600760066005600460036002600160039855'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("60096008600760066005600460036002600160039855"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x09)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x09)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79967)
@@ -4048,56 +5094,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH24 0x8899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("778899aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4108,21 +5164,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x8899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x8899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -4135,56 +5206,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH10 0x66778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6966778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6966778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4195,21 +5276,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6966778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6966778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x66778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x66778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -4222,56 +5318,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH21 0xbbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('74bbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("74bbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4282,21 +5388,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('74bbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("74bbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xbbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xBBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -4313,56 +5434,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP4
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600460036002600160039355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600460036002600160039355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4373,21 +5504,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600460036002600160039355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600460036002600160039355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x04)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79982)
@@ -4409,56 +5554,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP9
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60096008600760066005600460036002600188600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60096008600760066005600460036002600188600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4469,21 +5624,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60096008600760066005600460036002600188600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("60096008600760066005600460036002600188600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x09)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x09
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79967)
@@ -4509,56 +5678,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP13
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600d600c600b600a60096008600760066005600460036002600160039c55')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600d600c600b600a60096008600760066005600460036002600160039c55")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4569,21 +5748,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600d600c600b600a60096008600760066005600460036002600160039c55'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600d600c600b600a60096008600760066005600460036002600160039c55"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x0d)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x0D)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79955)
@@ -4606,56 +5799,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP10
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600a60096008600760066005600460036002600160039955')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600a60096008600760066005600460036002600160039955")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4666,21 +5869,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600a60096008600760066005600460036002600160039955'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600a60096008600760066005600460036002600160039955"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x0a)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x0A)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79964)
@@ -4708,56 +5925,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP15
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600f600e600d600c600b600a6009600860076006600560046003600260018e600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600f600e600d600c600b600a6009600860076006600560046003600260018e600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4768,21 +5995,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600f600e600d600c600b600a6009600860076006600560046003600260018e600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600f600e600d600c600b600a6009600860076006600560046003600260018e600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x0f)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x0F
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79949)
@@ -4795,56 +6036,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH15 0x112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6e112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6e112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4855,21 +6106,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6e112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6e112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -4882,56 +6148,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH26 0x66778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7966778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7966778899aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -4942,21 +6218,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7966778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7966778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x66778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x66778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -4982,56 +6273,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP13
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600d600c600b600a6009600860076006600560046003600260018c600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600d600c600b600a6009600860076006600560046003600260018c600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5042,21 +6343,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600d600c600b600a6009600860076006600560046003600260018c600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600d600c600b600a6009600860076006600560046003600260018c600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x0d)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x0D
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79955)
@@ -5072,56 +6387,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP3
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60036002600182600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60036002600182600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5132,21 +6457,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036002600182600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("60036002600182600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x03)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x03
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79985)
@@ -5157,56 +6496,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         File: push32Undefined3.json
         sha256sum: f02902689097ff0d3abaa241f98172a7affe62aefed41dcb6269ee5239799e2e
         Code:     
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7f")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5217,19 +6566,28 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("7f"))
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 99997)
@@ -5244,56 +6602,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP2
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6002600160039155')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6002600160039155")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5304,21 +6672,34 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600160039155'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("6002600160039155")
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x02)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79988)
@@ -5345,56 +6726,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP14
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600e600d600c600b600a60096008600760066005600460036002600160039d55')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600e600d600c600b600a60096008600760066005600460036002600160039d55")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5405,21 +6796,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600e600d600c600b600a60096008600760066005600460036002600160039d55'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600e600d600c600b600a60096008600760066005600460036002600160039d55"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x0e)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x0E)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79952)
@@ -5433,56 +6838,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP1
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039055')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039055"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5493,21 +6910,41 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039055'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039055"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff)), 0x03)
+        self.assertEqual(
+            solve(
+                world.get_storage_data(
+                    0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6,
+                    0x10112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+                )
+            ),
+            0x03,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79991)
@@ -5520,56 +6957,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH11 0x5566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6a5566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6a5566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5580,21 +7027,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6a5566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6a5566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x5566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x5566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -5613,56 +7075,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP6
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60066005600460036002600160039555')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("60066005600460036002600160039555")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5673,21 +7145,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60066005600460036002600160039555'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("60066005600460036002600160039555"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x06)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79976)
@@ -5700,56 +7186,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH13 0x33445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6c33445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6c33445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5760,21 +7256,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6c33445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6c33445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x33445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x33445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -5787,56 +7298,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH3 0xddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('62ddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("62ddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5847,21 +7368,34 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('62ddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6), unhexlify("62ddeeff600355")
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0xDDEEFF
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -5874,56 +7408,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH7 0x99aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6699aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6699aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -5934,21 +7478,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6699aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6699aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x99aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x99AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -5990,56 +7549,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH30 0xe7d34c64a9c85d4460dbbca87196b61618a4bd216800000000000000001
                   PUSH31 0x5b901f48a5b994d6572502bc4ea43140486666416aa1c71c71c71c71c71bd
                   PUSH32 0x47889870c178fc477414ea231d70467a388fffe31b4e638e38e38e38e38e37a
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('60656107d26204a0c763026921f4640bc5588eb165372d0f1dca6e661ba1d901961c71670c55f7bc23038e3868056bc75e2d630fffff69021e19e0c9bab24000016a085d1c6e8050f0ea1c71bd6b0688be36543f3c36e638e37a6c03d41f73d55d0d482ae55555376dc76810d0fe03c91964d31c71c6f46e615dd0360c07d931663b14e38e38b16f2da3f99955a3adcf27ebb1caaaaaaa6e7014ccba6a8bb1ed35bd86bf065c71c71c2b7109491c5d4781b79c9009de6bfb8e38e38de8720414a0f6fdec81304d4c563e740bffffffffa573118427b3b4a05bc8a8a4de8459868000000000017406eb15e7331e727940d4ac54b7cdca1c71c71c71bd750567a91c9fefc96ebaa626a22f98c5e638e38e38e37a76032abd16c5b68006e15d5aa307e383f4e55555555555377701a6427bdc4f0d58eab5f48a3ec67f64e21c71c71c71c6f478080dd0a0c9b9ff2c2a0c740b06853a0a980ee38e38e38e38b17903c679cb5e8f2f9cb3b5d6652b0e7334f746faaaaaaaaaaaaa6e7a01b873815917ebb2bf3b890a1af495d6235bae3c71c71c71c71c2b7b07ae4cca96e1a55dfa49c85ad3c3e60e426b92fb8e38e38e38e38de87c036018bf074e292bcc7d6c8bea0f9699443046178bffffffffffffffa57d0e7d34c64a9c85d4460dbbca87196b61618a4bd2168000000000000000017e05b901f48a5b994d6572502bc4ea43140486666416aa1c71c71c71c71c71bd7f047889870c178fc477414ea231d70467a388fffe31b4e638e38e38e38e38e37a')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "60656107d26204a0c763026921f4640bc5588eb165372d0f1dca6e661ba1d901961c71670c55f7bc23038e3868056bc75e2d630fffff69021e19e0c9bab24000016a085d1c6e8050f0ea1c71bd6b0688be36543f3c36e638e37a6c03d41f73d55d0d482ae55555376dc76810d0fe03c91964d31c71c6f46e615dd0360c07d931663b14e38e38b16f2da3f99955a3adcf27ebb1caaaaaaa6e7014ccba6a8bb1ed35bd86bf065c71c71c2b7109491c5d4781b79c9009de6bfb8e38e38de8720414a0f6fdec81304d4c563e740bffffffffa573118427b3b4a05bc8a8a4de8459868000000000017406eb15e7331e727940d4ac54b7cdca1c71c71c71bd750567a91c9fefc96ebaa626a22f98c5e638e38e38e37a76032abd16c5b68006e15d5aa307e383f4e55555555555377701a6427bdc4f0d58eab5f48a3ec67f64e21c71c71c71c6f478080dd0a0c9b9ff2c2a0c740b06853a0a980ee38e38e38e38b17903c679cb5e8f2f9cb3b5d6652b0e7334f746faaaaaaaaaaaaa6e7a01b873815917ebb2bf3b890a1af495d6235bae3c71c71c71c71c2b7b07ae4cca96e1a55dfa49c85ad3c3e60e426b92fb8e38e38e38e38de87c036018bf074e292bcc7d6c8bea0f9699443046178bffffffffffffffa57d0e7d34c64a9c85d4460dbbca87196b61618a4bd2168000000000000000017e05b901f48a5b994d6572502bc4ea43140486666416aa1c71c71c71c71c71bd7f047889870c178fc477414ea231d70467a388fffe31b4e638e38e38e38e38e37a"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 32)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6050,10 +7621,10 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # If test end in exception check it here
-        self.assertTrue(result == 'THROW')
+        self.assertTrue(result == "THROW")
 
     def test_dup7(self):
         """
@@ -6070,56 +7641,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP7
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600760066005600460036002600186600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600760066005600460036002600186600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6130,21 +7711,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600760066005600460036002600186600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600760066005600460036002600186600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x07)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x07
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79973)
@@ -6171,56 +7766,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   DUP14
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('600e600d600c600b600a6009600860076006600560046003600260018d600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("600e600d600c600b600a6009600860076006600560046003600260018d600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6231,21 +7836,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600e600d600c600b600a6009600860076006600560046003600260018d600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("600e600d600c600b600a6009600860076006600560046003600260018d600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x0e)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)), 0x0E
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79952)
@@ -6258,56 +7877,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH22 0xaabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('75aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("75aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6318,21 +7947,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('75aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("75aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xaabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0xAABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -6350,56 +7994,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
                   PUSH1 0x3
                   SWAP5
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('6005600460036002600160039455')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("6005600460036002600160039455")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6410,21 +8064,35 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6005600460036002600160039455'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("6005600460036002600160039455"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x01)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x05)), 0x01
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79979)
@@ -6437,56 +8105,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH30 0x2233445566778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7d2233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7d2233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6497,21 +8175,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7d2233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7d2233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x2233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x2233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -6522,56 +8215,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         File: push32FillUpInputWithZerosAtTheEnd.json
         sha256sum: 275e3e6817b9d5105ee52895f346e1b53c916d0b44f4c33af57f78e327a40649
         Code:     
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccdd')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7fff10112233445566778899aabbccddeeff00112233445566778899aabbccdd")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6582,19 +8285,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccdd'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7fff10112233445566778899aabbccddeeff00112233445566778899aabbccdd"),
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 99997)
@@ -6607,56 +8322,66 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH23 0x99aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7699aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify("7699aabbccddeeff00112233445566778899aabbccddeeff600355")
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6667,21 +8392,36 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7699aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7699aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x99aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x99AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
@@ -6694,56 +8434,68 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         Code:     PUSH32 0x10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff
                   PUSH1 0x3
                   SSTORE
-        """    
-    
+        """
+
         def solve(val):
             return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
-        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        blocknumber = constraints.new_bitvec(256, name="blocknumber")
         constraints.add(blocknumber == 0)
 
-        timestamp = constraints.new_bitvec(256, name='timestamp')
+        timestamp = constraints.new_bitvec(256, name="timestamp")
         constraints.add(timestamp == 1)
 
-        difficulty = constraints.new_bitvec(256, name='difficulty')
+        difficulty = constraints.new_bitvec(256, name="difficulty")
         constraints.add(difficulty == 256)
 
-        coinbase = constraints.new_bitvec(256, name='coinbase')
+        coinbase = constraints.new_bitvec(256, name="coinbase")
         constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
 
-        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        gaslimit = constraints.new_bitvec(256, name="gaslimit")
         constraints.add(gaslimit == 1000000)
 
-        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
-                             coinbase=coinbase, gaslimit=gaslimit)
-    
-        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        acc_code = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
-            
-        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        world = evm.EVMWorld(
+            constraints,
+            blocknumber=blocknumber,
+            timestamp=timestamp,
+            difficulty=difficulty,
+            coinbase=coinbase,
+            gaslimit=gaslimit,
+        )
+
+        acc_addr = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        acc_code = unhexlify(
+            "7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"
+        )
+
+        acc_balance = constraints.new_bitvec(
+            256, name="balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_balance == 100000000000000000000000)
 
-        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        acc_nonce = constraints.new_bitvec(
+            256, name="nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
+        )
         constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = constraints.new_bitvec(256, name='price')
+        address = 0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6
+        caller = 0xCD1722F3947DEF4CF144679DA39C4C32BDC35681
+        price = constraints.new_bitvec(256, name="price")
         constraints.add(price == 100000000000000)
 
-        value = constraints.new_bitvec(256, name='value')
+        value = constraints.new_bitvec(256, name="value")
         constraints.add(value == 1000000000000000000)
 
-        gas = constraints.new_bitvec(256, name='gas')
+        gas = constraints.new_bitvec(256, name="gas")
         constraints.add(gas == 100000)
 
-        data = ''
+        data = ""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world._open_transaction("CALL", address, price, data, caller, value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -6754,25 +8506,40 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(solve(world.block_coinbase()), 0x2ADC25665018AA1FE0E6BC666DAC8FC2697FF9BA)
 
         # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
-        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
+        self.assertEqual(solve(world.get_nonce(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)), 0)
+        self.assertEqual(
+            solve(world.get_balance(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6)),
+            100000000000000000000000,
+        )
+        self.assertEqual(
+            world.get_code(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6),
+            unhexlify("7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355"),
+        )
         # check storage
-        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        self.assertEqual(
+            solve(world.get_storage_data(0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6, 0x03)),
+            0x10112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF,
+        )
         # check outs
-        self.assertEqual(returndata, unhexlify(''))
+        self.assertEqual(returndata, unhexlify(""))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
+        logs = [
+            Log(unhexlify("{:040x}".format(l.address)), l.topics, solve(l.memlog))
+            for l in world.logs
+        ]
         data = rlp.encode(logs)
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        self.assertEqual(
+            sha3.keccak_256(data).hexdigest(),
+            "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        )
 
         # test used gas
         self.assertEqual(solve(world.current_vm.gas), 79994)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

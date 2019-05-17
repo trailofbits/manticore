@@ -9,14 +9,14 @@ from sys import argv, exit
 from manticore.native import Manticore
 
 
-def profile(program, sort='cumulative'):
-    print(f"[*] Profiling program \"{program}\"")
+def profile(program, sort="cumulative"):
+    print(f'[*] Profiling program "{program}"')
 
     m = Manticore(program)
     m.run(should_profile=True)
 
     stats = m.get_profiling_stats()
-    print(f'[*] Loaded profiling data.')
+    print(f"[*] Loaded profiling data.")
 
     if stats is None:
         print(f"[*] Failed to collect stats for program {program}")
@@ -30,8 +30,10 @@ def profile(program, sort='cumulative'):
 if __name__ == "__main__":
     if len(argv) != 2:
         print(f"usage: python {argv[0]} PROGRAM [SORT_METHOD]")
-        print('The default SORT_METHOD is cumulative')
-        print('SORT_METHODs can be seen on https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats')
+        print("The default SORT_METHOD is cumulative")
+        print(
+            "SORT_METHODs can be seen on https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats"
+        )
         exit()
 
     profile(argv[1])

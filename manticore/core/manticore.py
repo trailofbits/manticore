@@ -31,9 +31,10 @@ from enum import Enum
 
 class MProcessingType(Enum):
     """Used as configuration constant for choosing multiprocessing flavor"""
-    multiprocessing = 'multiprocessing'
-    single = 'single'
-    threading = 'threading'
+
+    multiprocessing = "multiprocessing"
+    single = "single"
+    threading = "threading"
 
     def title(self):
         return self._name_.title()
@@ -43,27 +44,34 @@ class MProcessingType(Enum):
         return cls.__members__[name]
 
     def to_class(self):
-        return globals()[f'Manticore{self.title()}']
+        return globals()[f"Manticore{self.title()}"]
 
 
 logger = logging.getLogger(__name__)
 
-consts = config.get_group('core')
-consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore invocation')
-consts.add('cluster', default=False, description='If True enables to run workers over the network UNIMPLEMENTED')
-consts.add('procs', default=10, description='Number of parallel processes to spawn')
-consts.add('mprocessing', default=MProcessingType.multiprocessing, description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
+consts = config.get_group("core")
+consts.add("timeout", default=0, description="Timeout, in seconds, for Manticore invocation")
+consts.add(
+    "cluster",
+    default=False,
+    description="If True enables to run workers over the network UNIMPLEMENTED",
+)
+consts.add("procs", default=10, description="Number of parallel processes to spawn")
+consts.add(
+    "mprocessing",
+    default=MProcessingType.multiprocessing,
+    description="single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes",
+)
 
 
 class ManticoreBase(Eventful):
-
     def __new__(cls, *args, **kwargs):
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
 
         cl = consts.mprocessing.to_class()
         if cl not in cls.__bases__:
-            #change ManticoreBase for the more specific class
+            # change ManticoreBase for the more specific class
             idx = cls.__bases__.index(ManticoreBase)
             bases = list(cls.__bases__)
             bases[idx] = cl
@@ -74,6 +82,7 @@ class ManticoreBase(Eventful):
     # Decorators added first for convenience.
     def sync(func):
         """Synchronization decorator"""
+
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             with self._lock:
@@ -85,6 +94,7 @@ class ManticoreBase(Eventful):
         """Allows the decorated method to run only when manticore is actively
            exploring states
         """
+
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if not self.is_running():
@@ -106,10 +116,19 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    _published_events = {'run', 'start_worker', 'terminate_worker', 'enqueue_state', 'fork_state', 'load_state',
-                         'terminate_state', 'kill_state', 'execute_instruction'}
+    _published_events = {
+        "run",
+        "start_worker",
+        "terminate_worker",
+        "enqueue_state",
+        "fork_state",
+        "load_state",
+        "terminate_state",
+        "kill_state",
+        "execute_instruction",
+    }
 
-    def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
+    def __init__(self, initial_state, workspace_url=None, policy="random", **kwargs):
         """
         :param initial_state: State to start from.
 
@@ -220,8 +239,21 @@ class ManticoreBase(Eventful):
         """
         super().__init__()
 
-        if any(not hasattr(self, x) for x in ('_worker_type', '_lock', '_running', '_killed', '_ready_states', '_terminated_states', '_killed_states', '_busy_states', '_shared_context')):
-            raise Exception('Need to instantiate one of: ManticoreNative, ManticoreThreads..')
+        if any(
+            not hasattr(self, x)
+            for x in (
+                "_worker_type",
+                "_lock",
+                "_running",
+                "_killed",
+                "_ready_states",
+                "_terminated_states",
+                "_killed_states",
+                "_busy_states",
+                "_shared_context",
+            )
+        ):
+            raise Exception("Need to instantiate one of: ManticoreNative, ManticoreThreads..")
 
         # The workspace and the output
         # Manticore will use the workspace to save and share temporary states.
@@ -229,15 +261,15 @@ class ManticoreBase(Eventful):
         # By default the output folder and the workspace folder are the same.
         # Check type, default to fs:
         if isinstance(workspace_url, str):
-            if ':' not in workspace_url:
-                workspace_url = f'fs:{workspace_url}'
+            if ":" not in workspace_url:
+                workspace_url = f"fs:{workspace_url}"
         else:
             if workspace_url is not None:
-                raise TypeError(f'Invalid workspace type: {type(workspace_url).__name__}')
+                raise TypeError(f"Invalid workspace type: {type(workspace_url).__name__}")
         self._workspace = Workspace(workspace_url)
-        #reuse the same workspace if not specified
+        # reuse the same workspace if not specified
         if workspace_url is None:
-            workspace_url = f'fs:{self._workspace.uri}'
+            workspace_url = f"fs:{self._workspace.uri}"
         self._output = ManticoreOutput(workspace_url)
 
         # The set of registered plugins
@@ -249,7 +281,7 @@ class ManticoreBase(Eventful):
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
-            raise TypeError(f'Invalid initial_state type: {type(initial_state).__name__}')
+            raise TypeError(f"Invalid initial_state type: {type(initial_state).__name__}")
         self._put_state(initial_state)
 
         # Workers will use manticore __dict__ So lets spawn them last
@@ -259,7 +291,7 @@ class ManticoreBase(Eventful):
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
 
-    def _fork(self, state, expression, policy='ALL', setstate=None):
+    def _fork(self, state, expression, policy="ALL", setstate=None):
         """
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
@@ -284,6 +316,7 @@ class ManticoreBase(Eventful):
         assert isinstance(expression, Expression)
 
         if setstate is None:
+
             def setstate(x, y):
                 pass
 
@@ -293,10 +326,11 @@ class ManticoreBase(Eventful):
         if not solutions:
             raise ManticoreError("Forking on unfeasible constraint set")
 
-        logger.debug("Forking. Policy: %s. Values: %s", policy,
-                     ', '.join(f'0x{sol:x}' for sol in solutions))
+        logger.debug(
+            "Forking. Policy: %s. Values: %s", policy, ", ".join(f"0x{sol:x}" for sol in solutions)
+        )
 
-        self._publish('will_fork_state', state, expression, solutions, policy)
+        self._publish("will_fork_state", state, expression, solutions, policy)
 
         # Build and enqueue a state for each solution
         children = []
@@ -314,7 +348,7 @@ class ManticoreBase(Eventful):
                     self._ready_states.append(new_state_id)
                     self._lock.notify_all()  # Must notify one!
 
-                self._publish('did_fork_state', new_state, expression, new_value, policy)
+                self._publish("did_fork_state", new_state, expression, new_value, policy)
                 # maintain a list of children for logging purpose
                 children.append(new_state_id)
 
@@ -360,11 +394,11 @@ class ManticoreBase(Eventful):
             self.stcache = weakref.WeakValueDictionary()
         if state_id in self.stcache:
             return self.stcache[state_id]
-        self._publish('will_load_state', state_id)
+        self._publish("will_load_state", state_id)
         state = self._workspace.load_state(state_id, delete=False)
         state._id = state_id
         self.forward_events_from(state, True)
-        self._publish('did_load_state', state, state_id)
+        self._publish("did_load_state", state, state_id)
         self.stcache[state_id] = state
         return state
 
@@ -559,7 +593,9 @@ class ManticoreBase(Eventful):
         """ Only allowed at not running.
             (At running we can have states at busy)
         """
-        return tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
+        return (
+            tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
+        )
 
     @property
     @sync
@@ -601,16 +637,16 @@ class ManticoreBase(Eventful):
         """ Terminated states count """
         return len(self._terminated_states)
 
-    def generate_testcase(self, state, message='test', name='test'):
+    def generate_testcase(self, state, message="test", name="test"):
         testcase = self._output.testcase(prefix=name)
-        with testcase.open_stream('pkl', binary=True) as statef:
+        with testcase.open_stream("pkl", binary=True) as statef:
             PickleSerializer().serialize(state, statef)
 
-        #Let the plugins generate a state based report
+        # Let the plugins generate a state based report
         for p in self.plugins:
             p.generate_testcase(state, testcase, message)
 
-        logger.info('Generated testcase No. %d - %s', testcase.num, message)
+        logger.info("Generated testcase No. %d - %s", testcase.num, message)
         return testcase
 
     @at_not_running
@@ -618,7 +654,7 @@ class ManticoreBase(Eventful):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"
-        assert getattr(plugin, 'manticore', None) is None, "Plugin instance already owned"
+        assert getattr(plugin, "manticore", None) is None, "Plugin instance already owned"
 
         plugin.manticore = self
         self.plugins.add(plugin)
@@ -627,35 +663,47 @@ class ManticoreBase(Eventful):
         prefix = Eventful.prefixes
         all_events = [x + y for x, y in itertools.product(prefix, events)]
         for event_name in all_events:
-            callback_name = f'{event_name}_callback'
+            callback_name = f"{event_name}_callback"
             callback = getattr(plugin, callback_name, None)
             if callback is not None:
                 self.subscribe(event_name, callback)
 
         # Safety checks
         for callback_name in dir(plugin):
-            if callback_name.endswith('_callback'):
+            if callback_name.endswith("_callback"):
                 event_name = callback_name[:-9]
                 if event_name not in all_events:
-                    logger.warning("There is no event named %s for callback on plugin %s", event_name,
-                                   type(plugin).__name__)
+                    logger.warning(
+                        "There is no event named %s for callback on plugin %s",
+                        event_name,
+                        type(plugin).__name__,
+                    )
 
         for event_name in all_events:
             for plugin_method_name in dir(plugin):
                 if event_name in plugin_method_name:
-                    if not plugin_method_name.endswith('_callback'):
-                        if plugin_method_name.startswith('on_') or \
-                                plugin_method_name.startswith('will_') or \
-                                plugin_method_name.startswith('did_'):
-                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s",
-                                           plugin_method_name, type(plugin).__name__)
-                    if plugin_method_name.endswith('_callback') and \
-                            not plugin_method_name.startswith('on_') and \
-                            not plugin_method_name.startswith('will_') and \
-                            not plugin_method_name.startswith('did_'):
+                    if not plugin_method_name.endswith("_callback"):
+                        if (
+                            plugin_method_name.startswith("on_")
+                            or plugin_method_name.startswith("will_")
+                            or plugin_method_name.startswith("did_")
+                        ):
+                            logger.warning(
+                                "Plugin methods named '%s()' should end with '_callback' on plugin %s",
+                                plugin_method_name,
+                                type(plugin).__name__,
+                            )
+                    if (
+                        plugin_method_name.endswith("_callback")
+                        and not plugin_method_name.startswith("on_")
+                        and not plugin_method_name.startswith("will_")
+                        and not plugin_method_name.startswith("did_")
+                    ):
                         logger.warning(
                             "Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s",
-                            plugin_method_name, type(plugin).__name__)
+                            plugin_method_name,
+                            type(plugin).__name__,
+                        )
 
         plugin.on_register()
 
@@ -672,6 +720,7 @@ class ManticoreBase(Eventful):
     def subscribe(self, name, callback):
         """ Register a callback to an event"""
         from types import MethodType
+
         if not isinstance(callback, MethodType):
             callback = MethodType(callback, self)
         super().subscribe(name, callback)
@@ -725,7 +774,7 @@ class ManticoreBase(Eventful):
             # if a key is provided we yield the specific value or a fresh one
             if value_type not in (list, dict):
                 raise TypeError("Type must be list or dict")
-            if hasattr(self, '_context_value_types'):
+            if hasattr(self, "_context_value_types"):
                 value_type = self._context_value_types[value_type]
             context = self._shared_context
             if key not in context:
@@ -810,7 +859,7 @@ class ManticoreBase(Eventful):
             # User subscription to events is disabled from now on
             self.subscribe = None
 
-        self._publish('will_run', self.ready_states)
+        self._publish("will_run", self.ready_states)
         self._running.value = True
         # start all the workers!
         for w in self._workers:
@@ -836,7 +885,7 @@ class ManticoreBase(Eventful):
                     self._killed_states.append(self._ready_states.pop())
 
         self._running.value = False
-        self._publish('did_run')
+        self._publish("did_run")
         assert not self.is_running()
 
     @sync
@@ -871,20 +920,20 @@ class ManticoreBase(Eventful):
     ############################################################################
 
     def save_run_data(self):
-        with self._output.save_stream('command.sh') as f:
-            f.write(' '.join(map(shlex.quote, sys.argv)))
+        with self._output.save_stream("command.sh") as f:
+            f.write(" ".join(map(shlex.quote, sys.argv)))
 
-        with self._output.save_stream('manticore.yml') as f:
+        with self._output.save_stream("manticore.yml") as f:
             config.save(f)
 
-        logger.info('Results in %s', self._output.store.uri)
+        logger.info("Results in %s", self._output.store.uri)
 
 
 class ManticoreSingle(ManticoreBase):
     _worker_type = WorkerSingle
 
     def __init__(self, *args, **kwargs):
-        class FakeLock():
+        class FakeLock:
             def _nothing(self, *args, **kwargs):
                 pass
 
@@ -937,8 +986,7 @@ class ManticoreMultiprocessing(ManticoreBase):
         # This is the global manager that will handle all shared memory access
         # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
         self._manager = SyncManager()
-        self._manager.start(
-            lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+        self._manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
         # The main manticore lock. Acquire this for accessing shared objects
         # THINKME: we use the same lock to access states lists and shared contexts
         self._lock = self._manager.Condition()
@@ -951,7 +999,6 @@ class ManticoreMultiprocessing(ManticoreBase):
         self._busy_states = self._manager.list()
         self._killed_states = self._manager.list()
         self._shared_context = self._manager.dict()
-        self._context_value_types = {list: self._manager.list,
-                                     dict: self._manager.dict}
+        self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
 
         super().__init__(*args, **kwargs)

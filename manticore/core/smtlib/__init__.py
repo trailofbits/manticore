@@ -4,4 +4,5 @@ from .solver import *  # noqa
 from . import operators as Operators  # noqa
 
 import logging
+
 logger = logging.getLogger(__name__)

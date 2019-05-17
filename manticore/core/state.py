@@ -25,7 +25,7 @@ class AbandonState(TerminateState):
         execution is finished
     """
 
-    def __init__(self, message='Abandoned state'):
+    def __init__(self, message="Abandoned state"):
         super().__init__(message)
 
 
@@ -38,17 +38,18 @@ class Concretize(StateException):
         #Fixme Doc.
 
     """
-    _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
+
+    _ValidPolicies = ["MINMAX", "ALL", "SAMPLED", "ONE"]
 
     def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
         if policy is None:
-            policy = 'ALL'
+            policy = "ALL"
         if policy not in self._ValidPolicies:
             raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
-        self.message = f'Concretize: {message} (Policy: {policy})'
+        self.message = f"Concretize: {message} (Policy: {policy})"
         super().__init__(**kwargs)
 
 
@@ -62,8 +63,8 @@ class ForkState(Concretize):
     """
 
     def __init__(self, message, expression, **kwargs):
-        assert isinstance(expression, Bool), 'Need a Bool to fork a state in two states'
-        super().__init__(message, expression, policy='ALL', **kwargs)
+        assert isinstance(expression, Bool), "Need a Bool to fork a state in two states"
+        super().__init__(message, expression, policy="ALL", **kwargs)
 
 
 class StateBase(Eventful):
@@ -89,30 +90,30 @@ class StateBase(Eventful):
 
     def __getstate__(self):
         state = super().__getstate__()
-        state['platform'] = self._platform
-        state['constraints'] = self._constraints
-        state['input_symbols'] = self._input_symbols
-        state['child'] = self._child
-        state['context'] = self._context
+        state["platform"] = self._platform
+        state["constraints"] = self._constraints
+        state["input_symbols"] = self._input_symbols
+        state["child"] = self._child
+        state["context"] = self._context
         return state
 
     def __setstate__(self, state):
         super().__setstate__(state)
-        self._platform = state['platform']
-        self._constraints = state['constraints']
-        self._input_symbols = state['input_symbols']
-        self._child = state['child']
-        self._context = state['context']
+        self._platform = state["platform"]
+        self._constraints = state["constraints"]
+        self._input_symbols = state["input_symbols"]
+        self._child = state["child"]
+        self._context = state["context"]
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._platform)
 
     @property
     def id(self):
-        return getattr(self, '_id', None)
+        return getattr(self, "_id", None)
 
     def __repr__(self):
-        return f'<State object with id {self.id}>'
+        return f"<State object with id {self.id}>"
 
     # Fixme(felipe) change for with "state.cow_copy() as st_temp":.
     # This need to change. this is the center of ALL the problems. re. CoW
@@ -189,16 +190,22 @@ class StateBase(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         """
-        label = options.get('label')
+        label = options.get("label")
         avoid_collisions = False
         if label is None:
-            label = 'buffer'
+            label = "buffer"
             avoid_collisions = True
-        taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint, avoid_collisions=avoid_collisions)
+        taint = options.get("taint", frozenset())
+        expr = self._constraints.new_array(
+            name=label,
+            index_max=nbytes,
+            value_bits=8,
+            taint=taint,
+            avoid_collisions=avoid_collisions,
+        )
         self._input_symbols.append(expr)
 
-        if options.get('cstring', False):
+        if options.get("cstring", False):
             for i in range(nbytes - 1):
                 self._constraints.add(expr[i] != 0)
 
@@ -218,10 +225,12 @@ class StateBase(Eventful):
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
         avoid_collisions = False
         if label is None:
-            label = 'val'
+            label = "val"
             avoid_collisions = True
 
-        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint, avoid_collisions=avoid_collisions)
+        expr = self._constraints.new_bitvec(
+            nbits, name=label, taint=taint, avoid_collisions=avoid_collisions
+        )
         self._input_symbols.append(expr)
         return expr
 
@@ -233,13 +242,13 @@ class StateBase(Eventful):
         symbolic = self.migrate_expression(symbolic)
 
         vals = []
-        if policy == 'MINMAX':
+        if policy == "MINMAX":
             vals = self._solver.minmax(self._constraints, symbolic)
-        elif policy == 'MAX':
+        elif policy == "MAX":
             vals = self._solver.max(self._constraints, symbolic)
-        elif policy == 'MIN':
+        elif policy == "MIN":
             vals = self._solver.min(self._constraints, symbolic)
-        elif policy == 'SAMPLED':
+        elif policy == "SAMPLED":
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
             if M - m > 3:
@@ -252,29 +261,33 @@ class StateBase(Eventful):
                     if maxcount <= len(vals):
                         break
             if M - m > 1000 and maxcount > len(vals):
-                vals += self._solver.get_all_values(self._constraints, symbolic,
-                                                    maxcnt=maxcount - len(vals), silent=True)
-        elif policy == 'ONE':
+                vals += self._solver.get_all_values(
+                    self._constraints, symbolic, maxcnt=maxcount - len(vals), silent=True
+                )
+        elif policy == "ONE":
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
-            assert policy == 'ALL'
-            vals = self._solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
+            assert policy == "ALL"
+            vals = self._solver.get_all_values(
+                self._constraints, symbolic, maxcnt=maxcount, silent=True
+            )
 
         return tuple(set(vals))
 
     @property
     def _solver(self):
         from .smtlib import Z3Solver
+
         return Z3Solver.instance()  # solver
 
     def migrate_expression(self, expression):
         if not issymbolic(expression):
             return expression
-        migration_map = self.context.get('migration_map')
+        migration_map = self.context.get("migration_map")
         if migration_map is None:
             migration_map = {}
         migrated_expression = self.constraints.migrate(expression, name_migration_map=migration_map)
-        self.context['migration_map'] = migration_map
+        self.context["migration_map"] = migration_map
         return migrated_expression
 
     def is_feasible(self):
@@ -290,7 +303,9 @@ class StateBase(Eventful):
 
     def must_be_true(self, expr):
         expr = self.migrate_expression(expr)
-        return self._solver.can_be_true(self._constraints, expr) and not self._solver.can_be_true(self._constraints, expr == False)
+        return self._solver.can_be_true(self._constraints, expr) and not self._solver.can_be_true(
+            self._constraints, expr == False
+        )
 
     def solve_one(self, expr, constrain=False):
         """
@@ -306,7 +321,7 @@ class StateBase(Eventful):
         value = self._solver.get_value(self._constraints, expr)
         if constrain:
             self.constrain(expr == value)
-        #Include forgiveness here
+        # Include forgiveness here
         if isinstance(value, bytearray):
             value = bytes(value)
         return value
@@ -388,7 +403,9 @@ class StateBase(Eventful):
                 cs_to_use.add(c == result[-1])
         return result
 
-    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
+    def symbolicate_buffer(
+        self, data, label="INPUT", wildcard="+", string=False, taint=frozenset()
+    ):
         """Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         :param str data: The string to symbolicate. If no wildcard bytes are provided,
@@ -405,7 +422,9 @@ class StateBase(Eventful):
         """
         if wildcard in data:
             size = len(data)
-            symb = self._constraints.new_array(name=label, index_max=size, taint=taint, avoid_collisions=True)
+            symb = self._constraints.new_array(
+                name=label, index_max=size, taint=taint, avoid_collisions=True
+            )
             self._input_symbols.append(symb)
 
             tmp = []

@@ -6,6 +6,7 @@ from manticore.native.cpu.register import Register
 
 class RegisterTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     def test_rd(self):
         r = Register(32)
         self.assertEqual(r.read(), 0)
@@ -17,13 +18,13 @@ class RegisterTest(unittest.TestCase):
 
     def test_truncate(self):
         r = Register(32)
-        r.write(2**32)
+        r.write(2 ** 32)
         self.assertEqual(r.read(), 0)
 
     def test_largest_write(self):
         r = Register(32)
-        r.write(0xffffffff)
-        self.assertEqual(r.read(), 0xffffffff)
+        r.write(0xFFFFFFFF)
+        self.assertEqual(r.read(), 0xFFFFFFFF)
 
     def test_flag(self):
         r = Register(1)

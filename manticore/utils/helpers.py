@@ -20,6 +20,7 @@ def issymbolic(value):
     :rtype: bool
     """
     from ..core.smtlib import Expression  # prevent circular imports
+
     return isinstance(value, Expression)
 
 
@@ -107,7 +108,8 @@ class CacheDict(OrderedDict):
     def __del__(self):
         log = logging.getLogger(self.__class__.__name__)
         log.debug(
-            f'DictCache: hits: {self._hits}, misses: {self._misses}, flushes: {self._flushes}, size: {self.__len__()}')
+            f"DictCache: hits: {self._hits}, misses: {self._misses}, flushes: {self._flushes}, size: {self.__len__()}"
+        )
 
     def __setitem__(self, key, value):
         if len(self) > self._max_size:
@@ -160,8 +162,10 @@ class PickleSerializer(StateSerializer):
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
-                raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
-            logger.info(f'Recursion soft limit {sys.getrecursionlimit()} hit, increasing')
+                raise Exception(
+                    f"PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting"
+                )
+            logger.info(f"Recursion soft limit {sys.getrecursionlimit()} hit, increasing")
             sys.setrecursionlimit(new_limit)
             self.serialize(state, f)
 

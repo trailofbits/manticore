@@ -1,10 +1,12 @@
 from manticore import Manticore
 
+
 def fixme():
-  raise Exception("Fill in the blanks!")
+    raise Exception("Fill in the blanks!")
+
 
 # Let's initialize the manticore control object
-m = Manticore('multiple-styles')
+m = Manticore("multiple-styles")
 
 # Now, we can hook the success state and figure out the flag! `fixme()` here
 # should be an address we'd like to get to
@@ -15,7 +17,7 @@ def solve(state):
     flag_base = state.cpu.RBP - fixme()
 
     # We're going to build a solution later
-    solution = ''
+    solution = ""
 
     # How big is the flag? We should be able to figure this out from traditional
     # static analysis
@@ -30,6 +32,7 @@ def solve(state):
     # And this should give us a solution, after which we're done!
     print(solution)
     m.terminate()
+
 
 # play with these numbers!
 m.verbosity = 0

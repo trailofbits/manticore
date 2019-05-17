@@ -6,6 +6,7 @@ import capstone as cs
 class Instruction:
     """Capstone-like instruction to be used internally
     """
+
     @property
     @abstractmethod
     def address(self):

@@ -135,16 +135,11 @@ def func(password, pad, flag=True):
         SUBPROGRAMFALSE = """    printf("You are NOT in!\\n");\n"""
     else:
         SUBPROGRAMFALSE = func(
-            "".join(random.choice(chars) for _ in range(len(password) // 2)),
-            pad[1:],
-            False,
+            "".join(random.choice(chars) for _ in range(len(password) // 2)), pad[1:], False
         )
 
     config = random.choice(
-        [
-            (True, SUBPROGRAMTRUE, SUBPROGRAMFALSE),
-            (False, SUBPROGRAMFALSE, SUBPROGRAMTRUE),
-        ]
+        [(True, SUBPROGRAMTRUE, SUBPROGRAMFALSE), (False, SUBPROGRAMFALSE, SUBPROGRAMTRUE)]
     )
 
     SUBPROGRAM = ""

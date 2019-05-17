@@ -7,8 +7,8 @@ from manticore.ethereum import ManticoreEVM
 m = ManticoreEVM()
 m.verbosity(0)
 # And now make the contract account to analyze
-# cat  | solc --bin 
-source_code = '''
+# cat  | solc --bin
+source_code = """
 pragma solidity ^0.4;
 contract C {
     uint c;
@@ -35,17 +35,17 @@ contract C {
         
     }
 }
-'''
+"""
 print(source_code)
 
 
 class EVMUseDef(Plugin):
     def _get_concrete_hex(self, state, array):
-        r = ''
+        r = ""
         for i in array:
             l = state.solve_n(i, 2)
             if len(l) == 1:
-                r += '%02x' % l[0]
+                r += "%02x" % l[0]
         if len(r) != 8:
             return
         return r
@@ -61,7 +61,7 @@ class EVMUseDef(Plugin):
             return
 
         offsets = state.solve_n(offset, 3000)
-        with self.locked_context('storage_writes', dict) as storage_writes:
+        with self.locked_context("storage_writes", dict) as storage_writes:
             contract_function = (md.name, md.get_func_name(r))
             if contract_function not in storage_writes:
                 storage_writes[contract_function] = set()
@@ -79,7 +79,7 @@ class EVMUseDef(Plugin):
             return
 
         offsets = state.solve_n(offset, 3000)
-        with self.locked_context('storage_reads', dict) as storage_reads:
+        with self.locked_context("storage_reads", dict) as storage_reads:
             contract_function = (md.name, md.get_func_name(r))
             if contract_function not in storage_reads:
                 storage_reads[contract_function] = set()
@@ -95,15 +95,13 @@ m.register_plugin(p)
 
 symbolic_data = m.make_symbolic_buffer(320)
 symbolic_value = m.make_symbolic_value()
-m.transaction(caller=user_account,
-              address=contract_account,
-              value=symbolic_value,
-              data=symbolic_data
-              )
-print('READS', p.context['storage_reads'])
-print('WRITES', p.context['storage_writes'])
+m.transaction(
+    caller=user_account, address=contract_account, value=symbolic_value, data=symbolic_data
+)
+print("READS", p.context["storage_reads"])
+print("WRITES", p.context["storage_writes"])
 
-print('It makes no sense to try f3() after 1 tx')
+print("It makes no sense to try f3() after 1 tx")
 
 m.finalize()
-print(f'[+] Look for results in {m.workspace}')
+print(f"[+] Look for results in {m.workspace}")
