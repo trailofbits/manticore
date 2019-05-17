@@ -60,6 +60,19 @@ launch_examples() {
     return 0
 }
 
+make_vmtests(){
+    DIR=`pwd`
+    if  [ ! -f ethereum_vm/.done ]; then
+        echo "Automaking VMTests" `pwd`
+        cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
+        rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
+        for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
+        for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+        rm -rf ./vmtests
+        touch ethereum_vm/.done
+    fi
+    cd $DIR
+}
 
 run_tests_from_dir() {
     DIR=$1
@@ -93,9 +106,15 @@ run_examples() {
 
 # Test type
 case $1 in
+    ethereum_vm)
+        make_vmtests
+        echo "Running only the tests from 'tests/$1' directory"
+        run_tests_from_dir $1
+        RV=$?
+        ;;
+
     native)                 ;&  # Fallthrough
     ethereum)               ;&  # Fallthrough
-    ethereum_vm)       ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
@@ -115,7 +134,7 @@ case $1 in
         RV=$(($RV + $?))
         run_tests_from_dir ethereum
         RV=$(($RV + $?))
-	run_tests_from_dir ethereum_vm
+        make_vmtests; run_tests_from_dir ethereum_vm
         RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))
