@@ -48,6 +48,10 @@ plugins:
         enabled: false
       E701:
         enabled: false
+      E203:
+        enabled: false
+      W503:
+        enabled: false
   sonar-python:
     enabled: false
     config:
