@@ -40,8 +40,7 @@ class ManticornTest(unittest.TestCase):
         self.concrete_instance.run()
 
         should_match = {'RAX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10', 'R12', 'R13', 'R14',
-                        'R15', 'RIP', 'YMM1', 'YMM2', 'YMM3', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM11', 'YMM12',
-                        'YMM13', 'YMM14', 'YMM15', 'CS', 'DS', 'ES', 'SS', 'FS', 'GS', 'AF', 'CF', 'DF', 'IF', 'OF',
+                        'R15', 'RIP', 'CS', 'DS', 'ES', 'SS', 'FS', 'GS', 'AF', 'CF', 'DF', 'IF', 'OF',
                         'SF', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'FPSW', 'FPCW'}
 
         concrete_regs = {}
