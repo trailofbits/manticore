@@ -55,7 +55,8 @@ class ManticornTest(unittest.TestCase):
                 concrete_regs[reg] = getattr(st.platform.current, reg)
 
         for reg in should_match:
-            self.assertEqual(concrete_regs[reg], normal_regs[reg])
+            self.assertEqual(concrete_regs[reg], normal_regs[reg],
+                             f"Mismatch in {reg}: {concrete_regs[reg]} != {normal_regs[reg]}")
 
     def test_integration_basic_stdout(self):
         self.m.run()
