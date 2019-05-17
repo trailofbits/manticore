@@ -14,11 +14,12 @@ stages:
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
-    - JOB_COUNT=3 # Three jobs generate test coverage: ethereum, native, and other
+    - JOB_COUNT=4 # Three jobs generate test coverage: ethereum, ethereum_vm, native, and other
     - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
   matrix:
     - TEST_TYPE=examples
     - TEST_TYPE=ethereum
+    - TEST_TYPE=ethereum_vm
     - TEST_TYPE=native
     - TEST_TYPE=other
 
@@ -52,7 +53,7 @@ install:
   - scripts/travis_install.sh $TEST_TYPE
 
 script:
-  - scripts/travis_test.sh $TEST_TYPE
+  - travis_wait 60 scripts/travis_test.sh $TEST_TYPE
 
 after_success:
   - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"
