@@ -93,8 +93,9 @@ run_examples() {
 
 # Test type
 case $1 in
-    native)     ;&  # Fallthrough
-    ethereum)   ;&  # Fallthrough
+    native)                 ;&  # Fallthrough
+    ethereum)               ;&  # Fallthrough
+    ethereum_vm)       ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
@@ -106,13 +107,15 @@ case $1 in
         ;;
 
     all)
-        echo "Running all tests registered in travis_test.sh: examples, native, ethereum, other";
+        echo "Running all tests registered in travis_test.sh: examples, native, ethereum, ethereum_vm, other";
 
         # Functions should return 0 on success and 1 on failure
         RV=0
         run_tests_from_dir native
         RV=$(($RV + $?))
         run_tests_from_dir ethereum
+        RV=$(($RV + $?))
+	run_tests_from_dir ethereum_vm
         RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))
@@ -121,7 +124,7 @@ case $1 in
         ;;
 
     *)
-        echo "Usage: $0 [examples|native|ethereum|other|all]"
+        echo "Usage: $0 [examples|native|ethereum|ethereum_vm|other|all]"
         exit 3;
         ;;
 esac

@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
 
-consts.add('oog', default='concrete', description=(
+consts.add('oog', default='pedantic', description=(
     'Default behavior for symbolic gas.'
     'pedantic: Fully faithful. Test at every instruction. Forks.'
     'complete: Mostly faithful. Test at BB limit. Forks.'
@@ -436,10 +436,18 @@ def concretized_args(**policies):
                 if policy == "ACCOUNTS":
                     value = args[index]
                     world = args[0].world
-                    #special handler for EVM only policy
+                    # special handler for EVM only policy
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
+
+                if args[index].taint:
+                    # TODO / FIXME: The taint should persist!
+                    logger.warning(
+                        f"Concretizing {func.__name__}'s {index} argument and dropping its taints: "
+                        "the value might not be tracked properly (in case of using detectors)"
+                    )
+                logger.info(f"Concretizing instruction argument {arg} by {policy}")
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
         wrapper.__signature__ = inspect.signature(func)
@@ -779,7 +787,7 @@ class EVM(Eventful):
 
     def _pop(self):
         """Pop a value from the stack"""
-        if len(self.stack) == 0:
+        if not self.stack:
             raise StackUnderflow()
         return self.stack.pop()
 
@@ -791,7 +799,6 @@ class EVM(Eventful):
         elif isinstance(fee, BitVec):
             if fee.size != 512:
                 raise ValueError("Fees should be 512 bit long")
-
         # This configuration variable allows the user to control and perhaps relax the gas calculation
         # pedantic: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
         # complete: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
@@ -799,6 +806,19 @@ class EVM(Eventful):
         # optimistic: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
         # pesimistic: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
         # ignore: Ignore gas. Do not account for it. Do not OOG.
+
+        # optimization that speed up concrete fees sometimes
+        if not issymbolic(fee) and issymbolic(self._gas):
+            reps, m = getattr(self, '_mgas', (0, None))
+            reps += 1
+            if m is None and reps > 10:
+                m = Z3Solver.instance().min(self.constraints, self._gas)
+            self._mgas = reps, m
+
+            if m is not None and fee < m:
+                self._gas -= fee
+                self._mgas = reps, m - fee
+                return
 
         if consts.oog in ('pedantic', 'complete'):
             # gas is faithfully accounted and ogg checked at instruction/BB level.
@@ -837,7 +857,7 @@ class EVM(Eventful):
             # Try not to OOG. If it may be enough gas we ignore the OOG case.
             # A constraint is added to assert the gas is enough and the OOG state is ignored.
             # explore only when there is enough gas if possible
-            if Z3Solver().can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
+            if Z3Solver.instance().can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
                 self.constraints.add(Operators.UGT(self.gas, fee))
             else:
                 logger.debug(f"Not enough gas for instruction {self.instruction.name} at 0x{self.pc:x}")
@@ -846,7 +866,7 @@ class EVM(Eventful):
             # OOG soon. If it may NOT be enough gas we ignore the normal case.
             # A constraint is added to assert the gas is NOT enough and the other state is ignored.
             # explore only when there is enough gas if possible
-            if Z3Solver().can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
+            if Z3Solver.instance().can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
                 self.constraints.add(Operators.ULE(self.gas, fee))
                 raise NotEnoughGas()
         else:
@@ -854,7 +874,7 @@ class EVM(Eventful):
                 raise Exception("Wrong oog config variable")
             # do nothing. gas is not even changed
             return
-        self._gas -= fee
+        self._gas = simplify(self._gas - fee)
 
         # If everything is concrete lets just check at every instruction
         if not issymbolic(self._gas) and self._gas < 0:
@@ -872,9 +892,9 @@ class EVM(Eventful):
         for _ in range(current.pops):
             arguments.append(self._pop())
         # simplify stack arguments
-        for i in range(len(arguments)):
-            if isinstance(arguments[i], Constant) and not arguments[i].taint:
-                arguments[i] = arguments[i].value
+        for i, arg in enumerate(arguments):
+            if isinstance(arg, Constant) and not arg.taint:
+                arguments[i] = arg.value
         return arguments
 
     def _top_arguments(self):
@@ -937,7 +957,10 @@ class EVM(Eventful):
             # this could raise an insufficient stack exception
             arguments = self._pop_arguments()
             fee = self._calculate_gas(*arguments)
+
             self._checkpoint_data = (pc, old_gas, instruction, arguments, fee, allocated)
+            self._consume(fee)
+
         return self._checkpoint_data
 
     def _rollback(self):
@@ -1030,13 +1053,13 @@ class EVM(Eventful):
                              policy='ALL')
         #print (self)
         try:
+            #import time
             #limbo = 0.0
             #a = time.time()
             self._check_jmpdest()
             #b = time.time()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             #c = time.time()
-            self._consume(fee)
             #d = time.time()
             result = self._handler(*arguments)
             #e = time.time()
@@ -1044,7 +1067,7 @@ class EVM(Eventful):
             #f = time.time()
             #if hasattr(self, 'F'):
             #    limbo = (a-self.F)*100
-            #print("%02.2f %02.2f %02.2f %02.2f %02.2f %02.2f"%((b-a)*100, (c-b)*100, (d-c)*100, (e-d)*100, (f-e)*100, limbo))
+            #print(f"{instruction}\t\t %02.4f %02.4f %02.4f %02.4f %02.4f %02.4f"%((b-a)*100, (c-b)*100, (d-c)*100, (e-d)*100, (f-e)*100, limbo))
             #self.F = time.time()
 
         except ConcretizeGas as ex:
@@ -1224,12 +1247,22 @@ class EVM(Eventful):
             return result
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
+    @concretized_args(base='SAMPLED', exponent='SAMPLED')
     def EXP(self, base, exponent):
         """
-            Exponential operation
-            The zero-th power of zero 0^0 is defined to be one
+        Exponential operation
+        The zero-th power of zero 0^0 is defined to be one.
+
+        :param base: exponential base, concretized with sampled values
+        :param exponent: exponent value, concretized with sampled values
+        :return: BitVec* EXP result
         """
-        # fixme integer bitvec
+        if exponent == 0:
+            return 1
+
+        if base == 0:
+            return 0
+
         return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value):
@@ -1299,8 +1332,8 @@ class EVM(Eventful):
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
             else:
-                #simplify by solving. probably means that we need to improve simplification
-                solutions = Z3Solver().get_all_values(self.constraints, simplified, 2, silent=True)
+                # simplify by solving. probably means that we need to improve simplification
+                solutions = Z3Solver.instance().get_all_values(self.constraints, simplified, 2, silent=True)
                 if len(solutions) != 1:
                     break
                 concrete_data.append(solutions[0])
@@ -1405,7 +1438,6 @@ class EVM(Eventful):
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
-
         if issymbolic(size):
             if Z3Solver().can_be_true(self._constraints, size <= len(self.data) + 32):
                 self.constraints.add(size <= len(self.data) + 32)
