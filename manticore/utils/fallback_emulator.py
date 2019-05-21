@@ -268,6 +268,10 @@ class UnicornEmulator:
                 ]
             )
 
+            # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
+            # the FS register, and it will segfault or hang.
+            registers -= {'FS'}
+
         # XXX(yan): This concretizes the entire register state. This is overly
         # aggressive. Once capstone adds consistent support for accessing
         # referred registers, make this only concretize those registers being

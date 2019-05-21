@@ -100,7 +100,10 @@ class ConcreteUnicornEmulator:
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
         self.registers -= self.flag_registers
-        self.registers.add("EFLAGS")
+        # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
+        # the FS register, and it will segfault or hang.
+        self.registers -= {'FS'}
+        self.registers.add('EFLAGS')
 
         for reg in self.registers:
             val = self._cpu.read_register(reg)
@@ -371,7 +374,12 @@ class ConcreteUnicornEmulator:
             logger.warning("Skipping Symbolic write-back")
             return
         if reg in self.flag_registers:
-            self._emu.reg_write(self._to_unicorn_id("EFLAGS"), self._cpu.read_register("EFLAGS"))
+            self._emu.reg_write(self._to_unicorn_id('EFLAGS'), self._cpu.read_register('EFLAGS'))
+            return
+        # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
+        # the FS register, and it will segfault or hang.
+        if reg in {'FS'}:
+            logger.warning(f"Skipping {reg} write. Unicorn unsupported register write.")
             return
         self._emu.reg_write(self._to_unicorn_id(reg), val)
 
