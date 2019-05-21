@@ -98,6 +98,7 @@ def get_levels():
             ('manticore.platforms.*', logging.DEBUG),
             ('manticore.ethereum', logging.DEBUG),
             ('manticore.core.plugin', logging.DEBUG),
+            ('manticore.util.emulate', logging.INFO),
         ],
         # 3 (-vv)
         [

@@ -1020,7 +1020,9 @@ class Aarch64Cpu(Cpu):
         if ldr:
             result = cpu.read_int(base + imm, size)
             if sextend:
-                result = Operators.SEXTEND(result, size, cpu.address_bit_size)
+                result = Operators.SEXTEND(result, size, reg_op.size)
+            else:
+                result = Operators.ZEXTEND(result, reg_op.size)
             reg_op.write(result)
         else:
             reg = reg_op.read()

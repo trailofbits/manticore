@@ -7593,6 +7593,29 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x58)
         self.assertEqual(self.rf.read('W0'), 0x58)
 
+    # LDRB misc.
+
+    # XXX: Add similar tests for other variants.
+    # XXX: Uses 'reset'.
+
+    @itest_setregs('X0=0x4142434445464749')
+    @itest_custom(
+        ['strb w0, [sp]', 'ldrb w1, [sp]'],
+        multiple_insts=True
+    )
+    def test_strb_ldrb_imm_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565749)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.rf.read('X1'), 0x49)
+        self.assertEqual(self.rf.read('W1'), 0x49)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
     # LDRH (immediate).
 
     # ldrh w1, [x27]          base register (opt. offset omitted):  w1 = [x27]

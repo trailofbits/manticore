@@ -2,6 +2,7 @@ import inspect
 import io
 import logging
 import struct
+import types
 from functools import wraps
 from itertools import islice
 
@@ -387,6 +388,14 @@ class Abi:
 platform_logger = logging.getLogger('manticore.platforms.platform')
 
 
+def unsigned_hexlify(i):
+    if type(i) is int:
+        if i < 0:
+            return hex((1 << 64) + i)
+        return hex(i)
+    return i
+
+
 class SyscallAbi(Abi):
     """
     A system-call specific ABI.
@@ -410,7 +419,11 @@ class SyscallAbi(Abi):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
+        self._cpu._publish('will_execute_syscall', model)
         ret = super().invoke(model, prefix_args)
+        self._cpu._publish('did_execute_syscall',
+                           model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
+                           self._last_arguments, ret)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
             # Try to expand strings up to max_arg_expansion
@@ -420,22 +433,22 @@ class SyscallAbi(Abi):
 
             args = []
             for arg in self._last_arguments:
-                arg_s = f"0x{arg:x}"
-                if self._cpu.memory.access_ok(arg, 'r'):
+                arg_s = unsigned_hexlify(arg) if abs(arg) > min_hex_expansion else f'{arg}'
+                if self._cpu.memory.access_ok(arg, 'r') and \
+                        model.__func__.__name__ not in {'sys_mprotect', 'sys_mmap'}:
                     try:
                         s = self._cpu.read_string(arg, max_arg_expansion)
-                        arg_s = f'({s.rstrip()})' if s else arg_s
-                    except UnicodeDecodeError:
+                        s = s.rstrip().replace('\n', '\\n') if s else s
+                        arg_s = (f'"{s}"' if s else arg_s)
+                    except Exception:
                         pass
                 args.append(arg_s)
 
             args_s = ', '.join(args)
+            ret_s = f'{unsigned_hexlify(ret)}' if abs(ret) > min_hex_expansion else f'{ret}'
 
-            ret_s = f'{ret}'
-            if ret > min_hex_expansion:
-                ret_s = ret_s + f'(0x{ret:x})'
+            platform_logger.debug('%s(%s) = %s', model.__func__.__name__, args_s, ret_s)
 
-            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, repr(args_s), ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
@@ -458,7 +471,8 @@ class Cpu(Eventful):
     """
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory'}
+                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory',
+                         'execute_syscall'}
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)

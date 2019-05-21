@@ -18,6 +18,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from . import linux_syscalls
+from . linux_syscall_stubs import SyscallStubs
 from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, Operators, Expression
 from ..core.smtlib.solver import Z3Solver
@@ -25,7 +26,7 @@ from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
-from ..platforms.platform import Platform, SyscallNotImplemented
+from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,10 @@ class File:
         # TODO: assert file is seekable; otherwise we should save what was
         # read from/written to the state
         mode = mode_from_flags(flags)
-        self.file = open(path, mode)
+        if mode == 'rb+' and not os.path.exists(path):
+            self.file = open(path, 'wb+')
+        else:
+            self.file = open(path, mode)
 
     def __getstate__(self):
         state = {
@@ -112,14 +116,17 @@ class File:
         return self.file.closed
 
     def stat(self):
-        return os.fstat(self.fileno())
+        try:
+            return os.fstat(self.fileno())
+        except OSError as e:
+            return -e.errno
 
     def ioctl(self, request, argp):
         try:
             return fcntl.fcntl(self, request, argp)
-        except OSError:
+        except OSError as e:
             logger.error(f"Invalid Fcntl request: {request}")
-            return -1
+            return -e.errno
 
     def tell(self, *args):
         return self.file.tell(*args)
@@ -189,7 +196,10 @@ class Directory(File):
         raise FdError("Is a directory", errno.EISDIR)
 
     def close(self, *args):
-        return os.close(self.fd)
+        try:
+            return os.close(self.fd)
+        except OSError as e:
+            return -e.errno
 
     def fileno(self, *args):
         return self.fd
@@ -320,6 +330,13 @@ class SocketDesc:
         self.socket_type = socket_type
         self.protocol = protocol
 
+    def close(self):
+        """
+        Doesn't need to do anything for internal SocketDesc type;
+        fixes 'SocketDesc' has no attribute 'close' error.
+        """
+        pass
+
 
 class Socket:
     def stat(self):
@@ -383,6 +400,12 @@ class Socket:
     def seek(self, *args):
         raise FdError("Invalid lseek() operation on Socket", errno.EINVAL)
 
+    def close(self):
+        """
+        Doesn't need to do anything; fixes "no attribute 'close'" error.
+        """
+        pass
+
 
 class Linux(Platform):
     """
@@ -415,6 +438,7 @@ class Linux(Platform):
         self.disasm = disasm
         self.envp = envp
         self.argv = argv
+        self.stubs = SyscallStubs(parent=self)
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -644,6 +668,7 @@ class Linux(Platform):
         self._function_abi = state['functionabi']
         self._syscall_abi = state['syscallabi']
         self._uname_machine = state['uname_machine']
+        self.stubs = SyscallStubs(parent=self)
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory']
 
@@ -1197,7 +1222,10 @@ class Linux(Platform):
         :param int mask: New mask
         """
         logger.debug(f"umask({mask:o})")
-        return os.umask(mask)
+        try:
+            return os.umask(mask)
+        except OSError as e:
+            return -e.errno
 
     def sys_chdir(self, path):
         """
@@ -1210,7 +1238,7 @@ class Linux(Platform):
             os.chdir(path_str)
             return 0
         except OSError as e:
-            return e.errno
+            return -e.errno
 
     def sys_getcwd(self, buf, size):
         """
@@ -1356,6 +1384,8 @@ class Linux(Platform):
         if os.access(filename, mode):
             return 0
         else:
+            if not os.path.exists(filename):
+                return -errno.ENOENT
             return -1
 
     def sys_newuname(self, old_utsname):
@@ -1537,11 +1567,11 @@ class Linux(Platform):
 
         return ret
 
-    def sys_getpid(self, v):
+    def sys_getpid(self):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
         return 1000
 
-    def sys_gettid(self, v):
+    def sys_gettid(self):
         logger.debug("GETTID, warning tid modeled as concrete 1000")
         return 1000
 
@@ -1556,7 +1586,7 @@ class Linux(Platform):
         logger.warning(f"KILL, Ignoring Sending signal {sig} to pid {pid}")
         return 0
 
-    def sys_rt_sigaction(self, signum, act, oldact):
+    def sys_rt_sigaction(self, signum, act, oldact, _sigsetsize):
         """Wrapper for sys_sigaction"""
         return self.sys_sigaction(signum, act, oldact)
 
@@ -1959,37 +1989,8 @@ class Linux(Platform):
         """
         return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value}")
 
-    def sys_ptrace(self, request, pid, addr, data):
-        logger.warning("Unimplemented system call: sys_ptrace")
-        return 0
-
-    def sys_nanosleep(self, req, rem):
-        logger.warning("Unimplemented system call: sys_nanosleep")
-        return 0
-
     def sys_set_tid_address(self, tidptr):
         return 1000  # tha pid
-
-    def sys_faccessat(self, dirfd, pathname, mode, flags):
-        logger.warning("Unimplemented system call: sys_faccessat")
-        filename = self.current.read_string(pathname)
-        return -1
-
-    def sys_set_robust_list(self, head, length):
-        logger.warning("Unimplemented system call: sys_set_robust_list")
-        return -1
-
-    def sys_sysinfo(self, infop):
-        logger.warning("Unimplemented system call: sys_sysinfo")
-        return -1
-
-    def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        logger.warning("Unimplemented system call: sys_futex")
-        return 0
-
-    def sys_setrlimit(self, resource, rlim):
-        logger.warning("Unimplemented system call: sys_setrlimit")
-        return -1
 
     def sys_getrlimit(self, resource, rlim):
         ret = -1
@@ -2011,18 +2012,6 @@ class Linux(Platform):
         else:
             logger.warning("Cowardly refusing to set resource limits for process %d", pid)
         return ret
-
-    def sys_gettimeofday(self, tv, tz):
-        logger.warning("Unimplemented system call: sys_gettimeofday")
-        return 0
-
-    def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
-        logger.warning("Unimplemented system call: sys_clone/ptregs")
-        return 1000
-
-    def sys_mkdir(self, pathname, mode):
-        logger.warning("Unimplemented system call: sys_mkdir")
-        return 0
 
     def sys_madvise(self, infop):
         logger.info("Ignoring sys_madvise")
@@ -2061,7 +2050,14 @@ class Linux(Platform):
     def sys_listen(self, sockfd, backlog):
         return self._is_sockfd(sockfd)
 
-    def sys_accept(self, sockfd, addr, addrlen, flags):
+    def sys_accept(self, sockfd, addr, addrlen):
+        """
+        https://github.com/torvalds/linux/blob/63bdf4284c38a48af21745ceb148a087b190cd21/net/socket.c#L1649-L1653
+        """
+        return self.sys_accept4(sockfd, addr, addrlen, 0)
+
+    def sys_accept4(self, sockfd, addr, addrlen, flags):
+        # TODO: ehennenfent - Only handles the flags=0 (sys_accept) case
         ret = self._is_sockfd(sockfd)
         if ret != 0:
             return ret
@@ -2148,6 +2144,28 @@ class Linux(Platform):
 
         return size
 
+    @unimplemented
+    def sys_futex(self, uaddr, op, val, utime, uaddr2, val3) -> int:
+        """
+        Fast user-space locking
+        success: Depends on the operation, but often 0
+        error: Returns -1
+        """
+        return 0
+
+    @unimplemented
+    def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
+        """
+        Create a child process
+        :param flags:
+        :param child_stack:
+        :param ptid:
+        :param ctid:
+        :param regs:
+        :return: The PID of the child process
+        """
+        return self.sys_getpid()
+
     # Dispatchers...
     def syscall(self):
         """
@@ -2159,7 +2177,10 @@ class Linux(Platform):
         try:
             table = getattr(linux_syscalls, self.current.machine)
             name = table.get(index, None)
-            implementation = getattr(self, name)
+            if hasattr(self, name):
+                implementation = getattr(self, name)
+            else:
+                implementation = getattr(self.stubs, name)
         except (AttributeError, KeyError):
             if name is not None:
                 raise SyscallNotImplemented(index, name)
@@ -2171,8 +2192,8 @@ class Linux(Platform):
     def sys_clock_gettime(self, clock_id, timespec):
         logger.warning("sys_clock_time not really implemented")
         if clock_id == 1:
-            t = int(time.monotonic() * 1000000000)
-            self.current.write_bytes(timespec, struct.pack('l', t // 1000000000) + struct.pack('l', t))
+            t = int(time.monotonic() * 1000000000)  # switch to monotonic_ns in py3.7
+            self.current.write_bytes(timespec, struct.pack('L', t // 1000000000) + struct.pack('L', t))
         return 0
 
     def sys_time(self, tloc):
@@ -2181,6 +2202,19 @@ class Linux(Platform):
         if tloc != 0:
             self.current.write_int(tloc, int(t), self.current.address_bit_size)
         return int(t)
+
+    def sys_gettimeofday(self, tv, tz) -> int:
+        """
+        Get time
+        success: Returns 0
+        error: Returns -1
+        """
+        if tv != 0:
+            microseconds = int(time.time() * 10 ** 6)
+            self.current.write_bytes(tv, struct.pack('L', microseconds // (10 ** 6)) + struct.pack('L', microseconds))
+        if tz != 0:
+            logger.warning("No support for time zones in sys_gettimeofday")
+        return 0
 
     def sched(self):
         """ Yield CPU.
@@ -2486,6 +2520,153 @@ class Linux(Platform):
         self.sys_close(fd)
         return ret
 
+    def sys_mkdir(self, pathname, mode) -> int:
+        """
+        Creates a directory
+        :return 0 on success
+        """
+        name = self.current.read_string(pathname)
+        try:
+            os.mkdir(name, mode=mode)
+        except OSError as e:
+            return -e.errno
+
+        return 0
+
+    def sys_rmdir(self, pathname) -> int:
+        """
+        Deletes a directory
+        :return 0 on success
+        """
+        name = self.current.read_string(pathname)
+        try:
+            os.rmdir(name)
+        except OSError as e:
+            return -e.errno
+
+        return -1
+
+    def sys_pipe(self, filedes) -> int:
+        """
+        Wrapper for pipe2(filedes, 0)
+        """
+        return self.sys_pipe2(filedes, 0)
+
+    def sys_pipe2(self, filedes, flags) -> int:
+        """
+        # TODO (ehennenfent) create a native pipe type instead of cheating with sockets
+        Create pipe
+        :return 0 on success
+        """
+        if flags == 0:
+            l, r = Socket.pair()
+            self.current.write_int(filedes, self._open(l))
+            self.current.write_int(filedes + 4, self._open(r))
+        else:
+            logger.warning("sys_pipe2 doesn't handle flags")
+            return -1
+
+    def sys_ftruncate(self, fd, length) -> int:
+        """
+        Truncate a file to <length>
+        :return 0 on success
+        """
+        try:
+            file = self._get_fd(fd)
+        except FdError as e:
+            logger.info("File descriptor %s is not open", fd)
+            return -e.err
+        except OSError as e:
+            return -e.errno
+        file.file.truncate(length)
+        return 0
+
+    def sys_link(self, oldname, newname) -> int:
+        """
+        Create a symlink from oldname to newname.
+        :return 0 on success
+        """
+        oldname = self.current.read_string(oldname)
+        newname = self.current.read_string(newname)
+        try:
+            os.link(oldname, newname)
+        except OSError as e:
+            return -e.errno
+        return 0
+
+    def sys_unlink(self, pathname) -> int:
+        """
+        Delete a symlink.
+        :return 0 on success
+        """
+        pathname = self.current.read_string(pathname)
+        try:
+            os.unlink(pathname)
+        except OSError as e:
+            return -e.errno
+        return 0
+
+    def sys_getdents(self, fd, dirent, count) -> int:
+        """
+        Fill memory with directory entry structs
+        return: The number of bytes read or 0 at the end of the directory
+        """
+        buf = b''
+        try:
+            file = self._get_fd(fd)
+        except FdError as e:
+            logger.info("File descriptor %s is not open", fd)
+            return -e.err
+        if not isinstance(file, Directory):
+            logger.info("Can't get directory entries for a file")
+            return -1
+
+        with os.scandir(file.path) as dent_iter:
+            for index, item in zip(range(count), dent_iter):
+                fmt = f'LLH{len(item.name) + 1}sxc'
+                size = struct.calcsize(fmt)
+
+                stat = item.stat()
+                print("FILE MODE:", item.name, " :: ", stat.st_mode)
+
+                buf += struct.pack(fmt, item.inode(), size, size, bytes(item.name, 'utf-8') + b'\x00', b'\x00')
+
+        self.current.write_bytes(dirent, buf)
+        return len(buf)
+
+    def sys_nanosleep(self, rqtp, rmtp) -> int:
+        """
+        Ignored
+        """
+        logger.info("Ignoring call to sys_nanosleep")
+        return 0
+
+    def sys_chmod(self, filename, mode) -> int:
+        """
+        Modify file permissions
+        :return 0 on success
+        """
+        filename = self.current.read_string(filename)
+        try:
+            os.chmod(filename, mode)
+        except OSError as e:
+            return -e.errno
+
+        return 0
+
+    def sys_chown(self, filename, user, group) -> int:
+        """
+        Modify file ownership
+        :return 0 on success
+        """
+        filename = self.current.read_string(filename)
+        try:
+            os.chown(filename, user, group)
+        except OSError as e:
+            return -e.errno
+
+        return 0
+
     def _arch_specific_init(self):
         assert self.arch in {'i386', 'amd64', 'armv7', 'aarch64'}
 
@@ -2614,7 +2795,7 @@ class SLinux(Linux):
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
-                c = bytes([solver.get_value(self.constraints, c)])
+                c = bytes([Z3Solver().get_value(self.constraints, c)])
             concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
@@ -2626,7 +2807,7 @@ class SLinux(Linux):
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
-            error_code = solver.get_value(self.constraints, error_code)
+            error_code = Z3Solver().get_value(self.constraints, error_code)
             return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value} (*)")
         else:
             return super().sys_exit_group(error_code)
@@ -2680,16 +2861,16 @@ class SLinux(Linux):
 
         return super().sys_recv(sockfd, buf, count, flags)
 
-    def sys_accept(self, sockfd, addr, addrlen, flags):
+    def sys_accept(self, sockfd, addr, addrlen):
         # TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
 
-        fd = super().sys_accept(sockfd, addr, addrlen, flags)
+        fd = super().sys_accept(sockfd, addr, addrlen)
         if fd < 0:
             return fd
         sock = self._get_fd(fd)
         nbytes = 32
-        symb = self.constraints.new_array(name='socket', index_max=nbytes)
+        symb = self.constraints.new_array(name=f'socket{fd}', index_max=nbytes)
         for i in range(nbytes):
             sock.buffer.append(symb[i])
         return fd

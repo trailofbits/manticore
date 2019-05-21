@@ -107,7 +107,7 @@ class ManticoreBase(Eventful):
         return newFunction
 
     _published_events = {'run', 'start_worker', 'terminate_worker', 'enqueue_state', 'fork_state', 'load_state',
-                         'terminate_state', 'execute_instruction'}
+                         'terminate_state', 'kill_state', 'execute_instruction'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
         """
@@ -618,7 +618,7 @@ class ManticoreBase(Eventful):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"
-        assert plugin.manticore is None, "Plugin instance already owned"
+        assert getattr(plugin, 'manticore', None) is None, "Plugin instance already owned"
 
         plugin.manticore = self
         self.plugins.add(plugin)
@@ -810,7 +810,7 @@ class ManticoreBase(Eventful):
             # User subscription to events is disabled from now on
             self.subscribe = None
 
-        self._publish('will_run')
+        self._publish('will_run', self.ready_states)
         self._running.value = True
         # start all the workers!
         for w in self._workers:
@@ -870,21 +870,14 @@ class ManticoreBase(Eventful):
     ############################################################################
     ############################################################################
 
-    def _save_run_data(self):
+    def save_run_data(self):
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(map(shlex.quote, sys.argv)))
 
         with self._output.save_stream('manticore.yml') as f:
             config.save(f)
-            time_ended = time.time()
-
-        # time_elapsed = time_ended - self._last_run_stats['time_started']
 
         logger.info('Results in %s', self._output.store.uri)
-        # logger.info('Total time: %s', time_elapsed)
-
-        # self._last_run_stats['time_ended'] = time_ended
-        # self._last_run_stats['time_elapsed'] = time_elapsed
 
 
 class ManticoreSingle(ManticoreBase):

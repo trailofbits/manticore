@@ -77,7 +77,7 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output_lines = output.splitlines()
 
-        self.assertEqual(len(output_lines), 3)
+        self.assertEqual(len(output_lines), 5)
 
         #self.assertIn(b'Verbosity set to 1.', output_lines[1])
         self.assertIn(b'Loading program', output_lines[0])
@@ -216,7 +216,7 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 3)
+        self.assertEqual(len(output), 5)
         #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
         self.assertIn(b'm.n.manticore:INFO: Loading program ', output[0])
         self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[1])
@@ -257,7 +257,7 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 2)
+        self.assertEqual(len(output), 4)
 
         #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
         self.assertIn(b'm.n.manticore:INFO: Loading program ', output[0])

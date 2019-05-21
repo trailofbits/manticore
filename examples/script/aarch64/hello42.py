@@ -45,6 +45,6 @@ if __name__ == '__main__':
     m.subscribe('did_execute_instruction', lambda self, state, last_pc, pc, insn:
                 execute_instruction(self, insn, 'done'))
 
-    m.run(procs=1)
+    m.run()
 
     print(f"Executed {m.context['count']} instructions")
