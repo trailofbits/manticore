@@ -16,7 +16,10 @@ function install_mcore {
         EXTRAS="dev"
     fi
 
-    pip install --no-binary keystone-engine -e .[$EXTRAS]  # ks can have pip install issues
+    # Unicorn needs python2
+    export UNICORN_QEMU_FLAGS="--python=/usr/bin/python"
+
+    pip install -I --no-binary keystone-engine -e .[$EXTRAS]  # ks can have pip install issues
 }
 
 function install_cc_env {
@@ -33,5 +36,3 @@ if [ "$1" != "env" ]; then
     install_solc
     install_mcore $1
 fi
-
-

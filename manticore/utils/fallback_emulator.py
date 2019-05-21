@@ -233,6 +233,10 @@ class UnicornEmulator:
             registers |= set(['XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7',
                               'XMM8', 'XMM9', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'])
 
+            # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
+            # the FS register, and it will segfault or hang.
+            registers -= {'FS'}
+
         # XXX(yan): This concretizes the entire register state. This is overly
         # aggressive. Once capstone adds consistent support for accessing
         # referred registers, make this only concretize those registers being
