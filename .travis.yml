@@ -40,7 +40,7 @@ jobs:
     - stage: format
       env: TEST_TYPE=format
       script:
-        - git diff --name-only $TRAVIS_COMMIT_RANGE | xargs black -t py36 -l 100 --check
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | grep ".*\.py$" | xargs black -t py36 -l 100 --check
     - stage: prepare
       env: TEST_TYPE=env
       script:
