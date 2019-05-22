@@ -39,37 +39,29 @@ class ManticornTest(unittest.TestCase):
         self.m.register_plugin(RegisterCapturePlugin())
         """
 
-    @unittest.skip("Registers simply not matching for now")
     def test_register_comparison(self):
         self.m.run()
         self.concrete_instance.run()
 
+        should_match = {'RAX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10', 'R12', 'R13', 'R14',
+                        'R15', 'RIP', 'CS', 'DS', 'ES', 'SS', 'FS', 'GS', 'AF', 'CF', 'DF', 'IF', 'OF',
+                        'SF', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'FPSW', 'FPCW'}
+
         concrete_regs = {}
         normal_regs = {}
         for st in self.m.all_states:
-            all_regs = st.platform.current.all_registers
-            for reg in all_regs:
+            for reg in should_match:
                 normal_regs[reg] = getattr(st.platform.current, reg)
 
         for st in self.concrete_instance.all_states:
-            all_regs = st.platform.current.canonical_registers
-            for reg in all_regs:
+            for reg in should_match:
                 concrete_regs[reg] = getattr(st.platform.current, reg)
 
-        for reg in concrete_regs:
-            print(reg, concrete_regs[reg], normal_regs[reg])
+        for reg in should_match:
+            self.assertEqual(concrete_regs[reg], normal_regs[reg],
+                             f"Mismatch in {reg}: {concrete_regs[reg]} != {normal_regs[reg]}")
 
-        for reg in concrete_regs:
-            self.assertEqual(concrete_regs[reg], normal_regs[reg])
-
-        """
-        concrete_regs = self.concrete_instance.context['regs']
-        normal_regs = self.m.context['regs']
-        for reg in concrete_regs.keys():
-            self.assertEqual(concrete_regs[reg],normal_regs[reg])
-        """
-
-    def test_integration_basic_stdin(self):
+    def test_integration_basic_stdout(self):
         self.m.run()
         self.concrete_instance.run()
 
