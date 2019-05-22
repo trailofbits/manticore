@@ -5508,6 +5508,27 @@ class X86Cpu(Cpu):
             dest.write(Operators.CONCAT(128, src.read(), value))
 
     @instruction
+    def MOVHPS(cpu, dest, src):
+        """
+        Moves high packed single-precision floating-point value.
+
+        Moves two packaed single-precision floating-point values from the source operand
+        (second operand) to the destination operand (first operand). The source and destination
+        operands can be an XMM register or a 64-bit memory location. The instruction allows
+        single-precision floating-point values to be moved to and from the high quadword of
+        an XMM register and memory. It cannot be used for register to register or memory to
+        memory moves. When the destination operand is an XMM register, the low quadword
+        of the register remains unchanged.
+        """
+        if src.size == 128:
+            assert dest.size == 64
+            dest.write(Operators.EXTRACT(src.read(), 64, 64))
+        else:
+            assert src.size == 64 and dest.size == 128
+            value = Operators.EXTRACT(dest.read(), 0, 64)  # low part
+            dest.write(Operators.CONCAT(128, src.read(), value))
+
+    @instruction
     def PSUBB(cpu, dest, src):
         """
         Packed subtract.
