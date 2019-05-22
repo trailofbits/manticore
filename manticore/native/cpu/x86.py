@@ -5512,7 +5512,7 @@ class X86Cpu(Cpu):
         """
         Moves high packed single-precision floating-point value.
 
-        Moves two packaed single-precision floating-point values from the source operand
+        Moves two packed single-precision floating-point values from the source operand
         (second operand) to the destination operand (first operand). The source and destination
         operands can be an XMM register or a 64-bit memory location. The instruction allows
         single-precision floating-point values to be moved to and from the high quadword of
