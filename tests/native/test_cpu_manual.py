@@ -9,7 +9,7 @@ from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr, operator, Bool
 from manticore.core.smtlib.solver import Z3Solver
-import mockmem
+from . import mockmem
 from functools import reduce
 solver = Z3Solver.instance()
 class ROOperand:
@@ -1155,7 +1155,7 @@ Using the SAR instruction to perform a division operation does not produce the s
         cpu.XMM0 = 0x0000000000000000ffffffffffffffff
         cpu.execute()
 
-        self.assertEqual(cpu.XMM0, 0x4048f5c340c8f5c3ffffffffffffffff)
+        self.assertEqual(cpu.XMM0, 0xc3f5c840c3f54840ffffffffffffffff)
 
     def test_MOVHPS_2(self):
         mem = Memory32()
@@ -1170,7 +1170,7 @@ Using the SAR instruction to perform a division operation does not produce the s
 
         cpu.RIP = 0x41e10a
         cpu.EAX = 0x41e000
-        cpu.XMM0 = 0x4048f5c340c8f5c3ffffffffffffffff
+        cpu.XMM1 = 0x4048f5c340c8f5c3ffffffffffffffff
         cpu.execute()
 
         self.assertItemsEqual(mem[0x41e000:0x41e004], to_bytelist(b'\x40\x48\xf5\xc3'))
