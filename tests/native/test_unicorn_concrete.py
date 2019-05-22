@@ -43,9 +43,45 @@ class ManticornTest(unittest.TestCase):
         self.m.run()
         self.concrete_instance.run()
 
-        should_match = {'RAX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10', 'R12', 'R13', 'R14',
-                        'R15', 'RIP', 'CS', 'DS', 'ES', 'SS', 'FS', 'GS', 'AF', 'CF', 'DF', 'IF', 'OF',
-                        'SF', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'FPSW', 'FPCW'}
+        should_match = {
+            "RAX",
+            "RDX",
+            "RBX",
+            "RSP",
+            "RBP",
+            "RSI",
+            "RDI",
+            "R8",
+            "R9",
+            "R10",
+            "R12",
+            "R13",
+            "R14",
+            "R15",
+            "RIP",
+            "CS",
+            "DS",
+            "ES",
+            "SS",
+            "FS",
+            "GS",
+            "AF",
+            "CF",
+            "DF",
+            "IF",
+            "OF",
+            "SF",
+            "FP0",
+            "FP1",
+            "FP2",
+            "FP3",
+            "FP4",
+            "FP5",
+            "FP6",
+            "FP7",
+            "FPSW",
+            "FPCW",
+        }
 
         concrete_regs = {}
         normal_regs = {}
@@ -58,8 +94,11 @@ class ManticornTest(unittest.TestCase):
                 concrete_regs[reg] = getattr(st.platform.current, reg)
 
         for reg in should_match:
-            self.assertEqual(concrete_regs[reg], normal_regs[reg],
-                             f"Mismatch in {reg}: {concrete_regs[reg]} != {normal_regs[reg]}")
+            self.assertEqual(
+                concrete_regs[reg],
+                normal_regs[reg],
+                f"Mismatch in {reg}: {concrete_regs[reg]} != {normal_regs[reg]}",
+            )
 
     def test_integration_basic_stdout(self):
         self.m.run()
