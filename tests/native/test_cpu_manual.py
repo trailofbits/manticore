@@ -9,7 +9,7 @@ from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr, operator, Bool
 from manticore.core.smtlib.solver import Z3Solver
-from . import mockmem
+import mockmem
 from functools import reduce
 solver = Z3Solver.instance()
 class ROOperand:
