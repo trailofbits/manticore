@@ -5,5 +5,5 @@ import sys
 
 for f in sys.stdin.readlines():
     line = f.strip()
-    if line.endswith('.py') and os.path.exists(line):
+    if line.endswith(".py") and os.path.exists(line):
         print(line)
