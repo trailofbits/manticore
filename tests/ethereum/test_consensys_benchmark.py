@@ -16,7 +16,7 @@ class EthBenchmark(unittest.TestCase):
         self.worksp = self.mevm.workspace
 
     def tearDown(self):
-        self.mevm = None
+        self.mevm.finalize()
         shutil.rmtree(self.worksp)
 
     def _test(self, name, should_find, use_ctor_sym_arg=False):

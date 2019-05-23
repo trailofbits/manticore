@@ -14,7 +14,6 @@ from ..core.smtlib import Operators, solver
 from ..native.memory import MemoryException
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def convert_permissions(m_perms):
@@ -102,10 +101,18 @@ class ConcreteUnicornEmulator:
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
         self.registers -= self.flag_registers
+        # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
+        # the FS register, and it will segfault or hang.
+        self.registers -= {'FS'}
         self.registers.add('EFLAGS')
 
         for reg in self.registers:
             val = self._cpu.read_register(reg)
+
+            if reg in {'FS', 'GS'}:
+                self.msr_write(reg, val)
+                continue
+
             if issymbolic(val):
                 from ..native.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
@@ -340,20 +347,26 @@ class ConcreteUnicornEmulator:
         if reg in self.flag_registers:
             self._emu.reg_write(self._to_unicorn_id('EFLAGS'), self._cpu.read_register('EFLAGS'))
             return
+        # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
+        # the FS register, and it will segfault or hang.
+        if reg in {'FS'}:
+            logger.warning(f"Skipping {reg} write. Unicorn unsupported register write.")
+            return
         self._emu.reg_write(self._to_unicorn_id(reg), val)
 
     def update_segment(self, selector, base, size, perms):
         """ Only useful for setting FS right now. """
         logger.info("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
         if selector == 99:
-            self.set_fs(base)
+            self.msr_write('FS', base)
         else:
             logger.error("No way to write segment: %d", selector)
 
-    def set_fs(self, addr):
+    def msr_write(self, reg, data):
         """
-        set the FS.base hidden descriptor-register field to the given address.
-        this enables referencing the fs segment on x86-64.
+        set the hidden descriptor-register fields to the given address.
+        This enables referencing the fs segment on x86-64.
         """
-        FSMSR = 0xC0000100
-        return self._emu.msr_write(FSMSR, addr)
+        magic = {'FS': 0xC0000100,
+                 'GS': 0xC0000101}
+        return self._emu.msr_write(magic[reg], data)

@@ -5,7 +5,7 @@ from ..native.cpu.x86 import I386Cpu
 from ..native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
 from ..native.memory import SMemory32, Memory32
 from ..core.smtlib import *
-from ..core.executor import TerminateState
+from ..core.state import TerminateState
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..platforms.platform import Platform
@@ -337,9 +337,10 @@ class Decree(Platform):
         assert status == 'Running'
 
         logger.info("Setting initial cpu state")
-        # set initial CPU state
         cpu.write_register('EAX', 0x0)
-        cpu.write_register('ECX', 0x0)
+        cpu.write_register('ECX', cpu.memory.mmap(CGC_PAGESTART(0x4347c000),
+                                                  CGC_PAGEALIGN(4096 + CGC_PAGEOFFSET(0x4347c000)),
+                                                  'rwx'))
         cpu.write_register('EDX', 0x0)
         cpu.write_register('EBX', 0x0)
         cpu.write_register('ESP', stack)

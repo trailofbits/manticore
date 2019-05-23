@@ -13,13 +13,13 @@ checks:
     config:
       threshold: 9000
   method-complexity:
-    enabled: true
+    enabled: false
     config:
       threshold: 40
   method-count:
-    enabled: true
+    enabled: false
     config:
-      threshold: 35
+      threshold: 45
   method-lines:
     enabled: true
     config:

@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from manticore.core.smtlib import ConstraintSet, solver
+from manticore.core.smtlib import ConstraintSet, Z3Solver
 from manticore.native.state import State
 from manticore.platforms import linux
 
@@ -101,8 +101,8 @@ class StrcmpTest(ModelTest):
         strs = self._push2(s1, s2)
 
         ret = strcmp(self.state, *strs)
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret != 0))
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret == 0))
+        self.assertTrue(Z3Solver.instance().can_be_true(self.state.constraints, ret != 0))
+        self.assertTrue(Z3Solver.instance().can_be_true(self.state.constraints, ret == 0))
 
         self.state.constrain(s2[0] == ord('a'))
         ret = strcmp(self.state, *strs)
@@ -147,7 +147,7 @@ class StrlenTest(ModelTest):
         s = self._push_string(sy)
 
         ret = strlen(self.state, s)
-        self.assertItemsEqual(range(4), solver.get_all_values(self.state.constraints, ret))
+        self.assertItemsEqual(range(4), Z3Solver.instance().get_all_values(self.state.constraints, ret))
 
         self.state.constrain(sy[0] == 0)
         ret = strlen(self.state, s)

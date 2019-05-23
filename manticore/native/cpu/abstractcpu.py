@@ -2,6 +2,7 @@ import inspect
 import io
 import logging
 import struct
+import types
 from functools import wraps
 from itertools import islice
 
@@ -14,13 +15,16 @@ from ..memory import (
 from ..memory import LazySMemory
 from ...core.smtlib import Expression, BitVec, Operators, Constant
 from ...core.smtlib import visitors
-from ...core.smtlib.solver import solver
+from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.helpers import issymbolic
 
+from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_ARCH_ARM
+from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
+from capstone.arm import ARM_REG_ENDING
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
@@ -146,7 +150,10 @@ class Operand:
 
         :param int reg_id: Register ID
         """
-        if reg_id >= X86_REG_ENDING:
+        # XXX: Support other architectures.
+        if ((self.cpu.arch == CS_ARCH_ARM64 and reg_id >= ARM64_REG_ENDING) or
+            (self.cpu.arch == CS_ARCH_X86 and reg_id >= X86_REG_ENDING) or
+            (self.cpu.arch == CS_ARCH_ARM and reg_id >= ARM_REG_ENDING)):
             logger.warning("Trying to get register name for a non-register")
             return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
@@ -381,6 +388,14 @@ class Abi:
 platform_logger = logging.getLogger('manticore.platforms.platform')
 
 
+def unsigned_hexlify(i):
+    if type(i) is int:
+        if i < 0:
+            return hex((1 << 64) + i)
+        return hex(i)
+    return i
+
+
 class SyscallAbi(Abi):
     """
     A system-call specific ABI.
@@ -404,7 +419,11 @@ class SyscallAbi(Abi):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
+        self._cpu._publish('will_execute_syscall', model)
         ret = super().invoke(model, prefix_args)
+        self._cpu._publish('did_execute_syscall',
+                           model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
+                           self._last_arguments, ret)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
             # Try to expand strings up to max_arg_expansion
@@ -414,22 +433,22 @@ class SyscallAbi(Abi):
 
             args = []
             for arg in self._last_arguments:
-                arg_s = f"0x{arg:x}"
-                if self._cpu.memory.access_ok(arg, 'r'):
+                arg_s = unsigned_hexlify(arg) if abs(arg) > min_hex_expansion else f'{arg}'
+                if self._cpu.memory.access_ok(arg, 'r') and \
+                        model.__func__.__name__ not in {'sys_mprotect', 'sys_mmap'}:
                     try:
                         s = self._cpu.read_string(arg, max_arg_expansion)
-                        arg_s = f'({s.rstrip()})' if s else arg_s
-                    except UnicodeDecodeError:
+                        s = s.rstrip().replace('\n', '\\n') if s else s
+                        arg_s = (f'"{s}"' if s else arg_s)
+                    except Exception:
                         pass
                 args.append(arg_s)
 
             args_s = ', '.join(args)
+            ret_s = f'{unsigned_hexlify(ret)}' if abs(ret) > min_hex_expansion else f'{ret}'
 
-            ret_s = f'{ret}'
-            if ret > min_hex_expansion:
-                ret_s = ret_s + f'(0x{ret:x})'
+            platform_logger.debug('%s(%s) = %s', model.__func__.__name__, args_s, ret_s)
 
-            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, repr(args_s), ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
@@ -452,7 +471,8 @@ class Cpu(Eventful):
     """
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory'}
+                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory',
+                         'execute_syscall'}
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
@@ -850,7 +870,7 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                        c = struct.pack('B', Z3Solver().get_value(self.memory.constraints, c))
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:
@@ -900,7 +920,6 @@ class Cpu(Eventful):
         """
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
-
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 

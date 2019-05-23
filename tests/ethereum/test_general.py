@@ -12,7 +12,7 @@ import tempfile
 
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib import solver
+from manticore.core.smtlib import Z3Solver
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
@@ -23,6 +23,8 @@ from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
+
+solver = Z3Solver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -411,8 +413,9 @@ class EthTests(unittest.TestCase):
         self.mevm = ManticoreEVM()
 
     def tearDown(self):
-        shutil.rmtree(self.mevm.workspace)
+        workspace = self.mevm.workspace
         del self.mevm
+        shutil.rmtree(workspace)
 
     def test_solidity_create_contract_no_args(self):
         source_code = 'contract A { constructor() {} }'
@@ -472,6 +475,15 @@ class EthTests(unittest.TestCase):
             self.mevm.solidity_create_contract(source_code, owner=owner, args='(uint32,uint32)')
 
         self.assertEqual(str(e.exception), 'The number of values to serialize is greater than the number of types')
+
+    def test_create_contract_with_string_args(self):
+        source_code = 'contract DontWork1{ string s; constructor(string memory s_) public{ s = s_;} }'
+        owner = self.mevm.create_account()
+
+        sym_args = self.mevm.make_symbolic_arguments('(string)')
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=sym_args)
+        self.assertIsNotNone(contract)
+        self.assertEqual(self.mevm.count_states(), 1)
 
     def test_create_contract_two_instances(self):
         source_code = 'contract A { constructor(uint32 arg) {} }'
@@ -577,18 +589,18 @@ class EthTests(unittest.TestCase):
         owner = self.mevm.create_account(balance=1000)
         A = self.mevm.solidity_create_contract('contract A { function foo() { revert(); } }', owner=owner)
 
-        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_ready_states(), 1)
         self.assertEqual(self.mevm.count_terminated_states(), 0)
         self.assertEqual(self.mevm.count_states(), 1)
 
         A.foo()
 
         def assert_all():
-            self.assertEqual(self.mevm.count_running_states(), 0)
+            self.assertEqual(self.mevm.count_ready_states(), 0)
             self.assertEqual(self.mevm.count_terminated_states(), 1)
             self.assertEqual(self.mevm.count_states(), 1)
 
-        list(self.mevm.running_states)
+        list(self.mevm.ready_states)
         assert_all()
 
         list(self.mevm.terminated_states)
@@ -637,7 +649,7 @@ class EthTests(unittest.TestCase):
 
         c.mul(1, 2)
 
-        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_ready_states(), 1)
         self.assertEqual(self.mevm.count_terminated_states(), 0)
 
     def test_gen_testcase_only_if(self):
@@ -652,9 +664,9 @@ class EthTests(unittest.TestCase):
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         input_sym = self.mevm.make_symbolic_value()
         contract_account.f(input_sym)
-        self.assertEqual(len(list(self.mevm.running_states)), 1)
+        self.assertEqual(self.mevm.count_ready_states(), 1)
 
-        state = next(self.mevm.running_states)
+        state = next(self.mevm.ready_states)
         retval_array = state.platform.human_transactions[-1].return_data
         retval = operators.CONCAT(256, *retval_array)
 
@@ -671,7 +683,10 @@ class EthTests(unittest.TestCase):
             'user_00000000.' + ext for ext in ('summary', 'constraints', 'pkl', 'tx.json', 'tx', 'trace', 'logs')
         }
 
-        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+        expected_files.add('state_00000001.pkl')
+
+        actual_files = set((fn for fn in os.listdir(self.mevm.workspace) if not fn.startswith(".")))
+        self.assertEqual(actual_files, expected_files)
 
         summary_path = os.path.join(self.mevm.workspace, 'user_00000000.summary')
         with open(summary_path) as summary:
@@ -683,7 +698,7 @@ class EthTests(unittest.TestCase):
         self.assertFalse(did_gen)
 
         # Just a sanity check: a generate testcase with not met condition shouldn't add any more files
-        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+        self.assertEqual(actual_files, expected_files)
 
         # Since the condition was not met there should be no testcase in the summary
         with open(summary_path) as summary:
@@ -705,7 +720,9 @@ class EthTests(unittest.TestCase):
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         contract_account.ret(self.mevm.make_symbolic_value(), self.mevm.make_symbolic_value(),
                              signature='(uint256,uint256)')
-        z = list(self.mevm.all_states)[0].solve_one(self.mevm.transactions()[1].return_data)
+        for st in self.mevm.all_states:
+            z = st.solve_one(st.platform.transactions[1].return_data)
+            break
         self.assertEqual(ABI.deserialize('(uint256)', z)[0], 2)
 
     def test_migrate_integration(self):
@@ -852,53 +869,43 @@ class EthTests(unittest.TestCase):
         receiver = m.create_account(0)
         symbolic_address = m.make_symbolic_address()
         m.constrain(symbolic_address == receiver.address)
-        self.assertTrue(m.count_running_states() > 0 )
+        self.assertTrue(m.count_ready_states() > 0 )
         contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
-        self.assertTrue(m.count_running_states() > 0 )
+        self.assertTrue(m.count_ready_states() > 0 )
         self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
-                                for state in m.running_states))
+                                for state in m.ready_states))
 
     def test_make_symbolic_address(self):
-        def get_state():
-            """Returns one state and asserts that there is ONLY ONE."""
-            states = list(self.mevm.running_states)
-            self.assertEqual(len(states), 1)
-            return states[0]
+        for init_state in self.mevm.ready_states:
+            symbolic_address1 = self.mevm.make_symbolic_address()
+            self.assertEqual(symbolic_address1.name, 'TXADDR')
 
-        init_state = get_state()
-
-        symbolic_address1 = self.mevm.make_symbolic_address()
-        self.assertEqual(symbolic_address1.name, 'TXADDR')
-
-        # sanity check: creating a symbolic address should not create a new state
-        self.assertIs(get_state(), init_state)
-
-        # TEST 1: the 1st symbolic address should be constrained only to 0 (as there are no other accounts yet!)
-        possible_addresses1 = init_state.solve_n(symbolic_address1, 10)
-        self.assertEqual(possible_addresses1, [0])
+            # TEST 1: the 1st symbolic address should be constrained only to 0 (as there are no other accounts yet!)
+            possible_addresses1 = init_state.solve_n(symbolic_address1, 10)
+            self.assertEqual(possible_addresses1, [0])
 
         owner = self.mevm.create_account(balance=1)
 
-        # TEST 2: the 2nd symbolic address should be constrained to OR(owner_address, 0)
-        symbolic_address2 = self.mevm.make_symbolic_address()
-        self.assertEqual(symbolic_address2.name, 'TXADDR_1')
+        for state in self.mevm.ready_states:
+            # TEST 2: the 2nd symbolic address should be constrained to OR(owner_address, 0)
+            symbolic_address2 = self.mevm.make_symbolic_address()
+            self.assertEqual(symbolic_address2.name, 'TXADDR_1')
 
-        self.assertEqual(get_state().solve_n(symbolic_address2, 10), [int(owner), 0])
+            self.assertCountEqual(state.solve_n(symbolic_address2, 10), [0, int(owner)])
 
         contract = self.mevm.solidity_create_contract('contract C {}', owner=owner)
-
         # TEST 3: the 3rd symbolic address should be constrained to OR(contract_address, 0, owner_address)
         symbolic_address3 = self.mevm.make_symbolic_address()
         self.assertEqual(symbolic_address3.name, 'TXADDR_2')
 
-        state = get_state()
+        for state in self.mevm.ready_states:
 
-        self.assertEqual(state.solve_n(symbolic_address3, 10), [int(contract), 0, int(owner)])
+            self.assertCountEqual(state.solve_n(symbolic_address3, 10), [int(contract), 0, int(owner)])
 
-        # NOTE: The 1st and 2nd symbolic addresses are still constrained to 0 and OR(owner_address, 0)
-        # as the constrains are not reevaluated. They are created/assigned only once: when we create symbolic address.
-        self.assertEqual(state.solve_n(symbolic_address1, 10), [0])
-        self.assertEqual(state.solve_n(symbolic_address2, 10), [int(owner), 0])
+            # NOTE: The 1st and 2nd symbolic addresses are still constrained to 0 and OR(owner_address, 0)
+            # as the constrains are not reevaluated. They are created/assigned only once: when we create symbolic address.
+            self.assertCountEqual(state.solve_n(symbolic_address1, 10), [0])
+            self.assertCountEqual(state.solve_n(symbolic_address2, 10), [int(owner), 0])
 
     def test_end_instruction_trace(self):
         """
@@ -923,7 +930,6 @@ class EthTests(unittest.TestCase):
                             d.append(instruction.pc)
                 except Exception as e:
                     raise
-
         mevm = self.mevm
         p = TestPlugin()
         mevm.register_plugin(p)
@@ -1078,7 +1084,7 @@ class EthTests(unittest.TestCase):
                         func_name, args = ABI.deserialize("is_symbolic(bytes)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
-                        except:
+                        except Exception:
                             raise Return(TRUE)
                         raise Return(FALSE)
                     elif func_id == ABI.function_selector("is_symbolic(uint256)"):
@@ -1501,7 +1507,7 @@ class EthPluginTests(unittest.TestCase):
         """
         Tests that the FilterFunctions plugin matches the fallback function hash correctly. issue #1196
         """
-        with disposable_mevm(procs=1) as m:
+        with disposable_mevm() as m:
             source_code = '''
             contract FallbackCounter {
                 uint public fallbackCounter = 123;
@@ -1525,7 +1531,7 @@ class EthPluginTests(unittest.TestCase):
             m.transaction(caller=creator_account, address=contract_account, data=symbolic_data, value=0)
 
             self.assertEqual(m.count_states(), 1)
-            self.assertEqual(m.count_running_states(), 1)
+            self.assertEqual(m.count_ready_states(), 1)
 
             self.assertEqual(len(m.world.all_transactions), 2)
 

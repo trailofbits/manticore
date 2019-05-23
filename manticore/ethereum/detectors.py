@@ -1,3 +1,4 @@
+from manticore.core.smtlib.visitors import simplify
 import hashlib
 import logging
 from contextlib import contextmanager
@@ -32,11 +33,11 @@ class Detector(Plugin):
         return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('{:s}.findings'.format(self.name), set())
+        return state.context.setdefault('{:s}.findings'.format(self.name), list())
 
     @contextmanager
     def locked_global_findings(self):
-        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
+        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), list) as global_findings:
             yield global_findings
 
     @property
@@ -61,9 +62,9 @@ class Detector(Plugin):
             pc = pc.value
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
-        self.get_findings(state).add((address, pc, finding, at_init, constraint))
+        self.get_findings(state).append((address, pc, finding, at_init, constraint))
         with self.locked_global_findings() as gf:
-            gf.add((address, pc, finding, at_init))
+            gf.append((address, pc, finding, at_init))
         #Fixme for ever broken logger
         logger.warning(finding)
 
@@ -76,10 +77,6 @@ class Detector(Plugin):
         """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        if isinstance(pc, Constant):
-            pc = pc.value
-        if not isinstance(pc, int):
-            raise ValueError("PC must be a number")
         at_init = state.platform.current_transaction.sort == 'CREATE'
         self.add_finding(state, address, pc, finding, at_init, constraint)
 

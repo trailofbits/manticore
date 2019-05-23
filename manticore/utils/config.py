@@ -12,7 +12,7 @@ in that order of priority.
 import argparse
 import logging
 from itertools import product
-
+from enum import Enum
 import os
 import yaml
 
@@ -201,7 +201,12 @@ def save(f):
 
     c = {}
     for group_name, group in _groups.items():
-        section = {var.name: var.value for var in group.updated_vars()}
+        section = {}
+        for var in group.updated_vars():
+            if isinstance(var.value, Enum):
+                section[var.name] = var.value.value
+            else:
+                section[var.name] = var.value
         if not section:
             continue
         c[group_name] = section
@@ -222,6 +227,10 @@ def parse_config(f):
             group = get_group(section_name)
 
             for key, val in section.items():
+                if key in group:
+                    obj = group._var_object(key)
+                    if isinstance(obj.default, Enum):
+                        val = type(obj.default).from_string(val)
                 group.update(key)
                 setattr(group, key, val)
     # Any exception here should trigger the warning; from not being able to parse yaml
@@ -319,5 +328,3 @@ def get_config_keys():
     for group_name, group in _groups.items():
         for key in group:
             yield f"{group_name}.{key}"
-
-

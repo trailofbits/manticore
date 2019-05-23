@@ -20,7 +20,8 @@ import itertools
 from manticore.native import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
-from manticore.core.smtlib import solver
+from manticore.core.smtlib.solver import Z3Solver
+from manticore.utils import config
 
 import copy
 from manticore.core.smtlib.expression import *
@@ -45,7 +46,7 @@ class TraceReceiver(Plugin):
     def trace(self):
         return self._trace
 
-    def will_generate_testcase_callback(self, state, testcase, msg):
+    def will_terminate_state_callback(self, state, reason):
         self._trace = state.context.get(self._tracer.context_key, [])
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
@@ -132,26 +133,32 @@ def input_from_cons(constupl, datas):
     def make_chr(c):
         try:
             return chr(c)
-        except:
+        except Exception:
             return c
     newset = constraints_to_constraintset(constupl)
 
     ret = ''
     for data in datas:
         for c in data:
-            ret += make_chr(solver.get_value(newset, c))
+            ret += make_chr(Z3Solver.instance().get_value(newset, c))
     return ret
 
 # Run a concrete run with |inp| as stdin
 def concrete_run_get_trace(inp):
+    
+    consts = config.get_group('core')
+    consts.mprocessing = consts.mprocessing.single
+
     m1 = Manticore.linux(prog, concrete_start=inp, workspace_url='mem:')
     t = ExtendedTracer()
-    r = TraceReceiver(t)
+    #r = TraceReceiver(t)
     m1.verbosity(VERBOSITY)
     m1.register_plugin(t)
-    m1.register_plugin(r)
-    m1.run(procs=1)
-    return r.trace
+    #m1.register_plugin(r)
+    m1.run()
+    for st in m1.all_states:
+        return t.get_trace(st) 
+    #return r.trace
 
 
 def symbolic_run_get_cons(trace):
@@ -159,13 +166,13 @@ def symbolic_run_get_cons(trace):
     Execute a symbolic run that follows a concrete run; return constraints generated
     and the stdin data produced
     '''
-
+    # mem: has no concurrency support. Manticore should be 'Single' process
     m2 = Manticore.linux(prog, workspace_url='mem:')
     f = Follower(trace)
     m2.verbosity(VERBOSITY)
     m2.register_plugin(f)
 
-    def on_term_testcase(mcore, state, stateid, err):
+    def on_term_testcase(mm, state, err):
         with m2.locked_context() as ctx:
             readdata = []
             for name, fd, data in state.platform.syscall_trace:
@@ -193,7 +200,7 @@ def getnew(oldcons, newcons):
 
 def constraints_are_sat(cons):
     'Whether constraints are sat'
-    return solver.check(constraints_to_constraintset(cons))
+    return Z3Solver.instance().check(constraints_to_constraintset(cons))
 
 def get_new_constrs_for_queue(oldcons, newcons):
     ret = []

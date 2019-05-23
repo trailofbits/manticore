@@ -476,6 +476,11 @@ class ArithmeticSimplifier(Visitor):
                 return left.operands[1]
             elif self._same_constant(left.operands[1], right):
                 return left.operands[0]
+        elif isinstance(left, BitVecSub) and isinstance(right, Constant):
+            subleft = left.operands[0]
+            subright = left.operands[1]
+            if isinstance(subright, Constant):
+                return BitVecSub(subleft, BitVecConstant(subleft.size, subright.value + right.value, taint=subright.taint | right.taint))
 
     def visit_BitVecOr(self, expression, *operands):
         """ a | 0 => a

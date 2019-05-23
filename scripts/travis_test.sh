@@ -60,6 +60,19 @@ launch_examples() {
     return 0
 }
 
+make_vmtests(){
+    DIR=`pwd`
+    if  [ ! -f ethereum_vm/.done ]; then
+        echo "Automaking VMTests" `pwd`
+        cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
+        rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
+        for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
+        for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+        rm -rf ./vmtests
+        touch ethereum_vm/.done
+    fi
+    cd $DIR
+}
 
 run_tests_from_dir() {
     DIR=$1
@@ -93,8 +106,15 @@ run_examples() {
 
 # Test type
 case $1 in
-    native)     ;&  # Fallthrough
-    ethereum)   ;&  # Fallthrough
+    ethereum_vm)
+        make_vmtests
+        echo "Running only the tests from 'tests/$1' directory"
+        run_tests_from_dir $1
+        RV=$?
+        ;;
+
+    native)                 ;&  # Fallthrough
+    ethereum)               ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
@@ -106,13 +126,15 @@ case $1 in
         ;;
 
     all)
-        echo "Running all tests registered in travis_test.sh: examples, natvie, ethereum, other";
+        echo "Running all tests registered in travis_test.sh: examples, native, ethereum, ethereum_vm, other";
 
         # Functions should return 0 on success and 1 on failure
         RV=0
         run_tests_from_dir native
         RV=$(($RV + $?))
         run_tests_from_dir ethereum
+        RV=$(($RV + $?))
+        make_vmtests; run_tests_from_dir ethereum_vm
         RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))
@@ -121,7 +143,7 @@ case $1 in
         ;;
 
     *)
-        echo "Usage: $0 [examples|native|ethereum|other|all]"
+        echo "Usage: $0 [examples|native|ethereum|ethereum_vm|other|all]"
         exit 3;
         ;;
 esac
