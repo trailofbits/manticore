@@ -56,7 +56,8 @@ setup(
         'prettytable',
         'pyevmasm==0.2.0',
         'rlp',
-        'ply'
+        'ply',
+        'crytic-compile>=0.1.1'
     ] + rtd_dependent_deps(),
     extras_require=extra_require,
     entry_points={

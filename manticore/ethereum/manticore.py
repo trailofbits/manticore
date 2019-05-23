@@ -693,6 +693,10 @@ class ManticoreEVM(ManticoreBase):
                 for lib_name in e.lib_names:
                     if lib_name not in deps:
                         contract_names.append(lib_name)
+            except EthereumError as e:
+                logger.error(e)
+                self.kill()
+                raise
             except Exception as e:
                 self.kill()
                 raise
