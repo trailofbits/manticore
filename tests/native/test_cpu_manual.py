@@ -1172,8 +1172,8 @@ Using the SAR instruction to perform a division operation does not produce the s
         cpu.XMM1 = 0x4048f5c340c8f5c3ffffffffffffffff
         cpu.execute()
 
-        self.assertItemsEqual(mem[0x41e000:0x41e004], to_bytelist(b'\x40\x48\xf5\xc3'))
-        self.assertItemsEqual(mem[0x41e004:0x41e008], to_bytelist(b'\x40\xc8\xf5\xc3'))
+        self.assertItemsEqual(mem[0x41e000:0x41e004], to_bytelist(b'\x40\xc8\xf5\xc3'))
+        self.assertItemsEqual(mem[0x41e004:0x41e008], to_bytelist(b'\x40\x48\xf5\xc3'))
 
     def test_symbolic_instruction(self):
         cs = ConstraintSet()
