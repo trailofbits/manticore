@@ -18,12 +18,9 @@ def native_main(args, _logger):
 
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())
-    m.register_plugin(Visited())
+    m.register_plugin(Visited(args.coverage))
     m.register_plugin(Tracer())
     m.register_plugin(RecordSymbolicBranches())
-
-    # Fixme(felipe) remove this, move to plugin
-    m.coverage_file = args.coverage
 
     if args.names is not None:
         m.apply_model_hooks(args.names)
