@@ -31,7 +31,7 @@ function install_cc_env {
 
 # Install black for initial formatting stage
 if [ "$1" == "format" ]; then
-    pip install --update black
+    pip install -U black
 fi
 
 # Install CodeClimate env
