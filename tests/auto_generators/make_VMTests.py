@@ -30,20 +30,20 @@ import pyevmasm as EVMAsm
 
 
 def gen_test(testcase, filename, symbolic, skip):
-    output = '''    @unittest.skip('Gas or performance related')\n''' if skip else ''
+    output = """    @unittest.skip('Gas or performance related')\n""" if skip else ""
 
     # Sanity checks
 
     # We don't use those!
-    testcase.pop('_info')
-    assert len(testcase.pop('callcreates', [])) == 0
+    testcase.pop("_info")
+    assert len(testcase.pop("callcreates", [])) == 0
 
     output += generate_pre_output(testcase, filename, symbolic)
 
-    if 'post' not in testcase:
-        output += '''
+    if "post" not in testcase:
+        output += """
         # If test end in exception check it here
-        self.assertTrue(result == 'THROW')'''
+        self.assertTrue(result == 'THROW')"""
     else:
         output += generate_post_output(testcase)
 
@@ -51,16 +51,16 @@ def gen_test(testcase, filename, symbolic, skip):
 
 
 def generate_pre_output(testcase, filename, symbolic):
-    testname = (os.path.split(filename)[1].replace('-', '_')).split('.')[0]
-    bytecode = unhexlify(testcase['exec']['code'][2:])
-    disassemble = ''
+    testname = (os.path.split(filename)[1].replace("-", "_")).split(".")[0]
+    bytecode = unhexlify(testcase["exec"]["code"][2:])
+    disassemble = ""
     try:
         # add silent=True when evmasm supports it
-        disassemble = '\n                  '.join(EVMAsm.disassemble(bytecode).split('\n'))
+        disassemble = "\n                  ".join(EVMAsm.disassemble(bytecode).split("\n"))
     except Exception as e:
         pass
 
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         sha256sum = hashlib.sha256(f.read()).hexdigest()
 
     output = f'''
@@ -74,10 +74,10 @@ def generate_pre_output(testcase, filename, symbolic):
     '''
 
     if symbolic:
-        output += '''
+        output += """
         def solve(val):
             return self._solve(constraints, val)
-'''
+"""
     else:
         output += '''
         def solve(val):
@@ -88,122 +88,135 @@ def generate_pre_output(testcase, filename, symbolic):
             return to_constant(val)
 '''
 
-    env = testcase['env']
+    env = testcase["env"]
 
-    gaslimit = int(env['currentGasLimit'], 0)
-    blocknumber = int(env['currentNumber'], 0)
-    timestamp = int(env['currentTimestamp'], 0)
-    difficulty = int(env['currentDifficulty'], 0)
-    coinbase = int(env['currentCoinbase'], 0)
-    output += f'''
+    gaslimit = int(env["currentGasLimit"], 0)
+    blocknumber = int(env["currentNumber"], 0)
+    timestamp = int(env["currentTimestamp"], 0)
+    difficulty = int(env["currentDifficulty"], 0)
+    coinbase = int(env["currentCoinbase"], 0)
+    output += f"""
         constraints = ConstraintSet()
-'''
+"""
 
     def format_bitvec(name, val, bits=256, symbolic_name=None):
         if symbolic_name is None:
             symbolic_name = name
 
-        return f'''
+        return f"""
         {name} = constraints.new_bitvec({bits}, name='{symbolic_name}')
         constraints.add({name} == {val})
-'''
+"""
 
     def format_var(name, val):
-        return f'''
-        {name} = {val}'''
+        return f"""
+        {name} = {val}"""
 
     # Spawns/creates bitvectors in symbolic or pure variables in concrete
     formatter = format_bitvec if symbolic else format_var
-    for var in ('blocknumber', 'timestamp', 'difficulty', 'coinbase', 'gaslimit'):
+    for var in ("blocknumber", "timestamp", "difficulty", "coinbase", "gaslimit"):
         output += formatter(var, locals()[var])
 
-    output += f'''
+    output += f"""
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
-    '''
+    """
 
-    for address, account in testcase['pre'].items():
-        assert account.keys() == {'code', 'nonce', 'balance', 'storage'}
+    for address, account in testcase["pre"].items():
+        assert account.keys() == {"code", "nonce", "balance", "storage"}
 
         account_address = int(address, 0)
-        account_code = account['code'][2:]
-        account_nonce = int(account['nonce'], 0)
-        account_balance = int(account['balance'], 0)
+        account_code = account["code"][2:]
+        account_nonce = int(account["nonce"], 0)
+        account_balance = int(account["balance"], 0)
 
         if symbolic:
             postfix = hex(account_address)
-            output += f'''
+            output += f"""
         acc_addr = {hex(account_address)}
         acc_code = unhexlify('{account_code}')
-            '''
-            output += format_bitvec('acc_balance', account_balance, symbolic_name=f'balance_{postfix}')
-            output += format_bitvec('acc_nonce', account_nonce, symbolic_name=f'nonce_{postfix}')
+            """
+            output += format_bitvec(
+                "acc_balance", account_balance, symbolic_name=f"balance_{postfix}"
+            )
+            output += format_bitvec("acc_nonce", account_nonce, symbolic_name=f"nonce_{postfix}")
         else:
-            output += f'''
+            output += f"""
         acc_addr = {hex(account_address)}
         acc_code = unhexlify('{account_code}')
         acc_balance = {account_balance}
         acc_nonce = {account_nonce}
-'''
+"""
 
-        output += f'''
+        output += f"""
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
-'''
-        for key, value in account['storage'].items():
+"""
+        for key, value in account["storage"].items():
             if symbolic:
                 postfix = hex(account_address)
-                output += format_bitvec('key', key, symbolic_name=f'storage_key_{postfix}')
-                output += format_bitvec('value', value, symbolic_name=f'storage_value_{postfix}')
-                output += '''
+                output += format_bitvec("key", key, symbolic_name=f"storage_key_{postfix}")
+                output += format_bitvec("value", value, symbolic_name=f"storage_value_{postfix}")
+                output += """
         world.set_storage_data(acc_addr, key, value)
-'''
+"""
             else:
-                output += f'''
+                output += f"""
         world.set_storage_data(acc_addr, {key}, {value})
-'''
+"""
 
-    address = int(testcase['exec']['address'], 0)
-    caller = int(testcase['exec']['caller'], 0)
-    code = testcase['exec']['code'][2:]
-    calldata = unhexlify(testcase['exec']['data'][2:])
-    gas = int(testcase['exec']['gas'], 0)
-    price = int(testcase['exec']['gasPrice'], 0)
-    origin = int(testcase['exec']['origin'], 0)
-    value = int(testcase['exec']['value'], 0)
-    assert testcase['exec'].keys() == {'address', 'caller', 'code', 'data', 'gas', 'gasPrice', 'origin', 'value'}
+    address = int(testcase["exec"]["address"], 0)
+    caller = int(testcase["exec"]["caller"], 0)
+    code = testcase["exec"]["code"][2:]
+    calldata = unhexlify(testcase["exec"]["data"][2:])
+    gas = int(testcase["exec"]["gas"], 0)
+    price = int(testcase["exec"]["gasPrice"], 0)
+    origin = int(testcase["exec"]["origin"], 0)
+    value = int(testcase["exec"]["value"], 0)
+    assert testcase["exec"].keys() == {
+        "address",
+        "caller",
+        "code",
+        "data",
+        "gas",
+        "gasPrice",
+        "origin",
+        "value",
+    }
 
     # Need to check if origin is diff from caller. we do not support those tests
     assert origin == caller, "test type not supported"
-    assert testcase['pre']['0x{:040x}'.format(address)]['code'][2:] == code, "test type not supported"
+    assert (
+        testcase["pre"]["0x{:040x}".format(address)]["code"][2:] == code
+    ), "test type not supported"
 
-    output += f'''
+    output += f"""
         address = {hex(address)}
-        caller = {hex(caller)}'''
+        caller = {hex(caller)}"""
 
     if symbolic:
-        output += format_bitvec('price', price)
-        output += format_bitvec('value', value)
-        output += format_bitvec('gas', gas)
+        output += format_bitvec("price", price)
+        output += format_bitvec("value", value)
+        output += format_bitvec("gas", gas)
     else:
-        output += f'''
+        output += f"""
         price = {hex(price)}
         value = {value}
-        gas = {gas}'''
+        gas = {gas}"""
 
     if calldata:
         if symbolic:
-            output += f'''
+            output += f"""
         data = constraints.new_array(index_max={len(calldata)})
         constraints.add(data == {calldata})
-'''
+"""
         else:
-            output += f'''
-        data = {calldata}'''
+            output += f"""
+        data = {calldata}"""
     else:
         output += f"""
         data = ''"""
 
-    output += f'''
+    output += f"""
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -217,62 +230,62 @@ def generate_pre_output(testcase, filename, symbolic):
         self.assertEqual(solve(world.block_timestamp()), {timestamp})
         self.assertEqual(solve(world.block_difficulty()), {difficulty})
         self.assertEqual(solve(world.block_coinbase()), {hex(coinbase)})
-'''
+"""
 
     return output
 
 
 def generate_post_output(testcase):
-    output = ''
+    output = ""
 
-    for address, account in testcase['post'].items():
-        assert account.keys() == {'code', 'nonce', 'balance', 'storage'}
+    for address, account in testcase["post"].items():
+        assert account.keys() == {"code", "nonce", "balance", "storage"}
 
         account_address = int(address, 0)
-        account_code = account['code'][2:]
-        account_nonce = int(account['nonce'], 0)
-        account_balance = int(account['balance'], 0)
+        account_code = account["code"][2:]
+        account_nonce = int(account["nonce"], 0)
+        account_balance = int(account["balance"], 0)
 
-        output += f'''
+        output += f"""
         # Add post checks for account {hex(account_address)}
         # check nonce, balance, code
         self.assertEqual(solve(world.get_nonce({hex(account_address)})), {account_nonce})
         self.assertEqual(solve(world.get_balance({hex(account_address)})), {account_balance})
-        self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))'''
+        self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))"""
 
-    if account['storage']:
-        output += '''
-        # check storage'''
+    if account["storage"]:
+        output += """
+        # check storage"""
 
-        for key, value in account['storage'].items():
-            output += f'''
-        self.assertEqual(solve(world.get_storage_data({hex(account_address)}, {key})), {value})'''
+        for key, value in account["storage"].items():
+            output += f"""
+        self.assertEqual(solve(world.get_storage_data({hex(account_address)}, {key})), {value})"""
 
-    output += f'''
+    output += f"""
         # check outs
-        self.assertEqual(returndata, unhexlify('{testcase['out'][2:]}'))'''
+        self.assertEqual(returndata, unhexlify('{testcase['out'][2:]}'))"""
 
-    output += '''
+    output += """
         # check logs
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
-        data = rlp.encode(logs)'''
-    output += f'''
+        data = rlp.encode(logs)"""
+    output += f"""
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '{testcase['logs'][2:]}')
-'''
+"""
 
-    output += f'''
+    output += f"""
         # test used gas
-        self.assertEqual(solve(world.current_vm.gas), {int(testcase['gas'], 0)})'''
+        self.assertEqual(solve(world.current_vm.gas), {int(testcase['gas'], 0)})"""
 
     return output
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit()
 
-    symbolic = '--symbolic' in sys.argv
+    symbolic = "--symbolic" in sys.argv
 
     filename_or_folder = os.path.abspath(sys.argv[1])
 
@@ -354,39 +367,45 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
     if os.path.isdir(filename_or_folder):
         folder = filename_or_folder
 
-        print(f'Generating tests from dir {folder}...', file=sys.stderr)
+        print(f"Generating tests from dir {folder}...", file=sys.stderr)
         cnt = 0
 
         for filename in os.listdir(folder):
-            if not filename.endswith('.json'):
+            if not filename.endswith(".json"):
                 continue
 
             filename = os.path.join(folder, filename)
             testcase = dict(json.loads(open(filename).read()))
             for name, testcase in testcase.items():
-                output += gen_test(testcase, filename, symbolic=symbolic, skip='Performance' in filename) + '\n'
+                output += (
+                    gen_test(testcase, filename, symbolic=symbolic, skip="Performance" in filename)
+                    + "\n"
+                )
                 cnt += 1
 
-        print(f'Generated {cnt} testcases from jsons in {folder}.', file=sys.stderr)
+        print(f"Generated {cnt} testcases from jsons in {folder}.", file=sys.stderr)
     else:
         folder = None
         filename = os.path.abspath(filename_or_folder)
         testcase = dict(json.loads(open(filename).read()))
         for name, testcase in testcase.items():
-            output += gen_test(testcase, filename, symbolic=symbolic, skip='Performance' in filename) + '\n'
+            output += (
+                gen_test(testcase, filename, symbolic=symbolic, skip="Performance" in filename)
+                + "\n"
+            )
 
-    output += '''
+    output += """
 
 if __name__ == '__main__':
     unittest.main()
-'''
-    postfix = 'symbolic' if symbolic else 'concrete'
+"""
+    postfix = "symbolic" if symbolic else "concrete"
 
     if folder:
-        testname = folder.split('/')[-1]
-        with open(f'ethereum_vm/VMTests_{postfix}/test_{testname}.py', 'w') as f:
+        testname = folder.split("/")[-1]
+        with open(f"ethereum_vm/VMTests_{postfix}/test_{testname}.py", "w") as f:
             f.write(output)
-        with open(f'ethereum_vm/VMTests_{postfix}/__init__.py', 'w') as f:
+        with open(f"ethereum_vm/VMTests_{postfix}/__init__.py", "w") as f:
             f.write("# DO NOT DELETE")
         print("Tests generated. If this is the only output, u did sth bad.", file=sys.stderr)
     else:

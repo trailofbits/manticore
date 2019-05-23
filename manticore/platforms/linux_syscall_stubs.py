@@ -20,8 +20,10 @@ class SyscallStubs:
         self.parent = parent
 
     def __getattr__(self, item):
-        print("System calls should be copied and pasted into linux.py, not implemented within the stub file.",
-              "If you're seeing this message, you may have forgotten to do that.")
+        print(
+            "System calls should be copied and pasted into linux.py, not implemented within the stub file.",
+            "If you're seeing this message, you may have forgotten to do that.",
+        )
         return getattr(self.parent, item)
 
     def simple_returns(self):

@@ -6,8 +6,15 @@ import re
 import struct
 
 from .abstractcpu import (
-    Cpu, CpuException, Interruption, InstructionNotImplementedError,
-    RegisterFile, Abi, SyscallAbi, Operand, instruction
+    Cpu,
+    CpuException,
+    Interruption,
+    InstructionNotImplementedError,
+    RegisterFile,
+    Abi,
+    SyscallAbi,
+    Operand,
+    instruction,
 )
 from .arm import HighBit, Armv7Operand
 from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR, Mask, GetNBits
@@ -27,51 +34,48 @@ class Aarch64InvalidInstruction(CpuException):
 # Map different instructions to a single implementation.
 OP_NAME_MAP = {
     # Make these go through 'MOV' to ensure that code path is reached.
-    'MOVZ': 'MOV',
-    'MOVN': 'MOV'
+    "MOVZ": "MOV",
+    "MOVN": "MOV",
 }
 
 
 # See "C1.2.4 Condition code".
-Condspec = collections.namedtuple('CondSpec', 'inverse func')
+Condspec = collections.namedtuple("CondSpec", "inverse func")
 COND_MAP = {
     cs.arm64.ARM64_CC_EQ: Condspec(cs.arm64.ARM64_CC_NE, lambda n, z, c, v: z == 1),
     cs.arm64.ARM64_CC_NE: Condspec(cs.arm64.ARM64_CC_EQ, lambda n, z, c, v: z == 0),
-
     cs.arm64.ARM64_CC_HS: Condspec(cs.arm64.ARM64_CC_LO, lambda n, z, c, v: c == 1),
     cs.arm64.ARM64_CC_LO: Condspec(cs.arm64.ARM64_CC_HS, lambda n, z, c, v: c == 0),
-
     cs.arm64.ARM64_CC_MI: Condspec(cs.arm64.ARM64_CC_PL, lambda n, z, c, v: n == 1),
     cs.arm64.ARM64_CC_PL: Condspec(cs.arm64.ARM64_CC_MI, lambda n, z, c, v: n == 0),
-
     cs.arm64.ARM64_CC_VS: Condspec(cs.arm64.ARM64_CC_VC, lambda n, z, c, v: v == 1),
     cs.arm64.ARM64_CC_VC: Condspec(cs.arm64.ARM64_CC_VS, lambda n, z, c, v: v == 0),
-
-    cs.arm64.ARM64_CC_HI: Condspec(cs.arm64.ARM64_CC_LS, lambda n, z, c, v: Operators.AND(c == 1, z == 0)),
-    cs.arm64.ARM64_CC_LS: Condspec(cs.arm64.ARM64_CC_HI, lambda n, z, c, v: Operators.NOT(Operators.AND(c == 1, z == 0))),
-
+    cs.arm64.ARM64_CC_HI: Condspec(
+        cs.arm64.ARM64_CC_LS, lambda n, z, c, v: Operators.AND(c == 1, z == 0)
+    ),
+    cs.arm64.ARM64_CC_LS: Condspec(
+        cs.arm64.ARM64_CC_HI, lambda n, z, c, v: Operators.NOT(Operators.AND(c == 1, z == 0))
+    ),
     cs.arm64.ARM64_CC_GE: Condspec(cs.arm64.ARM64_CC_LT, lambda n, z, c, v: n == v),
     cs.arm64.ARM64_CC_LT: Condspec(cs.arm64.ARM64_CC_GE, lambda n, z, c, v: n != v),
-
-    cs.arm64.ARM64_CC_GT: Condspec(cs.arm64.ARM64_CC_LE, lambda n, z, c, v: Operators.AND(z == 0, n == v)),
-    cs.arm64.ARM64_CC_LE: Condspec(cs.arm64.ARM64_CC_GT, lambda n, z, c, v: Operators.NOT(Operators.AND(z == 0, n == v))),
-
+    cs.arm64.ARM64_CC_GT: Condspec(
+        cs.arm64.ARM64_CC_LE, lambda n, z, c, v: Operators.AND(z == 0, n == v)
+    ),
+    cs.arm64.ARM64_CC_LE: Condspec(
+        cs.arm64.ARM64_CC_GT, lambda n, z, c, v: Operators.NOT(Operators.AND(z == 0, n == v))
+    ),
     cs.arm64.ARM64_CC_AL: Condspec(None, lambda n, z, c, v: True),
-    cs.arm64.ARM64_CC_NV: Condspec(None, lambda n, z, c, v: True)
+    cs.arm64.ARM64_CC_NV: Condspec(None, lambda n, z, c, v: True),
 }
 
 
 # XXX: Support other system registers.
 # System registers map.
-SYS_REG_MAP = {
-    0xc082: 'CPACR_EL1',
-    0xd807: 'DCZID_EL0',
-    0xde82: 'TPIDR_EL0'
-}
+SYS_REG_MAP = {0xC082: "CPACR_EL1", 0xD807: "DCZID_EL0", 0xDE82: "TPIDR_EL0"}
 
 
 class Aarch64RegisterFile(RegisterFile):
-    Regspec = collections.namedtuple('RegSpec', 'parent size')
+    Regspec = collections.namedtuple("RegSpec", "parent size")
 
     # Register table.
     _table = {}
@@ -80,40 +84,40 @@ class Aarch64RegisterFile(RegisterFile):
 
     # General-purpose registers.
     for i in range(31):
-        _table[f'X{i}'] = Regspec(f'X{i}', 64)
-        _table[f'W{i}'] = Regspec(f'X{i}', 32)
+        _table[f"X{i}"] = Regspec(f"X{i}", 64)
+        _table[f"W{i}"] = Regspec(f"X{i}", 32)
 
     # Stack pointer.
     # See "D1.8.2 SP alignment checking".
-    _table['SP'] = Regspec('SP', 64)
-    _table['WSP'] = Regspec('SP', 32)
+    _table["SP"] = Regspec("SP", 64)
+    _table["WSP"] = Regspec("SP", 32)
 
     # Program counter.
     # See "D1.8.1 PC alignment checking".
-    _table['PC'] = Regspec('PC', 64)
+    _table["PC"] = Regspec("PC", 64)
 
     # SIMD and FP registers.
     # See "A1.4 Supported data types".
     for i in range(32):
-        _table[f'V{i}'] = Regspec(f'V{i}', 128)
-        _table[f'Q{i}'] = Regspec(f'V{i}', 128)
-        _table[f'D{i}'] = Regspec(f'V{i}', 64)
-        _table[f'S{i}'] = Regspec(f'V{i}', 32)
-        _table[f'H{i}'] = Regspec(f'V{i}', 16)
-        _table[f'B{i}'] = Regspec(f'V{i}', 8)
+        _table[f"V{i}"] = Regspec(f"V{i}", 128)
+        _table[f"Q{i}"] = Regspec(f"V{i}", 128)
+        _table[f"D{i}"] = Regspec(f"V{i}", 64)
+        _table[f"S{i}"] = Regspec(f"V{i}", 32)
+        _table[f"H{i}"] = Regspec(f"V{i}", 16)
+        _table[f"B{i}"] = Regspec(f"V{i}", 8)
 
     # SIMD and FP control and status registers.
-    _table['FPCR'] = Regspec('FPCR', 64)
-    _table['FPSR'] = Regspec('FPSR', 64)
+    _table["FPCR"] = Regspec("FPCR", 64)
+    _table["FPSR"] = Regspec("FPSR", 64)
 
     # Condition flags.
     # See "C5.2.9 NZCV, Condition Flags".
-    _table['NZCV'] = Regspec('NZCV', 64)
+    _table["NZCV"] = Regspec("NZCV", 64)
 
     # Zero register.
     # See "C1.2.5 Register names".
-    _table['XZR'] = Regspec('XZR', 64)
-    _table['WZR'] = Regspec('XZR', 32)
+    _table["XZR"] = Regspec("XZR", 64)
+    _table["WZR"] = Regspec("XZR", 32)
 
     # XXX: Check the current exception level before reading from or writing to a
     # system register.
@@ -121,28 +125,28 @@ class Aarch64RegisterFile(RegisterFile):
     # See "D12.2 General system control registers".
 
     # See "D12.2.29 CPACR_EL1, Architectural Feature Access Control Register".
-    _table['CPACR_EL1'] = Regspec('CPACR_EL1', 64)
+    _table["CPACR_EL1"] = Regspec("CPACR_EL1", 64)
 
     # See "D12.2.35 DCZID_EL0, Data Cache Zero ID register".
-    _table['DCZID_EL0'] = Regspec('DCZID_EL0', 64)
+    _table["DCZID_EL0"] = Regspec("DCZID_EL0", 64)
 
     # See "D12.2.106 TPIDR_EL0, EL0 Read/Write Software Thread ID Register".
-    _table['TPIDR_EL0'] = Regspec('TPIDR_EL0', 64)
+    _table["TPIDR_EL0"] = Regspec("TPIDR_EL0", 64)
 
     def __init__(self):
         # Register aliases.
         _aliases = {
             # This one is required by the 'Cpu' class.
-            'STACK': 'SP',
+            "STACK": "SP",
             # See "5.1 Machine Registers" in the Procedure Call Standard for the ARM
             # 64-bit Architecture (AArch64), 22 May 2013.  ARM IHI 0055B.
             # Frame pointer.
-            'FP': 'X29',
+            "FP": "X29",
             # Intra-procedure-call temporary registers.
-            'IP1': 'X17',
-            'IP0': 'X16',
+            "IP1": "X17",
+            "IP0": "X16",
             # Link register.
-            'LR': 'X30'
+            "LR": "X30",
         }
         super().__init__(_aliases)
 
@@ -174,7 +178,7 @@ class Aarch64RegisterFile(RegisterFile):
 
         # XXX: Prohibit the DC ZVA instruction until it's implemented.
         # XXX: Allow to set this when a register is declared.
-        if parent == 'DCZID_EL0':
+        if parent == "DCZID_EL0":
             return 0b10000
 
         if name != parent:
@@ -195,12 +199,12 @@ class Aarch64RegisterFile(RegisterFile):
 
         # DCZID_EL0 is read-only.
         # XXX: Allow to set this when a register is declared.
-        if parent == 'DCZID_EL0':
+        if parent == "DCZID_EL0":
             raise Aarch64InvalidInstruction
 
         # Ignore writes to the zero register.
         # XXX: Allow to set this when a register is declared.
-        if parent != 'XZR':
+        if parent != "XZR":
             self._registers[parent].write(value)
 
     def size(self, register):
@@ -220,8 +224,8 @@ class Aarch64RegisterFile(RegisterFile):
         #
         # XXX: And Unicorn doesn't support these:
         not_supported = set()
-        not_supported.add('FPSR')
-        not_supported.add('FPCR')
+        not_supported.add("FPSR")
+        not_supported.add("FPCR")
 
         # XXX: Unicorn doesn't allow to write to and read from system
         # registers directly (see 'arm64_reg_write' and 'arm64_reg_read').
@@ -241,7 +245,7 @@ class Aarch64RegisterFile(RegisterFile):
     # See "C5.2.9 NZCV, Condition Flags".
     @property
     def nzcv(self):
-        nzcv = self.read('NZCV')
+        nzcv = self.read("NZCV")
         n = Operators.EXTRACT(nzcv, 31, 1)
         z = Operators.EXTRACT(nzcv, 30, 1)
         c = Operators.EXTRACT(nzcv, 29, 1)
@@ -264,7 +268,7 @@ class Aarch64RegisterFile(RegisterFile):
         v = LSL(v, 28, 64)
 
         result = n | z | c | v
-        self.write('NZCV', result)
+        self.write("NZCV", result)
 
 
 # XXX: Add more instructions.
@@ -272,12 +276,13 @@ class Aarch64Cpu(Cpu):
     """
     Cpu specialization handling the ARM64 architecture.
     """
+
     address_bit_size = 64
     max_instr_width = 4
     # XXX: Possible values: 'aarch64_be', 'aarch64', 'armv8b', 'armv8l'.
     # See 'UTS_MACHINE' and 'COMPAT_UTS_MACHINE' in the Linux kernel source.
     # https://stackoverflow.com/a/45125525
-    machine = 'aarch64'
+    machine = "aarch64"
     arch = cs.CS_ARCH_ARM64
     # See "A1.3.2 The ARMv8 instruction sets".
     mode = cs.CS_ARCH_ARM
@@ -296,37 +301,40 @@ class Aarch64Cpu(Cpu):
         name = insn.mnemonic.upper()
         name = OP_NAME_MAP.get(name, name)
         ops = insn.operands
-        name_list = name.split('.')
+        name_list = name.split(".")
 
         # Make sure MOV (bitmask immediate) and MOV (register) go through 'MOV'.
-        if (name == 'ORR' and len(ops) == 3 and
-            ops[1].type == cs.arm64.ARM64_OP_REG and
-            ops[1].reg in ['WZR', 'XZR'] and
-            not ops[2].is_shifted()):
-            name = 'MOV'
-            insn._raw.mnemonic = name.lower().encode('ascii')
+        if (
+            name == "ORR"
+            and len(ops) == 3
+            and ops[1].type == cs.arm64.ARM64_OP_REG
+            and ops[1].reg in ["WZR", "XZR"]
+            and not ops[2].is_shifted()
+        ):
+            name = "MOV"
+            insn._raw.mnemonic = name.lower().encode("ascii")
             del ops[1]
 
         # Map all B.cond variants to a single implementation.
-        elif (len(name_list) == 2 and
-              name_list[0] == 'B' and
-              insn.cc != cs.arm64.ARM64_CC_INVALID):
-            name = 'B_cond'
+        elif len(name_list) == 2 and name_list[0] == "B" and insn.cc != cs.arm64.ARM64_CC_INVALID:
+            name = "B_cond"
 
         # XXX: BFI is only valid when Rn != 11111:
         # https://github.com/aquynh/capstone/issues/1441
-        elif (name == 'BFI' and len(ops) == 4 and
-              ops[1].type == cs.arm64.ARM64_OP_REG and
-              ops[1].reg in ['WZR', 'XZR']):
-            name = 'BFC'
-            insn._raw.mnemonic = name.lower().encode('ascii')
+        elif (
+            name == "BFI"
+            and len(ops) == 4
+            and ops[1].type == cs.arm64.ARM64_OP_REG
+            and ops[1].reg in ["WZR", "XZR"]
+        ):
+            name = "BFC"
+            insn._raw.mnemonic = name.lower().encode("ascii")
             del ops[1]
 
         # XXX: CMEQ incorrectly sets the type to 'ARM64_OP_FP' for
         # 'cmeq v0.16b, v1.16b, #0':
         # https://github.com/aquynh/capstone/issues/1443
-        elif (name == 'CMEQ' and len(ops) == 3 and
-              ops[2].type == cs.arm64.ARM64_OP_FP):
+        elif name == "CMEQ" and len(ops) == 3 and ops[2].type == cs.arm64.ARM64_OP_FP:
             ops[2]._type = cs.arm64.ARM64_OP_IMM
 
         return name
@@ -335,7 +343,7 @@ class Aarch64Cpu(Cpu):
     def insn_bit_str(self):
         # XXX: Hardcoded endianness and instruction size.
         insn = struct.unpack("<I", self.instruction.bytes)[0]
-        return f'{insn:032b}'
+        return f"{insn:032b}"
 
     def cond_holds(cpu, cond):
         return COND_MAP[cond].func(*cpu.regfile.nzcv)
@@ -353,25 +361,25 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
-        assert mnem in ('add', 'adds', 'sub', 'subs')
+        assert mnem in ("add", "adds", "sub", "subs")
 
-        insn_rx = '[01]'      # sf
-        if mnem in ('add', 'adds'):
-            insn_rx += '0'    # op
+        insn_rx = "[01]"  # sf
+        if mnem in ("add", "adds"):
+            insn_rx += "0"  # op
         else:
-            insn_rx += '1'    # op
-        if mnem in ('add', 'sub'):
-            insn_rx += '0'    # S
+            insn_rx += "1"  # op
+        if mnem in ("add", "sub"):
+            insn_rx += "0"  # S
         else:
-            insn_rx += '1'    # S
-        insn_rx += '01011'
-        insn_rx += '00'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{3}'  # option
-        insn_rx += '[01]{3}'  # imm3
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+            insn_rx += "1"  # S
+        insn_rx += "01011"
+        insn_rx += "00"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{3}"  # option
+        insn_rx += "[01]{3}"  # imm3
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -424,34 +432,34 @@ class Aarch64Cpu(Cpu):
             assert shift.value in range(5)
             reg2 = LSL(reg2, shift.value, res_op.size)
 
-        if mnem in ('add', 'adds'):
+        if mnem in ("add", "adds"):
             result, nzcv = cpu._add_with_carry(res_op.size, reg1, reg2, 0)
         else:
             result, nzcv = cpu._add_with_carry(res_op.size, reg1, ~reg2, 1)
         res_op.write(UInt(result, res_op.size))
-        if mnem in ('adds', 'subs'):
+        if mnem in ("adds", "subs"):
             cpu.regfile.nzcv = nzcv
 
     def _adds_subs_immediate(cpu, res_op, reg_op, imm_op, mnem):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
-        assert mnem in ('add', 'adds', 'sub', 'subs')
+        assert mnem in ("add", "adds", "sub", "subs")
 
-        insn_rx = '[01]'               # sf
-        if mnem in ('add', 'adds'):
-            insn_rx += '0'             # op
+        insn_rx = "[01]"  # sf
+        if mnem in ("add", "adds"):
+            insn_rx += "0"  # op
         else:
-            insn_rx += '1'             # op
-        if mnem in ('add', 'sub'):
-            insn_rx += '0'             # S
+            insn_rx += "1"  # op
+        if mnem in ("add", "sub"):
+            insn_rx += "0"  # S
         else:
-            insn_rx += '1'             # S
-        insn_rx += '10001'
-        insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
-        insn_rx += '[01]{12}'          # imm12
-        insn_rx += '[01]{5}'           # Rn
-        insn_rx += '[01]{5}'           # Rd
+            insn_rx += "1"  # S
+        insn_rx += "10001"
+        insn_rx += "(?!1[01])[01]{2}"  # shift != 1x
+        insn_rx += "[01]{12}"  # imm12
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -465,47 +473,50 @@ class Aarch64Cpu(Cpu):
             assert shift.value in [0, 12]
             imm = LSL(imm, shift.value, res_op.size)
 
-        if mnem in ('add', 'adds'):
+        if mnem in ("add", "adds"):
             result, nzcv = cpu._add_with_carry(res_op.size, reg, imm, 0)
         else:
             result, nzcv = cpu._add_with_carry(res_op.size, reg, ~imm, 1)
         res_op.write(UInt(result, res_op.size))
-        if mnem in ('adds', 'subs'):
+        if mnem in ("adds", "subs"):
             cpu.regfile.nzcv = nzcv
 
     def _adds_subs_shifted_register(cpu, res_op, reg_op1, reg_op2, mnem):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
-        assert mnem in ('add', 'adds', 'sub', 'subs')
+        assert mnem in ("add", "adds", "sub", "subs")
 
-        insn_rx = '[01]'      # sf
-        if mnem in ('add', 'adds'):
-            insn_rx += '0'    # op
+        insn_rx = "[01]"  # sf
+        if mnem in ("add", "adds"):
+            insn_rx += "0"  # op
         else:
-            insn_rx += '1'    # op
-        if mnem in ('add', 'sub'):
-            insn_rx += '0'    # S
+            insn_rx += "1"  # op
+        if mnem in ("add", "sub"):
+            insn_rx += "0"  # S
         else:
-            insn_rx += '1'    # S
-        insn_rx += '01011'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+            insn_rx += "1"  # S
+        insn_rx += "01011"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        if mnem in ('add', 'adds'):
+        if mnem in ("add", "adds"):
+
             def action(x, y):
                 return cpu._add_with_carry(res_op.size, x, y, 0)
+
         else:
+
             def action(x, y):
                 return cpu._add_with_carry(res_op.size, x, ~y, 1)
 
-        if mnem in ('add', 'sub'):
+        if mnem in ("add", "sub"):
             flags = False
         else:
             flags = True
@@ -516,50 +527,44 @@ class Aarch64Cpu(Cpu):
             reg_op2=reg_op2,
             action=action,
             flags=flags,
-            shifts=[
-                cs.arm64.ARM64_SFT_LSL,
-                cs.arm64.ARM64_SFT_LSR,
-                cs.arm64.ARM64_SFT_ASR
-            ])
+            shifts=[cs.arm64.ARM64_SFT_LSL, cs.arm64.ARM64_SFT_LSR, cs.arm64.ARM64_SFT_ASR],
+        )
 
     def _add_sub_vector(cpu, res_op, reg_op1, reg_op2, add):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        scalar_rx = '01'
+        scalar_rx = "01"
         if add:
-            scalar_rx += '0'    # U
+            scalar_rx += "0"  # U
         else:
-            scalar_rx += '1'    # U
-        scalar_rx += '11110'
-        scalar_rx += '[01]{2}'  # size
-        scalar_rx += '1'
-        scalar_rx += '[01]{5}'  # Rm
-        scalar_rx += '10000'
-        scalar_rx += '1'
-        scalar_rx += '[01]{5}'  # Rn
-        scalar_rx += '[01]{5}'  # Rd
+            scalar_rx += "1"  # U
+        scalar_rx += "11110"
+        scalar_rx += "[01]{2}"  # size
+        scalar_rx += "1"
+        scalar_rx += "[01]{5}"  # Rm
+        scalar_rx += "10000"
+        scalar_rx += "1"
+        scalar_rx += "[01]{5}"  # Rn
+        scalar_rx += "[01]{5}"  # Rd
 
-        vector_rx = '0'
-        vector_rx += '[01]'     # Q
+        vector_rx = "0"
+        vector_rx += "[01]"  # Q
         if add:
-            vector_rx += '0'    # U
+            vector_rx += "0"  # U
         else:
-            vector_rx += '1'    # U
-        vector_rx += '01110'
-        vector_rx += '[01]{2}'  # size
-        vector_rx += '1'
-        vector_rx += '[01]{5}'  # Rm
-        vector_rx += '10000'
-        vector_rx += '1'
-        vector_rx += '[01]{5}'  # Rn
-        vector_rx += '[01]{5}'  # Rd
+            vector_rx += "1"  # U
+        vector_rx += "01110"
+        vector_rx += "[01]{2}"  # size
+        vector_rx += "1"
+        vector_rx += "[01]{5}"  # Rm
+        vector_rx += "10000"
+        vector_rx += "1"
+        vector_rx += "[01]{5}"  # Rn
+        vector_rx += "[01]{5}"  # Rd
 
-        assert (
-            re.match(scalar_rx, cpu.insn_bit_str) or
-            re.match(vector_rx, cpu.insn_bit_str)
-        )
+        assert re.match(scalar_rx, cpu.insn_bit_str) or re.match(vector_rx, cpu.insn_bit_str)
 
         # XXX: Check if trapped.
 
@@ -648,23 +653,23 @@ class Aarch64Cpu(Cpu):
         assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
         assert nzcv_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'          # sf
-        insn_rx += '1'            # op
-        insn_rx += '1'
-        insn_rx += '11010010'
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "1"
+        insn_rx += "11010010"
         if imm:
-            insn_rx += '[01]{5}'  # imm5
+            insn_rx += "[01]{5}"  # imm5
         else:
-            insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{4}'      # cond
+            insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{4}"  # cond
         if imm:
-            insn_rx += '1'
+            insn_rx += "1"
         else:
-            insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '[01]{5}'      # Rn
-        insn_rx += '0'
-        insn_rx += '[01]{4}'      # nzcv
+            insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "0"
+        insn_rx += "[01]{4}"  # nzcv
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -695,7 +700,7 @@ class Aarch64Cpu(Cpu):
             4,
             cpu.cond_holds(cpu.instruction.cc),
             make_nzcv(*cpu._add_with_carry(reg_op.size, reg, ~reg_imm, 1)[1]),
-            nzcv
+            nzcv,
         )
 
         n = Operators.EXTRACT(nzcv, 3, 1)
@@ -710,51 +715,48 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        scalar_rx = '01'
+        scalar_rx = "01"
         if register:
-            scalar_rx += '1'        # U
+            scalar_rx += "1"  # U
         else:
-            scalar_rx += '0'        # U
-        scalar_rx += '11110'
-        scalar_rx += '[01]{2}'      # size
+            scalar_rx += "0"  # U
+        scalar_rx += "11110"
+        scalar_rx += "[01]{2}"  # size
         if register:
-            scalar_rx += '1'
-            scalar_rx += '[01]{5}'  # Rm
-            scalar_rx += '10001'
-            scalar_rx += '1'
+            scalar_rx += "1"
+            scalar_rx += "[01]{5}"  # Rm
+            scalar_rx += "10001"
+            scalar_rx += "1"
         else:
-            scalar_rx += '10000'
-            scalar_rx += '0100'
-            scalar_rx += '1'        # op
-            scalar_rx += '10'
-        scalar_rx += '[01]{5}'      # Rn
-        scalar_rx += '[01]{5}'      # Rd
+            scalar_rx += "10000"
+            scalar_rx += "0100"
+            scalar_rx += "1"  # op
+            scalar_rx += "10"
+        scalar_rx += "[01]{5}"  # Rn
+        scalar_rx += "[01]{5}"  # Rd
 
-        vector_rx = '0'
-        vector_rx += '[01]'         # Q
+        vector_rx = "0"
+        vector_rx += "[01]"  # Q
         if register:
-            vector_rx += '1'        # U
+            vector_rx += "1"  # U
         else:
-            vector_rx += '0'        # U
-        vector_rx += '01110'
-        vector_rx += '[01]{2}'      # size
+            vector_rx += "0"  # U
+        vector_rx += "01110"
+        vector_rx += "[01]{2}"  # size
         if register:
-            vector_rx += '1'
-            vector_rx += '[01]{5}'  # Rm
-            vector_rx += '10001'
-            vector_rx += '1'
+            vector_rx += "1"
+            vector_rx += "[01]{5}"  # Rm
+            vector_rx += "10001"
+            vector_rx += "1"
         else:
-            vector_rx += '10000'
-            vector_rx += '0100'
-            vector_rx += '1'        # op
-            vector_rx += '10'
-        vector_rx += '[01]{5}'      # Rn
-        vector_rx += '[01]{5}'      # Rd
+            vector_rx += "10000"
+            vector_rx += "0100"
+            vector_rx += "1"  # op
+            vector_rx += "10"
+        vector_rx += "[01]{5}"  # Rn
+        vector_rx += "[01]{5}"  # Rd
 
-        assert (
-            re.match(scalar_rx, cpu.insn_bit_str) or
-            re.match(vector_rx, cpu.insn_bit_str)
-        )
+        assert re.match(scalar_rx, cpu.insn_bit_str) or re.match(vector_rx, cpu.insn_bit_str)
 
         # XXX: Check if trapped.
 
@@ -808,20 +810,14 @@ class Aarch64Cpu(Cpu):
         for i in range(elem_count):
             elem1 = Operators.EXTRACT(op1, i * elem_size, elem_size)
             elem2 = Operators.EXTRACT(op2, i * elem_size, elem_size)
-            elem = Operators.ITEBV(
-                elem_size,
-                elem1 == elem2,
-                Mask(elem_size),
-                0
-            )
+            elem = Operators.ITEBV(elem_size, elem1 == elem2, Mask(elem_size), 0)
             elem = Operators.ZEXTEND(elem, res_op.size)
             result |= elem << (i * elem_size)
 
         result = UInt(result, res_op.size)
         res_op.write(result)
 
-    def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts,
-                          flags=False):
+    def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts, flags=False):
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
         reg2_size = cpu.regfile.size(reg_op2.reg)
@@ -829,25 +825,20 @@ class Aarch64Cpu(Cpu):
         if reg_op2.is_shifted():
             shift = reg_op2.shift
 
-            assert (
-                (res_op.size == 32 and shift.value in range(0, 32)) or
-                (res_op.size == 64 and shift.value in range(0, 64))
+            assert (res_op.size == 32 and shift.value in range(0, 32)) or (
+                res_op.size == 64 and shift.value in range(0, 64)
             )
 
-            if (shift.type == cs.arm64.ARM64_SFT_LSL and
-                shift.type in shifts):
+            if shift.type == cs.arm64.ARM64_SFT_LSL and shift.type in shifts:
                 reg2 = LSL(reg2, shift.value, reg2_size)
 
-            elif (shift.type == cs.arm64.ARM64_SFT_LSR and
-                  shift.type in shifts):
+            elif shift.type == cs.arm64.ARM64_SFT_LSR and shift.type in shifts:
                 reg2 = LSR(reg2, shift.value, reg2_size)
 
-            elif (shift.type == cs.arm64.ARM64_SFT_ASR and
-                  shift.type in shifts):
+            elif shift.type == cs.arm64.ARM64_SFT_ASR and shift.type in shifts:
                 reg2 = ASR(reg2, shift.value, reg2_size)
 
-            elif (shift.type == cs.arm64.ARM64_SFT_ROR and
-                  shift.type in shifts):
+            elif shift.type == cs.arm64.ARM64_SFT_ROR and shift.type in shifts:
                 reg2 = ROR(reg2, shift.value, reg2_size)
 
             else:
@@ -865,49 +856,49 @@ class Aarch64Cpu(Cpu):
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
         assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
 
-        post_index_rx = '[01]{2}'   # opc
-        post_index_rx += '101'
-        post_index_rx += '[01]'
-        post_index_rx += '001'
+        post_index_rx = "[01]{2}"  # opc
+        post_index_rx += "101"
+        post_index_rx += "[01]"
+        post_index_rx += "001"
         if ldp:
-            post_index_rx += '1'    # L
+            post_index_rx += "1"  # L
         else:
-            post_index_rx += '0'    # L
-        post_index_rx += '[01]{7}'  # imm7
-        post_index_rx += '[01]{5}'  # Rt2
-        post_index_rx += '[01]{5}'  # Rn
-        post_index_rx += '[01]{5}'  # Rt
+            post_index_rx += "0"  # L
+        post_index_rx += "[01]{7}"  # imm7
+        post_index_rx += "[01]{5}"  # Rt2
+        post_index_rx += "[01]{5}"  # Rn
+        post_index_rx += "[01]{5}"  # Rt
 
-        pre_index_rx = '[01]{2}'   # opc
-        pre_index_rx += '101'
-        pre_index_rx += '[01]'
-        pre_index_rx += '011'
+        pre_index_rx = "[01]{2}"  # opc
+        pre_index_rx += "101"
+        pre_index_rx += "[01]"
+        pre_index_rx += "011"
         if ldp:
-            pre_index_rx += '1'    # L
+            pre_index_rx += "1"  # L
         else:
-            pre_index_rx += '0'    # L
-        pre_index_rx += '[01]{7}'  # imm7
-        pre_index_rx += '[01]{5}'  # Rt2
-        pre_index_rx += '[01]{5}'  # Rn
-        pre_index_rx += '[01]{5}'  # Rt
+            pre_index_rx += "0"  # L
+        pre_index_rx += "[01]{7}"  # imm7
+        pre_index_rx += "[01]{5}"  # Rt2
+        pre_index_rx += "[01]{5}"  # Rn
+        pre_index_rx += "[01]{5}"  # Rt
 
-        signed_offset_rx = '[01]{2}'   # opc
-        signed_offset_rx += '101'
-        signed_offset_rx += '[01]'
-        signed_offset_rx += '010'
+        signed_offset_rx = "[01]{2}"  # opc
+        signed_offset_rx += "101"
+        signed_offset_rx += "[01]"
+        signed_offset_rx += "010"
         if ldp:
-            signed_offset_rx += '1'    # L
+            signed_offset_rx += "1"  # L
         else:
-            signed_offset_rx += '0'    # L
-        signed_offset_rx += '[01]{7}'  # imm7
-        signed_offset_rx += '[01]{5}'  # Rt2
-        signed_offset_rx += '[01]{5}'  # Rn
-        signed_offset_rx += '[01]{5}'  # Rt
+            signed_offset_rx += "0"  # L
+        signed_offset_rx += "[01]{7}"  # imm7
+        signed_offset_rx += "[01]{5}"  # Rt2
+        signed_offset_rx += "[01]{5}"  # Rn
+        signed_offset_rx += "[01]{5}"  # Rt
 
         assert (
-            re.match(post_index_rx, cpu.insn_bit_str) or
-            re.match(pre_index_rx, cpu.insn_bit_str) or
-            re.match(signed_offset_rx, cpu.insn_bit_str)
+            re.match(post_index_rx, cpu.insn_bit_str)
+            or re.match(pre_index_rx, cpu.insn_bit_str)
+            or re.match(signed_offset_rx, cpu.insn_bit_str)
         )
 
         # XXX: SIMD&FP: check if trapped.
@@ -942,70 +933,70 @@ class Aarch64Cpu(Cpu):
         assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
 
         if size == 8:
-            post_index_rx = '00'     # size
+            post_index_rx = "00"  # size
         elif size == 16:
-            post_index_rx = '01'     # size
+            post_index_rx = "01"  # size
         else:
-            post_index_rx = '1[01]'  # size
-        post_index_rx += '111'
-        post_index_rx += '0'
-        post_index_rx += '00'
+            post_index_rx = "1[01]"  # size
+        post_index_rx += "111"
+        post_index_rx += "0"
+        post_index_rx += "00"
         if ldr and sextend:
-            post_index_rx += '10'    # opc
+            post_index_rx += "10"  # opc
         elif ldr:
-            post_index_rx += '01'    # opc
+            post_index_rx += "01"  # opc
         else:
-            post_index_rx += '00'    # opc
-        post_index_rx += '0'
-        post_index_rx += '[01]{9}'   # imm9
-        post_index_rx += '01'
-        post_index_rx += '[01]{5}'   # Rn
-        post_index_rx += '[01]{5}'   # Rt
+            post_index_rx += "00"  # opc
+        post_index_rx += "0"
+        post_index_rx += "[01]{9}"  # imm9
+        post_index_rx += "01"
+        post_index_rx += "[01]{5}"  # Rn
+        post_index_rx += "[01]{5}"  # Rt
 
         if size == 8:
-            pre_index_rx = '00'      # size
+            pre_index_rx = "00"  # size
         elif size == 16:
-            pre_index_rx = '01'      # size
+            pre_index_rx = "01"  # size
         else:
-            pre_index_rx = '1[01]'   # size
-        pre_index_rx += '111'
-        pre_index_rx += '0'
-        pre_index_rx += '00'
+            pre_index_rx = "1[01]"  # size
+        pre_index_rx += "111"
+        pre_index_rx += "0"
+        pre_index_rx += "00"
         if ldr and sextend:
-            pre_index_rx += '10'     # opc
+            pre_index_rx += "10"  # opc
         elif ldr:
-            pre_index_rx += '01'     # opc
+            pre_index_rx += "01"  # opc
         else:
-            pre_index_rx += '00'     # opc
-        pre_index_rx += '0'
-        pre_index_rx += '[01]{9}'    # imm9
-        pre_index_rx += '11'
-        pre_index_rx += '[01]{5}'    # Rn
-        pre_index_rx += '[01]{5}'    # Rt
+            pre_index_rx += "00"  # opc
+        pre_index_rx += "0"
+        pre_index_rx += "[01]{9}"  # imm9
+        pre_index_rx += "11"
+        pre_index_rx += "[01]{5}"  # Rn
+        pre_index_rx += "[01]{5}"  # Rt
 
         if size == 8:
-            unsigned_offset_rx = '00'     # size
+            unsigned_offset_rx = "00"  # size
         elif size == 16:
-            unsigned_offset_rx = '01'     # size
+            unsigned_offset_rx = "01"  # size
         else:
-            unsigned_offset_rx = '1[01]'  # size
-        unsigned_offset_rx += '111'
-        unsigned_offset_rx += '0'
-        unsigned_offset_rx += '01'
+            unsigned_offset_rx = "1[01]"  # size
+        unsigned_offset_rx += "111"
+        unsigned_offset_rx += "0"
+        unsigned_offset_rx += "01"
         if ldr and sextend:
-            unsigned_offset_rx += '10'    # opc
+            unsigned_offset_rx += "10"  # opc
         elif ldr:
-            unsigned_offset_rx += '01'    # opc
+            unsigned_offset_rx += "01"  # opc
         else:
-            unsigned_offset_rx += '00'    # opc
-        unsigned_offset_rx += '[01]{12}'  # imm12
-        unsigned_offset_rx += '[01]{5}'   # Rn
-        unsigned_offset_rx += '[01]{5}'   # Rt
+            unsigned_offset_rx += "00"  # opc
+        unsigned_offset_rx += "[01]{12}"  # imm12
+        unsigned_offset_rx += "[01]{5}"  # Rn
+        unsigned_offset_rx += "[01]{5}"  # Rt
 
         assert (
-            re.match(post_index_rx, cpu.insn_bit_str) or
-            re.match(pre_index_rx, cpu.insn_bit_str) or
-            re.match(unsigned_offset_rx, cpu.insn_bit_str)
+            re.match(post_index_rx, cpu.insn_bit_str)
+            or re.match(pre_index_rx, cpu.insn_bit_str)
+            or re.match(unsigned_offset_rx, cpu.insn_bit_str)
         )
 
         base = cpu.regfile.read(mem_op.mem.base)
@@ -1036,27 +1027,27 @@ class Aarch64Cpu(Cpu):
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
         if size == 8:
-            insn_rx = '00'     # size
+            insn_rx = "00"  # size
         elif size == 16:
-            insn_rx = '01'     # size
+            insn_rx = "01"  # size
         else:
-            insn_rx = '1[01]'  # size
-        insn_rx += '111'
-        insn_rx += '0'
-        insn_rx += '00'
+            insn_rx = "1[01]"  # size
+        insn_rx += "111"
+        insn_rx += "0"
+        insn_rx += "00"
         if ldr and sextend:
-            insn_rx += '10'    # opc
+            insn_rx += "10"  # opc
         elif ldr:
-            insn_rx += '01'    # opc
+            insn_rx += "01"  # opc
         else:
-            insn_rx += '00'    # opc
-        insn_rx += '1'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '[01]{3}'   # option
-        insn_rx += '[01]'      # S
-        insn_rx += '10'
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rt
+            insn_rx += "00"  # opc
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{3}"  # option
+        insn_rx += "[01]"  # S
+        insn_rx += "10"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1071,7 +1062,7 @@ class Aarch64Cpu(Cpu):
             assert ext in [
                 cs.arm64.ARM64_EXT_UXTW,
                 cs.arm64.ARM64_EXT_SXTW,
-                cs.arm64.ARM64_EXT_SXTX
+                cs.arm64.ARM64_EXT_SXTX,
             ]
 
             if ext == cs.arm64.ARM64_EXT_UXTW:
@@ -1111,14 +1102,14 @@ class Aarch64Cpu(Cpu):
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
         if sextend:
-            insn_rx = '10'     # opc
+            insn_rx = "10"  # opc
         else:
-            insn_rx = '0[01]'  # opc
-        insn_rx += '011'
-        insn_rx += '0'
-        insn_rx += '00'
-        insn_rx += '[01]{19}'  # imm19
-        insn_rx += '[01]{5}'   # Rt
+            insn_rx = "0[01]"  # opc
+        insn_rx += "011"
+        insn_rx += "0"
+        insn_rx += "00"
+        insn_rx += "[01]{19}"  # imm19
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1134,19 +1125,19 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx = '1[01]'     # size
-        insn_rx += '111'
-        insn_rx += '0'
-        insn_rx += '00'
+        insn_rx = "1[01]"  # size
+        insn_rx += "111"
+        insn_rx += "0"
+        insn_rx += "00"
         if ldur:
-            insn_rx += '01'   # opc
+            insn_rx += "01"  # opc
         else:
-            insn_rx += '00'   # opc
-        insn_rx += '0'
-        insn_rx += '[01]{9}'  # imm9
-        insn_rx += '00'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
+            insn_rx += "00"  # opc
+        insn_rx += "0"
+        insn_rx += "[01]{9}"  # imm9
+        insn_rx += "00"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1170,7 +1161,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='add')
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem="add")
 
     def _ADD_immediate(cpu, res_op, reg_op, imm_op):
         """
@@ -1180,7 +1171,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param imm_op: immediate.
         """
-        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='add')
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem="add")
 
     def _ADD_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -1190,7 +1181,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='add')
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem="add")
 
     def _ADD_vector(cpu, res_op, reg_op1, reg_op2):
         """
@@ -1222,13 +1213,13 @@ class Aarch64Cpu(Cpu):
         if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
             cpu._ADD_immediate(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == "0":
             cpu._ADD_vector(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == "1" and bit21 == "0":
             cpu._ADD_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == "1" and bit21 == "1":
             cpu._ADD_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
@@ -1244,15 +1235,15 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '01'
-        insn_rx += '0'
-        insn_rx += '11110'
-        insn_rx += '[01]{2}'  # size
-        insn_rx += '11000'
-        insn_rx += '11011'
-        insn_rx += '10'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "01"
+        insn_rx += "0"
+        insn_rx += "11110"
+        insn_rx += "[01]{2}"  # size
+        insn_rx += "11000"
+        insn_rx += "11011"
+        insn_rx += "10"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1279,17 +1270,17 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'
-        insn_rx += '[01]'     # Q
-        insn_rx += '0'
-        insn_rx += '01110'
-        insn_rx += '[01]{2}'  # size
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '10111'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "0"
+        insn_rx += "[01]"  # Q
+        insn_rx += "0"
+        insn_rx += "01110"
+        insn_rx += "[01]{2}"  # size
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "10111"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1377,7 +1368,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='adds')
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem="adds")
 
     def _ADDS_immediate(cpu, res_op, reg_op, imm_op):
         """
@@ -1387,7 +1378,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param imm_op: immediate.
         """
-        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='adds')
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem="adds")
 
     def _ADDS_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -1397,7 +1388,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='adds')
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem="adds")
 
     @instruction
     def ADDS(cpu, res_op, reg_op, reg_imm_op):
@@ -1418,10 +1409,10 @@ class Aarch64Cpu(Cpu):
         if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
             cpu._ADDS_immediate(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "0":
             cpu._ADDS_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "1":
             cpu._ADDS_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
@@ -1438,11 +1429,11 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '0'          # op
-        insn_rx += '[01]{2}'   # immlo
-        insn_rx += '10000'
-        insn_rx += '[01]{19}'  # immhi
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "0"  # op
+        insn_rx += "[01]{2}"  # immlo
+        insn_rx += "10000"
+        insn_rx += "[01]{19}"  # immhi
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1460,11 +1451,11 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '1'          # op
-        insn_rx += '[01]{2}'   # immlo
-        insn_rx += '10000'
-        insn_rx += '[01]{19}'  # immhi
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "1"  # op
+        insn_rx += "[01]{2}"  # immlo
+        insn_rx += "10000"
+        insn_rx += "[01]{19}"  # immhi
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1483,14 +1474,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '100100'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100100"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1511,15 +1502,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '01010'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'        # N
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "01010"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"  # N
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1532,8 +1523,9 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
-                cs.arm64.ARM64_SFT_ROR
-            ])
+                cs.arm64.ARM64_SFT_ROR,
+            ],
+        )
 
     def _AND_vector(cpu, res_op, reg_op1, reg_op2):
         """
@@ -1547,17 +1539,17 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'
-        insn_rx += '[01]'     # Q
-        insn_rx += '0'
-        insn_rx += '01110'
-        insn_rx += '00'       # size
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '00011'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "0"
+        insn_rx += "[01]"  # Q
+        insn_rx += "0"
+        insn_rx += "01110"
+        insn_rx += "00"  # size
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "00011"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1595,10 +1587,10 @@ class Aarch64Cpu(Cpu):
 
         bit21 = cpu.insn_bit_str[-22]
 
-        if reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "0":
             cpu._AND_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "1":
             cpu._AND_vector(res_op, reg_op, reg_imm_op)
 
         elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
@@ -1619,14 +1611,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '11'       # opc
-        insn_rx += '100100'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "11"  # opc
+        insn_rx += "100100"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1651,15 +1643,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '11'       # opc
-        insn_rx += '01010'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'        # N
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "11"  # opc
+        insn_rx += "01010"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"  # N
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1679,8 +1671,9 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
-                cs.arm64.ARM64_SFT_ROR
-            ])
+                cs.arm64.ARM64_SFT_ROR,
+            ],
+        )
 
     @instruction
     def ANDS(cpu, res_op, reg_op, reg_imm_op):
@@ -1716,14 +1709,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '00'        # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'      # N
-        insn_rx += '[01]{6}'   # immr
-        insn_rx += '[01]1{5}'  # imms
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]1{5}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1746,15 +1739,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '0010'
-        insn_rx += '10'        # op2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0010"
+        insn_rx += "10"  # op2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1797,15 +1790,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '0010'
-        insn_rx += '10'        # op2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0010"
+        insn_rx += "10"  # op2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1824,21 +1817,18 @@ class Aarch64Cpu(Cpu):
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '0101010'
-        insn_rx += '0'
-        insn_rx += '[01]{19}'  # imm19
-        insn_rx += '0'
-        insn_rx += '[01]{4}'   # cond
+        insn_rx = "0101010"
+        insn_rx += "0"
+        insn_rx += "[01]{19}"  # imm19
+        insn_rx += "0"
+        insn_rx += "[01]{4}"  # cond
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         imm = imm_op.op.imm
 
         cpu.PC = Operators.ITEBV(
-            cpu.regfile.size('PC'),
-            cpu.cond_holds(cpu.instruction.cc),
-            imm,
-            cpu.PC
+            cpu.regfile.size("PC"), cpu.cond_holds(cpu.instruction.cc), imm, cpu.PC
         )
 
     @instruction
@@ -1850,9 +1840,9 @@ class Aarch64Cpu(Cpu):
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '0'          # op
-        insn_rx += '00101'
-        insn_rx += '[01]{26}'  # imm26
+        insn_rx = "0"  # op
+        insn_rx += "00101"
+        insn_rx += "[01]{26}"  # imm26
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1872,14 +1862,14 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '01'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '1{5}'     # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "01"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "1{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1914,14 +1904,14 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'              # sf
-        insn_rx += '01'               # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'             # N
-        insn_rx += '[01]{6}'          # immr
-        insn_rx += '[01]{6}'          # imms
-        insn_rx += '(?!1{5})[01]{5}'  # Rn != 11111
-        insn_rx += '[01]{5}'          # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "01"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "(?!1{5})[01]{5}"  # Rn != 11111
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1948,14 +1938,14 @@ class Aarch64Cpu(Cpu):
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
         assert imms_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '01'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "01"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -1995,14 +1985,14 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '01'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "01"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2028,15 +2018,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '01010'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '1'        # N
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "01010"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "1"  # N
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2049,8 +2039,9 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
-                cs.arm64.ARM64_SFT_ROR
-            ])
+                cs.arm64.ARM64_SFT_ROR,
+            ],
+        )
 
     @instruction
     def BICS(cpu, res_op, reg_op1, reg_op2):
@@ -2065,15 +2056,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '11'       # opc
-        insn_rx += '01010'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '1'        # N
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "11"  # opc
+        insn_rx += "01010"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "1"  # N
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2093,8 +2084,9 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
-                cs.arm64.ARM64_SFT_ROR
-            ])
+                cs.arm64.ARM64_SFT_ROR,
+            ],
+        )
 
     @instruction
     def BL(cpu, imm_op):
@@ -2105,9 +2097,9 @@ class Aarch64Cpu(Cpu):
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '1'          # op
-        insn_rx += '00101'
-        insn_rx += '[01]{26}'  # imm26
+        insn_rx = "1"  # op
+        insn_rx += "00101"
+        insn_rx += "[01]{26}"  # imm26
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2125,16 +2117,16 @@ class Aarch64Cpu(Cpu):
         """
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '1101011'
-        insn_rx += '0'        # Z
-        insn_rx += '0'
-        insn_rx += '01'       # op
-        insn_rx += '1{5}'
-        insn_rx += '0{4}'
-        insn_rx += '0'        # A
-        insn_rx += '0'        # M
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '0{5}'     # Rm
+        insn_rx = "1101011"
+        insn_rx += "0"  # Z
+        insn_rx += "0"
+        insn_rx += "01"  # op
+        insn_rx += "1{5}"
+        insn_rx += "0{4}"
+        insn_rx += "0"  # A
+        insn_rx += "0"  # M
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "0{5}"  # Rm
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2152,16 +2144,16 @@ class Aarch64Cpu(Cpu):
         """
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '1101011'
-        insn_rx += '0'        # Z
-        insn_rx += '0'
-        insn_rx += '00'       # op
-        insn_rx += '1{5}'
-        insn_rx += '0{4}'
-        insn_rx += '0'        # A
-        insn_rx += '0'        # M
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '0{5}'     # Rm
+        insn_rx = "1101011"
+        insn_rx += "0"  # Z
+        insn_rx += "0"
+        insn_rx += "00"  # op
+        insn_rx += "1{5}"
+        insn_rx += "0{4}"
+        insn_rx += "0"  # A
+        insn_rx += "0"  # M
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "0{5}"  # Rm
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2179,23 +2171,18 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '011010'
-        insn_rx += '1'         # op
-        insn_rx += '[01]{19}'  # imm19
-        insn_rx += '[01]{5}'   # Rt
+        insn_rx = "[01]"  # sf
+        insn_rx += "011010"
+        insn_rx += "1"  # op
+        insn_rx += "[01]{19}"  # imm19
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         reg = reg_op.read()
         imm = imm_op.op.imm
 
-        cpu.PC = Operators.ITEBV(
-            cpu.regfile.size('PC'),
-            reg != 0,
-            imm,
-            cpu.PC
-        )
+        cpu.PC = Operators.ITEBV(cpu.regfile.size("PC"), reg != 0, imm, cpu.PC)
 
     @instruction
     def CBZ(cpu, reg_op, imm_op):
@@ -2208,23 +2195,18 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '011010'
-        insn_rx += '0'         # op
-        insn_rx += '[01]{19}'  # imm19
-        insn_rx += '[01]{5}'   # Rt
+        insn_rx = "[01]"  # sf
+        insn_rx += "011010"
+        insn_rx += "0"  # op
+        insn_rx += "[01]{19}"  # imm19
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         reg = reg_op.read()
         imm = imm_op.op.imm
 
-        cpu.PC = Operators.ITEBV(
-            cpu.regfile.size('PC'),
-            reg == 0,
-            imm,
-            cpu.PC
-        )
+        cpu.PC = Operators.ITEBV(cpu.regfile.size("PC"), reg == 0, imm, cpu.PC)
 
     def _CCMP_immediate(cpu, reg_op, imm_op, nzcv_op):
         """
@@ -2279,16 +2261,16 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'                 # sf
-        insn_rx += '0'                   # op
-        insn_rx += '0'
-        insn_rx += '11010100'
-        insn_rx += '(?!1{5})[01]{5}'     # Rm != 11111
-        insn_rx += '(?!111[01])[01]{4}'  # cond != 111x
-        insn_rx += '0'
-        insn_rx += '1'                   # o2
-        insn_rx += '(?!1{5})[01]{5}'     # Rn != 11111
-        insn_rx += '[01]{5}'             # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"  # op
+        insn_rx += "0"
+        insn_rx += "11010100"
+        insn_rx += "(?!1{5})[01]{5}"  # Rm != 11111
+        insn_rx += "(?!111[01])[01]{4}"  # cond != 111x
+        insn_rx += "0"
+        insn_rx += "1"  # o2
+        insn_rx += "(?!1{5})[01]{5}"  # Rn != 11111
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2309,16 +2291,16 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'                 # sf
-        insn_rx += '1'                   # op
-        insn_rx += '0'
-        insn_rx += '11010100'
-        insn_rx += '(?!1{5})[01]{5}'     # Rm != 11111
-        insn_rx += '(?!111[01])[01]{4}'  # cond != 111x
-        insn_rx += '0'
-        insn_rx += '0'                   # o2
-        insn_rx += '(?!1{5})[01]{5}'     # Rn != 11111
-        insn_rx += '[01]{5}'             # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "0"
+        insn_rx += "11010100"
+        insn_rx += "(?!1{5})[01]{5}"  # Rm != 11111
+        insn_rx += "(?!111[01])[01]{4}"  # cond != 111x
+        insn_rx += "0"
+        insn_rx += "0"  # o2
+        insn_rx += "(?!1{5})[01]{5}"  # Rn != 11111
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2340,15 +2322,15 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '1'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '0{5}'
-        insn_rx += '00010'
-        insn_rx += '0'        # op
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "0{5}"
+        insn_rx += "00010"
+        insn_rx += "0"  # op
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2412,17 +2394,17 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '0'        # op
-        insn_rx += '1'        # S
-        insn_rx += '01011'
-        insn_rx += '00'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{3}'  # option
-        insn_rx += '[01]{3}'  # imm3
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '1{5}'     # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"  # op
+        insn_rx += "1"  # S
+        insn_rx += "01011"
+        insn_rx += "00"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{3}"  # option
+        insn_rx += "[01]{3}"  # imm3
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2448,14 +2430,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'               # sf
-        insn_rx += '0'                 # op
-        insn_rx += '1'                 # S
-        insn_rx += '10001'
-        insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
-        insn_rx += '[01]{12}'          # imm12
-        insn_rx += '[01]{5}'           # Rn
-        insn_rx += '1{5}'              # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"  # op
+        insn_rx += "1"  # S
+        insn_rx += "10001"
+        insn_rx += "(?!1[01])[01]{2}"  # shift != 1x
+        insn_rx += "[01]{12}"  # imm12
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2481,16 +2463,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '0'        # op
-        insn_rx += '1'        # S
-        insn_rx += '01011'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '1{5}'     # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"  # op
+        insn_rx += "1"  # S
+        insn_rx += "01011"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2523,10 +2505,10 @@ class Aarch64Cpu(Cpu):
         if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
             cpu._CMN_immediate(reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "0":
             cpu._CMN_shifted_register(reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "1":
             cpu._CMN_extended_register(reg_op, reg_imm_op)
 
         else:
@@ -2542,17 +2524,17 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '1'        # op
-        insn_rx += '1'        # S
-        insn_rx += '01011'
-        insn_rx += '00'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{3}'  # option
-        insn_rx += '[01]{3}'  # imm3
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '1{5}'     # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "1"  # S
+        insn_rx += "01011"
+        insn_rx += "00"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{3}"  # option
+        insn_rx += "[01]{3}"  # imm3
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2578,14 +2560,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'               # sf
-        insn_rx += '1'                 # op
-        insn_rx += '1'                 # S
-        insn_rx += '10001'
-        insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
-        insn_rx += '[01]{12}'          # imm12
-        insn_rx += '[01]{5}'           # Rn
-        insn_rx += '1{5}'              # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "1"  # S
+        insn_rx += "10001"
+        insn_rx += "(?!1[01])[01]{2}"  # shift != 1x
+        insn_rx += "[01]{12}"  # imm12
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2611,16 +2593,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '1'        # op
-        insn_rx += '1'        # S
-        insn_rx += '01011'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '1{5}'     # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "1"  # S
+        insn_rx += "01011"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2653,10 +2635,10 @@ class Aarch64Cpu(Cpu):
         if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
             cpu._CMP_immediate(reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "0":
             cpu._CMP_shifted_register(reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "1":
             cpu._CMP_extended_register(reg_op, reg_imm_op)
 
         else:
@@ -2675,28 +2657,23 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'         # op
-        insn_rx += '0'
-        insn_rx += '11010100'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '[01]{4}'   # cond
-        insn_rx += '0'
-        insn_rx += '0'         # o2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"  # op
+        insn_rx += "0"
+        insn_rx += "11010100"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{4}"  # cond
+        insn_rx += "0"
+        insn_rx += "0"  # o2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
 
-        result = Operators.ITEBV(
-            res_op.size,
-            cpu.cond_holds(cpu.instruction.cc),
-            reg1,
-            reg2
-        )
+        result = Operators.ITEBV(res_op.size, cpu.cond_holds(cpu.instruction.cc), reg1, reg2)
 
         res_op.write(result)
 
@@ -2709,16 +2686,16 @@ class Aarch64Cpu(Cpu):
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'                 # sf
-        insn_rx += '0'                   # op
-        insn_rx += '0'
-        insn_rx += '11010100'
-        insn_rx += '1{5}'                # Rm
-        insn_rx += '(?!111[01])[01]{4}'  # cond != 111x
-        insn_rx += '0'
-        insn_rx += '1'                   # o2
-        insn_rx += '1{5}'                # Rn
-        insn_rx += '[01]{5}'             # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"  # op
+        insn_rx += "0"
+        insn_rx += "11010100"
+        insn_rx += "1{5}"  # Rm
+        insn_rx += "(?!111[01])[01]{4}"  # cond != 111x
+        insn_rx += "0"
+        insn_rx += "1"  # o2
+        insn_rx += "1{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2745,16 +2722,16 @@ class Aarch64Cpu(Cpu):
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'                 # sf
-        insn_rx += '1'                   # op
-        insn_rx += '0'
-        insn_rx += '11010100'
-        insn_rx += '1{5}'                # Rm
-        insn_rx += '(?!111[01])[01]{4}'  # cond != 111x
-        insn_rx += '0'
-        insn_rx += '0'                   # o2
-        insn_rx += '1{5}'                # Rn
-        insn_rx += '[01]{5}'             # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "0"
+        insn_rx += "11010100"
+        insn_rx += "1{5}"  # Rm
+        insn_rx += "(?!111[01])[01]{4}"  # cond != 111x
+        insn_rx += "0"
+        insn_rx += "0"  # o2
+        insn_rx += "1{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2785,16 +2762,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'         # op
-        insn_rx += '0'
-        insn_rx += '11010100'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '[01]{4}'   # cond
-        insn_rx += '0'
-        insn_rx += '1'         # o2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"  # op
+        insn_rx += "0"
+        insn_rx += "11010100"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{4}"  # cond
+        insn_rx += "0"
+        insn_rx += "1"  # o2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2802,12 +2779,7 @@ class Aarch64Cpu(Cpu):
         reg2 = reg_op2.read()
         cond = cond if cond else cpu.instruction.cc
 
-        result = Operators.ITEBV(
-            res_op.size,
-            cpu.cond_holds(cond),
-            reg1,
-            reg2 + 1
-        )
+        result = Operators.ITEBV(res_op.size, cpu.cond_holds(cond), reg1, reg2 + 1)
 
         res_op.write(UInt(result, res_op.size))
 
@@ -2824,16 +2796,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '1'         # op
-        insn_rx += '0'
-        insn_rx += '11010100'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '[01]{4}'   # cond
-        insn_rx += '0'
-        insn_rx += '0'         # o2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "0"
+        insn_rx += "11010100"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{4}"  # cond
+        insn_rx += "0"
+        insn_rx += "0"  # o2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2841,12 +2813,7 @@ class Aarch64Cpu(Cpu):
         reg2 = reg_op2.read()
         cond = cond if cond else cpu.instruction.cc
 
-        result = Operators.ITEBV(
-            res_op.size,
-            cpu.cond_holds(cond),
-            reg1,
-            ~reg2
-        )
+        result = Operators.ITEBV(res_op.size, cpu.cond_holds(cond), reg1, ~reg2)
 
         res_op.write(UInt(result, res_op.size))
 
@@ -2859,15 +2826,15 @@ class Aarch64Cpu(Cpu):
         """
         assert bar_imm_op.type in [cs.arm64.ARM64_OP_BARRIER, cs.arm64.ARM64_OP_IMM]
 
-        insn_rx = '1101010100'
-        insn_rx += '0'
-        insn_rx += '00'
-        insn_rx += '011'
-        insn_rx += '0011'
-        insn_rx += '[01]{4}'  # CRm
-        insn_rx += '1'
-        insn_rx += '01'       # opc
-        insn_rx += '1{5}'
+        insn_rx = "1101010100"
+        insn_rx += "0"
+        insn_rx += "00"
+        insn_rx += "011"
+        insn_rx += "0011"
+        insn_rx += "[01]{4}"  # CRm
+        insn_rx += "1"
+        insn_rx += "01"  # opc
+        insn_rx += "1{5}"
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2886,16 +2853,16 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'
-        insn_rx += '[01]'      # Q
-        insn_rx += '0'
-        insn_rx += '01110000'
-        insn_rx += '[01]{5}'   # imm5
-        insn_rx += '0'
-        insn_rx += '0001'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "0"
+        insn_rx += "[01]"  # Q
+        insn_rx += "0"
+        insn_rx += "01110000"
+        insn_rx += "[01]{5}"  # imm5
+        insn_rx += "0"
+        insn_rx += "0001"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2958,15 +2925,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '10'       # opc
-        insn_rx += '01010'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'        # N
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "01010"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"  # N
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -2979,8 +2946,9 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
-                cs.arm64.ARM64_SFT_ROR
-            ])
+                cs.arm64.ARM64_SFT_ROR,
+            ],
+        )
 
     # XXX: Support LD1 (single structure).
     @instruction
@@ -2997,59 +2965,71 @@ class Aarch64Cpu(Cpu):
         """
         assert op1.type is cs.arm64.ARM64_OP_REG
         assert op2.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG]
-        assert not op3 or op3.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
-        assert not op4 or op4.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
-        assert not op5 or op5.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert not op3 or op3.type in [
+            cs.arm64.ARM64_OP_MEM,
+            cs.arm64.ARM64_OP_REG,
+            cs.arm64.ARM64_OP_IMM,
+        ]
+        assert not op4 or op4.type in [
+            cs.arm64.ARM64_OP_MEM,
+            cs.arm64.ARM64_OP_REG,
+            cs.arm64.ARM64_OP_IMM,
+        ]
+        assert not op5 or op5.type in [
+            cs.arm64.ARM64_OP_MEM,
+            cs.arm64.ARM64_OP_REG,
+            cs.arm64.ARM64_OP_IMM,
+        ]
         assert not op6 or op6.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        no_offset_rx = '0'
-        no_offset_rx += '[01]'          # Q
-        no_offset_rx += '0011000'
-        no_offset_rx += '1'             # L
-        no_offset_rx += '000000'
-        no_offset_rx += '[01]{2}1[01]'  # opcode
-        no_offset_rx += '[01]{2}'       # size
-        no_offset_rx += '[01]{5}'       # Rn
-        no_offset_rx += '[01]{5}'       # Rt
+        no_offset_rx = "0"
+        no_offset_rx += "[01]"  # Q
+        no_offset_rx += "0011000"
+        no_offset_rx += "1"  # L
+        no_offset_rx += "000000"
+        no_offset_rx += "[01]{2}1[01]"  # opcode
+        no_offset_rx += "[01]{2}"  # size
+        no_offset_rx += "[01]{5}"  # Rn
+        no_offset_rx += "[01]{5}"  # Rt
 
-        post_index_rx = '0'
-        post_index_rx += '[01]'          # Q
-        post_index_rx += '0011001'
-        post_index_rx += '1'             # L
-        post_index_rx += '0'
-        post_index_rx += '[01]{5}'       # Rm
-        post_index_rx += '[01]{2}1[01]'  # opcode
-        post_index_rx += '[01]{2}'       # size
-        post_index_rx += '[01]{5}'       # Rn
-        post_index_rx += '[01]{5}'       # Rt
+        post_index_rx = "0"
+        post_index_rx += "[01]"  # Q
+        post_index_rx += "0011001"
+        post_index_rx += "1"  # L
+        post_index_rx += "0"
+        post_index_rx += "[01]{5}"  # Rm
+        post_index_rx += "[01]{2}1[01]"  # opcode
+        post_index_rx += "[01]{2}"  # size
+        post_index_rx += "[01]{5}"  # Rn
+        post_index_rx += "[01]{5}"  # Rt
 
-        assert (
-            re.match(no_offset_rx, cpu.insn_bit_str) or
-            re.match(post_index_rx, cpu.insn_bit_str)
-        )
+        assert re.match(no_offset_rx, cpu.insn_bit_str) or re.match(post_index_rx, cpu.insn_bit_str)
 
         # XXX: Check if trapped.
 
         # Four registers.
-        if (op1.type == cs.arm64.ARM64_OP_REG and
-            op2.type == cs.arm64.ARM64_OP_REG and
-            op3.type == cs.arm64.ARM64_OP_REG and
-            op4.type == cs.arm64.ARM64_OP_REG):
+        if (
+            op1.type == cs.arm64.ARM64_OP_REG
+            and op2.type == cs.arm64.ARM64_OP_REG
+            and op3.type == cs.arm64.ARM64_OP_REG
+            and op4.type == cs.arm64.ARM64_OP_REG
+        ):
             res_ops = [op1, op2, op3, op4]
             mem_op = op5
             wback_op = op6
 
         # Three registers.
-        elif (op1.type == cs.arm64.ARM64_OP_REG and
-              op2.type == cs.arm64.ARM64_OP_REG and
-              op3.type == cs.arm64.ARM64_OP_REG):
+        elif (
+            op1.type == cs.arm64.ARM64_OP_REG
+            and op2.type == cs.arm64.ARM64_OP_REG
+            and op3.type == cs.arm64.ARM64_OP_REG
+        ):
             res_ops = [op1, op2, op3]
             mem_op = op4
             wback_op = op5
 
         # Two registers.
-        elif (op1.type == cs.arm64.ARM64_OP_REG and
-              op2.type == cs.arm64.ARM64_OP_REG):
+        elif op1.type == cs.arm64.ARM64_OP_REG and op2.type == cs.arm64.ARM64_OP_REG:
             res_ops = [op1, op2]
             mem_op = op3
             wback_op = op4
@@ -3123,16 +3103,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx = '1[01]'     # size
-        insn_rx += '001000'
-        insn_rx += '0'
-        insn_rx += '1'        # L
-        insn_rx += '0'
-        insn_rx += '1{5}'     # Rs
-        insn_rx += '1'        # o0
-        insn_rx += '1{5}'     # Rt2
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
+        insn_rx = "1[01]"  # size
+        insn_rx += "001000"
+        insn_rx += "0"
+        insn_rx += "1"  # L
+        insn_rx += "0"
+        insn_rx += "1{5}"  # Rs
+        insn_rx += "1"  # o0
+        insn_rx += "1{5}"  # Rt2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3362,16 +3342,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx = '1[01]'     # size
-        insn_rx += '001000'
-        insn_rx += '0'
-        insn_rx += '1'        # L
-        insn_rx += '0'
-        insn_rx += '1{5}'     # Rs
-        insn_rx += '0'        # o0
-        insn_rx += '1{5}'     # Rt2
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
+        insn_rx = "1[01]"  # size
+        insn_rx += "001000"
+        insn_rx += "0"
+        insn_rx += "1"  # L
+        insn_rx += "0"
+        insn_rx += "1{5}"  # Rs
+        insn_rx += "0"  # o0
+        insn_rx += "1{5}"  # Rt2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3396,14 +3376,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '10'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3429,15 +3409,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '0010'
-        insn_rx += '00'        # op2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0010"
+        insn_rx += "00"  # op2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3480,15 +3460,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '0010'
-        insn_rx += '00'        # op2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0010"
+        insn_rx += "00"  # op2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3510,14 +3490,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '10'        # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'      # N
-        insn_rx += '[01]{6}'   # immr
-        insn_rx += '[01]1{5}'  # imms
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]1{5}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3540,15 +3520,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '0010'
-        insn_rx += '01'        # op2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0010"
+        insn_rx += "01"  # op2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3591,15 +3571,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '0010'
-        insn_rx += '01'        # op2
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0010"
+        insn_rx += "01"  # op2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3624,15 +3604,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
         assert reg_op3.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'
-        insn_rx += '11011'
-        insn_rx += '000'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '0'        # o0
-        insn_rx += '[01]{5}'  # Ra
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"
+        insn_rx += "11011"
+        insn_rx += "000"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0"  # o0
+        insn_rx += "[01]{5}"  # Ra
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3653,18 +3633,18 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'
-        insn_rx += '[01]'       # Q
-        insn_rx += '0'
-        insn_rx += '01110000'
-        insn_rx += '[01]{3}00'  # imm5
-        insn_rx += '0'
-        insn_rx += '01'
-        insn_rx += '1'
-        insn_rx += '1'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'    # Rn
-        insn_rx += '[01]{5}'    # Rd
+        insn_rx = "0"
+        insn_rx += "[01]"  # Q
+        insn_rx += "0"
+        insn_rx += "01110000"
+        insn_rx += "[01]{3}00"  # imm5
+        insn_rx += "0"
+        insn_rx += "01"
+        insn_rx += "1"
+        insn_rx += "1"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3713,11 +3693,11 @@ class Aarch64Cpu(Cpu):
 
         if reg_imm_op.type is cs.arm64.ARM64_OP_REG:
             # MOV (to general).
-            if bit26 == '1':
+            if bit26 == "1":
                 cpu._MOV_to_general(res_op, reg_imm_op)
 
             # MOV (to/from SP).
-            elif bit26 == '0' and opc == '00':
+            elif bit26 == "0" and opc == "00":
                 # Fake an immediate operand.
                 zero = Aarch64Operand.make_imm(cpu, 0)
 
@@ -3726,7 +3706,7 @@ class Aarch64Cpu(Cpu):
                 cpu.ADD.__wrapped__(cpu, res_op, reg_imm_op, zero)
 
             # MOV (register).
-            elif bit26 == '0' and opc == '01':
+            elif bit26 == "0" and opc == "01":
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
                 cpu.ORR.__wrapped__(cpu, res_op, zr, reg_imm_op)
@@ -3736,19 +3716,19 @@ class Aarch64Cpu(Cpu):
 
         elif reg_imm_op.type is cs.arm64.ARM64_OP_IMM:
             # MOV (inverted wide immediate).
-            if opc == '00':
+            if opc == "00":
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
                 cpu.MOVN.__wrapped__(cpu, res_op, reg_imm_op)
 
             # MOV (wide immediate).
-            elif opc == '10':
+            elif opc == "10":
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
                 cpu.MOVZ.__wrapped__(cpu, res_op, reg_imm_op)
 
             # MOV (bitmask immediate).
-            elif opc == '01':
+            elif opc == "01":
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
                 cpu.ORR.__wrapped__(cpu, res_op, zr, reg_imm_op)
@@ -3770,12 +3750,12 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '11'        # opc
-        insn_rx += '100101'
-        insn_rx += '[01]{2}'   # hw
-        insn_rx += '[01]{16}'  # imm16
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "11"  # opc
+        insn_rx += "100101"
+        insn_rx += "[01]{2}"  # hw
+        insn_rx += "[01]{16}"  # imm16
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3787,9 +3767,8 @@ class Aarch64Cpu(Cpu):
             assert imm_op.op.shift.type == cs.arm64.ARM64_SFT_LSL
 
         assert imm >= 0 and imm <= 65535
-        assert (
-            (res_op.size == 32 and sft in [0, 16]) or
-            (res_op.size == 64 and sft in [0, 16, 32, 48])
+        assert (res_op.size == 32 and sft in [0, 16]) or (
+            res_op.size == 64 and sft in [0, 16, 32, 48]
         )
 
         imm = LSL(imm, sft, res_op.size)
@@ -3808,12 +3787,12 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '00'        # opc
-        insn_rx += '100101'
-        insn_rx += '[01]{2}'   # hw
-        insn_rx += '[01]{16}'  # imm16
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100101"
+        insn_rx += "[01]{2}"  # hw
+        insn_rx += "[01]{16}"  # imm16
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3824,9 +3803,8 @@ class Aarch64Cpu(Cpu):
             assert imm_op.op.shift.type == cs.arm64.ARM64_SFT_LSL
 
         assert imm >= 0 and imm <= 65535
-        assert (
-            (res_op.size == 32 and sft in [0, 16]) or
-            (res_op.size == 64 and sft in [0, 16, 32, 48])
+        assert (res_op.size == 32 and sft in [0, 16]) or (
+            res_op.size == 64 and sft in [0, 16, 32, 48]
         )
 
         result = UInt(~LSL(imm, sft, res_op.size), res_op.size)
@@ -3843,12 +3821,12 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '10'        # opc
-        insn_rx += '100101'
-        insn_rx += '[01]{2}'   # hw
-        insn_rx += '[01]{16}'  # imm16
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100101"
+        insn_rx += "[01]{2}"  # hw
+        insn_rx += "[01]{16}"  # imm16
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3859,9 +3837,8 @@ class Aarch64Cpu(Cpu):
             assert imm_op.op.shift.type == cs.arm64.ARM64_SFT_LSL
 
         assert imm >= 0 and imm <= 65535
-        assert (
-            (res_op.size == 32 and sft in [0, 16]) or
-            (res_op.size == 64 and sft in [0, 16, 32, 48])
+        assert (res_op.size == 32 and sft in [0, 16]) or (
+            res_op.size == 64 and sft in [0, 16, 32, 48]
         )
 
         result = UInt(LSL(imm, sft, res_op.size), res_op.size)
@@ -3878,15 +3855,15 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG_MRS
 
-        insn_rx = '1101010100'
-        insn_rx += '1'           # L
-        insn_rx += '1'
-        insn_rx += '[01]'        # o0
-        insn_rx += '[01]{3}'     # op1
-        insn_rx += '[01]{4}'     # CRn
-        insn_rx += '[01]{4}'     # CRm
-        insn_rx += '[01]{3}'     # op2
-        insn_rx += '[01]{5}'     # Rt
+        insn_rx = "1101010100"
+        insn_rx += "1"  # L
+        insn_rx += "1"
+        insn_rx += "[01]"  # o0
+        insn_rx += "[01]{3}"  # op1
+        insn_rx += "[01]{4}"  # CRn
+        insn_rx += "[01]{4}"  # CRm
+        insn_rx += "[01]{3}"  # op2
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3905,15 +3882,15 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG_MSR
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '1101010100'
-        insn_rx += '0'           # L
-        insn_rx += '1'
-        insn_rx += '[01]'        # o0
-        insn_rx += '[01]{3}'     # op1
-        insn_rx += '[01]{4}'     # CRn
-        insn_rx += '[01]{4}'     # CRm
-        insn_rx += '[01]{3}'     # op2
-        insn_rx += '[01]{5}'     # Rt
+        insn_rx = "1101010100"
+        insn_rx += "0"  # L
+        insn_rx += "1"
+        insn_rx += "[01]"  # o0
+        insn_rx += "[01]{3}"  # op1
+        insn_rx += "[01]{4}"  # CRn
+        insn_rx += "[01]{4}"  # CRm
+        insn_rx += "[01]{3}"  # op2
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3935,15 +3912,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
         assert reg_op3.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'
-        insn_rx += '11011'
-        insn_rx += '000'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '1'        # o0
-        insn_rx += '[01]{5}'  # Ra
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"
+        insn_rx += "11011"
+        insn_rx += "000"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "1"  # o0
+        insn_rx += "[01]{5}"  # Ra
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -3968,15 +3945,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'
-        insn_rx += '11011'
-        insn_rx += '000'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '0'        # o0
-        insn_rx += '1{5}'     # Ra
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"
+        insn_rx += "11011"
+        insn_rx += "000"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0"  # o0
+        insn_rx += "1{5}"  # Ra
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4004,16 +3981,16 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '1'        # op
-        insn_rx += '0'        # S
-        insn_rx += '01011'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '1{5}'     # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"  # op
+        insn_rx += "0"  # S
+        insn_rx += "01011"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "1{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4034,14 +4011,14 @@ class Aarch64Cpu(Cpu):
         """
         NOP.
         """
-        insn_rx = '1101010100'
-        insn_rx += '0'
-        insn_rx += '00'
-        insn_rx += '011'
-        insn_rx += '0010'
-        insn_rx += '0000'        # CRm
-        insn_rx += '000'         # op2
-        insn_rx += '11111'
+        insn_rx = "1101010100"
+        insn_rx += "0"
+        insn_rx += "00"
+        insn_rx += "011"
+        insn_rx += "0010"
+        insn_rx += "0000"  # CRm
+        insn_rx += "000"  # op2
+        insn_rx += "11111"
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4057,14 +4034,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '01'       # opc
-        insn_rx += '100100'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "01"  # opc
+        insn_rx += "100100"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4085,15 +4062,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '01'       # opc
-        insn_rx += '01010'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'        # N
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "01"  # opc
+        insn_rx += "01010"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"  # N
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4106,8 +4083,9 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
-                cs.arm64.ARM64_SFT_ROR
-            ])
+                cs.arm64.ARM64_SFT_ROR,
+            ],
+        )
 
     def _ORR_vector_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -4121,17 +4099,17 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'
-        insn_rx += '[01]'     # Q
-        insn_rx += '0'
-        insn_rx += '01110'
-        insn_rx += '10'       # size
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '00011'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "0"
+        insn_rx += "[01]"  # Q
+        insn_rx += "0"
+        insn_rx += "01110"
+        insn_rx += "10"  # size
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "00011"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4183,10 +4161,10 @@ class Aarch64Cpu(Cpu):
         if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
             cpu._ORR_immediate(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "0":
             cpu._ORR_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "1":
             cpu._ORR_vector_register(res_op, reg_op, reg_imm_op)
 
         else:
@@ -4204,15 +4182,15 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '1'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '0{5}'
-        insn_rx += '0{4}'
-        insn_rx += '0{2}'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "0{5}"
+        insn_rx += "0{4}"
+        insn_rx += "0{2}"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4237,16 +4215,16 @@ class Aarch64Cpu(Cpu):
         """
         assert not reg_op or reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '1101011'
-        insn_rx += '0'        # Z
-        insn_rx += '0'
-        insn_rx += '10'       # op
-        insn_rx += '1{5}'
-        insn_rx += '0{4}'
-        insn_rx += '0'        # A
-        insn_rx += '0'        # M
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '0{5}'     # Rm
+        insn_rx = "1101011"
+        insn_rx += "0"  # Z
+        insn_rx += "0"
+        insn_rx += "10"  # op
+        insn_rx += "1{5}"
+        insn_rx += "0{4}"
+        insn_rx += "0"  # A
+        insn_rx += "0"  # M
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "0{5}"  # Rm
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4267,15 +4245,15 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '1'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '0{5}'
-        insn_rx += '0{4}'
-        insn_rx += '1[01]'    # opc
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "1"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "0{5}"
+        insn_rx += "0{4}"
+        insn_rx += "1[01]"  # opc
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4307,14 +4285,14 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4341,14 +4319,14 @@ class Aarch64Cpu(Cpu):
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
         assert imms_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4374,7 +4352,7 @@ class Aarch64Cpu(Cpu):
             res_op.size,
             Operators.EXTRACT(result, width + copy_to - 1, 1) == 1,
             (Mask(res_op.size) & ~Mask(width + copy_to)) | result,
-            result
+            result,
         )
 
         res_op.write(result)
@@ -4394,14 +4372,14 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4427,16 +4405,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx = '1[01]'     # size
-        insn_rx += '001000'
-        insn_rx += '0'
-        insn_rx += '0'        # L
-        insn_rx += '0'
-        insn_rx += '[01]{5}'  # Rs
-        insn_rx += '1'        # o0
-        insn_rx += '1{5}'     # Rt2
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
+        insn_rx = "1[01]"  # size
+        insn_rx += "001000"
+        insn_rx += "0"
+        insn_rx += "0"  # L
+        insn_rx += "0"
+        insn_rx += "[01]{5}"  # Rs
+        insn_rx += "1"  # o0
+        insn_rx += "1{5}"  # Rt2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4599,16 +4577,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx = '1[01]'     # size
-        insn_rx += '001000'
-        insn_rx += '0'
-        insn_rx += '0'        # L
-        insn_rx += '0'
-        insn_rx += '[01]{5}'  # Rs
-        insn_rx += '0'        # o0
-        insn_rx += '1{5}'     # Rt2
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
+        insn_rx = "1[01]"  # size
+        insn_rx += "001000"
+        insn_rx += "0"
+        insn_rx += "0"  # L
+        insn_rx += "0"
+        insn_rx += "[01]{5}"  # Rs
+        insn_rx += "0"  # o0
+        insn_rx += "1{5}"  # Rt2
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4630,7 +4608,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='sub')
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem="sub")
 
     def _SUB_immediate(cpu, res_op, reg_op, imm_op):
         """
@@ -4640,7 +4618,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param imm_op: immediate.
         """
-        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='sub')
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem="sub")
 
     def _SUB_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -4650,7 +4628,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='sub')
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem="sub")
 
     def _SUB_vector(cpu, res_op, reg_op1, reg_op2):
         """
@@ -4682,13 +4660,13 @@ class Aarch64Cpu(Cpu):
         if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
             cpu._SUB_immediate(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == "0":
             cpu._SUB_vector(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == "1" and bit21 == "0":
             cpu._SUB_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == "1" and bit21 == "1":
             cpu._SUB_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
@@ -4702,7 +4680,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='subs')
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem="subs")
 
     def _SUBS_immediate(cpu, res_op, reg_op, imm_op):
         """
@@ -4712,7 +4690,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param imm_op: immediate.
         """
-        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='subs')
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem="subs")
 
     def _SUBS_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -4722,7 +4700,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='subs')
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem="subs")
 
     @instruction
     def SUBS(cpu, res_op, reg_op, reg_imm_op):
@@ -4743,10 +4721,10 @@ class Aarch64Cpu(Cpu):
         if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
             cpu._SUBS_immediate(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "0":
             cpu._SUBS_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == "1":
             cpu._SUBS_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
@@ -4765,7 +4743,7 @@ class Aarch64Cpu(Cpu):
         assert imm >= 0 and imm <= 65535
 
         if imm != 0:
-            raise InstructionNotImplementedError(f'SVC #{imm}')
+            raise InstructionNotImplementedError(f"SVC #{imm}")
         raise Interruption(imm)
 
     @instruction
@@ -4779,14 +4757,14 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '0{6}'     # immr
-        insn_rx += '000111'   # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "0{6}"  # immr
+        insn_rx += "000111"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4809,14 +4787,14 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '00'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '0{6}'     # immr
-        insn_rx += '001111'   # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "0{6}"  # immr
+        insn_rx += "001111"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4839,14 +4817,14 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '1'         # sf
-        insn_rx += '00'       # opc
-        insn_rx += '100110'
-        insn_rx += '1'        # N
-        insn_rx += '000000'   # immr
-        insn_rx += '011111'   # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "1"  # sf
+        insn_rx += "00"  # opc
+        insn_rx += "100110"
+        insn_rx += "1"  # N
+        insn_rx += "000000"  # immr
+        insn_rx += "011111"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4871,12 +4849,12 @@ class Aarch64Cpu(Cpu):
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
         assert lab_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # b5
-        insn_rx += '011011'
-        insn_rx += '1'         # op
-        insn_rx += '[01]{5}'   # b40
-        insn_rx += '[01]{14}'  # imm14
-        insn_rx += '[01]{5}'   # Rt
+        insn_rx = "[01]"  # b5
+        insn_rx += "011011"
+        insn_rx += "1"  # op
+        insn_rx += "[01]{5}"  # b40
+        insn_rx += "[01]{14}"  # imm14
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4887,10 +4865,7 @@ class Aarch64Cpu(Cpu):
         assert imm in range(reg_op.size)
 
         cpu.PC = Operators.ITEBV(
-            cpu.regfile.size('PC'),
-            Operators.EXTRACT(reg, imm, 1) != 0,
-            lab,
-            cpu.PC
+            cpu.regfile.size("PC"), Operators.EXTRACT(reg, imm, 1) != 0, lab, cpu.PC
         )
 
     @instruction
@@ -4906,12 +4881,12 @@ class Aarch64Cpu(Cpu):
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
         assert lab_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'       # b5
-        insn_rx += '011011'
-        insn_rx += '0'         # op
-        insn_rx += '[01]{5}'   # b40
-        insn_rx += '[01]{14}'  # imm14
-        insn_rx += '[01]{5}'   # Rt
+        insn_rx = "[01]"  # b5
+        insn_rx += "011011"
+        insn_rx += "0"  # op
+        insn_rx += "[01]{5}"  # b40
+        insn_rx += "[01]{14}"  # imm14
+        insn_rx += "[01]{5}"  # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4922,10 +4897,7 @@ class Aarch64Cpu(Cpu):
         assert imm in range(reg_op.size)
 
         cpu.PC = Operators.ITEBV(
-            cpu.regfile.size('PC'),
-            Operators.EXTRACT(reg, imm, 1) == 0,
-            lab,
-            cpu.PC
+            cpu.regfile.size("PC"), Operators.EXTRACT(reg, imm, 1) == 0, lab, cpu.PC
         )
 
     def _TST_immediate(cpu, reg_op, imm_op):
@@ -4938,14 +4910,14 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '11'       # opc
-        insn_rx += '100100'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '1{5}'     # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "11"  # opc
+        insn_rx += "100100"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -4971,15 +4943,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '11'       # opc
-        insn_rx += '01010'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'        # N
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '1{5}'     # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "11"  # opc
+        insn_rx += "01010"
+        insn_rx += "[01]{2}"  # shift
+        insn_rx += "0"  # N
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "[01]{6}"  # imm6
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "1{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5030,14 +5002,14 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '10'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5064,14 +5036,14 @@ class Aarch64Cpu(Cpu):
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
         assert imms_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '10'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5110,14 +5082,14 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx = '[01]'      # sf
-        insn_rx += '10'       # opc
-        insn_rx += '100110'
-        insn_rx += '[01]'     # N
-        insn_rx += '[01]{6}'  # immr
-        insn_rx += '[01]{6}'  # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100110"
+        insn_rx += "[01]"  # N
+        insn_rx += "[01]{6}"  # immr
+        insn_rx += "[01]{6}"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5142,15 +5114,15 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '[01]'       # sf
-        insn_rx += '0'
-        insn_rx += '0'
-        insn_rx += '11010110'
-        insn_rx += '[01]{5}'   # Rm
-        insn_rx += '00001'
-        insn_rx += '0'         # o1
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "[01]"  # sf
+        insn_rx += "0"
+        insn_rx += "0"
+        insn_rx += "11010110"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "00001"
+        insn_rx += "0"  # o1
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5164,12 +5136,7 @@ class Aarch64Cpu(Cpu):
         except ZeroDivisionError:
             quot = 0
 
-        result = Operators.ITEBV(
-            res_op.size,
-            reg2 == 0,
-            0,
-            quot
-        )
+        result = Operators.ITEBV(res_op.size, reg2 == 0, 0, quot)
 
         res_op.write(result)
 
@@ -5184,18 +5151,18 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'
-        insn_rx += '[01]'      # Q
-        insn_rx += '0'
-        insn_rx += '01110000'
-        insn_rx += '[01]{5}'   # imm5
-        insn_rx += '0'
-        insn_rx += '01'
-        insn_rx += '1'
-        insn_rx += '1'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'   # Rn
-        insn_rx += '[01]{5}'   # Rd
+        insn_rx = "0"
+        insn_rx += "[01]"  # Q
+        insn_rx += "0"
+        insn_rx += "01110000"
+        insn_rx += "[01]{5}"  # imm5
+        insn_rx += "0"
+        insn_rx += "01"
+        insn_rx += "1"
+        insn_rx += "1"
+        insn_rx += "1"
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5236,16 +5203,16 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '1'
-        insn_rx += '00'
-        insn_rx += '11011'
-        insn_rx += '1'        # U
-        insn_rx += '10'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '0'
-        insn_rx += '1{5}'     # Ra
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "1"
+        insn_rx += "00"
+        insn_rx += "11011"
+        insn_rx += "1"  # U
+        insn_rx += "10"
+        insn_rx += "[01]{5}"  # Rm
+        insn_rx += "0"
+        insn_rx += "1{5}"  # Ra
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5269,14 +5236,14 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'         # sf
-        insn_rx += '10'       # opc
-        insn_rx += '100110'
-        insn_rx += '0'        # N
-        insn_rx += '0{6}'     # immr
-        insn_rx += '000111'   # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "0"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100110"
+        insn_rx += "0"  # N
+        insn_rx += "0{6}"  # immr
+        insn_rx += "000111"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5299,14 +5266,14 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx = '0'         # sf
-        insn_rx += '10'       # opc
-        insn_rx += '100110'
-        insn_rx += '0'        # N
-        insn_rx += '0{6}'     # immr
-        insn_rx += '001111'   # imms
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
+        insn_rx = "0"  # sf
+        insn_rx += "10"  # opc
+        insn_rx += "100110"
+        insn_rx += "0"  # N
+        insn_rx += "0{6}"  # immr
+        insn_rx += "001111"  # imms
+        insn_rx += "[01]{5}"  # Rn
+        insn_rx += "[01]{5}"  # Rd
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
@@ -5331,7 +5298,7 @@ class Aarch64CdeclAbi(Abi):
         # First 8 arguments are passed via X0-X7 (or W0-W7 if they are 32-bit),
         # then on stack.
 
-        for reg in ('X0', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7'):
+        for reg in ("X0", "X1", "X2", "X3", "X4", "X5", "X6", "X7"):
             yield reg
 
         for address in self.values_from(self._cpu.STACK):
@@ -5357,7 +5324,7 @@ class Aarch64LinuxSyscallAbi(SyscallAbi):
         return self._cpu.X8
 
     def get_arguments(self):
-        return ('X{}'.format(i) for i in range(6))
+        return ("X{}".format(i) for i in range(6))
 
     def write_result(self, result):
         self._cpu.X0 = result
@@ -5374,11 +5341,9 @@ class Aarch64Operand(Operand):
             cs.arm64.ARM64_OP_MEM,
             cs.arm64.ARM64_OP_IMM,
             cs.arm64.ARM64_OP_FP,
-            cs.arm64.ARM64_OP_BARRIER
+            cs.arm64.ARM64_OP_BARRIER,
         ):
-            raise NotImplementedError(
-                f"Unsupported operand type: '{self.op.type}'"
-            )
+            raise NotImplementedError(f"Unsupported operand type: '{self.op.type}'")
 
         self._type = self.op.type
 
@@ -5426,9 +5391,7 @@ class Aarch64Operand(Operand):
         elif self.type == cs.arm64.ARM64_OP_REG_MRS:
             name = SYS_REG_MAP.get(self.op.sys)
             if not name:
-                raise NotImplementedError(
-                    f"Unsupported system register: '0x{self.op.sys:x}'"
-                )
+                raise NotImplementedError(f"Unsupported system register: '0x{self.op.sys:x}'")
             return self.cpu.regfile.read(name)
         elif self.type == cs.arm64.ARM64_OP_IMM:
             return self.op.imm
@@ -5441,9 +5404,7 @@ class Aarch64Operand(Operand):
         elif self.type == cs.arm64.ARM64_OP_REG_MSR:
             name = SYS_REG_MAP.get(self.op.sys)
             if not name:
-                raise NotImplementedError(
-                    f"Unsupported system register: '0x{self.op.sys:x}'"
-                )
+                raise NotImplementedError(f"Unsupported system register: '0x{self.op.sys:x}'")
             self.cpu.regfile.write(name, value)
         else:
             raise NotImplementedError(f"Unsupported operand type: '{self.type}'")

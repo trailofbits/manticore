@@ -1,4 +1,3 @@
-
 import struct
 import unittest
 import json
@@ -10,7 +9,8 @@ import os
 
 class EVMTest_ISZERO(unittest.TestCase):
     _multiprocess_can_split_ = True
-    maxDiff=None 
+    maxDiff = None
+
     def _execute(self, new_vm):
         last_returned = None
         last_exception = None
@@ -31,251 +31,207 @@ class EVMTest_ISZERO(unittest.TestCase):
             last_returned = e.data
         except evm.Revert:
             last_exception = "REVERT"
-            
+
         return last_exception, last_returned
 
     def test_ISZERO_1(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
     def test_ISZERO_2(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(0)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [1])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(0)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [1])
 
     def test_ISZERO_3(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(1)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(1)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
     def test_ISZERO_4(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
     def test_ISZERO_5(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
     def test_ISZERO_6(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(16)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(16)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
     def test_ISZERO_7(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(32)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(32)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
     def test_ISZERO_8(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(48)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(48)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
     def test_ISZERO_9(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'\x15'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"\x15"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm._push(6089590155545428825848686802984512581899718912)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [0])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

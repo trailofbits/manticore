@@ -10,7 +10,7 @@ class Memory:  # todo Mock
 
 
 class Mem:
-    ''' Mocking class for memory '''
+    """ Mocking class for memory """
 
     def __init__(self, mem):
         self.mem = dict(mem)
@@ -25,7 +25,7 @@ class Mem:
 
     def read(self, addr, size):
         # print "read", hex(addr), size
-        result = ''
+        result = ""
         for i in range(size):
             result += self.mem[addr + i]
         return result
@@ -45,7 +45,7 @@ class Mem:
 
 
 class SMem:
-    ''' Mocking class for memory '''
+    """ Mocking class for memory """
 
     def __init__(self, array, init):
         self.code = {}

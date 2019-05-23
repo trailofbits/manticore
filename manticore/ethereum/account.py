@@ -5,7 +5,7 @@ from .abi import ABI
 from ..exceptions import EthereumError
 
 
-HashesEntry = namedtuple('HashesEntry', 'signature func_id')
+HashesEntry = namedtuple("HashesEntry", "signature func_id")
 
 
 class EVMAccount:
@@ -54,6 +54,7 @@ class EVMContract(EVMAccount):
     Note: The private methods of this class begin with a double underscore to avoid function
     name collisions with Solidity functions that begin with a single underscore.
     """
+
     def __init__(self, default_caller=None, **kwargs):
         """
         Encapsulates a contract account.
@@ -67,9 +68,9 @@ class EVMContract(EVMAccount):
 
     def add_function(self, signature):
         func_id = ABI.function_selector(signature)
-        func_name = str(signature.split('(')[0])
+        func_name = str(signature.split("(")[0])
 
-        if func_name in self.__dict__ or func_name in {'add_function', 'address', 'name_'}:
+        if func_name in self.__dict__ or func_name in {"add_function", "address", "name_"}:
             raise EthereumError(f"Function name ({func_name}) is internally reserved")
 
         entry = HashesEntry(signature, func_id)
@@ -104,23 +105,37 @@ class EVMContract(EVMAccount):
             self.__init_hashes()
 
         if name in self.__hashes:
-            def f(*args, signature: Optional[str]=None, caller=None, value=0, gas=0xffffffffffff, **kwargs):
+
+            def f(
+                *args,
+                signature: Optional[str] = None,
+                caller=None,
+                value=0,
+                gas=0xFFFFFFFFFFFF,
+                **kwargs,
+            ):
                 try:
                     if signature:
-                        if f'{name}{signature}' not in {entry.signature for entries in self.__hashes.values() for entry in entries}:
+                        if f"{name}{signature}" not in {
+                            entry.signature
+                            for entries in self.__hashes.values()
+                            for entry in entries
+                        }:
                             raise EthereumError(
-                                f'Function: `{name}` has no such signature\n'
-                                f'Known signatures: {[entry.signature[len(name):] for entry in self.__hashes[name]]}')
+                                f"Function: `{name}` has no such signature\n"
+                                f"Known signatures: {[entry.signature[len(name):] for entry in self.__hashes[name]]}"
+                            )
 
-                        tx_data = ABI.function_call(f'{name}{signature}', *args)
+                        tx_data = ABI.function_call(f"{name}{signature}", *args)
                     else:
                         entries = self.__hashes[name]
                         if len(entries) > 1:
-                            sig = entries[0].signature[len(name):]
+                            sig = entries[0].signature[len(name) :]
                             raise EthereumError(
-                                f'Function: `{name}` has multiple signatures but `signature` is not '
+                                f"Function: `{name}` has multiple signatures but `signature` is not "
                                 f'defined! Example: `account.{name}(..., signature="{sig}")`\n'
-                                f'Known signatures: {[entry.signature[len(name):] for entry in self.__hashes[name]]}')
+                                f"Known signatures: {[entry.signature[len(name):] for entry in self.__hashes[name]]}"
+                            )
 
                         tx_data = ABI.function_call(str(entries[0].signature), *args)
                 except KeyError as e:
@@ -129,11 +144,10 @@ class EVMContract(EVMAccount):
                 if caller is None:
                     caller = self.__default_caller
 
-                self._manticore.transaction(caller=caller,
-                                            address=self._address,
-                                            value=value,
-                                            data=tx_data,
-                                            gas=gas)
+                self._manticore.transaction(
+                    caller=caller, address=self._address, value=value, data=tx_data, gas=gas
+                )
+
             return f
 
         raise AttributeError(f"The contract {self._name} doesn't have {name} function.")

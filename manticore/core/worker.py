@@ -7,7 +7,7 @@ import os
 
 
 logger = logging.getLogger(__name__)
-#logger.setLevel(9)
+# logger.setLevel(9)
 
 
 # Workers
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # WorkerThread: runs on a different thread
 # WorkerProcess: runs on a different process - Full multiprocessing
 # WorkerMultiprocessing: --planned-- runs on a different computer
+
 
 class Worker:
     """
@@ -56,7 +57,12 @@ class Worker:
 
     def run(self, *args):
         # This controls the main symbolic execution loop of one of the workers
-        logger.debug("Starting Manticore Symbolic Emulator Worker %d. Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident())
+        logger.debug(
+            "Starting Manticore Symbolic Emulator Worker %d. Pid %d Tid %d).",
+            self.id,
+            os.getpid(),
+            threading.get_ident(),
+        )
 
         m = self.manticore
         m._is_main = False  # This will mark our copy of manticore
@@ -102,7 +108,10 @@ class Worker:
                         # Allows to terminate manticore worker on user request
                         # even in the middle of an execution
                         logger.debug("[%r] Running", self.id)
-                        assert current_state.id in m._busy_states and current_state.id not in m._ready_states
+                        assert (
+                            current_state.id in m._busy_states
+                            and current_state.id not in m._ready_states
+                        )
 
                         # This does not hold the lock so we may loss some event
                         # flickering
@@ -134,7 +143,7 @@ class Worker:
                     except TerminateState as exc:
                         logger.debug("[%r] Debug State %r %r", self.id, current_state, exc)
                         # Notify this state is done
-                        m._publish('will_terminate_state', current_state, exc)
+                        m._publish("will_terminate_state", current_state, exc)
                         # Update the stored version of the current state
 
                         m._save(current_state, state_id=current_state.id)
@@ -143,11 +152,12 @@ class Worker:
                         # this run
                         m._terminate_state(current_state.id)
 
-                        m._publish('did_terminate_state', current_state, exc)
+                        m._publish("did_terminate_state", current_state, exc)
                         current_state = None
 
                 except (Exception, AssertionError) as exc:
                     import traceback
+
                     formatted = traceback.format_exc()
                     logger.error("Exception in state %r: %r\n%s ", self.id, exc, formatted)
                     # Internal Exception
@@ -158,10 +168,10 @@ class Worker:
                         # Update the stored version of the current state
                         # Saved to a fresh id in case other worker have an old
                         # version this state cached over the old id
-                        m._publish('will_kill_state', current_state, exc)
+                        m._publish("will_kill_state", current_state, exc)
                         m._save(current_state, state_id=current_state.id)
                         m._kill_state(current_state.id)
-                        m._publish('did_kill_state', current_state, exc)
+                        m._publish("did_kill_state", current_state, exc)
                         current_state = None
                     break
 
@@ -175,6 +185,7 @@ class WorkerSingle(Worker):
     """ A single worker that will run in the current process and current thread.
         As this will not provide any concurrency is normally only used for
         profiling underlying arch emulation and debugging."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, single=True, **kwargs)
 
@@ -187,6 +198,7 @@ class WorkerSingle(Worker):
 
 class WorkerThread(Worker):
     """ A worker thread """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._t = None
@@ -202,6 +214,7 @@ class WorkerThread(Worker):
 
 class WorkerProcess(Worker):
     """ A worker process """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._p = None

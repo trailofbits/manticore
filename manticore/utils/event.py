@@ -12,12 +12,13 @@ class EventsGatherMetaclass(type):
     Metaclass that is used for Eventful to gather events that classes declare to
     publish.
     """
+
     def __new__(cls, name, parents, d):
         eventful_sub = super(EventsGatherMetaclass, cls).__new__(cls, name, parents, d)
 
         bases = inspect.getmro(parents[0])
 
-        if name is 'Eventful':
+        if name is "Eventful":
             return eventful_sub
 
         subclasses = takewhile(lambda c: c is not Eventful, bases)
@@ -29,7 +30,7 @@ class EventsGatherMetaclass(type):
         for sub in relevant_classes:
             # Not using hasattr() here because we only want classes where it's explicitly
             # defined.
-            if '_published_events' in sub.__dict__:
+            if "_published_events" in sub.__dict__:
                 relevant_events.update(sub._published_events)
         Eventful.__all_events__[eventful_sub] = relevant_events
 
@@ -59,7 +60,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     _published_events = set()
 
     # Event names prefixes
-    prefixes = ('will_', 'did_', 'on_')
+    prefixes = ("will_", "did_", "on_")
 
     @classmethod
     def all_events(cls):
@@ -111,7 +112,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         basename = _name
         for prefix in self.prefixes:
             if _name.startswith(prefix):
-                basename = _name[len(prefix):]
+                basename = _name[len(prefix) :]
 
         cls = self.__class__
         if basename not in cls.__all_events__[cls]:
@@ -144,7 +145,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
                 sink._publish_impl(_name, *args, **kwargs)
 
     def subscribe(self, name, method):
-        assert inspect.ismethod(method), f'{method.__class__.__name__} is not a method'
+        assert inspect.ismethod(method), f"{method.__class__.__name__} is not a method"
         obj, callback = method.__self__, method.__func__
         bucket = self._get_signal_bucket(name)
         robj = ref(obj, self._unref)  # see unref() for explanation
@@ -152,14 +153,14 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         self.__sub_events__.add(name)
 
     def forward_events_from(self, source, include_source=False):
-        assert isinstance(source, Eventful), f'{source.__class__.__name__} is not Eventful'
+        assert isinstance(source, Eventful), f"{source.__class__.__name__} is not Eventful"
         source.forward_events_to(self, include_source=include_source)
 
     def forward_events_to(self, sink, include_source=False):
         """This forwards signal to sink"""
-        assert isinstance(sink, Eventful), f'{sink.__class__.__name__} is not Eventful'
+        assert isinstance(sink, Eventful), f"{sink.__class__.__name__} is not Eventful"
         self._forwards[sink] = include_source
 
-    def copy_eventful_state(self, new_object: 'Eventful'):
+    def copy_eventful_state(self, new_object: "Eventful"):
         new_object._forwards = copy.copy(self._forwards)
         new_object._signals = copy.copy(self._signals)

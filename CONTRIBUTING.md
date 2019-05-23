@@ -30,6 +30,10 @@ more documentation, look [here](https://guides.github.com/activities/forking/).
 
 Some pull request guidelines:
 
+- We use the [`black`](https://black.readthedocs.io/en/stable/index.html) auto-formatter
+  to enforce style conventions in Manticore. To ensure your code is properly 
+  formatted, run `black -t py36 -l 100 .` in the manticore directory before
+  committing.
 - Minimize irrelevant changes (formatting, whitespace, etc) to code that would
   otherwise not be touched by this patch. Save formatting or style corrections
   for a separate pull request that does not make any semantic changes.

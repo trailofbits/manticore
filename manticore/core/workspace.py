@@ -11,8 +11,8 @@ from contextlib import contextmanager
 try:
     from contextlib import nullcontext
 except ImportError:
-    class nullcontext():
 
+    class nullcontext:
         def __init__(self, enter_result=None):
             self.enter_result = enter_result
 
@@ -21,6 +21,7 @@ except ImportError:
 
         def __exit__(self, *excinfo):
             pass
+
 
 import time
 import os
@@ -33,9 +34,11 @@ from .state import StateBase
 
 logger = logging.getLogger(__name__)
 
-consts = config.get_group('workspace')
-consts.add('prefix', default='mcore_', description="The prefix to use for output and workspace directories")
-consts.add('dir', default='.', description="Location of where to create workspace directories")
+consts = config.get_group("workspace")
+consts.add(
+    "prefix", default="mcore_", description="The prefix to use for output and workspace directories"
+)
+consts.add("dir", default=".", description="Location of where to create workspace directories")
 
 
 class Testcase:
@@ -52,8 +55,8 @@ class Testcase:
     def num(self):
         return self._num
 
-    def open_stream(self, suffix='', binary=False):
-        stream_name = f'{self._prefix}_{self._num:08x}.{suffix}'
+    def open_stream(self, suffix="", binary=False):
+        stream_name = f"{self._prefix}_{self._num:08x}.{suffix}"
         return self._ws.save_stream(stream_name, binary=binary)
 
 
@@ -82,22 +85,26 @@ class Store:
         :param str desc: Store descriptor
         :return: Store instance
         """
-        type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
+        type_, uri = ("fs", None) if desc is None else desc.split(":", 1)
         for subclass in cls.__subclasses__():
             if subclass.store_type == type_:
                 return subclass(uri)
         raise NotImplementedError(f"Storage type '{type_}' not supported.")
 
-    def __init__(self, uri, state_serialization_method='pickle'):
-        assert self.__class__ != Store, "The Store class can not be instantiated (create a subclass)"
+    def __init__(self, uri, state_serialization_method="pickle"):
+        assert (
+            self.__class__ != Store
+        ), "The Store class can not be instantiated (create a subclass)"
 
         self.uri = uri
         self._sub = []
 
-        if state_serialization_method == 'pickle':
+        if state_serialization_method == "pickle":
             self._serializer = PickleSerializer()
         else:
-            raise NotImplementedError(f"Pickling method '{state_serialization_method}' not supported.")
+            raise NotImplementedError(
+                f"Pickling method '{state_serialization_method}' not supported."
+            )
 
     # save_value/load_value and save_stream/load_stream are implemented in terms of each other. A backing store
     # can choose the pair it's best optimized for.
@@ -197,7 +204,8 @@ class FilesystemStore(Store):
     """
     A directory-backed Manticore workspace
     """
-    store_type = 'fs'
+
+    store_type = "fs"
 
     def __init__(self, uri=None):
         """
@@ -208,7 +216,7 @@ class FilesystemStore(Store):
             uri = os.path.abspath(tempfile.mkdtemp(prefix=consts.prefix, dir=consts.dir))
 
         if os.path.exists(uri):
-            assert os.path.isdir(uri), 'Store must be a directory'
+            assert os.path.isdir(uri), "Store must be a directory"
         else:
             os.mkdir(uri)
 
@@ -216,7 +224,7 @@ class FilesystemStore(Store):
 
     @contextmanager
     def lock(self):
-        lockfile = os.path.join(self.uri, '.lock')
+        lockfile = os.path.join(self.uri, ".lock")
         with self._tlock:
             while True:
                 try:
@@ -232,7 +240,7 @@ class FilesystemStore(Store):
                     break
 
     @contextmanager
-    def stream(self, key, mode='r', lock=False):
+    def stream(self, key, mode="r", lock=False):
         """
         Yield a file object representing `key`
 
@@ -259,7 +267,7 @@ class FilesystemStore(Store):
         :param lock: exclusive access if True
         :return:
         """
-        mode = 'wb' if binary else 'w'
+        mode = "wb" if binary else "w"
         with self.stream(key, mode, lock) as f:
             yield f
 
@@ -271,7 +279,7 @@ class FilesystemStore(Store):
         :param lock: exclusive access if True
         :return:
         """
-        mode = 'rb' if binary else 'r'
+        mode = "rb" if binary else "r"
         with self.stream(key, mode, lock) as f:
             yield f
 
@@ -302,7 +310,8 @@ class MemoryStore(Store):
     NOTE: This is mostly used for experimentation and testing functionality.
     Can not be used with multiple workers!
     """
-    store_type = 'mem'
+
+    store_type = "mem"
 
     # TODO(yan): Once we get a global config store, check it to make sure
     # we're executing in a single-worker or test environment.
@@ -330,13 +339,13 @@ class MemoryStore(Store):
             yield
 
     @contextmanager
-    def stream(self, key, mode='r', lock=False):
+    def stream(self, key, mode="r", lock=False):
         if lock:
             raise Exception("mem: does not support concurrency")
-        if 'b' in mode:
-            s = io.BytesIO(self._data.get(key, b''))
+        if "b" in mode:
+            s = io.BytesIO(self._data.get(key, b""))
         else:
-            s = io.StringIO(self._data.get(key, ''))
+            s = io.StringIO(self._data.get(key, ""))
         yield s
         self._data[key] = s.getvalue()
 
@@ -345,7 +354,8 @@ class RedisStore(Store):
     """
     A redis-backed Manticore workspace
     """
-    store_type = 'redis'
+
+    store_type = "redis"
 
     def __init__(self, uri=None):
         """
@@ -355,7 +365,7 @@ class RedisStore(Store):
         # Local import to avoid an explicit dependency
         import redis
 
-        hostname, port = uri.split(':')
+        hostname, port = uri.split(":")
         self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
 
         super().__init__(uri)
@@ -402,18 +412,18 @@ class Workspace:
         else:
             self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
-        self._prefix = 'state_'
-        self._suffix = '.pkl'
+        self._prefix = "state_"
+        self._suffix = ".pkl"
 
     @property
     def uri(self):
         return self._store.uri
 
     def try_loading_workspace(self):
-        state_names = self._store.ls(f'{self._prefix}*')
+        state_names = self._store.ls(f"{self._prefix}*")
 
         def get_state_id(name):
-            return int(name[len(self._prefix):-len(self._suffix)], 16)
+            return int(name[len(self._prefix) : -len(self._suffix)], 16)
 
         state_ids = list(map(get_state_id, state_names))
 
@@ -430,14 +440,14 @@ class Workspace:
         """
         with self._store.lock():
             try:
-                with self._store.load_stream('.state_id') as f:
+                with self._store.load_stream(".state_id") as f:
                     last_id = int(f.read())
             except Exception as e:
                 last_id = 0
             else:
                 last_id += 1
-            with self._store.save_stream('.state_id') as f:
-                f.write(f'{last_id}')
+            with self._store.save_stream(".state_id") as f:
+                f.write(f"{last_id}")
                 f.flush()
         return last_id
 
@@ -449,7 +459,7 @@ class Workspace:
         :return: The deserialized state
         :rtype: State
         """
-        return self._store.load_state(f'{self._prefix}{state_id:08x}{self._suffix}', delete=delete)
+        return self._store.load_state(f"{self._prefix}{state_id:08x}{self._suffix}", delete=delete)
 
     def save_state(self, state, state_id=None):
         """
@@ -466,7 +476,7 @@ class Workspace:
         else:
             self.rm_state(state_id)
 
-        self._store.save_state(state, f'{self._prefix}{state_id:08x}{self._suffix}')
+        self._store.save_state(state, f"{self._prefix}{state_id:08x}{self._suffix}")
         return state_id
 
     def rm_state(self, state_id):
@@ -475,7 +485,7 @@ class Workspace:
 
         :param state_id: The state reference of what to load
         """
-        return self._store.rm(f'{self._prefix}{state_id:08x}{self._suffix}')
+        return self._store.rm(f"{self._prefix}{state_id:08x}{self._suffix}")
 
 
 class ManticoreOutput:
@@ -493,11 +503,11 @@ class ManticoreOutput:
 
         :param desc: A descriptor ('type:uri') of where to write output.
         """
-        self._named_key_prefix = 'test'
+        self._named_key_prefix = "test"
         self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
 
-    def testcase(self, prefix='test'):
+    def testcase(self, prefix="test"):
         return Testcase(self, prefix)
 
     @property
@@ -515,7 +525,7 @@ class ManticoreOutput:
         :rtype: str
         """
         if self._descriptor is None:
-            self._descriptor = f'{self._store.store_type}:{self._store.uri}'
+            self._descriptor = f"{self._store.store_type}:{self._store.uri}"
 
         return self._descriptor
 
@@ -525,7 +535,7 @@ class ManticoreOutput:
 
         :rtype: int
         """
-        filename = '.testcase_id'
+        filename = ".testcase_id"
         with self._store.lock():
             try:
                 with self._store.stream(filename, "r") as f:
@@ -535,7 +545,7 @@ class ManticoreOutput:
             else:
                 last_id += 1
             with self._store.stream(filename, "w") as f:
-                f.write(f'{last_id}')
+                f.write(f"{last_id}")
                 f.flush()
         return last_id
 
@@ -549,7 +559,7 @@ class ManticoreOutput:
         return last_id
 
     def _named_key(self, suffix):
-        return f'{self._named_key_prefix}_{self._last_id:08x}.{suffix}'
+        return f"{self._named_key_prefix}_{self._last_id:08x}.{suffix}"
 
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)
@@ -566,8 +576,8 @@ class ManticoreOutput:
         with self._store.save_stream(self._named_key(name), binary=binary, lock=lock) as s:
             yield s
 
-    #Remove/move ...
-    def save_testcase(self, state, testcase, message=''):
+    # Remove/move ...
+    def save_testcase(self, state, testcase, message=""):
         """
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
@@ -592,14 +602,14 @@ class ManticoreOutput:
                     data = data.encode()
                 stream.write(data)
 
-        #self._store.save_state(state, self._named_key('pkl'))
+        # self._store.save_state(state, self._named_key('pkl'))
         return testcase
 
     @staticmethod
     def save_summary(testcase, state, message):
-        with testcase.open_stream('messages') as summary:
+        with testcase.open_stream("messages") as summary:
             summary.write(f"Command line:\n  '{' '.join(sys.argv)}'\n")
-            summary.write(f'Status:\n  {message}\n\n')
+            summary.write(f"Status:\n  {message}\n\n")
 
             memories = set()
             for cpu in filter(None, state.platform.procs):
@@ -607,7 +617,7 @@ class ManticoreOutput:
                 summary.write(f"================ PROC: {idx:02d} ================\n")
                 summary.write("Memory:\n")
                 if hash(cpu.memory) not in memories:
-                    summary.write(str(cpu.memory).replace('\n', '\n  '))
+                    summary.write(str(cpu.memory).replace("\n", "\n  "))
                     memories.add(hash(cpu.memory))
 
                 summary.write(f"CPU:\n{cpu}")
@@ -620,23 +630,23 @@ class ManticoreOutput:
 
     @staticmethod
     def save_trace(testcase, state):
-        with testcase.open_stream('trace') as f:
-            if 'trace' not in state.context:
+        with testcase.open_stream("trace") as f:
+            if "trace" not in state.context:
                 return
-            for entry in state.context['trace']:
-                f.write(f'0x{entry:x}\n')
+            for entry in state.context["trace"]:
+                f.write(f"0x{entry:x}\n")
 
     @staticmethod
     def save_constraints(testcase, state):
         # XXX(yan): We want to conditionally enable this check
         # assert solver.check(state.constraints)
 
-        with testcase.open_stream('smt') as f:
+        with testcase.open_stream("smt") as f:
             f.write(str(state.constraints))
 
     @staticmethod
     def save_input_symbols(testcase, state):
-        with testcase.open_stream('input') as f:
+        with testcase.open_stream("input") as f:
             for symbol in state.input_symbols:
                 buf = Z3Solver().get_value(state.constraints, symbol)
-                f.write(f'{symbol.name}: {buf!r}\n')
+                f.write(f"{symbol.name}: {buf!r}\n")

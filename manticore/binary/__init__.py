@@ -18,7 +18,8 @@ and common API.  interpreters? linkers? linked DLLs?
 from .binary import Binary, CGCElf, Elf  # noqa
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     print(list(Binary(sys.argv[1]).threads()))
     print(list(Binary(sys.argv[1]).maps()))
