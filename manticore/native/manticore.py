@@ -44,7 +44,6 @@ class Manticore(ManticoreBase):
 
         # Move the following into a linux plugin
         self._assertions = {}
-        self._coverage_file = None
         self.trace = None
         # sugar for 'will_execute_instruction"
         self._hooks = {}
@@ -85,15 +84,6 @@ class Manticore(ManticoreBase):
 
         for cb in self._model_hooks[pc]:
             cb(state)
-
-    @property
-    def coverage_file(self):
-        return self._coverage_file
-
-    @coverage_file.setter
-    @ManticoreBase.at_not_running
-    def coverage_file(self, path):
-        self._coverage_file = path
 
     def _generate_testcase_callback(self, state, testcase, message):
         self._output.save_testcase(state, testcase, message)

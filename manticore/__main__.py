@@ -55,7 +55,7 @@ def parse_arguments():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--context', type=str, default=None,
                         help=argparse.SUPPRESS)
-    parser.add_argument('--coverage', type=str, default=None,
+    parser.add_argument('--coverage', type=str, default='visited.txt',
                         help='Where to write the coverage data')
     parser.add_argument('--names', type=str, default=None,
                         help=argparse.SUPPRESS)
