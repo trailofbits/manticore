@@ -1165,8 +1165,7 @@ Using the SAR instruction to perform a division operation does not produce the s
         # movhps qword ptr [eax], xmm1
         mem[0x0041e10a] = '\x0f'
         mem[0x0041e10b] = '\x17'
-        mem[0x0041e10c] = '\x48'
-        mem[0x0041e10d] = '\x08'
+        mem[0x0041e10c] = '\x08'
 
         cpu.RIP = 0x41e10a
         cpu.EAX = 0x41e000
