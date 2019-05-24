@@ -29,10 +29,9 @@ def native_main(args, _logger):
         m.load_assertions(args.assertions)
 
     @m.init
-    def init(m, ready_states):
+    def init(state):
         for file in args.files:
-            for state in ready_states:
-                state.platform.add_symbolic_file(file)
+            state.platform.add_symbolic_file(file)
 
     with m.kill_timeout():
         m.run()

@@ -46,6 +46,7 @@ class Manticore(ManticoreBase):
         self.trace = None
         # sugar for 'will_execute_instruction"
         self._hooks = {}
+        self._init_hooks = set()
 
         # self.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
@@ -207,7 +208,9 @@ class Manticore(ManticoreBase):
         A decorator used to register a hook function to run before analysis begins. Hook
         function takes one :class:`~manticore.core.state.State` argument.
         """
-        self.subscribe("will_run", f)
+        self._init_hooks.add(f)
+        if self._init_hooks:
+            self.subscribe("will_run", self._init_callback)
         return f
 
     def hook(self, pc):
@@ -259,6 +262,13 @@ class Manticore(ManticoreBase):
         # Invoke all pc-agnostic hooks
         for cb in self._hooks.get(None, []):
             cb(state)
+
+    def _init_callback(self, ready_states):
+        for cb in self._init_hooks:
+            # We _should_ only ever have one starting state. Right now we're putting
+            # this in a loop for futureproofing.
+            for state in ready_states:
+                cb(state)
 
     ###############################
     # Symbol Resolution

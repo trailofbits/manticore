@@ -61,9 +61,9 @@ class ManticoreTest(unittest.TestCase):
         self.m.context["x"] = 0
 
         @self.m.init
-        def tmp(m, _ready_states):
-            m.context["x"] = 1
-            m.kill()
+        def tmp(_state):
+            self.m.context["x"] = 1
+            self.m.kill()
 
         self.m.run()
 
