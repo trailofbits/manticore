@@ -323,11 +323,10 @@ class LinuxTest(unittest.TestCase):
         m.context["success"] = False
 
         @m.init
-        def init(m, ready_states):
-            for state in ready_states:
-                state.platform.current.regfile.write("R0", 0)
-                state.platform.current.regfile.write("R1", 0x1234)
-                state.platform.current.regfile.write("R2", 0x5678)
+        def init(state):
+            state.platform.current.regfile.write("R0", 0)
+            state.platform.current.regfile.write("R1", 0x1234)
+            state.platform.current.regfile.write("R2", 0x5678)
 
         @m.hook(0x1001)
         def pre(state):
