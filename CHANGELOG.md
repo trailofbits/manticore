@@ -25,7 +25,7 @@ We look forward to getting feedback on this architecture so we can eventually re
 
 ### Ethereum
 
-* Added Symbolic EVM Tests ([#1431](https://github.com/trailofbits/manticore/pull/1431), [#1441](https://github.com/trailofbits/manticore/pull/1441))
+* Added Symbolic EVM Tests for the Frontier fork. Note that we don't support any other forks (i.e. Constantinople) yet. ([#1431](https://github.com/trailofbits/manticore/pull/1431), [#1441](https://github.com/trailofbits/manticore/pull/1441))
 * **[fixed API]** Fixed relative paths for .sol files ([#1393](https://github.com/trailofbits/manticore/pull/1393))
 * **[fixed API]** Support dynamic parameters in constructors ([#1414](https://github.com/trailofbits/manticore/pull/1414))
 * Fixed detector failure when PC is symbolic ([#1395](https://github.com/trailofbits/manticore/pull/1395))
