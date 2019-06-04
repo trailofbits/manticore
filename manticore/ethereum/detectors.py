@@ -3,7 +3,15 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
-from ..core.smtlib import Operators, Constant, simplify, issymbolic, istainted, get_taints, taint_with
+from ..core.smtlib import (
+    Operators,
+    Constant,
+    simplify,
+    istainted,
+    issymbolic,
+    get_taints,
+    taint_with,
+)
 from ..core.plugin import Plugin
 
 
