@@ -439,7 +439,11 @@ class SyscallAbi(Abi):
 
             args = []
             for arg in self._last_arguments:
-                arg_s = unsigned_hexlify(arg) if abs(arg) > min_hex_expansion else f"{arg}"
+                arg_s = (
+                    unsigned_hexlify(arg)
+                    if not issymbolic(arg) and abs(arg) > min_hex_expansion
+                    else f"{arg}"
+                )
                 if self._cpu.memory.access_ok(arg, "r") and model.__func__.__name__ not in {
                     "sys_mprotect",
                     "sys_mmap",
