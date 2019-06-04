@@ -23,6 +23,7 @@ class Expression:
     def taint(self):
         return self._taint
 
+
 def issymbolic(value):
     """
         Helper to determine whether an object is symbolic (e.g checking
