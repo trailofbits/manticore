@@ -370,7 +370,9 @@ class Socket:
         return a, b
 
     def __init__(self):
-        self.buffer = []  # queue os bytes
+        from collections import deque
+
+        self.buffer = deque()  # queue os bytes
         self.peer = None
 
     def __repr__(self):
@@ -399,7 +401,7 @@ class Socket:
         rx_bytes = min(size, len(self.buffer))
         ret = []
         for i in range(rx_bytes):
-            ret.append(self.buffer.pop())
+            ret.append(self.buffer.popleft())
         return ret
 
     def write(self, buf):
@@ -408,7 +410,7 @@ class Socket:
 
     def _transmit(self, buf):
         for c in buf:
-            self.buffer.insert(0, c)
+            self.buffer.append(c)
         return len(buf)
 
     def sync(self):
