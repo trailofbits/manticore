@@ -19,6 +19,8 @@ We've completed a major refactor of the core executor that reorganizes Manticore
 from manticore.core.smtlib.solver import Z3Solver
 solver = Z3Solver.instance()
 ```
+* `manticore.running_states` has been renamed to `manticore.busy_states`
+For more information about changes to the state machine, see [the diagram in core/manticore.py](https://github.com/trailofbits/manticore/blob/451965f03a5e0d6766e499bf3246e4796b35638f/manticore/core/manticore.py#L132-L239)
 
 ##### Blacken ([#1438](https://github.com/trailofbits/manticore/pull/1438))
 We've run the [`black`](https://black.readthedocs.io/en/stable/index.html) autoformatter on the master branch of Manticore, and added a check for compliance to our CI. To ensure your code is properly formatted, run `black -t py36 -l 100 .` in your Manticore directory before committing. 
