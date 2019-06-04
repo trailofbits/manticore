@@ -10,67 +10,6 @@ import re
 logger = logging.getLogger(__name__)
 
 
-def istainted(arg, taint=None):
-    """
-    Helper to determine whether an object if tainted.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    """
-
-    if not issymbolic(arg):
-        return False
-    if taint is None:
-        return len(arg.taint) != 0
-    for arg_taint in arg.taint:
-        m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
-        if m:
-            return True
-    return False
-
-
-def get_taints(arg, taint=None):
-    """
-    Helper to list an object taints.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    """
-
-    if not issymbolic(arg):
-        return
-    for arg_taint in arg.taint:
-        if taint is not None:
-            m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
-            if m:
-                yield arg_taint
-        else:
-            yield arg_taint
-    return
-
-
-def taint_with(arg, taint, value_bits=256, index_bits=256):
-    """
-    Helper to taint a value.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    """
-    from ..core.smtlib import BitVecConstant  # prevent circular imports
-
-    tainted_fset = frozenset((taint,))
-
-    if not issymbolic(arg):
-        if isinstance(arg, int):
-            arg = BitVecConstant(value_bits, arg)
-            arg._taint = tainted_fset
-        else:
-            raise ValueError("type not supported")
-
-    else:
-        arg = copy.copy(arg)
-        arg._taint |= tainted_fset
-
-    return arg
-
-
 def interval_intersection(min1, max1, min2, max2):
     """
     Given two intervals, (min1, max1) and (min2, max2) return their intersecting interval,
