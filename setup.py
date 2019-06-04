@@ -7,7 +7,7 @@ on_rtd = os.environ.get("READTHEDOCS") == "True"
 def rtd_dependent_deps():
     # RTD tries to build z3, ooms, and fails to build.
     if on_rtd:
-        return []
+        return native_deps
     else:
         return ["z3-solver"]
 
