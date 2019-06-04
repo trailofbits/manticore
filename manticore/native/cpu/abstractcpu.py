@@ -11,13 +11,12 @@ import unicorn
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory
-from ...core.smtlib import Expression, BitVec, Operators, Constant
+from ...core.smtlib import Expression, BitVec, Operators, Constant, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
-from ...utils.helpers import issymbolic
 
 from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_ARCH_ARM
 from capstone.arm64 import ARM64_REG_ENDING

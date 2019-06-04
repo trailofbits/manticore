@@ -6,7 +6,8 @@ if sys.version_info < (3, 6):
 
 from .utils import config, log
 from .utils.log import set_verbosity
-from .utils.helpers import issymbolic, istainted
+from .utils.helpers import istainted
+from .core.smtlib import issymbolic
 from .ethereum.manticore import ManticoreEVM
 
 __all__ = [issymbolic.__name__, istainted.__name__, ManticoreEVM.__name__, set_verbosity.__name__]

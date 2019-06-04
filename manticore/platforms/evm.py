@@ -6,7 +6,7 @@ import copy
 import inspect
 from functools import wraps
 from typing import List, Set, Tuple, Union
-from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
+from ..utils.helpers import get_taints, taint_with, istainted
 from ..platforms.platform import *
 from ..core.smtlib import (
     Z3Solver,
@@ -21,6 +21,7 @@ from ..core.smtlib import (
     translate_to_smtlib,
     to_constant,
     simplify,
+    issymbolic,
 )
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful

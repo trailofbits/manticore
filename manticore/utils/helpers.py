@@ -10,20 +10,6 @@ import re
 logger = logging.getLogger(__name__)
 
 
-def issymbolic(value):
-    """
-    Helper to determine whether an object is symbolic (e.g checking
-    if data read from memory is symbolic)
-
-    :param object value: object to check
-    :return: whether `value` is symbolic
-    :rtype: bool
-    """
-    from ..core.smtlib import Expression  # prevent circular imports
-
-    return isinstance(value, Expression)
-
-
 def istainted(arg, taint=None):
     """
     Helper to determine whether an object if tainted.

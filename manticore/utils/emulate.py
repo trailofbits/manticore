@@ -10,8 +10,7 @@ from unicorn import *
 from unicorn.arm_const import *
 from unicorn.x86_const import *
 
-from .helpers import issymbolic
-from ..core.smtlib import Operators, solver
+from ..core.smtlib import Operators, solver, issymbolic
 from ..native.memory import MemoryException
 
 logger = logging.getLogger(__name__)

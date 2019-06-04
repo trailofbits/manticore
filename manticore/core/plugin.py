@@ -4,7 +4,7 @@ import cProfile
 import pstats
 import threading
 
-from ..utils.helpers import issymbolic
+from .smtlib import issymbolic
 
 logger = logging.getLogger(__name__)
 

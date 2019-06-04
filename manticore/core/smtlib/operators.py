@@ -10,7 +10,7 @@ from .expression import (
     BoolConstant,
     BoolITE,
 )
-from ...utils.helpers import issymbolic
+from . import issymbolic
 import math
 
 

@@ -2,7 +2,7 @@ import logging
 
 from ..native.memory import MemoryException
 
-from .helpers import issymbolic
+from ..core.smtlib import issymbolic
 
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus

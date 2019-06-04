@@ -9,9 +9,10 @@ from ..core.smtlib import (
     BitVec,
     BitVecConstant,
     expression,
+    issymbolic,
 )
 from ..native.mappings import mmap, munmap
-from ..utils.helpers import issymbolic, interval_intersection
+from ..utils.helpers import interval_intersection
 
 import functools
 import logging

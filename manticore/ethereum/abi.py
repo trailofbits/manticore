@@ -5,8 +5,7 @@ import re
 import sha3
 
 from . import abitypes
-from ..utils.helpers import issymbolic
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
+from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy, issymbolic
 from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)
