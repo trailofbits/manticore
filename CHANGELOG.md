@@ -14,6 +14,11 @@ Thanks to our external contributors!
 We've completed a major refactor of the core executor that reorganizes Manticore's state machine to be more amenable toward use with the multiprocesssing module. This refactor introduces some small API changes:
 * One must explicitly call the `finalize` method to dump test cases from a run
 * The `will_start_run` event has been renamed to `will_run`
+* The `solver` module requires explicitly accessing the Z3Solver singleton. `from manticore.core.smtlib import solver` becomes:
+```python
+from manticore.core.smtlib.solver import Z3Solver
+solver = Z3Solver.instance()
+```
 
 ##### Blacken ([#1438](https://github.com/trailofbits/manticore/pull/1438))
 We've run the [`black`](https://black.readthedocs.io/en/stable/index.html) autoformatter on the master branch of Manticore, and added a check for compliance to our CI. To ensure your code is properly formatted, run `black -t py36 -l 100 .` in your Manticore directory before committing. 
