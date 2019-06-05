@@ -500,11 +500,11 @@ def concretized_args(**policies):
     Example decoration:
 
         @concretized_args(size='ONE', address='')
-        def LOG(self, address, size, *topics):
-            ...
+        def LOG(self, address, size, \*topics):
+        ...
 
-    The above will make sure that the |size| parameter to LOG is Concretized when symbolic
-    according to the 'ONE' policy and concretize |address| with the default policy.
+    The above will make sure that the *size* parameter to LOG is Concretized when symbolic
+    according to the 'ONE' policy and concretize *address* with the default policy.
 
     :param policies: A kwargs list of argument names and their respective policies.
                          Provide None or '' as policy to use default.
@@ -2832,7 +2832,7 @@ class EVMWorld(Platform):
 
             def set_address(state, solution):
                 world = state.platform
-                world._pending_transaction = sort, solution, price, data, caller, value, gas
+                world._pending_transaction = (sort, solution, price, data, caller, value, gas)
 
             cond = self._constraint_to_accounts(address, ty="contract", include_zero=False)
             self.constraints.add(cond)
@@ -2849,7 +2849,7 @@ class EVMWorld(Platform):
 
             def set_caller(state, solution):
                 world = state.platform
-                world._pending_transaction = sort, address, price, data, solution, value, gas
+                world._pending_transaction = (sort, address, price, data, solution, value, gas)
 
             # Constrain it so it can range over all normal accounts
             cond = self._constraint_to_accounts(caller, ty="normal")
