@@ -775,8 +775,8 @@ class Cpu(Eventful):
         :param int where: Address to write the string to
         :param str string: The string to write to memory
         :param int max_length:
-            The size in bytes to cap the string at, or None [default] for no
-            limit. This includes the NULL terminator.
+        The size in bytes to cap the string at, or None [default] for no
+        limit. This includes the NULL terminator.
         :param force: whether to ignore memory permissions
         """
 
