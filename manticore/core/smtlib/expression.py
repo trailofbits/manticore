@@ -1,6 +1,9 @@
 from functools import reduce
 import uuid
 
+import re
+import copy
+
 
 class Expression:
     """ Abstract taintable Expression. """
@@ -79,7 +82,6 @@ def taint_with(arg, taint, value_bits=256, index_bits=256):
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
     """
-    from ..core.smtlib import BitVecConstant  # prevent circular imports
 
     tainted_fset = frozenset((taint,))
 

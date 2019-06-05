@@ -3,9 +3,6 @@ import pickle
 import sys
 from collections import OrderedDict
 
-import copy
-import re
-
 
 logger = logging.getLogger(__name__)
 
