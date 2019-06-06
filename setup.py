@@ -14,11 +14,7 @@ def rtd_dependent_deps():
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
-native_deps = [
-    "capstone==4.0.1",
-    "pyelftools",
-    "unicorn @ git+https://github.com/unicorn-engine/unicorn.git@778171fc9546c1fc3d1341ff1151eab379848ea0#subdirectory=bindings/python&egg=unicorn-1.0.1.post0",
-]
+native_deps = ["capstone==4.0.1", "pyelftools", "unicorn"]
 
 extra_require = {
     "native": native_deps,
