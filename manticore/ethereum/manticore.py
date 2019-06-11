@@ -25,6 +25,7 @@ from ..core.smtlib import (
     BoolConstant,
     BoolOperation,
     Expression,
+    issymbolic,
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -34,7 +35,7 @@ from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
 from ..utils import config, log
-from ..utils.helpers import PickleSerializer, issymbolic
+from ..utils.helpers import PickleSerializer
 
 logger = logging.getLogger(__name__)
 

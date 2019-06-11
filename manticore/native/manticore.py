@@ -12,9 +12,8 @@ from elftools.elf.sections import SymbolTableSection
 from .state import State
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet
-from ..core.smtlib.solver import Z3Solver
+from ..core.smtlib.solver import Z3Solver, issymbolic
 from ..utils import log, config
-from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
