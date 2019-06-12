@@ -957,6 +957,21 @@ class Memory(object, metaclass=ABCMeta):
             self._recording_stack[-1].extend(lst)
         return lst
 
+    # this is an optimized version of write with only one byte
+    # and thus only one map
+    def write1(self, addr, val, force=False):
+        # optimizing together map_containing and access_ok
+        m = self._page2map.get(addr >> self.page_bit_size, None)
+        if m is None:
+            raise InvalidMemoryAccess(addr, "w")
+        if not force and not m.access_ok("w"):
+            raise InvalidMemoryAccess(addr, "w")
+
+        if self._recording_stack:
+            self._recording_stack[-1].append((addr, [val]))
+
+        m[addr] = val
+
     def write(self, addr, buf, force=False):
         size = len(buf)
         if not self.access_ok(slice(addr, addr + size), "w", force):
@@ -1172,7 +1187,7 @@ class SMemory(Memory):
                     # overwrite all previous items
                     if address + offset in self._symbols:
                         del self._symbols[address + offset]
-                    super().write(address + offset, [value[offset]], force)
+                    super().write1(address + offset, value[offset], force)
 
     def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
         """
