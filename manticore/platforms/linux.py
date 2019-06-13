@@ -2520,10 +2520,10 @@ class Linux(Platform):
         bufstat += add(4, stat.st_uid)  # unsigned long   st_uid;
         bufstat += add(4, stat.st_gid)  # unsigned long   st_gid;
         bufstat += add(8, stat.st_rdev)  # unsigned long long st_rdev;
-        bufstat += add(8, 0)  # unsigned long long __pad1;
+        bufstat += add(4, 0)  # unsigned long long __pad1;
         bufstat += add(8, stat.st_size)  # long long       st_size;
         bufstat += add(4, stat.st_blksize)  # int   st_blksize;
-        bufstat += add(4, 0)  # int   __pad2;
+        # bufstat += add(4, 0)  # int   __pad2;
         bufstat += add(8, stat.st_blocks)  # unsigned long long st_blocks;
         bufstat += to_timespec(stat.st_atime)  # unsigned long   st_atime;
         bufstat += to_timespec(stat.st_mtime)  # unsigned long   st_mtime;
