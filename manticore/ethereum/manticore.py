@@ -1432,10 +1432,8 @@ class ManticoreEVM(ManticoreBase):
                         cond = Operators.OR(Operators.AND(bufa == bufc, hsha == hshc), cond)
                 state.constrain(cond)
             if not state.can_be_true(True):
-                print(state.constraints)
                 self._terminated_states.remove(state.id)
 
-            print ("did finish", state, local_known_sha3)
 
     def _terminate_state_callback(self, state, e):
         """ INTERNAL USE
