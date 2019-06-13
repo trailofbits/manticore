@@ -1197,7 +1197,7 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        # print (self)
+        #print (self)
         try:
             # import time
             # limbo = 0.0
@@ -1531,30 +1531,44 @@ class EVM(Eventful):
 
     @concretized_args(size="SAMPLED")
     def SHA3(self, start, size):
-        """Compute Keccak-256 hash"""
+        """Compute Keccak-256 hash
+            If the size is symbolic the potential solutions will be sampled as
+            defined by the default policy and the analysis will be forked.
+            The `size` can be considered concrete in this handler.
+
+        """
         # read memory from start to end
         # http://gavwood.com/paper.pdf
         data = self.try_simplify_to_constant(self.read_buffer(start, size))
 
         if issymbolic(data):
+            # If the data is symbolic we let ManticoreEVM the known_sha3 dictionary
+            # will be updated with the buf->hash pairs to use
             known_sha3 = {}
             # Broadcast the signal
             self._publish(
                 "on_symbolic_sha3", data, known_sha3
             )  # This updates the local copy of sha3 with the pairs we need to explore
-            value = 0  # never used
+
+            # This builds a symbol in `value` that represents all the known sha3
+            # as reported by ManticoreEVM
+            value = None  # never used
             known_hashes_cond = False
             for key, hsh in known_sha3.items():
-                assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
-                cond = key == data
-                known_hashes_cond = Operators.OR(cond, known_hashes_cond)
-                value = Operators.ITEBV(256, cond, hsh, value)
-            return value
+                #Ignore the key if the size wont match
+                if len(key) == len(data):
+                    cond = key == data
+                    if known_hashes_cond is False:
+                        value = hsh
+                        known_hashes_cond = cond
+                    else:
+                        value = Operators.ITEBV(256, cond, hsh, value)
+                        known_hashes_cond = Operators.OR(cond, known_hashes_cond)
+        else:
+            value = int(sha3.keccak_256(data).hexdigest(), 16)
+            self._publish("on_concrete_sha3", data, value)
+            logger.info("Found a concrete SHA3 example %r -> %x", data, value)
 
-        value = sha3.keccak_256(data).hexdigest()
-        value = int(value, 16)
-        self._publish("on_concrete_sha3", data, value)
-        logger.info("Found a concrete SHA3 example %r -> %x", data, value)
         return value
 
     ############################################################################
