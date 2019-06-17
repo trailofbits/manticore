@@ -1864,7 +1864,7 @@ class Linux(Platform):
         :param size: the size of the portion to unmap.
         :return: C{0} on success.
         """
-        if(issymbolic(addr)):
+        if issymbolic(addr):
             raise ConcretizeArgument(self, 0)
         if issymbolic(size):
             raise ConcretizeArgument(self, 1)
