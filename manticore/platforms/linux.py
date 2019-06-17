@@ -1864,6 +1864,10 @@ class Linux(Platform):
         :param size: the size of the portion to unmap.
         :return: C{0} on success.
         """
+        if(issymbolic(addr)):
+            raise ConcretizeArgument(self, 0)
+        if issymbolic(size):
+            raise ConcretizeArgument(self, 1)
         self.current.memory.munmap(addr, size)
         return 0
 
@@ -1950,6 +1954,9 @@ class Linux(Platform):
         for i in range(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
+
+            if issymbolic(size):
+                size = Z3Solver().get_value(self.constraints, size)
 
             data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
