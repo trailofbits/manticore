@@ -1104,7 +1104,7 @@ class SMemory(Memory):
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition)
-                from .state import ForkState
+                from ..core.state import ForkState
 
                 raise ForkState("Forking state on incomplete result", condition)
 
@@ -1194,7 +1194,19 @@ class SMemory(Memory):
             if not self.access_ok(slice(base, base + size), access, force):
                 crashing_condition = Operators.OR(address == base, crashing_condition)
 
-        if solver.can_be_true(self.constraints, crashing_condition):
+        crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=3)
+
+        if len(crash_or_not) == 2:
+            from ..core.state import Concretize
+
+            def setstate(state, _value):
+                """ Roll back PC to redo last instruction """
+                state.cpu.PC = state.cpu._last_pc
+
+            raise Concretize(
+                "Forking on memory safety", expression=crashing_condition, setstate=setstate
+            )
+        elif crash_or_not[0]:
             raise InvalidSymbolicMemoryAccess(address, access, size, crashing_condition)
 
         return solutions
