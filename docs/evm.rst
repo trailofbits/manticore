@@ -1,9 +1,6 @@
 EVM
 ---
 
-.. automodule:: manticore.platforms.evm
-    :members:
-
 ABI
 ^^^
 
@@ -14,4 +11,10 @@ Manager
 ^^^^^^^
 
 .. autoclass:: manticore.ethereum.ManticoreEVM
+    :members:
+
+EVM
+^^^
+
+.. automodule:: manticore.platforms.evm
     :members:

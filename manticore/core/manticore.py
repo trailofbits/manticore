@@ -135,31 +135,33 @@ class ManticoreBase(Eventful):
                Manticore symbolically explores program states.
 
 
-        Manticore phases
-        ****************
+        **Manticore phases**
 
         Manticore has multiprocessing capabilities. Several worker processes
         could be registered to do concurrent exploration of the READY states.
         Manticore can be itself at different phases: STANDBY, RUNNING.
 
+        .. code-block::
+
                       +---------+               +---------+
                 ----->| STANDBY +<------------->+ RUNNING |
                       +---------+               +----+----+
 
-        = Phase STANDBY =
+        *Phase STANDBY*
+
         Manticore starts at STANDBY with a single initial state. Here the user
         can inspect, modify and generate testcases for the different states. The
         workers are paused and not doing any work. Actions: run()
 
 
-        = Phase RUNNING =
+        *Phase RUNNING*
+
         At RUNNING the workers consume states from the READY state list and
         potentially fork new states or terminate states. A RUNNING manticore can
         be stopped back to STANDBY. Actions: stop()
 
 
-        States and state lists
-        **********************
+        **States and state lists**
 
         A state contains all the information of the running program at a given
         moment. State snapshots are saved to the workspace often. Internally
@@ -167,12 +169,16 @@ class ManticoreBase(Eventful):
         of the state is then changed by the emulation of the specific arch.
         Stored snapshots are periodically updated using: _save() and _load().
 
+        .. code-block::
+
                       _save     +-------------+  _load
             State  +----------> |  WORKSPACE  +----------> State
                                 +-------------+
 
         During exploration Manticore spawns a number of temporary states that are
         maintained in different lists:
+
+        .. code-block::
 
                 Initial
                 State
@@ -190,8 +196,8 @@ class ManticoreBase(Eventful):
         At any given time a state must be at the READY, BUSY, TERMINATED or
         KILLED list.
 
-        State list: READY
-        =================
+        *State list: READY*
+
         The READY list holds all the runnable states. Internally a state is
         added to the READY list via method `_put_state(state)`. Workers take
         states from the READY list via the `_get_state(wait=True|False)` method.
@@ -200,8 +206,8 @@ class ManticoreBase(Eventful):
         KILLED
 
 
-        State list: BUSY
-        =================
+        *State list: BUSY*
+
         When a state is selected for exploration from the READY list it is
         marked as busy and put in the BUSY list. States being explored will be
         constantly modified  and only saved back to storage when moved out of
@@ -212,8 +218,8 @@ class ManticoreBase(Eventful):
         from all the lists.
 
 
-        State list: TERMINATED
-        ======================
+        *State list: TERMINATED*
+
         TERMINATED contains states that have reached a final condition and raised
         TerminateState. Workers mainloop simpliy move the states that requested
         termination to the TERMINATED list. This is a final list.
@@ -222,8 +228,8 @@ class ManticoreBase(Eventful):
         the states in TERMINATED that pass some condition and move them back to
         READY so the user can apply a following transaction.```
 
-        State list: KILLED
-        ==================
+        *State list: KILLED*
+
         KILLED contains all the READY and BUSY states found at a cancel event.
         Manticore supports interactive analysis and has a prominetnt event system
         A useror ui can stop or cancel the exploration at any time. The unfinnished
