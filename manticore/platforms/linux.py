@@ -450,6 +450,8 @@ class Linux(Platform):
         self.program = program
         self.clocks = 0
         self.files = []
+        # A cache for keeping state when reading directories { fd: dent_iter }
+        self._getdents_c = {}
         self._closed_files = []
         self.syscall_trace = []
         # Many programs to support SLinux
@@ -609,6 +611,7 @@ class Linux(Platform):
             else:
                 state_files.append(("File", fd))
         state["files"] = state_files
+        state["_getdents_c"] = self._getdents_c
         state["closed_files"] = self._closed_files
         state["rlimits"] = self._rlimits
 
@@ -662,6 +665,7 @@ class Linux(Platform):
         self.files[0].peer = self.output
         self.files[1].peer = self.output
         self.files[2].peer = self.output
+        self._getdents_c = state["_getdents_c"]
         self._closed_files = state["closed_files"]
         self.input.peer = self.files[0]
         self._rlimits = state["rlimits"]
@@ -2649,9 +2653,6 @@ class Linux(Platform):
             return -e.errno
         return 0
 
-    # A cache for keeping state when reading directories { fd: dent_iter }
-    sys_getdents_c = {}
-
     def sys_getdents(self, fd, dirent, count) -> int:
         """
         Fill memory with directory entry structs
@@ -2667,11 +2668,11 @@ class Linux(Platform):
             logger.info("Can't get directory entries for a file")
             return -1
 
-        if fd not in self.sys_getdents_c:
+        if fd not in self._getdents_c:
             # First call on this file descriptor
-            self.sys_getdents_c[fd] = os.scandir(file.path)
+            self._getdents_c[fd] = os.scandir(file.path)
 
-        dent_iter = self.sys_getdents_c[fd]
+        dent_iter = self._getdents_c[fd]
 
         item = next(dent_iter, None)
         while item is not None:
@@ -2692,10 +2693,10 @@ class Linux(Platform):
 
         if item:
             # Prepend the last valid item that didn't fit to the list for next time
-            self.sys_getdents_c[fd] = itertools.chain([item], dent_iter)
+            self._getdents_c[fd] = itertools.chain([item], dent_iter)
         else:
             # If everything fit, then save just the dent_iter
-            self.sys_getdents_c[fd] = dent_iter
+            self._getdents_c[fd] = dent_iter
 
         if len(buf) > 0:
             # Write out to buffer if we have something to write
@@ -2703,7 +2704,7 @@ class Linux(Platform):
         else:  # len(buf) == 0
             # When the buffer is 0, that means we've read all directory entries
             # Delete the state and don't write a zero buffer back to dirent
-            del self.sys_getdents_c[fd]
+            del self._getdents_c[fd]
 
         return len(buf)
 
