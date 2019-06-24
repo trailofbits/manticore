@@ -2676,7 +2676,7 @@ class Linux(Platform):
 
         item = next(dent_iter, None)
         while item is not None:
-            fmt = f"LLH{len(item.name) + 1}sxc"
+            fmt = f"LLH{len(item.name) + 1}sB"
             size = struct.calcsize(fmt)
             if len(buf) + size > count:
                 # Don't overflow buffer
@@ -2685,8 +2685,11 @@ class Linux(Platform):
             stat = item.stat()
             print(f"FILE MODE: {item.name} :: {stat.st_mode:o}")
 
+            # https://elixir.bootlin.com/linux/latest/source/include/linux/fs_types.h#L27
+            d_type = (stat.st_mode >> 12) & 15
+
             packed = struct.pack(
-                fmt, item.inode(), size, size, bytes(item.name, "utf-8") + b"\x00", b"\x00"
+                fmt, item.inode(), size, size, bytes(item.name, "utf-8") + b"\x00", d_type
             )
             buf += packed
             item = next(dent_iter, None)
