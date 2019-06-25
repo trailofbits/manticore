@@ -205,7 +205,9 @@ class Map(object, metaclass=ABCMeta):
         """ Returns True if index is in range """
         if isinstance(index, slice):
             in_range = (
-                index.start < index.stop and index.start >= self.start and index.stop <= self.end
+                index.start < index.stop
+                and index.start >= self.start
+                and index.stop <= self.end
             )
         else:
             in_range = index >= self.start and index <= self.end
@@ -279,7 +281,10 @@ class AnonMap(Map):
                 self._data[0 : len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
-        return (self.__class__, (self.start, len(self), self.perms, self._data, self.name))
+        return (
+            self.__class__,
+            (self.start, len(self), self.perms, self._data, self.name),
+        )
 
     def split(self, address):
         if address <= self.start:
@@ -288,8 +293,12 @@ class AnonMap(Map):
             return self, None
 
         assert address > self.start and address < self.end
-        head = AnonMap(self.start, address - self.start, self.perms, self[self.start : address])
-        tail = AnonMap(address, self.end - address, self.perms, self[address : self.end])
+        head = AnonMap(
+            self.start, address - self.start, self.perms, self[self.start : address]
+        )
+        tail = AnonMap(
+            address, self.end - address, self.perms, self[address : self.end]
+        )
         return head, tail
 
     def __setitem__(self, index, value):
@@ -316,7 +325,9 @@ class AnonMap(Map):
 
 
 class ArrayMap(Map):
-    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs):
+    def __init__(
+        self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs
+    ):
         super(ArrayMap, self).__init__(address, size, perms)
         if name is None:
             name = "ArrayMap_{:x}".format(address)
@@ -324,7 +335,9 @@ class ArrayMap(Map):
             self._array = backing_array
         else:
             self._array = expression.ArrayProxy(
-                expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name)
+                expression.ArrayVariable(
+                    index_bits, index_max=size, value_bits=8, name=name
+                )
             )
 
     def __reduce__(self):
@@ -356,17 +369,25 @@ class ArrayMap(Map):
         index_bits, value_bits = self._array.index_bits, self._array.value_bits
 
         left_size, right_size = address - self.start, self.end - address
-        left_name, right_name = ["{}_{:d}".format(self._array.name, i) for i in range(2)]
+        left_name, right_name = [
+            "{}_{:d}".format(self._array.name, i) for i in range(2)
+        ]
 
         head_arr = expression.ArrayProxy(
             expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name)
         )
         tail_arr = expression.ArrayProxy(
-            expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name)
+            expression.ArrayVariable(
+                index_bits, right_size, value_bits, name=right_name
+            )
         )
 
-        head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)
-        tail = ArrayMap(address, right_size, self.perms, index_bits, tail_arr, right_name)
+        head = ArrayMap(
+            self.start, left_size, self.perms, index_bits, head_arr, left_name
+        )
+        tail = ArrayMap(
+            address, right_size, self.perms, index_bits, tail_arr, right_name
+        )
 
         return head, tail
 
@@ -411,7 +432,14 @@ class FileMap(Map):
     def __reduce__(self):
         return (
             self.__class__,
-            (self.start, len(self), self.perms, self._filename, self._offset, self._overlay),
+            (
+                self.start,
+                len(self),
+                self.perms,
+                self._filename,
+                self._offset,
+                self._overlay,
+            ),
         )
 
     def __del__(self):
@@ -1028,7 +1056,11 @@ class SMemory(Memory):
             self._symbols = dict(symbols)
 
     def __reduce__(self):
-        return self.__class__, (self.constraints, self._symbols, self._maps), {"cpu": self.cpu}
+        return (
+            self.__class__,
+            (self.constraints, self._symbols, self._maps),
+            {"cpu": self.cpu},
+        )
 
     @property
     def constraints(self):
@@ -1092,15 +1124,21 @@ class SMemory(Memory):
                     if start <= M + size and end >= m:
                         if "r" in perms:
                             crashing_condition = Operators.AND(
-                                Operators.OR((address + size).ult(start), address.uge(end)),
+                                Operators.OR(
+                                    (address + size).ult(start), address.uge(end)
+                                ),
                                 crashing_condition,
                             )
 
                 if solver.can_be_true(self.constraints, crashing_condition):
-                    raise InvalidSymbolicMemoryAccess(address, "r", size, crashing_condition)
+                    raise InvalidSymbolicMemoryAccess(
+                        address, "r", size, crashing_condition
+                    )
 
                 # INCOMPLETE Result! We could also fork once for every map
-                logger.info("INCOMPLETE Result! Using the sampled solutions we have as result")
+                logger.info(
+                    "INCOMPLETE Result! Using the sampled solutions we have as result"
+                )
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition)
@@ -1123,9 +1161,13 @@ class SMemory(Memory):
                     byte = Operators.ORD(self.map_containing(addr_value)[addr_value])
                     if addr_value in self._symbols:
                         for condition, value in self._symbols[addr_value]:
-                            byte = Operators.ITEBV(8, condition, Operators.ORD(value), byte)
+                            byte = Operators.ITEBV(
+                                8, condition, Operators.ORD(value), byte
+                            )
                     if len(result) > offset:
-                        result[offset] = Operators.ITEBV(8, address == base, byte, result[offset])
+                        result[offset] = Operators.ITEBV(
+                            8, address == base, byte, result[offset]
+                        )
                     else:
                         result.append(byte)
                     assert len(result) == offset + 1
@@ -1146,11 +1188,13 @@ class SMemory(Memory):
     def write(self, address, value, force=False):
         """
         Write a value at address.
+
         :param address: The address at which to write
         :type address: int or long or Expression
         :param value: Bytes to write
         :type value: str or list
         :param force: Whether to ignore permissions
+
         """
         size = len(value)
         if issymbolic(address):
@@ -1160,7 +1204,9 @@ class SMemory(Memory):
             for offset in range(size):
                 for base in solutions:
                     condition = base == address
-                    self._symbols.setdefault(base + offset, []).append((condition, value[offset]))
+                    self._symbols.setdefault(base + offset, []).append(
+                        (condition, value[offset])
+                    )
         else:
 
             for offset in range(size):
@@ -1174,7 +1220,9 @@ class SMemory(Memory):
                         del self._symbols[address + offset]
                     super().write(address + offset, [value[offset]], force)
 
-    def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
+    def _try_get_solutions(
+        self, address, size, access, max_solutions=0x1000, force=False
+    ):
         """
         Try to solve for a symbolic address, checking permissions when reading/writing size bytes.
 
@@ -1187,7 +1235,9 @@ class SMemory(Memory):
         """
         assert issymbolic(address)
         solver = Z3Solver.instance()
-        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
+        solutions = solver.get_all_values(
+            self.constraints, address, maxcnt=max_solutions
+        )
 
         crashing_condition = False
         for base in solutions:
@@ -1283,7 +1333,9 @@ class LazySMemory(SMemory):
             return address >= mapping.start and address + size < mapping.end
         else:
             solver = Z3Solver.instance()
-            constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
+            constraint = Operators.AND(
+                address >= mapping.start, address + size < mapping.end
+            )
             return solver.can_be_true(self.constraints, constraint)
 
     def _import_concrete_memory(self, from_addr, to_addr):
@@ -1317,7 +1369,9 @@ class LazySMemory(SMemory):
                 self.backed_by_symbolic_store.add(addr)
 
     def _map_deref_expr(self, map, address):
-        return Operators.AND(Operators.UGE(address, map.start), Operators.ULT(address, map.end))
+        return Operators.AND(
+            Operators.UGE(address, map.start), Operators.ULT(address, map.end)
+        )
 
     def _reachable_range(self, sym_address, size):
         solver = Z3Solver.instance()

@@ -118,7 +118,9 @@ class Operand:
         def __init__(self, parent):
             self.parent = parent
 
-        segment = property(lambda self: self.parent._reg_name(self.parent.op.mem.segment))
+        segment = property(
+            lambda self: self.parent._reg_name(self.parent.op.mem.segment)
+        )
         base = property(lambda self: self.parent._reg_name(self.parent.op.mem.base))
         index = property(lambda self: self.parent._reg_name(self.parent.op.mem.index))
         scale = property(lambda self: self.parent.op.mem.scale)
@@ -377,7 +379,9 @@ class Abi:
             if isinstance(src, str):
                 raise ConcretizeRegister(self._cpu, src, msg)
             else:
-                raise ConcretizeMemory(self._cpu.memory, src, self._cpu.address_bit_size, msg)
+                raise ConcretizeMemory(
+                    self._cpu.memory, src, self._cpu.address_bit_size, msg
+                )
         else:
             if result is not None:
                 self.write_result(result)
@@ -425,7 +429,9 @@ class SyscallAbi(Abi):
         ret = super().invoke(model, prefix_args)
         self._cpu._publish(
             "did_execute_syscall",
-            model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
+            model.__func__.__name__
+            if isinstance(model, types.MethodType)
+            else model.__name__,
             self._last_arguments,
             ret,
         )
@@ -443,10 +449,9 @@ class SyscallAbi(Abi):
                     if not issymbolic(arg) and abs(arg) > min_hex_expansion
                     else f"{arg}"
                 )
-                if self._cpu.memory.access_ok(arg, "r") and model.__func__.__name__ not in {
-                    "sys_mprotect",
-                    "sys_mmap",
-                }:
+                if self._cpu.memory.access_ok(
+                    arg, "r"
+                ) and model.__func__.__name__ not in {"sys_mprotect", "sys_mmap"}:
                     try:
                         s = self._cpu.read_string(arg, max_arg_expansion)
                         s = s.rstrip().replace("\n", "\\n") if s else s
@@ -456,7 +461,9 @@ class SyscallAbi(Abi):
                 args.append(arg_s)
 
             args_s = ", ".join(args)
-            ret_s = f"{unsigned_hexlify(ret)}" if abs(ret) > min_hex_expansion else f"{ret}"
+            ret_s = (
+                f"{unsigned_hexlify(ret)}" if abs(ret) > min_hex_expansion else f"{ret}"
+            )
 
             platform_logger.debug("%s(%s) = %s", model.__func__.__name__, args_s, ret_s)
 
@@ -659,7 +666,8 @@ class Cpu(Eventful):
         self._publish("will_write_memory", where, expression, size)
 
         data = [
-            Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)
+            Operators.CHR(Operators.EXTRACT(expression, offset, 8))
+            for offset in range(0, size, 8)
         ]
         self._memory.write(where, data, force)
 
@@ -698,7 +706,9 @@ class Cpu(Eventful):
             data = bytes(map._data[start : start + size])
         else:
             data = b"".join(self.memory[where : where + size])
-        assert len(data) == size, "Raw read resulted in wrong data read which should never happen"
+        assert (
+            len(data) == size
+        ), "Raw read resulted in wrong data read which should never happen"
         return data
 
     def read_int(self, where, size=None, force=False):
@@ -775,11 +785,14 @@ class Cpu(Eventful):
     def write_string(self, where, string, max_length=None, force=False):
         """
         Writes a string to memory, appending a NULL-terminator at the end.
+
         :param int where: Address to write the string to
         :param str string: The string to write to memory
         :param int max_length:
+
         The size in bytes to cap the string at, or None [default] for no
         limit. This includes the NULL terminator.
+
         :param force: whether to ignore memory permissions
         """
 
@@ -901,13 +914,18 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack("B", Z3Solver().get_value(self.memory.constraints, c))
+                        c = struct.pack(
+                            "B", Z3Solver().get_value(self.memory.constraints, c)
+                        )
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:
                     logger.error("Concretize executable memory %r %r", c, text)
                     raise ConcretizeMemory(
-                        self.memory, address=pc, size=8 * self.max_instr_width, policy="INSTRUCTION"
+                        self.memory,
+                        address=pc,
+                        size=8 * self.max_instr_width,
+                        policy="INSTRUCTION",
                     )
             text += c
 
@@ -1080,7 +1098,9 @@ class Cpu(Eventful):
     def render_instruction(self, insn=None):
         try:
             insn = self.instruction
-            return f"INSTRUCTION: 0x{insn.address:016x}:\t{insn.mnemonic}\t{insn.op_str}"
+            return (
+                f"INSTRUCTION: 0x{insn.address:016x}:\t{insn.mnemonic}\t{insn.op_str}"
+            )
         except Exception as e:
             return "{can't decode instruction}"
 
