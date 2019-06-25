@@ -11,13 +11,12 @@ import unicorn
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory
-from ...core.smtlib import Expression, BitVec, Operators, Constant
+from ...core.smtlib import Expression, BitVec, Operators, Constant, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
-from ...utils.helpers import issymbolic
 
 from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_ARCH_ARM
 from capstone.arm64 import ARM64_REG_ENDING
@@ -439,7 +438,11 @@ class SyscallAbi(Abi):
 
             args = []
             for arg in self._last_arguments:
-                arg_s = unsigned_hexlify(arg) if abs(arg) > min_hex_expansion else f"{arg}"
+                arg_s = (
+                    unsigned_hexlify(arg)
+                    if not issymbolic(arg) and abs(arg) > min_hex_expansion
+                    else f"{arg}"
+                )
                 if self._cpu.memory.access_ok(arg, "r") and model.__func__.__name__ not in {
                     "sys_mprotect",
                     "sys_mmap",

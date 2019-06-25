@@ -3,7 +3,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 """
 
 from .cpu.abstractcpu import ConcretizeArgument
-from ..utils.helpers import issymbolic
+from ..core.smtlib import issymbolic
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 

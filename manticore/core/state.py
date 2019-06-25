@@ -1,8 +1,7 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool
-from ..utils.helpers import issymbolic
+from .smtlib import solver, Bool, issymbolic
 from ..utils.event import Eventful
 
 logger = logging.getLogger(__name__)

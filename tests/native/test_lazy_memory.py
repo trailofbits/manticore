@@ -10,8 +10,7 @@ from itertools import *
 import sys
 
 from manticore.native.memory import *
-from manticore.utils.helpers import issymbolic
-from manticore.core.smtlib import Z3Solver, Operators
+from manticore.core.smtlib import Z3Solver, Operators, issymbolic
 from manticore.core.smtlib.expression import *
 from manticore.core.smtlib.visitors import *
 

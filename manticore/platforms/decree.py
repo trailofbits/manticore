@@ -6,7 +6,6 @@ from ..native.cpu.abstractcpu import Interruption, ConcretizeRegister, Concretiz
 from ..native.memory import SMemory32, Memory32
 from ..core.smtlib import *
 from ..core.state import TerminateState
-from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..platforms.platform import Platform
 import logging

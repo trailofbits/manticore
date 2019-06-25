@@ -21,14 +21,13 @@ from elftools.elf.sections import SymbolTableSection
 from . import linux_syscalls
 from .linux_syscall_stubs import SyscallStubs
 from ..core.state import TerminateState
-from ..core.smtlib import ConstraintSet, Operators, Expression
+from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic
 from ..core.smtlib.solver import Z3Solver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
-from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
@@ -370,7 +369,9 @@ class Socket:
         return a, b
 
     def __init__(self):
-        self.buffer = []  # queue os bytes
+        from collections import deque
+
+        self.buffer = deque()  # queue os bytes
         self.peer = None
 
     def __repr__(self):
@@ -399,7 +400,7 @@ class Socket:
         rx_bytes = min(size, len(self.buffer))
         ret = []
         for i in range(rx_bytes):
-            ret.append(self.buffer.pop())
+            ret.append(self.buffer.popleft())
         return ret
 
     def write(self, buf):
@@ -408,7 +409,7 @@ class Socket:
 
     def _transmit(self, buf):
         for c in buf:
-            self.buffer.insert(0, c)
+            self.buffer.append(c)
         return len(buf)
 
     def sync(self):

@@ -26,7 +26,7 @@ from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
 from ...utils import config
-from ...utils.helpers import issymbolic
+from . import issymbolic
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
