@@ -28,7 +28,7 @@ class Worker:
         The events are transmitted via 2 conditional variable: m._killed and
         m._started.
 
-        .. code-block::
+        .. code-block:: none
 
             STANDBY:   Waiting for the start event
             RUNNING:   Exploring and spawning states until no more READY states or
@@ -143,7 +143,9 @@ class Worker:
                         current_state = None
 
                     except TerminateState as exc:
-                        logger.debug("[%r] Debug State %r %r", self.id, current_state, exc)
+                        logger.debug(
+                            "[%r] Debug State %r %r", self.id, current_state, exc
+                        )
                         # Notify this state is done
                         m._publish("will_terminate_state", current_state, exc)
                         # Update the stored version of the current state
@@ -161,7 +163,9 @@ class Worker:
                     import traceback
 
                     formatted = traceback.format_exc()
-                    logger.error("Exception in state %r: %r\n%s ", self.id, exc, formatted)
+                    logger.error(
+                        "Exception in state %r: %r\n%s ", self.id, exc, formatted
+                    )
                     # Internal Exception
                     # Add the state to the terminated state list
                     if current_state is not None:
