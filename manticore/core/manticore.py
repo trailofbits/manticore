@@ -50,9 +50,7 @@ class MProcessingType(Enum):
 logger = logging.getLogger(__name__)
 
 consts = config.get_group("core")
-consts.add(
-    "timeout", default=0, description="Timeout, in seconds, for Manticore invocation"
-)
+consts.add("timeout", default=0, description="Timeout, in seconds, for Manticore invocation")
 consts.add(
     "cluster",
     default=False,
@@ -68,12 +66,7 @@ consts.add(
 
 class ManticoreBase(Eventful):
     def __new__(cls, *args, **kwargs):
-        if cls in (
-            ManticoreBase,
-            ManticoreSingle,
-            ManticoreThreading,
-            ManticoreMultiprocessing,
-        ):
+        if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
 
         cl = consts.mprocessing.to_class()
@@ -118,9 +111,7 @@ class ManticoreBase(Eventful):
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if self.is_running():
-                raise Exception(
-                    f"{func.__name__} only allowed while NOT exploring states"
-                )
+                raise Exception(f"{func.__name__} only allowed while NOT exploring states")
             return func(self, *args, **kw)
 
         return newFunction
@@ -268,9 +259,7 @@ class ManticoreBase(Eventful):
                 "_shared_context",
             )
         ):
-            raise Exception(
-                "Need to instantiate one of: ManticoreNative, ManticoreThreads.."
-            )
+            raise Exception("Need to instantiate one of: ManticoreNative, ManticoreThreads..")
 
         # The workspace and the output
         # Manticore will use the workspace to save and share temporary states.
@@ -282,9 +271,7 @@ class ManticoreBase(Eventful):
                 workspace_url = f"fs:{workspace_url}"
         else:
             if workspace_url is not None:
-                raise TypeError(
-                    f"Invalid workspace type: {type(workspace_url).__name__}"
-                )
+                raise TypeError(f"Invalid workspace type: {type(workspace_url).__name__}")
         self._workspace = Workspace(workspace_url)
         # reuse the same workspace if not specified
         if workspace_url is None:
@@ -300,15 +287,11 @@ class ManticoreBase(Eventful):
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
-            raise TypeError(
-                f"Invalid initial_state type: {type(initial_state).__name__}"
-            )
+            raise TypeError(f"Invalid initial_state type: {type(initial_state).__name__}")
         self._put_state(initial_state)
 
         # Workers will use manticore __dict__ So lets spawn them last
-        self._workers = [
-            self._worker_type(id=i, manticore=self) for i in range(consts.procs)
-        ]
+        self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
         self._is_main = True
 
     def __str__(self):
@@ -350,9 +333,7 @@ class ManticoreBase(Eventful):
             raise ManticoreError("Forking on unfeasible constraint set")
 
         logger.debug(
-            "Forking. Policy: %s. Values: %s",
-            policy,
-            ", ".join(f"0x{sol:x}" for sol in solutions),
+            "Forking. Policy: %s. Values: %s", policy, ", ".join(f"0x{sol:x}" for sol in solutions)
         )
 
         self._publish("will_fork_state", state, expression, solutions, policy)
@@ -373,9 +354,7 @@ class ManticoreBase(Eventful):
                     self._ready_states.append(new_state_id)
                     self._lock.notify_all()  # Must notify one!
 
-                self._publish(
-                    "did_fork_state", new_state, expression, new_value, policy
-                )
+                self._publish("did_fork_state", new_state, expression, new_value, policy)
                 # maintain a list of children for logging purpose
                 children.append(new_state_id)
 
@@ -621,9 +600,7 @@ class ManticoreBase(Eventful):
             (At running we can have states at busy)
         """
         return (
-            tuple(self._ready_states)
-            + tuple(self._terminated_states)
-            + tuple(self._killed_states)
+            tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
         )
 
     @property
@@ -683,9 +660,7 @@ class ManticoreBase(Eventful):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"
-        assert (
-            getattr(plugin, "manticore", None) is None
-        ), "Plugin instance already owned"
+        assert getattr(plugin, "manticore", None) is None, "Plugin instance already owned"
 
         plugin.manticore = self
         self.plugins.add(plugin)
@@ -899,9 +874,7 @@ class ManticoreBase(Eventful):
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
             with self._lock:
-                while (
-                    self._busy_states or self._ready_states
-                ) and not self._killed.value:
+                while (self._busy_states or self._ready_states) and not self._killed.value:
                     self._lock.wait()
 
         # Join all the workers!
@@ -909,9 +882,7 @@ class ManticoreBase(Eventful):
             w.join()
 
         with self._lock:
-            assert (
-                not self._busy_states and not self._ready_states or self._killed.value
-            )
+            assert not self._busy_states and not self._ready_states or self._killed.value
 
             if self.is_killed():
                 logger.debug("Killed. Moving all remaining ready states to killed list")
