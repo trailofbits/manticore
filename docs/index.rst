@@ -14,6 +14,7 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
    states
    evm
    native
+   plugins
    gotchas
 
 
