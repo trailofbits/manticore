@@ -78,13 +78,12 @@ To implement a user-defined model, implement your model as a Python function, an
 are also good examples to look at and use the same external user API.
 
 Symbolic Input
---------------
+^^^^^^^^^^^^^^
 
 Manticore allows you to execute programs with symbolic input, which represents a range of possible inputs. You
 can do this in a variety of manners.
 
-Wildcard byte
-^^^^^^^^^^^^^
+**Wildcard byte**
 
 Throughout these various interfaces, the '+' character is defined to designate a byte
 of input as symbolic. This allows the user to make input that mixes symbolic and concrete
@@ -92,8 +91,7 @@ bytes (e.g. known file magic bytes).
 
 For example: ``"concretedata++++++++moreconcretedata++++++++++"``
 
-Symbolic arguments/environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Symbolic arguments/environment**
 
 To provide a symbolic argument or environment variable on the command line,
 use the wildcard byte where arguments and environment are specified.::
@@ -105,16 +103,14 @@ For API use, use the ``argv`` and ``envp`` arguments to the :meth:`manticore.nat
 
     Manticore.linux('./binary', ['++++++', '++++++'], dict(VAR1='+++++', VAR2='++++++'))
 
-Symbolic stdin
-^^^^^^^^^^^^^^
+**Symbolic stdin**
 
 Manticore by default is configured with 256 bytes of symbolic stdin data which is configurable
 with the ``stdin_size`` kwarg of :meth:`manticore.native.Manticore.linux` , after an optional
 concrete data prefix, which can be provided with the ``concrete_start`` kwarg of
 :meth:`manticore.native.Manticore.linux`.
 
-Symbolic file input
-^^^^^^^^^^^^^^^^^^^
+**Symbolic file input**
 
 To provide symbolic input from a file, first create the files that will be opened by the
 analyzed program, and fill them with wildcard bytes where you would like symbolic data
@@ -131,9 +127,7 @@ execution state from an :meth:`~manticore.core.manticore.ManticoreBase.init` hoo
     def init(initial_state):
         initial_state.platform.add_symbolic_file('my_symbolic_file1.txt')
 
-Symbolic sockets
-^^^^^^^^^^^^^^^^
+**Symbolic sockets**
 
 Manticore's socket support is experimental! Sockets are configured to contain 64 bytes of
 symbolic input.
-
