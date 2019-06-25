@@ -2685,7 +2685,7 @@ class Linux(Platform):
             stat = item.stat()
             print(f"FILE MODE: {item.name} :: {stat.st_mode:o}")
 
-            # https://elixir.bootlin.com/linux/latest/source/include/linux/fs_types.h#L27
+            # https://elixir.bootlin.com/linux/v5.1.15/source/include/linux/fs_types.h#L27
             d_type = (stat.st_mode >> 12) & 15
 
             packed = struct.pack(
