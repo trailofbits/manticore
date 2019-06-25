@@ -844,10 +844,9 @@ class ManticoreBase(Eventful):
             timer.cancel()
 
     @at_not_running
-    def run(self, timeout=None):
+    def run(self):
         """
         Runs analysis.
-        :param timeout: Analysis timeout, in seconds
         """
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a

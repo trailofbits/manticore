@@ -59,7 +59,7 @@ consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions."
 consts.add(
     "sha3",
     default=Sha3Type.timetravel,
-    description="concretize: sound simple concretization\nsymbolicate: unsound symbolication with out of cycle FP killing\ntimetravel: best effort is done on the spot using current and future information :-O\nfunctions: sha3 is replaced by a uninstantiated function, requires solver support",
+    description="concretize: sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing\ntimetravel: best effort is done on the spot using current and future information :-O\nfunctions: sha3 is replaced by a uninstantiated function, requires solver support",
 )
 
 
