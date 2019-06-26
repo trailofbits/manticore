@@ -62,7 +62,7 @@ This can greatly increase performance.
 Manticore comes with implementations of function models for some common library routines (core models),
 and also offers a user API for defining user-defined models.
 
-To use a core model, use the :meth:`~manticore.native.State.invoke_model` API. The
+To use a core model, use the :meth:`~manticore.native.state.State.invoke_model` API. The
 available core models are documented in the API Reference::
 
     from manticore.native.models import strcmp
@@ -72,8 +72,8 @@ available core models are documented in the API Reference::
         state.invoke_model(strcmp)
 
 To implement a user-defined model, implement your model as a Python function, and pass it to
-:meth:`~manticore.native.State.invoke_model`. See the
-:meth:`~manticore.native.State.invoke_model` documentation for more. The
+:meth:`~manticore.native.state.State.invoke_model`. See the
+:meth:`~manticore.native.state.State.invoke_model` documentation for more. The
 `core models <https://github.com/trailofbits/manticore/blob/master/manticore/models.py>`_
 are also good examples to look at and use the same external user API.
 
@@ -121,7 +121,9 @@ For command line use, invoke Manticore with the ``--file`` argument.::
     $ manticore ./binary --file my_symbolic_file1.txt --file my_symbolic_file2.txt
 
 For API use, use the :meth:`~manticore.platforms.linux.SLinux.add_symbolic_file` interface to customize the initial
-execution state from an :meth:`~manticore.core.manticore.ManticoreBase.init` hook.::
+execution state from an :meth:`~manticore.core.manticore.ManticoreBase.__init__`
+
+.. code-block:: Python
 
     @m.init
     def init(initial_state):
