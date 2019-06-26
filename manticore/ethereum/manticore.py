@@ -25,7 +25,7 @@ from ..core.smtlib import (
     Operators,
     BoolConstant,
     BoolOperation,
-    Expression,
+    Expression,translate_to_smtlib, simplify
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -58,8 +58,8 @@ consts = config.get_group("evm")
 consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
 consts.add(
     "sha3",
-    default=Sha3Type.timetravel,
-    description="concretize: sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing\ntimetravel: best effort is done on the spot using current and future information :-O\nfunctions: sha3 is replaced by a uninstantiated function, requires solver support",
+    default=Sha3Type.concretize,
+    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing\ntimetravel: best effort is done on the spot using current and future information :-O\nfunctions: sha3 is replaced by a uninstantiated function, requires solver support",
 )
 
 
@@ -171,7 +171,7 @@ class ManticoreEVM(ManticoreBase):
         """
         avoid_collisions = False
         if name is None:
-            name = "TXVALUE"
+            name = "SVALUE"
             avoid_collisions = True
         return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=avoid_collisions)
 
@@ -460,16 +460,17 @@ class ManticoreEVM(ManticoreBase):
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         self.subscribe("did_read_code", self._did_evm_read_code)
+
+
         if consts.sha3 is consts.sha3.timetravel:
-            self.subscribe("on_symbolic_sha3", self._on_symbolic_sha3_callback_tt)
-            self.subscribe("on_concrete_sha3", self._on_concrete_sha3_callback_tt)
-        elif consts.sha3 is consts.sha3.concretization:
-            self.subscribe("on_symbolic_sha3", self._on_symbolic_sha3_callback_c)
-        elif consts.sha3 is consts.sha3.symbolication:
-            self.subscribe("on_symbolic_sha3", self._on_symbolic_sha3_callback_us)
-            self.subscribe("on_concrete_sha3", self._on_concrete_sha3_callback_us)
-            self.subscribe("did_run", self._on_did_run_us)
-        elif consts.sha3 is consts.sha3.function:
+            self.subscribe("on_symbolic_function", self._on_timetravel)
+        elif consts.sha3 is consts.sha3.concretize:
+            self.subscribe("on_symbolic_function", self._on_concretize)
+        elif consts.sha3 is consts.sha3.symbolicate:
+            self.subscribe("on_symbolic_function", self.on_unsound_symbolication)
+            self.subscribe("did_run", self._on_did_run_unsound_symbolication)
+        else:
+            #if consts.sha3 is consts.sha3.function:
             raise NotImplemented
 
         self._accounts = dict()
@@ -1274,36 +1275,60 @@ class ManticoreEVM(ManticoreBase):
         assert not self._busy_states
         assert not self.is_running()
 
-        # ManticoreEthereum decided at terminate_state_callback wich state is
+        # ManticoreEthereum decided at terminate_state_callback which state is
         # ready for next run and saved them at the context item
         # 'ethereum.saved_states'
         # Move successfully terminated states to ready states
         with self.locked_context("ethereum.saved_states", list) as saved_states:
             while saved_states:
                 state_id = saved_states.pop()
-                self._terminated_states.remove(state_id)
-                self._ready_states.append(state_id)
+                if state_id in self._terminated_states:
+                    self._terminated_states.remove(state_id)
+                    self._ready_states.append(state_id)
 
 
     # Callbacks
-    def _on_symbolic_sha3_callback_c(self, state, data, known_hashes):
-        """ INTERNAL USE """
-        assert issymbolic(data), "Data should be symbolic here!"
-        with self.locked_context("ethereum") as context:
-            results = []
+    def _on_concretize(self, state, func, data, result):
+        if not issymbolic(data):
+            y_concrete = func(data)
+        else:
+            with self.locked_context("ethereum") as context:
+                # adding a single random example so we can explore further
+                x_concrete = state.solve_one(data)
+                y_concrete = func(x_concrete)
 
-            # adding a single random example so we can explore further
-            data_concrete = state.solve_one(data)
-            # data_concrete = state.solve_one(data)
-            data_hash = int(sha3.keccak_256(data_concrete).hexdigest(), 16)
-            results.append((data_concrete, data_hash))
-            known_hashes_cond = data_concrete == data
+                # Lets contraint the data to the single sound concretization
+                state.constrain(x_concrete == data)
 
-            # Lets contraint the data to the single sound concretization
-            state.constrain(known_hashes_cond)
+        result.append(y_concrete)
 
-            # send single known hash to evm
-            known_hashes.update(results)
+    def _on_timetravel(self, state, func, data, result):
+        if issymbolic(data):
+            # will be updated with the buf->hash pairs to use
+            known_hashes = {}
+            # This updates the local copy of sha3 with the pairs we need to explore
+            self._on_symbolic_sha3_callback_tt(state, data, known_hashes)
+
+            # This builds a symbol in `value` that represents all the known sha3
+            # as reported by ManticoreEVM
+            value = None  # never used
+            known_hashes_cond = False
+            for key, hsh in known_hashes.items():
+                #Ignore the key if the size wont match
+                if len(key) == len(data):
+                    cond = key == data
+                    if known_hashes_cond is False:
+                        value = hsh
+                        known_hashes_cond = cond
+                    else:
+                        value = Operators.ITEBV(256, cond, hsh, value)
+                        known_hashes_cond = Operators.OR(cond, known_hashes_cond)
+        else:
+            value = func(data)
+            self._on_concrete_sha3_callback_tt(state, data, value)
+            logger.info("Found a concrete SHA3 example %r -> %x", data, value)
+
+        result.append(value)
 
     # Callbacks
     def _on_symbolic_sha3_callback_tt(self, state, data, known_hashes):
@@ -1382,58 +1407,94 @@ class ManticoreEVM(ManticoreBase):
             ethereum_context["_known_sha3"] = known_sha3
 
 
-
-    # Callbacks
-    def _on_symbolic_sha3_callback_us(self, state, data, known_hashes):
-        local_known_sha3 = state.context.get('local_sha3', [])
-        # lets make a fresh 256 bit symbol representing any potential hash
-        new_hash = state.new_symbolic_value(256)
-        local_known_sha3.append((data,new_hash))
-        state.context['local_sha3'] = local_known_sha3
-
-        known_hashes[data] = new_hash
-
-    def _on_concrete_sha3_callback_us(self, state, buf, value):
+    # Callbacks for generic SYMB TABLE
+    def on_unsound_symbolication(self, state, func, data, result):
+        print (func.__name__, data)
+        name = func.__name__
+        #Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
-            known_sha3 = ethereum_context.get("_known_sha3", None)
-            if known_sha3 is None:
-                known_sha3 = set()
-            known_sha3.add((buf,value))
-            print ("found concete sha3",(buf,value))
-            ethereum_context["_known_sha3"] = known_sha3
+            functions = ethereum_context.get("symbolic_func", dict())
+            functions[name] = func
+            ethereum_context["symbolic_func"] = functions
 
-    #self._publish("did_run")
-    def _on_did_run_us(self):
-        for state in self.terminated_states:
-            constraint = True
-            local_sha3 = state.context.get('local_sha3', ())
-            for bufa, hsha in local_sha3:
-                for bufb, hshb in local_sha3:
-                    print (bufa, bufb)
-                    if bufa is not bufb:
-                        constraint = Operators.AND(Operators.IFF(bufa == bufb, hsha == hshb), constraint)
-            state.constrain(constraint)
+        if issymbolic(data):
+            '''table: is a string used internally to identify the symbolic function
+                data: is the symbolic value of the function domain
+                known_pairs: in/out is a dictionary containing known pairs from {domain, range}'''
 
-            #Get a single matching solution for each
-            local_known_sha3 = set()
-            for buf, hsh in local_sha3:
-                buf_concrete = state.solve_one(buf)
-                hsh_concrete = int(sha3.keccak_256(buf_concrete).hexdigest(), 16)
-                local_known_sha3.add((buf_concrete, hsh_concrete))
+            # local_known_pairs is the pairs known locally for this symbolic function
+            local_known_pairs = state.context.get(f'symbolic_func_sym_{name}',
+                                                  [])
+            # lets make a fresh 256 bit symbol representing any potential hash
+            value = state.new_symbolic_value(256)
+            local_known_pairs.append((data, value))
+            state.context[f'symbolic_func_sym_{name}'] = local_known_pairs
+            # let it return just new_hash
+        else:
+            value = func(data)
+            with self.locked_context("ethereum", dict) as ethereum_context:
+                global_known_pairs = ethereum_context.get(
+                    f"symbolic_func_conc_{name}", set())
+                global_known_pairs.add((data, value))
+                ethereum_context[
+                    f"symbolic_func_conc_{name}"] = global_known_pairs
 
-            with self.locked_context("ethereum",
-                                     dict) as ethereum_context:
-                local_known_sha3 = local_known_sha3.union(ethereum_context.get("_known_sha3", set()))
+            logger.info(f"Found a concrete {name} {data} -> {value}")
 
-            for bufa, hsha in local_sha3:
-                cond = False
-                for bufc, hshc in local_known_sha3:
-                    if len(bufa) == len(buf):
-                        cond = Operators.OR(Operators.AND(bufa == bufc, hsha == hshc), cond)
-                state.constrain(cond)
-            if not state.can_be_true(True):
-                self._terminated_states.remove(state.id)
+        result.append(value)
 
+    def _on_did_run_unsound_symbolication(self):
+        # Called at the end of a run(). Need to filter out the unreproducible/
+        # unfeasible states
+        # Caveat: It will add redundant constraints from previous run()
+        print ("EEENd")
+        for state in self.all_states:
+            # Save concrete unction
+            with self.locked_context("ethereum", dict) as ethereum_context:
+                functions = ethereum_context.get("symbolic_func", dict())
+                for table in functions:
+                    constraint = True
+                    symbolic_pairs = state.context.get(f'symbolic_func_sym_{table}', ())
+                    for xa, ya in symbolic_pairs:
+                        for xb, yb in symbolic_pairs:
+                            if xa is not xb:
+                                constraint = Operators.AND(Operators.IFF(xa == xb, ya == yb), constraint)
+                    state.constrain(constraint) # bijective
+
+                    #IDEA/caveat Forcing this here prevents the user from opening
+                    #the state and adding mor constraints
+                    #instead of choosing pair examples here we could overload
+                    #state.solve_.* so it handles this validity solvering
+                    if state.can_be_true(True):
+                        #Get a single matching solution for each
+                        local_pairs = set()
+                        for x, y in symbolic_pairs:
+                            x_concrete = state.solve_one(x)
+                            y_concrete = functions[table](x_concrete)
+                            #We shoud check that y_concrete can be equal to y(sym)
+                            # and if not then try a few times
+                            local_pairs.add((x_concrete, y_concrete))
+
+                        with self.locked_context("ethereum",
+                                             dict) as ethereum_context:
+                            local_pairs = local_pairs.union(ethereum_context.get(f"symbolic_func_conc_{table}", set()))
+
+                        for xa, ya in symbolic_pairs:
+                            cond = False
+                            for xc, yc in local_pairs:
+                                if len(xa) == len(xc):
+                                    cond = Operators.OR(Operators.AND(xa == xc, ya == yc), cond)
+                            state.constrain(cond)
+
+                    if not state.can_be_true(True):
+                        print ("REMOVED")
+                        if state.id in self._terminated_states:
+                            self._terminated_states.remove(state.id)
+                        elif state.id in self._ready_states:
+                            self._ready_states.remove(state.id)
+                        else:
+                            self._killed_states.remove(state.id)
+                        continue
 
     def _terminate_state_callback(self, state, e):
         """ INTERNAL USE

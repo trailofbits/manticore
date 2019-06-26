@@ -307,7 +307,7 @@ class StateBase(Eventful):
             self._constraints, expr == False
         )
 
-    def solve_one(self, expr, constrain=False):
+    def solve_one(self, *exprs, constrain=False):
         """
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
@@ -317,14 +317,23 @@ class StateBase(Eventful):
         :return: Concrete value
         :rtype: int
         """
-        expr = self.migrate_expression(expr)
-        value = self._solver.get_value(self._constraints, expr)
-        if constrain:
-            self.constrain(expr == value)
-        # Include forgiveness here
-        if isinstance(value, bytearray):
-            value = bytes(value)
-        return value
+        #if len(exprs)>1:
+        values = []
+        for expr in exprs:
+            if not issymbolic(expr):
+                values.append(expr)
+            else:
+                expr = self.migrate_expression(expr)
+                value = self._solver.get_value(self._constraints, expr)
+                if constrain:
+                    self.constrain(expr == value)
+                # Include forgiveness here
+                if isinstance(value, bytearray):
+                    value = bytes(value)
+                values.append(value)
+        if len(exprs) == 1:
+            values = values[0]
+        return values
 
     def solve_n(self, expr, nsolves):
         """

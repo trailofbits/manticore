@@ -101,7 +101,7 @@ class Bool(Expression):
         return BoolNot(self)
 
     def __eq__(self, other):
-        return BoolEq(self, self.cast(other))
+        return BoolEqual(self, self.cast(other))
 
     def __hash__(self):
         return object.__hash__(self)
@@ -159,7 +159,7 @@ class BoolNot(BoolOperation):
         super().__init__(value, **kwargs)
 
 
-class BoolEq(BoolOperation):
+class BoolEqual(BoolOperation):
     def __init__(self, a, b, **kwargs):
         super().__init__(a, b, **kwargs)
 
@@ -326,13 +326,13 @@ class BitVec(Expression):
         return LessOrEqual(self, self.cast(other))
 
     def __eq__(self, other):
-        return Equal(self, self.cast(other))
+        return BoolEqual(self, self.cast(other))
 
     def __hash__(self):
         return object.__hash__(self)
 
     def __ne__(self, other):
-        return BoolNot(Equal(self, self.cast(other)))
+        return BoolNot(BoolEqual(self, self.cast(other)))
 
     def __gt__(self, other):
         return GreaterThan(self, self.cast(other))
@@ -514,9 +514,10 @@ class LessOrEqual(BoolOperation):
         super().__init__(a, b, *args, **kwargs)
 
 
-class Equal(BoolOperation):
+class BoolEqual(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
-        assert a.size == b.size
+        if isinstance(a, BitVec) or isinstance(b, BitVec):
+            assert a.size == b.size
         super().__init__(a, b, *args, **kwargs)
 
 

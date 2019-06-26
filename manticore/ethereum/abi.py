@@ -6,7 +6,7 @@ import sha3
 
 from . import abitypes
 from ..utils.helpers import issymbolic
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
+from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy, to_constant, simplify, translate_to_smtlib
 from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)
@@ -221,7 +221,7 @@ class ABI:
 
     @staticmethod
     def _deserialize(ty, buf, offset=0):
-        assert isinstance(buf, (bytearray, Array))
+        assert isinstance(buf, (bytearray, bytes, Array))
         result = None
         if ty[0] == "int":
             result = ABI._deserialize_int(buf[offset : offset + 32], nbytes=ty[1] // 8)
@@ -235,11 +235,11 @@ class ABI:
             result = (address, func_id)
         elif ty[0] in ("bytes", "string"):
             dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
+            dyn_offset = to_constant(dyn_offset)
             size = ABI._deserialize_int(buf[dyn_offset : dyn_offset + 32])
             result = buf[dyn_offset + 32 : dyn_offset + 32 + size]
         elif ty[0] in ("tuple"):
             result = ()
-            current_off = 0
             for ty_i in ty[1]:
                 result += (ABI._deserialize(ty_i, buf, offset),)
                 offset += ABI._type_size(ty_i)
@@ -273,7 +273,7 @@ class ABI:
             raise ValueError
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
-            bytes = ArrayVariable(
+            buffer = ArrayVariable(
                 index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
             )
             if value.size <= size * 8:
@@ -281,16 +281,17 @@ class ABI:
             else:
                 # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument (160 bits)
                 value = Operators.EXTRACT(value, 0, size * 8)
-            bytes = ArrayProxy(bytes.write_BE(padding, value, size))
+            buffer = buffer.write_BE(padding, value, size)
         else:
             value = int(value)
-            bytes = bytearray()
+            buffer = bytearray()
             for _ in range(padding):
-                bytes.append(0)
+                buffer.append(0)
             for position in reversed(range(size)):
-                bytes.append(Operators.EXTRACT(value, position * 8, 8))
-        assert len(bytes) == size + padding
-        return bytes
+                buffer.append(Operators.EXTRACT(value, position * 8, 8))
+            buffer = bytes(buffer)
+        assert len(buffer) == size + padding
+        return buffer
 
     @staticmethod
     def _serialize_int(value, size=32, padding=0):
@@ -315,6 +316,7 @@ class ABI:
 
             for position in reversed(range(size)):
                 buf.append(Operators.EXTRACT(value, position * 8, 8))
+            buf = bytes(buf)
         return buf
 
     @staticmethod
@@ -353,7 +355,7 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytearray, Array))
+        assert isinstance(data, (bytearray, bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True, offset=offset)
         value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
@@ -367,7 +369,7 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytearray, Array))
+        assert isinstance(data, (bytearray, bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):

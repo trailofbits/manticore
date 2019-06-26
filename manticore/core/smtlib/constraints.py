@@ -11,11 +11,11 @@ from .expression import (
     BitVec,
     BoolConstant,
     ArrayProxy,
-    BoolEq,
+    BoolEqual,
     Variable,
     Constant,
 )
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, pretty_print, translate_to_smtlib
 import logging
 
 logger = logging.getLogger(__name__)
@@ -141,16 +141,15 @@ class ConstraintSet:
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=True):
+        replace_constants = False
         related_variables, related_constraints = self.__get_related(related_to)
 
         if replace_constants:
             constant_bindings = {}
-            for expression in self.constraints:
-                if (
-                    isinstance(expression, BoolEq)
-                    and isinstance(expression.operands[0], Variable)
-                    and isinstance(expression.operands[1], Constant)
-                ):
+            for expression in related_constraints:
+                if isinstance(expression, BoolEqual) and\
+                   isinstance(expression.operands[0], Variable) and\
+                   isinstance(expression.operands[1], (Variable, Constant)):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
         tmp = set()
@@ -163,21 +162,20 @@ class ConstraintSet:
                 continue
             tmp.add(var.declaration)
             result += var.declaration + "\n"
-
-        translator = TranslatorSmtlib(use_bindings=True)
+        translator = TranslatorSmtlib(use_bindings=False)
         for constraint in related_constraints:
             if replace_constants:
-                if (
-                    isinstance(constraint, BoolEq)
-                    and isinstance(constraint.operands[0], Variable)
-                    and isinstance(constraint.operands[1], Constant)
-                ):
-                    var = constraint.operands[0]
-                    expression = constraint.operands[1]
-                    expression = simplify(replace(expression, constant_bindings))
-                    constraint = var == expression
+                constraint = simplify(replace(constraint, constant_bindings))
+                # if no variables then it is a constant
+                if isinstance(constraint, Constant) and\
+                    constraint.value == True:
+                    continue
 
             translator.visit(constraint)
+        if replace_constants:
+            for k,v in constant_bindings.items():
+                translator.visit(k==v)
+
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
                 result += f"(declare-fun {name} () (_ BitVec {exp.size}))"

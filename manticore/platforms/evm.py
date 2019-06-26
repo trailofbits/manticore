@@ -50,6 +50,11 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group("evm")
 
+
+def globalsha3(data):
+    return int(sha3.keccak_256(data).hexdigest(), 16)
+
+
 consts.add(
     "oog",
     default="pedantic",
@@ -77,7 +82,6 @@ PendingTransaction = namedtuple(
     "PendingTransaction", ["type", "address", "price", "data", "caller", "value", "gas"]
 )
 EVMLog = namedtuple("EVMLog", ["address", "memlog", "topics"])
-
 
 def ceil32(x):
     size = 256
@@ -568,8 +572,7 @@ class EVM(Eventful):
         "evm_write_memory",
         "evm_read_code",
         "decode_instruction",
-        "concrete_sha3",
-        "symbolic_sha3",
+        "on_unsound_symbolication"
     }
 
     class transact:
@@ -1537,6 +1540,14 @@ class EVM(Eventful):
             The `size` can be considered concrete in this handler.
 
         """
+        print ("AAAAAAAAAAAAA")
+        data = self.read_buffer(start, size)
+        try:
+            return self.world.symbolic_function(globalsha3, data)
+        except Exception as e:
+            print ("error!",e)
+            return int(sha3.keccak_256(data).hexdigest(), 16)
+
         # read memory from start to end
         # http://gavwood.com/paper.pdf
         data = self.try_simplify_to_constant(self.read_buffer(start, size))
@@ -2195,10 +2206,9 @@ class EVMWorld(Platform):
         "evm_read_code",
         "decode_instruction",
         "execute_instruction",
-        "concrete_sha3",
-        "symbolic_sha3",
         "open_transaction",
         "close_transaction",
+        "symbolic_function"
     }
 
     def __init__(
@@ -2271,6 +2281,39 @@ class EVMWorld(Platform):
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
 
+    def try_simplify_to_constant(self, data):
+        concrete_data = bytearray()
+        for c in data:
+            simplified = simplify(c)
+            if isinstance(simplified, Constant):
+                concrete_data.append(simplified.value)
+            else:
+                # simplify by solving. probably means that we need to improve simplification
+                solutions = Z3Solver.instance().get_all_values(
+                    self.constraints, simplified, 2, silent=True
+                )
+                if len(solutions) != 1:
+                    break
+                concrete_data.append(solutions[0])
+        else:
+            data = bytes(concrete_data)
+        return data
+
+    def symbolic_function(self, func, data):
+        """
+        Get an unsound symbolication for function `name`
+
+        """
+        # read memory from start to end
+        # http://gavwood.com/paper.pdf
+        data = self.try_simplify_to_constant(data)
+        result = []
+        self._publish(
+            "on_symbolic_function", func, data, result
+        )  # This updates the local copy of result
+
+        return result[0]
+
     @property
     def PC(self):
         return (self.current_vm.address, self.current_vm.pc)
@@ -2284,7 +2327,7 @@ class EVMWorld(Platform):
         return key in self.accounts
 
     def __str__(self):
-        return "WORLD:" + str(self._world_state)
+        return "WORLD:" + str(self._world_state) +'\n'+ str(list( (map(str, self.transactions)))) + str(self.logs)
 
     @property
     def logs(self):
@@ -2914,7 +2957,7 @@ class EVMWorld(Platform):
         if not failed:
             src_balance = self.get_balance(caller)
             enough_balance = Operators.UGE(src_balance, value)
-            enough_balance_solutions = Z3Solver().get_all_values(self._constraints, enough_balance)
+            enough_balance_solutions = Z3Solver.instance().get_all_values(self._constraints, enough_balance)
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize(

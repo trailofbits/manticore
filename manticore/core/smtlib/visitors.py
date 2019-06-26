@@ -184,7 +184,7 @@ class PrettyPrinter(Visitor):
         self.depth = depth
 
     def _print(self, s, e=None):
-        self.output += " " * self.indent + str(s)  # + '(%016x)'%hash(e)
+        self.output += " " * self.indent +str(s) # + '(%016x)'%hash(e)
         self.output += "\n"
 
     def visit(self, expression):
@@ -212,7 +212,7 @@ class PrettyPrinter(Visitor):
         return
 
     def visit_Operation(self, expression, *operands):
-        self._print(expression.__class__.__name__, expression)
+        self._print(expression.__class__.__name__ + str(expression.__class__), expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
             for o in expression.operands:
@@ -275,12 +275,13 @@ class ConstantFolderSimplifier(Visitor):
         BitVecNeg: operator.__invert__,
         LessThan: operator.__lt__,
         LessOrEqual: operator.__le__,
-        Equal: operator.__eq__,
+        BoolEqual: operator.__eq__,
         GreaterThan: operator.__gt__,
         GreaterOrEqual: operator.__ge__,
         BoolAnd: operator.__and__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
+        BitVecUnsignedDiv: lambda x,y: (x&(1<<256)-1)//(y&(1<<256)-1)
     }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -314,12 +315,9 @@ class ConstantFolderSimplifier(Visitor):
             return b
         if isinstance(b, Constant) and b.value == True:
             return a
-
-    def visit_BoolOr(self, expression, a, b):
-        if isinstance(a, Constant) and a.value == False:
-            return b
-        if isinstance(b, Constant) and b.value == False:
+        if a is b:
             return a
+
 
     def visit_Operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
@@ -377,6 +375,68 @@ class ArithmeticSimplifier(Visitor):
         else:
             return expression
 
+    def visit_BoolAnd(self, expression, *operands):
+        if isinstance(expression.operands[0], Constant) and expression.operands[0].value:
+            return expression.operands[1]
+        if isinstance(expression.operands[1], Constant) and expression.operands[1].value:
+            return expression.operands[0]
+        if isinstance(expression.operands[0], BoolEqual) and isinstance(expression.operands[1], BoolEqual):
+            if isinstance(expression.operands[0].operands[0], BitVecExtract) and \
+               isinstance(expression.operands[0].operands[1], BitVecExtract) and \
+               isinstance(expression.operands[1].operands[0], BitVecExtract) and \
+               isinstance(expression.operands[1].operands[1], BitVecExtract) and \
+               expression.operands[0].operands[0].value is expression.operands[1].operands[0].value and \
+                expression.operands[0].operands[1].value is expression.operands[1].operands[1].value and \
+                expression.operands[0].operands[0].begining == expression.operands[0].operands[1].begining and \
+                expression.operands[0].operands[0].end == expression.operands[0].operands[1].end and \
+                expression.operands[1].operands[0].begining == expression.operands[1].operands[1].begining and \
+                expression.operands[1].operands[0].end == expression.operands[1].operands[1].end and \
+                ( (expression.operands[0].operands[0].end + 1) == expression.operands[1].operands[0].begining or
+                 expression.operands[0].operands[0].beginning == (expression.operands[1].operands[0].end + 1)):
+                    value0 = expression.operands[0].operands[0].value
+                    value1 = expression.operands[0].operands[1].value
+                    beg = min(expression.operands[0].operands[0].begining, expression.operands[1].operands[0].begining)
+                    end = max(expression.operands[0].operands[0].end, expression.operands[1].operands[0].end)
+                    return BitVecExtract(value0, beg, end-beg+1) ==  BitVecExtract(value1, beg, end-beg+1)
+
+    def visit_BoolNot(self, expression, *operands):
+        if isinstance(expression.operands[0], BoolNot):
+            return expression.operands[0].operands[0]
+
+    def visit_BoolEqual(self, expression, *operands):
+        ''' (EQ, ITE(cond, constant1, contant2), constant1) -> cond
+            (EQ, ITE(cond, constant1, contant2), constant2) -> NOT cond
+            (EQ (extract a, b, c) (extract a, b, c))
+        '''
+        if isinstance(expression.operands[0], BitVecITE) and isinstance(expression.operands[1], Constant):
+            if  isinstance(expression.operands[0].operands[1], Constant) and \
+                isinstance(expression.operands[0].operands[2], Constant):
+                value1, value2, value3 = expression.operands[1].value, expression.operands[0].operands[1].value, expression.operands[0].operands[2].value
+                if value1 == value2 and value1 != value3:
+                    return expression.operands[0].operands[0] #FIXME:taint
+                elif value1 == value3 and value1 != value2:
+                    return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
+        if operands[0]is operands[1] or \
+           isinstance(operands[0], BitVecExtract) and isinstance(operands[1], BitVecExtract) and\
+           operands[0].value is operands[1].value and \
+           operands[0].end == operands[1].end and\
+           operands[0].begining == operands[1].begining:
+            return BoolConstant(True, taint=expression.taint)
+
+    def visit_BoolOr(self, expression, a, b):
+        if isinstance(a, Constant):
+            if a.value == False:
+                return b
+            if a.value == True:
+                return a
+        if isinstance(b, Constant):
+            if b.value == False:
+                return a
+            if b.value == True:
+                return b
+        if a is b:
+            return a
+
     def visit_BitVecITE(self, expression, *operands):
         # FIXME Enable some taint propagating optimization
         if isinstance(expression.operands[0], Constant) and not expression.operands[0].taint:
@@ -392,9 +452,37 @@ class ArithmeticSimplifier(Visitor):
     def visit_BitVecConcat(self, expression, *operands):
         """ concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
             concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
+            concat( x , extract(k1, beg, a), extract(end, k1, a), z)  ==> concat( x , extract(k1, beg, a), extract(end, k1, a), z)
         """
-        op = expression.operands[0]
+        if len(operands) == 1:
+            return operands[0]
 
+        changed = False
+        last_o = None
+        new_operands = []
+        for o in operands:
+            if isinstance(o, BitVecExtract):
+                if last_o is None:
+                    last_o = o
+                else:
+                    if last_o.value is o.value and last_o.begining == o.end + 1:
+                            last_o = BitVecExtract(o.value, o.begining, last_o.end - o.begining + 1,
+                                          taint=expression.taint)
+                            changed = True
+                    else:
+                        new_operands.append(last_o)
+                        last_o = o
+            else:
+                if last_o is not None:
+                    new_operands.append(last_o)
+                    last_o = None
+                new_operands.append(o)
+        if last_o is not None:
+            new_operands.append(last_o)
+        if changed:
+            return BitVecConcat(expression.size, *new_operands)
+
+        op = expression.operands[0]
         value = None
         end = None
         begining = None
@@ -675,7 +763,7 @@ class TranslatorSmtlib(Translator):
 
     translation_table = {
         BoolNot: "not",
-        BoolEq: "=",
+        BoolEqual: "=",
         BoolAnd: "and",
         BoolOr: "or",
         BoolXor: "xor",
@@ -699,7 +787,6 @@ class TranslatorSmtlib(Translator):
         BitVecNeg: "bvneg",
         LessThan: "bvslt",
         LessOrEqual: "bvsle",
-        Equal: "=",
         GreaterThan: "bvsgt",
         GreaterOrEqual: "bvsge",
         UnsignedLessThan: "bvult",
