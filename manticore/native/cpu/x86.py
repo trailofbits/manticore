@@ -5701,8 +5701,7 @@ class X86Cpu(Cpu):
         :param src: source operand.
         """
         if src.size == 128:
-            print(dest.size)
-            # assert dest.size == 64
+            assert dest.size == 64
             dest.write(Operators.EXTRACT(src.read(), 64, 64))
         else:
             assert src.size == 64 and dest.size == 128
