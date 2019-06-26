@@ -14,6 +14,7 @@ from ..core.plugin import Plugin
 from ..core.smtlib import Expression
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
+from ..exceptions import ManticoreError
 from ..utils import config
 from ..utils.log import set_verbosity
 from ..utils.event import Eventful
