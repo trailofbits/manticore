@@ -8,15 +8,12 @@ from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallA
 from .abstractcpu import instruction as abstract_instruction
 from .bitwise import *
 from .register import Register
-from ...core.smtlib import Operators, BitVecConstant
-from ...utils.helpers import issymbolic
+from ...core.smtlib import Operators, BitVecConstant, issymbolic
 
 logger = logging.getLogger(__name__)
 
 # map different instructions to a single impl here
-OP_NAME_MAP = {
-    'MOVW': 'MOV'
-}
+OP_NAME_MAP = {"MOVW": "MOV"}
 
 
 def HighBit(n):
@@ -38,8 +35,9 @@ def instruction(body):
                 # Let's remember next time we get here we should not do this again
                 cpu._at_symbolic_conditional = cpu.instruction.address
                 i_size = cpu.instruction.size
-                cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC - i_size,
-                                         cpu.PC)
+                cpu.PC = Operators.ITEBV(
+                    cpu.address_bit_size, should_execute, cpu.PC - i_size, cpu.PC
+                )
                 return
 
         if should_execute:
@@ -54,11 +52,11 @@ def instruction(body):
 
 
 _TYPE_MAP = {
-    cs.arm.ARM_OP_REG: 'register',
-    cs.arm.ARM_OP_MEM: 'memory',
-    cs.arm.ARM_OP_IMM: 'immediate',
-    cs.arm.ARM_OP_PIMM: 'coprocessor',
-    cs.arm.ARM_OP_CIMM: 'immediate'
+    cs.arm.ARM_OP_REG: "register",
+    cs.arm.ARM_OP_MEM: "memory",
+    cs.arm.ARM_OP_IMM: "immediate",
+    cs.arm.ARM_OP_PIMM: "coprocessor",
+    cs.arm.ARM_OP_CIMM: "immediate",
 }
 
 
@@ -76,7 +74,7 @@ class Armv7Operand(Operand):
 
     @property
     def size(self):
-        assert self.__type == 'register'
+        assert self.__type == "register"
         if cs.arm.ARM_REG_D0 <= self.op.reg <= cs.arm.ARM_REG_D31:
             return 64
         else:
@@ -84,12 +82,12 @@ class Armv7Operand(Operand):
             return 32
 
     def read(self, nbits=None, with_carry=False):
-        carry = self.cpu.regfile.read('APSR_C')
-        if self.__type == 'register':
+        carry = self.cpu.regfile.read("APSR_C")
+        if self.__type == "register":
             value = self.cpu.regfile.read(self.reg)
             # PC in this case has to be set to the instruction after next. PC at this point
             # is already pointing to next instruction; we bump it one more.
-            if self.reg in ('PC', 'R15'):
+            if self.reg in ("PC", "R15"):
                 value += self.cpu.instruction.size
             if self.is_shifted():
                 shift = self.op.shift
@@ -99,17 +97,17 @@ class Armv7Operand(Operand):
             if with_carry:
                 return value, carry
             return value
-        elif self.__type == 'immediate':
+        elif self.__type == "immediate":
             imm = self.op.imm
             if self.op.subtracted:
                 imm = -imm
             if with_carry:
                 return imm, self._get_expand_imm_carry(carry)
             return imm
-        elif self.__type == 'coprocessor':
+        elif self.__type == "coprocessor":
             imm = self.op.imm
             return imm
-        elif self.__type == 'memory':
+        elif self.__type == "memory":
             val = self.cpu.read_int(self.address(), nbits)
             if with_carry:
                 return val, carry
@@ -118,17 +116,17 @@ class Armv7Operand(Operand):
             raise NotImplementedError("readOperand unknown type", self.op.type)
 
     def write(self, value, nbits=None):
-        if self.__type == 'register':
+        if self.__type == "register":
             self.cpu.regfile.write(self.reg, value)
-        elif self.__type == 'memory':
-            raise NotImplementedError('need to impl arm store mem')
+        elif self.__type == "memory":
+            raise NotImplementedError("need to impl arm store mem")
         else:
             raise NotImplementedError("writeOperand unknown type", self.op.type)
 
     def writeback(self, value):
-        if self.__type == 'register':
+        if self.__type == "register":
             self.write(value)
-        elif self.__type == 'memory':
+        elif self.__type == "memory":
             self.cpu.regfile.write(self.mem.base, value)
         else:
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
@@ -149,17 +147,17 @@ class Armv7Operand(Operand):
         return self.op.shift.type != cs.arm.ARM_SFT_INVALID
 
     def address(self):
-        assert self.__type == 'memory'
+        assert self.__type == "memory"
         addr = self.get_mem_base_addr() + self.get_mem_offset()
         return addr & Mask(self.cpu.address_bit_size)
 
     def get_mem_offset(self):
-        assert self.__type == 'memory'
+        assert self.__type == "memory"
 
         off = 0
         if self.mem.index is not None:
             idx = self.mem.scale * self.cpu.regfile.read(self.mem.index)
-            carry = self.cpu.regfile.read('APSR_C')
+            carry = self.cpu.regfile.read("APSR_C")
             if self.is_shifted():
                 shift = self.op.shift
                 idx, carry = self.cpu._shift(idx, shift.type, shift.value, carry)
@@ -169,7 +167,7 @@ class Armv7Operand(Operand):
         return off
 
     def get_mem_base_addr(self):
-        assert self.__type == 'memory'
+        assert self.__type == "memory"
 
         base = self.cpu.regfile.read(self.mem.base)
 
@@ -180,7 +178,7 @@ class Armv7Operand(Operand):
         #
         # Regardless of mode, our implementation of read(PC) will return the address
         # of the instruction following the next instruction.
-        if self.mem.base in ('PC', 'R15'):
+        if self.mem.base in ("PC", "R15"):
             if self.cpu.mode == cs.CS_MODE_ARM:
                 logger.debug(f"ARM mode PC relative addressing: PC + offset: 0x{base:x} + 0x{4:x}")
                 return base + 4
@@ -189,14 +187,16 @@ class Armv7Operand(Operand):
                 # we need (PC & 0xFFFFFFFC) + 4
                 # thus:
                 new_base = (base - self.cpu.instruction.size) & 0xFFFFFFFC
-                logger.debug(f"THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{new_base:x} + 0x{4:x}")
+                logger.debug(
+                    f"THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{new_base:x} + 0x{4:x}"
+                )
                 return new_base + 4
         else:
             return base
 
     def _get_expand_imm_carry(self, carryIn):
         """Manually compute the carry bit produced by expanding an immediate operand (see ARMExpandImm_C)"""
-        insn = struct.unpack('<I', self.cpu.instruction.bytes)[0]
+        insn = struct.unpack("<I", self.cpu.instruction.bytes)[0]
         unrotated = insn & Mask(8)
         shift = Operators.EXTRACT(insn, 8, 4)
         _, carry = self.cpu._shift(unrotated, cs.arm.ARM_SFT_ROR, 2 * shift, carryIn)
@@ -209,53 +209,105 @@ class Armv7RegisterFile(RegisterFile):
         ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         """
-        super().__init__({'SB': 'R9',
-                          'SL': 'R10',
-                          'FP': 'R11',
-                          'IP': 'R12',
-                          'STACK': 'R13',
-                          'SP': 'R13',
-                          'LR': 'R14',
-                          'PC': 'R15'})
+        super().__init__(
+            {
+                "SB": "R9",
+                "SL": "R10",
+                "FP": "R11",
+                "IP": "R12",
+                "STACK": "R13",
+                "SP": "R13",
+                "LR": "R14",
+                "PC": "R15",
+            }
+        )
         self._regs = {}
         # 32 bit registers
-        for reg_name in ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
-                         'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15'):
+        for reg_name in (
+            "R0",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "R6",
+            "R7",
+            "R8",
+            "R9",
+            "R10",
+            "R11",
+            "R12",
+            "R13",
+            "R14",
+            "R15",
+        ):
             self._regs[reg_name] = Register(32)
         # 64 bit registers
-        for reg_name in ('D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8',
-                         'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15', 'D16',
-                         'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24',
-                         'D25', 'D26', 'D27', 'D28', 'D29', 'D30', 'D31'):
+        for reg_name in (
+            "D0",
+            "D1",
+            "D2",
+            "D3",
+            "D4",
+            "D5",
+            "D6",
+            "D7",
+            "D8",
+            "D9",
+            "D10",
+            "D11",
+            "D12",
+            "D13",
+            "D14",
+            "D15",
+            "D16",
+            "D17",
+            "D18",
+            "D19",
+            "D20",
+            "D21",
+            "D22",
+            "D23",
+            "D24",
+            "D25",
+            "D26",
+            "D27",
+            "D28",
+            "D29",
+            "D30",
+            "D31",
+        ):
             self._regs[reg_name] = Register(64)
         # Flags
-        self._regs['APSR_N'] = Register(1)
-        self._regs['APSR_Z'] = Register(1)
-        self._regs['APSR_C'] = Register(1)
-        self._regs['APSR_V'] = Register(1)
-        self._regs['APSR_GE'] = Register(4)
+        self._regs["APSR_N"] = Register(1)
+        self._regs["APSR_Z"] = Register(1)
+        self._regs["APSR_C"] = Register(1)
+        self._regs["APSR_V"] = Register(1)
+        self._regs["APSR_GE"] = Register(4)
 
         # MMU Coprocessor  -- to support MCR/MRC for TLS
-        self._regs['P15_C13'] = Register(32)
+        self._regs["P15_C13"] = Register(32)
 
     def _read_APSR(self):
         def make_apsr_flag(flag_expr, offset):
             """Helper for constructing an expression for the APSR register"""
-            return Operators.ITEBV(32, flag_expr,
-                                   BitVecConstant(32, 1 << offset),
-                                   BitVecConstant(32, 0))
+            return Operators.ITEBV(
+                32, flag_expr, BitVecConstant(32, 1 << offset), BitVecConstant(32, 0)
+            )
 
         apsr = 0
-        N = self.read('APSR_N')
-        Z = self.read('APSR_Z')
-        C = self.read('APSR_C')
-        V = self.read('APSR_V')
+        N = self.read("APSR_N")
+        Z = self.read("APSR_Z")
+        C = self.read("APSR_C")
+        V = self.read("APSR_V")
 
         if any(issymbolic(x) for x in [N, Z, C, V]):
-            apsr = (make_apsr_flag(N, 31) |
-                    make_apsr_flag(Z, 30) |
-                    make_apsr_flag(C, 29) |
-                    make_apsr_flag(V, 28))
+            apsr = (
+                make_apsr_flag(N, 31)
+                | make_apsr_flag(Z, 30)
+                | make_apsr_flag(C, 29)
+                | make_apsr_flag(V, 28)
+            )
         else:
             if N:
                 apsr |= 1 << 31
@@ -274,39 +326,106 @@ class Armv7RegisterFile(RegisterFile):
         Z = Operators.EXTRACT(apsr, 30, 1)
         N = Operators.EXTRACT(apsr, 31, 1)
 
-        self.write('APSR_V', V)
-        self.write('APSR_C', C)
-        self.write('APSR_Z', Z)
-        self.write('APSR_N', N)
+        self.write("APSR_V", V)
+        self.write("APSR_C", C)
+        self.write("APSR_Z", Z)
+        self.write("APSR_N", N)
 
     def read(self, register):
         assert register in self
-        if register == 'APSR':
+        if register == "APSR":
             return self._read_APSR()
         register = self._alias(register)
         return self._regs[register].read()
 
     def write(self, register, value):
         assert register in self
-        if register == 'APSR':
+        if register == "APSR":
             return self._write_APSR(value)
         register = self._alias(register)
         self._regs[register].write(value)
 
     @property
     def all_registers(self):
-        return super().all_registers + \
-            ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',
-                'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15',
-                'D16', 'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24', 'D25', 'D26', 'D27', 'D28', 'D29',
-                'D30', 'D31', 'APSR', 'APSR_N',
-                'APSR_Z', 'APSR_C', 'APSR_V', 'APSR_GE',
-                'P15_C13')
+        return super().all_registers + (
+            "R0",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "R6",
+            "R7",
+            "R8",
+            "R9",
+            "R10",
+            "R11",
+            "R12",
+            "R13",
+            "R14",
+            "R15",
+            "D0",
+            "D1",
+            "D2",
+            "D3",
+            "D4",
+            "D5",
+            "D6",
+            "D7",
+            "D8",
+            "D9",
+            "D10",
+            "D11",
+            "D12",
+            "D13",
+            "D14",
+            "D15",
+            "D16",
+            "D17",
+            "D18",
+            "D19",
+            "D20",
+            "D21",
+            "D22",
+            "D23",
+            "D24",
+            "D25",
+            "D26",
+            "D27",
+            "D28",
+            "D29",
+            "D30",
+            "D31",
+            "APSR",
+            "APSR_N",
+            "APSR_Z",
+            "APSR_C",
+            "APSR_V",
+            "APSR_GE",
+            "P15_C13",
+        )
 
     @property
     def canonical_registers(self):
-        return ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',
-                'APSR')
+        return (
+            "R0",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5",
+            "R6",
+            "R7",
+            "R8",
+            "R9",
+            "R10",
+            "R11",
+            "R12",
+            "R13",
+            "R14",
+            "R15",
+            "APSR",
+        )
 
 
 class Armv7LinuxSyscallAbi(SyscallAbi):
@@ -321,7 +440,7 @@ class Armv7LinuxSyscallAbi(SyscallAbi):
 
     def get_arguments(self):
         for i in range(6):
-            yield f'R{i}'
+            yield f"R{i}"
 
     def write_result(self, result):
         self._cpu.R0 = result
@@ -332,7 +451,7 @@ class Armv7CdeclAbi(Abi):
 
     def get_arguments(self):
         # First four passed via R0-R3, then on stack
-        for reg in ('R0', 'R1', 'R2', 'R3'):
+        for reg in ("R0", "R1", "R2", "R3"):
             yield reg
 
         for address in self.values_from(self._cpu.STACK):
@@ -353,33 +472,34 @@ class Armv7Cpu(Cpu):
     instruction + 4. However, official spec defines PC to be address of
     current instruction + 8 (section A2.3).
     """
+
     address_bit_size = 32
     max_instr_width = 4
-    machine = 'armv7'
+    machine = "armv7"
     arch = cs.CS_ARCH_ARM
     # 'mode' is usually defined here as a class member, but it can change, so
     # it's an instance property.
 
     def __init__(self, memory):
         self._it_conditional = list()
-        self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
+        self._last_flags = {"C": 0, "V": 0, "N": 0, "Z": 0, "GE": 0}
         self._at_symbolic_conditional = None
         self._mode = cs.CS_MODE_ARM
         super().__init__(Armv7RegisterFile(), memory)
 
     def __getstate__(self):
         state = super().__getstate__()
-        state['_last_flags'] = self._last_flags
-        state['at_symbolic_conditional'] = self._at_symbolic_conditional
-        state['_it_conditional'] = self._it_conditional
-        state['_mode'] = self._mode
+        state["_last_flags"] = self._last_flags
+        state["at_symbolic_conditional"] = self._at_symbolic_conditional
+        state["_it_conditional"] = self._it_conditional
+        state["_mode"] = self._mode
         return state
 
     def __setstate__(self, state):
-        self._last_flags = state['_last_flags']
-        self._at_symbolic_conditional = state['at_symbolic_conditional']
-        self._it_conditional = state['_it_conditional']
-        self._mode = state['_mode']
+        self._last_flags = state["_last_flags"]
+        self._at_symbolic_conditional = state["at_symbolic_conditional"]
+        self._it_conditional = state["_it_conditional"]
+        self._mode = state["_mode"]
         super().__setstate__(state)
 
     @property
@@ -397,14 +517,19 @@ class Armv7Cpu(Cpu):
         self.disasm.disasm.mode = new_mode
 
     def _set_mode_by_val(self, val):
-        new_mode = Operators.ITEBV(self.address_bit_size, (val & 0x1) == 0x1, cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
+        new_mode = Operators.ITEBV(
+            self.address_bit_size, (val & 0x1) == 0x1, cs.CS_MODE_THUMB, cs.CS_MODE_ARM
+        )
 
         if issymbolic(new_mode):
             from ..state import Concretize
 
             def set_concrete_mode(state, value):
                 state.cpu.mode = value
-            raise Concretize("Concretizing ARMv7 mode", expression=new_mode, setstate=set_concrete_mode)
+
+            raise Concretize(
+                "Concretizing ARMv7 mode", expression=new_mode, setstate=set_concrete_mode
+            )
 
         self.mode = new_mode
 
@@ -433,21 +558,21 @@ class Armv7Cpu(Cpu):
         """
         unupdated_flags = self._last_flags.keys() - flags.keys()
         for flag in unupdated_flags:
-            flag_name = f'APSR_{flag}'
+            flag_name = f"APSR_{flag}"
             self._last_flags[flag] = self.regfile.read(flag_name)
         self._last_flags.update(flags)
 
     def commit_flags(self):
         # XXX: capstone incorrectly sets .update_flags for adc
-        if self.instruction.mnemonic == 'adc':
+        if self.instruction.mnemonic == "adc":
             return
         for flag, val in self._last_flags.items():
-            flag_name = f'APSR_{flag}'
+            flag_name = f"APSR_{flag}"
             self.regfile.write(flag_name, val)
 
     def _shift(cpu, value, _type, amount, carry):
         """See Shift() and Shift_C() in the ARM manual"""
-        assert(cs.arm.ARM_SFT_INVALID < _type <= cs.arm.ARM_SFT_RRX_REG)
+        assert cs.arm.ARM_SFT_INVALID < _type <= cs.arm.ARM_SFT_RRX_REG
 
         # XXX: Capstone should set the value of an RRX shift to 1, which is
         # asserted in the manual, but it sets it to 0, so we have to check
@@ -493,7 +618,7 @@ class Armv7Cpu(Cpu):
             self.SP -= len(data)
             self.write(self.SP, data)
         else:
-            raise NotImplementedError('unsupported type for stack push data')
+            raise NotImplementedError("unsupported type for stack push data")
         return self.SP
 
     def stack_peek(self, nbytes=4):
@@ -516,19 +641,19 @@ class Armv7Cpu(Cpu):
         return self.write_bytes(addr, data)
 
     def set_arm_tls(self, data):
-        self.regfile.write('P15_C13', data)
+        self.regfile.write("P15_C13", data)
 
     @staticmethod
     def canonicalize_instruction_name(instr):
         name = instr.insn_name().upper()
         # XXX bypass a capstone bug that incorrectly labels some insns as mov
-        if name == 'MOV':
-            if instr.mnemonic.startswith('lsr'):
-                return 'LSR'
-            elif instr.mnemonic.startswith('lsl'):
-                return 'LSL'
-            elif instr.mnemonic.startswith('asr'):
-                return 'ASR'
+        if name == "MOV":
+            if instr.mnemonic.startswith("lsr"):
+                return "LSR"
+            elif instr.mnemonic.startswith("lsl"):
+                return "LSL"
+            elif instr.mnemonic.startswith("asr"):
+                return "ASR"
         return OP_NAME_MAP.get(name, name)
 
     def _wrap_operands(self, ops):
@@ -556,10 +681,10 @@ class Armv7Cpu(Cpu):
         return cpu._evaluate_conditional(cc)
 
     def _evaluate_conditional(cpu, cc):
-        C = cpu.regfile.read('APSR_C')
-        N = cpu.regfile.read('APSR_N')
-        V = cpu.regfile.read('APSR_V')
-        Z = cpu.regfile.read('APSR_Z')
+        C = cpu.regfile.read("APSR_C")
+        N = cpu.regfile.read("APSR_N")
+        V = cpu.regfile.read("APSR_V")
+        Z = cpu.regfile.read("APSR_Z")
 
         if cc == cs.arm.ARM_CC_AL:
             ret = True
@@ -603,9 +728,9 @@ class Armv7Cpu(Cpu):
         # this is incredibly hacky--how else does capstone expose this?
         # TODO: find a better way than string parsing the mnemonic -GR, 2017-07-13
         for c in cpu.instruction.mnemonic[1:]:
-            if c == 't':
+            if c == "t":
                 cpu._it_conditional.append(true_case)
-            elif c == 'e':
+            elif c == "e":
                 cpu._it_conditional.append(not true_case)
 
     @instruction
@@ -629,11 +754,14 @@ class Armv7Cpu(Cpu):
         op1val = op1.read()
         op2val = op2.read()
         result = list()
-        GE = cpu.regfile.read('APSR_GE')
+        GE = cpu.regfile.read("APSR_GE")
         for i in range(4):
             bit = Operators.EXTRACT(GE, i, 1)
             result.append(
-                Operators.ITEBV(8, bit, Operators.EXTRACT(op1val, i * 8, 8), Operators.EXTRACT(op2val, i * 8, 8)))
+                Operators.ITEBV(
+                    8, bit, Operators.EXTRACT(op1val, i * 8, 8), Operators.EXTRACT(op2val, i * 8, 8)
+                )
+            )
         dest.write(Operators.CONCAT(32, *reversed(result)))
 
     @instruction
@@ -665,7 +793,7 @@ class Armv7Cpu(Cpu):
         :param Armv7Operand dest: The destination operand; register
         :param Armv7Operand src: The source operand; 16-bit immediate
         """
-        assert src.type == 'immediate'
+        assert src.type == "immediate"
         imm = src.read()
         low_halfword = dest.read() & Mask(16)
         dest.write((imm << 16) | low_halfword)
@@ -682,10 +810,10 @@ class Armv7Cpu(Cpu):
         :param Armv7Operand coprocessor_reg_m: the coprocessor register; immediate
         :param Armv7Operand opcode2: coprocessor specific opcode; 3-bit immediate
         """
-        assert coprocessor.type == 'coprocessor'
-        assert opcode1.type == 'immediate'
-        assert opcode2.type == 'immediate'
-        assert dest.type == 'register'
+        assert coprocessor.type == "coprocessor"
+        assert opcode1.type == "immediate"
+        assert opcode2.type == "immediate"
+        assert dest.type == "register"
         imm_coprocessor = coprocessor.read()
         imm_opcode1 = opcode1.read()
         imm_opcode2 = opcode2.read()
@@ -696,16 +824,18 @@ class Armv7Cpu(Cpu):
             if 0 == imm_opcode1:
                 if 13 == coprocessor_n_name:
                     if 3 == imm_opcode2:
-                        dest.write(cpu.regfile.read('P15_C13'))
+                        dest.write(cpu.regfile.read("P15_C13"))
                         return
-        raise NotImplementedError("MRC: unimplemented combination of coprocessor, opcode, and coprocessor register")
+        raise NotImplementedError(
+            "MRC: unimplemented combination of coprocessor, opcode, and coprocessor register"
+        )
 
     @instruction
     def LDRD(cpu, dest1, dest2, src, offset=None):
         """Loads double width data from memory."""
-        assert dest1.type == 'register'
-        assert dest2.type == 'register'
-        assert src.type == 'memory'
+        assert dest1.type == "register"
+        assert dest2.type == "register"
+        assert src.type == "memory"
         mem1 = cpu.read_int(src.address(), 32)
         mem2 = cpu.read_int(src.address() + 4, 32)
         writeback = cpu._compute_writeback(src, offset)
@@ -716,9 +846,9 @@ class Armv7Cpu(Cpu):
     @instruction
     def STRD(cpu, src1, src2, dest, offset=None):
         """Writes the contents of two registers to memory."""
-        assert src1.type == 'register'
-        assert src2.type == 'register'
-        assert dest.type == 'memory'
+        assert src1.type == "register"
+        assert src2.type == "register"
+        assert dest.type == "memory"
         val1 = src1.read()
         val2 = src2.read()
         writeback = cpu._compute_writeback(dest, offset)
@@ -829,7 +959,7 @@ class Armv7Cpu(Cpu):
             word = Operators.SEXTEND(mem, width, cpu.address_bit_size)
         else:
             word = Operators.ZEXTEND(mem, cpu.address_bit_size)
-        if dest.reg in ('PC', 'R15'):
+        if dest.reg in ("PC", "R15"):
             cpu._set_mode_by_val(word)
             word &= ~0x1
             logger.debug(f"LDR writing 0x{word:x} -> PC")
@@ -876,16 +1006,13 @@ class Armv7Cpu(Cpu):
         carry_out = UInt(result, W * 2) != unsigned_sum
         overflow = SInt(Operators.SEXTEND(result, W, W * 2), W * 2) != signed_sum
 
-        cpu.set_flags(C=carry_out,
-                      V=overflow,
-                      N=HighBit(result),
-                      Z=result == 0)
+        cpu.set_flags(C=carry_out, V=overflow, N=HighBit(result), Z=result == 0)
 
         return result, carry_out, overflow
 
     @instruction
     def ADC(cpu, dest, op1, op2=None):
-        carry = cpu.regfile.read('APSR_C')
+        carry = cpu.regfile.read("APSR_C")
         if op2 is not None:
             result, carry, overflow = cpu._ADD(op1.read(), op2.read(), carry)
         else:
@@ -912,7 +1039,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def RSC(cpu, dest, src, add):
-        carry = cpu.regfile.read('APSR_C')
+        carry = cpu.regfile.read("APSR_C")
         inv_src = GetNBits(~src.read(), cpu.address_bit_size)
         result, carry, overflow = cpu._ADD(inv_src, add.read(), carry)
         dest.write(result)
@@ -931,7 +1058,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def SBC(cpu, dest, op1, op2=None):
-        carry = cpu.regfile.read('APSR_C')
+        carry = cpu.regfile.read("APSR_C")
         if op2 is not None:
             result, carry, overflow = cpu._ADD(op1.read(), ~op2.read(), carry)
         else:
@@ -950,7 +1077,7 @@ class Armv7Cpu(Cpu):
             <Rd>. The assembler calculates the required value of the offset from the Align(PC,4)
             value of the ADR instruction to this label.
         """
-        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        aligned_pc = (cpu.instruction.address + 4) & 0xFFFFFFFC
         dest.write(aligned_pc + src.read())
 
     @instruction
@@ -967,8 +1094,8 @@ class Armv7Cpu(Cpu):
             Specifies the immediate value to be added to the value obtained from src. The range of allowed values is
             0-4095.
         """
-        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
-        if src.type == 'register' and src.reg in ('PC', 'R15'):
+        aligned_pc = (cpu.instruction.address + 4) & 0xFFFFFFFC
+        if src.type == "register" and src.reg in ("PC", "R15"):
             src = aligned_pc
         else:
             src = src.read()
@@ -988,8 +1115,8 @@ class Armv7Cpu(Cpu):
             Specifies the immediate value to be added to the value obtained from src. The range of allowed values is
             0-4095.
         """
-        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
-        if src.type == 'register' and src.reg in ('PC', 'R15'):
+        aligned_pc = (cpu.instruction.address + 4) & 0xFFFFFFFC
+        if src.type == "register" and src.reg in ("PC", "R15"):
             src = aligned_pc
         else:
             src = src.read()
@@ -1007,10 +1134,9 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def BLE(cpu, dest):
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
-                                 cpu.regfile.read('APSR_Z'),
-                                 dest.read(),
-                                 cpu.PC)
+        cpu.PC = Operators.ITEBV(
+            cpu.address_bit_size, cpu.regfile.read("APSR_Z"), dest.read(), cpu.PC
+        )
 
     @instruction
     def CBZ(cpu, op, dest):
@@ -1025,8 +1151,7 @@ class Armv7Cpu(Cpu):
             selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
             the range 0 to 126.
         """
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
-                                 op.read(), cpu.PC, dest.read())
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, op.read(), cpu.PC, dest.read())
 
     @instruction
     def CBNZ(cpu, op, dest):
@@ -1041,35 +1166,34 @@ class Armv7Cpu(Cpu):
             selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
             the range 0 to 126.
         """
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
-                                 op.read(), dest.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, op.read(), dest.read(), cpu.PC)
 
     @instruction
     def BL(cpu, label):
-        next_instr_addr = cpu.regfile.read('PC')
+        next_instr_addr = cpu.regfile.read("PC")
         if cpu.mode == cs.CS_MODE_THUMB:
-            cpu.regfile.write('LR', next_instr_addr + 1)
+            cpu.regfile.write("LR", next_instr_addr + 1)
         else:
-            cpu.regfile.write('LR', next_instr_addr)
-        cpu.regfile.write('PC', label.read())
+            cpu.regfile.write("LR", next_instr_addr)
+        cpu.regfile.write("PC", label.read())
 
     @instruction
     def BLX(cpu, dest):
         address = cpu.PC
         target = dest.read()
-        next_instr_addr = cpu.regfile.read('PC')
+        next_instr_addr = cpu.regfile.read("PC")
         if cpu.mode == cs.CS_MODE_THUMB:
-            cpu.regfile.write('LR', next_instr_addr + 1)
+            cpu.regfile.write("LR", next_instr_addr + 1)
         else:
-            cpu.regfile.write('LR', next_instr_addr)
-        cpu.regfile.write('PC', target & ~1)
+            cpu.regfile.write("LR", next_instr_addr)
+        cpu.regfile.write("PC", target & ~1)
 
         # The `blx <label>` form of this instruction forces a mode swap
         # Otherwise check the lsb of the destination and set the mode
-        if dest.type == 'immediate':
+        if dest.type == "immediate":
             logger.debug(f"swapping mode due to BLX at inst 0x{address:x}")
             cpu._swap_mode()
-        elif dest.type == 'register':
+        elif dest.type == "register":
             cpu._set_mode_by_val(dest.read())
 
     @instruction
@@ -1086,7 +1210,7 @@ class Armv7Cpu(Cpu):
         # Specifies the base register. This contains the address of the table of branch lengths. This
         # register is allowed to be the PC. If it is, the table immediately follows this instruction.
         base_addr = dest.get_mem_base_addr()
-        if dest.mem.base in ('PC', 'R15'):
+        if dest.mem.base in ("PC", "R15"):
             base_addr = cpu.PC
 
         # Specifies the index register. This contains an integer pointing to a single byte within the
@@ -1094,7 +1218,7 @@ class Armv7Cpu(Cpu):
         offset = cpu.read_int(base_addr + dest.get_mem_offset(), 8)
         offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
 
-        cpu.PC += (offset << 1)
+        cpu.PC += offset << 1
 
     @instruction
     def TBH(cpu, dest):
@@ -1110,7 +1234,7 @@ class Armv7Cpu(Cpu):
         # Specifies the base register. This contains the address of the table of branch lengths. This
         # register is allowed to be the PC. If it is, the table immediately follows this instruction.
         base_addr = dest.get_mem_base_addr()
-        if dest.mem.base in ('PC', 'R15'):
+        if dest.mem.base in ("PC", "R15"):
             base_addr = cpu.PC
 
         # Specifies the index register. This contains an integer pointing to a halfword within the table.
@@ -1118,7 +1242,7 @@ class Armv7Cpu(Cpu):
         offset = cpu.read_int(base_addr + dest.get_mem_offset(), 16)
         offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
 
-        cpu.PC += (offset << 1)
+        cpu.PC += offset << 1
 
     @instruction
     def CMP(cpu, reg, compare):
@@ -1129,7 +1253,7 @@ class Armv7Cpu(Cpu):
     def POP(cpu, *regs):
         for reg in regs:
             val = cpu.stack_pop(cpu.address_bit_size // 8)
-            if reg.reg in ('PC', 'R15'):
+            if reg.reg in ("PC", "R15"):
                 cpu._set_mode_by_val(val)
                 val = val & ~0x1
             reg.write(val)
@@ -1200,7 +1324,7 @@ class Armv7Cpu(Cpu):
                 address += (1 if increment else -1) * (reg.size // 8)
 
             reg.write(cpu.read_int(address, reg.size))
-            if reg.reg in ('PC', 'R15'):
+            if reg.reg in ("PC", "R15"):
                 # The general-purpose registers loaded can include the PC. If they do, the word loaded for the PC is
                 # treated as an address and a branch occurs to that address. In ARMv5 and above, bit[0] of the loaded
                 # value determines whether execution continues after this branch in ARM state or in Thumb state, as
@@ -1352,26 +1476,26 @@ class Armv7Cpu(Cpu):
         assert insn_id in (cs.arm.ARM_INS_ASR, cs.arm.ARM_INS_LSL, cs.arm.ARM_INS_LSR)
 
         if insn_id == cs.arm.ARM_INS_ASR:
-            if rest and rest[0].type == 'immediate':
+            if rest and rest[0].type == "immediate":
                 srtype = cs.arm.ARM_SFT_ASR
             else:
                 srtype = cs.arm.ARM_SFT_ASR_REG
         elif insn_id == cs.arm.ARM_INS_LSL:
-            if rest and rest[0].type == 'immediate':
+            if rest and rest[0].type == "immediate":
                 srtype = cs.arm.ARM_SFT_LSL
             else:
                 srtype = cs.arm.ARM_SFT_LSL_REG
         elif insn_id == cs.arm.ARM_INS_LSR:
-            if rest and rest[0].type == 'immediate':
+            if rest and rest[0].type == "immediate":
                 srtype = cs.arm.ARM_SFT_LSR
             else:
                 srtype = cs.arm.ARM_SFT_LSR_REG
 
-        carry = cpu.regfile.read('APSR_C')
-        if rest and rest[0].type == 'register':
+        carry = cpu.regfile.read("APSR_C")
+        if rest and rest[0].type == "register":
             # FIXME we should make Operand.op private (and not accessible)
             result, carry = cpu._shift(op.read(), srtype, rest[0].op.reg, carry)
-        elif rest and rest[0].type == 'immediate':
+        elif rest and rest[0].type == "immediate":
             amount = rest[0].read()
             result, carry = cpu._shift(op.read(), srtype, amount, carry)
         elif cpu.mode == cs.CS_MODE_THUMB:
@@ -1396,7 +1520,9 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def UMULL(cpu, rdlo, rdhi, rn, rm):
-        result = UInt(rn.read(), cpu.address_bit_size * 2) * UInt(rm.read(), cpu.address_bit_size * 2)
+        result = UInt(rn.read(), cpu.address_bit_size * 2) * UInt(
+            rm.read(), cpu.address_bit_size * 2
+        )
         rdhi.write(Operators.EXTRACT(result, cpu.address_bit_size, cpu.address_bit_size))
         rdlo.write(GetNBits(result, cpu.address_bit_size))
         cpu.set_flags(N=Bit(result, 63), Z=(result == 0))

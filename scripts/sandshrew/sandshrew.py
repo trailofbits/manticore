@@ -42,9 +42,9 @@ def binary_arch(binary):
     :rtype bool: True for x86_64, False otherwise
     """
 
-    with open(binary, 'rb') as f:
+    with open(binary, "rb") as f:
         elffile = ELFFile(f)
-        if elffile['e_machine'] == 'EM_X86_64':
+        if elffile["e_machine"] == "EM_X86_64":
             return True
         else:
             return False
@@ -63,8 +63,7 @@ def binary_symbols(binary):
     def substr_after(string, delim):
         return string.partition(delim)[2]
 
-
-    with open(binary, 'rb') as f:
+    with open(binary, "rb") as f:
         elffile = ELFFile(f)
 
         for section in elffile.iter_sections():
@@ -72,8 +71,9 @@ def binary_symbols(binary):
                 continue
 
             symbols = [sym.name for sym in section.iter_symbols() if sym]
-            return [substr_after(name, PREPEND_SYM) for name in symbols
-                    if name.startswith(PREPEND_SYM)]
+            return [
+                substr_after(name, PREPEND_SYM) for name in symbols if name.startswith(PREPEND_SYM)
+            ]
 
 
 def main():
@@ -81,22 +81,43 @@ def main():
 
     # required arg group for help display
     required = parser.add_argument_group("required arguments")
-    required.add_argument("-t", "--test", dest="test", required=True,
-                        help="Target binary for sandshrew analysis")
+    required.add_argument(
+        "-t", "--test", dest="test", required=True, help="Target binary for sandshrew analysis"
+    )
 
     # constraint configuration
-    parser.add_argument("-c", "--constraint", dest="constraint", required=False,
-                        help="Constraint to apply to symbolic input. Includes ascii, alpha, num, or alphanum")
+    parser.add_argument(
+        "-c",
+        "--constraint",
+        dest="constraint",
+        required=False,
+        help="Constraint to apply to symbolic input. Includes ascii, alpha, num, or alphanum",
+    )
 
     # debugging options
-    parser.add_argument("--debug", dest="debug", action="store_true", required=False,
-                        help="If set, turns on debugging output for sandshrew")
-    parser.add_argument("--trace", dest="trace", action="store_true", required=False,
-                        help="If set, trace instruction recording will be outputted to logger")
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        action="store_true",
+        required=False,
+        help="If set, turns on debugging output for sandshrew",
+    )
+    parser.add_argument(
+        "--trace",
+        dest="trace",
+        action="store_true",
+        required=False,
+        help="If set, trace instruction recording will be outputted to logger",
+    )
 
     # other configuration settings
-    parser.add_argument("--cmpsym", dest="cmp_sym", default="__strcmp_ssse3", required=False,
-                        help="Overrides comparison function used to test for equivalence (default is strcmp)")
+    parser.add_argument(
+        "--cmpsym",
+        dest="cmp_sym",
+        default="__strcmp_ssse3",
+        required=False,
+        help="Overrides comparison function used to test for equivalence (default is strcmp)",
+    )
 
     # parse or print help
     args = parser.parse_args()
@@ -113,34 +134,33 @@ def main():
         raise NotImplementedError("sandshrew only supports x86_64 binary concretization")
 
     # initialize Manticore
-    m = Manticore.linux(args.test, ['+' * BUFFER_SIZE])
+    m = Manticore.linux(args.test, ["+" * BUFFER_SIZE])
     m.verbosity(2)
 
     # initialize mcore context manager
-    m.context['syms'] = binary_symbols(args.test)
-    m.context['exec_flag'] = False
-    m.context['argv1'] = None
+    m.context["syms"] = binary_symbols(args.test)
+    m.context["exec_flag"] = False
+    m.context["argv1"] = None
 
     logging.debug(f"Functions for concretization: {m.context['syms']}")
 
     # add record trace hook throughout execution
-    m.context['trace'] = []
+    m.context["trace"] = []
 
     # initialize state by checking and storing symbolic argv
     @m.init
-    def init(m, ready_states):
+    def init(state):
 
         logging.debug(f"Checking for symbolic ARGV")
 
         # determine argv[1] from state.input_symbols by label name
-        argv1 = next(sym for sym in next(ready_states).input_symbols if sym.name == 'ARGV1')
+        argv1 = next(sym for sym in state.input_symbols if sym.name == "ARGV1")
         if argv1 is None:
             raise RuntimeException("ARGV was not provided and/or made symbolic")
 
         # store argv1 in global state
         with m.locked_context() as context:
-            context['argv1'] = argv1
-
+            context["argv1"] = argv1
 
     # store a trace counter, and output if arg was set
     @m.hook(None)
@@ -149,10 +169,9 @@ def main():
         if args.trace:
             print(f"{hex(pc)}")
         with m.locked_context() as context:
-            context['trace'] += [pc]
+            context["trace"] += [pc]
 
-
-    for sym in m.context['syms']:
+    for sym in m.context["syms"]:
 
         @m.hook(m.resolve("SANDSHREW_" + sym))
         def concrete_checker(state):
@@ -171,7 +190,7 @@ def main():
                     logging.debug(f"Symbolic input parameter to function {sym}() detected")
 
                     # store instruction after `call SANDSHREW_*`
-                    return_pc = context['trace'][-1] + 5
+                    return_pc = context["trace"][-1] + 5
 
                     # attach a hook to the return_pc, as this is where we will perform concolic execution
                     @m.hook(return_pc)
@@ -182,7 +201,7 @@ def main():
                         with m.locked_context() as context:
 
                             # output param is RDI, symbolicate RAX
-                            context['return_addr'] = cpu.RAX
+                            context["return_addr"] = cpu.RAX
                             logging.debug(f"Writing unconstrained buffer to output memory location")
 
                             # initialize unconstrained symbolic input
@@ -192,23 +211,38 @@ def main():
                             for i in range(BUFFER_SIZE):
 
                                 if args.constraint == "alpha":
-                                    state.constrain(operators.OR(
-                                            operators.AND(ord('A') <= return_buf[i], return_buf[i] <= ord('Z')),
-                                            operators.AND(ord('a') <= return_buf[i], return_buf[i] <= ord('z'))
-                                    ))
+                                    state.constrain(
+                                        operators.OR(
+                                            operators.AND(
+                                                ord("A") <= return_buf[i], return_buf[i] <= ord("Z")
+                                            ),
+                                            operators.AND(
+                                                ord("a") <= return_buf[i], return_buf[i] <= ord("z")
+                                            ),
+                                        )
+                                    )
 
                                 elif args.constraint == "num":
-                                    state.constrain(operators.AND(ord('0') <= return_buf[i], return_buf[i] <= ord('9')))
+                                    state.constrain(
+                                        operators.AND(
+                                            ord("0") <= return_buf[i], return_buf[i] <= ord("9")
+                                        )
+                                    )
 
                                 elif args.constraint == "alphanum":
-                                    raise NotImplementedError("alphanum constraint set not yet implemented")
+                                    raise NotImplementedError(
+                                        "alphanum constraint set not yet implemented"
+                                    )
 
                                 elif args.constraint == "ascii":
-                                    state.constrain(operators.AND(ord(' ') <= return_buf[i], return_buf[i] <= ord('}')))
+                                    state.constrain(
+                                        operators.AND(
+                                            ord(" ") <= return_buf[i], return_buf[i] <= ord("}")
+                                        )
+                                    )
 
                             # write to address
-                            state.cpu.write_bytes(context['return_addr'], return_buf)
-
+                            state.cpu.write_bytes(context["return_addr"], return_buf)
 
         @m.hook(m.resolve(sym))
         def concolic_hook(state):
@@ -220,7 +254,7 @@ def main():
             with m.locked_context() as context:
 
                 # store `call sym` instruction and ret val instruction
-                call_pc = context['trace'][-1]
+                call_pc = context["trace"][-1]
 
                 # we are currently in the function prologue of `sym`. Let's go back to `call sym`.
                 state.cpu.PC = call_pc
@@ -233,7 +267,6 @@ def main():
 
                 logging.debug("Continuing with Manticore symbolic execution")
 
-
     # TODO(alan): resolve ifunc (different archs use different optimized implementations)
     @m.hook(m.resolve(args.cmp_sym))
     def cmp_model(state):
@@ -245,8 +278,7 @@ def main():
         logging.debug("Invoking model for comparsion call")
         state.invoke_model(strcmp)
 
-
-    @m.hook(m.resolve('abort'))
+    @m.hook(m.resolve("abort"))
     def fail_state(state):
         """
         hook attached at fail state signified by abort call, which indicates that an edge case
@@ -257,20 +289,21 @@ def main():
 
         # solve for the symbolic argv input
         with m.locked_context() as context:
-            solution = state.solve_one(context['return_addr'], BUFFER_SIZE)
+            solution = state.solve_one(context["return_addr"], BUFFER_SIZE)
             print(f"Solution found: {solution}")
 
             # write solution to individual test case to workspace
-            rand_str = lambda n: ''.join([random.choice(string.ascii_lowercase) for i in range(n)])
-            with open(m.workspace + '/' + 'sandshrew_' + rand_str(4), 'w') as fd:
+            rand_str = lambda n: "".join([random.choice(string.ascii_lowercase) for i in range(n)])
+            with open(m.workspace + "/" + "sandshrew_" + rand_str(4), "w") as fd:
                 fd.write(str(solution))
 
         m.terminate()
 
-
     # run manticore
     m.run()
-    print(f"Total instructions: {len(m.context['trace'])}\nLast instruction: {hex(m.context['trace'][-1])}")
+    print(
+        f"Total instructions: {len(m.context['trace'])}\nLast instruction: {hex(m.context['trace'][-1])}"
+    )
     return 0
 
 

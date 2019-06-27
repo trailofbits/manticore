@@ -2,6 +2,7 @@ import logging
 import time
 
 from capstone import *
+
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
 # no emulator by default
@@ -9,8 +10,7 @@ from unicorn import *
 from unicorn.arm_const import *
 from unicorn.x86_const import *
 
-from .helpers import issymbolic
-from ..core.smtlib import Operators, solver
+from ..core.smtlib import Operators, solver, issymbolic
 from ..native.memory import MemoryException
 
 logger = logging.getLogger(__name__)
@@ -23,16 +23,16 @@ def convert_permissions(m_perms):
     :return: Unicorn Permissions
     """
     permissions = UC_PROT_NONE
-    if 'r' in m_perms:
+    if "r" in m_perms:
         permissions |= UC_PROT_READ
-    if 'w' in m_perms:
+    if "w" in m_perms:
         permissions |= UC_PROT_WRITE
-    if 'x' in m_perms:
+    if "x" in m_perms:
         permissions |= UC_PROT_EXEC
     return permissions
 
 
-def hr_size(num, suffix='B') -> str:
+def hr_size(num, suffix="B") -> str:
     """
     Human-readable data size
     From https://stackoverflow.com/a/1094933
@@ -40,11 +40,11 @@ def hr_size(num, suffix='B') -> str:
     :param suffix: Optional size specifier
     :return: Formatted string
     """
-    for unit in ' KMGTPEZ':
+    for unit in " KMGTPEZ":
         if abs(num) < 1024.0:
-            return "%3.1f%s%s" % (num, unit if unit != ' ' else '', suffix)
+            return "%3.1f%s%s" % (num, unit if unit != " " else "", suffix)
         num /= 1024.0
-    return "%.1f%s%s" % (num, 'Y', suffix)
+    return "%.1f%s%s" % (num, "Y", suffix)
 
 
 class ConcreteUnicornEmulator:
@@ -66,28 +66,26 @@ class ConcreteUnicornEmulator:
 
     Only supports X86_64 for now.
     """
+
     def __init__(self, cpu):
         self._cpu = cpu
         self._mem_delta = {}
-        self.flag_registers = {'CF', 'PF', 'AF', 'ZF', 'SF', 'IF', 'DF', 'OF'}
+        self.flag_registers = {"CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"}
         self.write_backs_disabled = False
         self._stop_at = None
 
-        cpu.subscribe('did_write_memory', self.write_back_memory)
-        cpu.subscribe('did_write_register', self.write_back_register)
-        cpu.subscribe('did_set_descriptor', self.update_segment)
-        cpu.subscribe('did_map_memory', self.map_memory_callback)
-        cpu.subscribe('did_unmap_memory', self.unmap_memory_callback)
-        cpu.subscribe('did_protect_memory', self.protect_memory_callback)
+        cpu.subscribe("did_write_memory", self.write_back_memory)
+        cpu.subscribe("did_write_register", self.write_back_register)
+        cpu.subscribe("did_set_descriptor", self.update_segment)
+        cpu.subscribe("did_map_memory", self.map_memory_callback)
+        cpu.subscribe("did_unmap_memory", self.unmap_memory_callback)
+        cpu.subscribe("did_protect_memory", self.protect_memory_callback)
 
         if self._cpu.arch == CS_ARCH_X86:
             self._uc_arch = UC_ARCH_X86
-            self._uc_mode = {
-                CS_MODE_32: UC_MODE_32,
-                CS_MODE_64: UC_MODE_64
-            }[self._cpu.mode]
+            self._uc_mode = {CS_MODE_32: UC_MODE_32, CS_MODE_64: UC_MODE_64}[self._cpu.mode]
         else:
-            raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
+            raise NotImplementedError(f"Unsupported architecture: {self._cpu.arch}")
 
         self.reset()
 
@@ -103,20 +101,22 @@ class ConcreteUnicornEmulator:
         self.registers -= self.flag_registers
         # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
         # the FS register, and it will segfault or hang.
-        self.registers -= {'FS'}
-        self.registers.add('EFLAGS')
+        self.registers -= {"FS"}
+        self.registers.add("EFLAGS")
 
         for reg in self.registers:
             val = self._cpu.read_register(reg)
 
-            if reg in {'FS', 'GS'}:
+            if reg in {"FS", "GS"}:
                 self.msr_write(reg, val)
                 continue
 
             if issymbolic(val):
                 from ..native.cpu.abstractcpu import ConcretizeRegister
-                raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
-                                         policy='ONE')
+
+                raise ConcretizeRegister(
+                    self._cpu, reg, "Concretizing for emulation.", policy="ONE"
+                )
             logger.debug("Writing %s into %s", val, reg)
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
@@ -138,18 +138,29 @@ class ConcreteUnicornEmulator:
         map_bytes = self._cpu._raw_read(address, size)
         self._emu.mem_write(address, map_bytes)
         if time.time() - start_time > 3:
-            logger.info(f"Copying {hr_size(size)} map at {hex(address)} took {time.time() - start_time} seconds")
+            logger.info(
+                f"Copying {hr_size(size)} map at {hex(address)} took {time.time() - start_time} seconds"
+            )
 
     def map_memory_callback(self, address, size, perms, name, offset, result):
         """
         Catches did_map_memory and copies the mapping into Manticore
         """
-        logger.info(' '.join(("Mapping Memory @",
-                              hex(address) if type(address) is int else "0x??",
-                              hr_size(size), "-",
-                              perms, "-",
-                              f"{name}:{hex(offset) if name else ''}", "->",
-                              hex(result))))
+        logger.info(
+            " ".join(
+                (
+                    "Mapping Memory @",
+                    hex(address) if type(address) is int else "0x??",
+                    hr_size(size),
+                    "-",
+                    perms,
+                    "-",
+                    f"{name}:{hex(offset) if name else ''}",
+                    "->",
+                    hex(result),
+                )
+            )
+        )
         self._emu.mem_map(address, size, convert_permissions(perms))
         self.copy_memory(address, size)
 
@@ -187,9 +198,12 @@ class ConcreteUnicornEmulator:
         """
         Unicorn hook that transfers control to Manticore so it can execute the syscall
         """
-        logger.debug(f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall")
+        logger.debug(
+            f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall"
+        )
         self.sync_unicorn_to_manticore()
         from ..native.cpu.abstractcpu import Syscall
+
         self._to_raise = Syscall()
         uc.emu_stop()
 
@@ -210,7 +224,11 @@ class ConcreteUnicornEmulator:
             m = self._cpu.memory.map_containing(address)
             self.copy_memory(m.start, m.end - m.start)
         except MemoryException as e:
-            logger.error("Failed to map memory {}-{}, ({}): {}".format(hex(address), hex(address + size), access, e))
+            logger.error(
+                "Failed to map memory {}-{}, ({}): {}".format(
+                    hex(address), hex(address + size), access, e
+                )
+            )
             self._to_raise = e
             self._should_try_again = False
             return False
@@ -224,17 +242,18 @@ class ConcreteUnicornEmulator:
         """
         logger.info("Caught interrupt: %s" % number)
         from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
+
         self._to_raise = Interruption(number)
         return True
 
     def _to_unicorn_id(self, reg_name):
         if self._cpu.arch == CS_ARCH_ARM:
-            return globals()['UC_ARM_REG_' + reg_name]
+            return globals()["UC_ARM_REG_" + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
-            custom_mapping = {'PC': 'RIP', 'STACK': 'RSP'}
+            custom_mapping = {"PC": "RIP", "STACK": "RSP"}
             try:
-                return globals()['UC_X86_REG_' + custom_mapping.get(reg_name, reg_name)]
+                return globals()["UC_X86_REG_" + custom_mapping.get(reg_name, reg_name)]
             except KeyError:
                 logger.error("Can't find register UC_X86_REG_%s", str(reg_name))
                 raise
@@ -293,6 +312,7 @@ class ConcreteUnicornEmulator:
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
             from ..native.cpu.abstractcpu import Syscall
+
             if type(self._to_raise) is not Syscall:
                 logger.info("Raising %s", self._to_raise)
             raise self._to_raise
@@ -324,7 +344,10 @@ class ConcreteUnicornEmulator:
             self._emu.mem_write(where, expr)
         else:
             if issymbolic(expr):
-                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+                data = [
+                    Operators.CHR(Operators.EXTRACT(expr, offset, 8))
+                    for offset in range(0, size, 8)
+                ]
                 concrete_data = []
                 for c in data:
                     if issymbolic(c):
@@ -332,10 +355,15 @@ class ConcreteUnicornEmulator:
                     concrete_data.append(c)
                 data = concrete_data
             else:
-                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+                data = [
+                    Operators.CHR(Operators.EXTRACT(expr, offset, 8))
+                    for offset in range(0, size, 8)
+                ]
             logger.debug(f"Writing back {hr_size(size // 8)} to {hex(where)}: {data}")
             # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
-            self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))
+            self._emu.mem_write(
+                where, b"".join(b.encode("utf-8") if type(b) is str else b for b in data)
+            )
 
     def write_back_register(self, reg, val):
         """ Sync register state from Manticore -> Unicorn"""
@@ -345,11 +373,11 @@ class ConcreteUnicornEmulator:
             logger.warning("Skipping Symbolic write-back")
             return
         if reg in self.flag_registers:
-            self._emu.reg_write(self._to_unicorn_id('EFLAGS'), self._cpu.read_register('EFLAGS'))
+            self._emu.reg_write(self._to_unicorn_id("EFLAGS"), self._cpu.read_register("EFLAGS"))
             return
         # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
         # the FS register, and it will segfault or hang.
-        if reg in {'FS'}:
+        if reg in {"FS"}:
             logger.warning(f"Skipping {reg} write. Unicorn unsupported register write.")
             return
         self._emu.reg_write(self._to_unicorn_id(reg), val)
@@ -358,7 +386,7 @@ class ConcreteUnicornEmulator:
         """ Only useful for setting FS right now. """
         logger.info("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
         if selector == 99:
-            self.msr_write('FS', base)
+            self.msr_write("FS", base)
         else:
             logger.error("No way to write segment: %d", selector)
 
@@ -367,6 +395,5 @@ class ConcreteUnicornEmulator:
         set the hidden descriptor-register fields to the given address.
         This enables referencing the fs segment on x86-64.
         """
-        magic = {'FS': 0xC0000100,
-                 'GS': 0xC0000101}
+        magic = {"FS": 0xC0000100, "GS": 0xC0000101}
         return self._emu.msr_write(magic[reg], data)

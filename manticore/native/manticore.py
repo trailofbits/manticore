@@ -12,30 +12,28 @@ from elftools.elf.sections import SymbolTableSection
 from .state import State
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet
-from ..core.smtlib.solver import Z3Solver
+from ..core.smtlib.solver import Z3Solver, issymbolic
 from ..utils import log, config
-from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
-consts = config.get_group('native')
-consts.add('stdin_size', default=256, description='Maximum symbolic stdin size')
+consts = config.get_group("native")
+consts.add("stdin_size", default=256, description="Maximum symbolic stdin size")
 
 
 class Manticore(ManticoreBase):
-
-    def generate_testcase(self, state, message='test'):
+    def generate_testcase(self, state, message="test"):
         testcase = super().generate_testcase(state, message)
         self._output.save_testcase(state, testcase, message)
 
-    def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
+    def __init__(self, path_or_state, argv=None, workspace_url=None, policy="random", **kwargs):
         """
         :param path_or_state: Path to binary or a state (object) to begin from.
         :param argv: arguments passed to the binary.
         """
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
-                raise OSError(f'{path_or_state} is not an existing regular file')
+                raise OSError(f"{path_or_state} is not an existing regular file")
             initial_state = _make_initial_state(path_or_state, argv=argv, **kwargs)
         else:
             initial_state = path_or_state
@@ -44,12 +42,12 @@ class Manticore(ManticoreBase):
 
         # Move the following into a linux plugin
         self._assertions = {}
-        self._coverage_file = None
         self.trace = None
         # sugar for 'will_execute_instruction"
         self._hooks = {}
+        self._init_hooks = set()
 
-        #self.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        # self.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
     ############################################################################
     # Model hooks + callback
@@ -63,20 +61,21 @@ class Manticore(ManticoreBase):
         import importlib
         from manticore import platforms
 
-        with open(path, 'r') as fnames:
+        with open(path, "r") as fnames:
             for line in fnames.readlines():
-                address, cc_name, name = line.strip().split(' ')
+                address, cc_name, name = line.strip().split(" ")
                 fmodel = platforms
-                name_parts = name.split('.')
-                importlib.import_module(f".platforms.{name_parts[0]}", 'manticore')
+                name_parts = name.split(".")
+                importlib.import_module(f".platforms.{name_parts[0]}", "manticore")
                 for n in name_parts:
                     fmodel = getattr(fmodel, n)
                 assert fmodel != platforms
 
                 def cb_function(state):
                     state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
+
                 self._model_hooks.setdefault(int(address, 0), set()).add(cb_function)
-                self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
+                self._executor.subscribe("will_execute_instruction", self._model_hook_callback)
 
     def _model_hook_callback(self, state, instruction):
         pc = state.cpu.PC
@@ -86,20 +85,22 @@ class Manticore(ManticoreBase):
         for cb in self._model_hooks[pc]:
             cb(state)
 
-    @property
-    def coverage_file(self):
-        return self._coverage_file
-
-    @coverage_file.setter
-    @ManticoreBase.at_not_running
-    def coverage_file(self, path):
-        self._coverage_file = path
-
     def _generate_testcase_callback(self, state, testcase, message):
         self._output.save_testcase(state, testcase, message)
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=None, **kwargs):
+    def linux(
+        cls,
+        path,
+        argv=None,
+        envp=None,
+        entry_symbol=None,
+        symbolic_files=None,
+        concrete_start="",
+        pure_symbolic=False,
+        stdin_size=None,
+        **kwargs,
+    ):
         """
         Constructor for Linux binary analysis.
 
@@ -122,12 +123,24 @@ class Manticore(ManticoreBase):
             stdin_size = consts.stdin_size
 
         try:
-            return cls(_make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, pure_symbolic, stdin_size), **kwargs)
+            return cls(
+                _make_linux(
+                    path,
+                    argv,
+                    envp,
+                    entry_symbol,
+                    symbolic_files,
+                    concrete_start,
+                    pure_symbolic,
+                    stdin_size,
+                ),
+                **kwargs,
+            )
         except elftools.common.exceptions.ELFError:
-            raise Exception(f'Invalid binary: {path}')
+            raise Exception(f"Invalid binary: {path}")
 
     @classmethod
-    def decree(cls, path, concrete_start='', **kwargs):
+    def decree(cls, path, concrete_start="", **kwargs):
         """
         Constructor for Decree binary analysis.
 
@@ -140,7 +153,7 @@ class Manticore(ManticoreBase):
         try:
             return cls(_make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
-            raise Exception(f'Invalid binary: {path}')
+            raise Exception(f"Invalid binary: {path}")
 
     @property
     def binary_path(self):
@@ -156,13 +169,13 @@ class Manticore(ManticoreBase):
     ############################################################################
 
     def load_assertions(self, path):
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             for line in f.readlines():
-                pc = int(line.split(' ')[0], 16)
+                pc = int(line.split(" ")[0], 16)
                 if pc in self._assertions:
                     logger.debug("Repeated PC in assertions file %s", path)
-                self._assertions[pc] = ' '.join(line.split(' ')[1:])
-                self.subscribe('will_execute_instruction', self._assertions_callback)
+                self._assertions[pc] = " ".join(line.split(" ")[1:])
+                self.subscribe("will_execute_instruction", self._assertions_callback)
 
     def _assertions_callback(self, state, pc, instruction):
         if pc not in self._assertions:
@@ -177,8 +190,9 @@ class Manticore(ManticoreBase):
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
         if not Z3Solver().can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
-            logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                        state.cpu.pc, program)
+            logger.info(
+                "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.pc, program
+            )
             raise TerminateState()
 
         # Everything is good add it.
@@ -193,7 +207,9 @@ class Manticore(ManticoreBase):
         A decorator used to register a hook function to run before analysis begins. Hook
         function takes one :class:`~manticore.core.state.State` argument.
         """
-        self.subscribe('will_run', f)
+        self._init_hooks.add(f)
+        if self._init_hooks:
+            self.subscribe("will_run", self._init_callback)
         return f
 
     def hook(self, pc):
@@ -204,9 +220,11 @@ class Manticore(ManticoreBase):
         :param pc: Address of instruction to hook
         :type pc: int or None
         """
+
         def decorator(f):
             self.add_hook(pc, f)
             return f
+
         return decorator
 
     def add_hook(self, pc, callback):
@@ -224,10 +242,10 @@ class Manticore(ManticoreBase):
         else:
             self._hooks.setdefault(pc, set()).add(callback)
             if self._hooks:
-                self.subscribe('will_execute_instruction', self._hook_callback)
+                self.subscribe("will_execute_instruction", self._hook_callback)
 
     def _hook_callback(self, state, pc, instruction):
-        'Invoke all registered generic hooks'
+        "Invoke all registered generic hooks"
 
         # Ignore symbolic pc.
         # TODO(yan): Should we ask the solver if any of the hooks are possible,
@@ -243,6 +261,13 @@ class Manticore(ManticoreBase):
         # Invoke all pc-agnostic hooks
         for cb in self._hooks.get(None, []):
             cb(state)
+
+    def _init_callback(self, ready_states):
+        for cb in self._init_hooks:
+            # We _should_ only ever have one starting state. Right now we're putting
+            # this in a loop for futureproofing.
+            for state in ready_states:
+                cb(state)
 
     ###############################
     # Symbol Resolution
@@ -260,7 +285,7 @@ class Manticore(ManticoreBase):
         :type line: int or None
         """
 
-        with open(self.binary_path, 'rb') as f:
+        with open(self.binary_path, "rb") as f:
 
             elffile = ELFFile(f)
 
@@ -275,13 +300,13 @@ class Manticore(ManticoreBase):
                     continue
 
                 # return first indexed memory address for the symbol,
-                return symbols[0].entry['st_value']
+                return symbols[0].entry["st_value"]
 
             raise ValueError(f"The {self.binary_path} ELFfile does not contain symbol {symbol}")
 
     def run(self, timeout=None):
         with self.locked_context() as context:
-            context['time_started'] = time.time()
+            context["time_started"] = time.time()
 
         super().run(timeout=timeout)
 
@@ -295,21 +320,21 @@ class Manticore(ManticoreBase):
         time_ended = time.time()
 
         with self.locked_context() as context:
-            time_elapsed = time_ended - context['time_started']
+            time_elapsed = time_ended - context["time_started"]
 
-            logger.info('Total time: %s', time_elapsed)
+            logger.info("Total time: %s", time_elapsed)
 
-            context['time_ended'] = time_ended
-            context['time_elapsed'] = time_elapsed
+            context["time_ended"] = time_ended
+            context["time_elapsed"] = time_elapsed
 
 
 def _make_initial_state(binary_path, **kwargs):
-    with open(binary_path, 'rb') as f:
+    with open(binary_path, "rb") as f:
         magic = f.read(4)
-    if magic == b'\x7fELF':
+    if magic == b"\x7fELF":
         # Linux
         state = _make_linux(binary_path, **kwargs)
-    elif magic == b'\x7fCGC':
+    elif magic == b"\x7fCGC":
         # Decree
         state = _make_decree(binary_path, **kwargs)
     else:
@@ -317,37 +342,46 @@ def _make_initial_state(binary_path, **kwargs):
     return state
 
 
-def _make_decree(program, concrete_start='', **kwargs):
+def _make_decree(program, concrete_start="", **kwargs):
     from ..platforms import decree
 
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
-    logger.info('Loading program %s', program)
+    logger.info("Loading program %s", program)
 
-    if concrete_start != '':
-        logger.info(f'Starting with concrete input: {concrete_start}')
+    if concrete_start != "":
+        logger.info(f"Starting with concrete input: {concrete_start}")
     platform.input.transmit(concrete_start)
-    platform.input.transmit(initial_state.symbolicate_buffer('+' * 14, label='RECEIVE'))
+    platform.input.transmit(initial_state.symbolicate_buffer("+" * 14, label="RECEIVE"))
     return initial_state
 
 
-def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=None):
+def _make_linux(
+    program,
+    argv=None,
+    env=None,
+    entry_symbol=None,
+    symbolic_files=None,
+    concrete_start="",
+    pure_symbolic=False,
+    stdin_size=None,
+):
     from ..platforms import linux
 
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = [f'{k}={v}' for k, v in env.items()]
+    env = [f"{k}={v}" for k, v in env.items()]
 
     if stdin_size is None:
         stdin_size = consts.stdin_size
 
-    logger.info('Loading program %s', program)
+    logger.info("Loading program %s", program)
 
     constraints = ConstraintSet()
-    platform = linux.SLinux(program, argv=argv, envp=env,
-                            symbolic_files=symbolic_files,
-                            pure_symbolic=pure_symbolic)
+    platform = linux.SLinux(
+        program, argv=argv, envp=env, symbolic_files=symbolic_files, pure_symbolic=pure_symbolic
+    )
     if entry_symbol is not None:
         entry_pc = platform._find_symbol(entry_symbol)
         if entry_pc is None:
@@ -355,22 +389,22 @@ def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=
             raise Exception("Symbol not found")
         else:
             logger.info("Found symbol '%s' (%x)", entry_symbol, entry_pc)
-            #TODO: use argv as arguments for function
+            # TODO: use argv as arguments for function
             platform.set_entry(entry_pc)
 
     initial_state = State(constraints, platform)
 
-    if concrete_start != '':
-        logger.info('Starting with concrete input: %s', concrete_start)
+    if concrete_start != "":
+        logger.info("Starting with concrete input: %s", concrete_start)
 
     if pure_symbolic:
-        logger.warning('[EXPERIMENTAL] Using purely symbolic memory.')
+        logger.warning("[EXPERIMENTAL] Using purely symbolic memory.")
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label=f'ARGV{i + 1}')
+        argv[i] = initial_state.symbolicate_buffer(arg, label=f"ARGV{i + 1}")
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label=f'ENV{i + 1}')
+        env[i] = initial_state.symbolicate_buffer(evar, label=f"ENV{i + 1}")
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
@@ -380,6 +414,5 @@ def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=
     platform.input.write(concrete_start)
 
     # set stdin input...
-    platform.input.write(initial_state.symbolicate_buffer('+' * stdin_size,
-                                                          label='STDIN'))
+    platform.input.write(initial_state.symbolicate_buffer("+" * stdin_size, label="STDIN"))
     return initial_state

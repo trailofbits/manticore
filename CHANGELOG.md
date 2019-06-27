@@ -1,6 +1,58 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.5...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.0...HEAD)
+
+## 0.3.0 - 2019-06-06
+
+Thanks to our external contributors!
+
+ - [catenacyber](https://github.com/trailofbits/manticore/commits?author=catenacyber)
+ - [binaryflesh](https://github.com/trailofbits/manticore/commits?author=binaryflesh)
+ 
+### Major Changes
+##### Executor Refactor ([#1385](https://github.com/trailofbits/manticore/pull/1385))
+We've completed a major refactor of the core executor that reorganizes Manticore's state machine to be more amenable toward use with the multiprocesssing module. This refactor introduces some small API changes:
+* One must explicitly call the `finalize` method to dump test cases from a run
+* The `will_start_run` event has been renamed to `will_run`
+* The `solver` module requires explicitly accessing the Z3Solver singleton. `from manticore.core.smtlib import solver` becomes:
+```python
+from manticore.core.smtlib.solver import Z3Solver
+solver = Z3Solver.instance()
+```
+* `manticore.running_states` has been renamed to `manticore._busy_states`
+For more information about changes to the state machine, see [the diagram in core/manticore.py](https://github.com/trailofbits/manticore/blob/451965f03a5e0d6766e499bf3246e4796b35638f/manticore/core/manticore.py#L132-L239)
+
+##### Blacken ([#1438](https://github.com/trailofbits/manticore/pull/1438))
+We've run the [`black`](https://black.readthedocs.io/en/stable/index.html) autoformatter on the master branch of Manticore, and added a check for compliance to our CI. To ensure your code is properly formatted, run `black -t py36 -l 100 .` in your Manticore directory before committing. 
+
+##### Support for statically-linked AArch64 binaries ([#1424](https://github.com/trailofbits/manticore/pull/1424))
+Contractor [nkaretnikov](https://github.com/trailofbits/manticore/commits?author=nkaretnikov) spent several months adding support for AArch64 on Linux. As this is a brand new architecture, we've left in most of the debugging assertions, which may slow it down slightly. 
+We look forward to getting feedback on this architecture so we can eventually remove the debugging assertions. 
+
+
+### Ethereum
+
+* Added Symbolic EVM Tests for the Frontier fork. Note that we don't support any other forks (i.e. Constantinople) yet. ([#1431](https://github.com/trailofbits/manticore/pull/1431), [#1441](https://github.com/trailofbits/manticore/pull/1441))
+* **[fixed API]** Fixed relative paths for .sol files ([#1393](https://github.com/trailofbits/manticore/pull/1393))
+* **[fixed API]** Support dynamic parameters in constructors ([#1414](https://github.com/trailofbits/manticore/pull/1414))
+* Fixed detector failure when PC is symbolic ([#1395](https://github.com/trailofbits/manticore/pull/1395))
+* Transfers from etherless contracts no longer report STOP ([#1392](https://github.com/trailofbits/manticore/pull/1392))
+
+### Native
+
+* Added stubs for missing system calls & downgraded most missing calls from exceptions to warnings ([#1384](https://github.com/trailofbits/manticore/pull/1384))
+* Fixed DECREE magic pages ([#1413](https://github.com/trailofbits/manticore/pull/1413))
+* Store x86 registers in a set instead of a list ([#1415](https://github.com/trailofbits/manticore/pull/1415))
+* Fix register boundary check for non-x86 architectures ([#1429](https://github.com/trailofbits/manticore/pull/1429))
+* Support `movhps` on x86 ([#1444](https://github.com/trailofbits/manticore/pull/1444))
+
+### Other
+
+* Only publish events when there is at least one subscriber ([#1388](https://github.com/trailofbits/manticore/pull/1388))
+* Added sandshrew example ([#1396](https://github.com/trailofbits/manticore/pull/1396))
+* Updated Unicorn to track latest master ([#1440](https://github.com/trailofbits/manticore/pull/1440))
+* **[fixed API]** Now respects coverage file argument ([#1442](https://github.com/trailofbits/manticore/pull/1442))
+
 
 ## 0.2.5 - 2019-03-18
 

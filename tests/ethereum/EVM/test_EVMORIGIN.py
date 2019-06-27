@@ -1,4 +1,3 @@
-
 import struct
 import unittest
 import json
@@ -10,7 +9,8 @@ import os
 
 class EVMTest_ORIGIN(unittest.TestCase):
     _multiprocess_can_split_ = True
-    maxDiff=None 
+    maxDiff = None
+
     def _execute(self, new_vm):
         last_returned = None
         last_exception = None
@@ -31,25 +31,26 @@ class EVMTest_ORIGIN(unittest.TestCase):
             last_returned = e.data
         except evm.Revert:
             last_exception = "REVERT"
-            
+
         return last_exception, last_returned
 
     def test_ORIGIN_1(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            owner_account = world.create_account(balance=1000)
-            contract_account = world.create_account(balance=1000, code=b'2')
+        owner_account = world.create_account(balance=1000)
+        contract_account = world.create_account(balance=1000, code=b"2")
 
-            world._open_transaction('CALL', contract_account, 10, '', owner_account, 0)
+        world._open_transaction("CALL", contract_account, 10, "", owner_account, 0)
 
-            new_vm = world.current_vm
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [owner_account])
+        new_vm = world.current_vm
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [owner_account])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

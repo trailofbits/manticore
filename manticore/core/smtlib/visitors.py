@@ -3,6 +3,7 @@ from .expression import *
 from functools import lru_cache
 import logging
 import operator
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,7 +55,7 @@ class Visitor:
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = "visit_%s" % sort
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
@@ -111,6 +112,7 @@ class Visitor:
         if isinstance(expression, Operation):
             if any(x is not y for x, y in zip(expression.operands, operands)):
                 import copy
+
                 aux = copy.copy(expression)
                 aux._operands = operands
                 return aux
@@ -122,13 +124,13 @@ class Translator(Visitor):
     """
 
     def _method(self, expression, *args):
-        #Special case. Need to get the unsleeved version of the array
+        # Special case. Need to get the unsleeved version of the array
         if isinstance(expression, ArrayProxy):
             expression = expression.array
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = f'visit_{sort:s}'
+            methodname = f"visit_{sort:s}"
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
@@ -177,13 +179,13 @@ def get_depth(exp):
 class PrettyPrinter(Visitor):
     def __init__(self, depth=None, **kwargs):
         super().__init__(**kwargs)
-        self.output = ''
+        self.output = ""
         self.indent = 0
         self.depth = depth
 
     def _print(self, s, e=None):
-        self.output += ' ' * self.indent + str(s)  # + '(%016x)'%hash(e)
-        self.output += '\n'
+        self.output += " " * self.indent + str(s)  # + '(%016x)'%hash(e)
+        self.output += "\n"
 
     def visit(self, expression):
         """
@@ -202,7 +204,7 @@ class PrettyPrinter(Visitor):
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = "visit_%s" % sort
             method = getattr(self, methodname, None)
             if method is not None:
                 method(expression, *args)
@@ -216,28 +218,31 @@ class PrettyPrinter(Visitor):
             for o in expression.operands:
                 self.visit(o)
         else:
-            self._print('...')
+            self._print("...")
         self.indent -= 2
-        return ''
+        return ""
 
     def visit_BitVecExtract(self, expression):
-        self._print(expression.__class__.__name__ + '{%d:%d}' % (expression.begining, expression.end), expression)
+        self._print(
+            expression.__class__.__name__ + "{%d:%d}" % (expression.begining, expression.end),
+            expression,
+        )
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
             for o in expression.operands:
                 self.visit(o)
         else:
-            self._print('...')
+            self._print("...")
         self.indent -= 2
-        return ''
+        return ""
 
     def visit_Constant(self, expression):
         self._print(expression.value)
-        return ''
+        return ""
 
     def visit_Variable(self, expression):
         self._print(expression.name)
-        return ''
+        return ""
 
     @property
     def result(self):
@@ -256,25 +261,27 @@ class ConstantFolderSimplifier(Visitor):
     def __init__(self, **kw):
         super().__init__(**kw)
 
-    operations = {BitVecAdd: operator.__add__,
-                  BitVecSub: operator.__sub__,
-                  BitVecMul: operator.__mul__,
-                  BitVecDiv: operator.__truediv__,
-                  BitVecShiftLeft: operator.__lshift__,
-                  BitVecShiftRight: operator.__rshift__,
-                  BitVecAnd: operator.__and__,
-                  BitVecOr: operator.__or__,
-                  BitVecXor: operator.__xor__,
-                  BitVecNot: operator.__not__,
-                  BitVecNeg: operator.__invert__,
-                  LessThan: operator.__lt__,
-                  LessOrEqual: operator.__le__,
-                  Equal: operator.__eq__,
-                  GreaterThan: operator.__gt__,
-                  GreaterOrEqual: operator.__ge__,
-                  BoolAnd: operator.__and__,
-                  BoolOr: operator.__or__,
-                  BoolNot: operator.__not__}
+    operations = {
+        BitVecAdd: operator.__add__,
+        BitVecSub: operator.__sub__,
+        BitVecMul: operator.__mul__,
+        BitVecDiv: operator.__truediv__,
+        BitVecShiftLeft: operator.__lshift__,
+        BitVecShiftRight: operator.__rshift__,
+        BitVecAnd: operator.__and__,
+        BitVecOr: operator.__or__,
+        BitVecXor: operator.__xor__,
+        BitVecNot: operator.__not__,
+        BitVecNeg: operator.__invert__,
+        LessThan: operator.__lt__,
+        LessOrEqual: operator.__le__,
+        Equal: operator.__eq__,
+        GreaterThan: operator.__gt__,
+        GreaterOrEqual: operator.__ge__,
+        BoolAnd: operator.__and__,
+        BoolOr: operator.__or__,
+        BoolNot: operator.__not__,
+    }
 
     def visit_BitVecConcat(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
@@ -298,7 +305,7 @@ class ConstantFolderSimplifier(Visitor):
             begining = expression.begining
             end = expression.end
             value = value >> begining
-            mask = 2**(end - begining + 1) - 1
+            mask = 2 ** (end - begining + 1) - 1
             value = value & mask
             return BitVecConstant(expression.size, value, taint=expression.taint)
 
@@ -317,8 +324,7 @@ class ConstantFolderSimplifier(Visitor):
     def visit_Operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
-        if operation is not None and \
-                all(isinstance(o, Constant) for o in operands):
+        if operation is not None and all(isinstance(o, Constant) for o in operands):
             value = operation(*(x.value for x in operands))
             if isinstance(expression, BitVec):
                 return BitVecConstant(expression.size, value, taint=expression.taint)
@@ -348,9 +354,7 @@ class ArithmeticSimplifier(Visitor):
 
     @staticmethod
     def _same_constant(a, b):
-        return isinstance(a, Constant) and\
-            isinstance(b, Constant) and\
-            a.value == b.value or a is b
+        return isinstance(a, Constant) and isinstance(b, Constant) and a.value == b.value or a is b
 
     @staticmethod
     def _changed(expression, operands):
@@ -445,11 +449,19 @@ class ArithmeticSimplifier(Visitor):
                         new_operands.append(item)
                     bitcount += item.size
             if begining != expression.begining:
-                return BitVecExtract(BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
-                                     begining, expression.size, taint=expression.taint)
+                return BitVecExtract(
+                    BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
+                    begining,
+                    expression.size,
+                    taint=expression.taint,
+                )
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
-            return op.__class__(BitVecExtract(bitoperand_a, begining, expression.size), BitVecExtract(bitoperand_b, begining, expression.size), taint=expression.taint)
+            return op.__class__(
+                BitVecExtract(bitoperand_a, begining, expression.size),
+                BitVecExtract(bitoperand_b, begining, expression.size),
+                taint=expression.taint,
+            )
 
     def visit_BitVecAdd(self, expression, *operands):
         """ a + 0  ==> a
@@ -480,7 +492,14 @@ class ArithmeticSimplifier(Visitor):
             subleft = left.operands[0]
             subright = left.operands[1]
             if isinstance(subright, Constant):
-                return BitVecSub(subleft, BitVecConstant(subleft.size, subright.value + right.value, taint=subright.taint | right.taint))
+                return BitVecSub(
+                    subleft,
+                    BitVecConstant(
+                        subleft.size,
+                        subright.value + right.value,
+                        taint=subright.taint | right.taint,
+                    ),
+                )
 
     def visit_BitVecOr(self, expression, *operands):
         """ a | 0 => a
@@ -556,10 +575,19 @@ class ArithmeticSimplifier(Visitor):
 
             # props are slow and using them in tight loops should be avoided, esp when they offer no additional validation
             # arr._operands[1] = arr.index, arr._operands[0] = arr.array
-            while isinstance(arr, ArrayStore) and isinstance(arr._operands[1], BitVecConstant) and arr._operands[1]._value != ival:
+            while (
+                isinstance(arr, ArrayStore)
+                and isinstance(arr._operands[1], BitVecConstant)
+                and arr._operands[1]._value != ival
+            ):
                 arr = arr._operands[0]  # arr.array
 
-        if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
+        if (
+            isinstance(index, BitVecConstant)
+            and isinstance(arr, ArrayStore)
+            and isinstance(arr.index, BitVecConstant)
+            and arr.index.value == index.value
+        ):
             return arr.value
         else:
             if arr is not expression.array:
@@ -616,10 +644,11 @@ def simplify(expression):
 class TranslatorSmtlib(Translator):
     """ Simple visitor to translate an expression to its smtlib representation
     """
+
     unique = 0
 
     def __init__(self, use_bindings=False, *args, **kw):
-        assert 'bindings' not in kw
+        assert "bindings" not in kw
         super().__init__(*args, **kw)
         self.use_bindings = use_bindings
         self._bindings_cache = {}
@@ -633,7 +662,7 @@ class TranslatorSmtlib(Translator):
             return self._bindings_cache[smtlib]
 
         TranslatorSmtlib.unique += 1
-        name = 'a_%d' % TranslatorSmtlib.unique
+        name = "a_%d" % TranslatorSmtlib.unique
 
         self._bindings.append((name, expression, smtlib))
 
@@ -645,56 +674,56 @@ class TranslatorSmtlib(Translator):
         return self._bindings
 
     translation_table = {
-        BoolNot: 'not',
-        BoolEq: '=',
-        BoolAnd: 'and',
-        BoolOr: 'or',
-        BoolXor: 'xor',
-        BoolITE: 'ite',
-        BitVecAdd: 'bvadd',
-        BitVecSub: 'bvsub',
-        BitVecMul: 'bvmul',
-        BitVecDiv: 'bvsdiv',
-        BitVecUnsignedDiv: 'bvudiv',
-        BitVecMod: 'bvsmod',
-        BitVecRem: 'bvsrem',
-        BitVecUnsignedRem: 'bvurem',
-        BitVecShiftLeft: 'bvshl',
-        BitVecShiftRight: 'bvlshr',
-        BitVecArithmeticShiftLeft: 'bvashl',
-        BitVecArithmeticShiftRight: 'bvashr',
-        BitVecAnd: 'bvand',
-        BitVecOr: 'bvor',
-        BitVecXor: 'bvxor',
-        BitVecNot: 'bvnot',
-        BitVecNeg: 'bvneg',
-        LessThan: 'bvslt',
-        LessOrEqual: 'bvsle',
-        Equal: '=',
-        GreaterThan: 'bvsgt',
-        GreaterOrEqual: 'bvsge',
-        UnsignedLessThan: 'bvult',
-        UnsignedLessOrEqual: 'bvule',
-        UnsignedGreaterThan: 'bvugt',
-        UnsignedGreaterOrEqual: 'bvuge',
-        BitVecSignExtend: '(_ sign_extend %d)',
-        BitVecZeroExtend: '(_ zero_extend %d)',
-        BitVecExtract: '(_ extract %d %d)',
-        BitVecConcat: 'concat',
-        BitVecITE: 'ite',
-        ArrayStore: 'store',
-        ArraySelect: 'select',
+        BoolNot: "not",
+        BoolEq: "=",
+        BoolAnd: "and",
+        BoolOr: "or",
+        BoolXor: "xor",
+        BoolITE: "ite",
+        BitVecAdd: "bvadd",
+        BitVecSub: "bvsub",
+        BitVecMul: "bvmul",
+        BitVecDiv: "bvsdiv",
+        BitVecUnsignedDiv: "bvudiv",
+        BitVecMod: "bvsmod",
+        BitVecRem: "bvsrem",
+        BitVecUnsignedRem: "bvurem",
+        BitVecShiftLeft: "bvshl",
+        BitVecShiftRight: "bvlshr",
+        BitVecArithmeticShiftLeft: "bvashl",
+        BitVecArithmeticShiftRight: "bvashr",
+        BitVecAnd: "bvand",
+        BitVecOr: "bvor",
+        BitVecXor: "bvxor",
+        BitVecNot: "bvnot",
+        BitVecNeg: "bvneg",
+        LessThan: "bvslt",
+        LessOrEqual: "bvsle",
+        Equal: "=",
+        GreaterThan: "bvsgt",
+        GreaterOrEqual: "bvsge",
+        UnsignedLessThan: "bvult",
+        UnsignedLessOrEqual: "bvule",
+        UnsignedGreaterThan: "bvugt",
+        UnsignedGreaterOrEqual: "bvuge",
+        BitVecSignExtend: "(_ sign_extend %d)",
+        BitVecZeroExtend: "(_ zero_extend %d)",
+        BitVecExtract: "(_ extract %d %d)",
+        BitVecConcat: "concat",
+        BitVecITE: "ite",
+        ArrayStore: "store",
+        ArraySelect: "select",
     }
 
     def visit_BitVecConstant(self, expression):
         assert isinstance(expression, BitVecConstant)
         if expression.size == 1:
-            return '#' + bin(expression.value & expression.mask)[1:]
+            return "#" + bin(expression.value & expression.mask)[1:]
         else:
-            return '#x%0*x' % (int(expression.size / 4), expression.value & expression.mask)
+            return "#x%0*x" % (int(expression.size / 4), expression.value & expression.mask)
 
     def visit_BoolConstant(self, expression):
-        return expression.value and 'true' or 'false'
+        return expression.value and "true" or "false"
 
     def visit_Variable(self, expression):
         return expression.name
@@ -704,7 +733,7 @@ class TranslatorSmtlib(Translator):
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
 
-        return '(select %s %s)' % (array_smt, index_smt)
+        return "(select %s %s)" % (array_smt, index_smt)
 
     def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
@@ -714,7 +743,7 @@ class TranslatorSmtlib(Translator):
             operation = operation % (expression.end, expression.begining)
 
         operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        return '(%s %s)' % (operation, ' '.join(operands))
+        return "(%s %s)" % (operation, " ".join(operands))
 
     @property
     def results(self):
@@ -725,7 +754,7 @@ class TranslatorSmtlib(Translator):
         output = super().result
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
-                output = '( let ((%s %s)) %s )' % (name, smtlib, output)
+                output = "( let ((%s %s)) %s )" % (name, smtlib, output)
         return output
 
 

@@ -5,7 +5,7 @@ manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
 all_loggers = set()
 default_factory = logging.getLogRecordFactory()
-logfmt = ("%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s")
+logfmt = "%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s"
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(logfmt)
 handler.setFormatter(formatter)
@@ -21,23 +21,26 @@ class ContextFilter(logging.Filter):
         Produce a summarized record name
           i.e. manticore.core.executor -> m.c.executor
         """
-        components = name.split('.')
-        prefix = '.'.join(c[0] for c in components[:-1])
-        return f'{prefix}.{components[-1]}'
+        components = name.split(".")
+        prefix = ".".join(c[0] for c in components[:-1])
+        return f"{prefix}.{components[-1]}"
 
     colors_disabled = False
 
-    coloring = {u'DEBUG': u'magenta', u'WARNING': u'yellow',
-                u'ERROR': u'red', u'INFO': u'blue'}
-    colors = dict(zip([u'black', u'red', u'green', u'yellow',
-                       u'blue', u'magenta', u'cyan', u'white'], map(str, range(30, 30 + 8))))
+    coloring = {"DEBUG": "magenta", "WARNING": "yellow", "ERROR": "red", "INFO": "blue"}
+    colors = dict(
+        zip(
+            ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"],
+            map(str, range(30, 30 + 8)),
+        )
+    )
 
     color_map = {}
     for k, v in coloring.items():
         color_map[k] = colors[v]
 
-    colored_levelname_format = u'\x1b[{}m{}:\x1b[0m'
-    plain_levelname_format = u'{}:'
+    colored_levelname_format = "\x1b[{}m{}:\x1b[0m"
+    plain_levelname_format = "{}:"
 
     def colored_level_name(self, levelname):
         """
@@ -67,7 +70,7 @@ class CustomLogger(logging.Logger):
         all_loggers.add(name)
         self.initialized = False
 
-        if name.startswith('manticore'):
+        if name.startswith("manticore"):
             self.addHandler(handler)
             self.addFilter(ctxfilter)
             self.propagate = False
@@ -86,38 +89,36 @@ def get_levels():
         [(x, DEFAULT_LOG_LEVEL) for x in all_loggers],
         # 1
         [
-            ('manticore.manticore', logging.INFO),
-            ('manticore.main', logging.INFO),
-            ('manticore.ethereum.*', logging.INFO),
-            ('manticore.native.*', logging.INFO),
-            ('manticore.core.manticore', logging.INFO)
+            ("manticore.manticore", logging.INFO),
+            ("manticore.main", logging.INFO),
+            ("manticore.ethereum.*", logging.INFO),
+            ("manticore.native.*", logging.INFO),
+            ("manticore.core.manticore", logging.INFO),
         ],
         # 2 (-v)
         [
-            ('manticore.core.executor', logging.INFO),
-            ('manticore.platforms.*', logging.DEBUG),
-            ('manticore.ethereum', logging.DEBUG),
-            ('manticore.core.plugin', logging.DEBUG),
-            ('manticore.util.emulate', logging.INFO),
+            ("manticore.core.executor", logging.INFO),
+            ("manticore.platforms.*", logging.DEBUG),
+            ("manticore.ethereum", logging.DEBUG),
+            ("manticore.core.plugin", logging.DEBUG),
+            ("manticore.util.emulate", logging.INFO),
         ],
         # 3 (-vv)
-        [
-            ('manticore.native.cpu.*', logging.DEBUG)
-        ],
+        [("manticore.native.cpu.*", logging.DEBUG)],
         # 4 (-vvv)
         [
-            ('manticore.native.memory', logging.DEBUG),
-            ('manticore.native.cpu.*', logging.DEBUG),
-            ('manticore.native.cpu.*.registers', logging.DEBUG)
+            ("manticore.native.memory", logging.DEBUG),
+            ("manticore.native.cpu.*", logging.DEBUG),
+            ("manticore.native.cpu.*.registers", logging.DEBUG),
         ],
         # 5 (-vvvv)
         [
-            ('manticore.manticore', logging.DEBUG),
-            ('manticore.ethereum.*', logging.DEBUG),
-            ('manticore.native.*', logging.DEBUG),
-            ('manticore.core.smtlib', logging.DEBUG),
-            ('manticore.core.smtlib.*', logging.DEBUG)
-        ]
+            ("manticore.manticore", logging.DEBUG),
+            ("manticore.ethereum.*", logging.DEBUG),
+            ("manticore.native.*", logging.DEBUG),
+            ("manticore.core.smtlib", logging.DEBUG),
+            ("manticore.core.smtlib.*", logging.DEBUG),
+        ],
     ]
 
 
@@ -127,11 +128,11 @@ def get_verbosity(logger_name):
         Pseudo globbing that only supports full fields. 'a.*.d' matches 'a.b.d'
         but not 'a.b.c.d'.
         """
-        name_l, pattern_l = name.split('.'), pattern.split('.')
+        name_l, pattern_l = name.split("."), pattern.split(".")
         if len(name_l) != len(pattern_l):
             return False
         for name_f, pattern_f in zip(name_l, pattern_l):
-            if pattern_f == '*':
+            if pattern_f == "*":
                 continue
             if name_f != pattern_f:
                 return False

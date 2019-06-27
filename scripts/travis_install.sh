@@ -16,10 +16,7 @@ function install_mcore {
         EXTRAS="dev"
     fi
 
-    # Unicorn needs python2
-    export UNICORN_QEMU_FLAGS="--python=/usr/bin/python"
-
-    pip install -I --no-binary keystone-engine -e .[$EXTRAS]  # ks can have pip install issues
+    pip install --no-binary keystone-engine -e .[$EXTRAS]  # ks can have pip install issues
 }
 
 function install_cc_env {
@@ -29,20 +26,21 @@ function install_cc_env {
     pip install awscli
 }
 
-# TODO: temporary function, until next release of crytic-compile
-function install_crytic_compile {
-    git clone https://github.com/crytic/crytic-compile
-    cd crytic-compile
-    pip install .
-    cd ..
-}
-
-# install CodeClimate env in all conditions
-install_cc_env
-
-install_crytic_compile
-
-if [ "$1" != "env" ]; then
-    install_solc
-    install_mcore $1
+# Install black for initial formatting stage
+if [ "$1" == "format" ]; then
+    pip install -U black
 fi
+
+# Install CodeClimate env
+if [ "$1" != "format" ]; then
+    install_cc_env
+fi
+
+# Skip Manticore installation setup and teardown
+if [ "$1" != "env" ]; then
+    if [ "$1" != "format" ]; then
+        install_solc
+        install_mcore $1
+    fi
+fi
+

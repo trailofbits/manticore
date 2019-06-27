@@ -9,17 +9,14 @@ from itertools import islice
 import unicorn
 
 from .disasm import init_disassembler
-from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
-)
+from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory
-from ...core.smtlib import Expression, BitVec, Operators, Constant
+from ...core.smtlib import Expression, BitVec, Operators, Constant, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
-from ...utils.helpers import issymbolic
 
 from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_ARCH_ARM
 from capstone.arm64 import ARM64_REG_ENDING
@@ -27,7 +24,7 @@ from capstone.x86 import X86_REG_ENDING
 from capstone.arm import ARM_REG_ENDING
 
 logger = logging.getLogger(__name__)
-register_logger = logging.getLogger(f'{__name__}.registers')
+register_logger = logging.getLogger(f"{__name__}.registers")
 
 ###################################################################################
 # Exceptions
@@ -84,7 +81,7 @@ class ConcretizeRegister(CpuException):
     Raised when a symbolic register needs to be concretized.
     """
 
-    def __init__(self, cpu, reg_name, message=None, policy='MINMAX'):
+    def __init__(self, cpu, reg_name, message=None, policy="MINMAX"):
         self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
@@ -97,7 +94,7 @@ class ConcretizeArgument(CpuException):
     Raised when a symbolic argument needs to be concretized.
     """
 
-    def __init__(self, cpu, argnum, policy='MINMAX'):
+    def __init__(self, cpu, argnum, policy="MINMAX"):
         self.message = f"Concretizing argument #{argnum}."
         self.cpu = cpu
         self.policy = policy
@@ -111,6 +108,7 @@ class Operand:
     """This class encapsulates how to access operands (regs/mem/immediates) for
     different CPUs
     """
+
     class MemSpec:
         """
         Auxiliary class wraps capstone operand 'mem' attribute. This will
@@ -119,6 +117,7 @@ class Operand:
 
         def __init__(self, parent):
             self.parent = parent
+
         segment = property(lambda self: self.parent._reg_name(self.parent.op.mem.segment))
         base = property(lambda self: self.parent._reg_name(self.parent.op.mem.base))
         index = property(lambda self: self.parent._reg_name(self.parent.op.mem.index))
@@ -151,13 +150,15 @@ class Operand:
         :param int reg_id: Register ID
         """
         # XXX: Support other architectures.
-        if ((self.cpu.arch == CS_ARCH_ARM64 and reg_id >= ARM64_REG_ENDING) or
-            (self.cpu.arch == CS_ARCH_X86 and reg_id >= X86_REG_ENDING) or
-            (self.cpu.arch == CS_ARCH_ARM and reg_id >= ARM_REG_ENDING)):
+        if (
+            (self.cpu.arch == CS_ARCH_ARM64 and reg_id >= ARM64_REG_ENDING)
+            or (self.cpu.arch == CS_ARCH_X86 and reg_id >= X86_REG_ENDING)
+            or (self.cpu.arch == CS_ARCH_ARM and reg_id >= ARM_REG_ENDING)
+        ):
             logger.warning("Trying to get register name for a non-register")
             return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
-        if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
+        if cs_reg_name is None or cs_reg_name.lower() == "(invalid)":
             return None
         return self.cpu._regfile._alias(cs_reg_name.upper())
 
@@ -194,6 +195,7 @@ class Operand:
     def write(self, value):
         """ It writes the value of specific type to the registers or memory """
         raise NotImplementedError
+
 
 #  Basic register file structure not actually need to abstract as it's used
 #  only from the cpu implementation
@@ -371,7 +373,7 @@ class Abi:
             descriptors = self.get_arguments()
             src = next(islice(descriptors, idx, idx + 1))
 
-            msg = 'Concretizing due to model invocation'
+            msg = "Concretizing due to model invocation"
             if isinstance(src, str):
                 raise ConcretizeRegister(self._cpu, src, msg)
             else:
@@ -385,7 +387,7 @@ class Abi:
         return result
 
 
-platform_logger = logging.getLogger('manticore.platforms.platform')
+platform_logger = logging.getLogger("manticore.platforms.platform")
 
 
 def unsigned_hexlify(i):
@@ -419,11 +421,14 @@ class SyscallAbi(Abi):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
-        self._cpu._publish('will_execute_syscall', model)
+        self._cpu._publish("will_execute_syscall", model)
         ret = super().invoke(model, prefix_args)
-        self._cpu._publish('did_execute_syscall',
-                           model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
-                           self._last_arguments, ret)
+        self._cpu._publish(
+            "did_execute_syscall",
+            model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
+            self._last_arguments,
+            ret,
+        )
 
         if platform_logger.isEnabledFor(logging.DEBUG):
             # Try to expand strings up to max_arg_expansion
@@ -433,21 +438,27 @@ class SyscallAbi(Abi):
 
             args = []
             for arg in self._last_arguments:
-                arg_s = unsigned_hexlify(arg) if abs(arg) > min_hex_expansion else f'{arg}'
-                if self._cpu.memory.access_ok(arg, 'r') and \
-                        model.__func__.__name__ not in {'sys_mprotect', 'sys_mmap'}:
+                arg_s = (
+                    unsigned_hexlify(arg)
+                    if not issymbolic(arg) and abs(arg) > min_hex_expansion
+                    else f"{arg}"
+                )
+                if self._cpu.memory.access_ok(arg, "r") and model.__func__.__name__ not in {
+                    "sys_mprotect",
+                    "sys_mmap",
+                }:
                     try:
                         s = self._cpu.read_string(arg, max_arg_expansion)
-                        s = s.rstrip().replace('\n', '\\n') if s else s
-                        arg_s = (f'"{s}"' if s else arg_s)
+                        s = s.rstrip().replace("\n", "\\n") if s else s
+                        arg_s = f'"{s}"' if s else arg_s
                     except Exception:
                         pass
                 args.append(arg_s)
 
-            args_s = ', '.join(args)
-            ret_s = f'{unsigned_hexlify(ret)}' if abs(ret) > min_hex_expansion else f'{ret}'
+            args_s = ", ".join(args)
+            ret_s = f"{unsigned_hexlify(ret)}" if abs(ret) > min_hex_expansion else f"{ret}"
 
-            platform_logger.debug('%s(%s) = %s', model.__func__.__name__, args_s, ret_s)
+            platform_logger.debug("%s(%s) = %s", model.__func__.__name__, args_s, ret_s)
 
 
 ############################################################################
@@ -470,13 +481,23 @@ class Cpu(Eventful):
     - stack_alias
     """
 
-    _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory',
-                         'execute_syscall'}
+    _published_events = {
+        "write_register",
+        "read_register",
+        "write_memory",
+        "read_memory",
+        "decode_instruction",
+        "execute_instruction",
+        "set_descriptor",
+        "map_memory",
+        "protect_memory",
+        "unmap_memory",
+        "execute_syscall",
+    }
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
-        self._disasm = kwargs.pop("disasm", 'capstone')
+        self._disasm = kwargs.pop("disasm", "capstone")
         super().__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
@@ -489,29 +510,33 @@ class Cpu(Eventful):
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
-        assert 'STACK' in self._regfile
-        assert 'PC' in self._regfile
+        assert "STACK" in self._regfile
+        assert "PC" in self._regfile
 
     def __getstate__(self):
         state = super().__getstate__()
-        state['regfile'] = self._regfile
-        state['memory'] = self._memory
-        state['icount'] = self._icount
-        state['last_pc'] = self._last_pc
-        state['disassembler'] = self._disasm
-        state['concrete'] = self._concrete
-        state['break_unicorn_at'] = self._break_unicorn_at
+        state["regfile"] = self._regfile
+        state["memory"] = self._memory
+        state["icount"] = self._icount
+        state["last_pc"] = self._last_pc
+        state["disassembler"] = self._disasm
+        state["concrete"] = self._concrete
+        state["break_unicorn_at"] = self._break_unicorn_at
         return state
 
     def __setstate__(self, state):
-        Cpu.__init__(self, state['regfile'],
-                     state['memory'],
-                     disasm=state['disassembler'], concrete=state['concrete'])
-        self._icount = state['icount']
-        self._last_pc = state['last_pc']
-        self._disasm = state['disassembler']
-        self._concrete = state['concrete']
-        self._break_unicorn_at = state['break_unicorn_at']
+        Cpu.__init__(
+            self,
+            state["regfile"],
+            state["memory"],
+            disasm=state["disassembler"],
+            concrete=state["concrete"],
+        )
+        self._icount = state["icount"]
+        self._last_pc = state["last_pc"]
+        self._disasm = state["disassembler"]
+        self._concrete = state["concrete"]
+        self._break_unicorn_at = state["break_unicorn_at"]
         super().__setstate__(state)
 
     @property
@@ -555,9 +580,9 @@ class Cpu(Eventful):
         :param value: register value
         :type value: int or long or Expression
         """
-        self._publish('will_write_register', register, value)
+        self._publish("will_write_register", register, value)
         value = self._regfile.write(register, value)
-        self._publish('did_write_register', register, value)
+        self._publish("did_write_register", register, value)
         return value
 
     def read_register(self, register):
@@ -568,9 +593,9 @@ class Cpu(Eventful):
         :return: register value
         :rtype: int or long or Expression
         """
-        self._publish('will_read_register', register)
+        self._publish("will_read_register", register)
         value = self._regfile.read(register)
-        self._publish('did_read_register', register, value)
+        self._publish("did_read_register", register, value)
         return value
 
     # Pythonic access to registers and aliases
@@ -580,7 +605,7 @@ class Cpu(Eventful):
 
         :param str name: Name of the register
         """
-        if name != '_regfile':
+        if name != "_regfile":
             if name in self._regfile:
                 return self.read_register(name)
         raise AttributeError(name)
@@ -631,12 +656,14 @@ class Cpu(Eventful):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self._publish('will_write_memory', where, expression, size)
+        self._publish("will_write_memory", where, expression, size)
 
-        data = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)]
+        data = [
+            Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)
+        ]
         self._memory.write(where, data, force)
 
-        self._publish('did_write_memory', where, expression, size)
+        self._publish("did_write_memory", where, expression, size)
 
     def _raw_read(self, where: int, size=1) -> bytes:
         """
@@ -653,23 +680,25 @@ class Cpu(Eventful):
             end = map._get_offset(where + size)
 
             if end > map._mapped_size:
-                logger.warning(f"Missing {end - map._mapped_size} bytes at the end of {map._filename}")
+                logger.warning(
+                    f"Missing {end - map._mapped_size} bytes at the end of {map._filename}"
+                )
 
-            raw_data = map._data[map._get_offset(where): min(end, map._mapped_size)]
+            raw_data = map._data[map._get_offset(where) : min(end, map._mapped_size)]
             if len(raw_data) < end:
-                raw_data += b'\x00' * (end - len(raw_data))
+                raw_data += b"\x00" * (end - len(raw_data))
 
-            data = b''
+            data = b""
             for offset in sorted(map._overlay.keys()):
-                data += raw_data[len(data):offset]
+                data += raw_data[len(data) : offset]
                 data += map._overlay[offset]
-            data += raw_data[len(data):]
+            data += raw_data[len(data) :]
 
         elif mapType is AnonMap:
-            data = bytes(map._data[start:start + size])
+            data = bytes(map._data[start : start + size])
         else:
-            data = b''.join(self.memory[where:where + size])
-        assert len(data) == size, 'Raw read resulted in wrong data read which should never happen'
+            data = b"".join(self.memory[where : where + size])
+        assert len(data) == size, "Raw read resulted in wrong data read which should never happen"
         return data
 
     def read_int(self, where, size=None, force=False):
@@ -685,13 +714,13 @@ class Cpu(Eventful):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self._publish('will_read_memory', where, size)
+        self._publish("will_read_memory", where, size)
 
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
-        self._publish('did_read_memory', where, value, size)
+        self._publish("did_read_memory", where, value, size)
         return value
 
     def write_bytes(self, where, data, force=False):
@@ -709,19 +738,21 @@ class Cpu(Eventful):
         # At the very least, using it in non-concrete mode will break the symbolic strcmp/strlen models. The 1024 byte
         # minimum is intended to minimize the potential effects of this by ensuring that if there _are_ any other
         # issues, they'll only crop up when we're doing very large writes, which are fairly uncommon.
-        can_write_raw = type(mp) is AnonMap and \
-            isinstance(data, (str, bytes)) and \
-            (mp.end - mp.start + 1) >= len(data) >= 1024 and \
-            not issymbolic(data) and \
-            self._concrete
+        can_write_raw = (
+            type(mp) is AnonMap
+            and isinstance(data, (str, bytes))
+            and (mp.end - mp.start + 1) >= len(data) >= 1024
+            and not issymbolic(data)
+            and self._concrete
+        )
 
         if can_write_raw:
             logger.debug("Using fast write")
             offset = mp._get_offset(where)
             if isinstance(data, str):
-                data = bytes(data.encode('utf-8'))
-            mp._data[offset:offset + len(data)] = data
-            self._publish('did_write_memory', where, data, 8 * len(data))
+                data = bytes(data.encode("utf-8"))
+            mp._data[offset : offset + len(data)] = data
+            self._publish("did_write_memory", where, data, 8 * len(data))
         else:
             for i in range(len(data)):
                 self.write_int(where + i, Operators.ORD(data[i]), 8, force)
@@ -753,9 +784,9 @@ class Cpu(Eventful):
         """
 
         if max_length is not None:
-            string = string[:max_length - 1]
+            string = string[: max_length - 1]
 
-        self.write_bytes(where, string + '\x00', force)
+        self.write_bytes(where, string + "\x00", force)
 
     def read_string(self, where, max_length=None, force=False):
         """
@@ -852,13 +883,13 @@ class Cpu(Eventful):
         if pc in self._instruction_cache:
             return self._instruction_cache[pc]
 
-        text = b''
+        text = b""
 
         # Read Instruction from memory
         for address in range(pc, pc + self.max_instr_width):
             # This reads a byte from memory ignoring permissions
             # and concretize it if symbolic
-            if not self.memory.access_ok(address, 'x'):
+            if not self.memory.access_ok(address, "x"):
                 break
 
             c = self.memory[address]
@@ -870,19 +901,18 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack('B', Z3Solver().get_value(self.memory.constraints, c))
+                        c = struct.pack("B", Z3Solver().get_value(self.memory.constraints, c))
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:
-                    logger.error('Concretize executable memory %r %r', c, text)
-                    raise ConcretizeMemory(self.memory,
-                                           address=pc,
-                                           size=8 * self.max_instr_width,
-                                           policy='INSTRUCTION')
+                    logger.error("Concretize executable memory %r %r", c, text)
+                    raise ConcretizeMemory(
+                        self.memory, address=pc, size=8 * self.max_instr_width, policy="INSTRUCTION"
+                    )
             text += c
 
         # Pad potentially incomplete instruction with zeroes
-        code = text.ljust(self.max_instr_width, b'\x00')
+        code = text.ljust(self.max_instr_width, b"\x00")
 
         try:
             # decode the instruction from code
@@ -891,9 +921,9 @@ class Cpu(Eventful):
             raise DecodeException(pc, code)
 
         # Check that the decoded instruction is contained in executable memory
-        if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
+        if not self.memory.access_ok(slice(pc, pc + insn.size), "x"):
             logger.info("Trying to execute instructions from non-executable memory")
-            raise InvalidMemoryAccess(pc, 'x')
+            raise InvalidMemoryAccess(pc, "x")
 
         insn.operands = self._wrap_operands(insn.operands)
         self._instruction_cache[pc] = insn
@@ -919,16 +949,16 @@ class Cpu(Eventful):
         Decode, and execute one instruction pointed by register PC
         """
         if issymbolic(self.PC):
-            raise ConcretizeRegister(self, 'PC', policy='ALL')
-        if not self.memory.access_ok(self.PC, 'x'):
-            raise InvalidMemoryAccess(self.PC, 'x')
+            raise ConcretizeRegister(self, "PC", policy="ALL")
+        if not self.memory.access_ok(self.PC, "x"):
+            raise InvalidMemoryAccess(self.PC, "x")
 
-        self._publish('will_decode_instruction', self.PC)
+        self._publish("will_decode_instruction", self.PC)
 
         insn = self.decode_instruction(self.PC)
         self._last_pc = self.PC
 
-        self._publish('will_execute_instruction', self.PC, insn)
+        self._publish("will_execute_instruction", self.PC, insn)
 
         # FIXME (theo) why just return here?
         if insn.address != self.PC:
@@ -942,9 +972,9 @@ class Cpu(Eventful):
                 register_logger.debug(l)
 
         try:
-            if self._concrete and 'SYSCALL' in name:
+            if self._concrete and "SYSCALL" in name:
                 self.emu.sync_unicorn_to_manticore()
-            if self._concrete and 'SYSCALL' not in name:
+            if self._concrete and "SYSCALL" not in name:
                 self.emulate(insn)
                 if self.PC == self._break_unicorn_at:
                     logger.debug("Switching from Unicorn to Manticore")
@@ -957,9 +987,14 @@ class Cpu(Eventful):
                     implementation(*insn.operands)
 
                 else:
-                    text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                    logger.warning("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                                   insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                    text_bytes = " ".join("%02x" % x for x in insn.bytes)
+                    logger.warning(
+                        "Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                        insn.address,
+                        text_bytes,
+                        insn.mnemonic,
+                        insn.op_str,
+                    )
                     self.backup_emulate(insn)
         except (Interruption, Syscall) as e:
             e.on_handled = lambda: self._publish_instruction_as_executed(insn)
@@ -975,7 +1010,7 @@ class Cpu(Eventful):
         Notify listeners that an instruction has been executed.
         """
         self._icount += 1
-        self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
+        self._publish("did_execute_instruction", self._last_pc, self.PC, insn)
 
     def emulate(self, insn):
         """
@@ -1003,9 +1038,14 @@ class Cpu(Eventful):
             self.emu.emulate(insn)
         except unicorn.UcError as e:
             if e.errno == unicorn.UC_ERR_INSN_INVALID:
-                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                text_bytes = " ".join("%02x" % x for x in insn.bytes)
+                logger.error(
+                    "Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                    insn.address,
+                    text_bytes,
+                    insn.mnemonic,
+                    insn.op_str,
+                )
             raise InstructionEmulationError(str(e))
 
     def backup_emulate(self, insn):
@@ -1016,15 +1056,20 @@ class Cpu(Eventful):
         :param capstone.CsInsn instruction: The instruction object to emulate
         """
 
-        if not hasattr(self, 'backup_emu'):
+        if not hasattr(self, "backup_emu"):
             self.backup_emu = UnicornEmulator(self)
         try:
             self.backup_emu.emulate(insn)
         except unicorn.UcError as e:
             if e.errno == unicorn.UC_ERR_INSN_INVALID:
-                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                text_bytes = " ".join("%02x" % x for x in insn.bytes)
+                logger.error(
+                    "Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                    insn.address,
+                    text_bytes,
+                    insn.mnemonic,
+                    insn.op_str,
+                )
             raise InstructionEmulationError(str(e))
         finally:
             # We have been seeing occasional Unicorn issues with it not clearing
@@ -1069,9 +1114,10 @@ class Cpu(Eventful):
         :rtype: str
         :return: name and current value for all the registers.
         """
-        result = f'{self.render_instruction()}\n'
-        result += '\n'.join(self.render_registers())
+        result = f"{self.render_instruction()}\n"
+        result += "\n".join(self.render_registers())
         return result
+
 
 # Instruction decorators
 
@@ -1082,5 +1128,6 @@ def instruction(old_method):
     def new_method(cpu, *args, **kw_args):
         cpu.PC += cpu.instruction.size
         return old_method(cpu, *args, **kw_args)
+
     new_method.old_method = old_method
     return new_method

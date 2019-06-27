@@ -5,8 +5,7 @@ import re
 import sha3
 
 from . import abitypes
-from ..utils.helpers import issymbolic
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
+from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy, issymbolic
 from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)
@@ -20,21 +19,22 @@ class ABI:
         and for contract-to-contract interaction.
 
     """
+
     @staticmethod
     def _type_size(ty):
         """ Calculate `static` type size """
-        if ty[0] in ('int', 'uint', 'bytesM', 'function'):
+        if ty[0] in ("int", "uint", "bytesM", "function"):
             return 32
-        elif ty[0] in ('tuple'):
+        elif ty[0] in ("tuple"):
             result = 0
             for ty_i in ty[1]:
                 result += ABI._type_size(ty_i)
             return result
-        elif ty[0] in ('array'):
+        elif ty[0] in ("array"):
             rep = ty[1]
             result = 32  # offset link
             return result
-        elif ty[0] in ('bytes', 'string'):
+        elif ty[0] in ("bytes", "string"):
             result = 32  # offset link
             return result
         raise ValueError
@@ -43,14 +43,16 @@ class ABI:
     def _check_and_warn_num_args(type_spec, *args):
         num_args = len(args)
 
-        no_declared_args = '()' in type_spec
+        no_declared_args = "()" in type_spec
         if no_declared_args:
             num_sig_args = 0
         else:
-            num_sig_args = len(type_spec.split(','))
+            num_sig_args = len(type_spec.split(","))
 
         if num_args != num_sig_args:
-            logger.warning(f'Number of provided arguments ({num_args}) does not match number of arguments in signature: {type_spec}')
+            logger.warning(
+                f"Number of provided arguments ({num_args}) does not match number of arguments in signature: {type_spec}"
+            )
 
     @staticmethod
     def function_call(type_spec, *args):
@@ -64,7 +66,7 @@ class ABI:
         ABI._check_and_warn_num_args(type_spec, *args)
 
         result = ABI.function_selector(type_spec)  # Funcid
-        result += ABI.serialize(m.group('type'), *args)
+        result += ABI.serialize(m.group("type"), *args)
         return result
 
     @staticmethod
@@ -80,9 +82,9 @@ class ABI:
             # Catch and rebrand parsing errors
             raise EthereumError(str(e))
 
-        if parsed_ty[0] != 'tuple':
+        if parsed_ty[0] != "tuple":
             if len(values) > 1:
-                raise ValueError('too many values passed for non-tuple')
+                raise ValueError("too many values passed for non-tuple")
             values = values[0]
             if isinstance(values, str):
                 values = values.encode()
@@ -102,28 +104,30 @@ class ABI:
         result = bytearray()
         dyn_result = bytearray()
 
-        if ty[0] == 'int':
+        if ty[0] == "int":
             result += ABI._serialize_int(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
-        elif ty[0] == 'uint':
+        elif ty[0] == "uint":
             result += ABI._serialize_uint(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
-        elif ty[0] == 'bytesM':
+        elif ty[0] == "bytesM":
             nbytes = ty[1]
             if len(value) > nbytes:
-                raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
+                raise EthereumError(
+                    "bytesM: value length exceeds size of bytes{} type".format(nbytes)
+                )
             result += ABI._serialize_bytes(value)
-        elif ty[0] in ('bytes', 'string'):
+        elif ty[0] in ("bytes", "string"):
             result += ABI._serialize_uint(dyn_offset)
             dyn_result += ABI._serialize_uint(len(value))
             dyn_result += ABI._serialize_bytes(value)
-        elif ty[0] == 'function':
+        elif ty[0] == "function":
             result = ABI._serialize_uint(value[0], 20)
-            result += value[1] + bytearray('\0' * 8)
+            result += value[1] + bytearray("\0" * 8)
             assert len(result) == 32
-        elif ty[0] == 'tuple':
+        elif ty[0] == "tuple":
             sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
             result += sub_result
             dyn_result += sub_dyn_result
-        elif ty[0] == 'array':
+        elif ty[0] == "array":
             rep = ty[1]
             base_type = ty[2]
             sub_result, sub_dyn_result = ABI._serialize_array(rep, base_type, value, dyn_offset)
@@ -141,14 +145,16 @@ class ABI:
         :param value:
         :type value: str or bytearray or Array
         """
-        return value + bytearray(b'\x00' * (32 - len(value)))
+        return value + bytearray(b"\x00" * (32 - len(value)))
 
     @staticmethod
     def _serialize_tuple(types, value, dyn_offset=None):
         result = bytearray()
         dyn_result = bytearray()
         if len(types) != len(value):
-            raise ValueError(f"The number of values to serialize is {'less' if len(value) < len(types) else 'greater'} than the number of types")
+            raise ValueError(
+                f"The number of values to serialize is {'less' if len(value) < len(types) else 'greater'} than the number of types"
+            )
         for ty_i, value_i in zip(types, value):
             result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
             result += result_i
@@ -168,7 +174,9 @@ class ABI:
         sub_result += ABI._serialize_uint(len(value))
 
         for value_i in value:
-            result_i, dyn_result_i = ABI._serialize(base_type, value_i, dyn_offset + len(dyn_result))
+            result_i, dyn_result_i = ABI._serialize(
+                base_type, value_i, dyn_offset + len(dyn_result)
+            )
             sub_result += result_i
             sub_dyn_result += dyn_result_i
 
@@ -195,12 +203,12 @@ class ABI:
             assert isinstance(data, (bytearray, Array))
 
             m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
-            if m and m.group('name'):
+            if m and m.group("name"):
                 # Type has function name. Let's take the function id from the data
                 # This does not check that the encoded func_id is valid
                 # func_id = ABI.function_selector(type_spec)
                 result = (data[:4],)
-                ty = m.group('type')
+                ty = m.group("type")
                 result += (ABI._deserialize(abitypes.parse(ty), data[4:]),)
             else:
                 # No function name, just types
@@ -214,33 +222,33 @@ class ABI:
     def _deserialize(ty, buf, offset=0):
         assert isinstance(buf, (bytearray, Array))
         result = None
-        if ty[0] == 'int':
-            result = ABI._deserialize_int(buf[offset:offset + 32], nbytes=ty[1] // 8)
-        elif ty[0] == 'uint':
-            result = ABI._deserialize_uint(buf[offset:offset + 32], nbytes=ty[1] // 8)
-        elif ty[0] == 'bytesM':
-            result = buf[offset:offset + ty[1]]
-        elif ty[0] == 'function':
-            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20), 256)
-            func_id = buf[offset + 20:offset + 24]
+        if ty[0] == "int":
+            result = ABI._deserialize_int(buf[offset : offset + 32], nbytes=ty[1] // 8)
+        elif ty[0] == "uint":
+            result = ABI._deserialize_uint(buf[offset : offset + 32], nbytes=ty[1] // 8)
+        elif ty[0] == "bytesM":
+            result = buf[offset : offset + ty[1]]
+        elif ty[0] == "function":
+            address = Operators.ZEXTEND(ABI._readBE(buf[offset : offset + 20], 20), 256)
+            func_id = buf[offset + 20 : offset + 24]
             result = (address, func_id)
-        elif ty[0] in ('bytes', 'string'):
-            dyn_offset = ABI._deserialize_int(buf[offset:offset + 32])
-            size = ABI._deserialize_int(buf[dyn_offset:dyn_offset + 32])
-            result = buf[dyn_offset + 32:dyn_offset + 32 + size]
-        elif ty[0] in ('tuple'):
+        elif ty[0] in ("bytes", "string"):
+            dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
+            size = ABI._deserialize_int(buf[dyn_offset : dyn_offset + 32])
+            result = buf[dyn_offset + 32 : dyn_offset + 32 + size]
+        elif ty[0] in ("tuple"):
             result = ()
             current_off = 0
             for ty_i in ty[1]:
-                result += (ABI._deserialize(ty_i, buf, offset), )
+                result += (ABI._deserialize(ty_i, buf, offset),)
                 offset += ABI._type_size(ty_i)
-        elif ty[0] in ('array'):
+        elif ty[0] in ("array"):
             result = []
-            dyn_offset = ABI._deserialize_int(buf[offset:offset + 32])
+            dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
             rep = ty[1]
             ty_size = ABI._type_size(ty[2])
             if rep is None:
-                rep = ABI._deserialize_int(buf[dyn_offset:dyn_offset + 32])
+                rep = ABI._deserialize_int(buf[dyn_offset : dyn_offset + 32])
                 dyn_offset += 32
             for _ in range(rep):
                 result.append(ABI._deserialize(ty[2], buf, dyn_offset))
@@ -259,11 +267,14 @@ class ABI:
             raise ValueError
 
         from .account import EVMAccount  # because of circular import
+
         if not isinstance(value, (int, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
-            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
+            bytes = ArrayVariable(
+                index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
+            )
             if value.size <= size * 8:
                 value = Operators.ZEXTEND(value, size * 8)
             else:
@@ -290,7 +301,9 @@ class ABI:
         if not isinstance(value, (int, BitVec)):
             raise ValueError
         if issymbolic(value):
-            buf = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
+            buf = ArrayVariable(
+                index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
+            )
             value = Operators.SEXTEND(value, value.size, size * 8)
             buf = ArrayProxy(buf.write_BE(padding, value, size))
         else:

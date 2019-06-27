@@ -27,7 +27,7 @@ class ConfigError(Exception):
 
 
 class _Var:
-    def __init__(self, name: str='', default=None, description: str=None, defined: bool=True):
+    def __init__(self, name: str = "", default=None, description: str = None, defined: bool = True):
         self.name = name
         self.description = description
         self.value = default
@@ -58,16 +58,17 @@ class _Group:
     Also don't forget that a given variable can be set through CLI or .yaml file!
     (see config.py)
     """
+
     def __init__(self, name: str):
         # To bypass __setattr__
-        object.__setattr__(self, '_name', name)
-        object.__setattr__(self, '_vars', {})
+        object.__setattr__(self, "_name", name)
+        object.__setattr__(self, "_vars", {})
 
     @property
     def name(self) -> str:
         return self._name
 
-    def add(self, name: str, default=None, description: str=None):
+    def add(self, name: str, default=None, description: str = None):
         """
         Add a variable named |name| to this value group, optionally giving it a
         default value and a description.
@@ -80,13 +81,13 @@ class _Group:
         if name in self._vars:
             raise ConfigError(f"{self.name}.{name} already defined.")
 
-        if name == 'name':
+        if name == "name":
             raise ConfigError("'name' is a reserved name for a group.")
 
         v = _Var(name, description=description, default=default)
         self._vars[name] = v
 
-    def update(self, name: str, value=None, default=None, description: str=None):
+    def update(self, name: str, value=None, default=None, description: str = None):
         """
         Like add, but can tolerate existing values; also updates the value.
 
@@ -95,7 +96,7 @@ class _Group:
         if name in self._vars:
             description = description or self._vars[name].description
             default = default or self._vars[name].default
-        elif name == 'name':
+        elif name == "name":
             raise ConfigError("'name' is a reserved name for a group.")
 
         v = _Var(name, description=description, default=default, defined=False)
@@ -152,9 +153,9 @@ class _Group:
 
 class _TemporaryGroup:
     def __init__(self, group: _Group):
-        object.__setattr__(self, '_group', group)
-        object.__setattr__(self, '_entered', False)
-        object.__setattr__(self, '_saved', {k: v.value for k, v in group._vars.items()})
+        object.__setattr__(self, "_group", group)
+        object.__setattr__(self, "_entered", False)
+        object.__setattr__(self, "_saved", {k: v.value for k, v in group._vars.items()})
 
     def __getattr__(self, item):
         return getattr(self._grp, item)
@@ -167,13 +168,13 @@ class _TemporaryGroup:
         if self._entered is True:
             raise ConfigError("Can't use temporary group recursively!")
 
-        object.__setattr__(self, '_entered', True)
+        object.__setattr__(self, "_entered", True)
 
     def __exit__(self, *_):
         for k in self._saved:
             setattr(self._group, k, self._saved[k])
 
-        object.__setattr__(self, '_entered', False)
+        object.__setattr__(self, "_entered", False)
 
 
 def get_group(name: str) -> _Group:
@@ -250,13 +251,13 @@ def load_overrides(path=None):
     if path is not None:
         names = [path]
     else:
-        possible_names = ['mcore.yml', 'manticore.yml']
-        names = [os.path.join('.', ''.join(x)) for x in product(['', '.'], possible_names)]
+        possible_names = ["mcore.yml", "manticore.yml"]
+        names = [os.path.join(".", "".join(x)) for x in product(["", "."], possible_names)]
 
     for name in names:
         try:
-            with open(name, 'r') as yml_f:
-                logger.info(f'Reading configuration from {name}')
+            with open(name, "r") as yml_f:
+                logger.info(f"Reading configuration from {name}")
                 parse_config(yml_f)
             break
         except FileNotFoundError:
@@ -277,8 +278,12 @@ def add_config_vars_to_argparse(args):
     for group_name, group in _groups.items():
         for key in group:
             obj = group._var_object(key)
-            args.add_argument(f"--{group_name}.{key}", type=type(obj.default),
-                              default=obj.default, help=obj.description)
+            args.add_argument(
+                f"--{group_name}.{key}",
+                type=type(obj.default),
+                default=obj.default,
+                help=obj.description,
+            )
 
 
 def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namespace):
@@ -299,7 +304,7 @@ def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namesp
     command_line_args = vars(args)
 
     # Bring in the options keys into args
-    config_cli_args = get_group('cli')
+    config_cli_args = get_group("cli")
 
     # Place all command line args into the cli group (for saving in the workspace). If
     # the value is set on command line, then it takes precedence; otherwise we try to
@@ -312,7 +317,7 @@ def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namesp
                 config_cli_args.update(k, value=set_val)
             else:
                 # Update a var's native group
-                group_name, key = k.split('.')
+                group_name, key = k.split(".")
                 group = get_group(group_name)
                 setattr(group, key, set_val)
         else:

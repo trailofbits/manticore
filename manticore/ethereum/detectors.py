@@ -3,8 +3,15 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
-from ..core.smtlib import Operators, Constant, simplify
-from ..utils.helpers import istainted, issymbolic, taint_with, get_taints
+from ..core.smtlib import (
+    Operators,
+    Constant,
+    simplify,
+    istainted,
+    issymbolic,
+    get_taints,
+    taint_with,
+)
 from ..core.plugin import Plugin
 
 
@@ -16,6 +23,7 @@ class DetectorClassification:
     Shall be consistent with
     https://github.com/trailofbits/slither/blob/563d5118298e4cae7f0ea5f2a531f0dcdcebd64d/slither/detectors/abstract_detector.py#L11-L15
     """
+
     HIGH = 0
     MEDIUM = 1
     LOW = 2
@@ -30,14 +38,16 @@ class Detector(Plugin):
 
     @property
     def name(self):
-        return self.__class__.__name__.split('.')[-1]
+        return self.__class__.__name__.split(".")[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('{:s}.findings'.format(self.name), list())
+        return state.context.setdefault("{:s}.findings".format(self.name), list())
 
     @contextmanager
     def locked_global_findings(self):
-        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), list) as global_findings:
+        with self.manticore.locked_context(
+            "{:s}.global_findings".format(self.name), list
+        ) as global_findings:
             yield global_findings
 
     @property
@@ -65,7 +75,7 @@ class Detector(Plugin):
         self.get_findings(state).append((address, pc, finding, at_init, constraint))
         with self.locked_global_findings() as gf:
             gf.append((address, pc, finding, at_init))
-        #Fixme for ever broken logger
+        # Fixme for ever broken logger
         logger.warning(finding)
 
     def add_finding_here(self, state, finding, constraint=True):
@@ -77,7 +87,7 @@ class Detector(Plugin):
         """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        at_init = state.platform.current_transaction.sort == 'CREATE'
+        at_init = state.platform.current_transaction.sort == "CREATE"
         self.add_finding(state, address, pc, finding, at_init, constraint)
 
     def _save_current_location(self, state, finding, condition=True):
@@ -91,10 +101,10 @@ class Detector(Plugin):
         """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        at_init = state.platform.current_transaction.sort == 'CREATE'
+        at_init = state.platform.current_transaction.sort == "CREATE"
         location = (address, pc, finding, at_init, condition)
         hash_id = hashlib.sha1(str(location).encode()).hexdigest()
-        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
+        state.context.setdefault("{:s}.locations".format(self.name), {})[hash_id] = location
         return hash_id
 
     def _get_location(self, state, hash_id):
@@ -102,7 +112,7 @@ class Detector(Plugin):
         Get previously saved location
         A location is composed of: address, pc, finding, at_init, condition
         """
-        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
+        return state.context.setdefault("{:s}.locations".format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
@@ -117,45 +127,59 @@ class DetectEnvInstruction(Detector):
     using it. Unless special situations. Notably to programatically detect human transactions
     `sender == origin`
     """
-    ARGUMENT = 'env-instr'
-    HELP = 'Use of potentially unsafe/manipulable instructions'
+
+    ARGUMENT = "env-instr"
+    HELP = "Use of potentially unsafe/manipulable instructions"
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-        if instruction.semantics in ('BLOCKHASH', 'COINBASE', 'TIMESTAMP', 'NUMBER', 'DIFFICULTY', 'GASLIMIT', 'ORIGIN', 'GASPRICE'):
-            self.add_finding_here(state, f'Warning {instruction.semantics} instruction used')
+        if instruction.semantics in (
+            "BLOCKHASH",
+            "COINBASE",
+            "TIMESTAMP",
+            "NUMBER",
+            "DIFFICULTY",
+            "GASLIMIT",
+            "ORIGIN",
+            "GASPRICE",
+        ):
+            self.add_finding_here(state, f"Warning {instruction.semantics} instruction used")
 
 
 class DetectSuicidal(Detector):
-    ARGUMENT = 'suicidal'
-    HELP = 'Reachable selfdestruct instructions'
+    ARGUMENT = "suicidal"
+    HELP = "Reachable selfdestruct instructions"
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-        if instruction.semantics == 'SELFDESTRUCT':
-            self.add_finding_here(state, 'Reachable SELFDESTRUCT')
+        if instruction.semantics == "SELFDESTRUCT":
+            self.add_finding_here(state, "Reachable SELFDESTRUCT")
 
 
 class DetectExternalCallAndLeak(Detector):
-    ARGUMENT = 'ext-call-leak'
-    HELP = 'Reachable external call or ether leak to sender or arbitrary address'
+    ARGUMENT = "ext-call-leak"
+    HELP = "Reachable external call or ether leak to sender or arbitrary address"
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-        if instruction.semantics == 'CALL':
+        if instruction.semantics == "CALL":
             dest_address = arguments[1]
             sent_value = arguments[2]
             msg_sender = state.platform.current_vm.caller
 
-            msg = 'ether leak' if state.can_be_true(sent_value != 0) else 'external call'
+            msg = "ether leak" if state.can_be_true(sent_value != 0) else "external call"
 
             if issymbolic(dest_address):
                 # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
                 if state.can_be_true(msg_sender == dest_address):
-                    self.add_finding_here(state, f"Reachable {msg} to sender via argument", constraint=msg_sender == dest_address)
+                    self.add_finding_here(
+                        state,
+                        f"Reachable {msg} to sender via argument",
+                        constraint=msg_sender == dest_address,
+                    )
                 else:
                     # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
                     # we report nothing if it can't go to > 1 other addresses since that means the code constrained
@@ -166,15 +190,19 @@ class DetectExternalCallAndLeak(Detector):
                     if len(possible_destinations) > 1:
                         # This might be a false positive if the dest_address can't actually be solved to anything
                         # useful/exploitable, even though it can be solved to more than 1 thing
-                        self.add_finding_here(state, f"Reachable {msg} to user controlled address via argument", constraint=msg_sender != dest_address)
+                        self.add_finding_here(
+                            state,
+                            f"Reachable {msg} to user controlled address via argument",
+                            constraint=msg_sender != dest_address,
+                        )
             else:
                 if msg_sender == dest_address:
                     self.add_finding_here(state, f"Reachable {msg} to sender")
 
 
 class DetectInvalid(Detector):
-    ARGUMENT = 'invalid'
-    HELP = 'Enable INVALID instruction detection'
+    ARGUMENT = "invalid"
+    HELP = "Enable INVALID instruction detection"
     IMPACT = DetectorClassification.LOW
     CONFIDENCE = DetectorClassification.HIGH
 
@@ -194,7 +222,7 @@ class DetectInvalid(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         mnemonic = instruction.semantics
 
-        if mnemonic == 'INVALID':
+        if mnemonic == "INVALID":
             if not self._only_human or state.platform.current_transaction.depth == 0:
                 self.add_finding_here(state, "INVALID instruction")
 
@@ -205,21 +233,22 @@ class DetectReentrancySimple(Detector):
     Alert if contract changes the state of storage (does a write) after a call with >2300 gas to a user controlled/symbolic
     external address or the msg.sender address.
     """
-    ARGUMENT = 'reentrancy'
-    HELP = 'Reentrancy bug'
+
+    ARGUMENT = "reentrancy"
+    HELP = "Reentrancy bug"
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
     @property
     def _context_key(self):
-        return f'{self.name}.call_locations'
+        return f"{self.name}.call_locations"
 
     def will_open_transaction_callback(self, state, tx):
         if tx.is_human:
             state.context[self._context_key] = []
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-        if instruction.semantics == 'CALL':
+        if instruction.semantics == "CALL":
             gas = arguments[0]
             dest_address = arguments[1]
             msg_sender = state.platform.current_vm.caller
@@ -241,8 +270,15 @@ class DetectReentrancySimple(Detector):
         # encountered a dangerous call and is now at a write.
         for callpc, gas_constraint in locs:
             addr = state.platform.current_vm.address
-            at_init = state.platform.current_transaction.sort == 'CREATE'
-            self.add_finding(state, addr, callpc, 'Potential reentrancy vulnerability', at_init, constraint=gas_constraint)
+            at_init = state.platform.current_transaction.sort == "CREATE"
+            self.add_finding(
+                state,
+                addr,
+                callpc,
+                "Potential reentrancy vulnerability",
+                at_init,
+                constraint=gas_constraint,
+            )
 
 
 class DetectReentrancyAdvanced(Detector):
@@ -257,8 +293,9 @@ class DetectReentrancyAdvanced(Detector):
 
     3) The storage slot of the SSTORE must be used in some path to control flow
     """
-    ARGUMENT = 'reentrancy-adv'
-    HELP = 'Reentrancy bug (different method)'
+
+    ARGUMENT = "reentrancy-adv"
+    HELP = "Reentrancy bug (different method)"
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
@@ -271,29 +308,34 @@ class DetectReentrancyAdvanced(Detector):
 
     @property
     def _read_storage_name(self):
-        return '{:s}.read_storage'.format(self.name)
+        return "{:s}.read_storage".format(self.name)
 
     def will_open_transaction_callback(self, state, tx):
         # Reset reading log on new human transactions
         if tx.is_human:
             state.context[self._read_storage_name] = set()
-            state.context['{:s}.locations'.format(self.name)] = dict()
+            state.context["{:s}.locations".format(self.name)] = dict()
 
     def did_close_transaction_callback(self, state, tx):
         world = state.platform
-        #Check if it was an internal tx
+        # Check if it was an internal tx
         if not tx.is_human:
             # Check is the tx was successful
             if tx.result:
                 # Check if gas was enough for a reentrancy attack
                 if tx.gas > 2300:
                     # Check if target address is attaker controlled
-                    if self._addresses is None and not world.get_code(tx.address) or self._addresses is not None and tx.address in self._addresses:
-                        #that's enough. Save current location and read list
+                    if (
+                        self._addresses is None
+                        and not world.get_code(tx.address)
+                        or self._addresses is not None
+                        and tx.address in self._addresses
+                    ):
+                        # that's enough. Save current location and read list
                         self._save_location_and_reads(state)
 
     def _save_location_and_reads(self, state):
-        name = '{:s}.locations'.format(self.name)
+        name = "{:s}.locations".format(self.name)
         locations = state.context.get(name, dict)
         world = state.platform
         address = world.current_vm.address
@@ -301,13 +343,13 @@ class DetectReentrancyAdvanced(Detector):
         if isinstance(pc, Constant):
             pc = pc.value
         assert isinstance(pc, int)
-        at_init = world.current_transaction.sort == 'CREATE'
+        at_init = world.current_transaction.sort == "CREATE"
         location = (address, pc, "Reentrancy multi-million ether bug", at_init)
         locations[location] = set(state.context[self._read_storage_name])
         state.context[name] = locations
 
     def _get_location_and_reads(self, state):
-        name = '{:s}.locations'.format(self.name)
+        name = "{:s}.locations".format(self.name)
         locations = state.context.get(name, dict)
         return locations.items()
 
@@ -328,8 +370,9 @@ class DetectIntegerOverflow(Detector):
     """
     Detects potential overflow and underflow conditions on ADD and SUB instructions.
     """
-    ARGUMENT = 'overflow'
-    HELP = 'Integer overflows'
+
+    ARGUMENT = "overflow"
+    HELP = "Integer overflows"
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
@@ -465,20 +508,20 @@ class DetectIntegerOverflow(Detector):
         ios = False
         iou = False
 
-        if mnemonic == 'ADD':
+        if mnemonic == "ADD":
             ios = self._signed_add_overflow(state, *arguments)
             iou = self._unsigned_add_overflow(state, *arguments)
-        elif mnemonic == 'MUL':
+        elif mnemonic == "MUL":
             ios = self._signed_mul_overflow(state, *arguments)
             iou = self._unsigned_mul_overflow(state, *arguments)
-        elif mnemonic == 'SUB':
+        elif mnemonic == "SUB":
             ios = self._signed_sub_overflow(state, *arguments)
             iou = self._unsigned_sub_overflow(state, *arguments)
-        elif mnemonic == 'SSTORE':
+        elif mnemonic == "SSTORE":
             # If an overflowded value is stored in the storage then it is a finding
             where, what = arguments
             self._check_finding(state, what)
-        elif mnemonic == 'RETURN':
+        elif mnemonic == "RETURN":
             world = state.platform
             if world.current_transaction.is_human:
                 # If an overflowded value is returned to a human
@@ -486,29 +529,34 @@ class DetectIntegerOverflow(Detector):
                 data = world.current_vm.read_buffer(offset, size)
                 self._check_finding(state, data)
 
-        if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
+        if mnemonic in ("SLT", "SGT", "SDIV", "SMOD"):
             result = taint_with(result, "SIGNED")
             vm.change_last_result(result)
         if state.can_be_true(ios):
-            id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
+            id_val = self._save_current_location(
+                state, "Signed integer overflow at %s instruction" % mnemonic, ios
+            )
             result = taint_with(result, "IOS_{:s}".format(id_val))
             vm.change_last_result(result)
         if state.can_be_true(iou):
-            id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
+            id_val = self._save_current_location(
+                state, "Unsigned integer overflow at %s instruction" % mnemonic, iou
+            )
             result = taint_with(result, "IOU_{:s}".format(id_val))
             vm.change_last_result(result)
 
 
 class DetectUnusedRetVal(Detector):
     """Detects unused return value from internal transactions"""
-    ARGUMENT = 'unused-return'
-    HELP = 'Unused internal transaction return values'
+
+    ARGUMENT = "unused-return"
+    HELP = "Unused internal transaction return values"
     IMPACT = DetectorClassification.LOW
     CONFIDENCE = DetectorClassification.HIGH
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._stack_name = '{:s}.stack'.format(self.name)
+        self._stack_name = "{:s}.stack".format(self.name)
 
     def _add_retval_taint(self, state, taint):
         taints = state.context[self._stack_name][-1]
@@ -548,11 +596,13 @@ class DetectUnusedRetVal(Detector):
         if instruction.is_starttx:
             # A transactional instruction just returned so we add a taint to result
             # and add that taint to the set
-            id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
+            id_val = self._save_current_location(
+                state, "Returned value at {:s} instruction is not used".format(mnemonic)
+            )
             taint = "RETVAL_{:s}".format(id_val)
             current_vm.change_last_result(taint_with(result, taint))
             self._add_retval_taint(state, taint)
-        elif mnemonic == 'JUMPI':
+        elif mnemonic == "JUMPI":
             dest, cond = arguments
             for used_taint in get_taints(cond, "RETVAL_.*"):
                 self._remove_retval_taint(state, used_taint)
@@ -565,8 +615,9 @@ class DetectDelegatecall(Detector):
         * the destination address can be controlled by the caller
         * the first 4 bytes of the calldata are controlled by the caller
     """
-    ARGUMENT = 'delegatecall'
-    HELP = 'Problematic uses of DELEGATECALL instruction'
+
+    ARGUMENT = "delegatecall"
+    HELP = "Problematic uses of DELEGATECALL instruction"
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
@@ -579,7 +630,7 @@ class DetectDelegatecall(Detector):
         # if blockchain.last_transaction.return_value:
         # TODO: check if any of the potential target addresses has code
         # if not any( world.get_code, possible_addresses):
-        if mnemonic == 'DELEGATECALL':
+        if mnemonic == "DELEGATECALL":
             gas, address, in_offset, in_size, out_offset, out_size = arguments
             if issymbolic(address):
                 possible_addresses = state.solve_n(address, 2)
@@ -598,34 +649,42 @@ class DetectUninitializedMemory(Detector):
     """
     Detects uses of uninitialized memory
     """
-    ARGUMENT = 'uninitialized-memory'
-    HELP = 'Uninitialized memory usage'
+
+    ARGUMENT = "uninitialized-memory"
+    HELP = "Uninitialized memory usage"
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
     def did_evm_read_memory_callback(self, state, offset, value):
-        initialized_memory = state.context.get('{:s}.initialized_memory'.format(self.name), set())
+        initialized_memory = state.context.get("{:s}.initialized_memory".format(self.name), set())
         cbu = True  # Can be unknown
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
             if current_contract == known_contract:
                 cbu = Operators.AND(cbu, offset != known_offset)
         if state.can_be_true(cbu):
-            self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
+            self.add_finding_here(
+                state,
+                "Potentially reading uninitialized memory at instruction (address: %r, offset %r)"
+                % (current_contract, offset),
+            )
 
     def did_evm_write_memory_callback(self, state, offset, value):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        state.context.setdefault('{:s}.initialized_memory'.format(self.name), set()).add((current_contract, offset))
+        state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
+            (current_contract, offset)
+        )
 
 
 class DetectUninitializedStorage(Detector):
     """
     Detects uses of uninitialized storage
     """
-    ARGUMENT = 'uninitialized-storage'
-    HELP = 'Uninitialized storage usage'
+
+    ARGUMENT = "uninitialized-storage"
+    HELP = "Uninitialized storage usage"
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
@@ -635,7 +694,7 @@ class DetectUninitializedStorage(Detector):
             return
         # check if offset is known
         cbu = True  # Can be unknown
-        context_name = '{:s}.initialized_storage'.format(self.name)
+        context_name = "{:s}.initialized_storage".format(self.name)
         for known_address, known_offset in state.context.get(context_name, ()):
             cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
@@ -644,7 +703,9 @@ class DetectUninitializedStorage(Detector):
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
-        state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
+        state.context.setdefault("{:s}.initialized_storage".format(self.name), set()).add(
+            (address, offset)
+        )
 
 
 class DetectRaceCondition(Detector):
@@ -654,12 +715,13 @@ class DetectRaceCondition(Detector):
     The RaceCondition detector might not work properly for contracts that have only a fallback function.
     See the detector's implementation and it's `_in_user_func` method for more information.
     """
-    ARGUMENT = 'race-condition'
-    HELP = 'Possible transaction race conditions'
+
+    ARGUMENT = "race-condition"
+    HELP = "Possible transaction race conditions"
     IMPACT = DetectorClassification.LOW
     CONFIDENCE = DetectorClassification.LOW
 
-    TAINT = 'written_storage_slots.'
+    TAINT = "written_storage_slots."
 
     def __init__(self, *a, **kw):
         # Normally `add_finding_here` makes it unique reporting but
@@ -691,8 +753,8 @@ class DetectRaceCondition(Detector):
         """
 
         # If we are already in user function (we cached it) let's just return True
-        in_function = state.context.get('in_function', False)
-        prev_tx_count = state.context.get('prev_tx_count', 0)
+        in_function = state.context.get("in_function", False)
+        prev_tx_count = state.context.get("prev_tx_count", 0)
         curr_tx_count = len(state.platform.transactions)
 
         new_human_tx = prev_tx_count != curr_tx_count
@@ -703,8 +765,8 @@ class DetectRaceCondition(Detector):
         # This is expensive call, so we cache it
         in_function = len(state.solve_n(state.platform.current_transaction.data[:4], 2)) == 1
 
-        state.context['in_function'] = in_function
-        state.context['prev_tx_count'] = curr_tx_count
+        state.context["in_function"] = in_function
+        state.context["prev_tx_count"] = curr_tx_count
 
         return in_function
 
@@ -712,7 +774,7 @@ class DetectRaceCondition(Detector):
         world = state.platform
         curr_tx = world.current_transaction
 
-        if curr_tx.sort == 'CREATE' or not self._in_user_func(state):
+        if curr_tx.sort == "CREATE" or not self._in_user_func(state):
             return
 
         key = self.TAINT + str(offset)  # offset is storage index/slot
@@ -739,20 +801,20 @@ class DetectRaceCondition(Detector):
         world = state.platform
         curr_tx = world.current_transaction
 
-        if curr_tx.sort != 'CREATE':
+        if curr_tx.sort != "CREATE":
             metadata = self.manticore.metadata[curr_tx.address]
             curr_func = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
 
             for arg in arguments:
                 if istainted(arg):
-                    for taint in get_taints(arg, self.TAINT + '*'):
-                        tainted_val = taint[taint.rindex('.') + 1:]
+                    for taint in get_taints(arg, self.TAINT + "*"):
+                        tainted_val = taint[taint.rindex(".") + 1 :]
 
                         try:
                             storage_index = int(tainted_val)
                             storage_index_key = storage_index
                         except ValueError:
-                            storage_index = 'which is symbolic'
+                            storage_index = "which is symbolic"
                             storage_index_key = hash(tainted_val)
 
                         prev_funcs = state.context[taint]
@@ -762,11 +824,13 @@ class DetectRaceCondition(Detector):
                             if prev_func is None:
                                 continue
 
-                            msg = 'Potential race condition (transaction order dependency):\n'
-                            msg += f'Value has been stored in storage slot/index {storage_index} in transaction that ' \
-                                   f'called {prev_func} and is now used in transaction that calls {curr_func}.\n' \
-                                   f'An attacker seeing a transaction to {curr_func} could create a transaction ' \
-                                   f'to {prev_func} with high gas and win a race.'
+                            msg = "Potential race condition (transaction order dependency):\n"
+                            msg += (
+                                f"Value has been stored in storage slot/index {storage_index} in transaction that "
+                                f"called {prev_func} and is now used in transaction that calls {curr_func}.\n"
+                                f"An attacker seeing a transaction to {curr_func} could create a transaction "
+                                f"to {prev_func} with high gas and win a race."
+                            )
 
                             unique_key = (storage_index_key, prev_func, curr_func)
                             if unique_key in self.__findings:

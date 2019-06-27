@@ -2,7 +2,8 @@ import logging
 
 from ..native.memory import MemoryException
 
-from .helpers import issymbolic
+from ..core.smtlib import issymbolic
+
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
 # no emulator by default
@@ -26,9 +27,7 @@ class UnicornEmulator:
 
         text = cpu.memory.map_containing(cpu.PC)
         # Keep track of all memory mappings. We start with just the text section
-        self._should_be_mapped = {
-            text.start: (len(text), UC_PROT_READ | UC_PROT_EXEC)
-        }
+        self._should_be_mapped = {text.start: (len(text), UC_PROT_READ | UC_PROT_EXEC)}
 
         # Keep track of all the memory Unicorn needs while executing this
         # instruction
@@ -36,26 +35,20 @@ class UnicornEmulator:
 
         if self._cpu.arch == CS_ARCH_ARM:
             self._uc_arch = UC_ARCH_ARM
-            self._uc_mode = {
-                CS_MODE_ARM: UC_MODE_ARM,
-                CS_MODE_THUMB: UC_MODE_THUMB
-            }[self._cpu.mode]
+            self._uc_mode = {CS_MODE_ARM: UC_MODE_ARM, CS_MODE_THUMB: UC_MODE_THUMB}[self._cpu.mode]
 
         elif self._cpu.arch == CS_ARCH_ARM64:
             self._uc_arch = UC_ARCH_ARM64
             self._uc_mode = UC_MODE_ARM
             if self._cpu.mode != UC_MODE_ARM:
-                raise Exception('Aarch64/Arm64 cannot have different uc mode than ARM.')
+                raise Exception("Aarch64/Arm64 cannot have different uc mode than ARM.")
 
         elif self._cpu.arch == CS_ARCH_X86:
             self._uc_arch = UC_ARCH_X86
-            self._uc_mode = {
-                CS_MODE_32: UC_MODE_32,
-                CS_MODE_64: UC_MODE_64
-            }[self._cpu.mode]
+            self._uc_mode = {CS_MODE_32: UC_MODE_32, CS_MODE_64: UC_MODE_64}[self._cpu.mode]
 
         else:
-            raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
+            raise NotImplementedError(f"Unsupported architecture: {self._cpu.arch}")
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
@@ -72,11 +65,11 @@ class UnicornEmulator:
         m = self._cpu.memory.map_containing(address)
 
         permissions = UC_PROT_NONE
-        if 'r' in m.perms:
+        if "r" in m.perms:
             permissions |= UC_PROT_READ
-        if 'w' in m.perms:
+        if "w" in m.perms:
             permissions |= UC_PROT_WRITE
-        if 'x' in m.perms:
+        if "x" in m.perms:
             permissions |= UC_PROT_EXEC
 
         uc.mem_map(m.start, len(m), permissions)
@@ -96,7 +89,9 @@ class UnicornEmulator:
             elif self._cpu.mode == CS_MODE_64:
                 return self._emu.reg_read(UC_X86_REG_RIP)
         else:
-            raise Exception(f"Getting PC after unicorn emulation for {self._cpu.arch} architecture is not implemented")
+            raise Exception(
+                f"Getting PC after unicorn emulation for {self._cpu.arch} architecture is not implemented"
+            )
 
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
         """
@@ -145,6 +140,7 @@ class UnicornEmulator:
         """
 
         from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
+
         self._to_raise = Interruption(number)
         return True
 
@@ -152,15 +148,15 @@ class UnicornEmulator:
         # TODO(felipe, yan): Register naming is broken in current unicorn
         # packages, but works on unicorn git's master. We leave this hack
         # in until unicorn gets updated.
-        if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
-            reg_name = 'CPSR'
+        if unicorn.__version__ <= "1.0.0" and reg_name == "APSR":
+            reg_name = "CPSR"
         if self._cpu.arch == CS_ARCH_ARM:
-            return globals()['UC_ARM_REG_' + reg_name]
+            return globals()["UC_ARM_REG_" + reg_name]
         elif self._cpu.arch == CS_ARCH_ARM64:
-            return globals()['UC_ARM64_REG_' + reg_name]
+            return globals()["UC_ARM64_REG_" + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
-            return globals()['UC_X86_REG_' + reg_name]
+            return globals()["UC_X86_REG_" + reg_name]
         else:
             # TODO(yan): raise a more appropriate exception
             raise TypeError(f"Cannot convert {reg_name} to unicorn register id")
@@ -193,10 +189,12 @@ class UnicornEmulator:
                 for offset, byte in enumerate(values, start=address):
                     if issymbolic(byte):
                         from ..native.cpu.abstractcpu import ConcretizeMemory
-                        raise ConcretizeMemory(self._cpu.memory, offset, 8,
-                                               "Concretizing for emulation")
 
-                self._emu.mem_write(address, b''.join(values))
+                        raise ConcretizeMemory(
+                            self._cpu.memory, offset, 8, "Concretizing for emulation"
+                        )
+
+                self._emu.mem_write(address, b"".join(values))
 
             # Try emulation
             self._should_try_again = False
@@ -210,8 +208,9 @@ class UnicornEmulator:
         """
         A single attempt at executing an instruction.
         """
-        logger.debug("0x%x:\t%s\t%s"
-                     % (instruction.address, instruction.mnemonic, instruction.op_str))
+        logger.debug(
+            "0x%x:\t%s\t%s" % (instruction.address, instruction.mnemonic, instruction.op_str)
+        )
 
         registers = set(self._cpu.canonical_registers)
 
@@ -219,8 +218,8 @@ class UnicornEmulator:
         if self._cpu.arch == CS_ARCH_X86:
             # The last 8 canonical registers of x86 are individual flags; replace
             # with the eflags
-            registers -= set(['CF', 'PF', 'AF', 'ZF', 'SF', 'IF', 'DF', 'OF'])
-            registers.add('EFLAGS')
+            registers -= set(["CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"])
+            registers.add("EFLAGS")
 
             # TODO(mark): Unicorn 1.0.1 does not support reading YMM registers,
             # and simply returns back zero. If a unicorn emulated instruction writes to an
@@ -228,14 +227,50 @@ class UnicornEmulator:
             # incorrect zero value being actually written to the XMM register. This is
             # fixed in Unicorn PR #819, so when that is included in a release, delete
             # these two lines.
-            registers -= set(['YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7',
-                              'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15'])
-            registers |= set(['XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7',
-                              'XMM8', 'XMM9', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'])
+            registers -= set(
+                [
+                    "YMM0",
+                    "YMM1",
+                    "YMM2",
+                    "YMM3",
+                    "YMM4",
+                    "YMM5",
+                    "YMM6",
+                    "YMM7",
+                    "YMM8",
+                    "YMM9",
+                    "YMM10",
+                    "YMM11",
+                    "YMM12",
+                    "YMM13",
+                    "YMM14",
+                    "YMM15",
+                ]
+            )
+            registers |= set(
+                [
+                    "XMM0",
+                    "XMM1",
+                    "XMM2",
+                    "XMM3",
+                    "XMM4",
+                    "XMM5",
+                    "XMM6",
+                    "XMM7",
+                    "XMM8",
+                    "XMM9",
+                    "XMM10",
+                    "XMM11",
+                    "XMM12",
+                    "XMM13",
+                    "XMM14",
+                    "XMM15",
+                ]
+            )
 
             # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
             # the FS register, and it will segfault or hang.
-            registers -= {'FS'}
+            registers -= {"FS"}
 
         # XXX(yan): This concretizes the entire register state. This is overly
         # aggressive. Once capstone adds consistent support for accessing
@@ -245,14 +280,16 @@ class UnicornEmulator:
             val = self._cpu.read_register(reg)
             if issymbolic(val):
                 from ..native.cpu.abstractcpu import ConcretizeRegister
-                raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
-                                         policy='ONE')
+
+                raise ConcretizeRegister(
+                    self._cpu, reg, "Concretizing for emulation.", policy="ONE"
+                )
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
         # Bring in the instruction itself
         instruction = self._cpu.decode_instruction(self._cpu.PC)
         text_bytes = self._cpu.read_bytes(self._cpu.PC, instruction.size)
-        self._emu.mem_write(self._cpu.PC, b''.join(text_bytes))
+        self._emu.mem_write(self._cpu.PC, b"".join(text_bytes))
 
         self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
@@ -272,8 +309,9 @@ class UnicornEmulator:
             # Unfortunately, this may lead to race conditions if the value is
             # too small.  Tests that work fine without 'timeout' start to fail
             # because registers are not being written to.
-            self._emu.emu_start(pc, self._cpu.PC + instruction.size,
-                                count=1, timeout=1000000)  # microseconds
+            self._emu.emu_start(
+                pc, self._cpu.PC + instruction.size, count=1, timeout=1000000
+            )  # microseconds
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error

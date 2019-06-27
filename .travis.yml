@@ -7,6 +7,7 @@ python:
   - 3.6.6
 
 stages:
+  - format
   - prepare
   - test
   - submit
@@ -36,6 +37,10 @@ cache:
 
 jobs:
   include:
+    - stage: format
+      env: TEST_TYPE=format
+      script:
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check
     - stage: prepare
       env: TEST_TYPE=env
       script:

@@ -22,7 +22,7 @@ class WithKeyboardInterruptAs:
             self.old_handler(sig, frame)
         else:
             self.callback()
-            logging.debug('SIGINT received. Supressing KeyboardInterrupt.')
+            logging.debug("SIGINT received. Supressing KeyboardInterrupt.")
 
     def __exit__(self, type, value, traceback):
         try:

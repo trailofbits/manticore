@@ -4,8 +4,8 @@ from manticore.ethereum import ManticoreEVM
 
 m = ManticoreEVM()
 
-#And now make the contract account to analyze
-truffle_json = r'''{
+# And now make the contract account to analyze
+truffle_json = r"""{
   "contractName": "MetaCoin",
   "abi": [
     {
@@ -1042,25 +1042,24 @@ truffle_json = r'''{
   "updatedAt": "2017-05-15T20:46:00Z",
   "schemaVersion": "0.0.5"
 }
-'''
+"""
 
-user_account = m.create_account(balance=1000, name='user_account')
+user_account = m.create_account(balance=1000, name="user_account")
 print("[+] Creating a user account", user_account.name_)
 
-contract_account = m.json_create_contract(truffle_json, owner=user_account, name='contract_account')
+contract_account = m.json_create_contract(truffle_json, owner=user_account, name="contract_account")
 print("[+] Creating a contract account", contract_account.name_)
-contract_account.sendCoin(1,1)
+contract_account.sendCoin(1, 1)
 
 print("[+] Now the symbolic values")
-symbolic_data = m.make_symbolic_buffer(320) 
+symbolic_data = m.make_symbolic_buffer(320)
 symbolic_value = m.make_symbolic_value(name="VALUE")
 symbolic_address = m.make_symbolic_value(name="ADDRESS")
 symbolic_caller = m.make_symbolic_value(name="CALLER")
-m.transaction(caller=symbolic_caller,
-                address=symbolic_address,
-                data=symbolic_data,
-                value=symbolic_value )
+m.transaction(
+    caller=symbolic_caller, address=symbolic_address, data=symbolic_data, value=symbolic_value
+)
 
-#Let seth know we are not sending more transactions 
+# Let seth know we are not sending more transactions
 m.finalize()
 print(f"[+] Look for results in {m.workspace}")
