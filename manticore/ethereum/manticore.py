@@ -334,8 +334,6 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError("Solidity compilation error:\n\n{}".format(stderr))
 
     @staticmethod
-    def _compile(
-        source_code, contract_name, libraries=None, crytic_compile_args=dict()):
     def _compile_through_crytic_compile(filename, contract_name, libraries, crytic_compile_args):
         """
         :param filename: filename to compile
