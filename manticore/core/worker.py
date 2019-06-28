@@ -28,9 +28,11 @@ class Worker:
         The events are transmitted via 2 conditional variable: m._killed and
         m._started.
 
+        .. code-block:: none
+
             STANDBY:   Waiting for the start event
             RUNNING:   Exploring and spawning states until no more READY states or
-                       the cancel event is received
+            the cancel event is received
             KIlLED:    This is the end. No more manticoring in this worker process
 
                          +---------+     +---------+

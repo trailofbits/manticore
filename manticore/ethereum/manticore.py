@@ -394,7 +394,7 @@ class ManticoreEVM(ManticoreBase):
         hashes = {str(x): str(y) for x, y in contract["hashes"].items()}
         abi = json.loads(contract["abi"])
         runtime = ManticoreEVM._link(contract["bin-runtime"], libraries)
-        return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings)
 
     @property
     def accounts(self):
@@ -573,6 +573,7 @@ class ManticoreEVM(ManticoreBase):
     ):
         """ Creates a solidity contract based on a truffle json artifact.
             https://github.com/trufflesuite/truffle/tree/develop/packages/truffle-contract-schema
+
             :param jfile: truffle json artifact
             :type jfile: str or IOBase
             :param owner: owner account (will be default caller in any transactions)
@@ -1087,6 +1088,7 @@ class ManticoreEVM(ManticoreBase):
     ) -> BoolOperation:
         """ Returns a constraint that excludes combinations of value and data that would cause an exception in the EVM
             contract dispatcher.
+
             :param address: address of the contract to call
             :param value: balance to be transferred (optional)
             :param data: symbolic transaction data
