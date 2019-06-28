@@ -15,9 +15,10 @@ from ..core.smtlib import Expression
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..utils import config
-from ..utils.log import set_verbosity
+from ..utils.deprecated import deprecated
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
+from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace
 from .worker import WorkerSingle, WorkerThread, WorkerProcess
@@ -361,12 +362,12 @@ class ManticoreBase(Eventful):
         logger.debug("Forking current state %r into states %r", state.id, children)
 
     @staticmethod
+    @deprecated('Use utils.log.set_verbosity instead.')
     def verbosity(level):
         """ Sets global vervosity level.
             This will activate different logging profiles globally depending
             on the provided numeric value
         """
-        logger.info("Deprecated!")
         set_verbosity(level)
 
     # State storage
