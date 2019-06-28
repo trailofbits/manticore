@@ -35,6 +35,7 @@ from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
 from ..utils import config, log
+from ..utils.deprecated import deprecated
 from ..utils.helpers import PickleSerializer
 
 logger = logging.getLogger(__name__)
@@ -462,14 +463,14 @@ class ManticoreEVM(ManticoreBase):
 
     # deprecate this 5 in favor of for state in m.all_states: do stuff?
     @property
+    @deprecated('You should iterate over `m.all_states` instead.')
     def completed_transactions(self):
-        logger.info("Deprecated!")
         with self.locked_context("ethereum") as context:
             return context["_completed_transactions"]
 
+    @deprecated('You should use the `platform` member of a `state` insteance instead.')
     def get_world(self, state_id=None):
         """ Returns the evm world of `state_id` state. """
-        logger.info("Deprecated!")
         if state_id is None:
             state_id = self._ready_states[0]
 
@@ -479,42 +480,42 @@ class ManticoreEVM(ManticoreBase):
         else:
             return state.platform
 
+    @deprecated('Instead, call `get_balance` on a state instance')
     def get_balance(self, address, state_id=None):
         """ Balance for account `address` on state `state_id` """
-        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_balance(address)
 
+    @deprecated('Instead, call `get_storage_data` on a state instance')
     def get_storage_data(self, address, offset, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
-        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_storage_data(address, offset)
 
+    @deprecated('Instead, call `get_code` on a state instance')
     def get_code(self, address, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
-        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_code(address)
 
+    @deprecated('Instead, use `state.last_transaction.return_data` on a state instance')
     def last_return(self, state_id=None):
         """ Last returned buffer for state `state_id` """
-        logger.info("Deprecated!")
         state = self.load(state_id)
         return state.platform.last_transaction.return_data
 
+    @deprecated('Instead, use `state.transactions` on a state instance')
     def transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
-        logger.info("Deprecated!")
         state = self._load(state_id)
         return state.platform.transactions
 
+    @deprecated('Instead, use `state.transactions` on a state instance')
     def human_transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
-        logger.info("Deprecated!")
         state = self.load(state_id)
         return state.platform.human_transactions
 
