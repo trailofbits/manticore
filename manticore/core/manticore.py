@@ -362,7 +362,7 @@ class ManticoreBase(Eventful):
         logger.debug("Forking current state %r into states %r", state.id, children)
 
     @staticmethod
-    @deprecated('Use utils.log.set_verbosity instead.')
+    @deprecated("Use utils.log.set_verbosity instead.")
     def verbosity(level):
         """ Sets global vervosity level.
             This will activate different logging profiles globally depending
