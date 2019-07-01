@@ -445,15 +445,18 @@ class ArithmeticSimplifier(Visitor):
                     return expression.operands[0].operands[0]  # FIXME:taint
                 elif value1 == value3 and value1 != value2:
                     return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
-        if (
-            operands[0] is operands[1]
-            or isinstance(operands[0], BitVecExtract)
-            and isinstance(operands[1], BitVecExtract)
-            and operands[0].value is operands[1].value
-            and operands[0].end == operands[1].end
-            and operands[0].begining == operands[1].begining
-        ):
+
+        if operands[0] is operands[1]:
             return BoolConstant(True, taint=expression.taint)
+
+        if isinstance(operands[0], BitVecExtract) and isinstance(operands[1], BitVecExtract):
+            if (
+                operands[0].value is operands[1].value
+                and operands[0].end == operands[1].end
+                and operands[0].begining == operands[1].begining
+            ):
+
+                return BoolConstant(True, taint=expression.taint)
 
     def visit_BoolOr(self, expression, a, b):
         if isinstance(a, Constant):
