@@ -317,7 +317,7 @@ class StateBase(Eventful):
         :return: Concrete value
         :rtype: int
         """
-        #if len(exprs)>1:
+        # if len(exprs)>1:
         values = []
         for expr in exprs:
             if not issymbolic(expr):

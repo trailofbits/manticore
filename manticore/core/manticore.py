@@ -126,7 +126,6 @@ class ManticoreBase(Eventful):
         "terminate_state",
         "kill_state",
         "execute_instruction",
-
     }
 
     def __init__(self, initial_state, workspace_url=None, policy="random", **kwargs):

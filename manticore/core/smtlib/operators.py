@@ -70,11 +70,14 @@ def OR(a, b, *others):
         result = ITE(result != 0, True, False)
     return result
 
+
 def IMPLIES(a, b):
     return OR(NOT(b), a)
 
+
 def IFF(a, b):
-    return AND(IMPLIES(a,b), IMPLIES(b, a))
+    return AND(IMPLIES(a, b), IMPLIES(b, a))
+
 
 def XOR(a, b):
     result = a ^ b

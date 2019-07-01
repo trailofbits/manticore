@@ -184,7 +184,7 @@ class PrettyPrinter(Visitor):
         self.depth = depth
 
     def _print(self, s, e=None):
-        self.output += " " * self.indent +str(s) # + '(%016x)'%hash(e)
+        self.output += " " * self.indent + str(s)  # + '(%016x)'%hash(e)
         self.output += "\n"
 
     def visit(self, expression):
@@ -281,7 +281,7 @@ class ConstantFolderSimplifier(Visitor):
         BoolAnd: operator.__and__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
-        BitVecUnsignedDiv: lambda x,y: (x&(1<<256)-1)//(y&(1<<256)-1)
+        BitVecUnsignedDiv: lambda x, y: (x & (1 << 256) - 1) // (y & (1 << 256) - 1),
     }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -317,7 +317,6 @@ class ConstantFolderSimplifier(Visitor):
             return a
         if a is b:
             return a
-
 
     def visit_Operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
@@ -380,47 +379,76 @@ class ArithmeticSimplifier(Visitor):
             return expression.operands[1]
         if isinstance(expression.operands[1], Constant) and expression.operands[1].value:
             return expression.operands[0]
-        if isinstance(expression.operands[0], BoolEqual) and isinstance(expression.operands[1], BoolEqual):
-            if isinstance(expression.operands[0].operands[0], BitVecExtract) and \
-               isinstance(expression.operands[0].operands[1], BitVecExtract) and \
-               isinstance(expression.operands[1].operands[0], BitVecExtract) and \
-               isinstance(expression.operands[1].operands[1], BitVecExtract) and \
-               expression.operands[0].operands[0].value is expression.operands[1].operands[0].value and \
-                expression.operands[0].operands[1].value is expression.operands[1].operands[1].value and \
-                expression.operands[0].operands[0].begining == expression.operands[0].operands[1].begining and \
-                expression.operands[0].operands[0].end == expression.operands[0].operands[1].end and \
-                expression.operands[1].operands[0].begining == expression.operands[1].operands[1].begining and \
-                expression.operands[1].operands[0].end == expression.operands[1].operands[1].end and \
-                ( (expression.operands[0].operands[0].end + 1) == expression.operands[1].operands[0].begining or
-                 expression.operands[0].operands[0].beginning == (expression.operands[1].operands[0].end + 1)):
-                    value0 = expression.operands[0].operands[0].value
-                    value1 = expression.operands[0].operands[1].value
-                    beg = min(expression.operands[0].operands[0].begining, expression.operands[1].operands[0].begining)
-                    end = max(expression.operands[0].operands[0].end, expression.operands[1].operands[0].end)
-                    return BitVecExtract(value0, beg, end-beg+1) ==  BitVecExtract(value1, beg, end-beg+1)
+        if isinstance(expression.operands[0], BoolEqual) and isinstance(
+            expression.operands[1], BoolEqual
+        ):
+            if (
+                isinstance(expression.operands[0].operands[0], BitVecExtract)
+                and isinstance(expression.operands[0].operands[1], BitVecExtract)
+                and isinstance(expression.operands[1].operands[0], BitVecExtract)
+                and isinstance(expression.operands[1].operands[1], BitVecExtract)
+                and expression.operands[0].operands[0].value
+                is expression.operands[1].operands[0].value
+                and expression.operands[0].operands[1].value
+                is expression.operands[1].operands[1].value
+                and expression.operands[0].operands[0].begining
+                == expression.operands[0].operands[1].begining
+                and expression.operands[0].operands[0].end == expression.operands[0].operands[1].end
+                and expression.operands[1].operands[0].begining
+                == expression.operands[1].operands[1].begining
+                and expression.operands[1].operands[0].end == expression.operands[1].operands[1].end
+                and (
+                    (expression.operands[0].operands[0].end + 1)
+                    == expression.operands[1].operands[0].begining
+                    or expression.operands[0].operands[0].beginning
+                    == (expression.operands[1].operands[0].end + 1)
+                )
+            ):
+                value0 = expression.operands[0].operands[0].value
+                value1 = expression.operands[0].operands[1].value
+                beg = min(
+                    expression.operands[0].operands[0].begining,
+                    expression.operands[1].operands[0].begining,
+                )
+                end = max(
+                    expression.operands[0].operands[0].end, expression.operands[1].operands[0].end
+                )
+                return BitVecExtract(value0, beg, end - beg + 1) == BitVecExtract(
+                    value1, beg, end - beg + 1
+                )
 
     def visit_BoolNot(self, expression, *operands):
         if isinstance(expression.operands[0], BoolNot):
             return expression.operands[0].operands[0]
 
     def visit_BoolEqual(self, expression, *operands):
-        ''' (EQ, ITE(cond, constant1, contant2), constant1) -> cond
+        """ (EQ, ITE(cond, constant1, contant2), constant1) -> cond
             (EQ, ITE(cond, constant1, contant2), constant2) -> NOT cond
             (EQ (extract a, b, c) (extract a, b, c))
-        '''
-        if isinstance(expression.operands[0], BitVecITE) and isinstance(expression.operands[1], Constant):
-            if  isinstance(expression.operands[0].operands[1], Constant) and \
-                isinstance(expression.operands[0].operands[2], Constant):
-                value1, value2, value3 = expression.operands[1].value, expression.operands[0].operands[1].value, expression.operands[0].operands[2].value
+        """
+        if isinstance(expression.operands[0], BitVecITE) and isinstance(
+            expression.operands[1], Constant
+        ):
+            if isinstance(expression.operands[0].operands[1], Constant) and isinstance(
+                expression.operands[0].operands[2], Constant
+            ):
+                value1, value2, value3 = (
+                    expression.operands[1].value,
+                    expression.operands[0].operands[1].value,
+                    expression.operands[0].operands[2].value,
+                )
                 if value1 == value2 and value1 != value3:
-                    return expression.operands[0].operands[0] #FIXME:taint
+                    return expression.operands[0].operands[0]  # FIXME:taint
                 elif value1 == value3 and value1 != value2:
                     return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
-        if operands[0]is operands[1] or \
-           isinstance(operands[0], BitVecExtract) and isinstance(operands[1], BitVecExtract) and\
-           operands[0].value is operands[1].value and \
-           operands[0].end == operands[1].end and\
-           operands[0].begining == operands[1].begining:
+        if (
+            operands[0] is operands[1]
+            or isinstance(operands[0], BitVecExtract)
+            and isinstance(operands[1], BitVecExtract)
+            and operands[0].value is operands[1].value
+            and operands[0].end == operands[1].end
+            and operands[0].begining == operands[1].begining
+        ):
             return BoolConstant(True, taint=expression.taint)
 
     def visit_BoolOr(self, expression, a, b):
@@ -466,9 +494,10 @@ class ArithmeticSimplifier(Visitor):
                     last_o = o
                 else:
                     if last_o.value is o.value and last_o.begining == o.end + 1:
-                            last_o = BitVecExtract(o.value, o.begining, last_o.end - o.begining + 1,
-                                          taint=expression.taint)
-                            changed = True
+                        last_o = BitVecExtract(
+                            o.value, o.begining, last_o.end - o.begining + 1, taint=expression.taint
+                        )
+                        changed = True
                     else:
                         new_operands.append(last_o)
                         last_o = o

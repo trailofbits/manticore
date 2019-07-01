@@ -6,7 +6,16 @@ import sha3
 
 from . import abitypes
 from ..utils.helpers import issymbolic
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy, to_constant, simplify, translate_to_smtlib
+from ..core.smtlib import (
+    Array,
+    Operators,
+    BitVec,
+    ArrayVariable,
+    ArrayProxy,
+    to_constant,
+    simplify,
+    translate_to_smtlib,
+)
 from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)

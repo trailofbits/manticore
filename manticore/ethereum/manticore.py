@@ -25,7 +25,9 @@ from ..core.smtlib import (
     Operators,
     BoolConstant,
     BoolOperation,
-    Expression,translate_to_smtlib, simplify
+    Expression,
+    translate_to_smtlib,
+    simplify,
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -39,13 +41,14 @@ from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
 
+
 class Sha3Type(Enum):
     """Used as configuration constant for choosing sha3 flavor"""
 
-    concretize = 'concretize'
-    symbolicate = 'symbolicate'
-    timetravel = 'timetravel'
-    functions = 'functions'
+    concretize = "concretize"
+    symbolicate = "symbolicate"
+    timetravel = "timetravel"
+    functions = "functions"
 
     def title(self):
         return self._name_.title()
@@ -53,6 +56,7 @@ class Sha3Type(Enum):
     @classmethod
     def from_string(cls, name):
         return cls.__members__[name]
+
 
 consts = config.get_group("evm")
 consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
@@ -461,7 +465,6 @@ class ManticoreEVM(ManticoreBase):
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         self.subscribe("did_read_code", self._did_evm_read_code)
 
-
         if consts.sha3 is consts.sha3.timetravel:
             self.subscribe("on_symbolic_function", self._on_timetravel)
         elif consts.sha3 is consts.sha3.concretize:
@@ -470,7 +473,7 @@ class ManticoreEVM(ManticoreBase):
             self.subscribe("on_symbolic_function", self.on_unsound_symbolication)
             self.subscribe("did_run", self._on_did_run_unsound_symbolication)
         else:
-            #if consts.sha3 is consts.sha3.function:
+            # if consts.sha3 is consts.sha3.function:
             raise NotImplemented
 
         self._accounts = dict()
@@ -1286,7 +1289,6 @@ class ManticoreEVM(ManticoreBase):
                     self._terminated_states.remove(state_id)
                     self._ready_states.append(state_id)
 
-
     # Callbacks
     def _on_concretize(self, state, func, data, result):
         if not issymbolic(data):
@@ -1314,7 +1316,7 @@ class ManticoreEVM(ManticoreBase):
             value = None  # never used
             known_hashes_cond = False
             for key, hsh in known_hashes.items():
-                #Ignore the key if the size wont match
+                # Ignore the key if the size wont match
                 if len(key) == len(data):
                     cond = key == data
                     if known_hashes_cond is False:
@@ -1393,7 +1395,7 @@ class ManticoreEVM(ManticoreBase):
             if known_sha3 is None:
                 known_sha3 = set()
 
-            sha3_states = ethereum_context['_sha3_states']
+            sha3_states = ethereum_context["_sha3_states"]
             for sha3_state_id, (size, hashes) in sha3_states.items():
                 if size == len(buf) and value not in hashes:
                     sha3_states.remove(sha3_state_id)
@@ -1406,38 +1408,34 @@ class ManticoreEVM(ManticoreBase):
             known_sha3.add((buf, value))
             ethereum_context["_known_sha3"] = known_sha3
 
-
     # Callbacks for generic SYMB TABLE
     def on_unsound_symbolication(self, state, func, data, result):
-        print (func.__name__, data)
+        print(func.__name__, data)
         name = func.__name__
-        #Save concrete unction
+        # Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
             functions = ethereum_context.get("symbolic_func", dict())
             functions[name] = func
             ethereum_context["symbolic_func"] = functions
 
         if issymbolic(data):
-            '''table: is a string used internally to identify the symbolic function
+            """table: is a string used internally to identify the symbolic function
                 data: is the symbolic value of the function domain
-                known_pairs: in/out is a dictionary containing known pairs from {domain, range}'''
+                known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
 
             # local_known_pairs is the pairs known locally for this symbolic function
-            local_known_pairs = state.context.get(f'symbolic_func_sym_{name}',
-                                                  [])
+            local_known_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
             # lets make a fresh 256 bit symbol representing any potential hash
             value = state.new_symbolic_value(256)
             local_known_pairs.append((data, value))
-            state.context[f'symbolic_func_sym_{name}'] = local_known_pairs
+            state.context[f"symbolic_func_sym_{name}"] = local_known_pairs
             # let it return just new_hash
         else:
             value = func(data)
             with self.locked_context("ethereum", dict) as ethereum_context:
-                global_known_pairs = ethereum_context.get(
-                    f"symbolic_func_conc_{name}", set())
+                global_known_pairs = ethereum_context.get(f"symbolic_func_conc_{name}", set())
                 global_known_pairs.add((data, value))
-                ethereum_context[
-                    f"symbolic_func_conc_{name}"] = global_known_pairs
+                ethereum_context[f"symbolic_func_conc_{name}"] = global_known_pairs
 
             logger.info(f"Found a concrete {name} {data} -> {value}")
 
@@ -1447,37 +1445,39 @@ class ManticoreEVM(ManticoreBase):
         # Called at the end of a run(). Need to filter out the unreproducible/
         # unfeasible states
         # Caveat: It will add redundant constraints from previous run()
-        print ("EEENd")
         for state in self.all_states:
             # Save concrete unction
             with self.locked_context("ethereum", dict) as ethereum_context:
                 functions = ethereum_context.get("symbolic_func", dict())
                 for table in functions:
                     constraint = True
-                    symbolic_pairs = state.context.get(f'symbolic_func_sym_{table}', ())
+                    symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
                     for xa, ya in symbolic_pairs:
                         for xb, yb in symbolic_pairs:
                             if xa is not xb:
-                                constraint = Operators.AND(Operators.IFF(xa == xb, ya == yb), constraint)
-                    state.constrain(constraint) # bijective
+                                constraint = Operators.AND(
+                                    Operators.IFF(xa == xb, ya == yb), constraint
+                                )
+                    state.constrain(constraint)  # bijective
 
-                    #IDEA/caveat Forcing this here prevents the user from opening
-                    #the state and adding mor constraints
-                    #instead of choosing pair examples here we could overload
-                    #state.solve_.* so it handles this validity solvering
+                    # IDEA/caveat Forcing this here prevents the user from opening
+                    # the state and adding mor constraints
+                    # instead of choosing pair examples here we could overload
+                    # state.solve_.* so it handles this validity solvering
                     if state.can_be_true(True):
-                        #Get a single matching solution for each
+                        # Get a single matching solution for each
                         local_pairs = set()
                         for x, y in symbolic_pairs:
                             x_concrete = state.solve_one(x)
                             y_concrete = functions[table](x_concrete)
-                            #We shoud check that y_concrete can be equal to y(sym)
+                            # We shoud check that y_concrete can be equal to y(sym)
                             # and if not then try a few times
                             local_pairs.add((x_concrete, y_concrete))
 
-                        with self.locked_context("ethereum",
-                                             dict) as ethereum_context:
-                            local_pairs = local_pairs.union(ethereum_context.get(f"symbolic_func_conc_{table}", set()))
+                        with self.locked_context("ethereum", dict) as ethereum_context:
+                            local_pairs = local_pairs.union(
+                                ethereum_context.get(f"symbolic_func_conc_{table}", set())
+                            )
 
                         for xa, ya in symbolic_pairs:
                             cond = False
@@ -1487,7 +1487,6 @@ class ManticoreEVM(ManticoreBase):
                             state.constrain(cond)
 
                     if not state.can_be_true(True):
-                        print ("REMOVED")
                         if state.id in self._terminated_states:
                             self._terminated_states.remove(state.id)
                         elif state.id in self._ready_states:

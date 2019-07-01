@@ -137,6 +137,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
                     callback(robj(), *args, **kwargs)
                 except Exception as e:
                     import traceback
+
                     traceback.print_stack()
 
         # The include_source flag indicates to prepend the source of the event in

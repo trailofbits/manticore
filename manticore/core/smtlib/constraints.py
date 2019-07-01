@@ -15,7 +15,15 @@ from .expression import (
     Variable,
     Constant,
 )
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, pretty_print, translate_to_smtlib
+from .visitors import (
+    GetDeclarations,
+    TranslatorSmtlib,
+    get_variables,
+    simplify,
+    replace,
+    pretty_print,
+    translate_to_smtlib,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -147,9 +155,11 @@ class ConstraintSet:
         if replace_constants:
             constant_bindings = {}
             for expression in related_constraints:
-                if isinstance(expression, BoolEqual) and\
-                   isinstance(expression.operands[0], Variable) and\
-                   isinstance(expression.operands[1], (Variable, Constant)):
+                if (
+                    isinstance(expression, BoolEqual)
+                    and isinstance(expression.operands[0], Variable)
+                    and isinstance(expression.operands[1], (Variable, Constant))
+                ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
         tmp = set()
@@ -167,14 +177,13 @@ class ConstraintSet:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
                 # if no variables then it is a constant
-                if isinstance(constraint, Constant) and\
-                    constraint.value == True:
+                if isinstance(constraint, Constant) and constraint.value == True:
                     continue
 
             translator.visit(constraint)
         if replace_constants:
-            for k,v in constant_bindings.items():
-                translator.visit(k==v)
+            for k, v in constant_bindings.items():
+                translator.visit(k == v)
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):

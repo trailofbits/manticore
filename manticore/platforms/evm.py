@@ -83,6 +83,7 @@ PendingTransaction = namedtuple(
 )
 EVMLog = namedtuple("EVMLog", ["address", "memlog", "topics"])
 
+
 def ceil32(x):
     size = 256
     if isinstance(x, BitVec):
@@ -572,7 +573,7 @@ class EVM(Eventful):
         "evm_write_memory",
         "evm_read_code",
         "decode_instruction",
-        "on_unsound_symbolication"
+        "on_unsound_symbolication",
     }
 
     class transact:
@@ -1200,7 +1201,7 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        #print (self)
+        # print (self)
         try:
             # import time
             # limbo = 0.0
@@ -1540,47 +1541,13 @@ class EVM(Eventful):
             The `size` can be considered concrete in this handler.
 
         """
-        print ("AAAAAAAAAAAAA")
         data = self.read_buffer(start, size)
         try:
             return self.world.symbolic_function(globalsha3, data)
         except Exception as e:
-            print ("error!",e)
+            logger.info("error! %r", e)
             return int(sha3.keccak_256(data).hexdigest(), 16)
 
-        # read memory from start to end
-        # http://gavwood.com/paper.pdf
-        data = self.try_simplify_to_constant(self.read_buffer(start, size))
-
-        if issymbolic(data):
-            # If the data is symbolic we let ManticoreEVM the known_sha3 dictionary
-            # will be updated with the buf->hash pairs to use
-            known_sha3 = {}
-            # Broadcast the signal
-            self._publish(
-                "on_symbolic_sha3", data, known_sha3
-            )  # This updates the local copy of sha3 with the pairs we need to explore
-
-            # This builds a symbol in `value` that represents all the known sha3
-            # as reported by ManticoreEVM
-            value = None  # never used
-            known_hashes_cond = False
-            for key, hsh in known_sha3.items():
-                #Ignore the key if the size wont match
-                if len(key) == len(data):
-                    cond = key == data
-                    if known_hashes_cond is False:
-                        value = hsh
-                        known_hashes_cond = cond
-                    else:
-                        value = Operators.ITEBV(256, cond, hsh, value)
-                        known_hashes_cond = Operators.OR(cond, known_hashes_cond)
-        else:
-            value = int(sha3.keccak_256(data).hexdigest(), 16)
-            self._publish("on_concrete_sha3", data, value)
-            logger.info("Found a concrete SHA3 example %r -> %x", data, value)
-
-        return value
 
     ############################################################################
     # Environmental Information
@@ -2208,7 +2175,7 @@ class EVMWorld(Platform):
         "execute_instruction",
         "open_transaction",
         "close_transaction",
-        "symbolic_function"
+        "symbolic_function",
     }
 
     def __init__(
@@ -2327,7 +2294,13 @@ class EVMWorld(Platform):
         return key in self.accounts
 
     def __str__(self):
-        return "WORLD:" + str(self._world_state) +'\n'+ str(list( (map(str, self.transactions)))) + str(self.logs)
+        return (
+            "WORLD:"
+            + str(self._world_state)
+            + "\n"
+            + str(list((map(str, self.transactions))))
+            + str(self.logs)
+        )
 
     @property
     def logs(self):
@@ -2957,7 +2930,9 @@ class EVMWorld(Platform):
         if not failed:
             src_balance = self.get_balance(caller)
             enough_balance = Operators.UGE(src_balance, value)
-            enough_balance_solutions = Z3Solver.instance().get_all_values(self._constraints, enough_balance)
+            enough_balance_solutions = Z3Solver.instance().get_all_values(
+                self._constraints, enough_balance
+            )
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize(
