@@ -212,7 +212,9 @@ class PrettyPrinter(Visitor):
         return
 
     def visit_Operation(self, expression, *operands):
-        self._print(expression.__class__.__name__ + str(expression.__class__), expression)
+        self._print(
+            expression.__class__.__name__ + str(expression.__class__), expression
+        )
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
             for o in expression.operands:
@@ -224,7 +226,8 @@ class PrettyPrinter(Visitor):
 
     def visit_BitVecExtract(self, expression):
         self._print(
-            expression.__class__.__name__ + "{%d:%d}" % (expression.begining, expression.end),
+            expression.__class__.__name__
+            + "{%d:%d}" % (expression.begining, expression.end),
             expression,
         )
         self.indent += 2
@@ -294,7 +297,9 @@ class ConstantFolderSimplifier(Visitor):
 
     def visit_BitVecZeroExtend(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
-            return BitVecConstant(expression.size, operands[0].value, taint=expression.taint)
+            return BitVecConstant(
+                expression.size, operands[0].value, taint=expression.taint
+            )
 
     def visit_BitVecSignExtend(self, expression, *operands):
         if expression.extend == 0:
@@ -329,7 +334,9 @@ class ConstantFolderSimplifier(Visitor):
                 isinstance(expression, Bool)
                 return BoolConstant(value, taint=expression.taint)
         else:
-            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
+            if any(
+                operands[i] is not expression.operands[i] for i in range(len(operands))
+            ):
                 expression = self._rebuild(expression, operands)
         return expression
 
@@ -351,7 +358,12 @@ class ArithmeticSimplifier(Visitor):
 
     @staticmethod
     def _same_constant(a, b):
-        return isinstance(a, Constant) and isinstance(b, Constant) and a.value == b.value or a is b
+        return (
+            isinstance(a, Constant)
+            and isinstance(b, Constant)
+            and a.value == b.value
+            or a is b
+        )
 
     @staticmethod
     def _changed(expression, operands):
@@ -375,47 +387,57 @@ class ArithmeticSimplifier(Visitor):
             return expression
 
     def visit_BoolAnd(self, expression, *operands):
-        if isinstance(expression.operands[0], Constant) and expression.operands[0].value:
+        if (
+            isinstance(expression.operands[0], Constant)
+            and expression.operands[0].value
+        ):
             return expression.operands[1]
-        if isinstance(expression.operands[1], Constant) and expression.operands[1].value:
+        if (
+            isinstance(expression.operands[1], Constant)
+            and expression.operands[1].value
+        ):
             return expression.operands[0]
+
+        # AND ( EQ (EXTRACT(0,8, a), EXTRACT(0,8, b)),  EQ (EXTRACT(8,16, a), EXTRACT(8,16 b)) ->
+        # EQ(EXTRACT(0,16, a), EXTRACT(0,16, b))
         if isinstance(expression.operands[0], BoolEqual) and isinstance(
             expression.operands[1], BoolEqual
         ):
+            # Eq operands
+            operanda = expression.operands[0]
+            operandb = expression.operands[1]
+            # Extract operands
+            operandaa = operanda.operands[0]
+            operandab = operanda.operands[1]
+            operandba = operandb.operands[0]
+            operandbb = operandb.operands[1]
+
             if (
-                isinstance(expression.operands[0].operands[0], BitVecExtract)
-                and isinstance(expression.operands[0].operands[1], BitVecExtract)
-                and isinstance(expression.operands[1].operands[0], BitVecExtract)
-                and isinstance(expression.operands[1].operands[1], BitVecExtract)
-                and expression.operands[0].operands[0].value
-                is expression.operands[1].operands[0].value
-                and expression.operands[0].operands[1].value
-                is expression.operands[1].operands[1].value
-                and expression.operands[0].operands[0].begining
-                == expression.operands[0].operands[1].begining
-                and expression.operands[0].operands[0].end == expression.operands[0].operands[1].end
-                and expression.operands[1].operands[0].begining
-                == expression.operands[1].operands[1].begining
-                and expression.operands[1].operands[0].end == expression.operands[1].operands[1].end
-                and (
-                    (expression.operands[0].operands[0].end + 1)
-                    == expression.operands[1].operands[0].begining
-                    or expression.operands[0].operands[0].beginning
-                    == (expression.operands[1].operands[0].end + 1)
-                )
+                isinstance(operandaa, BitVecExtract)
+                and isinstance(operandaa, BitVecExtract)
+                and isinstance(operandba, BitVecExtract)
+                and isinstance(operandbb, BitVecExtract)
             ):
-                value0 = expression.operands[0].operands[0].value
-                value1 = expression.operands[0].operands[1].value
-                beg = min(
-                    expression.operands[0].operands[0].begining,
-                    expression.operands[1].operands[0].begining,
-                )
-                end = max(
-                    expression.operands[0].operands[0].end, expression.operands[1].operands[0].end
-                )
-                return BitVecExtract(value0, beg, end - beg + 1) == BitVecExtract(
-                    value1, beg, end - beg + 1
-                )
+
+                if (
+                    operandaa.value is operandba.value
+                    and operandab.value is operandbb.value
+                    and operandaa.begining == operandab.begining
+                    and operandaa.end == operandab.end
+                    and operandba.begining == operandbb.begining
+                    and operandba.end == operandbb.end
+                ):
+                    if ((operandaa.end + 1) == operandba.begining) or (
+                        operandaa.beginning == (operandba.end + 1)
+                    ):
+
+                        value0 = operandaa.value  # := operandba.value
+                        value1 = operandab.value  # := operandbb.value
+                        beg = min(operandaa.begining, operandba.begining)
+                        end = max(operandaa.end, operandba.end)
+                        return BitVecExtract(
+                            value0, beg, end - beg + 1
+                        ) == BitVecExtract(value1, beg, end - beg + 1)
 
     def visit_BoolNot(self, expression, *operands):
         if isinstance(expression.operands[0], BoolNot):
@@ -440,7 +462,9 @@ class ArithmeticSimplifier(Visitor):
                 if value1 == value2 and value1 != value3:
                     return expression.operands[0].operands[0]  # FIXME:taint
                 elif value1 == value3 and value1 != value2:
-                    return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
+                    return BoolNot(
+                        expression.operands[0].operands[0], taint=expression.taint
+                    )
         if (
             operands[0] is operands[1]
             or isinstance(operands[0], BitVecExtract)
@@ -467,7 +491,10 @@ class ArithmeticSimplifier(Visitor):
 
     def visit_BitVecITE(self, expression, *operands):
         # FIXME Enable some taint propagating optimization
-        if isinstance(expression.operands[0], Constant) and not expression.operands[0].taint:
+        if (
+            isinstance(expression.operands[0], Constant)
+            and not expression.operands[0].taint
+        ):
             if expression.operands[0].value:
                 result = expression.operands[1]
             else:
@@ -495,7 +522,10 @@ class ArithmeticSimplifier(Visitor):
                 else:
                     if last_o.value is o.value and last_o.begining == o.end + 1:
                         last_o = BitVecExtract(
-                            o.value, o.begining, last_o.end - o.begining + 1, taint=expression.taint
+                            o.value,
+                            o.begining,
+                            last_o.end - o.begining + 1,
+                            taint=expression.taint,
                         )
                         changed = True
                     else:
@@ -539,7 +569,9 @@ class ArithmeticSimplifier(Visitor):
 
         if value is not None:
             if end + 1 != value.size or begining != 0:
-                return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
+                return BitVecExtract(
+                    value, begining, end - begining + 1, taint=expression.taint
+                )
 
         return value
 
@@ -557,7 +589,9 @@ class ArithmeticSimplifier(Visitor):
         if begining == 0 and end + 1 == op.size:
             return op
         elif isinstance(op, BitVecExtract):
-            return BitVecExtract(op.value, op.begining + begining, size, taint=expression.taint)
+            return BitVecExtract(
+                op.value, op.begining + begining, size, taint=expression.taint
+            )
         elif isinstance(op, BitVecConcat):
             new_operands = []
             bitcount = 0
@@ -570,7 +604,9 @@ class ArithmeticSimplifier(Visitor):
                     bitcount += item.size
             if begining != expression.begining:
                 return BitVecExtract(
-                    BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
+                    BitVecConcat(
+                        sum([x.size for x in new_operands]), *reversed(new_operands)
+                    ),
                     begining,
                     expression.size,
                     taint=expression.taint,
@@ -639,7 +675,9 @@ class ArithmeticSimplifier(Visitor):
                 left_left = left.operands[0]
                 left_right = left.operands[1]
                 if isinstance(right, Constant):
-                    return BitVecOr(left_left, (left_right | right), taint=expression.taint)
+                    return BitVecOr(
+                        left_left, (left_right | right), taint=expression.taint
+                    )
         elif isinstance(left, BitVecConstant):
             return BitVecOr(right, left, taint=expression.taint)
 
@@ -661,11 +699,15 @@ class ArithmeticSimplifier(Visitor):
                 left_left = left.operands[0]
                 left_right = left.operands[1]
                 if isinstance(right, Constant):
-                    return BitVecAnd(left_left, left_right & right, taint=expression.taint)
+                    return BitVecAnd(
+                        left_left, left_right & right, taint=expression.taint
+                    )
             elif isinstance(left, BitVecOr):
                 left_left = left.operands[0]
                 left_right = left.operands[1]
-                return BitVecOr(right & left_left, right & left_right, taint=expression.taint)
+                return BitVecOr(
+                    right & left_left, right & left_right, taint=expression.taint
+                )
 
         elif isinstance(left, BitVecConstant):
             return BitVecAnd(right, left, taint=expression.taint)
@@ -839,7 +881,10 @@ class TranslatorSmtlib(Translator):
         if expression.size == 1:
             return "#" + bin(expression.value & expression.mask)[1:]
         else:
-            return "#x%0*x" % (int(expression.size / 4), expression.value & expression.mask)
+            return "#x%0*x" % (
+                int(expression.size / 4),
+                expression.value & expression.mask,
+            )
 
     def visit_BoolConstant(self, expression):
         return expression.value and "true" or "false"
