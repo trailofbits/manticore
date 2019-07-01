@@ -518,7 +518,8 @@ class ArithmeticSimplifier(Visitor):
         for o in operands:
             # If found a non BitVecExtract, do not apply
             if not isinstance(o, BitVecExtract):
-                return None
+                value = None
+                break
             # Set the value for the first item
             if value is None:
                 value = o.value
@@ -527,18 +528,20 @@ class ArithmeticSimplifier(Visitor):
             else:
                 # If concat of extracts of different values do not apply
                 if value is not o.value:
-                    return None
+                    value = None
+                    break
                 # If concat of non contiguous extracs do not apply
                 if begining != o.end + 1:
-                    return None
+                    value = None
+                    break
                 # update begining variable
                 begining = o.begining
 
         if value is not None:
-            if end + 1 == value.size and begining == 0:
-                return value
-            else:
+            if end + 1 != value.size or begining != 0:
                 return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
+
+        return value
 
     def visit_BitVecExtract(self, expression, *operands):
         """ extract(sizeof(a), 0)(a)  ==> a

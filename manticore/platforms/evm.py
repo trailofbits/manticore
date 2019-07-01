@@ -1548,7 +1548,6 @@ class EVM(Eventful):
             logger.info("error! %r", e)
             return int(sha3.keccak_256(data).hexdigest(), 16)
 
-
     ############################################################################
     # Environmental Information
     def ADDRESS(self):
