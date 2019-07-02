@@ -94,6 +94,7 @@ run_truffle_tests(){
     fi
     echo "Truffle test succeded"
     cd ..
+    return 0
 }
 
 run_tests_from_dir() {
