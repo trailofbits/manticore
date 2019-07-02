@@ -290,7 +290,8 @@ class FilesystemStore(Store):
         :param str key: The file to delete
         """
         path = os.path.join(self.uri, key)
-        os.remove(path)
+        if os.path.exists(path):
+            os.remove(path)
 
     def ls(self, glob_str):
         """
