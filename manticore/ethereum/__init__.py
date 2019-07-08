@@ -16,6 +16,7 @@ from .detectors import (
     DetectUninitializedMemory,
     DetectUninitializedStorage,
     DetectRaceCondition,
+    DetectManipulableBalance,
 )
 from .account import EVMAccount, EVMContract
 from .abi import ABI
