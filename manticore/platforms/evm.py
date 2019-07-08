@@ -69,8 +69,9 @@ consts.add(
 
 consts.add(
     "calldata_max_offset",
-    default=1024*1024,
-    description="Max calldata offset to explore with. Iff offset or size in a calldata related instruction are symbolic it wil wbe constrained to this constant")
+    default=1024 * 1024,
+    description="Max calldata offset to explore with. Iff offset or size in a calldata related instruction are symbolic it wil wbe constrained to this constant",
+)
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -548,7 +549,9 @@ def concretized_args(**policies):
                         f"Concretizing {func.__name__}'s {index} argument and dropping its taints: "
                         "the value might not be tracked properly (in case of using detectors)"
                     )
-                logger.info(f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}")
+                logger.info(
+                    f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}"
+                )
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
 
@@ -1205,7 +1208,7 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        #print(self.instruction)
+        # print(self.instruction)
         try:
             # import time
             # limbo = 0.0
@@ -1639,9 +1642,13 @@ class EVM(Eventful):
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         if issymbolic(size):
-            if not Z3Solver().can_be_true(self._constraints, Operators.ULE(size, len(self.data) + data_offset + 32)):
-                print ("omg it can not be small")
-                import pdb; pdb.set_trace()
+            if not Z3Solver().can_be_true(
+                self._constraints, Operators.ULE(size, len(self.data) + data_offset + 32)
+            ):
+                print("omg it can not be small")
+                import pdb
+
+                pdb.set_trace()
                 raise ConcretizeArgument(3, policy="MIN")
             self.constraints.add(Operators.ULE(size, len(self.data) + data_offset + 32))
             raise ConcretizeArgument(3, policy="SAMPLED")
@@ -1650,8 +1657,7 @@ class EVM(Eventful):
             if Z3Solver().can_be_true(self._constraints, data_offset == self._used_calldata_size):
                 self.constraints.add(data_offset == self._used_calldata_size)
                 data_offset = self._used_calldata_size
-                print("symbolic data_offset", data_offset, "choosing",
-                      self._used_calldata_size)
+                print("symbolic data_offset", data_offset, "choosing", self._used_calldata_size)
             else:
                 logger.debug("symbolic data_offset MIN")
                 raise ConcretizeArgument(2, policy="MIN")
@@ -1661,7 +1667,10 @@ class EVM(Eventful):
         self._allocate(mem_offset, size)
         if size > consts.calldata_max_offset:
             logger.info("CALLDATACOPY absurd size %d. OOG policy used: %r", size, consts.oog)
-            raise TerminateState("CALLDATACOPY absurd size %d. OOG policy used: %r"%( size, consts.oog), testcase=True)
+            raise TerminateState(
+                "CALLDATACOPY absurd size %d. OOG policy used: %r" % (size, consts.oog),
+                testcase=True,
+            )
 
         for i in range(size):
             try:

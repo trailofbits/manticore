@@ -840,6 +840,7 @@ class DetectRaceCondition(Detector):
                             self.__findings.add(unique_key)
                             self.add_finding_here(state, msg)
 
+
 class DetectManipulableBalance(Detector):
     """
     Detects the use of manipulable balance in strict compare.
@@ -850,17 +851,16 @@ class DetectManipulableBalance(Detector):
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
-
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         vm = state.platform.current_vm
         mnemonic = instruction.semantics
 
         if mnemonic == "BALANCE":
-            #replace result with tainted value
+            # replace result with tainted value
             result = taint_with(result, "BALANCE")
             vm.change_last_result(result)
         elif mnemonic == "EQ":
-            #check if balance tainted
+            # check if balance tainted
             for op in arguments:
                 if istainted(op, "BALANCE"):
                     self.add_finding_here(state, "Manipulable balance used in a strict comparison")

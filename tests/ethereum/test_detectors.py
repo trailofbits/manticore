@@ -390,6 +390,7 @@ class EthRaceCondition(EthDetectorTest):
             },
         )
 
+
 class EthBalance(EthDetectorTest):
     """ Test the detection of funny delegatecalls """
 
@@ -401,7 +402,7 @@ class EthBalance(EthDetectorTest):
 
     def test_balance_not_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, { ( ('Manipulable balance used in a strict comparison', False) ) })
+        self._test(name, {(("Manipulable balance used in a strict comparison", False))})
 
 
 if __name__ == "__main__":

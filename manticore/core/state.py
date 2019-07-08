@@ -244,9 +244,9 @@ class StateBase(Eventful):
         if policy == "MINMAX":
             vals = self._solver.minmax(self._constraints, symbolic)
         elif policy == "MAX":
-            vals = self._solver.max(self._constraints, symbolic),
+            vals = (self._solver.max(self._constraints, symbolic),)
         elif policy == "MIN":
-            vals = self._solver.min(self._constraints, symbolic),
+            vals = (self._solver.min(self._constraints, symbolic),)
         elif policy == "SAMPLED":
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]

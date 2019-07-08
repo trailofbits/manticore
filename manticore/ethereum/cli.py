@@ -12,7 +12,7 @@ from .detectors import (
     DetectEnvInstruction,
     DetectRaceCondition,
     DetectorClassification,
-    DetectManipulableBalance
+    DetectManipulableBalance,
 )
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM

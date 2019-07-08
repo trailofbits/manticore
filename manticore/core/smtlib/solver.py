@@ -449,7 +449,7 @@ class Z3Solver(Solver):
                         break
                     else:
                         raise TooManySolutions(result)
-                if time.time()-start > consts.timeout:
+                if time.time() - start > consts.timeout:
                     raise SolverError("Timeout")
             return result
 

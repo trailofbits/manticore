@@ -1627,7 +1627,7 @@ class ManticoreEVM(ManticoreBase):
             try:
                 self.generate_testcase(st, message=message)
             except Exception as e:
-                print (e)
+                print(e)
 
         def worker_finalize(q):
             try:
