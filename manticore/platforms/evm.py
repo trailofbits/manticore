@@ -2278,7 +2278,6 @@ class EVMWorld(Platform):
             logger.info("error! %r", e)
             return int(sha3.keccak_256(data).hexdigest(), 16)
 
-
     @property
     def PC(self):
         return (self.current_vm.address, self.current_vm.pc)

@@ -404,8 +404,11 @@ class ArithmeticSimplifier(Visitor):
                 if (
                     operandaa.value is operandba.value
                     and operandab.value is operandbb.value
-                    and operandaa.begining, operandaa.end == operandab.begining, operandab.end
-                    and operandba.begining, operandba.end == operandbb.begining, operandbb.end
+                    and operandaa.begining,
+                    operandaa.end == operandab.begining,
+                    operandab.end and operandba.begining,
+                    operandba.end == operandbb.begining,
+                    operandbb.end,
                 ):
                     if ((operandaa.end + 1) == operandba.begining) or (
                         operandaa.beginning == (operandba.end + 1)
