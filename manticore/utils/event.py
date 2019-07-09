@@ -76,14 +76,17 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     @staticmethod
     def will_did(name):
         """Pre/pos emiting signal"""
+
         def deco(func):
             @functools.wraps(func)
             def newFunction(self, *args, **kw):
-                self._publish(f'will_{name}', *args, **kw)
+                self._publish(f"will_{name}", *args, **kw)
                 result = func(self, *args, **kw)
-                self._publish(f'did_{name}', result)
+                self._publish(f"did_{name}", result)
                 return result
+
             return newFunction
+
         return deco
 
     def __init__(self, *args, **kwargs):

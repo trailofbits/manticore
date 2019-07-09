@@ -49,6 +49,7 @@ class EVMAccount:
     def __hash__(self):
         return self._address
 
+
 class EVMContract(EVMAccount):
     """
     An EVM account

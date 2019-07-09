@@ -63,7 +63,7 @@ consts.add(
     default=MProcessingType.multiprocessing,
     description="single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes",
 )
-consts.add('seed', default=1337, description='The seed to use when randomly selecting states')
+consts.add("seed", default=1337, description="The seed to use when randomly selecting states")
 
 
 class ManticoreBase(Eventful):
@@ -113,7 +113,7 @@ class ManticoreBase(Eventful):
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if self.is_running():
-                print ("Calling at running not allowed")
+                print("Calling at running not allowed")
                 raise Exception(f"{func.__name__} only allowed while NOT exploring states")
             return func(self, *args, **kw)
 
@@ -363,8 +363,7 @@ class ManticoreBase(Eventful):
             state._id = None
             self._lock.notify_all()
 
-        self._publish("did_fork_state", new_state, expression, new_value,
-                      policy)
+        self._publish("did_fork_state", new_state, expression, new_value, policy)
 
         logger.debug("Forking current state %r into states %r", state.id, children)
 
