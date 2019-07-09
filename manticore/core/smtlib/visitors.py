@@ -396,7 +396,7 @@ class ArithmeticSimplifier(Visitor):
 
             if (
                 isinstance(operandaa, BitVecExtract)
-                and isinstance(operandaa, BitVecExtract)
+                and isinstance(operandab, BitVecExtract)
                 and isinstance(operandba, BitVecExtract)
                 and isinstance(operandbb, BitVecExtract)
             ):
