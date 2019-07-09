@@ -296,13 +296,12 @@ class AnonMap(Map):
         assert not isinstance(index, slice) or len(value) == index.stop - index.start
         index = self._get_offset(index)
 
-        if issymbolic(value[0]) and isinstance(self._data, bytearray):
-            self._data = [
-                Operators.ORD(b) for b in self._data
-            ]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
-
         if isinstance(index, slice):
-            if not isinstance(value[0], int):
+            if issymbolic(value[0]) and isinstance(self._data, bytearray):
+                self._data = [
+                    Operators.ORD(b) for b in self._data
+                ]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
+            else if not isinstance(value[0], int):
                 value = [Operators.ORD(n) for n in value]
             self._data[index] = value
         else:
@@ -970,7 +969,7 @@ class Memory(object, metaclass=ABCMeta):
         if self._recording_stack:
             self._recording_stack[-1].append((addr, [val]))
 
-        m[addr : addr + 1] = [val]
+        m[addr] = val
 
     def write(self, addr, buf, force=False):
         size = len(buf)
