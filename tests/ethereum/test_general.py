@@ -1317,8 +1317,11 @@ class EthHelpersTest(unittest.TestCase):
             class Y:
                 class Z:
                     instruction = "instruction"
+
                 current_vm = Z()
+
             world = Y()
+
         with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(X(), self.bv, 34)
 
@@ -1334,8 +1337,11 @@ class EthHelpersTest(unittest.TestCase):
             class Y:
                 class Z:
                     instruction = "instruction"
+
                 current_vm = Z()
+
             world = Y()
+
         with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(X(), 34, self.bv)
 
