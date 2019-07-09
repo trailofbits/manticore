@@ -212,7 +212,7 @@ class PrettyPrinter(Visitor):
         return
 
     def visit_Operation(self, expression, *operands):
-        self._print(expression.__class__.__name__ + str(expression.__class__), expression)
+        self._print(expression.__class__.__name__, expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
             for o in expression.operands:
@@ -404,10 +404,8 @@ class ArithmeticSimplifier(Visitor):
                 if (
                     operandaa.value is operandba.value
                     and operandab.value is operandbb.value
-                    and operandaa.begining == operandab.begining
-                    and operandaa.end == operandab.end
-                    and operandba.begining == operandbb.begining
-                    and operandba.end == operandbb.end
+                    and operandaa.begining, operandaa.end == operandab.begining, operandab.end
+                    and operandba.begining, operandba.end == operandbb.begining, operandbb.end
                 ):
                     if ((operandaa.end + 1) == operandba.begining) or (
                         operandaa.beginning == (operandba.end + 1)

@@ -1542,11 +1542,7 @@ class EVM(Eventful):
 
         """
         data = self.read_buffer(start, size)
-        try:
-            return self.world.symbolic_function(globalsha3, data)
-        except Exception as e:
-            logger.info("error! %r", e)
-            return int(sha3.keccak_256(data).hexdigest(), 16)
+        return self.world.symbolic_function(globalsha3, data)
 
     ############################################################################
     # Environmental Information
@@ -2267,18 +2263,21 @@ class EVMWorld(Platform):
 
     def symbolic_function(self, func, data):
         """
-        Get an unsound symbolication for function `name`
+        Get an unsound symbolication for function `func`
 
         """
-        # read memory from start to end
-        # http://gavwood.com/paper.pdf
         data = self.try_simplify_to_constant(data)
-        result = []
-        self._publish(
-            "on_symbolic_function", func, data, result
-        )  # This updates the local copy of result
+        try:
+            result = []
+            self._publish(
+                "on_symbolic_function", func, data, result
+            )  # This updates the local copy of result
 
-        return result[0]
+            return result[0]
+        except Exception as e:
+            logger.info("error! %r", e)
+            return int(sha3.keccak_256(data).hexdigest(), 16)
+
 
     @property
     def PC(self):
