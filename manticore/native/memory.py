@@ -970,7 +970,7 @@ class Memory(object, metaclass=ABCMeta):
         if self._recording_stack:
             self._recording_stack[-1].append((addr, [val]))
 
-        m[addr] = val
+        m[addr : addr + 1] = [val]
 
     def write(self, addr, buf, force=False):
         size = len(buf)
