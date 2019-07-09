@@ -301,7 +301,7 @@ class AnonMap(Map):
                 self._data = [
                     Operators.ORD(b) for b in self._data
                 ]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
-            else if not isinstance(value[0], int):
+            elif not isinstance(value[0], int):
                 value = [Operators.ORD(n) for n in value]
             self._data[index] = value
         else:
