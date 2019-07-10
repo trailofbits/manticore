@@ -72,6 +72,8 @@ def flip(constraint):
     assert len(equal.operands) == 2
     # assume they are the equal -> ite form that we produce on standard branches
     ite, forcepc = equal.operands
+    if not( isinstance(ite, BitVecITE) and isinstance(forcepc, BitVecConstant)):
+        return constraint
     assert isinstance(ite, BitVecITE) and isinstance(forcepc, BitVecConstant)
     assert len(ite.operands) == 3
     cond, iifpc, eelsepc = ite.operands
