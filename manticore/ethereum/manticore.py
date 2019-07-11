@@ -6,6 +6,7 @@ from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from subprocess import check_output, Popen, PIPE
 from typing import Dict, Optional, Union
+from enum import Enum
 
 import io
 import os
@@ -27,7 +28,7 @@ from ..core.smtlib import (
     BoolConstant,
     BoolOperation,
     Expression,
-    issymbolic,
+    issymbolic
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -42,8 +43,30 @@ from ..utils.helpers import PickleSerializer
 logger = logging.getLogger(__name__)
 logging.getLogger("CryticCompile").setLevel(logging.ERROR)
 
-cfg = config.get_group("evm")
-cfg.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
+
+class Sha3Type(Enum):
+    """Used as configuration constant for choosing sha3 flavor"""
+
+    concretize = "concretize"
+    symbolicate = "symbolicate"
+    timetravel = "timetravel"
+    functions = "functions"
+
+    def title(self):
+        return self._name_.title()
+
+    @classmethod
+    def from_string(cls, name):
+        return cls.__members__[name]
+
+
+consts = config.get_group("evm")
+consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
+consts.add(
+    "sha3",
+    default=Sha3Type.concretize,
+    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing\ntimetravel: best effort is done on the spot using current and future information :-O\nfunctions: sha3 is replaced by a uninstantiated function, requires solver support",
+)
 
 
 def flagged(flag):
@@ -154,7 +177,7 @@ class ManticoreEVM(ManticoreBase):
         """
         avoid_collisions = False
         if name is None:
-            name = "TXVALUE"
+            name = "SVALUE"
             avoid_collisions = True
         return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=avoid_collisions)
 
@@ -168,9 +191,9 @@ class ManticoreEVM(ManticoreBase):
         """
         if select not in ("both", "normal", "contract"):
             raise EthereumError("Wrong selection type")
-        if select in ("normal", "contract"):
+        #if select in ("normal", "contract"):
             # FIXME need to select contracts or normal accounts
-            raise NotImplemented
+        #    raise NotImplemented
 
         avoid_collisions = False
         if name is None:
@@ -183,6 +206,10 @@ class ManticoreEVM(ManticoreBase):
 
         constraint = symbolic_address == 0
         for account in self._accounts.values():
+            if select == 'contract' and not self.get_code(account):
+                continue
+            if select == 'normal' and self.get_code(account):
+                continue
             constraint = Operators.OR(symbolic_address == int(account), constraint)
         self.constrain(constraint)
 
@@ -194,18 +221,6 @@ class ManticoreEVM(ManticoreBase):
         else:
             for state in self.all_states:
                 state.constrain(constraint)
-
-    @staticmethod
-    def compile(
-        source_code, contract_name=None, libraries=None, runtime=False, crytic_compile_args=dict()
-    ):
-        """ Get initialization bytecode from a Solidity source code """
-        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(
-            source_code, contract_name, libraries, crytic_compile_args
-        )
-        if runtime:
-            return runtime_bytecode
-        return init_bytecode
 
     @staticmethod
     def _link(bytecode, libraries=None):
@@ -244,90 +259,6 @@ class ManticoreEVM(ManticoreBase):
                     hex_contract_lst[pos : pos + 40] = "%040x" % int(lib_address)
             hex_contract = "".join(hex_contract_lst)
         return bytearray(binascii.unhexlify(hex_contract))
-
-    @staticmethod
-    def _run_solc(source_file, solc_bin=None, solc_remaps=[], working_dir=None):
-        """ Compile a source file with the Solidity compiler
-
-            :param source_file: a file object for the source file
-            :param solc_bin: path to solc binary
-            :param solc_remaps: solc import remaps
-            :return: output, warnings
-        """
-        if solc_bin is not None:
-            solc = solc_bin
-        else:
-            solc = "solc"
-
-        # check solc version
-        supported_versions = ("0.4.18", "0.4.21")
-
-        try:
-            installed_version_output = check_output([solc, "--version"])
-        except OSError:
-            raise EthereumError("Solidity compiler not installed.")
-
-        m = re.match(
-            r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*",
-            installed_version_output.decode(),
-            re.DOTALL | re.IGNORECASE,
-        )
-
-        if not m or m.groupdict()["version"] not in supported_versions:
-            # Fixme https://github.com/trailofbits/manticore/issues/847
-            # logger.warning("Unsupported solc version %s", installed_version)
-            pass
-
-        # solc path search is a mess
-        # https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
-
-        relative_filepath = source_file.name
-
-        if not working_dir:
-            working_dir = os.getcwd()
-
-        if relative_filepath.startswith(working_dir):
-            relative_filepath = relative_filepath[len(working_dir) + 1 :]
-
-        # If someone pass an absolute path to the file, we don't have to put cwd
-        additional_kwargs = {"cwd": working_dir} if working_dir else {}
-
-        solc_invocation = (
-            [solc]
-            + list(solc_remaps)
-            + [
-                "--combined-json",
-                "abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime",
-                "--allow-paths",
-                ".",
-                relative_filepath,
-            ]
-        )
-        logger.debug(f"Running: {' '.join(solc_invocation)}")
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, **additional_kwargs)
-        stdout, stderr = p.communicate()
-
-        stdout, stderr = stdout.decode(), stderr.decode()
-
-        # See #1123 - solc fails when run within snap
-        # and https://forum.snapcraft.io/t/interfaces-allow-access-tmp-directory/5129
-        if stdout == "" and f'""{relative_filepath}"" is not found' in stderr:
-            raise EthereumError(
-                "Solidity compilation failed with error: {}\n"
-                "Did you install solc from snap Linux universal packages?\n"
-                "If so, the problem is likely due to snap's sandbox restricting access to /tmp\n"
-                "\n"
-                "Here are some potential solutions:\n"
-                " 1) Remove solc from snap and install it different way\n"
-                " 2) Reinstall solc from snap in developer mode, so there is no sandbox\n"
-                " 3) Find a way to add /tmp to the solc's sandbox. If you do, "
-                "send us a PR so we could add it here!".format(stderr)
-            )
-
-        try:
-            return json.loads(stdout), stderr
-        except ValueError:
-            raise EthereumError("Solidity compilation error:\n\n{}".format(stderr))
 
     @staticmethod
     def _compile_through_crytic_compile(filename, contract_name, libraries, crytic_compile_args):
@@ -398,18 +329,18 @@ class ManticoreEVM(ManticoreBase):
 
         crytic_compile_args = dict() if crytic_compile_args is None else crytic_compile_args
 
+        print ("source code", source_code, is_supported(source_code))
         if isinstance(source_code, io.IOBase):
             source_code = source_code.name
 
         if isinstance(source_code, str) and not is_supported(source_code):
-            with tempfile.NamedTemporaryFile("w+", suffix=".sol") as temp:
-                temp.write(source_code)
-                temp.flush()
-                compilation_result = ManticoreEVM._compile_through_crytic_compile(
-                    temp.name, contract_name, libraries, crytic_compile_args
-                )
-        else:
-            compilation_result = ManticoreEVM._compile_through_crytic_compile(
+            # temp is garbage collected at the end of this func
+            temp = tempfile.NamedTemporaryFile("w+", suffix=".sol")
+            temp.write(source_code)
+            temp.flush()
+            source_code = temp.name
+
+        compilation_result = ManticoreEVM._compile_through_crytic_compile(
                 source_code, contract_name, libraries, crytic_compile_args
             )
 
@@ -464,8 +395,17 @@ class ManticoreEVM(ManticoreBase):
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         self.subscribe("did_read_code", self._did_evm_read_code)
-        self.subscribe("on_symbolic_sha3", self._on_symbolic_sha3_callback)
-        self.subscribe("on_concrete_sha3", self._on_concrete_sha3_callback)
+
+        if consts.sha3 is consts.sha3.timetravel:
+            self.subscribe("on_symbolic_function", self._on_timetravel)
+        elif consts.sha3 is consts.sha3.concretize:
+            self.subscribe("on_symbolic_function", self._on_concretize)
+        elif consts.sha3 is consts.sha3.symbolicate:
+            self.subscribe("on_symbolic_function", self.on_unsound_symbolication)
+            self.subscribe("did_run", self._on_did_run_unsound_symbolication)
+        else:
+            # if consts.sha3 is consts.sha3.function:
+            raise NotImplemented
 
         self._accounts = dict()
         self._serializer = PickleSerializer()
@@ -584,109 +524,6 @@ class ManticoreEVM(ManticoreBase):
 
         return result
 
-    def json_create_contract(
-        self,
-        jfile,
-        owner=None,
-        name=None,
-        contract_name=None,
-        balance=0,
-        gas=None,
-        network_id=None,
-        args=(),
-    ):
-        """ Creates a solidity contract based on a truffle json artifact.
-            https://github.com/trufflesuite/truffle/tree/develop/packages/truffle-contract-schema
-
-            :param jfile: truffle json artifact
-            :type jfile: str or IOBase
-            :param owner: owner account (will be default caller in any transactions)
-            :type owner: int or EVMAccount
-            :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
-            :type contract_name: str
-            :param balance: balance to be transferred on creation
-            :type balance: int or BitVecVariable
-            :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
-            :type gas: int
-            :param network_id: Truffle network id to instantiate
-            :param tuple args: constructor arguments
-            :rtype: EVMAccount
-        """
-
-        if isinstance(jfile, io.IOBase):
-            jfile = jfile.read()
-        elif isinstance(jfile, bytes):
-            jfile = str(jfile, "utf-8")
-        elif not isinstance(jfile, str):
-            raise TypeError(f"source code bad type: {type(jfile).__name__}")
-
-        truffle = json.loads(jfile)
-        hashes = {}
-        for item in truffle["abi"]:
-            item_type = item["type"]
-            if item_type in ("function"):
-                signature = SolidityMetadata.function_signature_for_name_and_inputs(
-                    item["name"], item["inputs"]
-                )
-                hashes[signature] = int(
-                    "0x" + sha3.keccak_256(signature.encode()).hexdigest()[:8], 16
-                )
-                if "signature" in item:
-                    if item["signature"] != f"0x{hashes[signature]}":
-                        raise Exception(
-                            f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)"
-                        )
-
-        if contract_name is None:
-            contract_name = truffle["contractName"]
-
-        if network_id is None:
-            if len(truffle["networks"]) > 1:
-                raise Exception("Network id not specified")
-            if len(truffle["networks"]) == 1:
-                network_id = list(truffle["networks"].keys())[0]
-        if network_id in truffle["networks"]:
-            temp_dict = truffle["networks"][network_id]["links"]
-            links = dict((k, int(v["address"], 0)) for k, v in temp_dict.items())
-        else:
-            links = ()
-
-        source_code = truffle["source"]
-        bytecode = self._link(truffle["bytecode"][2:], links)
-        runtime = self._link(truffle["deployedBytecode"][2:], links)
-        if "sourceMap" in truffle:
-            srcmap = truffle["sourceMap"].split(";")
-        else:
-            srcmap_runtime = []
-        if "deployedSourceMap" in truffle:
-            srcmap_runtime = truffle["deployedSourceMap"].split(";")
-        else:
-            srcmap_runtime = []
-        abi = truffle["abi"]
-        md = SolidityMetadata(
-            contract_name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, b""
-        )
-        constructor_types = md.get_constructor_arguments()
-        if constructor_types != "()":
-            if args is None:
-                args = self.make_symbolic_arguments(constructor_types)
-
-            constructor_data = ABI.serialize(constructor_types, *args)
-        else:
-            constructor_data = b""
-
-        contract_account = self.create_contract(
-            owner=owner, balance=balance, init=md._init_bytecode + constructor_data, gas=gas
-        )
-
-        if contract_account is None:
-            raise EthereumError(f"Failed to build contract {contract_name}")
-        self.metadata[int(contract_account)] = md
-
-        if not self.count_ready_states() or len(self.get_code(contract_account)) == 0:
-            return None
-        return contract_account
-
     def solidity_create_contract(
         self,
         source_code,
@@ -698,7 +535,7 @@ class ManticoreEVM(ManticoreBase):
         address=None,
         args=(),
         gas=None,
-        crytic_compile_args=None,
+        compile_args=None,
     ):
         """ Creates a solidity contract and library dependencies
 
@@ -713,14 +550,15 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
-            :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
-            :type crytic_compile_args: dict
+            :param compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+            :type compile_args: dict
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
             :rtype: EVMAccount
         """
 
-        crytic_compile_args = dict() if crytic_compile_args is None else crytic_compile_args
+        if compile_args is None:
+            compile_args = dict()
 
         if libraries is None:
             deps = {}
@@ -735,7 +573,7 @@ class ManticoreEVM(ManticoreBase):
                     source_code,
                     contract_name_i,
                     libraries=deps,
-                    crytic_compile_args=crytic_compile_args,
+                    crytic_compile_args=compile_args,
                 )
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
@@ -1012,7 +850,7 @@ class ManticoreEVM(ManticoreBase):
             :rtype: EVMAccount
         """
         if gaslimit is None:
-            gaslimit = cfg.defaultgas
+            gaslimit = consts.defaultgas
         # Type Forgiveness
         if isinstance(address, EVMAccount):
             address = int(address)
@@ -1163,7 +1001,7 @@ class ManticoreEVM(ManticoreBase):
         tx_account="attacker",
         tx_preconstrain=False,
         args=None,
-        crytic_compile_args=dict(),
+        compile_args=None,
     ):
         owner_account = self.create_account(balance=1000, name="owner")
         attacker_account = self.create_account(balance=1000, name="attacker")
@@ -1175,7 +1013,7 @@ class ManticoreEVM(ManticoreBase):
             contract_name=contract_name,
             owner=owner_account,
             args=args,
-            crytic_compile_args=crytic_compile_args,
+            compile_args=compile_args,
         )
 
         if tx_account == "attacker":
@@ -1272,18 +1110,62 @@ class ManticoreEVM(ManticoreBase):
         assert not self._busy_states
         assert not self.is_running()
 
-        # ManticoreEthereum decided at terminate_state_callback wich state is
+        # ManticoreEthereum decided at terminate_state_callback which state is
         # ready for next run and saved them at the context item
         # 'ethereum.saved_states'
         # Move successfully terminated states to ready states
         with self.locked_context("ethereum.saved_states", list) as saved_states:
             while saved_states:
                 state_id = saved_states.pop()
-                self._terminated_states.remove(state_id)
-                self._ready_states.append(state_id)
+                if state_id in self._terminated_states:
+                    self._terminated_states.remove(state_id)
+                    self._ready_states.append(state_id)
 
     # Callbacks
-    def _on_symbolic_sha3_callback(self, state, data, known_hashes):
+    def _on_concretize(self, state, func, data, result):
+        if not issymbolic(data):
+            y_concrete = func(data)
+        else:
+            with self.locked_context("ethereum") as context:
+                # adding a single random example so we can explore further
+                x_concrete = state.solve_one(data)
+                y_concrete = func(x_concrete)
+
+                # Lets contraint the data to the single sound concretization
+                state.constrain(x_concrete == data)
+
+        result.append(y_concrete)
+
+    def _on_timetravel(self, state, func, data, result):
+        if issymbolic(data):
+            # will be updated with the buf->hash pairs to use
+            known_hashes = {}
+            # This updates the local copy of sha3 with the pairs we need to explore
+            self._on_symbolic_sha3_callback_tt(state, data, known_hashes)
+
+            # This builds a symbol in `value` that represents all the known sha3
+            # as reported by ManticoreEVM
+            value = None  # never used
+            known_hashes_cond = False
+            for key, hsh in known_hashes.items():
+                # Ignore the key if the size wont match
+                if len(key) == len(data):
+                    cond = key == data
+                    if known_hashes_cond is False:
+                        value = hsh
+                        known_hashes_cond = cond
+                    else:
+                        value = Operators.ITEBV(256, cond, hsh, value)
+                        known_hashes_cond = Operators.OR(cond, known_hashes_cond)
+        else:
+            value = func(data)
+            self._on_concrete_sha3_callback_tt(state, data, value)
+            logger.info("Found a concrete SHA3 example %r -> %x", data, value)
+
+        result.append(value)
+
+    # Callbacks
+    def _on_symbolic_sha3_callback_tt(self, state, data, known_hashes):
         """ INTERNAL USE """
         assert issymbolic(data), "Data should be symbolic here!"
         with self.locked_context("ethereum") as context:
@@ -1309,7 +1191,6 @@ class ManticoreEVM(ManticoreBase):
                 with state as temp:
                     temp.constrain(known_hashes_cond == False)
                     data_concrete = temp.solve_one(data)
-                # data_concrete = state.solve_one(data)
                 data_hash = int(sha3.keccak_256(data_concrete).hexdigest(), 16)
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = Operators.OR(data_concrete == data, known_hashes_cond)
@@ -1325,7 +1206,10 @@ class ManticoreEVM(ManticoreBase):
                 if temp_state.can_be_true(not_known_hashes_cond):
                     temp_state.constrain(not_known_hashes_cond)
                     state_id = self._workspace.save_state(temp_state)
-                    sha3_states[state_id] = [hsh for buf, hsh in known_sha3]
+                    # Save the size of the input buffer and all known hashes so
+                    # we awake this state only when a _new_ sha3 pair for _this_
+                    # size is found
+                    sha3_states[state_id] = (len(data), [hsh for buf, hsh in known_sha3])
             context["_sha3_states"] = sha3_states
             context["_known_sha3"] = known_sha3
 
@@ -1336,14 +1220,112 @@ class ManticoreEVM(ManticoreBase):
             # send known hashes to evm
             known_hashes.update(results)
 
-    def _on_concrete_sha3_callback(self, state, buf, value):
+    def _on_concrete_sha3_callback_tt(self, state, buf, value):
         """ INTERNAL USE """
         with self.locked_context("ethereum", dict) as ethereum_context:
             known_sha3 = ethereum_context.get("_known_sha3", None)
             if known_sha3 is None:
                 known_sha3 = set()
+
+            sha3_states = ethereum_context["_sha3_states"]
+            for sha3_state_id, (size, hashes) in sha3_states.items():
+                if size == len(buf) and value not in hashes:
+                    sha3_states.remove(sha3_state_id)
+
+                    # locked at locked_context()
+                    # Enqueue it in the ready state list for processing
+                    self._ready_states.append(sha3_state_id)
+                    self._lock.notify_all()
+
             known_sha3.add((buf, value))
             ethereum_context["_known_sha3"] = known_sha3
+
+    # Callbacks for generic SYMB TABLE
+    def on_unsound_symbolication(self, state, func, data, result):
+        print(func.__name__, data)
+        name = func.__name__
+        # Save concrete unction
+        with self.locked_context("ethereum", dict) as ethereum_context:
+            functions = ethereum_context.get("symbolic_func", dict())
+            functions[name] = func
+            ethereum_context["symbolic_func"] = functions
+
+        if issymbolic(data):
+            """table: is a string used internally to identify the symbolic function
+                data: is the symbolic value of the function domain
+                known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
+
+            # local_known_pairs is the pairs known locally for this symbolic function
+            local_known_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
+            # lets make a fresh 256 bit symbol representing any potential hash
+            value = state.new_symbolic_value(256)
+            local_known_pairs.append((data, value))
+            state.context[f"symbolic_func_sym_{name}"] = local_known_pairs
+            # let it return just new_hash
+        else:
+            value = func(data)
+            with self.locked_context("ethereum", dict) as ethereum_context:
+                global_known_pairs = ethereum_context.get(f"symbolic_func_conc_{name}", set())
+                global_known_pairs.add((data, value))
+                ethereum_context[f"symbolic_func_conc_{name}"] = global_known_pairs
+
+            logger.info(f"Found a concrete {name} {data} -> {value}")
+
+        result.append(value)
+
+    def _on_did_run_unsound_symbolication(self):
+        # Called at the end of a run(). Need to filter out the unreproducible/
+        # unfeasible states
+        # Caveat: It will add redundant constraints from previous run()
+        for state in self.all_states:
+            # Save concrete unction
+            with self.locked_context("ethereum", dict) as ethereum_context:
+                functions = ethereum_context.get("symbolic_func", dict())
+                for table in functions:
+                    constraint = True
+                    symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
+                    for xa, ya in symbolic_pairs:
+                        for xb, yb in symbolic_pairs:
+                            if xa is not xb:
+                                constraint = Operators.AND(
+                                    Operators.IFF(xa == xb, ya == yb), constraint
+                                )
+                    state.constrain(constraint)  # bijective
+
+                    # IDEA/caveat Forcing this here prevents the user from opening
+                    # the state and adding mor constraints
+                    # instead of choosing pair examples here we could overload
+                    # state.solve_.* so it handles this validity solvering
+                    if state.can_be_true(True):
+                        # Get a single matching solution for each
+                        local_pairs = set()
+                        for x, y in symbolic_pairs:
+                            x_concrete = state.solve_one(x)
+                            y_concrete = functions[table](x_concrete)
+                            # We shoud check that y_concrete can be equal to y(sym)
+                            # and if not then try a few times
+                            local_pairs.add((x_concrete, y_concrete))
+
+                        with self.locked_context("ethereum", dict) as ethereum_context:
+                            local_pairs = local_pairs.union(
+                                ethereum_context.get(f"symbolic_func_conc_{table}", set())
+                            )
+
+                        for xa, ya in symbolic_pairs:
+                            cond = False
+                            for xc, yc in local_pairs:
+                                if len(xa) == len(xc):
+                                    cond = Operators.OR(Operators.AND(xa == xc, ya == yc), cond)
+                            state.constrain(cond)
+
+                    if not state.can_be_true(True):
+                        if state.id in self._terminated_states:
+                            self._terminated_states.remove(state.id)
+                        elif state.id in self._ready_states:
+                            self._ready_states.remove(state.id)
+                        else:
+                            self._killed_states.remove(state.id)
+                        continue
 
     def _terminate_state_callback(self, state, e):
         """ INTERNAL USE

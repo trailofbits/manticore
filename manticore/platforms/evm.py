@@ -53,6 +53,11 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group("evm")
 
+
+def globalsha3(data):
+    return int(sha3.keccak_256(data).hexdigest(), 16)
+
+
 consts.add(
     "oog",
     default="pedantic",
@@ -571,8 +576,7 @@ class EVM(Eventful):
         "evm_write_memory",
         "evm_read_code",
         "decode_instruction",
-        "concrete_sha3",
-        "symbolic_sha3",
+        "on_unsound_symbolication",
     }
 
     class transact:
@@ -724,10 +728,7 @@ class EVM(Eventful):
         self._published_pre_instruction_events = False
 
         # Used calldata size
-        min_size = 0
-        max_size = len(self.data)
         self._used_calldata_size = 0
-        self._calldata_size = len(self.data)
         self._valid_jmpdests = set()
 
     @property
@@ -767,7 +768,6 @@ class EVM(Eventful):
         state["_checkpoint_data"] = self._checkpoint_data
         state["_published_pre_instruction_events"] = self._published_pre_instruction_events
         state["_used_calldata_size"] = self._used_calldata_size
-        state["_calldata_size"] = self._calldata_size
         state["_valid_jumpdests"] = self._valid_jumpdests
         state["_check_jumpdest"] = self._check_jumpdest
         return state
@@ -791,7 +791,6 @@ class EVM(Eventful):
         self._allocated = state["allocated"]
         self.suicides = state["suicides"]
         self._used_calldata_size = state["_used_calldata_size"]
-        self._calldata_size = state["_calldata_size"]
         self._valid_jumpdests = state["_valid_jumpdests"]
         self._check_jumpdest = state["_check_jumpdest"]
         super().__setstate__(state)
@@ -1200,7 +1199,8 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        # print (self)
+        #print (self)
+        #assert(Z3Solver.instance().can_be_true(self.constraints))
         try:
             # import time
             # limbo = 0.0
@@ -1534,31 +1534,14 @@ class EVM(Eventful):
 
     @concretized_args(size="SAMPLED")
     def SHA3(self, start, size):
-        """Compute Keccak-256 hash"""
-        # read memory from start to end
-        # http://gavwood.com/paper.pdf
-        data = self.try_simplify_to_constant(self.read_buffer(start, size))
+        """Compute Keccak-256 hash
+            If the size is symbolic the potential solutions will be sampled as
+            defined by the default policy and the analysis will be forked.
+            The `size` can be considered concrete in this handler.
 
-        if issymbolic(data):
-            known_sha3 = {}
-            # Broadcast the signal
-            self._publish(
-                "on_symbolic_sha3", data, known_sha3
-            )  # This updates the local copy of sha3 with the pairs we need to explore
-            value = 0  # never used
-            known_hashes_cond = False
-            for key, hsh in known_sha3.items():
-                assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
-                cond = key == data
-                known_hashes_cond = Operators.OR(cond, known_hashes_cond)
-                value = Operators.ITEBV(256, cond, hsh, value)
-            return value
-
-        value = sha3.keccak_256(data).hexdigest()
-        value = int(value, 16)
-        self._publish("on_concrete_sha3", data, value)
-        logger.info("Found a concrete SHA3 example %r -> %x", data, value)
-        return value
+        """
+        data = self.read_buffer(start, size)
+        return self.world.symbolic_function(globalsha3, data)
 
     ############################################################################
     # Environmental Information
@@ -1588,15 +1571,33 @@ class EVM(Eventful):
     def CALLDATALOAD(self, offset):
         """Get input data of current environment"""
 
-        if issymbolic(offset):
-            if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size):
-                self.constraints.add(offset == self._used_calldata_size)
-            raise ConcretizeArgument(1, policy="SAMPLED")
+        print ("CALLDATALOAD", offset)
+
+        #calldata_overflow = const.calldata_overflow
+        #calldata_underflow = const.calldata_underflow
+        calldata_overflow = 32
+        calldata_underflow = 32
+        #if const.calldata_overlap:
+        if True:
+            self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
+            self.constraints.add(offset >= -calldata_underflow)
+        else:
+            if not Z3Solver.instance().can_be_true(self.constraints, Operators.AND(
+                    Operators.ULE(offset + 32, len(self.data) + calldata_overflow),
+                    Operators.UGE(offset, self._used_calldata_size))):
+                import pdb; pdb.set_trace()
+
+            self.constraints.add(Operators.ULE(offset + 32, len(self.data) + calldata_overflow))
+            self.constraints.add(Operators.UGE(offset, self._used_calldata_size))
+
+        #if issymbolic(offset):
+        #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
+        #        self.constraints.add(offset == self._used_calldata_size+32)
+        #    raise ConcretizeArgument(1, policy="SAMPLED")
 
         self._use_calldata(offset, 32)
 
         data_length = len(self.data)
-
         bytes = []
         for i in range(32):
             try:
@@ -1608,20 +1609,19 @@ class EVM(Eventful):
             bytes.append(c)
         return Operators.CONCAT(256, *bytes)
 
-    def _use_calldata(self, n, size):
-        assert not issymbolic(n)
-        max_size = len(self.data)
-        min_size = self._used_calldata_size
+    def _use_calldata(self, offset, size):
+        ''' To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly '''
         self._used_calldata_size = Operators.ITEBV(
             256,
             size != 0,
-            Operators.ITEBV(256, min_size + n > max_size, max_size, min_size + n),
+            self._used_calldata_size + offset + size,
             self._used_calldata_size,
         )
 
     def CALLDATASIZE(self):
         """Get size of input data in current environment"""
-        return self._calldata_size
+        return len(self.data)
 
     def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
         GCOPY = 3  # cost to copy one 32 byte word
@@ -1631,9 +1631,55 @@ class EVM(Eventful):
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
+        print ("CALLDATACOPY", data_offset, size)
+
+
+        #calldata_overflow = const.calldata_overflow
+        #calldata_underflow = const.calldata_underflow
+        calldata_overflow = 32
+        calldata_underflow = 32
+        #if const.calldata_overlap:
+        if False:
+            self.constraints.add(data_offset + 32 <= len(self.data) + calldata_overflow)
+            self.constraints.add(data_offset >= -calldata_underflow)
+        else:
+            self.constraints.add(Operators.ULE(data_offset + 32, len(self.data) + calldata_overflow))
+            self.constraints.add(Operators.UGE(data_offset, self._used_calldata_size))
+
+        #if issymbolic(offset):
+        #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
+        #        self.constraints.add(offset == self._used_calldata_size+32)
+        #    raise ConcretizeArgument(1, policy="SAMPLED")
+
+        self._use_calldata(data_offset, size)
+        max_size = Z3Solver.instance().max(self.constraints, size)
+        #@max_size = min(max_size, consts.calldata_maxsize)
+        max_size = min(max_size, 324)
+        logger.info(f"Constraining CALLDATACOPY size to {max_size}")
+        self.constraints.add(Operators.ULE(size, max_size))
+
+        for i in range(max_size):
+            try:
+                c = Operators.ITEBV(
+                    8,
+                    data_offset + i < len(self.data),
+                    Operators.ORD(self.data[data_offset + i]),
+                    0,
+                )
+            except IndexError:
+                # data_offset + i is concrete and outside data
+                c = 0
+            self._store(mem_offset + i, c)
+
+
+
+
+
+
+
         if issymbolic(size):
-            if Z3Solver().can_be_true(self._constraints, size <= len(self.data) + 32):
-                self.constraints.add(size <= len(self.data) + 32)
+            if Z3Solver().can_be_true(self._constraints, Operators.ULE(size, len(self.data) + data_offset+ 32)):
+                self.constraints.add(Operators.ULE(size, len(self.data) + data_offset+ 32))
             raise ConcretizeArgument(3, policy="SAMPLED")
 
         if issymbolic(data_offset):
@@ -2184,10 +2230,9 @@ class EVMWorld(Platform):
         "evm_read_code",
         "decode_instruction",
         "execute_instruction",
-        "concrete_sha3",
-        "symbolic_sha3",
         "open_transaction",
         "close_transaction",
+        "symbolic_function",
     }
 
     def __init__(
@@ -2260,6 +2305,41 @@ class EVMWorld(Platform):
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
 
+    def try_simplify_to_constant(self, data):
+        concrete_data = bytearray()
+        for c in data:
+            simplified = simplify(c)
+            if isinstance(simplified, Constant):
+                concrete_data.append(simplified.value)
+            else:
+                # simplify by solving. probably means that we need to improve simplification
+                solutions = Z3Solver.instance().get_all_values(
+                    self.constraints, simplified, 2, silent=True
+                )
+                if len(solutions) != 1:
+                    break
+                concrete_data.append(solutions[0])
+        else:
+            data = bytes(concrete_data)
+        return data
+
+    def symbolic_function(self, func, data):
+        """
+        Get an unsound symbolication for function `func`
+
+        """
+        data = self.try_simplify_to_constant(data)
+        try:
+            result = []
+            self._publish(
+                "on_symbolic_function", func, data, result
+            )  # This updates the local copy of result
+
+            return result[0]
+        except Exception as e:
+            logger.info("error! %r", e)
+            return int(sha3.keccak_256(data).hexdigest(), 16)
+
     @property
     def PC(self):
         return (self.current_vm.address, self.current_vm.pc)
@@ -2273,7 +2353,13 @@ class EVMWorld(Platform):
         return key in self.accounts
 
     def __str__(self):
-        return "WORLD:" + str(self._world_state)
+        return (
+            "WORLD:"
+            + str(self._world_state)
+            + "\n"
+            + str(list((map(str, self.transactions))))
+            + str(self.logs)
+        )
 
     @property
     def logs(self):
@@ -2906,7 +2992,9 @@ class EVMWorld(Platform):
         if not failed:
             src_balance = self.get_balance(caller)
             enough_balance = Operators.UGE(src_balance, value)
-            enough_balance_solutions = Z3Solver().get_all_values(self._constraints, enough_balance)
+            enough_balance_solutions = Z3Solver.instance().get_all_values(
+                self._constraints, enough_balance
+            )
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize(

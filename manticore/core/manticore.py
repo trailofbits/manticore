@@ -558,7 +558,8 @@ class ManticoreBase(Eventful):
 
         This means it is not possible to change the state used by Manticore with `states = list(m.ready_states)`.
         """
-        for state_id in self._ready_states:
+        _ready_states = self._ready_states
+        for state_id in _ready_states:
             state = self._load(state_id)
             yield state
             # Re-save the state in case the user changed its data
@@ -850,11 +851,9 @@ class ManticoreBase(Eventful):
             timer.cancel()
 
     @at_not_running
-    def run(self, timeout=None):
+    def run(self):
         """
         Runs analysis.
-
-        :param timeout: Analysis timeout, in seconds
         """
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a

@@ -275,12 +275,13 @@ class ConstantFolderSimplifier(Visitor):
         BitVecNeg: operator.__invert__,
         LessThan: operator.__lt__,
         LessOrEqual: operator.__le__,
-        Equal: operator.__eq__,
+        BoolEqual: operator.__eq__,
         GreaterThan: operator.__gt__,
         GreaterOrEqual: operator.__ge__,
         BoolAnd: operator.__and__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
+        BitVecUnsignedDiv: lambda x, y: (x & (1 << 256) - 1) // (y & (1 << 256) - 1),
     }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -314,11 +315,7 @@ class ConstantFolderSimplifier(Visitor):
             return b
         if isinstance(b, Constant) and b.value == True:
             return a
-
-    def visit_BoolOr(self, expression, a, b):
-        if isinstance(a, Constant) and a.value == False:
-            return b
-        if isinstance(b, Constant) and b.value == False:
+        if a is b:
             return a
 
     def visit_Operation(self, expression, *operands):
@@ -377,6 +374,105 @@ class ArithmeticSimplifier(Visitor):
         else:
             return expression
 
+    def visit_BoolAnd(self, expression, *operands):
+        if isinstance(expression.operands[0], Constant) and expression.operands[0].value:
+            return expression.operands[1]
+        if isinstance(expression.operands[1], Constant) and expression.operands[1].value:
+            return expression.operands[0]
+
+        # AND ( EQ (EXTRACT(0,8, a), EXTRACT(0,8, b)),  EQ (EXTRACT(8,16, a), EXTRACT(8,16 b)) ->
+        # EQ(EXTRACT(0,16, a), EXTRACT(0,16, b))
+        if isinstance(expression.operands[0], BoolEqual) and isinstance(
+            expression.operands[1], BoolEqual
+        ):
+            # Eq operands
+            operanda = expression.operands[0]
+            operandb = expression.operands[1]
+            # Extract operands
+            operandaa = operanda.operands[0]
+            operandab = operanda.operands[1]
+            operandba = operandb.operands[0]
+            operandbb = operandb.operands[1]
+
+            if (
+                isinstance(operandaa, BitVecExtract)
+                and isinstance(operandab, BitVecExtract)
+                and isinstance(operandba, BitVecExtract)
+                and isinstance(operandbb, BitVecExtract)
+            ):
+
+                if (
+                    operandaa.value is operandba.value
+                    and operandab.value is operandbb.value
+                    and operandaa.begining,
+                    operandaa.end == operandab.begining,
+                    operandab.end and operandba.begining,
+                    operandba.end == operandbb.begining,
+                    operandbb.end,
+                ):
+                    if ((operandaa.end + 1) == operandba.begining) or (
+                        operandaa.begining == (operandba.end + 1)
+                    ):
+
+                        value0 = operandaa.value  # := operandba.value
+                        value1 = operandab.value  # := operandbb.value
+                        beg = min(operandaa.begining, operandba.begining)
+                        end = max(operandaa.end, operandba.end)
+                        return BitVecExtract(value0, beg, end - beg + 1) == BitVecExtract(
+                            value1, beg, end - beg + 1
+                        )
+
+    def visit_BoolNot(self, expression, *operands):
+        if isinstance(expression.operands[0], BoolNot):
+            return expression.operands[0].operands[0]
+
+    def visit_BoolEqual(self, expression, *operands):
+        """ (EQ, ITE(cond, constant1, contant2), constant1) -> cond
+            (EQ, ITE(cond, constant1, contant2), constant2) -> NOT cond
+            (EQ (extract a, b, c) (extract a, b, c))
+        """
+        if isinstance(expression.operands[0], BitVecITE) and isinstance(
+            expression.operands[1], Constant
+        ):
+            if isinstance(expression.operands[0].operands[1], Constant) and isinstance(
+                expression.operands[0].operands[2], Constant
+            ):
+                value1, value2, value3 = (
+                    expression.operands[1].value,
+                    expression.operands[0].operands[1].value,
+                    expression.operands[0].operands[2].value,
+                )
+                if value1 == value2 and value1 != value3:
+                    return expression.operands[0].operands[0]  # FIXME:taint
+                elif value1 == value3 and value1 != value2:
+                    return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
+
+        if operands[0] is operands[1]:
+            return BoolConstant(True, taint=expression.taint)
+
+        if isinstance(operands[0], BitVecExtract) and isinstance(operands[1], BitVecExtract):
+            if (
+                operands[0].value is operands[1].value
+                and operands[0].end == operands[1].end
+                and operands[0].begining == operands[1].begining
+            ):
+
+                return BoolConstant(True, taint=expression.taint)
+
+    def visit_BoolOr(self, expression, a, b):
+        if isinstance(a, Constant):
+            if a.value == False:
+                return b
+            if a.value == True:
+                return a
+        if isinstance(b, Constant):
+            if b.value == False:
+                return a
+            if b.value == True:
+                return b
+        if a is b:
+            return a
+
     def visit_BitVecITE(self, expression, *operands):
         # FIXME Enable some taint propagating optimization
         if isinstance(expression.operands[0], Constant) and not expression.operands[0].taint:
@@ -392,16 +488,46 @@ class ArithmeticSimplifier(Visitor):
     def visit_BitVecConcat(self, expression, *operands):
         """ concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
             concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
+            concat( x , extract(k1, beg, a), extract(end, k1, a), z)  ==> concat( x , extract(k1, beg, a), extract(end, k1, a), z)
         """
-        op = expression.operands[0]
+        if len(operands) == 1:
+            return operands[0]
 
+        changed = False
+        last_o = None
+        new_operands = []
+        for o in operands:
+            if isinstance(o, BitVecExtract):
+                if last_o is None:
+                    last_o = o
+                else:
+                    if last_o.value is o.value and last_o.begining == o.end + 1:
+                        last_o = BitVecExtract(
+                            o.value, o.begining, last_o.end - o.begining + 1, taint=expression.taint
+                        )
+                        changed = True
+                    else:
+                        new_operands.append(last_o)
+                        last_o = o
+            else:
+                if last_o is not None:
+                    new_operands.append(last_o)
+                    last_o = None
+                new_operands.append(o)
+        if last_o is not None:
+            new_operands.append(last_o)
+        if changed:
+            return BitVecConcat(expression.size, *new_operands)
+
+        op = expression.operands[0]
         value = None
         end = None
         begining = None
         for o in operands:
             # If found a non BitVecExtract, do not apply
             if not isinstance(o, BitVecExtract):
-                return None
+                value = None
+                break
             # Set the value for the first item
             if value is None:
                 value = o.value
@@ -410,18 +536,20 @@ class ArithmeticSimplifier(Visitor):
             else:
                 # If concat of extracts of different values do not apply
                 if value is not o.value:
-                    return None
+                    value = None
+                    break
                 # If concat of non contiguous extracs do not apply
                 if begining != o.end + 1:
-                    return None
+                    value = None
+                    break
                 # update begining variable
                 begining = o.begining
 
         if value is not None:
-            if end + 1 == value.size and begining == 0:
-                return value
-            else:
+            if end + 1 != value.size or begining != 0:
                 return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
+
+        return value
 
     def visit_BitVecExtract(self, expression, *operands):
         """ extract(sizeof(a), 0)(a)  ==> a
@@ -675,7 +803,7 @@ class TranslatorSmtlib(Translator):
 
     translation_table = {
         BoolNot: "not",
-        BoolEq: "=",
+        BoolEqual: "=",
         BoolAnd: "and",
         BoolOr: "or",
         BoolXor: "xor",
@@ -699,7 +827,6 @@ class TranslatorSmtlib(Translator):
         BitVecNeg: "bvneg",
         LessThan: "bvslt",
         LessOrEqual: "bvsle",
-        Equal: "=",
         GreaterThan: "bvsgt",
         GreaterOrEqual: "bvsge",
         UnsignedLessThan: "bvult",
