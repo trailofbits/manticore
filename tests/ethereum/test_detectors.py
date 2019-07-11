@@ -67,9 +67,13 @@ class EthDetectorTest(unittest.TestCase):
             ctor_arg = ()
 
         self.mevm.register_detector(self.DETECTOR_CLASS())
+
         with self.mevm.kill_timeout(240):
             mevm.multi_tx_analysis(
-                filepath, contract_name="DetectThis", args=ctor_arg, working_dir=dir
+                filepath,
+                contract_name="DetectThis",
+                args=ctor_arg,
+                crytic_compile_args={"solc_working_dir": dir},
             )
 
         expected_findings = set(((finding, at_init) for finding, at_init in should_find))

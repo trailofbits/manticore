@@ -105,6 +105,7 @@ def ethereum_main(args, logger):
                 tx_send_ether=not args.txnoether,
                 tx_account=args.txaccount,
                 tx_preconstrain=args.txpreconstrain,
+                crytic_compile_args=vars(args),
             )
 
         if not args.no_testcases:
