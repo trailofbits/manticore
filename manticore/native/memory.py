@@ -21,9 +21,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 consts = config.get_group("native")
-consts.add("fast_crash", default=False, description="If True, throws a memory safety error if ANY concretization "
-                                                    "of a pointer is out of bounds. Otherwise, forks into valid "
-                                                    "and invalid memory access states.")
+consts.add(
+    "fast_crash",
+    default=False,
+    description="If True, throws a memory safety error if ANY concretization of a pointer is"
+    " out of bounds. Otherwise, forks into valid and invalid memory access states.",
+)
 
 
 class MemoryException(Exception):
