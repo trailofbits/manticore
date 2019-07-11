@@ -2,6 +2,7 @@ import binascii
 import ctypes
 import errno
 import fcntl
+import itertools
 import logging
 import socket
 import struct
@@ -449,6 +450,8 @@ class Linux(Platform):
         self.program = program
         self.clocks = 0
         self.files = []
+        # A cache for keeping state when reading directories { fd: dent_iter }
+        self._getdents_c = {}
         self._closed_files = []
         self.syscall_trace = []
         # Many programs to support SLinux
@@ -608,6 +611,7 @@ class Linux(Platform):
             else:
                 state_files.append(("File", fd))
         state["files"] = state_files
+        state["_getdents_c"] = self._getdents_c
         state["closed_files"] = self._closed_files
         state["rlimits"] = self._rlimits
 
@@ -661,6 +665,7 @@ class Linux(Platform):
         self.files[0].peer = self.output
         self.files[1].peer = self.output
         self.files[2].peer = self.output
+        self._getdents_c = state["_getdents_c"]
         self._closed_files = state["closed_files"]
         self.input.peer = self.files[0]
         self._rlimits = state["rlimits"]
@@ -2670,19 +2675,47 @@ class Linux(Platform):
             logger.info("Can't get directory entries for a file")
             return -1
 
-        with os.scandir(file.path) as dent_iter:
-            for index, item in zip(range(count), dent_iter):
-                fmt = f"LLH{len(item.name) + 1}sxc"
-                size = struct.calcsize(fmt)
+        if fd not in self._getdents_c:
+            # First call on this file descriptor
+            self._getdents_c[fd] = os.scandir(file.path)
 
-                stat = item.stat()
-                print("FILE MODE:", item.name, " :: ", stat.st_mode)
+        dent_iter = self._getdents_c[fd]
 
-                buf += struct.pack(
-                    fmt, item.inode(), size, size, bytes(item.name, "utf-8") + b"\x00", b"\x00"
-                )
+        item = next(dent_iter, None)
+        while item is not None:
+            fmt = f"LLH{len(item.name) + 1}sB"
+            size = struct.calcsize(fmt)
+            if len(buf) + size > count:
+                # Don't overflow buffer
+                break
 
-        self.current.write_bytes(dirent, buf)
+            stat = item.stat()
+            print(f"FILE MODE: {item.name} :: {stat.st_mode:o}")
+
+            # https://elixir.bootlin.com/linux/v5.1.15/source/include/linux/fs_types.h#L27
+            d_type = (stat.st_mode >> 12) & 15
+
+            packed = struct.pack(
+                fmt, item.inode(), size, size, bytes(item.name, "utf-8") + b"\x00", d_type
+            )
+            buf += packed
+            item = next(dent_iter, None)
+
+        if item:
+            # Prepend the last valid item that didn't fit to the list for next time
+            self._getdents_c[fd] = itertools.chain([item], dent_iter)
+        else:
+            # If everything fit, then save just the dent_iter
+            self._getdents_c[fd] = dent_iter
+
+        if len(buf) > 0:
+            # Write out to buffer if we have something to write
+            self.current.write_bytes(dirent, buf)
+        else:  # len(buf) == 0
+            # When the buffer is 0, that means we've read all directory entries
+            # Delete the state and don't write a zero buffer back to dirent
+            del self._getdents_c[fd]
+
         return len(buf)
 
     def sys_nanosleep(self, rqtp, rmtp) -> int:

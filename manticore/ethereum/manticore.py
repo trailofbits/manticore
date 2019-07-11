@@ -15,6 +15,8 @@ import re
 import sha3
 import tempfile
 
+from crytic_compile import CryticCompile, InvalidCompilation, is_supported
+
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import (
     ConstraintSet,
@@ -35,9 +37,11 @@ from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
 from ..utils import config, log
+from ..utils.deprecated import deprecated
 from ..utils.helpers import PickleSerializer
 
 logger = logging.getLogger(__name__)
+logging.getLogger("CryticCompile").setLevel(logging.ERROR)
 
 cfg = config.get_group("evm")
 cfg.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
@@ -194,16 +198,11 @@ class ManticoreEVM(ManticoreBase):
 
     @staticmethod
     def compile(
-        source_code,
-        contract_name=None,
-        libraries=None,
-        runtime=False,
-        solc_bin=None,
-        solc_remaps=[],
+        source_code, contract_name=None, libraries=None, runtime=False, crytic_compile_args=dict()
     ):
         """ Get initialization bytecode from a Solidity source code """
         name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(
-            source_code, contract_name, libraries, solc_bin, solc_remaps
+            source_code, contract_name, libraries, crytic_compile_args
         )
         if runtime:
             return runtime_bytecode
@@ -332,68 +331,94 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError("Solidity compilation error:\n\n{}".format(stderr))
 
     @staticmethod
-    def _compile(
-        source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[], working_dir=None
-    ):
+    def _compile_through_crytic_compile(filename, contract_name, libraries, crytic_compile_args):
+        """
+        :param filename: filename to compile
+        :param contract_name: contract to extract
+        :param libraries: an itemizable of pairs (library_name, address)
+        :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+        :type crytic_compile_args: dict
+        :return:
+        """
+        try:
+
+            if crytic_compile_args:
+                crytic_compile = CryticCompile(filename, **crytic_compile_args)
+            else:
+                crytic_compile = CryticCompile(filename)
+
+            if not contract_name:
+                if len(crytic_compile.contracts_names_without_libraries) > 1:
+                    raise EthereumError(
+                        f"Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {', '.join(crytic_compile.contracts_names)}"
+                    )
+                contract_name = list(crytic_compile.contracts_names_without_libraries)[0]
+
+            if contract_name not in crytic_compile.contracts_names:
+                raise ValueError(f"Specified contract not found: {contract_name}")
+
+            name = contract_name
+
+            libs = crytic_compile.libraries_names(name)
+            if libraries:
+                libs = [l for l in libs if l not in libraries]
+            if libs:
+                raise DependencyError(libs)
+
+            bytecode = bytes.fromhex(crytic_compile.bytecode_init(name, libraries))
+            runtime = bytes.fromhex(crytic_compile.bytecode_runtime(name, libraries))
+            srcmap = crytic_compile.srcmap_init(name)
+            srcmap_runtime = crytic_compile.srcmap_runtime(name)
+            hashes = crytic_compile.hashes(name)
+            abi = crytic_compile.abi(name)
+
+            filename = crytic_compile.filename_of_contract(name).absolute
+            with open(filename) as f:
+                source_code = f.read()
+
+            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
+
+        except InvalidCompilation as e:
+            raise EthereumError(
+                f"Errors : {e}\n. Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented. "
+            )
+
+    @staticmethod
+    def _compile(source_code, contract_name, libraries=None, crytic_compile_args=None):
         """ Compile a Solidity contract, used internally
 
-            :param source_code: solidity source as either a string or a file handle
+            :param source_code: solidity source
+            :type source_code: string (filename, directory, etherscan address) or a file handle
             :param contract_name: a string with the name of the contract to analyze
             :param libraries: an itemizable of pairs (library_name, address)
-            :param solc_bin: path to solc binary
-            :param solc_remaps: solc import remaps
-            :param working_dir: working directory for solc compilation (defaults to current)
+            :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+            :type crytic_compile_args: dict
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
 
-        if isinstance(source_code, str):
-            with tempfile.NamedTemporaryFile("w+") as temp:
+        crytic_compile_args = dict() if crytic_compile_args is None else crytic_compile_args
+
+        if isinstance(source_code, io.IOBase):
+            source_code = source_code.name
+
+        if isinstance(source_code, str) and not is_supported(source_code):
+            with tempfile.NamedTemporaryFile("w+", suffix=".sol") as temp:
                 temp.write(source_code)
                 temp.flush()
-                output, warnings = ManticoreEVM._run_solc(
-                    temp, solc_bin, solc_remaps, working_dir=working_dir
+                compilation_result = ManticoreEVM._compile_through_crytic_compile(
+                    temp.name, contract_name, libraries, crytic_compile_args
                 )
-        elif isinstance(source_code, io.IOBase):
-            output, warnings = ManticoreEVM._run_solc(
-                source_code, solc_bin, solc_remaps, working_dir=working_dir
-            )
-            source_code.seek(0)
-            source_code = source_code.read()
         else:
-            raise TypeError(f"source code bad type: {type(source_code).__name__}")
-
-        contracts = output.get("contracts", [])
-        if len(contracts) != 1 and contract_name is None:
-            raise EthereumError(
-                f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(contracts)}'
+            compilation_result = ManticoreEVM._compile_through_crytic_compile(
+                source_code, contract_name, libraries, crytic_compile_args
             )
 
-        name, contract = None, None
-        if contract_name is None:
-            name, contract = list(contracts.items())[0]
-        else:
-            for n, c in contracts.items():
-                if n == contract_name or n.split(":")[1] == contract_name:
-                    name, contract = n, c
-                    break
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi = (
+            compilation_result
+        )
+        warnings = ""
 
-        if name is None:
-            raise ValueError(f"Specified contract not found: {contract_name}")
-
-        name = name.split(":")[1]
-
-        if contract["bin"] == "":
-            raise EthereumError(
-                "Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented"
-            )
-
-        bytecode = ManticoreEVM._link(contract["bin"], libraries)
-        srcmap = contract["srcmap"].split(";")
-        srcmap_runtime = contract["srcmap-runtime"].split(";")
-        hashes = {str(x): str(y) for x, y in contract["hashes"].items()}
-        abi = json.loads(contract["abi"])
-        runtime = ManticoreEVM._link(contract["bin-runtime"], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     @property
@@ -462,14 +487,14 @@ class ManticoreEVM(ManticoreBase):
 
     # deprecate this 5 in favor of for state in m.all_states: do stuff?
     @property
+    @deprecated("You should iterate over `m.all_states` instead.")
     def completed_transactions(self):
-        logger.info("Deprecated!")
         with self.locked_context("ethereum") as context:
             return context["_completed_transactions"]
 
+    @deprecated("You should use the `platform` member of a `state` insteance instead.")
     def get_world(self, state_id=None):
         """ Returns the evm world of `state_id` state. """
-        logger.info("Deprecated!")
         if state_id is None:
             state_id = self._ready_states[0]
 
@@ -479,42 +504,42 @@ class ManticoreEVM(ManticoreBase):
         else:
             return state.platform
 
+    @deprecated("Instead, call `get_balance` on a state instance")
     def get_balance(self, address, state_id=None):
         """ Balance for account `address` on state `state_id` """
-        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_balance(address)
 
+    @deprecated("Instead, call `get_storage_data` on a state instance")
     def get_storage_data(self, address, offset, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
-        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_storage_data(address, offset)
 
+    @deprecated("Instead, call `get_code` on a state instance")
     def get_code(self, address, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
-        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_code(address)
 
+    @deprecated("Instead, use `state.last_transaction.return_data` on a state instance")
     def last_return(self, state_id=None):
         """ Last returned buffer for state `state_id` """
-        logger.info("Deprecated!")
         state = self.load(state_id)
         return state.platform.last_transaction.return_data
 
+    @deprecated("Instead, use `state.transactions` on a state instance")
     def transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
-        logger.info("Deprecated!")
         state = self._load(state_id)
         return state.platform.transactions
 
+    @deprecated("Instead, use `state.transactions` on a state instance")
     def human_transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
-        logger.info("Deprecated!")
         state = self.load(state_id)
         return state.platform.human_transactions
 
@@ -573,6 +598,7 @@ class ManticoreEVM(ManticoreBase):
     ):
         """ Creates a solidity contract based on a truffle json artifact.
             https://github.com/trufflesuite/truffle/tree/develop/packages/truffle-contract-schema
+
             :param jfile: truffle json artifact
             :type jfile: str or IOBase
             :param owner: owner account (will be default caller in any transactions)
@@ -603,7 +629,9 @@ class ManticoreEVM(ManticoreBase):
                 signature = SolidityMetadata.function_signature_for_name_and_inputs(
                     item["name"], item["inputs"]
                 )
-                hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
+                hashes[signature] = int(
+                    "0x" + sha3.keccak_256(signature.encode()).hexdigest()[:8], 16
+                )
                 if "signature" in item:
                     if item["signature"] != f"0x{hashes[signature]}":
                         raise Exception(
@@ -670,14 +698,13 @@ class ManticoreEVM(ManticoreBase):
         balance=0,
         address=None,
         args=(),
-        solc_bin=None,
-        solc_remaps=[],
-        working_dir=None,
         gas=None,
+        crytic_compile_args=None,
     ):
         """ Creates a solidity contract and library dependencies
 
-            :param str source_code: solidity source code
+            :param source_code: solidity source code
+            :type source_code: string (filename, directory, etherscan address) or a file handle
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
             :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
@@ -687,16 +714,15 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
-            :param solc_bin: path to solc binary
-            :type solc_bin: str
-            :param solc_remaps: solc import remaps
-            :type solc_remaps: list of str
-            :param working_dir: working directory for solc compilation (defaults to current)
-            :type working_dir: str
+            :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+            :type crytic_compile_args: dict
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
             :rtype: EVMAccount
         """
+
+        crytic_compile_args = dict() if crytic_compile_args is None else crytic_compile_args
+
         if libraries is None:
             deps = {}
         else:
@@ -710,9 +736,7 @@ class ManticoreEVM(ManticoreBase):
                     source_code,
                     contract_name_i,
                     libraries=deps,
-                    solc_bin=solc_bin,
-                    solc_remaps=solc_remaps,
-                    working_dir=working_dir,
+                    crytic_compile_args=crytic_compile_args,
                 )
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
@@ -754,12 +778,16 @@ class ManticoreEVM(ManticoreBase):
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
                 self.metadata[int(contract_account)] = md
 
-                deps[contract_name_i] = contract_account
+                deps[contract_name_i] = int(contract_account)
             except DependencyError as e:
                 contract_names.append(contract_name_i)
                 for lib_name in e.lib_names:
                     if lib_name not in deps:
                         contract_names.append(lib_name)
+            except EthereumError as e:
+                logger.error(e)
+                self.kill()
+                raise
             except Exception as e:
                 self.kill()
                 raise
@@ -1087,6 +1115,7 @@ class ManticoreEVM(ManticoreBase):
     ) -> BoolOperation:
         """ Returns a constraint that excludes combinations of value and data that would cause an exception in the EVM
             contract dispatcher.
+
             :param address: address of the contract to call
             :param value: balance to be transferred (optional)
             :param data: symbolic transaction data
@@ -1128,7 +1157,6 @@ class ManticoreEVM(ManticoreBase):
     def multi_tx_analysis(
         self,
         solidity_filename,
-        working_dir=None,
         contract_name=None,
         tx_limit=None,
         tx_use_coverage=True,
@@ -1136,20 +1164,20 @@ class ManticoreEVM(ManticoreBase):
         tx_account="attacker",
         tx_preconstrain=False,
         args=None,
+        crytic_compile_args=dict(),
     ):
         owner_account = self.create_account(balance=1000, name="owner")
         attacker_account = self.create_account(balance=1000, name="attacker")
         # Pretty print
         logger.info("Starting symbolic create contract")
 
-        with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(
-                f,
-                contract_name=contract_name,
-                owner=owner_account,
-                args=args,
-                working_dir=working_dir,
-            )
+        contract_account = self.solidity_create_contract(
+            solidity_filename,
+            contract_name=contract_name,
+            owner=owner_account,
+            args=args,
+            crytic_compile_args=crytic_compile_args,
+        )
 
         if tx_account == "attacker":
             tx_account = [attacker_account]

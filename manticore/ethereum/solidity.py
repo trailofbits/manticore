@@ -51,7 +51,7 @@ class SolidityMetadata:
         self._runtime_bytecode = runtime_bytecode
 
         self._function_signatures_by_selector = {
-            bytes.fromhex(sel): sig for sig, sel in hashes.items()
+            bytes.fromhex("{:08x}".format(sel)): sig for sig, sel in hashes.items()
         }
 
         fallback_selector = b"\0\0\0\0"

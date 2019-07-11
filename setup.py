@@ -42,6 +42,7 @@ setup(
         "pyevmasm==0.2.0",
         "rlp",
         "ply",
+        "crytic-compile>=0.1.1",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,

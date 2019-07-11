@@ -5,13 +5,22 @@ from ..native.memory import ConcretizeMemory, MemoryException
 class State(StateBase):
     @property
     def cpu(self):
+        """
+        Current cpu state
+        """
         return self._platform.current
 
     @property
     def mem(self):
+        """
+        Current virtual memory mappings
+        """
         return self._platform.current.memory
 
     def execute(self):
+        """
+        Perform a single step on the current state
+        """
         from .cpu.abstractcpu import (
             ConcretizeRegister,
         )  # must be here, otherwise we get circular imports

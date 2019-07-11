@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-O3 -static
-NOSTDLIBFLAGS=-fno-builtin -static -nostdlib -fomit-frame-pointer
+NOSTDLIBFLAGS=-fno-builtin -static -nostdlib -fomit-frame-pointer -fno-stack-protector
 PYTHON=python3
 
 EXAMPLES=basic sindex  strncmp  arguments ibranch sendmail crackme indexhell  helloworld simple_copy simpleassert
