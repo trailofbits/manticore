@@ -13,11 +13,17 @@ from ..core.smtlib import (
 )
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
+from ..utils import config
 
 import functools
 import logging
 
 logger = logging.getLogger(__name__)
+
+consts = config.get_group("native")
+consts.add("fast_crash", default=False, description="If True, throws a memory safety error if ANY concretization "
+                                                    "of a pointer is out of bounds. Otherwise, forks into valid "
+                                                    "and invalid memory access states.")
 
 
 class MemoryException(Exception):
@@ -1198,7 +1204,7 @@ class SMemory(Memory):
 
         crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=3)
 
-        if len(crash_or_not) == 2:
+        if not consts.fast_crash and len(crash_or_not) == 2:
             from ..core.state import Concretize
 
             def setstate(state, _value):
