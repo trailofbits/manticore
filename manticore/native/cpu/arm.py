@@ -1501,7 +1501,7 @@ class Armv7Cpu(Cpu):
             src_reg = cpu.instruction.reg_name(rest[0].op.reg).upper()
             amount = cpu.regfile.read(src_reg)
             result, carry = cpu._shift(op.read(), srtype, amount, carry)
-        elif rest and rest[0].type == 'immediate':
+        elif rest and rest[0].type == "immediate":
             amount = rest[0].read()
             result, carry = cpu._shift(op.read(), srtype, amount, carry)
         elif cpu.mode == cs.CS_MODE_THUMB:

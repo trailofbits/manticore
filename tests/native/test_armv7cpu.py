@@ -1669,7 +1669,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R0=11", "R2=2")
     @itest_thumb("lsr.w R0, R0, R2")
     def test_lsrw_thumb_reg(self):
-        self.assertEqual(self.cpu.R0, 11>>2)
+        self.assertEqual(self.cpu.R0, 11 >> 2)
 
     @itest_setregs("R5=0", "R6=16")
     @itest_thumb("asr.w R5, R6, #3")
