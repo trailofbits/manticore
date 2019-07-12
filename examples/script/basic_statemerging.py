@@ -18,11 +18,11 @@ if __name__ == "__main__":
     path = sys.argv[1]
     m = Manticore(path, policy="random")
 
-    def will_load_state_callback(_, state_id):
+    def will_load_state_callback(_mc, state_id):
         print("about to load state_id = " + str(state_id))
 
-    def did_load_state_callback(_, state, state_id):
-        print("loaded state_id = " + str(state_id) + " at cpu = " + hex(state.cpu.PC))
+    def did_load_state_callback(_mc, state):
+        print("loaded state_id = " + str(state.id) + " at cpu = " + hex(state.cpu.PC))
 
     m.subscribe("will_load_state", will_load_state_callback)
     m.subscribe("did_load_state", did_load_state_callback)
