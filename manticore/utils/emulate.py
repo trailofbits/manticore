@@ -251,7 +251,7 @@ class ConcreteUnicornEmulator:
             return globals()["UC_ARM_REG_" + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
-            custom_mapping = {"PC": "RIP", "STACK": "RSP"}
+            custom_mapping = {"PC": "RIP", "STACK": "RSP", "FRAME": "RBP"}
             try:
                 return globals()["UC_X86_REG_" + custom_mapping.get(reg_name, reg_name)]
             except KeyError:
