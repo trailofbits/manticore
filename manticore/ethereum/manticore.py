@@ -1,3 +1,4 @@
+import copy
 import itertools
 import binascii
 import json
@@ -1324,7 +1325,7 @@ class ManticoreEVM(ManticoreBase):
                         # they depend on each other
 
                         for ordered_symbolic_pairs in itertools.permutations(symbolic_pairs):
-                            local_pairs = copy(seen_pairs)
+                            local_pairs = copy.copy(seen_pairs)
                             with state as temp_state:
                                 local_pairs_snapshot = copy(local_pairs)
                                 for x, y in ordered_symbolic_pairs:
