@@ -1281,12 +1281,24 @@ class ManticoreEVM(ManticoreBase):
                 functions = ethereum_context.get("symbolic_func", dict())
                 for table in functions:
                     symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
+                    for i in range(len(symbolic_pairs)):
+                        for j in range(i+1, len(symbolic_pairs)):
+                            xa, ya = symbolic_pairs[i]
+                            xb, yb = symbolic_pairs[j]
+
+                            if len(xa) == len(xb):
+                                constraint = Operators.IFF(xa == xb, ya == yb)
+                            else:
+                                constraint = ya != yb
+                            state.constrain(constraint)  # bijective
+                    '''
                     for xa, ya in symbolic_pairs:
                         for xb, yb in symbolic_pairs:
                             if xa is not xb:
                                 #Thinkme maybe put a binding for x?
                                 constraint = Operators.IFF(xa == xb, ya == yb)
                                 state.constrain(constraint)  # bijective
+                    '''
 
                     # IDEA/caveat Forcing this here prevents the user from opening
                     # the state and adding more constraints. Or multi tx analisys.
