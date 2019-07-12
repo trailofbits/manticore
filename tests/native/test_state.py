@@ -269,13 +269,14 @@ class StateMergeTest(unittest.TestCase):
     # Then, when we hit
 
     class StateCounter(Plugin):
-
         def did_fork_state_callback(self, *_args, **_kwargs):
-            self.max_states = max(self.max_states,
-                                  self.manticore.count_busy_states() +
-                                  self.manticore.count_ready_states() +
-                                  self.manticore.count_killed_states() +
-                                  self.manticore.count_terminated_states())
+            self.max_states = max(
+                self.max_states,
+                self.manticore.count_busy_states()
+                + self.manticore.count_ready_states()
+                + self.manticore.count_killed_states()
+                + self.manticore.count_terminated_states(),
+            )
 
         @property
         def max_states(self):
@@ -290,8 +291,7 @@ class StateMergeTest(unittest.TestCase):
     def setUp(self):
         dirname = os.path.dirname(__file__)
         self.m = Manticore(
-            os.path.join(dirname, "binaries", "basic_state_merging"),
-            policy="random"
+            os.path.join(dirname, "binaries", "basic_state_merging"), policy="random"
         )
         self.plugin = self.StateCounter()
 
@@ -303,11 +303,15 @@ class StateMergeTest(unittest.TestCase):
         self.m.register_plugin(self.plugin)
 
     def test_state_merging(self):
-
-        @self.m.hook(0x40065d)
+        @self.m.hook(0x40065D)
         def hook_post_merge(*_args, **_kwargs):
             with self.m.locked_context() as ctx:
-                ctx["state_count"] = self.m.count_busy_states() + self.m.count_ready_states() + self.m.count_killed_states() + self.m.count_terminated_states()
+                ctx["state_count"] = (
+                    self.m.count_busy_states()
+                    + self.m.count_ready_states()
+                    + self.m.count_killed_states()
+                    + self.m.count_terminated_states()
+                )
 
         self.m.run()
         self.assertLess(self.m.context["state_count"], self.plugin.max_states)
