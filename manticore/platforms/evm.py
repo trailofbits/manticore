@@ -250,7 +250,7 @@ class Transaction:
                 calldata = conc_tx.data
                 is_calldata_symbolic = issymbolic(self.data)
 
-                function_id = calldata[:4]  # hope there is enough data
+                function_id = bytes(calldata[:4])  # hope there is enough data
                 signature = metadata.get_func_signature(function_id)
                 function_name = metadata.get_func_name(function_id)
                 if signature:
@@ -963,10 +963,14 @@ class EVM(Eventful):
 
                 # FIXME if gas can be both enough and insufficient this will
                 #  reenter here and generate redundant queries
-                if not issymbolic(self._gas) and not issymbolic(fee):
-                    enough_gas_solutions = (self._gas - fee >= 0,)
+
+                constraint = simplify(Operators.UGT(self._gas, fee))
+                if isinstance(constraint, Constant):
+                    enough_gas_solutions = (constraint.value,) #(self._gas - fee >= 0,)
+                elif isinstance(constraint, bool):
+                        enough_gas_solutions = (
+                        constraint,)  # (self._gas - fee >= 0,)
                 else:
-                    constraint = simplify(Operators.UGT(self._gas, fee))
                     enough_gas_solutions = Z3Solver.instance().get_all_values(
                         self.constraints, constraint
                     )
@@ -1019,6 +1023,8 @@ class EVM(Eventful):
             # do nothing. gas is not even changed
             return
         self._gas = simplify(self._gas - fee)
+        if isinstance(self._gas, Constant) and not self._gas.taint:
+            self._gas = self._gas.value
 
         # If everything is concrete lets just check at every instruction
         if not issymbolic(self._gas) and self._gas < 0:
@@ -1125,7 +1131,7 @@ class EVM(Eventful):
         Note that at this point `flag` can be the conditional from a JUMPI
         instruction hence potentially a symbolic value.
         """
-        self._check_jumpdest = flag
+        self._check_jumpdest = simplify(flag)
 
     def _check_jmpdest(self):
         """
@@ -1136,7 +1142,9 @@ class EVM(Eventful):
         already constrained to a single concrete value.
         """
         should_check_jumpdest = self._check_jumpdest
-        if issymbolic(should_check_jumpdest):
+        if isinstance(should_check_jumpdest, Constant):
+            should_check_jumpdest = should_check_jumpdest.value
+        elif issymbolic(should_check_jumpdest):
             should_check_jumpdest_solutions = Z3Solver().get_all_values(
                 self.constraints, should_check_jumpdest
             )
@@ -1509,24 +1517,6 @@ class EVM(Eventful):
         offset = Operators.ITEBV(256, offset < 32, (31 - offset) * 8, 256)
         return Operators.ZEXTEND(Operators.EXTRACT(value, offset, 8), 256)
 
-    def try_simplify_to_constant(self, data):
-        concrete_data = bytearray()
-        for c in data:
-            simplified = simplify(c)
-            if isinstance(simplified, Constant):
-                concrete_data.append(simplified.value)
-            else:
-                # simplify by solving. probably means that we need to improve simplification
-                solutions = Z3Solver.instance().get_all_values(
-                    self.constraints, simplified, 2, silent=True
-                )
-                if len(solutions) != 1:
-                    break
-                concrete_data.append(solutions[0])
-        else:
-            data = bytes(concrete_data)
-        return data
-
     def SHA3_gas(self, start, size):
         GSHA3WORD = 6  # Cost of SHA3 per word
         memfee = self._get_memfee(start, size)
@@ -1570,8 +1560,6 @@ class EVM(Eventful):
 
     def CALLDATALOAD(self, offset):
         """Get input data of current environment"""
-
-        print ("CALLDATALOAD", offset)
 
         #calldata_overflow = const.calldata_overflow
         #calldata_underflow = const.calldata_underflow
@@ -1631,9 +1619,6 @@ class EVM(Eventful):
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
-        print ("CALLDATACOPY", data_offset, size)
-
-
         #calldata_overflow = const.calldata_overflow
         #calldata_underflow = const.calldata_underflow
         calldata_overflow = 32

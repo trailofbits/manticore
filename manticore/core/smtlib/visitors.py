@@ -282,6 +282,8 @@ class ConstantFolderSimplifier(Visitor):
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
         BitVecUnsignedDiv: lambda x, y: (x & (1 << 256) - 1) // (y & (1 << 256) - 1),
+        UnsignedLessThan: lambda x, y: x < y,
+        UnsignedGreaterThan: lambda x, y: x > y
     }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -404,11 +406,8 @@ class ArithmeticSimplifier(Visitor):
                 if (
                     operandaa.value is operandba.value
                     and operandab.value is operandbb.value
-                    and operandaa.begining,
-                    operandaa.end == operandab.begining,
-                    operandab.end and operandba.begining,
-                    operandba.end == operandbb.begining,
-                    operandbb.end,
+                    and (operandaa.begining, operandaa.end) == (operandab.begining, operandab.end) 
+                    and (operandba.begining, operandba.end) == (operandbb.begining, operandbb.end)
                 ):
                     if ((operandaa.end + 1) == operandba.begining) or (
                         operandaa.begining == (operandba.end + 1)
@@ -418,8 +417,12 @@ class ArithmeticSimplifier(Visitor):
                         value1 = operandab.value  # := operandbb.value
                         beg = min(operandaa.begining, operandba.begining)
                         end = max(operandaa.end, operandba.end)
-                        return BitVecExtract(value0, beg, end - beg + 1) == BitVecExtract(
-                            value1, beg, end - beg + 1
+                        print (operandaa.begining, operandba.begining)
+                        print (operandaa.end, operandba.end)
+                        print (beg, end, BitVecExtract(value0, beg, end - beg+1), BitVecExtract(value0, beg, end - beg+1).size)
+                        print (value0.size, value1.size)
+                        return BitVecExtract(value0, beg, end - beg+1) == BitVecExtract(
+                            value1, beg, end - beg+1
                         )
 
     def visit_BoolNot(self, expression, *operands):

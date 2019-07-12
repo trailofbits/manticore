@@ -1,18 +1,16 @@
+import itertools
 import binascii
 import json
 import logging
 import string
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
-from subprocess import check_output, Popen, PIPE
 from typing import Dict, Optional, Union
 from enum import Enum
 
 import io
-import os
 import pyevmasm as EVMAsm
 import random
-import re
 import sha3
 import tempfile
 
@@ -181,7 +179,7 @@ class ManticoreEVM(ManticoreBase):
             avoid_collisions = True
         return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=avoid_collisions)
 
-    def make_symbolic_address(self, name=None, select="both"):
+    def make_symbolic_address(self, *accounts, name=None, select="both"):
         """
         Creates a symbolic address and constrains it to pre-existing addresses or the 0 address.
 
@@ -194,7 +192,8 @@ class ManticoreEVM(ManticoreBase):
         #if select in ("normal", "contract"):
             # FIXME need to select contracts or normal accounts
         #    raise NotImplemented
-
+        if not accounts:
+            accounts = self._accounts.values()
         avoid_collisions = False
         if name is None:
             name = "TXADDR"
@@ -205,7 +204,7 @@ class ManticoreEVM(ManticoreBase):
         )
 
         constraint = symbolic_address == 0
-        for account in self._accounts.values():
+        for account in accounts:
             if select == 'contract' and not self.get_code(account):
                 continue
             if select == 'normal' and self.get_code(account):
@@ -329,7 +328,6 @@ class ManticoreEVM(ManticoreBase):
 
         crytic_compile_args = dict() if crytic_compile_args is None else crytic_compile_args
 
-        print ("source code", source_code, is_supported(source_code))
         if isinstance(source_code, io.IOBase):
             source_code = source_code.name
 
@@ -395,14 +393,14 @@ class ManticoreEVM(ManticoreBase):
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         self.subscribe("did_read_code", self._did_evm_read_code)
-
+        consts.sha3 =consts.sha3.symbolicate
         if consts.sha3 is consts.sha3.timetravel:
             self.subscribe("on_symbolic_function", self._on_timetravel)
         elif consts.sha3 is consts.sha3.concretize:
             self.subscribe("on_symbolic_function", self._on_concretize)
         elif consts.sha3 is consts.sha3.symbolicate:
             self.subscribe("on_symbolic_function", self.on_unsound_symbolication)
-            self.subscribe("did_run", self._on_did_run_unsound_symbolication)
+            #self.subscribe("did_run", self._on_did_run_unsound_symbolication)
         else:
             # if consts.sha3 is consts.sha3.function:
             raise NotImplemented
@@ -1242,7 +1240,6 @@ class ManticoreEVM(ManticoreBase):
 
     # Callbacks for generic SYMB TABLE
     def on_unsound_symbolication(self, state, func, data, result):
-        print(func.__name__, data)
         name = func.__name__
         # Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1293,24 +1290,44 @@ class ManticoreEVM(ManticoreBase):
                     state.constrain(constraint)  # bijective
 
                     # IDEA/caveat Forcing this here prevents the user from opening
-                    # the state and adding mor constraints
-                    # instead of choosing pair examples here we could overload
-                    # state.solve_.* so it handles this validity solvering
+                    # the state and adding more constraints. Or multi tx analisys.
+                    # Instead of choosing pair examples here we could overload
+                    # state.solve_.* so it handles this validity solvering lazily
+                    local_pairs = ethereum_context.get(f"symbolic_func_conc_{table}",
+                                             set())
+
+                    #If UF complies with bijectiveness lets try to find a set of
+                    # pairs that makes it sat.
                     if state.can_be_true(True):
-                        # Get a single matching solution for each
-                        local_pairs = set()
-                        for x, y in symbolic_pairs:
-                            x_concrete = state.solve_one(x)
-                            y_concrete = functions[table](x_concrete)
-                            # We shoud check that y_concrete can be equal to y(sym)
-                            # and if not then try a few times
-                            local_pairs.add((x_concrete, y_concrete))
+                        # Search for a matching solution for all UF applications
+                        # if the gathered knowledge is not sufficient it will ask
+                        # the solver for domain value examples and hope for the best
 
-                        with self.locked_context("ethereum", dict) as ethereum_context:
-                            local_pairs = local_pairs.union(
-                                ethereum_context.get(f"symbolic_func_conc_{table}", set())
-                            )
+                        # ideally we should toposort this And solve the leafs first
+                        # We try assigning valid sha3 pairs to the different
+                        # symbolic pairs in different ordering just in case
+                        # they depend on each other
 
+                        for ordered_symbolic_pairs in itertools.permutations(symbolic_pairs):
+                            with state as temp_state:
+                                for x, y in ordered_symbolic_pairs:
+                                    x_concrete = temp_state.solve_one(x)
+                                    y_concrete = functions[table](x_concrete)
+                                    # We should check that y_concrete can be equal to y(sym)
+                                    # and if not then try a few times
+                                    local_pairs.add((x_concrete, y_concrete))
+
+                                    cond = False
+                                    for xc, yc in local_pairs:
+                                        if len(x) == len(xc):
+                                            cond = Operators.OR(Operators.AND(x == xc, y == yc), cond)
+                                    temp_state.constrain(cond)
+
+                                if temp_state.can_be_true(True):
+                                    #Stop the search if we found 1 matching set
+                                    break
+
+                        #Now paste the known pairs in the state constraints
                         for xa, ya in symbolic_pairs:
                             cond = False
                             for xc, yc in local_pairs:
@@ -1621,6 +1638,7 @@ class ManticoreEVM(ManticoreBase):
 
         :param procs: nomber of local processes to use in the reporting generation
         """
+        self._on_did_run_unsound_symbolication()
 
         logger.debug("Finalizing %d states.", self.count_states())
 
