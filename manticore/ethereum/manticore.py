@@ -26,7 +26,8 @@ from ..core.smtlib import (
     BoolConstant,
     BoolOperation,
     Expression,
-    issymbolic
+    issymbolic,
+    simplify
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -1287,7 +1288,7 @@ class ManticoreEVM(ManticoreBase):
                             xb, yb = symbolic_pairs[j]
 
                             if len(xa) == len(xb):
-                                constraint = simplify(Operators.IFF(xa == xb, ya == yb))
+                                constraint = Operators.IFF(xa == xb, ya == yb)
                             else:
                                 constraint = ya != yb
                             state.constrain(constraint)  # bijective
