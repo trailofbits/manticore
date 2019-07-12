@@ -1253,7 +1253,7 @@ class ManticoreEVM(ManticoreBase):
                 data: is the symbolic value of the function domain
                 known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
             pipi = state.new_symbolic_buffer(len(data))
-            state.constraint(pipi == data)
+            state.constrain(pipi == data)
             data = pipi
 
             # local_known_pairs is the pairs known locally for this symbolic function
