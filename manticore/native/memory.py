@@ -1217,7 +1217,7 @@ class SMemory(Memory):
             raise Concretize(
                 "Forking on memory safety", expression=crashing_condition, setstate=setstate
             )
-        elif crash_or_not[0]:
+        elif any(crash_or_not):
             raise InvalidSymbolicMemoryAccess(address, access, size, crashing_condition)
 
         return solutions
