@@ -1287,7 +1287,7 @@ class ManticoreEVM(ManticoreBase):
                             xb, yb = symbolic_pairs[j]
 
                             if len(xa) == len(xb):
-                                constraint = Operators.IFF(xa == xb, ya == yb)
+                                constraint = simplify(Operators.IFF(xa == xb, ya == yb))
                             else:
                                 constraint = ya != yb
                             state.constrain(constraint)  # bijective
@@ -1304,7 +1304,7 @@ class ManticoreEVM(ManticoreBase):
                     # the state and adding more constraints. Or multi tx analisys.
                     # Instead of choosing pair examples here we could overload
                     # state.solve_.* so it handles this validity solvering lazily
-                    local_pairs = ethereum_context.get(f"symbolic_func_conc_{table}",
+                    seen_pairs = ethereum_context.get(f"symbolic_func_conc_{table}",
                                              set())
 
                     #If UF complies with bijectiveness lets try to find a set of
@@ -1320,7 +1320,9 @@ class ManticoreEVM(ManticoreBase):
                         # they depend on each other
 
                         for ordered_symbolic_pairs in itertools.permutations(symbolic_pairs):
+                            local_pairs = copy(seen_pairs)
                             with state as temp_state:
+                                local_pairs_snapshot = copy(local_pairs)
                                 for x, y in ordered_symbolic_pairs:
                                     x_concrete = temp_state.solve_one(x) # FIXME catch exception!
                                     y_concrete = functions[table](x_concrete)
