@@ -1252,6 +1252,9 @@ class ManticoreEVM(ManticoreBase):
             """table: is a string used internally to identify the symbolic function
                 data: is the symbolic value of the function domain
                 known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
+            pipi = state.new_symbolic_buffer(len(data))
+            state.constraint(pipi == data)
+            data = pipi
 
             # local_known_pairs is the pairs known locally for this symbolic function
             local_known_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
@@ -1283,8 +1286,8 @@ class ManticoreEVM(ManticoreBase):
                 for table in functions:
                     symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
                     for i in range(len(symbolic_pairs)):
+                        xa, ya = symbolic_pairs[i]
                         for j in range(i+1, len(symbolic_pairs)):
-                            xa, ya = symbolic_pairs[i]
                             xb, yb = symbolic_pairs[j]
 
                             if len(xa) == len(xb):

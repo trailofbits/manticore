@@ -20,9 +20,7 @@ from .visitors import (
     TranslatorSmtlib,
     get_variables,
     simplify,
-    replace,
-    pretty_print,
-    translate_to_smtlib,
+    replace
 )
 import logging
 
