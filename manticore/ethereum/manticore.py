@@ -376,7 +376,7 @@ class ManticoreEVM(ManticoreBase):
             with open(filename) as f:
                 source_code = f.read()
 
-            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
+            return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi)
 
         except InvalidCompilation as e:
             raise EthereumError(
@@ -419,7 +419,7 @@ class ManticoreEVM(ManticoreBase):
         )
         warnings = ""
 
-        return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings)
 
     @property
     def accounts(self):
