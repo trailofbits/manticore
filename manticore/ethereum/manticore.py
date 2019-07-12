@@ -1309,9 +1309,10 @@ class ManticoreEVM(ManticoreBase):
                     # the state and adding more constraints. Or multi tx analisys.
                     # Instead of choosing pair examples here we could overload
                     # state.solve_.* so it handles this validity solvering lazily
-                    seen_pairs = ethereum_context.get(f"symbolic_func_conc_{table}",
+                    known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}",
                                              set())
 
+                    import pdb; pdb.set_trace()
                     #If UF complies with bijectiveness lets try to find a set of
                     # pairs that makes it sat.
                     if state.can_be_true(True):
@@ -1325,29 +1326,28 @@ class ManticoreEVM(ManticoreBase):
                         # they depend on each other
 
                         for ordered_symbolic_pairs in itertools.permutations(symbolic_pairs):
-                            local_pairs = copy.copy(seen_pairs)
+                            local_pairs = set()
                             with state as temp_state:
-                                local_pairs_snapshot = copy(local_pairs)
-                                for x, y in ordered_symbolic_pairs:
-                                    x_concrete = temp_state.solve_one(x) # FIXME catch exception!
-                                    y_concrete = functions[table](x_concrete)
-                                    # We should check that y_concrete can be equal to y(sym)
-                                    # and if not then try a few times
-                                    local_pairs.add((x_concrete, y_concrete))
+                                try:
+                                    for x, y in ordered_symbolic_pairs:
+                                        x_concrete = temp_state.solve_one(x, constraint=True) # FIXME catch exception!
+                                        y_concrete = functions[table](x_concrete)
+                                        # We should check that y_concrete can be equal to y(sym)
+                                        # and if not then try a few times
+                                        local_pairs.add((x_concrete, y_concrete))
 
-                                    cond = False
-                                    for xc, yc in local_pairs:
-                                        if len(x) == len(xc):
-                                            cond = Operators.OR(Operators.AND(x == xc, y == yc), cond)
-                                    temp_state.constrain(cond)
+                                        temp_state.constrain(y==y_concrete)
+                                except:
+                                    print ("Unmatching concret pairs")
                                 if temp_state.can_be_true(True):
                                     #Stop the search if we found 1 matching set
-                                    break
+                                    known_pairs = known_pairs.union(local_pairs)
+                                    break #or not
 
                         #Now paste the known pairs in the state constraints
                         for xa, ya in symbolic_pairs:
                             cond = False
-                            for xc, yc in local_pairs:
+                            for xc, yc in known_pairs:
                                 if len(xa) == len(xc):
                                     cond = Operators.OR(Operators.AND(xa == xc, ya == yc), cond)
                             state.constrain(cond)
