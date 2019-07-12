@@ -1,4 +1,3 @@
-
 import unittest
 
 from manticore.native.cpu import bitwise
@@ -9,7 +8,7 @@ class BitwiseTest(unittest.TestCase):
 
     def test_mask(self):
         masked = bitwise.Mask(8)
-        self.assertEqual(masked, 0xff)
+        self.assertEqual(masked, 0xFF)
 
     def test_get_bits(self):
         val = 0xAABBCCDD
@@ -20,26 +19,26 @@ class BitwiseTest(unittest.TestCase):
         val = 0xAA00
         result, carry = bitwise.LSL_C(val, 4, 32)
         self.assertEqual(result, 0x0AA000)
-        self.assertEqual(carry , 0)
+        self.assertEqual(carry, 0)
 
     def test_lsl_carry(self):
         val = 0x80000000
         result, carry = bitwise.LSL_C(val, 1, 32)
         print(hex(result), "", hex(carry))
         self.assertEqual(result, 0)
-        self.assertEqual(carry , 1)
+        self.assertEqual(carry, 1)
 
     def test_lsr_nocarry(self):
         val = 0xFFF7
         result, carry = bitwise.LSR_C(val, 4, 32)
         self.assertEqual(result, 0x0FFF)
-        self.assertEqual(carry , 0)
+        self.assertEqual(carry, 0)
 
     def test_lsr_carry(self):
         val = 0xFFF8
         result, carry = bitwise.LSR_C(val, 4, 32)
         self.assertEqual(result, 0x0FFF)
-        self.assertEqual(carry , 1)
+        self.assertEqual(carry, 1)
 
     def test_asr_nocarry(self):
         val = 0x00F0

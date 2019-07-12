@@ -26,12 +26,21 @@ function install_cc_env {
     pip install awscli
 }
 
-# install CodeClimate env in all conditions
-install_cc_env
-
-if [ "$1" != "env" ]; then
-    install_solc
-    install_mcore $1
+# Install black for initial formatting stage
+if [ "$1" == "format" ]; then
+    pip install -U black
 fi
 
+# Install CodeClimate env
+if [ "$1" != "format" ]; then
+    install_cc_env
+fi
+
+# Skip Manticore installation setup and teardown
+if [ "$1" != "env" ]; then
+    if [ "$1" != "format" ]; then
+        install_solc
+        install_mcore $1
+    fi
+fi
 

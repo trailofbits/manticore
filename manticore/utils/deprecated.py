@@ -1,4 +1,3 @@
-
 from functools import wraps
 import inspect
 import warnings
@@ -8,10 +7,11 @@ import warnings
 
 class ManticoreDeprecationWarning(DeprecationWarning):
     """The deprecation warning class used by Manticore."""
+
     pass
 
 
-warnings.simplefilter('default', category=ManticoreDeprecationWarning)
+warnings.simplefilter("default", category=ManticoreDeprecationWarning)
 
 
 def deprecated(message: str):
@@ -21,8 +21,11 @@ def deprecated(message: str):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            warnings.warn(f"`{func.__qualname__}` is deprecated. {message}",
-                          category=ManticoreDeprecationWarning, stacklevel=2)
+            warnings.warn(
+                f"`{func.__qualname__}` is deprecated. {message}",
+                category=ManticoreDeprecationWarning,
+                stacklevel=2,
+            )
             return func(*args, **kwargs)
 
         return wrapper

@@ -3,85 +3,8 @@ import pickle
 import sys
 from collections import OrderedDict
 
-import copy
-import re
-
 
 logger = logging.getLogger(__name__)
-
-
-def issymbolic(value):
-    """
-    Helper to determine whether an object is symbolic (e.g checking
-    if data read from memory is symbolic)
-
-    :param object value: object to check
-    :return: whether `value` is symbolic
-    :rtype: bool
-    """
-    from ..core.smtlib import Expression  # prevent circular imports
-    return isinstance(value, Expression)
-
-
-def istainted(arg, taint=None):
-    """
-    Helper to determine whether an object if tainted.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    """
-
-    if not issymbolic(arg):
-        return False
-    if taint is None:
-        return len(arg.taint) != 0
-    for arg_taint in arg.taint:
-        m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
-        if m:
-            return True
-    return False
-
-
-def get_taints(arg, taint=None):
-    """
-    Helper to list an object taints.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    """
-
-    if not issymbolic(arg):
-        return
-    for arg_taint in arg.taint:
-        if taint is not None:
-            m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
-            if m:
-                yield arg_taint
-        else:
-            yield arg_taint
-    return
-
-
-def taint_with(arg, taint, value_bits=256, index_bits=256):
-    """
-    Helper to taint a value.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    """
-    from ..core.smtlib import BitVecConstant  # prevent circular imports
-
-    tainted_fset = frozenset((taint,))
-
-    if not issymbolic(arg):
-        if isinstance(arg, int):
-            arg = BitVecConstant(value_bits, arg)
-            arg._taint = tainted_fset
-        else:
-            raise ValueError("type not supported")
-
-    else:
-        arg = copy.copy(arg)
-        arg._taint |= tainted_fset
-
-    return arg
 
 
 def interval_intersection(min1, max1, min2, max2):
@@ -107,7 +30,8 @@ class CacheDict(OrderedDict):
     def __del__(self):
         log = logging.getLogger(self.__class__.__name__)
         log.debug(
-            f'DictCache: hits: {self._hits}, misses: {self._misses}, flushes: {self._flushes}, size: {self.__len__()}')
+            f"DictCache: hits: {self._hits}, misses: {self._misses}, flushes: {self._flushes}, size: {self.__len__()}"
+        )
 
     def __setitem__(self, key, value):
         if len(self) > self._max_size:
@@ -160,8 +84,10 @@ class PickleSerializer(StateSerializer):
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
-                raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
-            logger.info(f'Recursion soft limit {sys.getrecursionlimit()} hit, increasing')
+                raise Exception(
+                    f"PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting"
+                )
+            logger.info(f"Recursion soft limit {sys.getrecursionlimit()} hit, increasing")
             sys.setrecursionlimit(new_limit)
             self.serialize(state, f)
 

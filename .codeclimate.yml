@@ -13,13 +13,13 @@ checks:
     config:
       threshold: 9000
   method-complexity:
-    enabled: true
+    enabled: false
     config:
       threshold: 40
   method-count:
-    enabled: true
+    enabled: false
     config:
-      threshold: 35
+      threshold: 45
   method-lines:
     enabled: true
     config:
@@ -48,6 +48,10 @@ plugins:
         enabled: false
       E701:
         enabled: false
+      E203:
+        enabled: false
+      W503:
+        enabled: false
   sonar-python:
     enabled: false
     config:
@@ -64,4 +68,5 @@ exclude_patterns:
   - "tests/"
   - "mcore_*/"
   - ".tox/"
+  - "manticore/ethereum/parsetab.py"
 

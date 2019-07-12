@@ -1,5 +1,3 @@
-pragma solidity ^0.4.13;
-
 contract Test {
     event Log(string);
     mapping(address => uint) private balances;

@@ -27,8 +27,14 @@ libc = get_libc()
 # void* mmap(void* addr, size_t len, int prot, int flags, int fd, off_t offset)
 mmap_function = libc.mmap
 mmap_function.restype = ctypes.c_void_p
-mmap_function.argtype = [ctypes.c_void_p, ctypes.c_size_t,
-                         ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_size_t]
+mmap_function.argtype = [
+    ctypes.c_void_p,
+    ctypes.c_size_t,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_size_t,
+]
 
 
 # int munmap(void* addr, size_t len)
@@ -44,11 +50,11 @@ def mmap(fd, offset, size):
     # When trying to map the contents of a file into memory, the offset must be a multiple of the page size (see
     # `man mmap`). So we need to align it before passing it to mmap(). Doing so also increases the size of the memory
     # area needed, so we need to account for that difference.
-    aligned_offset = offset & ~0xfff
+    aligned_offset = offset & ~0xFFF
     size += offset - aligned_offset
 
-    if size & 0xfff != 0:
-        size = (size & ~0xfff) + 0x1000
+    if size & 0xFFF != 0:
+        size = (size & ~0xFFF) + 0x1000
     assert size > 0
 
     result = mmap_function(0, size, prot, flags, fd, aligned_offset)
@@ -64,7 +70,7 @@ def munmap(address, size):
     # pointer can be recovered by aligning it on the page size. The size needs to be increased by that difference to
     # account for cases where the requested memory area was larger.
     address = ctypes.cast(address, ctypes.c_void_p).value
-    aligned_address = address & ~0xfff
+    aligned_address = address & ~0xFFF
     size += address - aligned_address
     assert size > 0
     aligned_address = ctypes.cast(aligned_address, ctypes.POINTER(ctypes.c_char))

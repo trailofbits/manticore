@@ -9,6 +9,7 @@ from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.smtlib import *
 from manticore.core.state import Concretize
+from manticore.core.smtlib.solver import Z3Solver
 from manticore.native.memory import SMemory32
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
@@ -17,6 +18,7 @@ ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
 import logging
 
 logger = logging.getLogger("ARM_TESTS")
+solver = Z3Solver.instance()
 
 
 def assemble(asm, mode=CS_MODE_ARM):
@@ -25,10 +27,10 @@ def assemble(asm, mode=CS_MODE_ARM):
     elif CS_MODE_THUMB == mode:
         ords = ks_thumb.asm(asm)[0]
     else:
-        raise Exception(f'bad processor mode for assembly: {mode}')
+        raise Exception(f"bad processor mode for assembly: {mode}")
     if not ords:
-        raise Exception(f'bad assembly: {asm}')
-    return ''.join(map(chr, ords))
+        raise Exception(f"bad assembly: {asm}")
+    return "".join(map(chr, ords))
 
 
 class Armv7CpuTest(unittest.TestCase):
@@ -41,15 +43,15 @@ class Armv7CpuTest(unittest.TestCase):
         self._setupStack()
 
     def _setupStack(self):
-        self.stack = self.c.memory.mmap(0xf000, 0x1000, 'rw')
-        self.rf.write('SP', self.stack + 0x1000)
+        self.stack = self.c.memory.mmap(0xF000, 0x1000, "rw")
+        self.rf.write("SP", self.stack + 0x1000)
 
     def test_rd(self):
-        self.assertEqual(self.rf.read('R0'), 0)
+        self.assertEqual(self.rf.read("R0"), 0)
 
     def test_rd2(self):
         self.c.STACK = 0x1337
-        self.assertEqual(self.rf.read('SP'), 0x1337)
+        self.assertEqual(self.rf.read("SP"), 0x1337)
 
     def test_stack_set_get(self):
         self.c.STACK = 0x1337
@@ -57,28 +59,28 @@ class Armv7CpuTest(unittest.TestCase):
 
     def test_rd3(self):
         self.c.STACK = 0x1337 - 1
-        self.assertEqual(self.rf.read('SP'), 0x1336)
+        self.assertEqual(self.rf.read("SP"), 0x1336)
 
     def test_rd4(self):
         self.c.STACK = 0x1337 + 1
-        self.assertEqual(self.rf.read('SP'), 0x1338)
+        self.assertEqual(self.rf.read("SP"), 0x1338)
 
     def test_stack_push(self):
         self.c.stack_push(42)
         self.c.stack_push(44)
-        self.assertEqual(b''.join(self.c.read(self.c.STACK, 4)), b'\x2c\x00\x00\x00')
-        self.assertEqual(b''.join(self.c.read(self.c.STACK + 4, 4)), b'\x2a\x00\x00\x00')
+        self.assertEqual(b"".join(self.c.read(self.c.STACK, 4)), b"\x2c\x00\x00\x00")
+        self.assertEqual(b"".join(self.c.read(self.c.STACK + 4, 4)), b"\x2a\x00\x00\x00")
 
     def test_stack_pop(self):
         v = 0x55
-        v_bytes = struct.pack('<I', v)
+        v_bytes = struct.pack("<I", v)
         self.c.stack_push(v)
         val = self.c.stack_pop()
-        self.assertEqual(b''.join(self.c.read(self.c.STACK - 4, 4)), v_bytes)
+        self.assertEqual(b"".join(self.c.read(self.c.STACK - 4, 4)), v_bytes)
 
     def test_stack_peek(self):
         self.c.stack_push(42)
-        self.assertEqual(b''.join(self.c.stack_peek()), b'\x2a\x00\x00\x00')
+        self.assertEqual(b"".join(self.c.stack_peek()), b"\x2a\x00\x00\x00")
 
     def test_readwrite_int(self):
         self.c.STACK -= 4
@@ -118,11 +120,11 @@ def itest_setregs(*preds):
         @wraps(custom_func)
         def wrapper(self):
             for p in preds:
-                dest, src = p.split('=')
+                dest, src = p.split("=")
 
                 try:
                     src = int(src, 0)
-                except:
+                except Exception:
                     pass
 
                 self.rf.write(dest.upper(), src)
@@ -131,6 +133,7 @@ def itest_setregs(*preds):
         return wrapper
 
     return instr_dec
+
 
 def itest_custom(asm, mode=CS_MODE_ARM):
     def instr_dec(custom_func):
@@ -143,6 +146,7 @@ def itest_custom(asm, mode=CS_MODE_ARM):
 
     return instr_dec
 
+
 def itest_thumb(asm):
     def instr_dec(assertions_func):
         @wraps(assertions_func)
@@ -154,6 +158,7 @@ def itest_thumb(asm):
         return wrapper
 
     return instr_dec
+
 
 def itest_multiple(asms):
     def instr_dec(assertions_func):
@@ -191,9 +196,9 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.rf = self.cpu.regfile
 
     def _setupCpu(self, asm, mode=CS_MODE_ARM, multiple_insts=False):
-        self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
-        self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
-        self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
+        self.code = self.mem.mmap(0x1000, 0x1000, "rwx")
+        self.data = self.mem.mmap(0xD000, 0x1000, "rw")
+        self.stack = self.mem.mmap(0xF000, 0x1000, "rw")
 
         # it doesn't really matter what's the starting address of code
         # as long as it's known and constant for all the tests;
@@ -204,512 +209,512 @@ class Armv7CpuInstructions(unittest.TestCase):
             offset = 0
             for asm_single in asm:
                 asm_inst = assemble(asm_single, mode)
-                self.mem.write(start+offset, asm_inst)
+                self.mem.write(start + offset, asm_inst)
                 offset += len(asm_inst)
         else:
             self.mem.write(start, assemble(asm, mode))
-        self.rf.write('PC', start)
-        self.rf.write('SP', self.stack + 0x1000)
+        self.rf.write("PC", start)
+        self.rf.write("SP", self.stack + 0x1000)
         self.cpu.mode = mode
 
     def _checkFlagsNZCV(self, n, z, c, v):
-        self.assertEqual(self.rf.read('APSR_N'), n)
-        self.assertEqual(self.rf.read('APSR_Z'), z)
-        self.assertEqual(self.rf.read('APSR_C'), c)
-        self.assertEqual(self.rf.read('APSR_V'), v)
+        self.assertEqual(self.rf.read("APSR_N"), n)
+        self.assertEqual(self.rf.read("APSR_Z"), z)
+        self.assertEqual(self.rf.read("APSR_C"), c)
+        self.assertEqual(self.rf.read("APSR_V"), v)
 
     # MOV
 
     @itest("mov r0, 0x0")
     def test_mov_imm_min(self):
-        self.assertEqual(self.rf.read('R0'), 0x0)
+        self.assertEqual(self.rf.read("R0"), 0x0)
 
     @itest("mov r0, 42")
     def test_mov_imm_norm(self):
-        self.assertEqual(self.rf.read('R0'), 42)
+        self.assertEqual(self.rf.read("R0"), 42)
 
     @itest("mov r0, 0x100")
     def test_mov_imm_modified_imm_min(self):
-        self.assertEqual(self.rf.read('R0'), 0x100)
+        self.assertEqual(self.rf.read("R0"), 0x100)
 
     @itest("mov r0, 0xff000000")
     def test_mov_imm_modified_imm_max(self):
-        self.assertEqual(self.rf.read('R0'), 0xff000000)
+        self.assertEqual(self.rf.read("R0"), 0xFF000000)
 
     @itest_custom("mov r0, r1")
     def test_mov_immreg(self):
-        self.rf.write('R1', 0)
+        self.rf.write("R1", 0)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0)
+        self.assertEqual(self.rf.read("R0"), 0)
 
     @itest_custom("mov r0, r1")
     def test_mov_immreg1(self):
-        self.rf.write('R1', 2 ** 32)
+        self.rf.write("R1", 2 ** 32)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0)
+        self.assertEqual(self.rf.read("R0"), 0)
 
     @itest_custom("mov r0, r1")
     def test_mov_immreg2(self):
-        self.rf.write('R1', 0xffffffff)
+        self.rf.write("R1", 0xFFFFFFFF)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0xffffffff)
+        self.assertEqual(self.rf.read("R0"), 0xFFFFFFFF)
 
     @itest_custom("mov r0, r1")
     def test_mov_immreg3(self):
-        self.rf.write('R1', 42)
+        self.rf.write("R1", 42)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 42)
+        self.assertEqual(self.rf.read("R0"), 42)
 
     # MOVW
 
     @itest("movw r0, 0")
     def test_movw_imm_min(self):
-        self.assertEqual(self.rf.read('R0'), 0x0)
+        self.assertEqual(self.rf.read("R0"), 0x0)
 
     @itest("movw r0, 0xffff")
     def test_movw_imm_max(self):
-        self.assertEqual(self.rf.read('R0'), 0xffff)
+        self.assertEqual(self.rf.read("R0"), 0xFFFF)
 
     # MOVS
 
     @itest_custom("movs r0, 0")
     def test_movs_imm_min(self):
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0)
+        self.assertEqual(self.rf.read("R0"), 0)
         self._checkFlagsNZCV(0, 1, pre_c, pre_v)
 
     @itest_custom("movs r0, 42")
     def test_movs_imm_norm(self):
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 42)
+        self.assertEqual(self.rf.read("R0"), 42)
         self._checkFlagsNZCV(0, 0, pre_c, pre_v)
 
     @itest_custom("movs r0, 0x100")
     def test_movs_imm_modified_imm_min(self):
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0x100)
+        self.assertEqual(self.rf.read("R0"), 0x100)
         self._checkFlagsNZCV(0, 0, pre_c, pre_v)
 
     @itest_custom("movs r0, 0xff000000")
     def test_movs_imm_modified_imm_max(self):
-        pre_v = self.rf.read('APSR_V')
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0xff000000)
+        self.assertEqual(self.rf.read("R0"), 0xFF000000)
         self._checkFlagsNZCV(1, 0, 1, pre_v)
 
     @itest_custom("movs r0, 0x0e000000")
     def test_movs_imm_modified_imm_sans_carry(self):
-        pre_v = self.rf.read('APSR_V')
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0x0e000000)
+        self.assertEqual(self.rf.read("R0"), 0x0E000000)
         self._checkFlagsNZCV(0, 0, 0, pre_v)
 
     @itest_custom("movs r0, r1")
     def test_movs_reg(self):
-        self.rf.write('R1', 0)
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
+        self.rf.write("R1", 0)
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0)
+        self.assertEqual(self.rf.read("R0"), 0)
         self._checkFlagsNZCV(0, 1, pre_c, pre_v)
 
     @itest_custom("movs r0, r1")
     def test_movs_reg1(self):
-        self.rf.write('R1', 2 ** 32)
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
+        self.rf.write("R1", 2 ** 32)
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 0)
+        self.assertEqual(self.rf.read("R0"), 0)
         self._checkFlagsNZCV(0, 1, pre_c, pre_v)
 
     @itest_custom("movs r0, r1")
     def test_movs_reg2(self):
-        self.rf.write('R1', 2 ** 32 - 1)
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
+        self.rf.write("R1", 2 ** 32 - 1)
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R0"), 2 ** 32 - 1)
         self._checkFlagsNZCV(1, 0, pre_c, pre_v)
 
     @itest_custom("movs r0, r1")
     def test_movs_reg3(self):
-        self.rf.write('R1', 42)
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
+        self.rf.write("R1", 42)
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), 42)
+        self.assertEqual(self.rf.read("R0"), 42)
         self._checkFlagsNZCV(0, 0, pre_c, pre_v)
 
     # ADD
 
     @itest_custom("add r3, r1, 55")
     def test_add_imm_norm(self):
-        self.rf.write('R1', 44)
+        self.rf.write("R1", 44)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 99)
+        self.assertEqual(self.rf.read("R3"), 99)
 
     @itest_custom("add r3, r1, 0x100")
     def test_add_imm_mod_imm_min(self):
-        self.rf.write('R1', 44)
+        self.rf.write("R1", 44)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0x100)
+        self.assertEqual(self.rf.read("R3"), 44 + 0x100)
 
     @itest_custom("add r3, r1, 0xff000000")
     def test_add_imm_mod_imm_max(self):
-        self.rf.write('R1', 44)
+        self.rf.write("R1", 44)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0xff000000)
+        self.assertEqual(self.rf.read("R3"), 44 + 0xFF000000)
 
     @itest_custom("add r3, r1, 0x1000000")
     def test_add_imm_carry(self):
-        self.rf.write('R1', 0xff000001)
+        self.rf.write("R1", 0xFF000001)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read("R3"), 1)
 
     @itest_custom("add r3, r1, 0x1")
     def test_add_imm_overflow(self):
-        self.rf.write('R1', (2 ** 31 - 1))
+        self.rf.write("R1", (2 ** 31 - 1))
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x80000000)
+        self.assertEqual(self.rf.read("R3"), 0x80000000)
 
     @itest_custom("add r3, r1, r2")
     def test_add_reg_norm(self):
-        self.rf.write('R1', 44)
-        self.rf.write('R2', 55)
+        self.rf.write("R1", 44)
+        self.rf.write("R2", 55)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 99)
+        self.assertEqual(self.rf.read("R3"), 99)
 
     @itest_custom("add r3, r1, r2")
     def test_add_reg_mod_imm_min(self):
-        self.rf.write('R1', 44)
-        self.rf.write('R2', 0x100)
+        self.rf.write("R1", 44)
+        self.rf.write("R2", 0x100)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0x100)
+        self.assertEqual(self.rf.read("R3"), 44 + 0x100)
 
     @itest_custom("add r3, r1, r2")
     def test_add_reg_mod_imm_max(self):
-        self.rf.write('R1', 44)
-        self.rf.write('R2', 0xff000000)
+        self.rf.write("R1", 44)
+        self.rf.write("R2", 0xFF000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0xff000000)
+        self.assertEqual(self.rf.read("R3"), 44 + 0xFF000000)
 
     @itest_custom("add r3, r1, r2")
     def test_add_reg_carry(self):
-        self.rf.write('R1', 0x1000000)
-        self.rf.write('R2', 0xff000001)
+        self.rf.write("R1", 0x1000000)
+        self.rf.write("R2", 0xFF000001)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read("R3"), 1)
 
     @itest_custom("add r3, r1, r2")
     def test_add_reg_overflow(self):
-        self.rf.write('R1', (2 ** 31 - 1))
-        self.rf.write('R2', 1)
+        self.rf.write("R1", (2 ** 31 - 1))
+        self.rf.write("R2", 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (1 << 31))
+        self.assertEqual(self.rf.read("R3"), (1 << 31))
 
     @itest_custom("add r3, r1, r2, lsl #3")
     def test_add_reg_sft_lsl(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x1)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (1 << 3))
+        self.assertEqual(self.rf.read("R3"), (1 << 3))
 
     @itest_custom("add r3, r1, r2, lsr #3")
     def test_add_reg_sft_lsr(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x8)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x8)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (0x8 >> 3))
+        self.assertEqual(self.rf.read("R3"), (0x8 >> 3))
 
     @itest_custom("add r3, r1, r2, asr #3")
     def test_add_reg_sft_asr(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x80000000)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x80000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0xf0000000)
+        self.assertEqual(self.rf.read("R3"), 0xF0000000)
 
     @itest_custom("add r3, r1, r2, asr #3")
     def test_add_reg_sft_asr2(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x40000000)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x40000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (0x40000000 >> 3))
+        self.assertEqual(self.rf.read("R3"), (0x40000000 >> 3))
 
     @itest_custom("add r3, r1, r2, ror #3")
     def test_add_reg_sft_ror_norm(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x8)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x8)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x1)
+        self.assertEqual(self.rf.read("R3"), 0x1)
 
     @itest_custom("add r3, r1, r2, ror #3")
     def test_add_reg_sft_ror(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x3)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x3)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x60000000)
+        self.assertEqual(self.rf.read("R3"), 0x60000000)
 
     @itest_setregs("R3=0xfffffff6", "R4=10")
     @itest_thumb("adcs r3, r4")
     def test_thumb_adc_basic(self):
-        self.assertEqual(self.rf.read('R3'), 0)
+        self.assertEqual(self.rf.read("R3"), 0)
 
     @itest_custom("adc r3, r1, r2")
     @itest_setregs("R1=1", "R2=2", "APSR_C=1")
     def test_adc_basic(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 4)
+        self.assertEqual(self.rf.read("R3"), 4)
 
     @itest_custom("adc r3, r1, r2, ror #3")
     @itest_setregs("R1=1", "R2=2", "APSR_C=1")
     def test_adc_reg_sft_ror(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x3)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x3)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x60000001)
+        self.assertEqual(self.rf.read("R3"), 0x60000001)
 
     # TODO what is shifter_carry_out in the manual, A8-291? it gets set to
     # Bit[0] presumably, but i have no clue what it is. Not mentioned again in
     # manual.
     @itest_custom("add r3, r1, r2, rrx")
     def test_add_reg_sft_rrx(self):
-        self.rf.write('APSR_C', 0x0)
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 2 ** 32 - 1)
+        self.rf.write("APSR_C", 0x0)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 2 ** 32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 2 ** 31 - 1)
+        self.assertEqual(self.rf.read("R3"), 2 ** 31 - 1)
 
     @itest_custom("add r3, r1, r2, rrx")
     def test_add_reg_sft_rrx2(self):
-        self.rf.write('APSR_C', 0x1)
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 2 ** 32 - 1)
+        self.rf.write("APSR_C", 0x1)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 2 ** 32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R3"), 2 ** 32 - 1)
 
     @itest_custom("add r3, r1, r2, lsl r4")
     def test_add_reg_sft_lsl_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R4', 0x3)
-        self.rf.write('R2', 0x1)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R4", 0x3)
+        self.rf.write("R2", 0x1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (1 << 3))
+        self.assertEqual(self.rf.read("R3"), (1 << 3))
 
     @itest_custom("add r3, r1, r2, lsr r4")
     def test_add_reg_sft_lsr_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R4', 0x3)
-        self.rf.write('R2', 0x8)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R4", 0x3)
+        self.rf.write("R2", 0x8)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (0x8 >> 3))
+        self.assertEqual(self.rf.read("R3"), (0x8 >> 3))
 
     @itest_custom("add r3, r1, r2, asr r4")
     def test_add_reg_sft_asr_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R4', 0x3)
-        self.rf.write('R2', 0x80000000)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R4", 0x3)
+        self.rf.write("R2", 0x80000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0xf0000000)
+        self.assertEqual(self.rf.read("R3"), 0xF0000000)
 
     @itest_custom("add r3, r1, r2, asr r4")
     def test_add_reg_sft_asr2_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R4', 0x3)
-        self.rf.write('R2', 0x40000000)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R4", 0x3)
+        self.rf.write("R2", 0x40000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (0x40000000 >> 3))
+        self.assertEqual(self.rf.read("R3"), (0x40000000 >> 3))
 
     @itest_custom("add r3, r1, r2, ror r4")
     def test_add_reg_sft_ror_norm_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R4', 0x3)
-        self.rf.write('R2', 0x8)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R4", 0x3)
+        self.rf.write("R2", 0x8)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read("R3"), 1)
 
     @itest_custom("add r3, r1, r2, ror r4")
     def test_add_reg_sft_ror_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R4', 0x3)
-        self.rf.write('R2', 0x3)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R4", 0x3)
+        self.rf.write("R2", 0x3)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x60000000)
+        self.assertEqual(self.rf.read("R3"), 0x60000000)
 
     @itest_custom("add r3, r1, r2, rrx")
     def test_add_reg_sft_rrx_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('APSR_C', 0x0)
-        self.rf.write('R2', 2 ** 32 - 1)
+        self.rf.write("R1", 0x0)
+        self.rf.write("APSR_C", 0x0)
+        self.rf.write("R2", 2 ** 32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 2 ** 31 - 1)
+        self.assertEqual(self.rf.read("R3"), 2 ** 31 - 1)
 
     @itest_custom("add r3, r1, r2, rrx")
     def test_add_reg_sft_rrx2_reg(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('APSR_C', 0x1)
-        self.rf.write('R2', 2 ** 32 - 1)
+        self.rf.write("R1", 0x0)
+        self.rf.write("APSR_C", 0x1)
+        self.rf.write("R2", 2 ** 32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R3"), 2 ** 32 - 1)
 
     # ADDS
 
     @itest_custom("adds r3, r1, 55")
     def test_adds_imm_norm(self):
-        self.rf.write('R1', 44)
+        self.rf.write("R1", 44)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 99)
+        self.assertEqual(self.rf.read("R3"), 99)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_custom("adds r3, r1, 0x100")
     def test_adds_imm_mod_imm_min(self):
-        self.rf.write('R1', 44)
+        self.rf.write("R1", 44)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0x100)
+        self.assertEqual(self.rf.read("R3"), 44 + 0x100)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_custom("adds r3, r1, 0xff000000")
     def test_adds_imm_mod_imm_max(self):
-        self.rf.write('R1', 44)
+        self.rf.write("R1", 44)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0xff000000)
+        self.assertEqual(self.rf.read("R3"), 44 + 0xFF000000)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     @itest_custom("adds r3, r1, 0x1000000")
     def test_adds_imm_carry(self):
-        self.rf.write('R1', 0xff000001)
+        self.rf.write("R1", 0xFF000001)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read("R3"), 1)
         self._checkFlagsNZCV(0, 0, 1, 0)
 
     @itest_custom("adds r3, r1, 0x80000000")
     def test_adds_imm_carry_overflow(self):
-        self.rf.write('R1', 0x80000001)
+        self.rf.write("R1", 0x80000001)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read("R3"), 1)
         self._checkFlagsNZCV(0, 0, 1, 1)
 
     @itest_custom("adds r3, r1, 0x1")
     def test_adds_imm_overflow(self):
-        self.rf.write('R1', (2 ** 31 - 1))
+        self.rf.write("R1", (2 ** 31 - 1))
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x80000000)
+        self.assertEqual(self.rf.read("R3"), 0x80000000)
         self._checkFlagsNZCV(1, 0, 0, 1)
 
     @itest_custom("adds r3, r3, 0x0")
     def test_adds_imm_zf(self):
-        self.rf.write('R3', 0)
+        self.rf.write("R3", 0)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0)
+        self.assertEqual(self.rf.read("R3"), 0)
         self._checkFlagsNZCV(0, 1, 0, 0)
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_norm(self):
-        self.rf.write('R1', 44)
-        self.rf.write('R2', 55)
+        self.rf.write("R1", 44)
+        self.rf.write("R2", 55)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 99)
+        self.assertEqual(self.rf.read("R3"), 99)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_mod_imm_min(self):
-        self.rf.write('R1', 44)
-        self.rf.write('R2', 0x100)
+        self.rf.write("R1", 44)
+        self.rf.write("R2", 0x100)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0x100)
+        self.assertEqual(self.rf.read("R3"), 44 + 0x100)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_mod_imm_max(self):
-        self.rf.write('R1', 44)
-        self.rf.write('R2', 0xff000000)
+        self.rf.write("R1", 44)
+        self.rf.write("R2", 0xFF000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 44 + 0xff000000)
+        self.assertEqual(self.rf.read("R3"), 44 + 0xFF000000)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_carry(self):
-        self.rf.write('R1', 0x1000000)
-        self.rf.write('R2', 0xff000001)
+        self.rf.write("R1", 0x1000000)
+        self.rf.write("R2", 0xFF000001)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read("R3"), 1)
         self._checkFlagsNZCV(0, 0, 1, 0)
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_overflow(self):
-        self.rf.write('R1', (2 ** 31 - 1))
-        self.rf.write('R2', 1)
+        self.rf.write("R1", (2 ** 31 - 1))
+        self.rf.write("R2", 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (1 << 31))
+        self.assertEqual(self.rf.read("R3"), (1 << 31))
         self._checkFlagsNZCV(1, 0, 0, 1)
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_carry_overflow(self):
-        self.rf.write('R1', 0x80000001)
-        self.rf.write('R2', 0x80000000)
+        self.rf.write("R1", 0x80000001)
+        self.rf.write("R2", 0x80000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read("R3"), 1)
         self._checkFlagsNZCV(0, 0, 1, 1)
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_zf(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x0)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x0)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0)
+        self.assertEqual(self.rf.read("R3"), 0)
         self._checkFlagsNZCV(0, 1, 0, 0)
 
     @itest_custom("adds r3, r1, r2, asr #3")
     def test_adds_reg_sft_asr(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x80000000)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x80000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0xf0000000)
+        self.assertEqual(self.rf.read("R3"), 0xF0000000)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     @itest_custom("adds r3, r1, r2, asr #3")
     def test_adds_reg_sft_asr2(self):
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x40000000)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 0x40000000)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), (0x40000000 >> 3))
+        self.assertEqual(self.rf.read("R3"), (0x40000000 >> 3))
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_custom("adds r3, r1, r2, rrx")
     def test_adds_reg_sft_rrx(self):
-        self.rf.write('APSR_C', 0x0)
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 2 ** 32 - 1)
+        self.rf.write("APSR_C", 0x0)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 2 ** 32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 2 ** 31 - 1)
+        self.assertEqual(self.rf.read("R3"), 2 ** 31 - 1)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_custom("adds r3, r1, r2, rrx")
     def test_adds_reg_sft_rrx2(self):
-        self.rf.write('APSR_C', 0x1)
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 2 ** 32 - 1)
+        self.rf.write("APSR_C", 0x1)
+        self.rf.write("R1", 0x0)
+        self.rf.write("R2", 2 ** 32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R3"), 2 ** 32 - 1)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     @itest_setregs("R0=0")
     @itest_thumb("adds r0, #4")
     def test_adds_thumb_two_op(self):
-        self.assertEqual(self.rf.read('R0'), 4)
+        self.assertEqual(self.rf.read("R0"), 4)
 
     # UADD8
 
     @itest_setregs("R2=0x00FF00FF", "R3=0x00010002")
     @itest_thumb("uadd8 r2, r2, r3")
     def test_uadd8(self):
-        self.assertEqual(self.rf.read('R2'), 1)
-        self.assertEqual(self.rf.read('APSR_GE'), 5)
+        self.assertEqual(self.rf.read("R2"), 1)
+        self.assertEqual(self.rf.read("APSR_GE"), 5)
 
     # LDR imm
 
@@ -717,14 +722,14 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_ldr_imm_off_none(self):
         self.cpu.stack_push(42)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
+        self.assertEqual(self.rf.read("R1"), 42)
         self.assertEqual(self.cpu.mode, CS_MODE_ARM)
 
     @itest_custom("ldr pc, [sp]")
     def test_ldr_imm_off_none_to_thumb(self):
         self.cpu.stack_push(43)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R15'), 42)
+        self.assertEqual(self.rf.read("R15"), 42)
         self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     @itest_custom("ldr r1, [sp, #4]")
@@ -732,7 +737,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(42)
         self.cpu.stack_push(41)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
+        self.assertEqual(self.rf.read("R1"), 42)
 
     @itest_custom("ldr r1, [sp, #-4]")
     def test_ldr_imm_off_neg(self):
@@ -740,7 +745,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(41)
         self.cpu.STACK += 4
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 41)
+        self.assertEqual(self.rf.read("R1"), 41)
 
     @itest_custom("ldr r1, [sp, #4]!")
     def test_ldr_imm_preind_pos(self):
@@ -748,8 +753,8 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(41)
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('SP'), pre_stack + 4)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("SP"), pre_stack + 4)
 
     @itest_custom("ldr r1, [sp, #-4]!")
     def test_ldr_imm_preind_neg(self):
@@ -758,100 +763,100 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.STACK += 4
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 41)
-        self.assertEqual(self.rf.read('SP'), pre_stack - 4)
+        self.assertEqual(self.rf.read("R1"), 41)
+        self.assertEqual(self.rf.read("SP"), pre_stack - 4)
 
     @itest_custom("ldr r1, [sp], #5")
     def test_ldr_imm_postind_pos(self):
         self.cpu.stack_push(42)
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('SP'), pre_stack + 5)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("SP"), pre_stack + 5)
 
     @itest_custom("ldr r1, [sp], #-5")
     def test_ldr_imm_postind_neg(self):
         self.cpu.stack_push(42)
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('SP'), pre_stack - 5)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("SP"), pre_stack - 5)
 
     # LDR reg
 
     @itest_custom("ldr r1, [sp, r2]")
     def test_ldr_reg_off(self):
-        self.cpu.regfile.write('R2', 4)
+        self.cpu.regfile.write("R2", 4)
         self.cpu.stack_push(42)
         self.cpu.stack_push(48)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
+        self.assertEqual(self.rf.read("R1"), 42)
 
     @itest_custom("ldr r1, [sp, -r2]")
     def test_ldr_reg_off_neg(self):
-        self.cpu.regfile.write('R2', 4)
+        self.cpu.regfile.write("R2", 4)
         self.cpu.stack_push(42)
         self.cpu.stack_push(48)
         self.cpu.STACK += 4
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 48)
+        self.assertEqual(self.rf.read("R1"), 48)
 
     @itest_custom("ldr r1, [sp, r2, lsl #3]")
     def test_ldr_reg_off_shift(self):
-        self.cpu.regfile.write('R2', 1)
+        self.cpu.regfile.write("R2", 1)
         self.cpu.stack_push(42)
         self.cpu.stack_push(48)
         self.cpu.stack_push(40)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
+        self.assertEqual(self.rf.read("R1"), 42)
 
     @itest_custom("ldr r1, [sp, -r2, lsl #3]")
     def test_ldr_reg_off_neg_shift(self):
-        self.cpu.regfile.write('R2', 1)
+        self.cpu.regfile.write("R2", 1)
         self.cpu.stack_push(42)
         self.cpu.stack_push(48)
         self.cpu.STACK += 8
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 48)
+        self.assertEqual(self.rf.read("R1"), 48)
 
     @itest_custom("ldr r1, [sp, r2]!")
     def test_ldr_reg_preind(self):
-        self.cpu.regfile.write('R2', 4)
+        self.cpu.regfile.write("R2", 4)
         self.cpu.stack_push(42)
         self.cpu.stack_push(48)
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('SP'), pre_stack + 4)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("SP"), pre_stack + 4)
 
     @itest_custom("ldr r1, [sp, -r2, lsl #3]!")
     def test_ldr_reg_preind_shift(self):
-        self.cpu.regfile.write('R2', 1)
+        self.cpu.regfile.write("R2", 1)
         self.cpu.stack_push(42)
         self.cpu.stack_push(48)
         self.cpu.STACK += 8
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 48)
-        self.assertEqual(self.rf.read('SP'), pre_stack - 8)
+        self.assertEqual(self.rf.read("R1"), 48)
+        self.assertEqual(self.rf.read("SP"), pre_stack - 8)
 
     @itest_custom("ldr r1, [sp], r2")
     def test_ldr_reg_postind(self):
-        self.cpu.regfile.write('R2', 4)
+        self.cpu.regfile.write("R2", 4)
         self.cpu.stack_push(42)
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('SP'), pre_stack + 4)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("SP"), pre_stack + 4)
 
     @itest_custom("ldr r1, [sp], -r2, lsl #3")
     def test_ldr_reg_postind_neg_shift(self):
-        self.cpu.regfile.write('R2', 1)
+        self.cpu.regfile.write("R2", 1)
         self.cpu.stack_push(42)
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('SP'), pre_stack - 8)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("SP"), pre_stack - 8)
 
     @itest_custom("ldrd r2, [sp]")
     def test_ldrd(self):
@@ -860,16 +865,16 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(r3)
         self.cpu.stack_push(r2)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), r2)
-        self.assertEqual(self.rf.read('R3'), r3)
+        self.assertEqual(self.rf.read("R2"), r2)
+        self.assertEqual(self.rf.read("R3"), r3)
 
     @itest_custom("pop {r1}")
     def test_pop_one_reg(self):
         self.cpu.stack_push(0x55)
         pre_stack = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0x55)
-        self.assertEqual(self.rf.read('SP'), pre_stack + 4)
+        self.assertEqual(self.rf.read("R1"), 0x55)
+        self.assertEqual(self.rf.read("SP"), pre_stack + 4)
 
     @itest_custom("pop {r1, r2, r3}")
     def test_pop_multops(self):
@@ -877,15 +882,15 @@ class Armv7CpuInstructions(unittest.TestCase):
         for v in vals:
             self.cpu.stack_push(v)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0xAA)
-        self.assertEqual(self.rf.read('R2'), 0x55)
-        self.assertEqual(self.rf.read('R3'), 0x01)
+        self.assertEqual(self.rf.read("R1"), 0xAA)
+        self.assertEqual(self.rf.read("R2"), 0x55)
+        self.assertEqual(self.rf.read("R3"), 0x01)
 
     @itest_custom("push {r1}")
     @itest_setregs("R1=3")
     def test_push_one_reg(self):
         self.cpu.execute()
-        self.assertEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
+        self.assertEqual(b"".join(self.cpu.stack_peek()), struct.pack("<I", 3))
 
     @itest_custom("push {r1, r2, r3}")
     @itest_setregs("R1=3", "R2=0x55", "R3=0xffffffff")
@@ -893,16 +898,16 @@ class Armv7CpuInstructions(unittest.TestCase):
         pre_sp = self.cpu.STACK
         self.cpu.execute()
         sp = self.cpu.STACK
-        self.assertEqual(self.rf.read('SP'), pre_sp - (3 * 4))
-        self.assertEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
+        self.assertEqual(self.rf.read("SP"), pre_sp - (3 * 4))
+        self.assertEqual(b"".join(self.cpu.stack_peek()), struct.pack("<I", 3))
         self.assertEqual(self.cpu.read_int(sp + 4, self.cpu.address_bit_size), 0x55)
-        self.assertEqual(self.cpu.read_int(sp + 8, self.cpu.address_bit_size), 0xffffffff)
+        self.assertEqual(self.cpu.read_int(sp + 8, self.cpu.address_bit_size), 0xFFFFFFFF)
 
     @itest_custom("str SP, [R1]")
     @itest_setregs("R1=0xd000")
     def test_str_basic(self):
-        r1 = self.rf.read('R1')
-        sp = self.rf.read('SP')
+        r1 = self.rf.read("R1")
+        sp = self.rf.read("SP")
         self.cpu.execute()
         dr1 = self.cpu.read_int(r1, self.cpu.address_bit_size)
         self.assertEqual(sp, dr1)
@@ -910,9 +915,9 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("str R1, [R2, R3]")
     @itest_setregs("R1=34", "R2=0xD000", "R3=8")
     def test_str_index(self):
-        r1 = self.rf.read('R1')
-        r2 = self.rf.read('R2')
-        r3 = self.rf.read('R3')
+        r1 = self.rf.read("R1")
+        r2 = self.rf.read("R2")
+        r3 = self.rf.read("R3")
         self.cpu.execute()
         retrieved = self.cpu.read_int(r2 + r3, self.cpu.address_bit_size)
         self.assertEqual(retrieved, r1)
@@ -920,9 +925,9 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("str R1, [R2, R3, LSL #3]")
     @itest_setregs("R1=34", "R2=0xD000", "R3=1")
     def test_str_index_w_shift(self):
-        r1 = self.rf.read('R1')
-        r2 = self.rf.read('R2')
-        r3 = self.rf.read('R3')
+        r1 = self.rf.read("R1")
+        r2 = self.rf.read("R2")
+        r3 = self.rf.read("R3")
         r3 = r3 << 3
         self.cpu.execute()
         retrieved = self.cpu.read_int(r2 + r3, self.cpu.address_bit_size)
@@ -931,46 +936,46 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("str R1, [R2], #3")
     @itest_setregs("R1=34", "R2=0xD000")
     def test_str_postindex(self):
-        r1 = self.rf.read('R1')
-        r2 = self.rf.read('R2')
+        r1 = self.rf.read("R1")
+        r2 = self.rf.read("R2")
         self.cpu.execute()
         # check store results
         data = self.cpu.read_int(r2, self.cpu.address_bit_size)
         self.assertEqual(data, r1)
         # check writeback results
-        new_r2 = self.rf.read('R2')
+        new_r2 = self.rf.read("R2")
         self.assertEqual(new_r2, r2 + 3)
 
     @itest_custom("str R1, [R2, #3]!")
     @itest_setregs("R1=34", "R2=0xD000")
     def test_str_index_writeback(self):
-        r1 = self.rf.read('R1')
-        r2 = self.rf.read('R2')
+        r1 = self.rf.read("R1")
+        r2 = self.rf.read("R2")
         self.cpu.execute()
         # check store results
         data = self.cpu.read_int(r2 + 3, self.cpu.address_bit_size)
         self.assertEqual(data, r1)
         # check writeback results
-        new_r2 = self.rf.read('R2')
+        new_r2 = self.rf.read("R2")
         self.assertEqual(new_r2, r2 + 3)
 
     @itest_custom("strd R2, [R1]")
     @itest_setregs("R1=0xD000", "R2=34", "R3=35")
     def test_strd(self):
-        r1 = self.rf.read('R1')
-        r2 = self.rf.read('R2')
-        r3 = self.rf.read('R3')
+        r1 = self.rf.read("R1")
+        r2 = self.rf.read("R2")
+        r3 = self.rf.read("R3")
         self.cpu.execute()
         dr2 = self.cpu.read_int(r1, self.cpu.address_bit_size)
-        dr3 = self.cpu.read_int(r1+4, self.cpu.address_bit_size)
+        dr3 = self.cpu.read_int(r1 + 4, self.cpu.address_bit_size)
         self.assertEqual(dr2, r2)
         self.assertEqual(dr3, r3)
 
     @itest_custom("str R2, [R1]")
     @itest_setregs("R1=0xD000", "R2=34")
     def test_str(self):
-        r1 = self.rf.read('R1')
-        r2 = self.rf.read('R2')
+        r1 = self.rf.read("R1")
+        r2 = self.rf.read("R2")
         self.cpu.execute()
         dr2 = self.cpu.read_int(r1, self.cpu.address_bit_size)
         self.assertEqual(dr2, r2)
@@ -979,81 +984,81 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("adr r0, #16", mode=CS_MODE_THUMB)
     def test_adr(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), (pre_pc + 4) + 16)  # adr is 4 bytes long
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 4) + 16)  # adr is 4 bytes long
 
     # ADDW
 
     @itest_setregs("R1=0x1234")
     @itest_thumb("addw r0, r1, #0x2a")
     def test_addw(self):
-        self.assertEqual(self.rf.read('R0'), 0x1234 + 0x2a)
+        self.assertEqual(self.rf.read("R0"), 0x1234 + 0x2A)
 
     @itest_custom("addw r0, pc, #0x2a", mode=CS_MODE_THUMB)
     def test_addw_pc_relative(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), (pre_pc + 4) + 0x2a)  # addw is 4 bytes long
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 4) + 0x2A)  # addw is 4 bytes long
 
     # SUBW
 
     @itest_setregs("R1=0x1234")
     @itest_thumb("subw r0, r1, #0x2a")
     def test_subw(self):
-        self.assertEqual(self.rf.read('R0'), 0x1234 - 0x2a)
+        self.assertEqual(self.rf.read("R0"), 0x1234 - 0x2A)
 
     @itest_custom("subw r0, pc, #0x2a", mode=CS_MODE_THUMB)
     def test_subw_pc_relative(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), (pre_pc + 4) - 0x2a)  # subw is 4 bytes long
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 4) - 0x2A)  # subw is 4 bytes long
 
     # BL
 
     @itest_custom("bl 0x170")
     def test_bl(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 0x170)
-        self.assertEqual(self.rf.read('LR'), pre_pc + 4)
+        self.assertEqual(self.rf.read("PC"), pre_pc + 0x170)
+        self.assertEqual(self.rf.read("LR"), pre_pc + 4)
 
     @itest_custom("bl #-4")
     def test_bl_neg(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc - 4)
-        self.assertEqual(self.rf.read('LR'), pre_pc + 4)
+        self.assertEqual(self.rf.read("PC"), pre_pc - 4)
+        self.assertEqual(self.rf.read("LR"), pre_pc + 4)
 
     # CBZ/CBNZ
 
     @itest_setregs("R0=0")
     @itest_custom("cbz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbz_taken(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 0x2a)
+        self.assertEqual(self.rf.read("PC"), pre_pc + 0x2A)
 
     @itest_setregs("R0=1")
     @itest_custom("cbz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbz_not_taken(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 2)  # cbz is 2 bytes long
+        self.assertEqual(self.rf.read("PC"), pre_pc + 2)  # cbz is 2 bytes long
 
     @itest_setregs("R0=1")
     @itest_custom("cbnz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbnz_taken(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 0x2a)
+        self.assertEqual(self.rf.read("PC"), pre_pc + 0x2A)
 
     @itest_setregs("R0=0")
     @itest_custom("cbnz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbnz_not_taken(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 2)  # cbnz is 2 bytes long
+        self.assertEqual(self.rf.read("PC"), pre_pc + 2)  # cbnz is 2 bytes long
 
     # TBB/TBH
 
@@ -1063,11 +1068,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # Write the table of offsets at 0xd000 (R0)
         # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
-            self.mem.write(0xd000 + i, struct.pack('<B', offset))
+            self.mem.write(0xD000 + i, struct.pack("<B", offset))
 
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbb is 4 bytes long
+        self.assertEqual(self.rf.read("PC"), (pre_pc + 4) + 42)  # tbb is 4 bytes long
 
     @itest_setregs("R1=1")
     @itest_custom("tbb [pc, r1]", mode=CS_MODE_THUMB)
@@ -1075,11 +1080,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # Write the table of offsets after the instruction
         # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
-            self.mem.write(self.cpu.PC + 4 + i, struct.pack('<B', offset))
+            self.mem.write(self.cpu.PC + 4 + i, struct.pack("<B", offset))
 
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbb is 4 bytes long
+        self.assertEqual(self.rf.read("PC"), (pre_pc + 4) + 42)  # tbb is 4 bytes long
 
     @itest_setregs("R0=0xd000", "R1=1")
     @itest_custom("tbh [r0, r1, lsl #1]", mode=CS_MODE_THUMB)
@@ -1087,11 +1092,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # Write the table of offsets at 0xd000 (R0)
         # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
-            self.mem.write(0xd000 + i * 2, struct.pack('<H', offset))
+            self.mem.write(0xD000 + i * 2, struct.pack("<H", offset))
 
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbh is 4 bytes long
+        self.assertEqual(self.rf.read("PC"), (pre_pc + 4) + 42)  # tbh is 4 bytes long
 
     @itest_setregs("R1=1")
     @itest_custom("tbh [pc, r1, lsl #1]", mode=CS_MODE_THUMB)
@@ -1099,11 +1104,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # Write the table of offsets after the instruction
         # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
-            self.mem.write(self.cpu.PC + 4 + i * 2, struct.pack('<H', offset))
+            self.mem.write(self.cpu.PC + 4 + i * 2, struct.pack("<H", offset))
 
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbh is 4 bytes long
+        self.assertEqual(self.rf.read("PC"), (pre_pc + 4) + 42)  # tbh is 4 bytes long
 
     # CMP
 
@@ -1143,67 +1148,67 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R2=0xFFFF")
     def test_clz_sixteen_zeroes(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 16)
+        self.assertEqual(self.rf.read("R1"), 16)
 
     @itest_custom("clz r1, r2")
     @itest_setregs("R2=0")
     def test_clz_all_zero(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), self.cpu.address_bit_size)
+        self.assertEqual(self.rf.read("R1"), self.cpu.address_bit_size)
 
     @itest_custom("clz r1, r2")
     @itest_setregs("R2=0xffffffff")
     def test_clz_no_leading_zeroes(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0)
+        self.assertEqual(self.rf.read("R1"), 0)
 
     @itest_custom("clz r1, r2")
     @itest_setregs("R2=0x7fffffff")
     def test_clz_one_leading_zero(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read("R1"), 1)
 
     @itest_custom("clz r1, r2")
     @itest_setregs("R2=0x7f7fffff")
     def test_clz_lead_zero_then_more_zeroes(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read("R1"), 1)
 
     @itest_custom("sub r3, r1, r2")
     @itest_setregs("R1=4", "R2=2")
     def test_sub_basic(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 2)
+        self.assertEqual(self.rf.read("R3"), 2)
 
     @itest_setregs("R3=0xE")
     @itest_thumb("sub r3, #12")
     def test_thumb_sub_basic(self):
-        self.assertEqual(self.rf.read('R3'), 2)
+        self.assertEqual(self.rf.read("R3"), 2)
 
     @itest_custom("sub r3, r1, #5")
     @itest_setregs("R1=10")
     def test_sub_imm(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 5)
+        self.assertEqual(self.rf.read("R3"), 5)
 
     @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R1=0x04030201", "R2=0x01010101")
     def test_uqsub8_concrete(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x03020100)
+        self.assertEqual(self.rf.read("R3"), 0x03020100)
 
     @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R1=0x05040302", "R2=0x07050101")
     def test_uqsub8_concrete_saturated(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 0x00000201)
+        self.assertEqual(self.rf.read("R3"), 0x00000201)
 
     @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R2=0x01010101")
     def test_uqsub8_sym(self):
-        op1 = BitVecVariable(32, 'op1')
+        op1 = BitVecVariable(32, "op1")
         self.cpu.memory.constraints.add(op1 >= 0x04030201)
-        self.cpu.memory.constraints.add(op1 <  0x04030204)
+        self.cpu.memory.constraints.add(op1 < 0x04030204)
         self.cpu.R1 = op1
         self.cpu.execute()
         all_vals = solver.get_all_values(self.cpu.memory.constraints, self.cpu.R3)
@@ -1213,12 +1218,12 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R1=10")
     def test_sbc_imm(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R3'), 4)
+        self.assertEqual(self.rf.read("R3"), 4)
 
-    @itest_setregs("R0=0","R3=0xffffffff")
+    @itest_setregs("R0=0", "R3=0xffffffff")
     @itest_thumb("sbcs r0, r3")
     def test_sbc_thumb(self):
-        self.assertEqual(self.rf.read('R0'), 0)
+        self.assertEqual(self.rf.read("R0"), 0)
 
     # LDM/LDMIB/LDMDA/LDMDB
 
@@ -1229,9 +1234,9 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(42)
         pre_sp = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('R2'), 2)
-        self.assertEqual(self.rf.read('R3'), 0x41414141)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("R2"), 2)
+        self.assertEqual(self.rf.read("R3"), 0x41414141)
         self.assertEqual(self.cpu.STACK, pre_sp)
 
     @itest_custom("ldm sp!, {r1, r2, r3}")
@@ -1241,9 +1246,9 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(42)
         pre_sp = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 42)
-        self.assertEqual(self.rf.read('R2'), 2)
-        self.assertEqual(self.rf.read('R3'), 0x41414141)
+        self.assertEqual(self.rf.read("R1"), 42)
+        self.assertEqual(self.rf.read("R2"), 2)
+        self.assertEqual(self.rf.read("R3"), 0x41414141)
         self.assertEqual(self.cpu.STACK, pre_sp + 12)
 
     @itest_setregs("R0=0xd100")
@@ -1251,60 +1256,60 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_ldmia(self):
         # IA - Increment After
         # so the first value read should be at 0xd100
-        self.cpu.write_int(0xd100+0x0, 1, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100+0x4, 2, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100+0x8, 3, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 + 0x0, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 + 0x4, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 + 0x8, 3, self.cpu.address_bit_size)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 1)
-        self.assertEqual(self.rf.read('R2'), 2)
-        self.assertEqual(self.rf.read('R3'), 3)
+        self.assertEqual(self.rf.read("R1"), 1)
+        self.assertEqual(self.rf.read("R2"), 2)
+        self.assertEqual(self.rf.read("R3"), 3)
         # and the writeback should be 0xd10c
-        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 + 0xC)
 
     @itest_setregs("R0=0xd100")
     @itest_custom("ldmib r0!, {r1, r2, r3}")
     def test_ldmib(self):
         # IB - Increment Before
         # so the first value read should be at 0xd104
-        self.cpu.write_int(0xd100+0x4, 1, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100+0x8, 2, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100+0xc, 3, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 + 0x4, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 + 0x8, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 + 0xC, 3, self.cpu.address_bit_size)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 1)
-        self.assertEqual(self.rf.read('R2'), 2)
-        self.assertEqual(self.rf.read('R3'), 3)
+        self.assertEqual(self.rf.read("R1"), 1)
+        self.assertEqual(self.rf.read("R2"), 2)
+        self.assertEqual(self.rf.read("R3"), 3)
         # and the writeback should be 0xd10c
-        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 + 0xC)
 
     @itest_setregs("R0=0xd100")
     @itest_custom("ldmda r0!, {r1, r2, r3}")
     def test_ldmda(self):
         # DA - Decrement After
         # so the first value read should be at 0xd100
-        self.cpu.write_int(0xd100-0x0, 1, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100-0x4, 2, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100-0x8, 3, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 - 0x0, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 - 0x4, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 - 0x8, 3, self.cpu.address_bit_size)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 1)
-        self.assertEqual(self.rf.read('R2'), 2)
-        self.assertEqual(self.rf.read('R3'), 3)
+        self.assertEqual(self.rf.read("R1"), 1)
+        self.assertEqual(self.rf.read("R2"), 2)
+        self.assertEqual(self.rf.read("R3"), 3)
         # and the writeback should be 0xd0f8
-        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 - 0xC)
 
     @itest_setregs("R0=0xd100")
     @itest_custom("ldmdb r0!, {r1, r2, r3}")
     def test_ldmdb(self):
         # DB - Decrement Before
         # so the first value read should be at 0xd0fc
-        self.cpu.write_int(0xd100-0x4, 1, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100-0x8, 2, self.cpu.address_bit_size)
-        self.cpu.write_int(0xd100-0xc, 3, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 - 0x4, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 - 0x8, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xD100 - 0xC, 3, self.cpu.address_bit_size)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 1)
-        self.assertEqual(self.rf.read('R2'), 2)
-        self.assertEqual(self.rf.read('R3'), 3)
+        self.assertEqual(self.rf.read("R1"), 1)
+        self.assertEqual(self.rf.read("R2"), 2)
+        self.assertEqual(self.rf.read("R3"), 3)
         # and the writeback should be 0xd0f8
-        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 - 0xC)
 
     # STM/STMIB/STMDA/STMDB
 
@@ -1336,11 +1341,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # IA = Increment After
         self.cpu.execute()
         # so the first value written should be at 0xd100
-        self.assertEqual(self.cpu.read_int(0xd100+0x0, self.cpu.address_bit_size), 1)
-        self.assertEqual(self.cpu.read_int(0xd100+0x4, self.cpu.address_bit_size), 2)
-        self.assertEqual(self.cpu.read_int(0xd100+0x8, self.cpu.address_bit_size), 3)
+        self.assertEqual(self.cpu.read_int(0xD100 + 0x0, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xD100 + 0x4, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xD100 + 0x8, self.cpu.address_bit_size), 3)
         # and the writeback should be 0xd100c
-        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 + 0xC)
 
     @itest_setregs("R0=0xd100", "R1=1", "R2=2", "R3=3")
     @itest_custom("stmib r0!, {r1, r2, r3}")
@@ -1348,11 +1353,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # IB = Increment Before
         self.cpu.execute()
         # so the first value written should be at 0xd104
-        self.assertEqual(self.cpu.read_int(0xd100+0x4, self.cpu.address_bit_size), 1)
-        self.assertEqual(self.cpu.read_int(0xd100+0x8, self.cpu.address_bit_size), 2)
-        self.assertEqual(self.cpu.read_int(0xd100+0xc, self.cpu.address_bit_size), 3)
+        self.assertEqual(self.cpu.read_int(0xD100 + 0x4, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xD100 + 0x8, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xD100 + 0xC, self.cpu.address_bit_size), 3)
         # and the writeback should be 0xd100c
-        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 + 0xC)
 
     @itest_setregs("R0=0xd100", "R1=1", "R2=2", "R3=3")
     @itest_custom("stmda r0!, {r1, r2, r3}")
@@ -1360,11 +1365,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # DA = Decrement After
         self.cpu.execute()
         # so the first value written should be at 0xd100
-        self.assertEqual(self.cpu.read_int(0xd100-0x0, self.cpu.address_bit_size), 1)
-        self.assertEqual(self.cpu.read_int(0xd100-0x4, self.cpu.address_bit_size), 2)
-        self.assertEqual(self.cpu.read_int(0xd100-0x8, self.cpu.address_bit_size), 3)
+        self.assertEqual(self.cpu.read_int(0xD100 - 0x0, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xD100 - 0x4, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xD100 - 0x8, self.cpu.address_bit_size), 3)
         # and the writeback should be 0xd0f8
-        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 - 0xC)
 
     @itest_setregs("R0=0xd100", "R1=1", "R2=2", "R3=3")
     @itest_custom("stmdb r0!, {r1, r2, r3}")
@@ -1372,11 +1377,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         # DB = Decrement Before
         self.cpu.execute()
         # so the first value written should be at 0xd0fc
-        self.assertEqual(self.cpu.read_int(0xd100-0x4, self.cpu.address_bit_size), 1)
-        self.assertEqual(self.cpu.read_int(0xd100-0x8, self.cpu.address_bit_size), 2)
-        self.assertEqual(self.cpu.read_int(0xd100-0xc, self.cpu.address_bit_size), 3)
+        self.assertEqual(self.cpu.read_int(0xD100 - 0x4, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xD100 - 0x8, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xD100 - 0xC, self.cpu.address_bit_size), 3)
         # and the writeback should be 0xd0f8
-        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+        self.assertEqual(self.rf.read("R0"), 0xD100 - 0xC)
 
     # BX
 
@@ -1384,15 +1389,15 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R1=0x1008")
     def test_bx_basic(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), 0x1008)
+        self.assertEqual(self.rf.read("PC"), 0x1008)
         self.assertEqual(self.cpu.mode, CS_MODE_ARM)
 
     @itest_custom("bx r1")
     @itest_setregs("R1=0x1009")
     def test_bx_thumb(self):
-        pre_pc = self.rf.read('PC')
+        pre_pc = self.rf.read("PC")
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 4)
+        self.assertEqual(self.rf.read("PC"), pre_pc + 4)
         self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     # ORR
@@ -1401,45 +1406,45 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R3=0x1000")
     def test_orr_imm(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x1005)
+        self.assertEqual(self.rf.read("R2"), 0x1005)
 
     @itest_setregs("R3=0x1000")
     @itest_thumb("orr r3, #5")
     def test_thumb_orr_imm(self):
-        self.assertEqual(self.rf.read('R3'), 0x1005)
+        self.assertEqual(self.rf.read("R3"), 0x1005)
 
     @itest_custom("orrs r2, r3")
     @itest_setregs("R2=0x5", "R3=0x80000000")
     def test_orrs_imm_flags(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x80000005)
-        self.assertEqual(self.rf.read('APSR_N'), True)
+        self.assertEqual(self.rf.read("R2"), 0x80000005)
+        self.assertEqual(self.rf.read("APSR_N"), True)
 
     @itest_custom("orr r2, r3")
     @itest_setregs("R2=0x5", "R3=0x80000000")
     def test_orr_reg_w_flags(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x80000005)
+        self.assertEqual(self.rf.read("R2"), 0x80000005)
         # self.assertEqual(self.rf.read('APSR_N'), 1)
 
     @itest_custom("orr r2, r3, r4")
     @itest_setregs("R3=0x5", "R4=0x80000000")
     def test_orr_reg_two_op(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x80000005)
+        self.assertEqual(self.rf.read("R2"), 0x80000005)
         # self.assertEqual(self.rf.read('APSR_N'), 1)
 
     @itest_custom("orr r2, r3, r4, LSL #4")
     @itest_setregs("R3=0x5", "R4=0xF")
     def test_orr_reg_two_op_shifted(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0xF5)
+        self.assertEqual(self.rf.read("R2"), 0xF5)
 
     # ORN
     @itest_setregs("R2=0x0", "R5=0xFFFFFFFA")
     @itest_thumb("orn r2, r2, r5")
     def test_orn(self):
-        self.assertEqual(self.rf.read('R2'), 0x5)
+        self.assertEqual(self.rf.read("R2"), 0x5)
 
     # EOR
 
@@ -1447,38 +1452,38 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R3=0xA")
     def test_eor_imm(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0xF)
+        self.assertEqual(self.rf.read("R2"), 0xF)
 
     @itest_setregs("R3=0xA")
     @itest_thumb("eor r3, #5")
     def test_thumb_eor_imm(self):
-        self.assertEqual(self.rf.read('R3'), 0xF)
+        self.assertEqual(self.rf.read("R3"), 0xF)
 
     @itest_custom("eors r2, r3")
     @itest_setregs("R2=0xAA", "R3=0x80000000")
     def test_eors_imm_flags(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x800000AA)
-        self.assertEqual(self.rf.read('APSR_N'), True)
+        self.assertEqual(self.rf.read("R2"), 0x800000AA)
+        self.assertEqual(self.rf.read("APSR_N"), True)
 
     @itest_custom("eors r2, r3")
     @itest_setregs("R2=0x5", "R3=0x80000005")
     def test_eor_reg_w_flags(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x80000000)
-        self.assertEqual(self.rf.read('APSR_N'), 1)
+        self.assertEqual(self.rf.read("R2"), 0x80000000)
+        self.assertEqual(self.rf.read("APSR_N"), 1)
 
     @itest_custom("eor r2, r3, r4")
     @itest_setregs("R3=0x80000005", "R4=0x80000005")
     def test_eor_reg_two_op(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0)
+        self.assertEqual(self.rf.read("R2"), 0)
 
     @itest_custom("eor r2, r3, r4, LSL #4")
     @itest_setregs("R3=0x55", "R4=0x5")
     def test_eor_reg_two_op_shifted(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x5)
+        self.assertEqual(self.rf.read("R2"), 0x5)
 
     # LDRH - see also LDR tests
 
@@ -1486,7 +1491,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_ldrh_imm_off_none(self):
         self.cpu.stack_push(0x41410041)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0x41)
+        self.assertEqual(self.rf.read("R1"), 0x41)
 
     @itest_custom("ldrh r1, [sp, r2]")
     @itest_setregs("R2=4")
@@ -1494,37 +1499,37 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(0x41410041)
         self.cpu.stack_push(48)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0x41)
+        self.assertEqual(self.rf.read("R1"), 0x41)
 
     # LDRSH - see also LDR tests
 
     @itest_custom("ldrsh r1, [sp]")
     def test_ldrsh_imm_off_none_neg(self):
-        self.cpu.stack_push(0x2ff0f)
+        self.cpu.stack_push(0x2FF0F)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0xffffff0f)
+        self.assertEqual(self.rf.read("R1"), 0xFFFFFF0F)
 
     @itest_custom("ldrsh r1, [sp]")
     def test_ldrsh_imm_off_none_pos(self):
-        self.cpu.stack_push(0xff0fff)
+        self.cpu.stack_push(0xFF0FFF)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0x0fff)
+        self.assertEqual(self.rf.read("R1"), 0x0FFF)
 
     @itest_custom("ldrsh r1, [sp, r2]")
     @itest_setregs("R2=4")
     def test_ldrsh_reg_off_neg(self):
-        self.cpu.stack_push(0x2ff0f)
+        self.cpu.stack_push(0x2FF0F)
         self.cpu.stack_push(48)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0xffffff0f)
+        self.assertEqual(self.rf.read("R1"), 0xFFFFFF0F)
 
     @itest_custom("ldrsh r1, [sp, r2]")
     @itest_setregs("R2=4")
     def test_ldrsh_reg_off_pos(self):
-        self.cpu.stack_push(0xff0fff)
+        self.cpu.stack_push(0xFF0FFF)
         self.cpu.stack_push(48)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0x0fff)
+        self.assertEqual(self.rf.read("R1"), 0x0FFF)
 
     # LDRB - see also LDR tests
 
@@ -1532,7 +1537,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_ldrb_imm_off_none(self):
         self.cpu.stack_push(0x41)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0x41)
+        self.assertEqual(self.rf.read("R1"), 0x41)
 
     @itest_custom("ldrb r1, [sp, r2]")
     @itest_setregs("R2=4")
@@ -1540,37 +1545,37 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(0x41)
         self.cpu.stack_push(48)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0x41)
+        self.assertEqual(self.rf.read("R1"), 0x41)
 
     # LDRSB - see also LDR tests
 
     @itest_custom("ldrsb r1, [sp]")
     def test_ldrsb_imm_off_none_neg(self):
-        self.cpu.stack_push(0x2ff)
+        self.cpu.stack_push(0x2FF)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), Mask(32))
+        self.assertEqual(self.rf.read("R1"), Mask(32))
 
     @itest_custom("ldrsb r1, [sp]")
     def test_ldrsb_imm_off_none_pos(self):
-        self.cpu.stack_push(0xff0f)
+        self.cpu.stack_push(0xFF0F)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0xf)
+        self.assertEqual(self.rf.read("R1"), 0xF)
 
     @itest_custom("ldrsb r1, [sp, r2]")
     @itest_setregs("R2=4")
     def test_ldrsb_reg_off_neg(self):
-        self.cpu.stack_push(0x2ff)
+        self.cpu.stack_push(0x2FF)
         self.cpu.stack_push(48)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), Mask(32))
+        self.assertEqual(self.rf.read("R1"), Mask(32))
 
     @itest_custom("ldrsb r1, [sp, r2]")
     @itest_setregs("R2=4")
     def test_ldrsb_reg_off_pos(self):
-        self.cpu.stack_push(0xff0f)
+        self.cpu.stack_push(0xFF0F)
         self.cpu.stack_push(48)
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R1'), 0xf)
+        self.assertEqual(self.rf.read("R1"), 0xF)
 
     # TST
     @itest_setregs("R1=1", "R3=0")
@@ -1582,18 +1587,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R2=5")
     @itest("and r2, r2, #1")
     def test_and_imm(self):
-        self.assertEqual(self.rf.read('R2'), 1)
+        self.assertEqual(self.rf.read("R2"), 1)
 
     @itest_setregs("R1=5", "R2=3")
     @itest("and r1, r1, r2")
     def test_and_reg(self):
-        self.assertEqual(self.rf.read('R1'), 3 & 5)
+        self.assertEqual(self.rf.read("R1"), 3 & 5)
 
     @itest_setregs("R1=5", "R2=3", "APSR_C=1")
     @itest("and r1, r1, r2")
     def test_and_reg_carry(self):
-        self.assertEqual(self.rf.read('R1'), 3 & 5)
-        self.assertEqual(self.rf.read('APSR_C'), 1)
+        self.assertEqual(self.rf.read("R1"), 3 & 5)
+        self.assertEqual(self.rf.read("APSR_C"), 1)
 
     # svc
 
@@ -1607,25 +1612,25 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R3=0x11")
     @itest("lsls r4, r3, 1")
     def test_lsl_imm_min(self):
-        self.assertEqual(self.rf.read('R4'), 0x11 << 1)
+        self.assertEqual(self.rf.read("R4"), 0x11 << 1)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_setregs("R3=0x11")
     @itest("lsls r4, r3, 31")
     def test_lsl_imm_max(self):
-        self.assertEqual(self.rf.read('R4'), 1 << 31)
+        self.assertEqual(self.rf.read("R4"), 1 << 31)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     @itest_setregs("R3=0x11", "R2=0xff01")
     @itest("lsls r4, r3, r2")
     def test_lsl_reg_min(self):
-        self.assertEqual(self.rf.read('R4'), 0x11 << 1)
+        self.assertEqual(self.rf.read("R4"), 0x11 << 1)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_setregs("R3=0x11", "R2=0xff1f")
     @itest("lsls r4, r3, r2")
     def test_lsl_reg_max(self):
-        self.assertEqual(self.rf.read('R4'), 0x1 << 31)
+        self.assertEqual(self.rf.read("R4"), 0x1 << 31)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     @itest_setregs("R2=0xffffffff")
@@ -1637,19 +1642,19 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R5=1", "R6=2")
     @itest_thumb("lsl.w r5, r6, #3")
     def test_lslw_thumb(self):
-        '''thumb mode specific behavior'''
+        """thumb mode specific behavior"""
         self.assertEqual(self.cpu.R5, 0x2 << 3)
 
     # lsr
     @itest_setregs("R0=0x1000", "R2=3")
     @itest("lsr r0, r0, r2")
     def test_lsr_reg(self):
-        self.assertEqual(self.rf.read('R0'), 0x1000 >> 3)
+        self.assertEqual(self.rf.read("R0"), 0x1000 >> 3)
 
     @itest_setregs("R0=0x1000")
     @itest("lsr r0, r0, #3")
     def test_lsr_reg_imm(self):
-        self.assertEqual(self.rf.read('R0'), 0x1000 >> 3)
+        self.assertEqual(self.rf.read("R0"), 0x1000 >> 3)
 
     @itest_setregs("R1=0", "R2=3")
     @itest_thumb("lsrs r1, r2")
@@ -1659,7 +1664,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R5=0", "R6=16")
     @itest_thumb("lsr.w R5, R6, #3")
     def test_lsrw_thumb(self):
-        self.assertEqual(self.cpu.R5, 16>>3)
+        self.assertEqual(self.cpu.R5, 16 >> 3)
 
     @itest_setregs("R0=11", "R2=2")
     @itest_thumb("lsr.w R0, R0, R2")
@@ -1669,22 +1674,22 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R5=0", "R6=16")
     @itest_thumb("asr.w R5, R6, #3")
     def test_asrw_thumb(self):
-        self.assertEqual(self.cpu.R5, 16>>3)
+        self.assertEqual(self.cpu.R5, 16 >> 3)
 
     @itest_setregs("R2=29")
     @itest("RSB r2, r2, #31")
     def test_rsb_imm(self):
         # Diverging instruction from trace
-        self.assertEqual(self.rf.read('R2'), 2)
+        self.assertEqual(self.rf.read("R2"), 2)
 
     @itest_setregs("R6=2", "R8=0xfffffffe")
     @itest("RSBS r8, r6, #0")
     def test_rsbs_carry(self):
-        self.assertEqual(self.rf.read('R8'), 0xFFFFFFFE)
+        self.assertEqual(self.rf.read("R8"), 0xFFFFFFFE)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     def test_flag_state_continuity(self):
-        '''If an instruction only partially updates flags, cpu.set_flags should
+        """If an instruction only partially updates flags, cpu.set_flags should
         ensure unupdated flags are preserved.
 
         For example:
@@ -1694,13 +1699,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         mov r3, 0
         tst r3, r1 // does not change overflow flag
         // ovf should still be 1
-        '''
+        """
 
-        self.rf.write('R1', (2 ** 31 - 1))
+        self.rf.write("R1", (2 ** 31 - 1))
         self._setupCpu("adds r2, r1, #0x1")
         self.cpu.execute()
-        self.rf.write('R1', 1)
-        self.rf.write('R3', 0)
+        self.rf.write("R1", 1)
+        self.rf.write("R3", 0)
         self.mem.write(self.cpu.PC, assemble("tst r3, r1"))
         self.cpu.execute()
         self._checkFlagsNZCV(0, 1, 0, 1)
@@ -1708,80 +1713,80 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R1=30", "R2=10")
     @itest("MUL R1, R2")
     def test_mul_reg(self):
-        self.assertEqual(self.rf.read('R1'), 300)
+        self.assertEqual(self.rf.read("R1"), 300)
 
     @itest_setregs("R1=30", "R2=10")
     @itest("MUL R3, R1, R2")
     def test_mul_reg_w_dest(self):
-        self.assertEqual(self.rf.read('R3'), 300)
+        self.assertEqual(self.rf.read("R3"), 300)
 
     @itest_setregs("R2=10", "R3=15", "R4=7")
     @itest("MLA R1, R2, R3, R4")
     def test_mla_reg(self):
-        self.assertEqual(self.rf.read('R1'), 157)
+        self.assertEqual(self.rf.read("R1"), 157)
 
     @itest_setregs("R1=0xFF")
     @itest("BIC R2, R1, #0x10")
     def test_bic_reg_imm(self):
-        self.assertEqual(self.rf.read('R2'), 0xEF)
+        self.assertEqual(self.rf.read("R2"), 0xEF)
 
     @itest_setregs("R1=0xFF")
     @itest("BIC R1, #0x10")
     def test_thumb_bic_reg_imm(self):
-        self.assertEqual(self.rf.read('R1'), 0xEF)
+        self.assertEqual(self.rf.read("R1"), 0xEF)
 
     @itest_setregs("R1=0x1008")
     @itest("BLX R1")
     def test_blx_reg(self):
-        self.assertEqual(self.rf.read('PC'), 0x1008)
-        self.assertEqual(self.rf.read('LR'), 0x1008)
+        self.assertEqual(self.rf.read("PC"), 0x1008)
+        self.assertEqual(self.rf.read("LR"), 0x1008)
         self.assertEqual(self.cpu.mode, CS_MODE_ARM)
 
     @itest_setregs("R1=0x1009")
     @itest("BLX R1")
     def test_blx_reg_thumb(self):
-        self.assertEqual(self.rf.read('PC'), 0x1008)
-        self.assertEqual(self.rf.read('LR'), 0x1008)
+        self.assertEqual(self.rf.read("PC"), 0x1008)
+        self.assertEqual(self.rf.read("LR"), 0x1008)
         self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     @itest_setregs("R1=0xffffffff", "R2=2")
     @itest("UMULLS R1, R2, R1, R2")
     def test_umull(self):
-        mul = 0xffffffff * 2
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
-        self.assertEqual(self.rf.read('R1'), mul & Mask(32))
-        self.assertEqual(self.rf.read('R2'), mul >> 32)
+        mul = 0xFFFFFFFF * 2
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
+        self.assertEqual(self.rf.read("R1"), mul & Mask(32))
+        self.assertEqual(self.rf.read("R2"), mul >> 32)
         self._checkFlagsNZCV(0, 0, pre_c, pre_v)
 
     @itest_setregs("R1=2", "R2=2")
     @itest("UMULLS R1, R2, R1, R2")
     def test_umull_still32(self):
         mul = 2 * 2
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
-        self.assertEqual(self.rf.read('R1'), mul & Mask(32))
-        self.assertEqual(self.rf.read('R2'), mul >> 32)
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
+        self.assertEqual(self.rf.read("R1"), mul & Mask(32))
+        self.assertEqual(self.rf.read("R2"), mul >> 32)
         self._checkFlagsNZCV(0, 0, pre_c, pre_v)
 
     @itest_setregs("R1=0xfffffffe", "R2=0xfffffffe")
     @itest("UMULLS R1, R2, R1, R2")
     def test_umull_max(self):
-        mul = 0xfffffffe ** 2
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
-        self.assertEqual(self.rf.read('R1'), mul & Mask(32))
-        self.assertEqual(self.rf.read('R2'), mul >> 32)
+        mul = 0xFFFFFFFE ** 2
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
+        self.assertEqual(self.rf.read("R1"), mul & Mask(32))
+        self.assertEqual(self.rf.read("R2"), mul >> 32)
         self._checkFlagsNZCV(1, 0, pre_c, pre_v)
 
     @itest_setregs("R1=3", "R2=0")
     @itest("UMULLS R1, R2, R1, R2")
     def test_umull_z(self):
         mul = 3 * 0
-        pre_c = self.rf.read('APSR_C')
-        pre_v = self.rf.read('APSR_V')
-        self.assertEqual(self.rf.read('R1'), mul & Mask(32))
-        self.assertEqual(self.rf.read('R2'), (mul >> 32) & Mask(32))
+        pre_c = self.rf.read("APSR_C")
+        pre_v = self.rf.read("APSR_V")
+        self.assertEqual(self.rf.read("R1"), mul & Mask(32))
+        self.assertEqual(self.rf.read("R2"), (mul >> 32) & Mask(32))
         self._checkFlagsNZCV(0, 1, pre_c, pre_v)
 
     @itest("dmb ish")
@@ -1823,7 +1828,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("mrc p15, #0, r2, c13, c0, #3")
     def test_mrc(self):
         self.cpu.set_arm_tls(0x55555)
-        self.cpu.write_register('R2', 0)
+        self.cpu.write_register("R2", 0)
         self.cpu.execute()
         self.assertEqual(self.cpu.R2, 0x55555)
 
@@ -1839,57 +1844,58 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.cpu.R2, 0x55555555)
         self.assertEqual(self.cpu.R1, 0x5555)
 
-    @itest_setregs("R1=1","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_setregs("R1=1", "R2=0", "R3=0", "R4=0", "R12=0x4141")
     @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
     def test_itt_ne_noexec(self):
-        self.assertEqual(self.rf.read('R2'), 0)
-        self.assertEqual(self.rf.read('R3'), 0)
-        self.assertEqual(self.rf.read('R4'), 0x4141)
+        self.assertEqual(self.rf.read("R2"), 0)
+        self.assertEqual(self.rf.read("R3"), 0)
+        self.assertEqual(self.rf.read("R4"), 0x4141)
 
-
-    @itest_setregs("R1=0","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_setregs("R1=0", "R2=0", "R3=0", "R4=0", "R12=0x4141")
     @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
     def test_itt_ne_exec(self):
-        self.assertEqual(self.rf.read('R2'), 0x4141)
-        self.assertEqual(self.rf.read('R3'), 0x4141)
-        self.assertEqual(self.rf.read('R4'), 0x4141)
+        self.assertEqual(self.rf.read("R2"), 0x4141)
+        self.assertEqual(self.rf.read("R3"), 0x4141)
+        self.assertEqual(self.rf.read("R4"), 0x4141)
 
-    @itest_setregs("R1=0","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_setregs("R1=0", "R2=0", "R3=0", "R4=0", "R12=0x4141")
     @itest_thumb_multiple(["cmp r1, #1", "ite ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
     def test_ite_ne_exec(self):
-        self.assertEqual(self.rf.read('R2'), 0x4141)
-        self.assertEqual(self.rf.read('R3'), 0x0)
-        self.assertEqual(self.rf.read('R4'), 0x4141)
+        self.assertEqual(self.rf.read("R2"), 0x4141)
+        self.assertEqual(self.rf.read("R3"), 0x0)
+        self.assertEqual(self.rf.read("R4"), 0x4141)
 
-    @itest_setregs("R1=0","R2=0","R3=0","R4=0")
-    @itest_thumb_multiple(["cmp r1, #1", "itete ne", "mov r1, #1", "mov r2, #1", "mov r3, #1", "mov r4, #4"])
+    @itest_setregs("R1=0", "R2=0", "R3=0", "R4=0")
+    @itest_thumb_multiple(
+        ["cmp r1, #1", "itete ne", "mov r1, #1", "mov r2, #1", "mov r3, #1", "mov r4, #4"]
+    )
     def test_itete_exec(self):
-        self.assertEqual(self.rf.read('R1'), 1)
-        self.assertEqual(self.rf.read('R2'), 0)
-        self.assertEqual(self.rf.read('R3'), 1)
-        self.assertEqual(self.rf.read('R4'), 0)
+        self.assertEqual(self.rf.read("R1"), 1)
+        self.assertEqual(self.rf.read("R2"), 0)
+        self.assertEqual(self.rf.read("R3"), 1)
+        self.assertEqual(self.rf.read("R4"), 0)
 
-    @itest_setregs("APSR_GE=3","R4=0","R5=0x01020304","R6=0x05060708")
+    @itest_setregs("APSR_GE=3", "R4=0", "R5=0x01020304", "R6=0x05060708")
     @itest_thumb("sel r4, r5, r6")
     def test_sel(self):
-        self.assertEqual(self.rf.read('R4'), 0x05060304)
+        self.assertEqual(self.rf.read("R4"), 0x05060304)
 
-    @itest_setregs("R2=0","R1=0x01020304")
+    @itest_setregs("R2=0", "R1=0x01020304")
     @itest("rev r2, r1")
     def test_rev(self):
-        self.assertEqual(self.rf.read('R1'), 0x01020304)
-        self.assertEqual(self.rf.read('R2'), 0x04030201)
+        self.assertEqual(self.rf.read("R1"), 0x01020304)
+        self.assertEqual(self.rf.read("R2"), 0x04030201)
 
-    @itest_setregs("R1=0x01020304","R2=0x05060708", "R3=0","R4=0xF001")
+    @itest_setregs("R1=0x01020304", "R2=0x05060708", "R3=0", "R4=0xF001")
     @itest_multiple(["sxth r1, r2", "sxth r3, r4", "sxth r5, r4, ROR #8"])
     def test_sxth(self):
-        self.assertEqual(self.rf.read('R1'), 0x0708)
-        self.assertEqual(self.rf.read('R3'), 0xFFFFF001)
-        self.assertEqual(self.rf.read('R5'), 0xF0)
+        self.assertEqual(self.rf.read("R1"), 0x0708)
+        self.assertEqual(self.rf.read("R3"), 0xFFFFF001)
+        self.assertEqual(self.rf.read("R5"), 0xF0)
 
     @itest_custom("blx  r1")
     def test_blx_reg_sym(self):
-        dest = BitVecVariable(32, 'dest')
+        dest = BitVecVariable(32, "dest")
         self.cpu.memory.constraints.add(dest >= 0x1000)
         self.cpu.memory.constraints.add(dest <= 0x1001)
         self.cpu.R1 = dest
@@ -1912,29 +1918,30 @@ class Armv7CpuInstructions(unittest.TestCase):
         e.setstate(self, CS_MODE_THUMB)
         self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
-    @itest_setregs("R1=0x00000008") # pc/r15 is set to 0x1004 in _setupCpu()
+    @itest_setregs("R1=0x00000008")  # pc/r15 is set to 0x1004 in _setupCpu()
     @itest("add pc, pc, r1")
     def test_add_to_pc(self):
-        self.assertEqual(self.rf.read('R15'), 0x1014)
+        self.assertEqual(self.rf.read("R15"), 0x1014)
 
     # Make sure a cpu will survive a round trip through pickling/unpickling
     def test_arm_save_restore_cpu(self):
         import pickle
+
         dumped_s = pickle.dumps(self.cpu)
         self.cpu = pickle.loads(dumped_s)
 
     def test_symbolic_conditional(self):
         asm = ""
         asm += "  tst r0, r0\n"  # 0x1004
-        asm += "  beq label\n"   # 0x1006
-        asm += "  bne label\n"   # 0x1008
+        asm += "  beq label\n"  # 0x1006
+        asm += "  bne label\n"  # 0x1008
         asm += "label:\n"
-        asm += "  nop"           # 0x100a
+        asm += "  nop"  # 0x100a
 
         self._setupCpu(asm, mode=CS_MODE_THUMB)  # code starts at 0x1004
 
         # Set R0 as a symbolic value
-        self.cpu.R0 = BitVecVariable(32, 'val')
+        self.cpu.R0 = BitVecVariable(32, "val")
         self.cpu.execute()  # tst r0, r0
         self.cpu.execute()  # beq label
 
@@ -1962,5 +1969,4 @@ class Armv7CpuInstructions(unittest.TestCase):
         # Get all possible values of the PC
         all_values = solver.get_all_values(self.cpu.memory.constraints, expression)
         # They should be either the bne instruction itself, or the next instruction
-        self.assertEqual(sorted(all_values), [0x1008, 0x100a])
-
+        self.assertEqual(sorted(all_values), [0x1008, 0x100A])

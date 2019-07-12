@@ -2,10 +2,10 @@ from ...core.smtlib import Operators, BitVec, Bool
 
 
 class Register:
-    '''
+    """
     Generic variable width register. For 1 bit registers, allows writes of types
     bool and int, but always reads back bools.
-    '''
+    """
 
     def __init__(self, width):
         self.width = width
@@ -27,4 +27,4 @@ class Register:
             if self.is_flag():
                 self.value = bool(self.value)
         else:
-            raise TypeError(f'Cannot store {val.__class__.__name__} in Register')
+            raise TypeError(f"Cannot store {val.__class__.__name__} in Register")

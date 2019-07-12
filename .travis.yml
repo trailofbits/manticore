@@ -4,9 +4,10 @@ os:
   - linux
 language: python
 python:
-  - 3.6.5
+  - 3.6.6
 
 stages:
+  - format
   - prepare
   - test
   - submit
@@ -14,11 +15,12 @@ stages:
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
-    - JOB_COUNT=2 # Two jobs generate test coverage
+    - JOB_COUNT=4 # Four jobs generate test coverage: ethereum, ethereum_vm, native, and other
     - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
   matrix:
     - TEST_TYPE=examples
     - TEST_TYPE=ethereum
+    - TEST_TYPE=ethereum_vm
     - TEST_TYPE=native
     - TEST_TYPE=other
 
@@ -30,11 +32,15 @@ branches:
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python3.6.5/lib/python3.6/site-packages
-  - $HOME/virtualenv/python3.6.5/bin/
+  - $HOME/virtualenv/python3.6.6/lib/python3.6/site-packages
+  - $HOME/virtualenv/python3.6.6/bin/
 
 jobs:
   include:
+    - stage: format
+      env: TEST_TYPE=format
+      script:
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check
     - stage: prepare
       env: TEST_TYPE=env
       script:
@@ -52,7 +58,7 @@ install:
   - scripts/travis_install.sh $TEST_TYPE
 
 script:
-  - scripts/travis_test.sh $TEST_TYPE
+  - travis_wait 60 scripts/travis_test.sh $TEST_TYPE
 
 after_success:
   - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"

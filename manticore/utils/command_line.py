@@ -7,10 +7,10 @@ from prettytable import PrettyTable
 from ..ethereum.detectors import DetectorClassification
 
 classification_txt = {
-    DetectorClassification.INFORMATIONAL: 'Informational',
-    DetectorClassification.LOW: 'Low',
-    DetectorClassification.MEDIUM: 'Medium',
-    DetectorClassification.HIGH: 'High',
+    DetectorClassification.INFORMATIONAL: "Informational",
+    DetectorClassification.LOW: "Low",
+    DetectorClassification.MEDIUM: "Medium",
+    DetectorClassification.HIGH: "High",
 }
 
 
@@ -28,14 +28,12 @@ def output_detectors(detector_classes):
         confidence = classification_txt[detector.CONFIDENCE]
         detectors_list.append((argument, help_info, impact, confidence))
 
-    table = PrettyTable(["Num",
-                         "Check",
-                         "What it Detects",
-                         "Impact",
-                         "Confidence"])
+    table = PrettyTable(["Num", "Check", "What it Detects", "Impact", "Confidence"])
 
     # Sort by impact, confidence, and name
-    detectors_list = sorted(detectors_list, key=lambda element: (element[2], element[3], element[0]))
+    detectors_list = sorted(
+        detectors_list, key=lambda element: (element[2], element[3], element[0])
+    )
     idx = 1
     for (argument, help_info, impact, confidence) in detectors_list:
         table.add_row([idx, argument, help_info, classification_txt[impact], confidence])

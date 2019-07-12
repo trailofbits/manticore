@@ -2,7 +2,6 @@
 `explore` is the first level of exploration; you have to call it multiple times to explore the path
 `explore2` is a bit more complex; the owner has to call first the `enable_exploration` function
 */
-pragma solidity ^0.4.15;
 
 contract Coverage{
     address private owner;
@@ -74,7 +73,7 @@ contract Coverage{
         if(give){
             remove(msg.sender, value);
             add(user, value);
-            Give(msg.sender, user, value);
+            emit Give(msg.sender, user, value);
         }
         else{
             if( balances[user] > balances[msg.sender]){
@@ -84,7 +83,7 @@ contract Coverage{
                 value = diff >value ? value : diff;
                 add(msg.sender, value);
                 remove(user, value);
-                Take(msg.sender, user, value);
+                emit Take(msg.sender, user, value);
             }
             else{
                 // If you try to take to someone poorer than you
@@ -104,7 +103,7 @@ contract Coverage{
         if(give){
             remove(msg.sender, value);
             add(user, value);
-            Give(msg.sender, user, value);
+            emit Give(msg.sender, user, value);
         }
         else{
             uint diff;
@@ -113,7 +112,7 @@ contract Coverage{
             value = diff >value ? value : diff;
             add(msg.sender, value);
             remove(user, value);
-            Take(msg.sender, user, value);
+            emit Take(msg.sender, user, value);
         }
     }
 }

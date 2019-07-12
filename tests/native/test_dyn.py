@@ -1,905 +1,1038 @@
-
 import unittest
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
+from manticore.core.smtlib.solver import Z3Solver
+
+solver = Z3Solver.instance()
 
 
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     class ROOperand:
-        ''' Mocking class for operand ronly '''
+        """ Mocking class for operand ronly """
+
         def __init__(self, size, value):
             self.size = size
             self.value = value
+
         def read(self):
-            return self.value & ((1<<self.size)-1)
+            return self.value & ((1 << self.size) - 1)
 
     class RWOperand(ROOperand):
-        ''' Mocking class for operand rw '''
+        """ Mocking class for operand rw """
+
         def write(self, value):
-            self.value = value & ((1<<self.size)-1)
+            self.value = value & ((1 << self.size) - 1)
             return self.value
 
-
-
     def test_MOVHPD_1(self):
-        ''' Instruction MOVHPD_1
+        """ Instruction MOVHPD_1
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a249d1, 'IVATE\x00\x00\x00')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0xffffffffffff00ff52505f4342494c47
-        cpu.RDI = 0x7ffff7a249c9
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A249D1, "IVATE\x00\x00\x00")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0xFFFFFFFFFFFF00FF52505F4342494C47
+        cpu.RDI = 0x7FFFF7A249C9
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a249d1:0x7ffff7a249d9], [b'I',b'V',b'A',b'T',b'E',b'\x00',b'\x00',b'\x00'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A249D1:0x7FFFF7A249D9],
+            [b"I", b"V", b"A", b"T", b"E", b"\x00", b"\x00", b"\x00"],
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 5492818941963568420245782219847)
         self.assertEqual(cpu.RDI, 140737347996105)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_10(self):
-        ''' Instruction MOVHPD_10
+        """ Instruction MOVHPD_10
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
-        cpu.RDI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0xFFFFFFFF00FFFFFF2E325F4342494C47
+        cpu.RDI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_11(self):
-        ''' Instruction MOVHPD_11
+        """ Instruction MOVHPD_11
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
-        cpu.RSI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x42494C4700352E322E325F4342494C47
+        cpu.RSI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_12(self):
-        ''' Instruction MOVHPD_12
+        """ Instruction MOVHPD_12
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
-        cpu.RDI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0xFFFFFFFF00FFFFFF2E325F4342494C47
+        cpu.RDI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_13(self):
-        ''' Instruction MOVHPD_13
+        """ Instruction MOVHPD_13
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a218da, 'tart_mai')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0x735f6362696c5f5f
-        cpu.RDI = 0x7ffff7a218d2
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A21000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A218DA, "tart_mai")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0x735F6362696C5F5F
+        cpu.RDI = 0x7FFFF7A218D2
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a218da:0x7ffff7a218e2], [b't',b'a',b'r',b't',b'_',b'm',b'a',b'i'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A218DA:0x7FFFF7A218E2], [b"t", b"a", b"r", b"t", b"_", b"m", b"a", b"i"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 140074810698054820722452200425796689759)
         self.assertEqual(cpu.RDI, 140737347983570)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_14(self):
-        ''' Instruction MOVHPD_14
+        """ Instruction MOVHPD_14
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a20000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a20a9b, '\x00acct\x00_n')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x36766772615f6c645f
-        cpu.RSI = 0x7ffff7a20a93
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A20000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A20A9B, "\x00acct\x00_n")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x36766772615F6C645F
+        cpu.RSI = 0x7FFFF7A20A93
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a20a9b:0x7ffff7a20aa3], [b'\x00',b'a',b'c',b'c',b't',b'\x00',b'_',b'n'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A20A9B:0x7FFFF7A20AA3],
+            [b"\x00", b"a", b"c", b"c", b"t", b"\x00", b"_", b"n"],
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 146708356959127564005328096862462043231)
         self.assertEqual(cpu.RSI, 140737347979923)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_15(self):
-        ''' Instruction MOVHPD_15
+        """ Instruction MOVHPD_15
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a23000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a232ee, 'nable_se')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x36655f6362696c5f5f
-        cpu.RSI = 0x7ffff7a232e6
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A23000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A232EE, "nable_se")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x36655F6362696C5F5F
+        cpu.RSI = 0x7FFFF7A232E6
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a232ee:0x7ffff7a232f6], [b'n',b'a',b'b',b'l',b'e',b'_',b's',b'e'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A232EE:0x7FFFF7A232F6], [b"n", b"a", b"b", b"l", b"e", b"_", b"s", b"e"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 134851076577508085086976746042965122911)
         self.assertEqual(cpu.RSI, 140737347990246)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_16(self):
-        ''' Instruction MOVHPD_16
+        """ Instruction MOVHPD_16
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
-        cpu.RSI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x42494C4700352E322E325F4342494C47
+        cpu.RSI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_17(self):
-        ''' Instruction MOVHPD_17
+        """ Instruction MOVHPD_17
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7dd7671, '_dso_for')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0x646e69665f6c645f
-        cpu.RDI = 0x7ffff7dd7669
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7DD7000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DD7671, "_dso_for")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0x646E69665F6C645F
+        cpu.RDI = 0x7FFFF7DD7669
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7dd7671:0x7ffff7dd7679], [b'_',b'd',b's',b'o',b'_',b'f',b'o',b'r'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7DD7671:0x7FFFF7DD7679], [b"_", b"d", b"s", b"o", b"_", b"f", b"o", b"r"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 152110412837725123259047000460919333983)
         self.assertEqual(cpu.RDI, 140737351874153)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_18(self):
-        ''' Instruction MOVHPD_18
+        """ Instruction MOVHPD_18
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
-        cpu.RSI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x42494C4700352E322E325F4342494C47
+        cpu.RSI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_19(self):
-        ''' Instruction MOVHPD_19
+        """ Instruction MOVHPD_19
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7dd7750, 'obal_ro\x00')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0x6c675f646c74725f
-        cpu.RDI = 0x7ffff7dd7748
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7DD7000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DD7750, "obal_ro\x00")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0x6C675F646C74725F
+        cpu.RDI = 0x7FFFF7DD7748
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7dd7750:0x7ffff7dd7758], [b'o',b'b',b'a',b'l',b'_',b'r',b'o',b'\x00'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7DD7750:0x7FFFF7DD7758], [b"o", b"b", b"a", b"l", b"_", b"r", b"o", b"\x00"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 578664706209732724830403288697696863)
         self.assertEqual(cpu.RDI, 140737351874376)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_2(self):
-        ''' Instruction MOVHPD_2
+        """ Instruction MOVHPD_2
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
-        cpu.RDI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0xFFFFFFFF00FFFFFF2E325F4342494C47
+        cpu.RDI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_20(self):
-        ''' Instruction MOVHPD_20
+        """ Instruction MOVHPD_20
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248b7, '-x86-64.')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0x78756e696c2d646c
-        cpu.RDI = 0x7ffff7a248af
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248B7, "-x86-64.")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0x78756E696C2D646C
+        cpu.RDI = 0x7FFFF7A248AF
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248b7:0x7ffff7a248bf], [b'-',b'x',b'8',b'6',b'-',b'6',b'4',b'.'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248B7:0x7FFFF7A248BF], [b"-", b"x", b"8", b"6", b"-", b"6", b"4", b"."]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 61415586074916309421369241318231729260)
         self.assertEqual(cpu.RDI, 140737347995823)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_21(self):
-        ''' Instruction MOVHPD_21
+        """ Instruction MOVHPD_21
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7b99000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7b99a30, '6\x00__vdso')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x64765f5f00656d692e325f58554e494c
-        cpu.RSI = 0x7ffff7b99a28
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7B99000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7B99A30, "6\x00__vdso")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x64765F5F00656D692E325F58554E494C
+        cpu.RSI = 0x7FFFF7B99A28
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7b99a30:0x7ffff7b99a38], [b'6',b'\x00',b'_',b'_',b'v',b'd',b's',b'o'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7B99A30:0x7FFFF7B99A38], [b"6", b"\x00", b"_", b"_", b"v", b"d", b"s", b"o"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 148143459290256633805182000720633547084)
         self.assertEqual(cpu.RSI, 140737349524008)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_3(self):
-        ''' Instruction MOVHPD_3
+        """ Instruction MOVHPD_3
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
-        cpu.RDI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0xFFFFFFFF00FFFFFF2E325F4342494C47
+        cpu.RDI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_4(self):
-        ''' Instruction MOVHPD_4
+        """ Instruction MOVHPD_4
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
-        cpu.RSI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x42494C4700352E322E325F4342494C47
+        cpu.RSI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_5(self):
-        ''' Instruction MOVHPD_5
+        """ Instruction MOVHPD_5
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7ffa000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        mem.write(0x7ffff7ffa30c, '6\x00\x00\x00\x00\x00\x02\x00')
-        cpu.XMM1 = 0xffffffff00ffffff2e325f58554e494c
-        cpu.RDI = 0x7ffff7ffa304
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7FFA000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        mem.write(0x7FFFF7FFA30C, "6\x00\x00\x00\x00\x00\x02\x00")
+        cpu.XMM1 = 0xFFFFFFFF00FFFFFF2E325F58554E494C
+        cpu.RDI = 0x7FFFF7FFA304
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
-        self.assertEqual(mem[0x7ffff7ffa30c:0x7ffff7ffa314], [b'6',b'\x00',b'\x00',b'\x00',b'\x00',b'\x00',b'\x02',b'\x00'])
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7FFA30C:0x7FFFF7FFA314],
+            [b"6", b"\x00", b"\x00", b"\x00", b"\x00", b"\x00", b"\x02", b"\x00"],
+        )
         self.assertEqual(cpu.XMM1, 10384593717070654710068880547400012)
         self.assertEqual(cpu.RDI, 140737354113796)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_6(self):
-        ''' Instruction MOVHPD_6
+        """ Instruction MOVHPD_6
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
-        cpu.RSI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x42494C4700352E322E325F4342494C47
+        cpu.RSI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_7(self):
-        ''' Instruction MOVHPD_7
+        """ Instruction MOVHPD_7
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
-        cpu.RSI = 0x7ffff7a248ce
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A248D6, "2.5\x00GLIB")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        cpu.XMM2 = 0x42494C4700352E322E325F4342494C47
+        cpu.RSI = 0x7FFFF7A248CE
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A248D6:0x7FFFF7A248DE], [b"2", b".", b"5", b"\x00", b"G", b"L", b"I", b"B"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_8(self):
-        ''' Instruction MOVHPD_8
+        """ Instruction MOVHPD_8
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7ff7000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
-        mem.write(0x7ffff7ff74a8, '_64-linu')
-        cpu.XMM2 = 0x3638782f62696c2f
-        cpu.RSI = 0x7ffff7ff74a0
-        cpu.RIP = 0x7ffff7df2953
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7FF7000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
+        mem.write(0x7FFFF7FF74A8, "_64-linu")
+        cpu.XMM2 = 0x3638782F62696C2F
+        cpu.RSI = 0x7FFFF7FF74A0
+        cpu.RIP = 0x7FFFF7DF2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
-        self.assertEqual(mem[0x7ffff7ff74a8:0x7ffff7ff74b0], [b'_',b'6',b'4',b'-',b'l',b'i',b'n',b'u'])
+        self.assertEqual(
+            mem[0x7FFFF7DF2953:0x7FFFF7DF2958], [b"f", b"\x0f", b"\x16", b"V", b"\x08"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7FF74A8:0x7FFFF7FF74B0], [b"_", b"6", b"4", b"-", b"l", b"i", b"n", b"u"]
+        )
         self.assertEqual(cpu.XMM2, 156092966384913869483545010807748783151)
         self.assertEqual(cpu.RSI, 140737354101920)
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_9(self):
-        ''' Instruction MOVHPD_9
+        """ Instruction MOVHPD_9
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7a21315, 'emalign\x00')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
-        cpu.XMM1 = 0xffffffff00ffffff6d5f6362696c5f5f
-        cpu.RDI = 0x7ffff7a2130d
-        cpu.RIP = 0x7ffff7df294e
+        mem.mmap(0x7FFFF7A21000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7A21315, "emalign\x00")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
+        cpu.XMM1 = 0xFFFFFFFF00FFFFFF6D5F6362696C5F5F
+        cpu.RDI = 0x7FFFF7A2130D
+        cpu.RIP = 0x7FFFF7DF294E
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7a21315:0x7ffff7a2131d], [b'e',b'm',b'a',b'l',b'i',b'g',b'n',b'\x00'])
-        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(
+            mem[0x7FFFF7A21315:0x7FFFF7A2131D], [b"e", b"m", b"a", b"l", b"i", b"g", b"n", b"\x00"]
+        )
+        self.assertEqual(
+            mem[0x7FFFF7DF294E:0x7FFFF7DF2953], [b"f", b"\x0f", b"\x16", b"O", b"\x08"]
+        )
         self.assertEqual(cpu.XMM1, 573250095127234633104266320675626847)
         self.assertEqual(cpu.RDI, 140737347982093)
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_PSLLDQ_1(self):
-        ''' Instruction PSLLDQ_1
+        """ Instruction PSLLDQ_1
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = 0x1
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_10(self):
-        ''' Instruction PSLLDQ_10
+        """ Instruction PSLLDQ_10
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df3470
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_11(self):
-        ''' Instruction PSLLDQ_11
+        """ Instruction PSLLDQ_11
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df3470
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_12(self):
-        ''' Instruction PSLLDQ_12
+        """ Instruction PSLLDQ_12
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df3470
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_13(self):
-        ''' Instruction PSLLDQ_13
+        """ Instruction PSLLDQ_13
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = 0x1
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_14(self):
-        ''' Instruction PSLLDQ_14
+        """ Instruction PSLLDQ_14
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df3470
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_15(self):
-        ''' Instruction PSLLDQ_15
+        """ Instruction PSLLDQ_15
             Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
-        cpu.XMM2 = 0x3000000020002000000352e322e32
-        cpu.RIP = 0x7ffff7df389d
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF389D, "f\x0fs\xfa\x04")
+        cpu.XMM2 = 0x3000000020002000000352E322E32
+        cpu.RIP = 0x7FFFF7DF389D
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df389d:0x7ffff7df38a2], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
+        self.assertEqual(
+            mem[0x7FFFF7DF389D:0x7FFFF7DF38A2], [b"f", b"\x0f", b"s", b"\xfa", b"\x04"]
+        )
         self.assertEqual(cpu.XMM2, 10384752173395664791945953216036864)
         self.assertEqual(cpu.RIP, 140737351989410)
 
     def test_PSLLDQ_16(self):
-        ''' Instruction PSLLDQ_16
+        """ Instruction PSLLDQ_16
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df3470
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_17(self):
-        ''' Instruction PSLLDQ_17
+        """ Instruction PSLLDQ_17
             Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
-        cpu.XMM2 = 0x494c4700352e322e325f4342494c4700
-        cpu.RIP = 0x7ffff7df39dd
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF39DD, "f\x0fs\xfa\x03")
+        cpu.XMM2 = 0x494C4700352E322E325F4342494C4700
+        cpu.RIP = 0x7FFFF7DF39DD
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df39dd:0x7ffff7df39e2], [b'f',b'\x0f',b's',b'\xfa',b'\x03'])
+        self.assertEqual(
+            mem[0x7FFFF7DF39DD:0x7FFFF7DF39E2], [b"f", b"\x0f", b"s", b"\xfa", b"\x03"]
+        )
         self.assertEqual(cpu.XMM2, 276128700049446162655260478745346048)
         self.assertEqual(cpu.RIP, 140737351989730)
 
     def test_PSLLDQ_18(self):
-        ''' Instruction PSLLDQ_18
+        """ Instruction PSLLDQ_18
             Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
-        cpu.XMM2 = 0x665f4f495f006f6c6c657466006b6863
-        cpu.RIP = 0x7ffff7df389d
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF389D, "f\x0fs\xfa\x04")
+        cpu.XMM2 = 0x665F4F495F006F6C6C657466006B6863
+        cpu.RIP = 0x7FFFF7DF389D
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df389d:0x7ffff7df38a2], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
+        self.assertEqual(
+            mem[0x7FFFF7DF389D:0x7FFFF7DF38A2], [b"f", b"\x0f", b"s", b"\xfa", b"\x04"]
+        )
         self.assertEqual(cpu.XMM2, 126278919537221597046423674937331941376)
         self.assertEqual(cpu.RIP, 140737351989410)
 
     def test_PSLLDQ_19(self):
-        ''' Instruction PSLLDQ_19
+        """ Instruction PSLLDQ_19
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = 0x1
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_2(self):
-        ''' Instruction PSLLDQ_2
+        """ Instruction PSLLDQ_2
             Groups: sse2
             0x7ffff7df2f70:	pslldq	xmm2, 0xb
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2f70, 'f\x0fs\xfa\x0b')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df2f70
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2F70, "f\x0fs\xfa\x0b")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF2F70
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2f70:0x7ffff7df2f75], [b'f',b'\x0f',b's',b'\xfa',b'\x0b'])
+        self.assertEqual(
+            mem[0x7FFFF7DF2F70:0x7FFFF7DF2F75], [b"f", b"\x0f", b"s", b"\xfa", b"\x0b"]
+        )
         self.assertEqual(cpu.XMM2, 132104554884493019491015862172149350400)
         self.assertEqual(cpu.RIP, 140737351987061)
 
     def test_PSLLDQ_20(self):
-        ''' Instruction PSLLDQ_20
+        """ Instruction PSLLDQ_20
             Groups: sse2
             0x7ffff7df3970:	pslldq	xmm2, 3
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3970, 'f\x0fs\xfa\x03')
-        cpu.XMM2 = 0x322e6f732e34362d3638782d78756e69
-        cpu.RIP = 0x7ffff7df3970
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3970, "f\x0fs\xfa\x03")
+        cpu.XMM2 = 0x322E6F732E34362D3638782D78756E69
+        cpu.RIP = 0x7FFFF7DF3970
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3970:0x7ffff7df3975], [b'f',b'\x0f',b's',b'\xfa',b'\x03'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3970:0x7FFFF7DF3975], [b"f", b"\x0f", b"s", b"\xfa", b"\x03"]
+        )
         self.assertEqual(cpu.XMM2, 153101124148370467217615035531131879424)
         self.assertEqual(cpu.RIP, 140737351989621)
 
     def test_PSLLDQ_21(self):
-        ''' Instruction PSLLDQ_21
+        """ Instruction PSLLDQ_21
             Groups: sse2
             0x7ffff7df3830:	pslldq	xmm2, 4
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3830, 'f\x0fs\xfa\x04')
-        cpu.XMM2 = 0x5f4342494c4700342e332e325f434249
-        cpu.RIP = 0x7ffff7df3830
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3830, "f\x0fs\xfa\x04")
+        cpu.XMM2 = 0x5F4342494C4700342E332E325F434249
+        cpu.RIP = 0x7FFFF7DF3830
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3830:0x7ffff7df3835], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3830:0x7FFFF7DF3835], [b"f", b"\x0f", b"s", b"\xfa", b"\x04"]
+        )
         self.assertEqual(cpu.XMM2, 101389984890772213670702594761716400128)
         self.assertEqual(cpu.RIP, 140737351989301)
 
     def test_PSLLDQ_3(self):
-        ''' Instruction PSLLDQ_3
+        """ Instruction PSLLDQ_3
             Groups: sse2
             0x7ffff7df3ab0:	pslldq	xmm2, 2
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3ab0, 'f\x0fs\xfa\x02')
-        cpu.XMM2 = 0x63007463656a626f5f726f665f6f7364
-        cpu.RIP = 0x7ffff7df3ab0
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3AB0, "f\x0fs\xfa\x02")
+        cpu.XMM2 = 0x63007463656A626F5F726F665F6F7364
+        cpu.RIP = 0x7FFFF7DF3AB0
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3ab0:0x7ffff7df3ab5], [b'f',b'\x0f',b's',b'\xfa',b'\x02'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3AB0:0x7FFFF7DF3AB5], [b"f", b"\x0f", b"s", b"\xfa", b"\x02"]
+        )
         self.assertEqual(cpu.XMM2, 154706541852064556987039687627872927744)
         self.assertEqual(cpu.RIP, 140737351989941)
 
     def test_PSLLDQ_4(self):
-        ''' Instruction PSLLDQ_4
+        """ Instruction PSLLDQ_4
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df3470
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_5(self):
-        ''' Instruction PSLLDQ_5
+        """ Instruction PSLLDQ_5
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
-        cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
-        cpu.RIP = 0x7ffff7df3470
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
+        cpu.XMM2 = 0x6972705F5F00362E6F732E6362696C00
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_6(self):
-        ''' Instruction PSLLDQ_6
+        """ Instruction PSLLDQ_6
             Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
-        cpu.XMM2 = 0x3000000020002000000352e322e32
-        cpu.RIP = 0x7ffff7df389d
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF389D, "f\x0fs\xfa\x04")
+        cpu.XMM2 = 0x3000000020002000000352E322E32
+        cpu.RIP = 0x7FFFF7DF389D
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df389d:0x7ffff7df38a2], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
+        self.assertEqual(
+            mem[0x7FFFF7DF389D:0x7FFFF7DF38A2], [b"f", b"\x0f", b"s", b"\xfa", b"\x04"]
+        )
         self.assertEqual(cpu.XMM2, 10384752173395664791945953216036864)
         self.assertEqual(cpu.RIP, 140737351989410)
 
     def test_PSLLDQ_7(self):
-        ''' Instruction PSLLDQ_7
+        """ Instruction PSLLDQ_7
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = 0x1
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3470:0x7FFFF7DF3475], [b"f", b"\x0f", b"s", b"\xfa", b"\x07"]
+        )
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_8(self):
-        ''' Instruction PSLLDQ_8
+        """ Instruction PSLLDQ_8
             Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
-        cpu.XMM2 = 0x7461636f6c6c6165645f6c645f00636f
-        cpu.RIP = 0x7ffff7df39dd
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF39DD, "f\x0fs\xfa\x03")
+        cpu.XMM2 = 0x7461636F6C6C6165645F6C645F00636F
+        cpu.RIP = 0x7FFFF7DF39DD
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df39dd:0x7ffff7df39e2], [b'f',b'\x0f',b's',b'\xfa',b'\x03'])
+        self.assertEqual(
+            mem[0x7FFFF7DF39DD:0x7FFFF7DF39E2], [b"f", b"\x0f", b"s", b"\xfa", b"\x03"]
+        )
         self.assertEqual(cpu.XMM2, 148107273809595710738464457560820809728)
         self.assertEqual(cpu.RIP, 140737351989730)
 
     def test_PSLLDQ_9(self):
-        ''' Instruction PSLLDQ_9
+        """ Instruction PSLLDQ_9
             Groups: sse2
             0x7ffff7df3c5d:	pslldq	xmm2, 1
-        '''
+        """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3c5d, 'f\x0fs\xfa\x01')
-        cpu.XMM2 = 0x68252e7568254d00796164666f656d69
-        cpu.RIP = 0x7ffff7df3c5d
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3C5D, "f\x0fs\xfa\x01")
+        cpu.XMM2 = 0x68252E7568254D00796164666F656D69
+        cpu.RIP = 0x7FFFF7DF3C5D
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3c5d:0x7ffff7df3c62], [b'f',b'\x0f',b's',b'\xfa',b'\x01'])
+        self.assertEqual(
+            mem[0x7FFFF7DF3C5D:0x7FFFF7DF3C62], [b"f", b"\x0f", b"s", b"\xfa", b"\x01"]
+        )
         self.assertEqual(cpu.XMM2, 49422662792731052987857949274592340224)
         self.assertEqual(cpu.RIP, 140737351990370)
 
     def test_MOVHPD_1_symbolic(self):
-        ''' Instruction MOVHPD_1
+        """ Instruction MOVHPD_1
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d1)
+        cs.add(addr == 0x7FFFF7A249D1)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d2)
+        cs.add(addr == 0x7FFFF7A249D2)
         value = cs.new_bitvec(8)
         cs.add(value == 0x56)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d3)
+        cs.add(addr == 0x7FFFF7A249D3)
         value = cs.new_bitvec(8)
         cs.add(value == 0x41)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d4)
+        cs.add(addr == 0x7FFFF7A249D4)
         value = cs.new_bitvec(8)
         cs.add(value == 0x54)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d5)
+        cs.add(addr == 0x7FFFF7A249D5)
         value = cs.new_bitvec(8)
         cs.add(value == 0x45)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d6)
+        cs.add(addr == 0x7FFFF7A249D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d7)
+        cs.add(addr == 0x7FFFF7A249D7)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a249d8)
+        cs.add(addr == 0x7FFFF7A249D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem.write(0x7ffff7df2951, 'O\x08')
+        mem.write(0x7FFFF7DF2951, "O\x08")
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0xffffffffffff00ff52505f4342494c47)
+        cs.add(cpu.XMM1 == 0xFFFFFFFFFFFF00FF52505F4342494C47)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a249c9)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A249C9)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -913,22 +1046,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d3, 8)== ord('A'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d4, 8)== ord('T'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d5, 8)== ord('E'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d6, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d7, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d8, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d1, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a249d2, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x455441564952505f4342494c47)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a249c9)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D3, 8) == ord("A"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D4, 8) == ord("T"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D5, 8) == ord("E"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D6, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D7, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D8, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D1, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A249D2, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x455441564952505F4342494C47)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A249C9)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -937,63 +1070,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_10_symbolic(self):
-        ''' Instruction MOVHPD_10
+        """ Instruction MOVHPD_10
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0xffffffff00ffffff2e325f4342494c47)
+        cs.add(cpu.XMM1 == 0xFFFFFFFF00FFFFFF2E325F4342494C47)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -1007,22 +1139,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1031,63 +1163,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_11_symbolic(self):
-        ''' Instruction MOVHPD_11
+        """ Instruction MOVHPD_11
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
+        cs.add(cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -1101,22 +1232,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1125,63 +1256,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_12_symbolic(self):
-        ''' Instruction MOVHPD_12
+        """ Instruction MOVHPD_12
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0xffffffff00ffffff2e325f4342494c47)
+        cs.add(cpu.XMM1 == 0xFFFFFFFF00FFFFFF2E325F4342494C47)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -1195,22 +1325,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1219,63 +1349,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_13_symbolic(self):
-        ''' Instruction MOVHPD_13
+        """ Instruction MOVHPD_13
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7A21000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218da)
+        cs.add(addr == 0x7FFFF7A218DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x74)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218db)
+        cs.add(addr == 0x7FFFF7A218DB)
         value = cs.new_bitvec(8)
         cs.add(value == 0x61)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218dc)
+        cs.add(addr == 0x7FFFF7A218DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x72)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218dd)
+        cs.add(addr == 0x7FFFF7A218DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x74)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218de)
+        cs.add(addr == 0x7FFFF7A218DE)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218df)
+        cs.add(addr == 0x7FFFF7A218DF)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6d)
+        cs.add(value == 0x6D)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218e0)
+        cs.add(addr == 0x7FFFF7A218E0)
         value = cs.new_bitvec(8)
         cs.add(value == 0x61)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a218e1)
+        cs.add(addr == 0x7FFFF7A218E1)
         value = cs.new_bitvec(8)
         cs.add(value == 0x69)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0x735f6362696c5f5f)
+        cs.add(cpu.XMM1 == 0x735F6362696C5F5F)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a218d2)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A218D2)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -1289,22 +1418,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218da, 8)== ord('t'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218db, 8)== ord('a'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218dc, 8)== ord('r'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218dd, 8)== ord('t'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218de, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218df, 8)== ord('m'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218e0, 8)== ord('a'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a218e1, 8)== ord('i'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x69616d5f74726174735f6362696c5f5f)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a218d2)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218DA, 8) == ord("t"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218DB, 8) == ord("a"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218DC, 8) == ord("r"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218DD, 8) == ord("t"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218DE, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218DF, 8) == ord("m"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218E0, 8) == ord("a"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A218E1, 8) == ord("i"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x69616D5F74726174735F6362696C5F5F)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A218D2)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1313,63 +1442,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_14_symbolic(self):
-        ''' Instruction MOVHPD_14
+        """ Instruction MOVHPD_14
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a20000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A20000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20a9b)
+        cs.add(addr == 0x7FFFF7A20A9B)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20a9c)
+        cs.add(addr == 0x7FFFF7A20A9C)
         value = cs.new_bitvec(8)
         cs.add(value == 0x61)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20a9d)
+        cs.add(addr == 0x7FFFF7A20A9D)
         value = cs.new_bitvec(8)
         cs.add(value == 0x63)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20a9e)
+        cs.add(addr == 0x7FFFF7A20A9E)
         value = cs.new_bitvec(8)
         cs.add(value == 0x63)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20a9f)
+        cs.add(addr == 0x7FFFF7A20A9F)
         value = cs.new_bitvec(8)
         cs.add(value == 0x74)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20aa0)
+        cs.add(addr == 0x7FFFF7A20AA0)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20aa1)
+        cs.add(addr == 0x7FFFF7A20AA1)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a20aa2)
+        cs.add(addr == 0x7FFFF7A20AA2)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6e)
+        cs.add(value == 0x6E)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x36766772615f6c645f)
+        cs.add(cpu.XMM2 == 0x36766772615F6C645F)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a20a93)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A20A93)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -1383,22 +1511,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20a9b, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20a9c, 8)== ord('a'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20a9d, 8)== ord('c'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20a9e, 8)== ord('c'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20a9f, 8)== ord('t'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20aa0, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20aa1, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a20aa2, 8)== ord('n'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x6e5f007463636100766772615f6c645f)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a20a93)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20A9B, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20A9C, 8) == ord("a"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20A9D, 8) == ord("c"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20A9E, 8) == ord("c"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20A9F, 8) == ord("t"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20AA0, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20AA1, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A20AA2, 8) == ord("n"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x6E5F007463636100766772615F6C645F)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A20A93)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1407,63 +1535,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_15_symbolic(self):
-        ''' Instruction MOVHPD_15
+        """ Instruction MOVHPD_15
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a23000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A23000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232ee)
+        cs.add(addr == 0x7FFFF7A232EE)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6e)
+        cs.add(value == 0x6E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232ef)
+        cs.add(addr == 0x7FFFF7A232EF)
         value = cs.new_bitvec(8)
         cs.add(value == 0x61)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232f0)
+        cs.add(addr == 0x7FFFF7A232F0)
         value = cs.new_bitvec(8)
         cs.add(value == 0x62)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232f1)
+        cs.add(addr == 0x7FFFF7A232F1)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6c)
+        cs.add(value == 0x6C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232f2)
+        cs.add(addr == 0x7FFFF7A232F2)
         value = cs.new_bitvec(8)
         cs.add(value == 0x65)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232f3)
+        cs.add(addr == 0x7FFFF7A232F3)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232f4)
+        cs.add(addr == 0x7FFFF7A232F4)
         value = cs.new_bitvec(8)
         cs.add(value == 0x73)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a232f5)
+        cs.add(addr == 0x7FFFF7A232F5)
         value = cs.new_bitvec(8)
         cs.add(value == 0x65)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x36655f6362696c5f5f)
+        cs.add(cpu.XMM2 == 0x36655F6362696C5F5F)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a232e6)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A232E6)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -1477,22 +1604,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232ee, 8)== ord('n'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232ef, 8)== ord('a'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232f0, 8)== ord('b'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232f1, 8)== ord('l'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232f2, 8)== ord('e'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232f3, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232f4, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a232f5, 8)== ord('e'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x65735f656c62616e655f6362696c5f5f)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a232e6)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232EE, 8) == ord("n"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232EF, 8) == ord("a"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232F0, 8) == ord("b"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232F1, 8) == ord("l"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232F2, 8) == ord("e"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232F3, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232F4, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A232F5, 8) == ord("e"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x65735F656C62616E655F6362696C5F5F)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A232E6)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1501,63 +1628,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_16_symbolic(self):
-        ''' Instruction MOVHPD_16
+        """ Instruction MOVHPD_16
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
+        cs.add(cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -1571,22 +1697,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1595,63 +1721,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_17_symbolic(self):
-        ''' Instruction MOVHPD_17
+        """ Instruction MOVHPD_17
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7DD7000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7671)
+        cs.add(addr == 0x7FFFF7DD7671)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7672)
+        cs.add(addr == 0x7FFFF7DD7672)
         value = cs.new_bitvec(8)
         cs.add(value == 0x64)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7673)
+        cs.add(addr == 0x7FFFF7DD7673)
         value = cs.new_bitvec(8)
         cs.add(value == 0x73)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7674)
+        cs.add(addr == 0x7FFFF7DD7674)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6f)
+        cs.add(value == 0x6F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7675)
+        cs.add(addr == 0x7FFFF7DD7675)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7676)
+        cs.add(addr == 0x7FFFF7DD7676)
         value = cs.new_bitvec(8)
         cs.add(value == 0x66)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7677)
+        cs.add(addr == 0x7FFFF7DD7677)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6f)
+        cs.add(value == 0x6F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7678)
+        cs.add(addr == 0x7FFFF7DD7678)
         value = cs.new_bitvec(8)
         cs.add(value == 0x72)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0x646e69665f6c645f)
+        cs.add(cpu.XMM1 == 0x646E69665F6C645F)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7dd7669)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7DD7669)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -1665,22 +1790,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7671, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7672, 8)== ord('d'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7673, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7674, 8)== ord('o'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7675, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7676, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7677, 8)== ord('o'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7678, 8)== ord('r'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x726f665f6f73645f646e69665f6c645f)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7dd7669)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7671, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7672, 8) == ord("d"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7673, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7674, 8) == ord("o"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7675, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7676, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7677, 8) == ord("o"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7678, 8) == ord("r"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x726F665F6F73645F646E69665F6C645F)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7DD7669)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1689,63 +1814,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_18_symbolic(self):
-        ''' Instruction MOVHPD_18
+        """ Instruction MOVHPD_18
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
+        cs.add(cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -1759,22 +1883,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1783,64 +1907,63 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_19_symbolic(self):
-        ''' Instruction MOVHPD_19
+        """ Instruction MOVHPD_19
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f')
+        mem.mmap(0x7FFFF7DD7000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7750)
+        cs.add(addr == 0x7FFFF7DD7750)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6f)
+        cs.add(value == 0x6F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7751)
+        cs.add(addr == 0x7FFFF7DD7751)
         value = cs.new_bitvec(8)
         cs.add(value == 0x62)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7752)
+        cs.add(addr == 0x7FFFF7DD7752)
         value = cs.new_bitvec(8)
         cs.add(value == 0x61)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7753)
+        cs.add(addr == 0x7FFFF7DD7753)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6c)
+        cs.add(value == 0x6C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7754)
+        cs.add(addr == 0x7FFFF7DD7754)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7755)
+        cs.add(addr == 0x7FFFF7DD7755)
         value = cs.new_bitvec(8)
         cs.add(value == 0x72)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7756)
+        cs.add(addr == 0x7FFFF7DD7756)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6f)
+        cs.add(value == 0x6F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7dd7757)
+        cs.add(addr == 0x7FFFF7DD7757)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem.write(0x7ffff7df2950, '\x16O\x08')
+        mem.write(0x7FFFF7DF2950, "\x16O\x08")
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0x6c675f646c74725f)
+        cs.add(cpu.XMM1 == 0x6C675F646C74725F)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7dd7748)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7DD7748)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -1854,22 +1977,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7753, 8)== ord('l'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7754, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7755, 8)== ord('r'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7756, 8)== ord('o'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7757, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7750, 8)== ord('o'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7751, 8)== ord('b'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7dd7752, 8)== ord('a'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x6f725f6c61626f6c675f646c74725f)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7dd7748)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7753, 8) == ord("l"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7754, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7755, 8) == ord("r"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7756, 8) == ord("o"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7757, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7750, 8) == ord("o"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7751, 8) == ord("b"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DD7752, 8) == ord("a"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x6F725F6C61626F6C675F646C74725F)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7DD7748)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1878,63 +2001,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_2_symbolic(self):
-        ''' Instruction MOVHPD_2
+        """ Instruction MOVHPD_2
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0xffffffff00ffffff2e325f4342494c47)
+        cs.add(cpu.XMM1 == 0xFFFFFFFF00FFFFFF2E325F4342494C47)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -1948,22 +2070,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -1972,63 +2094,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_20_symbolic(self):
-        ''' Instruction MOVHPD_20
+        """ Instruction MOVHPD_20
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248b7)
+        cs.add(addr == 0x7FFFF7A248B7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2d)
+        cs.add(value == 0x2D)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248b8)
+        cs.add(addr == 0x7FFFF7A248B8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x78)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248b9)
+        cs.add(addr == 0x7FFFF7A248B9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x38)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248ba)
+        cs.add(addr == 0x7FFFF7A248BA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x36)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248bb)
+        cs.add(addr == 0x7FFFF7A248BB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2d)
+        cs.add(value == 0x2D)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248bc)
+        cs.add(addr == 0x7FFFF7A248BC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x36)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248bd)
+        cs.add(addr == 0x7FFFF7A248BD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x34)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248be)
+        cs.add(addr == 0x7FFFF7A248BE)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0x78756e696c2d646c)
+        cs.add(cpu.XMM1 == 0x78756E696C2D646C)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a248af)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A248AF)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -2042,22 +2163,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248b7, 8)== ord('-'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248b8, 8)== ord('x'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248b9, 8)== ord('8'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248ba, 8)== ord('6'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248bb, 8)== ord('-'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248bc, 8)== ord('6'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248bd, 8)== ord('4'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248be, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x2e34362d3638782d78756e696c2d646c)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a248af)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248B7, 8) == ord("-"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248B8, 8) == ord("x"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248B9, 8) == ord("8"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248BA, 8) == ord("6"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248BB, 8) == ord("-"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248BC, 8) == ord("6"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248BD, 8) == ord("4"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248BE, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x2E34362D3638782D78756E696C2D646C)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A248AF)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2066,63 +2187,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_21_symbolic(self):
-        ''' Instruction MOVHPD_21
+        """ Instruction MOVHPD_21
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7b99000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7B99000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a30)
+        cs.add(addr == 0x7FFFF7B99A30)
         value = cs.new_bitvec(8)
         cs.add(value == 0x36)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a31)
+        cs.add(addr == 0x7FFFF7B99A31)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a32)
+        cs.add(addr == 0x7FFFF7B99A32)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a33)
+        cs.add(addr == 0x7FFFF7B99A33)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a34)
+        cs.add(addr == 0x7FFFF7B99A34)
         value = cs.new_bitvec(8)
         cs.add(value == 0x76)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a35)
+        cs.add(addr == 0x7FFFF7B99A35)
         value = cs.new_bitvec(8)
         cs.add(value == 0x64)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a36)
+        cs.add(addr == 0x7FFFF7B99A36)
         value = cs.new_bitvec(8)
         cs.add(value == 0x73)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7b99a37)
+        cs.add(addr == 0x7FFFF7B99A37)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6f)
+        cs.add(value == 0x6F)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x64765f5f00656d692e325f58554e494c)
+        cs.add(cpu.XMM2 == 0x64765F5F00656D692E325F58554E494C)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7b99a28)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7B99A28)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -2136,22 +2256,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a30, 8)== ord('6'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a31, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a32, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a33, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a34, 8)== ord('v'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a35, 8)== ord('d'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a36, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7b99a37, 8)== ord('o'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x6f7364765f5f00362e325f58554e494c)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7b99a28)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A30, 8) == ord("6"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A31, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A32, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A33, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A34, 8) == ord("v"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A35, 8) == ord("d"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A36, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7B99A37, 8) == ord("o"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x6F7364765F5F00362E325F58554E494C)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7B99A28)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2160,63 +2280,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_3_symbolic(self):
-        ''' Instruction MOVHPD_3
+        """ Instruction MOVHPD_3
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0xffffffff00ffffff2e325f4342494c47)
+        cs.add(cpu.XMM1 == 0xFFFFFFFF00FFFFFF2E325F4342494C47)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -2230,22 +2349,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2254,63 +2373,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_4_symbolic(self):
-        ''' Instruction MOVHPD_4
+        """ Instruction MOVHPD_4
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
+        cs.add(cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -2324,22 +2442,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2348,66 +2466,65 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_5_symbolic(self):
-        ''' Instruction MOVHPD_5
+        """ Instruction MOVHPD_5
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7ffa000, 0x1000, 'rwx')
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7FFA000, 0x1000, "rwx")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa30c)
+        cs.add(addr == 0x7FFFF7FFA30C)
         value = cs.new_bitvec(8)
         cs.add(value == 0x36)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa30d)
+        cs.add(addr == 0x7FFFF7FFA30D)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa30e)
+        cs.add(addr == 0x7FFFF7FFA30E)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem.write(0x7ffff7df294f, '\x0f')
+        mem.write(0x7FFFF7DF294F, "\x0f")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa310)
+        cs.add(addr == 0x7FFFF7FFA310)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa311)
+        cs.add(addr == 0x7FFFF7FFA311)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem.write(0x7ffff7df2952, '\x08')
+        mem.write(0x7FFFF7DF2952, "\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa313)
+        cs.add(addr == 0x7FFFF7FFA313)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem.write(0x7ffff7df294e, 'f')
+        mem.write(0x7FFFF7DF294E, "f")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa30f)
+        cs.add(addr == 0x7FFFF7FFA30F)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem.write(0x7ffff7df2950, '\x16O')
+        mem.write(0x7FFFF7DF2950, "\x16O")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ffa312)
+        cs.add(addr == 0x7FFFF7FFA312)
         value = cs.new_bitvec(8)
         cs.add(value == 0x2)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0xffffffff00ffffff2e325f58554e494c)
+        cs.add(cpu.XMM1 == 0xFFFFFFFF00FFFFFF2E325F58554E494C)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7ffa304)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7FFA304)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -2421,22 +2538,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa30c, 8)== ord('6'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa30d, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa30e, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa313, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa30f, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa310, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa311, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ffa312, 8)== ord('\x02'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x20000000000362e325f58554e494c)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7ffa304)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA30C, 8) == ord("6"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA30D, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA30E, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA313, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA30F, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA310, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA311, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FFA312, 8) == ord("\x02"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x20000000000362E325F58554E494C)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7FFA304)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2444,64 +2561,63 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_MOVHPD_6_symbolic(self):
-        ''' Instruction MOVHPD_6
+        """ Instruction MOVHPD_6
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
+        cs.add(cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -2515,22 +2631,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2538,64 +2654,63 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_MOVHPD_7_symbolic(self):
-        ''' Instruction MOVHPD_7
+        """ Instruction MOVHPD_7
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7A24000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d6)
+        cs.add(addr == 0x7FFFF7A248D6)
         value = cs.new_bitvec(8)
         cs.add(value == 0x32)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d7)
+        cs.add(addr == 0x7FFFF7A248D7)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2e)
+        cs.add(value == 0x2E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d8)
+        cs.add(addr == 0x7FFFF7A248D8)
         value = cs.new_bitvec(8)
         cs.add(value == 0x35)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248d9)
+        cs.add(addr == 0x7FFFF7A248D9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248da)
+        cs.add(addr == 0x7FFFF7A248DA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x47)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248db)
+        cs.add(addr == 0x7FFFF7A248DB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x4c)
+        cs.add(value == 0x4C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dc)
+        cs.add(addr == 0x7FFFF7A248DC)
         value = cs.new_bitvec(8)
         cs.add(value == 0x49)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a248dd)
+        cs.add(addr == 0x7FFFF7A248DD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x42)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
+        cs.add(cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7a248ce)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7A248CE)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -2609,22 +2724,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d7, 8)== ord('.'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d6, 8)== ord('2'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d8, 8)== ord('5'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248d9, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248da, 8)== ord('G'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248db, 8)== ord('L'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dc, 8)== ord('I'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a248dd, 8)== ord('B'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x42494c4700352e322e325f4342494c47)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7a248ce)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D7, 8) == ord("."))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D6, 8) == ord("2"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D8, 8) == ord("5"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248D9, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DA, 8) == ord("G"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DB, 8) == ord("L"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DC, 8) == ord("I"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A248DD, 8) == ord("B"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x42494C4700352E322E325F4342494C47)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7A248CE)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2633,63 +2748,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_8_symbolic(self):
-        ''' Instruction MOVHPD_8
+        """ Instruction MOVHPD_8
             Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7ff7000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7FF7000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2953, "f\x0f\x16V\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74a8)
+        cs.add(addr == 0x7FFFF7FF74A8)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x5f)
+        cs.add(value == 0x5F)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74a9)
+        cs.add(addr == 0x7FFFF7FF74A9)
         value = cs.new_bitvec(8)
         cs.add(value == 0x36)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74aa)
+        cs.add(addr == 0x7FFFF7FF74AA)
         value = cs.new_bitvec(8)
         cs.add(value == 0x34)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74ab)
+        cs.add(addr == 0x7FFFF7FF74AB)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x2d)
+        cs.add(value == 0x2D)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74ac)
+        cs.add(addr == 0x7FFFF7FF74AC)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6c)
+        cs.add(value == 0x6C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74ad)
+        cs.add(addr == 0x7FFFF7FF74AD)
         value = cs.new_bitvec(8)
         cs.add(value == 0x69)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74ae)
+        cs.add(addr == 0x7FFFF7FF74AE)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6e)
+        cs.add(value == 0x6E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7ff74af)
+        cs.add(addr == 0x7FFFF7FF74AF)
         value = cs.new_bitvec(8)
         cs.add(value == 0x75)
         mem[addr] = value
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x3638782f62696c2f)
+        cs.add(cpu.XMM2 == 0x3638782F62696C2F)
         cpu.RSI = cs.new_bitvec(64)
-        cs.add(cpu.RSI == 0x7ffff7ff74a0)
-        cpu.RIP = 0x7ffff7df2953
+        cs.add(cpu.RSI == 0x7FFFF7FF74A0)
+        cpu.RIP = 0x7FFFF7DF2953
 
         done = False
         while not done:
@@ -2703,22 +2817,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2953, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2954, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2955, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2956, 8)== ord('V'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2957, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74a8, 8)== ord('_'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74a9, 8)== ord('6'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74aa, 8)== ord('4'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74ab, 8)== ord('-'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74ac, 8)== ord('l'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74ad, 8)== ord('i'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74ae, 8)== ord('n'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7ff74af, 8)== ord('u'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x756e696c2d34365f3638782f62696c2f)
-        condition = Operators.AND(condition, cpu.RSI == 0x7ffff7ff74a0)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2958)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2953, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2954, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2955, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2956, 8) == ord("V"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2957, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74A8, 8) == ord("_"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74A9, 8) == ord("6"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74AA, 8) == ord("4"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74AB, 8) == ord("-"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74AC, 8) == ord("l"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74AD, 8) == ord("i"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74AE, 8) == ord("n"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7FF74AF, 8) == ord("u"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x756E696C2D34365F3638782F62696C2F)
+        condition = Operators.AND(condition, cpu.RSI == 0x7FFFF7FF74A0)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2958)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2727,63 +2841,62 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-
     def test_MOVHPD_9_symbolic(self):
-        ''' Instruction MOVHPD_9
+        """ Instruction MOVHPD_9
             Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.mmap(0x7FFFF7A21000, 0x1000, "rwx")
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF294E, "f\x0f\x16O\x08")
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a21315)
+        cs.add(addr == 0x7FFFF7A21315)
         value = cs.new_bitvec(8)
         cs.add(value == 0x65)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a21316)
+        cs.add(addr == 0x7FFFF7A21316)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6d)
+        cs.add(value == 0x6D)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a21317)
+        cs.add(addr == 0x7FFFF7A21317)
         value = cs.new_bitvec(8)
         cs.add(value == 0x61)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a21318)
+        cs.add(addr == 0x7FFFF7A21318)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6c)
+        cs.add(value == 0x6C)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a21319)
+        cs.add(addr == 0x7FFFF7A21319)
         value = cs.new_bitvec(8)
         cs.add(value == 0x69)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a2131a)
+        cs.add(addr == 0x7FFFF7A2131A)
         value = cs.new_bitvec(8)
         cs.add(value == 0x67)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a2131b)
+        cs.add(addr == 0x7FFFF7A2131B)
         value = cs.new_bitvec(8)
-        cs.add(value == 0x6e)
+        cs.add(value == 0x6E)
         mem[addr] = value
         addr = cs.new_bitvec(64)
-        cs.add(addr == 0x7ffff7a2131c)
+        cs.add(addr == 0x7FFFF7A2131C)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
         cpu.XMM1 = cs.new_bitvec(128)
-        cs.add(cpu.XMM1 == 0xffffffff00ffffff6d5f6362696c5f5f)
+        cs.add(cpu.XMM1 == 0xFFFFFFFF00FFFFFF6D5F6362696C5F5F)
         cpu.RDI = cs.new_bitvec(64)
-        cs.add(cpu.RDI == 0x7ffff7a2130d)
-        cpu.RIP = 0x7ffff7df294e
+        cs.add(cpu.RDI == 0x7FFFF7A2130D)
+        cpu.RIP = 0x7FFFF7DF294E
 
         done = False
         while not done:
@@ -2797,22 +2910,22 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294e, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df294f, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2950, 8)== ord('\x16'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2951, 8)== ord('O'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2952, 8)== ord('\x08'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a21315, 8)== ord('e'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a21316, 8)== ord('m'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a21317, 8)== ord('a'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a21318, 8)== ord('l'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a21319, 8)== ord('i'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a2131a, 8)== ord('g'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a2131b, 8)== ord('n'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7a2131c, 8)== ord('\x00'))
-        condition = Operators.AND(condition, cpu.XMM1 == 0x6e67696c616d656d5f6362696c5f5f)
-        condition = Operators.AND(condition, cpu.RDI == 0x7ffff7a2130d)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2953)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294E, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF294F, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2950, 8) == ord("\x16"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2951, 8) == ord("O"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2952, 8) == ord("\x08"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A21315, 8) == ord("e"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A21316, 8) == ord("m"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A21317, 8) == ord("a"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A21318, 8) == ord("l"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A21319, 8) == ord("i"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A2131A, 8) == ord("g"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A2131B, 8) == ord("n"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7A2131C, 8) == ord("\x00"))
+        condition = Operators.AND(condition, cpu.XMM1 == 0x6E67696C616D656D5F6362696C5F5F)
+        condition = Operators.AND(condition, cpu.RDI == 0x7FFFF7A2130D)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2953)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2820,21 +2933,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_1_symbolic(self):
-        ''' Instruction PSLLDQ_1
+        """ Instruction PSLLDQ_1
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -2848,13 +2960,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
         condition = Operators.AND(condition, cpu.XMM2 == 0x100000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2862,21 +2974,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_10_symbolic(self):
-        ''' Instruction PSLLDQ_10
+        """ Instruction PSLLDQ_10
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df3470
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -2890,13 +3001,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x2e6f732e6362696c0000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x2E6F732E6362696C0000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2904,21 +3015,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_11_symbolic(self):
-        ''' Instruction PSLLDQ_11
+        """ Instruction PSLLDQ_11
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df3470
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -2932,13 +3042,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x2e6f732e6362696c0000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x2E6F732E6362696C0000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2946,21 +3056,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_12_symbolic(self):
-        ''' Instruction PSLLDQ_12
+        """ Instruction PSLLDQ_12
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df3470
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -2974,13 +3083,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x2e6f732e6362696c0000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x2E6F732E6362696C0000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -2988,21 +3097,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_13_symbolic(self):
-        ''' Instruction PSLLDQ_13
+        """ Instruction PSLLDQ_13
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -3016,13 +3124,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
         condition = Operators.AND(condition, cpu.XMM2 == 0x100000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3030,21 +3138,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_14_symbolic(self):
-        ''' Instruction PSLLDQ_14
+        """ Instruction PSLLDQ_14
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df3470
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -3058,13 +3165,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x2e6f732e6362696c0000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x2E6F732E6362696C0000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3072,21 +3179,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_15_symbolic(self):
-        ''' Instruction PSLLDQ_15
+        """ Instruction PSLLDQ_15
             Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF389D, "f\x0fs\xfa\x04")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x3000000020002000000352e322e32)
-        cpu.RIP = 0x7ffff7df389d
+        cs.add(cpu.XMM2 == 0x3000000020002000000352E322E32)
+        cpu.RIP = 0x7FFFF7DF389D
 
         done = False
         while not done:
@@ -3100,13 +3206,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df38a0, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df38a1, 8)== ord('\x04'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389d, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389e, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389f, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x20002000000352e322e3200000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df38a2)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF38A0, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF38A1, 8) == ord("\x04"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389D, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389E, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389F, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x20002000000352E322E3200000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF38A2)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3114,21 +3220,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_16_symbolic(self):
-        ''' Instruction PSLLDQ_16
+        """ Instruction PSLLDQ_16
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df3470
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -3142,13 +3247,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x2e6f732e6362696c0000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x2E6F732E6362696C0000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3156,21 +3261,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_17_symbolic(self):
-        ''' Instruction PSLLDQ_17
+        """ Instruction PSLLDQ_17
             Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF39DD, "f\x0fs\xfa\x03")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x494c4700352e322e325f4342494c4700)
-        cpu.RIP = 0x7ffff7df39dd
+        cs.add(cpu.XMM2 == 0x494C4700352E322E325F4342494C4700)
+        cpu.RIP = 0x7FFFF7DF39DD
 
         done = False
         while not done:
@@ -3184,13 +3288,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39e0, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39e1, 8)== ord('\x03'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39dd, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39de, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39df, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x352e322e325f4342494c4700000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df39e2)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39E0, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39E1, 8) == ord("\x03"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39DD, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39DE, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39DF, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x352E322E325F4342494C4700000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF39E2)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3198,21 +3302,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_18_symbolic(self):
-        ''' Instruction PSLLDQ_18
+        """ Instruction PSLLDQ_18
             Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF389D, "f\x0fs\xfa\x04")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x665f4f495f006f6c6c657466006b6863)
-        cpu.RIP = 0x7ffff7df389d
+        cs.add(cpu.XMM2 == 0x665F4F495F006F6C6C657466006B6863)
+        cpu.RIP = 0x7FFFF7DF389D
 
         done = False
         while not done:
@@ -3226,13 +3329,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df38a0, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df38a1, 8)== ord('\x04'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389d, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389e, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389f, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x5f006f6c6c657466006b686300000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df38a2)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF38A0, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF38A1, 8) == ord("\x04"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389D, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389E, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389F, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x5F006F6C6C657466006B686300000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF38A2)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3240,21 +3343,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_19_symbolic(self):
-        ''' Instruction PSLLDQ_19
+        """ Instruction PSLLDQ_19
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -3268,13 +3370,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
         condition = Operators.AND(condition, cpu.XMM2 == 0x100000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3282,21 +3384,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_2_symbolic(self):
-        ''' Instruction PSLLDQ_2
+        """ Instruction PSLLDQ_2
             Groups: sse2
             0x7ffff7df2f70:	pslldq	xmm2, 0xb
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df2f70, 'f\x0fs\xfa\x0b')
+        mem.mmap(0x7FFFF7DF2000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF2F70, "f\x0fs\xfa\x0b")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df2f70
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF2F70
 
         done = False
         while not done:
@@ -3310,13 +3411,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2f70, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2f71, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2f72, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2f73, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df2f74, 8)== ord('\x0b'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x6362696c000000000000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df2f75)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2F70, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2F71, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2F72, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2F73, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF2F74, 8) == ord("\x0b"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x6362696C000000000000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF2F75)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3324,21 +3425,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_20_symbolic(self):
-        ''' Instruction PSLLDQ_20
+        """ Instruction PSLLDQ_20
             Groups: sse2
             0x7ffff7df3970:	pslldq	xmm2, 3
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3970, 'f\x0fs\xfa\x03')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3970, "f\x0fs\xfa\x03")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x322e6f732e34362d3638782d78756e69)
-        cpu.RIP = 0x7ffff7df3970
+        cs.add(cpu.XMM2 == 0x322E6F732E34362D3638782D78756E69)
+        cpu.RIP = 0x7FFFF7DF3970
 
         done = False
         while not done:
@@ -3352,13 +3452,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3970, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3971, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3972, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3973, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3974, 8)== ord('\x03'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x732e34362d3638782d78756e69000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3975)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3970, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3971, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3972, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3973, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3974, 8) == ord("\x03"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x732E34362D3638782D78756E69000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3975)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3366,21 +3466,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_21_symbolic(self):
-        ''' Instruction PSLLDQ_21
+        """ Instruction PSLLDQ_21
             Groups: sse2
             0x7ffff7df3830:	pslldq	xmm2, 4
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3830, 'f\x0fs\xfa\x04')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3830, "f\x0fs\xfa\x04")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x5f4342494c4700342e332e325f434249)
-        cpu.RIP = 0x7ffff7df3830
+        cs.add(cpu.XMM2 == 0x5F4342494C4700342E332E325F434249)
+        cpu.RIP = 0x7FFFF7DF3830
 
         done = False
         while not done:
@@ -3394,13 +3493,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3830, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3831, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3832, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3833, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3834, 8)== ord('\x04'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x4c4700342e332e325f43424900000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3835)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3830, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3831, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3832, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3833, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3834, 8) == ord("\x04"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x4C4700342E332E325F43424900000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3835)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3408,21 +3507,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_3_symbolic(self):
-        ''' Instruction PSLLDQ_3
+        """ Instruction PSLLDQ_3
             Groups: sse2
             0x7ffff7df3ab0:	pslldq	xmm2, 2
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3ab0, 'f\x0fs\xfa\x02')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3AB0, "f\x0fs\xfa\x02")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x63007463656a626f5f726f665f6f7364)
-        cpu.RIP = 0x7ffff7df3ab0
+        cs.add(cpu.XMM2 == 0x63007463656A626F5F726F665F6F7364)
+        cpu.RIP = 0x7FFFF7DF3AB0
 
         done = False
         while not done:
@@ -3436,13 +3534,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3ab0, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3ab1, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3ab2, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3ab3, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3ab4, 8)== ord('\x02'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x7463656a626f5f726f665f6f73640000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3ab5)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3AB0, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3AB1, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3AB2, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3AB3, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3AB4, 8) == ord("\x02"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x7463656A626F5F726F665F6F73640000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3AB5)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3450,21 +3548,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_4_symbolic(self):
-        ''' Instruction PSLLDQ_4
+        """ Instruction PSLLDQ_4
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df3470
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -3478,13 +3575,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x2e6f732e6362696c0000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x2E6F732E6362696C0000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3492,21 +3589,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_5_symbolic(self):
-        ''' Instruction PSLLDQ_5
+        """ Instruction PSLLDQ_5
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
-        cpu.RIP = 0x7ffff7df3470
+        cs.add(cpu.XMM2 == 0x6972705F5F00362E6F732E6362696C00)
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -3520,13 +3616,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x2e6f732e6362696c0000000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x2E6F732E6362696C0000000000000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3534,21 +3630,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_6_symbolic(self):
-        ''' Instruction PSLLDQ_6
+        """ Instruction PSLLDQ_6
             Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF389D, "f\x0fs\xfa\x04")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x3000000020002000000352e322e32)
-        cpu.RIP = 0x7ffff7df389d
+        cs.add(cpu.XMM2 == 0x3000000020002000000352E322E32)
+        cpu.RIP = 0x7FFFF7DF389D
 
         done = False
         while not done:
@@ -3562,13 +3657,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df38a0, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df38a1, 8)== ord('\x04'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389d, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389e, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df389f, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x20002000000352e322e3200000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df38a2)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF38A0, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF38A1, 8) == ord("\x04"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389D, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389E, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF389F, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x20002000000352E322E3200000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF38A2)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3576,21 +3671,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_7_symbolic(self):
-        ''' Instruction PSLLDQ_7
+        """ Instruction PSLLDQ_7
             Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3470, "f\x0fs\xfa\x07")
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
-        cpu.RIP = 0x7ffff7df3470
+        cpu.RIP = 0x7FFFF7DF3470
 
         done = False
         while not done:
@@ -3604,13 +3698,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3470, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3471, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3472, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3473, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3474, 8)== ord('\x07'))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3470, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3471, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3472, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3473, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3474, 8) == ord("\x07"))
         condition = Operators.AND(condition, cpu.XMM2 == 0x100000000000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3475)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3475)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3618,21 +3712,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_8_symbolic(self):
-        ''' Instruction PSLLDQ_8
+        """ Instruction PSLLDQ_8
             Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF39DD, "f\x0fs\xfa\x03")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x7461636f6c6c6165645f6c645f00636f)
-        cpu.RIP = 0x7ffff7df39dd
+        cs.add(cpu.XMM2 == 0x7461636F6C6C6165645F6C645F00636F)
+        cpu.RIP = 0x7FFFF7DF39DD
 
         done = False
         while not done:
@@ -3646,13 +3739,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39e0, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39e1, 8)== ord('\x03'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39dd, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39de, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df39df, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x6f6c6c6165645f6c645f00636f000000)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df39e2)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39E0, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39E1, 8) == ord("\x03"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39DD, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39DE, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF39DF, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x6F6C6C6165645F6C645F00636F000000)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF39E2)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3660,21 +3753,20 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
 
     def test_PSLLDQ_9_symbolic(self):
-        ''' Instruction PSLLDQ_9
+        """ Instruction PSLLDQ_9
             Groups: sse2
             0x7ffff7df3c5d:	pslldq	xmm2, 1
-        '''
+        """
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
-        mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem.write(0x7ffff7df3c5d, 'f\x0fs\xfa\x01')
+        mem.mmap(0x7FFFF7DF3000, 0x1000, "rwx")
+        mem.write(0x7FFFF7DF3C5D, "f\x0fs\xfa\x01")
         cpu.XMM2 = cs.new_bitvec(128)
-        cs.add(cpu.XMM2 == 0x68252e7568254d00796164666f656d69)
-        cpu.RIP = 0x7ffff7df3c5d
+        cs.add(cpu.XMM2 == 0x68252E7568254D00796164666F656D69)
+        cpu.RIP = 0x7FFFF7DF3C5D
 
         done = False
         while not done:
@@ -3688,13 +3780,13 @@ class CPUTest(unittest.TestCase):
                 setattr(cpu, e.reg_name, values[0])
 
         condition = True
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3c60, 8)== ord('\xfa'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3c61, 8)== ord('\x01'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3c5d, 8)== ord('f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3c5e, 8)== ord('\x0f'))
-        condition = Operators.AND(condition, cpu.read_int(0x7ffff7df3c5f, 8)== ord('s'))
-        condition = Operators.AND(condition, cpu.XMM2 == 0x252e7568254d00796164666f656d6900)
-        condition = Operators.AND(condition, cpu.RIP == 0x7ffff7df3c62)
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3C60, 8) == ord("\xfa"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3C61, 8) == ord("\x01"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3C5D, 8) == ord("f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3C5E, 8) == ord("\x0f"))
+        condition = Operators.AND(condition, cpu.read_int(0x7FFFF7DF3C5F, 8) == ord("s"))
+        condition = Operators.AND(condition, cpu.XMM2 == 0x252E7568254D00796164666F656D6900)
+        condition = Operators.AND(condition, cpu.RIP == 0x7FFFF7DF3C62)
 
         with cs as temp_cs:
             temp_cs.add(condition)
@@ -3704,6 +3796,5 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-

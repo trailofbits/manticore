@@ -1,8 +1,18 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
-from ..core.smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec, BitVecConstant, expression
+from ..core.smtlib import (
+    Operators,
+    ConstraintSet,
+    arithmetic_simplify,
+    Z3Solver,
+    TooManySolutions,
+    BitVec,
+    BitVecConstant,
+    expression,
+    issymbolic,
+)
 from ..native.mappings import mmap, munmap
-from ..utils.helpers import issymbolic, interval_intersection
+from ..utils.helpers import interval_intersection
 
 import functools
 import logging
@@ -11,32 +21,32 @@ logger = logging.getLogger(__name__)
 
 
 class MemoryException(Exception):
-    '''
+    """
     Memory exceptions
-    '''
+    """
 
     def __init__(self, message, address=None):
-        '''
+        """
         Builds a memory exception.
 
         :param message: exception message.
         :param address: memory address where the exception occurred.
-        '''
+        """
         self.address = address
         self.message = message
         if address is not None and not issymbolic(address):
-            self.message += f' <{address:x}>'
+            self.message += f" <{address:x}>"
 
     def __str__(self):
         return self.message
 
 
 class ConcretizeMemory(MemoryException):
-    '''
+    """
     Raised when a symbolic memory cell needs to be concretized.
-    '''
+    """
 
-    def __init__(self, mem, address, size, message=None, policy='MINMAX'):
+    def __init__(self, mem, address, size, message=None, policy="MINMAX"):
         if message is None:
             self.message = f"Concretizing memory address {address} size {size}"
         else:
@@ -48,21 +58,21 @@ class ConcretizeMemory(MemoryException):
 
 
 class InvalidMemoryAccess(MemoryException):
-    _message = 'Invalid memory access'
+    _message = "Invalid memory access"
 
     def __init__(self, address, mode):
-        assert mode in 'rwx'
-        suffix = f' (mode:{mode})'
+        assert mode in "rwx"
+        suffix = f" (mode:{mode})"
         message = self._message + suffix
-        super(InvalidMemoryAccess, self, ).__init__(message, address)
+        super(InvalidMemoryAccess, self).__init__(message, address)
         self.mode = mode
 
 
 class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
-    _message = 'Invalid symbolic memory access'
+    _message = "Invalid symbolic memory access"
 
     def __init__(self, address, mode, size, constraint):
-        super(InvalidSymbolicMemoryAccess, self, ).__init__(address, mode)
+        super(InvalidSymbolicMemoryAccess, self).__init__(address, mode)
         # the crashing constraint you need to assert
         self.constraint = constraint
         self.size = size
@@ -84,7 +94,7 @@ def _normalize(c):
 
 
 class Map(object, metaclass=ABCMeta):
-    '''
+    """
     A memory map.
 
     It represents a convex chunk of memory with a start and an end address.
@@ -94,18 +104,18 @@ class Map(object, metaclass=ABCMeta):
                   ^                                    ^
                 start                                 end
 
-    '''
+    """
 
     def __init__(self, start, size, perms, name=None):
-        '''
+        """
         Abstract memory map.
 
         :param start: the first valid address.
         :param size: the size of the map.
         :param perms: the access permissions of the map (rwx).
-        '''
-        assert isinstance(start, int) and start >= 0, 'Invalid start address'
-        assert isinstance(size, int) and size > 0, 'Invalid end address'
+        """
+        assert isinstance(start, int) and start >= 0, "Invalid start address"
+        assert isinstance(size, int) and size > 0, "Invalid end address"
 
         super().__init__()
         self._start = start
@@ -114,23 +124,27 @@ class Map(object, metaclass=ABCMeta):
         self._name = name
 
     def _get_perms(self):
-        ''' Gets the access permissions of the map. '''
+        """ Gets the access permissions of the map. """
         return self._perms
 
     def _set_perms(self, perms):
-        '''
+        """
         Sets the access permissions of the map.
 
         :param perms: the new permissions.
-        '''
-        assert isinstance(perms, str) and len(perms) <= 3 and perms.strip() in ['', 'r', 'w', 'x', 'rw', 'r x', 'rx', 'rwx', 'wx', ]
+        """
+        assert (
+            isinstance(perms, str)
+            and len(perms) <= 3
+            and perms.strip() in ["", "r", "w", "x", "rw", "r x", "rx", "rwx", "wx"]
+        )
         self._perms = perms
 
     # Property
     perms = property(_get_perms, _set_perms)
 
     def access_ok(self, access):
-        ''' Check if there is enough permissions for access '''
+        """ Check if there is enough permissions for access """
         for c in access:
             if c not in self.perms:
                 return False
@@ -149,16 +163,16 @@ class Map(object, metaclass=ABCMeta):
         return self._name
 
     def __len__(self):
-        '''Returns the current size in bytes. '''
+        """Returns the current size in bytes. """
         return self._end - self._start
 
     def __repr__(self):
-        '''
+        """
         Returns the string representation of the map mapping.
 
         :rtype: str
-        '''
-        return f'<{self.__class__.__name__} 0x{self.start:016x}-0x{self.end:016x} {self.perms}>'
+        """
+        return f"<{self.__class__.__name__} 0x{self.start:016x}-0x{self.end:016x} {self.perms}>"
 
     def __iter__(self):
         """
@@ -167,10 +181,12 @@ class Map(object, metaclass=ABCMeta):
         return iter(range(self._start, self._end))
 
     def __eq__(self, other):
-        return self.start == other.start and \
-            self.end == other.end and \
-            self.perms == other.perms and \
-            self.name == other.name
+        return (
+            self.start == other.start
+            and self.end == other.end
+            and self.perms == other.perms
+            and self.name == other.name
+        )
 
     def __lt__(self, other):
         if self.start != other.start:
@@ -186,27 +202,26 @@ class Map(object, metaclass=ABCMeta):
         return object.__hash__(self)
 
     def _in_range(self, index):
-        ''' Returns True if index is in range '''
+        """ Returns True if index is in range """
         if isinstance(index, slice):
-            in_range = index.start < index.stop and \
-                index.start >= self.start and \
-                index.stop <= self.end
+            in_range = (
+                index.start < index.stop and index.start >= self.start and index.stop <= self.end
+            )
         else:
-            in_range = index >= self.start and \
-                index <= self.end
+            in_range = index >= self.start and index <= self.end
         return in_range
 
     def _get_offset(self, index):
-        '''
+        """
         Translates the index to the internal offsets.
 
         self.start   -> 0
         self.start+1 -> 1
         ...
         self.end     -> len(self)
-        '''
+        """
         if not self._in_range(index):
-            raise IndexError('Map index out of range')
+            raise IndexError("Map index out of range")
         if isinstance(index, slice):
             index = slice(index.start - self.start, index.stop - self.start)
         else:
@@ -215,53 +230,53 @@ class Map(object, metaclass=ABCMeta):
 
     @abstractmethod
     def __getitem__(self, index):
-        '''
+        """
         Reads a byte from an address or a sequence of bytes from a range of addresses
 
         :param index: the address or slice where to obtain the bytes from.
         :return: the character or sequence at the specified address.
         :rtype: byte or array
-        '''
+        """
 
     @abstractmethod
     def __setitem__(self, index, value):
-        '''
+        """
         Writes a byte to an address or a sequence of bytes to a range of addresses
 
         :param index: the address or slice where to put the data.
         :param value: byte or sequence of bytes to put in this map.
-        '''
+        """
 
     @abstractmethod
     def split(self, address):
-        '''
+        """
         Split the current map into two mappings
 
         :param address: The address at which to split the Map.
-        '''
+        """
 
 
 class AnonMap(Map):
-    ''' A concrete anonymous memory map '''
+    """ A concrete anonymous memory map """
 
     def __init__(self, start, size, perms, data_init=None, name=None, **kwargs):
-        '''
+        """
         Builds a concrete anonymous memory map.
 
         :param start: the first valid address of the map.
         :param size: the size of the map.
         :param perms: the access permissions of the map.
         :param data_init: the data to initialize the map.
-        '''
+        """
         super().__init__(start, size, perms, name, **kwargs)
         self._data = bytearray(size)
         if data_init is not None:
-            assert len(data_init) <= size, 'More initial data than reserved memory'
+            assert len(data_init) <= size, "More initial data than reserved memory"
             # check that the values this slice points to are ints
             if isinstance(data_init[0], int):
-                self._data[0:len(data_init)] = data_init
+                self._data[0 : len(data_init)] = data_init
             else:
-                self._data[0:len(data_init)] = [ord(s) for s in data_init]
+                self._data[0 : len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
         return (self.__class__, (self.start, len(self), self.perms, self._data, self.name))
@@ -273,17 +288,18 @@ class AnonMap(Map):
             return self, None
 
         assert address > self.start and address < self.end
-        head = AnonMap(self.start, address - self.start, self.perms, self[self.start:address])
-        tail = AnonMap(address, self.end - address, self.perms, self[address:self.end])
+        head = AnonMap(self.start, address - self.start, self.perms, self[self.start : address])
+        tail = AnonMap(address, self.end - address, self.perms, self[address : self.end])
         return head, tail
 
     def __setitem__(self, index, value):
-        assert not isinstance(index, slice) or \
-            len(value) == index.stop - index.start
+        assert not isinstance(index, slice) or len(value) == index.stop - index.start
         index = self._get_offset(index)
 
         if issymbolic(value[0]) and isinstance(self._data, bytearray):
-            self._data = [Operators.ORD(b) for b in self._data]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
+            self._data = [
+                Operators.ORD(b) for b in self._data
+            ]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
 
         if isinstance(index, slice):
             if not isinstance(value[0], int):
@@ -303,14 +319,26 @@ class ArrayMap(Map):
     def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs):
         super(ArrayMap, self).__init__(address, size, perms)
         if name is None:
-            name = 'ArrayMap_{:x}'.format(address)
+            name = "ArrayMap_{:x}".format(address)
         if backing_array is not None:
             self._array = backing_array
         else:
-            self._array = expression.ArrayProxy(expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name))
+            self._array = expression.ArrayProxy(
+                expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name)
+            )
 
     def __reduce__(self):
-        return self.__class__, (self.start, len(self), self._perms, self._array.index_bits, self._array, self._array.name)
+        return (
+            self.__class__,
+            (
+                self.start,
+                len(self),
+                self._perms,
+                self._array.index_bits,
+                self._array,
+                self._array.name,
+            ),
+        )
 
     def __setitem__(self, key, value):
         self._array[key] = value
@@ -328,10 +356,14 @@ class ArrayMap(Map):
         index_bits, value_bits = self._array.index_bits, self._array.value_bits
 
         left_size, right_size = address - self.start, self.end - address
-        left_name, right_name = ['{}_{:d}'.format(self._array.name, i) for i in range(2)]
+        left_name, right_name = ["{}_{:d}".format(self._array.name, i) for i in range(2)]
 
-        head_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name))
-        tail_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name))
+        head_arr = expression.ArrayProxy(
+            expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name)
+        )
+        tail_arr = expression.ArrayProxy(
+            expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name)
+        )
 
         head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)
         tail = ArrayMap(address, right_size, self.perms, index_bits, tail_arr, right_name)
@@ -340,7 +372,7 @@ class ArrayMap(Map):
 
 
 class FileMap(Map):
-    '''
+    """
     A file map.
 
     A  file is mapped in multiples of the page size.  For a file that is not a
@@ -348,10 +380,10 @@ class FileMap(Map):
     writes to that region are not written out to the file. The effect of
     changing the size of the underlying file of a mapping on the pages that
     correspond to added or removed regions of the file is unspecified.
-    '''
+    """
 
     def __init__(self, addr, size, perms, filename, offset=0, overlay=None, **kwargs):
-        '''
+        """
         Builds a map of memory  initialized with the content of filename.
 
         :param addr: the first valid address of the file map.
@@ -360,13 +392,13 @@ class FileMap(Map):
         :param filename: the file to map in memory.
         :param offset: the offset into the file where to start the mapping. \
                 This offset must be a multiple of pagebitsize.
-        '''
+        """
         super().__init__(addr, size, perms, **kwargs)
         assert isinstance(offset, int)
         assert offset >= 0
         self._filename = filename
         self._offset = offset
-        with open(filename, 'r') as fileobject:
+        with open(filename, "r") as fileobject:
             fileobject.seek(0, 2)
             file_size = fileobject.tell()
             self._mapped_size = min(size, file_size - offset)
@@ -377,17 +409,20 @@ class FileMap(Map):
             self._overlay = dict()
 
     def __reduce__(self):
-        return (self.__class__, (self.start, len(self), self.perms, self._filename, self._offset, self._overlay))
+        return (
+            self.__class__,
+            (self.start, len(self), self.perms, self._filename, self._offset, self._overlay),
+        )
 
     def __del__(self):
-        munmap(self._data, self._mapped_size)
+        if hasattr(self, "_data"):
+            munmap(self._data, self._mapped_size)
 
     def __repr__(self):
-        return f'<{self.__class__.__name__} [{self._filename}+{self._offset:x}] 0x{self.start:016x}-0x{self.end:016x} {self.perms}>'
+        return f"<{self.__class__.__name__} [{self._filename}+{self._offset:x}] 0x{self.start:016x}-0x{self.end:016x} {self.perms}>"
 
     def __setitem__(self, index, value):
-        assert not isinstance(index, slice) or \
-            len(value) == index.stop - index.start
+        assert not isinstance(index, slice) or len(value) == index.stop - index.start
         index = self._get_offset(index)
         if isinstance(index, slice):
             for i in range(index.stop - index.start):
@@ -401,7 +436,7 @@ class FileMap(Map):
                 return _normalize(self._overlay[offset])
             else:
                 if offset >= self._mapped_size:
-                    return b'\x00'  # , 'Extra data must initially be zero'
+                    return b"\x00"  # , 'Extra data must initially be zero'
                 return _normalize(self._data[offset])
 
         index = self._get_offset(index)
@@ -426,12 +461,12 @@ class FileMap(Map):
 
 
 class COWMap(Map):
-    '''
+    """
     Copy-on-write based map.
-    '''
+    """
 
     def __init__(self, parent, offset=0, perms=None, size=None, **kwargs):
-        '''
+        """
         A copy on write copy of parent. Writes to the parent after a copy on
         write are unspecified.
 
@@ -439,7 +474,7 @@ class COWMap(Map):
         :param offset: an offset within the parent map from where to create the new map.
         :param perms: Permissions on new mapping, or None if inheriting.
         :param size: the size of the new map or max.
-        '''
+        """
         assert isinstance(parent, Map)
         assert offset >= 0 and offset < len(parent)
         if size is None:
@@ -485,21 +520,27 @@ class COWMap(Map):
         return head, tail
 
 
+class StubCPU:
+    def _publish(self, *args, **kwargs):
+        return None
+
+
 class Memory(object, metaclass=ABCMeta):
-    '''
+    """
     The memory manager.
     This class handles all virtual memory mappings and symbolic chunks.
-    '''
+    """
 
-    def __init__(self, maps=None):
-        '''
+    def __init__(self, maps=None, cpu=StubCPU()):
+        """
         Builds a memory manager.
-        '''
+        """
         super().__init__()
         if maps is None:
             self._maps = set()
         else:
             self._maps = set(maps)
+        self.cpu = cpu
         self._page2map = WeakValueDictionary()  # {page -> ref{MAP}}
         self._recording_stack = []
         for m in self._maps:
@@ -508,7 +549,7 @@ class Memory(object, metaclass=ABCMeta):
                 self._page2map[i] = m
 
     def __reduce__(self):
-        return (self.__class__, (self._maps, ))
+        return (self.__class__, (self._maps, self.cpu))
 
     @property
     @abstractmethod
@@ -541,36 +582,36 @@ class Memory(object, metaclass=ABCMeta):
         return self._maps
 
     def _ceil(self, address):
-        '''
+        """
         Returns the smallest page boundary value not less than the address.
         :rtype: int
         :param address: the address to calculate its ceil.
         :return: the ceil of C{address}.
-        '''
+        """
         return (((address - 1) + self.page_size) & ~self.page_mask) & self.memory_mask
 
     def _floor(self, address):
-        '''
+        """
         Returns largest page boundary value not greater than the address.
 
         :param address: the address to calculate its floor.
         :return: the floor of C{address}.
         :rtype: int
-        '''
+        """
         return address & ~self.page_mask
 
     def _page(self, address):
-        '''
+        """
         Calculates the page number of an address.
 
         :param address: the address to calculate its page number.
         :return: the page number of address.
         :rtype: int
-        '''
+        """
         return address >> self.page_bit_size
 
     def _search(self, size, start=None, counter=0):
-        '''
+        """
         Recursively searches the address space for enough free space to allocate C{size} bytes.
 
         :param size: the size in bytes to allocate.
@@ -582,10 +623,10 @@ class Memory(object, metaclass=ABCMeta):
 
 
         todo: Document what happens when you try to allocate something that goes round the address 32/64 bit representation.
-        '''
+        """
         assert size & self.page_mask == 0
         if start is None:
-            end = {32: 0xf8000000, 64: 0x0000800000000000}[self.memory_bit_size]
+            end = {32: 0xF8000000, 64: 0x0000800000000000}[self.memory_bit_size]
             start = end - size
         else:
             if start > self.memory_size - size:
@@ -602,12 +643,12 @@ class Memory(object, metaclass=ABCMeta):
                 return p << self.page_bit_size
             counter += 1
             if counter >= self.memory_size // self.page_size:
-                raise MemoryException('Not enough memory')
+                raise MemoryException("Not enough memory")
 
         return self._search(size, self.memory_size - size, counter)
 
     def mmapFile(self, addr, size, perms, filename, offset=0):
-        '''
+        """
         Creates a new file mapping in the memory address space.
 
         :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
@@ -624,14 +665,16 @@ class Memory(object, metaclass=ABCMeta):
                    - 'Address shall be concrete' if C{addr} is not an integer number.
                    - 'Address too big' if C{addr} goes beyond the limit of the memory.
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
-        '''
+        """
         # If addr is NULL, the system determines where to allocate the region.
-        assert addr is None or isinstance(addr, int), 'Address shall be concrete'
+        assert addr is None or isinstance(addr, int), "Address shall be concrete"
         assert size > 0
+
+        self.cpu._publish("will_map_memory", addr, size, perms, filename, offset)
 
         # address is rounded down to the nearest multiple of the allocation granularity
         if addr is not None:
-            assert addr < self.memory_size, 'Address too big'
+            assert addr < self.memory_size, "Address too big"
             addr = self._floor(addr)
 
         # size value is rounded up to the next page boundary
@@ -642,7 +685,7 @@ class Memory(object, metaclass=ABCMeta):
 
         # It should not be allocated
         for i in range(self._page(addr), self._page(addr + size)):
-            assert i not in self._page2map, 'Map already used'
+            assert i not in self._page2map, "Map already used"
 
         # Create the map
         m = FileMap(addr, size, perms, filename, offset)
@@ -650,11 +693,12 @@ class Memory(object, metaclass=ABCMeta):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New file-memory map @%x size:%x', addr, size)
+        logger.debug("New file-memory map @%x size:%x", addr, size)
+        self.cpu._publish("did_map_memory", addr, size, perms, filename, offset, addr)
         return addr
 
     def mmap(self, addr, size, perms, data_init=None, name=None):
-        '''
+        """
         Creates a new mapping in the memory address space.
 
         :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
@@ -670,13 +714,15 @@ class Memory(object, metaclass=ABCMeta):
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
         :rtype: int
 
-        '''
+        """
         # If addr is NULL, the system determines where to allocate the region.
-        assert addr is None or isinstance(addr, int), 'Address shall be concrete'
+        assert addr is None or isinstance(addr, int), "Address shall be concrete"
+
+        self.cpu._publish("will_map_memory", addr, size, perms, None, None)
 
         # address is rounded down to the nearest multiple of the allocation granularity
         if addr is not None:
-            assert addr < self.memory_size, 'Address too big'
+            assert addr < self.memory_size, "Address too big"
             addr = self._floor(addr)
 
         # size value is rounded up to the next page boundary
@@ -687,7 +733,7 @@ class Memory(object, metaclass=ABCMeta):
 
         # It should not be allocated
         for i in range(self._page(addr), self._page(addr + size)):
-            assert i not in self._page2map, 'Map already used'
+            assert i not in self._page2map, "Map already used"
 
         # Create the anonymous map
         m = AnonMap(start=addr, size=size, perms=perms, data_init=data_init, name=name)
@@ -695,7 +741,9 @@ class Memory(object, metaclass=ABCMeta):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New memory map @%x size:%x', addr, size)
+        logger.debug("New memory map @%x size:%x", addr, size)
+
+        self.cpu._publish("did_map_memory", addr, size, perms, None, None, addr)
         return addr
 
     def _add(self, m):
@@ -718,30 +766,30 @@ class Memory(object, metaclass=ABCMeta):
         self._maps.remove(m)
 
     def map_containing(self, address):
-        '''
+        """
         Returns the L{MMap} object containing the address.
 
         :param address: the address to obtain its mapping.
         :rtype: L{MMap}
 
         @todo: symbolic address
-        '''
+        """
         page_offset = self._page(address)
         if page_offset not in self._page2map:
             raise MemoryException("Page not mapped", address)
         return self._page2map[page_offset]
 
     def mappings(self):
-        '''
+        """
         Returns a sorted list of all the mappings for this memory.
 
         :return: a list of mappings.
         :rtype: list
-        '''
+        """
         result = []
         for m in self.maps:
             if isinstance(m, AnonMap):
-                result.append((m.start, m.end, m.perms, 0, ''))
+                result.append((m.start, m.end, m.perms, 0, ""))
             elif isinstance(m, FileMap):
                 result.append((m.start, m.end, m.perms, m._offset, m._filename))
             else:
@@ -750,12 +798,17 @@ class Memory(object, metaclass=ABCMeta):
         return sorted(result)
 
     def __str__(self):
-        return '\n'.join([f'{start:016x}-{end:016x} {p:>4s} {offset:08x} {name or ""}' for start, end, p, offset, name in self.mappings()])
+        return "\n".join(
+            [
+                f'{start:016x}-{end:016x} {p:>4s} {offset:08x} {name or ""}'
+                for start, end, p, offset, name in self.mappings()
+            ]
+        )
 
     def _maps_in_range(self, start, end):
-        '''
+        """
         Generates the list of maps that overlaps with the range [start:end]
-        '''
+        """
 
         # Search for the first matching map
         addr = start
@@ -768,16 +821,18 @@ class Memory(object, metaclass=ABCMeta):
                 addr = m.end
 
     def munmap(self, start, size):
-        '''
+        """
         Deletes the mappings for the specified address range and causes further
         references to addresses within the range to generate invalid memory
         references.
 
         :param start: the starting address to delete.
         :param size: the length of the unmapping.
-        '''
+        """
         start = self._floor(start)
         end = self._ceil(start + size)
+
+        self.cpu._publish("will_unmap_memory", start, size)
 
         for m in self._maps_in_range(start, end):
             self._del(m)
@@ -789,12 +844,15 @@ class Memory(object, metaclass=ABCMeta):
             if tail:
                 self._add(tail)
 
-        logger.debug(f'Unmap memory @{start:x} size:{size:x}')
+        self.cpu._publish("did_unmap_memory", start, size)
+        logger.debug(f"Unmap memory @{start:x} size:{size:x}")
 
     def mprotect(self, start, size, perms):
         assert size > 0
         start = self._floor(start)
         end = self._ceil(start + size)
+
+        self.cpu._publish("will_protect_memory", start, size, perms)
 
         for m in self._maps_in_range(start, end):
             self._del(m)
@@ -811,6 +869,8 @@ class Memory(object, metaclass=ABCMeta):
             if tail:
                 self._add(tail)
 
+        self.cpu._publish("did_protect_memory", start, size, perms)
+
     # Permissions
     def __contains__(self, address):
         return self._page(address) in self._page2map
@@ -819,7 +879,7 @@ class Memory(object, metaclass=ABCMeta):
         # not happy with this interface.
         if isinstance(index, slice):
             # get the more restrictive set of perms for the range
-            raise NotImplementedError('No perms for slices')
+            raise NotImplementedError("No perms for slices")
         else:
             return self.map_containing(index).perms
 
@@ -847,8 +907,8 @@ class Memory(object, metaclass=ABCMeta):
 
     # write and read potentially symbolic bytes at symbolic indexes
     def read(self, addr, size, force=False):
-        if not self.access_ok(slice(addr, addr + size), 'r', force):
-            raise InvalidMemoryAccess(addr, 'r')
+        if not self.access_ok(slice(addr, addr + size), "r", force):
+            raise InvalidMemoryAccess(addr, "r")
 
         assert size > 0
         result = []
@@ -858,20 +918,20 @@ class Memory(object, metaclass=ABCMeta):
             m = self.map_containing(p)
 
             _size = min(m.end - p, stop - p)
-            result += m[p:p + _size]
+            result += m[p : p + _size]
             p += _size
         assert p == stop
 
         return result
 
     def push_record_writes(self):
-        '''
+        """
         Begin recording all writes. Retrieve all writes with `pop_record_writes()`
-        '''
+        """
         self._recording_stack.append([])
 
     def pop_record_writes(self):
-        '''
+        """
         Stop recording trace and return a `list[(address, value)]` of all the writes
         that occurred, where `value` is of type list[str]. Can be called without
         intermediate `pop_record_writes()`.
@@ -889,7 +949,7 @@ class Memory(object, metaclass=ABCMeta):
         same order they occurred.
 
         :return: list[tuple]
-        '''
+        """
 
         lst = self._recording_stack.pop()
         # Append the current list to a previously-started trace.
@@ -899,8 +959,8 @@ class Memory(object, metaclass=ABCMeta):
 
     def write(self, addr, buf, force=False):
         size = len(buf)
-        if not self.access_ok(slice(addr, addr + size), 'w', force):
-            raise InvalidMemoryAccess(addr, 'w')
+        if not self.access_ok(slice(addr, addr + size), "w", force):
+            raise InvalidMemoryAccess(addr, "w")
         assert size > 0
         stop = addr + size
         start = addr
@@ -911,7 +971,7 @@ class Memory(object, metaclass=ABCMeta):
         while addr < stop:
             m = self.map_containing(addr)
             size = min(m.end - addr, stop - addr)
-            m[addr:addr + size] = buf[addr - start:addr - start + size]
+            m[addr : addr + size] = buf[addr - start : addr - start + size]
             addr += size
         assert addr == stop
 
@@ -945,20 +1005,20 @@ class Memory(object, metaclass=ABCMeta):
 
 
 class SMemory(Memory):
-    '''
+    """
     The symbolic memory manager.
     This class handles all virtual memory mappings and symbolic chunks.
 
     :todo: improve comments
-    '''
+    """
 
     def __init__(self, constraints, symbols=None, *args, **kwargs):
-        '''
+        """
         Builds a memory.
 
         :param constraints:  a set of constraints
         :param symbols: Symbolic chunks
-        '''
+        """
         super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
         self._constraints = constraints
@@ -968,7 +1028,7 @@ class SMemory(Memory):
             self._symbols = dict(symbols)
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps, ))
+        return (self.__class__, (self.constraints, self._symbols, self._maps), {"cpu": self.cpu})
 
     @property
     def constraints(self):
@@ -987,14 +1047,14 @@ class SMemory(Memory):
         return size.value
 
     def munmap(self, start, size):
-        '''
+        """
         Deletes the mappings for the specified address range and causes further
         references to addresses within the range to generate invalid memory
         references.
 
         :param start: the starting address to delete.
         :param size: the length of the unmapping.
-        '''
+        """
         for addr in range(start, start + size):
             if len(self._symbols) == 0:
                 break
@@ -1003,7 +1063,7 @@ class SMemory(Memory):
         super().munmap(start, size)
 
     def read(self, address, size, force=False):
-        '''
+        """
         Read a stream of potentially symbolic bytes from a potentially symbolic
         address
 
@@ -1011,36 +1071,41 @@ class SMemory(Memory):
         :param size: How many bytes
         :param force: Whether to ignore permissions
         :rtype: list
-        '''
+        """
         size = self._get_size(size)
         assert not issymbolic(size)
-
         if issymbolic(address):
-            assert solver.check(self.constraints)
-            logger.debug(f'Reading {size} bytes from symbolic address {address}')
+            logger.debug(f"Reading {size} bytes from symbolic address {address}")
             try:
-                solutions = self._try_get_solutions(address, size, 'r', force=force)
+                solutions = self._try_get_solutions(address, size, "r", force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
+                solver = Z3Solver.instance()
                 m, M = solver.minmax(self.constraints, address)
-                logger.debug(f'Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!')
+                logger.debug(
+                    f"Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!"
+                )
 
                 # The force param shouldn't affect this, as this is checking for unmapped reads, not bad perms
                 crashing_condition = True
                 for start, end, perms, offset, name in self.mappings():
                     if start <= M + size and end >= m:
-                        if 'r' in perms:
-                            crashing_condition = Operators.AND(Operators.OR((address + size).ult(start), address.uge(end)), crashing_condition)
+                        if "r" in perms:
+                            crashing_condition = Operators.AND(
+                                Operators.OR((address + size).ult(start), address.uge(end)),
+                                crashing_condition,
+                            )
 
                 if solver.can_be_true(self.constraints, crashing_condition):
-                    raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
+                    raise InvalidSymbolicMemoryAccess(address, "r", size, crashing_condition)
 
                 # INCOMPLETE Result! We could also fork once for every map
-                logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
+                logger.info("INCOMPLETE Result! Using the sampled solutions we have as result")
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition)
                 from .state import ForkState
+
                 raise ForkState("Forking state on incomplete result", condition)
 
             # So here we have all potential solutions to address
@@ -1073,22 +1138,26 @@ class SMemory(Memory):
                         if condition is True:
                             result[offset] = Operators.ORD(value)
                         else:
-                            result[offset] = Operators.ITEBV(8, condition, Operators.ORD(value), result[offset])
+                            result[offset] = Operators.ITEBV(
+                                8, condition, Operators.ORD(value), result[offset]
+                            )
             return list(map(Operators.CHR, result))
 
     def write(self, address, value, force=False):
-        '''
+        """
         Write a value at address.
+
         :param address: The address at which to write
         :type address: int or long or Expression
         :param value: Bytes to write
         :type value: str or list
         :param force: Whether to ignore permissions
-        '''
+
+        """
         size = len(value)
         if issymbolic(address):
 
-            solutions = self._try_get_solutions(address, size, 'w', force=force)
+            solutions = self._try_get_solutions(address, size, "w", force=force)
 
             for offset in range(size):
                 for base in solutions:
@@ -1098,8 +1167,8 @@ class SMemory(Memory):
 
             for offset in range(size):
                 if issymbolic(value[offset]):
-                    if not self.access_ok(address + offset, 'w', force):
-                        raise InvalidMemoryAccess(address + offset, 'w')
+                    if not self.access_ok(address + offset, "w", force):
+                        raise InvalidMemoryAccess(address + offset, "w")
                     self._symbols[address + offset] = [(True, value[offset])]
                 else:
                     # overwrite all previous items
@@ -1108,7 +1177,7 @@ class SMemory(Memory):
                     super().write(address + offset, [value[offset]], force)
 
     def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
-        '''
+        """
         Try to solve for a symbolic address, checking permissions when reading/writing size bytes.
 
         :param Expression address: The address to solve for
@@ -1117,9 +1186,9 @@ class SMemory(Memory):
         :param int max_solutions: Will raise if more solutions are found
         :param force: Whether to ignore permission failure
         :rtype: list
-        '''
+        """
         assert issymbolic(address)
-
+        solver = Z3Solver.instance()
         solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
 
         crashing_condition = False
@@ -1134,11 +1203,11 @@ class SMemory(Memory):
 
 
 class LazySMemory(SMemory):
-    '''
+    """
     A fully symbolic memory.
 
     Currently does not support cross-page reads/writes.
-    '''
+    """
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
@@ -1146,16 +1215,22 @@ class LazySMemory(SMemory):
         self.backed_by_symbolic_store = set()
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps),
-                {'backing_array': self.backing_array,
-                 'backed_by_symbolic_store': self.backed_by_symbolic_store})
+        return (
+            self.__class__,
+            (self.constraints, self._symbols, self._maps),
+            {
+                "backing_array": self.backing_array,
+                "backed_by_symbolic_store": self.backed_by_symbolic_store,
+                "cpu": self.cpu,
+            },
+        )
 
     def __setstate__(self, state):
-        self.backing_array = state['backing_array']
-        self.backed_by_symbolic_store = state['backed_by_symbolic_store']
+        self.backing_array = state["backing_array"]
+        self.backed_by_symbolic_store = state["backed_by_symbolic_store"]
 
     def mmapFile(self, addr, size, perms, filename, offset=0):
-        '''
+        """
         Creates a new file mapping in the memory address space.
 
         :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
@@ -1172,11 +1247,13 @@ class LazySMemory(SMemory):
                    - 'Address shall be concrete' if C{addr} is not an integer number.
                    - 'Address too big' if C{addr} goes beyond the limit of the memory.
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
-        '''
+        """
         # If addr is NULL, the system determines where to allocate the region.
-        assert addr is None or isinstance(addr, int), 'Address shall be concrete'
-        assert addr < self.memory_size, 'Address too big'
+        assert addr is None or isinstance(addr, int), "Address shall be concrete"
+        assert addr < self.memory_size, "Address too big"
         assert size > 0
+
+        self.cpu._publish("will_map_memory", addr, size, perms, filename, offset)
 
         map = AnonMap(addr, size, perms)
         self._add(map)
@@ -1188,17 +1265,18 @@ class LazySMemory(SMemory):
         # size value is rounded up to the next page boundary
         size = self._ceil(size)
 
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             fdata = f.read()  # fdata is a bytes now
 
         # this worked
         fdata = fdata[offset:]
-        fdata = fdata.ljust(size, b'\0')
+        fdata = fdata.ljust(size, b"\0")
 
         for i in range(size):
             Memory.write(self, addr + i, chr(fdata[i]), force=True)
 
-        logger.debug('New file-memory map @%x size:%x', addr, size)
+        logger.debug("New file-memory map @%x size:%x", addr, size)
+        self.cpu._publish("did_map_memory", addr, size, perms, filename, offset, addr)
 
         return addr
 
@@ -1206,6 +1284,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return address >= mapping.start and address + size < mapping.end
         else:
+            solver = Z3Solver.instance()
             constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
             return solver.can_be_true(self.constraints, constraint)
 
@@ -1219,7 +1298,11 @@ class LazySMemory(SMemory):
         :param int to_addr:
         :return:
         """
-        logger.debug("Importing concrete memory: {:x} - {:x} ({} bytes)".format(from_addr, to_addr, to_addr - from_addr))
+        logger.debug(
+            "Importing concrete memory: {:x} - {:x} ({} bytes)".format(
+                from_addr, to_addr, to_addr - from_addr
+            )
+        )
 
         for m in self.maps:
             span = interval_intersection(m.start, m.end, from_addr, to_addr)
@@ -1236,11 +1319,10 @@ class LazySMemory(SMemory):
                 self.backed_by_symbolic_store.add(addr)
 
     def _map_deref_expr(self, map, address):
-        return Operators.AND(
-            Operators.UGE(address, map.start),
-            Operators.ULT(address, map.end))
+        return Operators.AND(Operators.UGE(address, map.start), Operators.ULT(address, map.end))
 
     def _reachable_range(self, sym_address, size):
+        solver = Z3Solver.instance()
         addr_min, addr_max = solver.minmax(self.constraints, sym_address)
         return addr_min, addr_max + size - 1
 
@@ -1274,7 +1356,7 @@ class LazySMemory(SMemory):
                 from_array = True
             elif addr in self.backed_by_symbolic_store:
                 m = self.map_containing(addr)
-                from_array = not m or 'w' in m.perms
+                from_array = not m or "w" in m.perms
             else:
                 from_array = False
 
@@ -1327,7 +1409,7 @@ class LazySMemory(SMemory):
                 if ptr + len(data_to_find) >= mapping.end:
                     break
 
-                candidate = mapping[ptr:ptr + len(data_to_find)]
+                candidate = mapping[ptr : ptr + len(data_to_find)]
 
                 # TODO: treat symbolic bytes as bytes that don't match. for our simple tests right now, the
                 # bytes will be there concretely

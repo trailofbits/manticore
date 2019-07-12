@@ -5,14 +5,25 @@ from ..native.memory import ConcretizeMemory, MemoryException
 class State(StateBase):
     @property
     def cpu(self):
+        """
+        Current cpu state
+        """
         return self._platform.current
 
     @property
     def mem(self):
+        """
+        Current virtual memory mappings
+        """
         return self._platform.current.memory
 
     def execute(self):
-        from .cpu.abstractcpu import ConcretizeRegister  # must be here, otherwise we get circular imports
+        """
+        Perform a single step on the current state
+        """
+        from .cpu.abstractcpu import (
+            ConcretizeRegister,
+        )  # must be here, otherwise we get circular imports
 
         try:
             result = self._platform.execute()
@@ -27,10 +38,7 @@ class State(StateBase):
                 state.cpu.write_register(setstate.e.reg_name, value)
 
             setstate.e = e
-            raise Concretize(str(e),
-                             expression=expression,
-                             setstate=setstate,
-                             policy=e.policy)
+            raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except ConcretizeMemory as e:
             expression = self.cpu.read_int(e.address, e.size)
 
@@ -38,10 +46,7 @@ class State(StateBase):
                 state.cpu.write_int(setstate.e.address, value, setstate.e.size)
 
             setstate.e = e
-            raise Concretize(str(e),
-                             expression=expression,
-                             setstate=setstate,
-                             policy=e.policy)
+            raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except MemoryException as e:
             raise TerminateState(str(e), testcase=True)
 

@@ -3,12 +3,11 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 """
 
 from .cpu.abstractcpu import ConcretizeArgument
-from ..utils.helpers import issymbolic
-from ..core.smtlib.solver import solver
+from ..core.smtlib import issymbolic
+from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 
-
-VARIADIC_FUNC_ATTR = '_variadic'
+VARIADIC_FUNC_ATTR = "_variadic"
 
 
 def isvariadic(model):
@@ -47,7 +46,7 @@ def _find_zero(cpu, constrs, ptr):
         byt = cpu.read_int(ptr + offset, 8)
 
         if issymbolic(byt):
-            if not solver.can_be_true(constrs, byt != 0):
+            if not Z3Solver().can_be_true(constrs, byt != 0):
                 break
         else:
             if byt == 0:
@@ -68,13 +67,13 @@ def strcmp(state, s1, s2):
 
     Points of Interest:
     - We've been building up a symbolic tree but then encounter two
-      concrete bytes that differ. We can throw away the entire symbolic
-      tree!
+    concrete bytes that differ. We can throw away the entire symbolic
+    tree!
     - If we've been encountering concrete bytes that match
-      at the end of the string as we walk forward, and then we encounter
-      a pair where one is symbolic, we can forget about that 0 `ret` we've
-      been tracking and just replace it with the symbolic subtraction of
-      the two
+    at the end of the string as we walk forward, and then we encounter
+    a pair where one is symbolic, we can forget about that 0 `ret` we've
+    been tracking and just replace it with the symbolic subtraction of
+    the two
 
     :param State state: Current program state
     :param int s1: Address of string 1

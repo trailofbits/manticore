@@ -1,16 +1,12 @@
 REQUIREMENTS_TO_IMPORTS = {
-    'native': {
-        'capstone': 'capstone',
-        'pyelftools': 'elftools',
-        'unicorn': 'unicorn'
-    }
+    "native": {"capstone": "capstone", "pyelftools": "elftools", "unicorn": "unicorn"}
 }
 
 
 def ensure_native_deps():
     if not has_native:
         raise ImportError(
-            'Missing some packages for native binary analysis. Please install them with pip install manticore[native].'
+            "Missing some packages for native binary analysis. Please install them with pip install manticore[native]."
         )
 
 
@@ -24,6 +20,6 @@ def _has_deps(deps):
     return True
 
 
-has_native = _has_deps('native')
+has_native = _has_deps("native")
 
-__all__ = ['ensure_native_deps', 'has_native']
+__all__ = ["ensure_native_deps", "has_native"]

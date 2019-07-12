@@ -4,7 +4,7 @@ from manticore.ethereum import ManticoreEVM
 
 m = ManticoreEVM()
 # And now make the contract account to analyze
-source_code = '''
+source_code = """
 contract C {
     uint n;
     function C(uint x) {
@@ -19,7 +19,7 @@ contract C {
         }
     }
 }
-'''
+"""
 
 user_account = m.create_account(balance=1000)
 print("[+] Creating a user account", user_account)
@@ -31,12 +31,10 @@ print(source_code)
 
 print("[+] Now the symbolic values")
 symbolic_data = m.make_symbolic_buffer(320)
-symbolic_value = m.make_symbolic_value(name='value')
-m.transaction(caller=user_account,
-              address=contract_account,
-              value=symbolic_value,
-              data=symbolic_data,
-              )
+symbolic_value = m.make_symbolic_value(name="value")
+m.transaction(
+    caller=user_account, address=contract_account, value=symbolic_value, data=symbolic_data
+)
 
 print("[+] Resulting balances are:")
 for state in m.running_states:

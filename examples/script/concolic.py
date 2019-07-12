@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
 Rough concolic execution implementation
 
 Limitations
@@ -11,7 +11,7 @@ Bugs
 - Will probably break if a newly discovered branch gets more input/does another read(2)
 - possibly unnecessary deepcopies
 
-'''
+"""
 
 import queue
 import struct
@@ -20,20 +20,24 @@ import itertools
 from manticore.native import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
-from manticore.core.smtlib import solver
+from manticore.core.smtlib.solver import Z3Solver
+from manticore.utils import config
 
 import copy
 from manticore.core.smtlib.expression import *
 
-prog = '../linux/simpleassert'
+prog = "../linux/simpleassert"
 VERBOSITY = 0
+
 
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
     return (list(itertools.filterfalse(pred, t1)), list(filter(pred, t2)))
 
+
 def log(s):
-    print('[+]', s)
+    print("[+]", s)
+
 
 class TraceReceiver(Plugin):
     def __init__(self, tracer):
@@ -45,21 +49,24 @@ class TraceReceiver(Plugin):
     def trace(self):
         return self._trace
 
-    def will_generate_testcase_callback(self, state, testcase, msg):
+    def will_terminate_state_callback(self, state, reason):
         self._trace = state.context.get(self._tracer.context_key, [])
 
-        instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
+        instructions, writes = _partition(lambda x: x["type"] == "regs", self._trace)
         total = len(self._trace)
-        log(f'Recorded concrete trace: {len(instructions)}/{total} instructions, {len(writes)}/{total} writes')
+        log(
+            f"Recorded concrete trace: {len(instructions)}/{total} instructions, {len(writes)}/{total} writes"
+        )
+
 
 def flip(constraint):
-    '''
+    """
     flips a constraint (Equal)
 
     (Equal (BitVecITE Cond IfC ElseC) IfC)
         ->
     (Equal (BitVecITE Cond IfC ElseC) ElseC)
-    '''
+    """
     equal = copy.copy(constraint)
 
     assert len(equal.operands) == 2
@@ -70,9 +77,10 @@ def flip(constraint):
     cond, iifpc, eelsepc = ite.operands
     assert isinstance(iifpc, BitVecConstant) and isinstance(eelsepc, BitVecConstant)
 
-    equal._operands= (equal.operands[0], eelsepc if forcepc.value == iifpc.value else iifpc)
+    equal._operands = (equal.operands[0], eelsepc if forcepc.value == iifpc.value else iifpc)
 
     return equal
+
 
 def eq(a, b):
     # this ignores checking the conditions, only checks the 2 possible pcs
@@ -94,8 +102,9 @@ def eq(a, b):
 
     return True
 
+
 def perm(lst, func):
-    ''' Produce permutations of `lst`, where permutations are mutated by `func`. Used for flipping constraints. highly
+    """ Produce permutations of `lst`, where permutations are mutated by `func`. Used for flipping constraints. highly
     possible that returned constraints can be unsat this does it blindly, without any attention to the constraints
     themselves
 
@@ -118,82 +127,97 @@ def perm(lst, func):
     The code below yields lists of constraints permuted as above by treating list indeces as bitmasks from 1 to
      2**len(lst) and applying func to all the set bit offsets.
 
-    '''
-    for i in range(1, 2**len(lst)):
-        yield [func(item) if (1<<j)&i else item for (j, item) in enumerate(lst)]
+    """
+    for i in range(1, 2 ** len(lst)):
+        yield [func(item) if (1 << j) & i else item for (j, item) in enumerate(lst)]
+
 
 def constraints_to_constraintset(constupl):
     x = ConstraintSet()
     x._constraints = list(constupl)
     return x
 
+
 def input_from_cons(constupl, datas):
-    ' solve bytes in |datas| based on '
+    " solve bytes in |datas| based on "
+
     def make_chr(c):
         try:
             return chr(c)
-        except:
+        except Exception:
             return c
+
     newset = constraints_to_constraintset(constupl)
 
-    ret = ''
+    ret = ""
     for data in datas:
         for c in data:
-            ret += make_chr(solver.get_value(newset, c))
+            ret += make_chr(Z3Solver.instance().get_value(newset, c))
     return ret
+
 
 # Run a concrete run with |inp| as stdin
 def concrete_run_get_trace(inp):
-    m1 = Manticore.linux(prog, concrete_start=inp, workspace_url='mem:')
+
+    consts = config.get_group("core")
+    consts.mprocessing = consts.mprocessing.single
+
+    m1 = Manticore.linux(prog, concrete_start=inp, workspace_url="mem:")
     t = ExtendedTracer()
-    r = TraceReceiver(t)
+    # r = TraceReceiver(t)
     m1.verbosity(VERBOSITY)
     m1.register_plugin(t)
-    m1.register_plugin(r)
-    m1.run(procs=1)
-    return r.trace
+    # m1.register_plugin(r)
+    m1.run()
+    for st in m1.all_states:
+        return t.get_trace(st)
+    # return r.trace
 
 
 def symbolic_run_get_cons(trace):
-    '''
+    """
     Execute a symbolic run that follows a concrete run; return constraints generated
     and the stdin data produced
-    '''
-
-    m2 = Manticore.linux(prog, workspace_url='mem:')
+    """
+    # mem: has no concurrency support. Manticore should be 'Single' process
+    m2 = Manticore.linux(prog, workspace_url="mem:")
     f = Follower(trace)
     m2.verbosity(VERBOSITY)
     m2.register_plugin(f)
 
-    def on_term_testcase(mcore, state, stateid, err):
+    def on_term_testcase(mm, state, err):
         with m2.locked_context() as ctx:
             readdata = []
             for name, fd, data in state.platform.syscall_trace:
-                if name in ('_receive', '_read') and fd == 0:
+                if name in ("_receive", "_read") and fd == 0:
                     readdata.append(data)
-            ctx['readdata'] = readdata
-            ctx['constraints'] = list(state.constraints.constraints)
+            ctx["readdata"] = readdata
+            ctx["constraints"] = list(state.constraints.constraints)
 
-    m2.subscribe('will_terminate_state', on_term_testcase)
+    m2.subscribe("will_terminate_state", on_term_testcase)
 
     m2.run()
 
-    constraints = m2.context['constraints']
-    datas = m2.context['readdata']
+    constraints = m2.context["constraints"]
+    datas = m2.context["readdata"]
 
     return constraints, datas
 
+
 def contains(new, olds):
-    '__contains__ operator using the `eq` function'
+    "__contains__ operator using the `eq` function"
     return any(eq(new, old) for old in olds)
+
 
 def getnew(oldcons, newcons):
     "return all constraints in newcons that aren't in oldcons"
     return [new for new in newcons if not contains(new, oldcons)]
 
+
 def constraints_are_sat(cons):
-    'Whether constraints are sat'
-    return solver.check(constraints_to_constraintset(cons))
+    "Whether constraints are sat"
+    return Z3Solver.instance().check(constraints_to_constraintset(cons))
+
 
 def get_new_constrs_for_queue(oldcons, newcons):
     ret = []
@@ -218,14 +242,19 @@ def get_new_constrs_for_queue(oldcons, newcons):
 
     return ret
 
+
 def inp2ints(inp):
-    a, b, c = struct.unpack('<iii', inp)
-    return f'a={a} b={b} c={c}'
+    a, b, c = struct.unpack("<iii", inp)
+    return f"a={a} b={b} c={c}"
+
 
 def ints2inp(*ints):
-    return struct.pack('<'+'i'*len(ints), *ints)
+    return struct.pack("<" + "i" * len(ints), *ints)
+
 
 traces = set()
+
+
 def concrete_input_to_constraints(ci, prev=None):
     global traces
     if prev is None:
@@ -233,11 +262,13 @@ def concrete_input_to_constraints(ci, prev=None):
     trc = concrete_run_get_trace(ci)
 
     # Only heed new traces
-    trace_rips = tuple(x['values']['RIP'] for x in trc if x['type'] == 'regs' and 'RIP' in x['values'])
+    trace_rips = tuple(
+        x["values"]["RIP"] for x in trc if x["type"] == "regs" and "RIP" in x["values"]
+    )
     if trace_rips in traces:
         return [], []
     traces.add(trace_rips)
-    
+
     log("getting constraints from symbolic run")
     cons, datas = symbolic_run_get_cons(trc)
     # hmmm: ideally, do some smart stuff so we don't have to check if the
@@ -248,7 +279,7 @@ def concrete_input_to_constraints(ci, prev=None):
     # but maybe a dumb way where we blindly permute the constraints
     # and just check if they're sat before queueing will work
     new_constraints = get_new_constrs_for_queue(prev, cons)
-    log(f'permuting constraints and adding {len(new_constraints)} constraints sets to queue')
+    log(f"permuting constraints and adding {len(new_constraints)} constraints sets to queue")
     return new_constraints, datas
 
 
@@ -259,7 +290,7 @@ def main():
     # todo randomly generated concrete start
     stdin = ints2inp(0, 5, 0)
 
-    log(f'seed input generated ({inp2ints(stdin)}), running initial concrete run.')
+    log(f"seed input generated ({inp2ints(stdin)}), running initial concrete run.")
 
     to_queue, datas = concrete_input_to_constraints(stdin)
     for each in to_queue:
@@ -268,7 +299,7 @@ def main():
     # hmmm: probably issues with the datas stuff here? probably need to store
     # the datas in the queue or something. what if there was a new read(2) deep in the program, changing the datas?
     while not q.empty():
-        log(f'get constraint set from queue, queue size: {q.qsize()}')
+        log(f"get constraint set from queue, queue size: {q.qsize()}")
         cons = q.get()
         inp = input_from_cons(cons, datas)
         to_queue, new_datas = concrete_input_to_constraints(inp, cons)
@@ -278,7 +309,8 @@ def main():
         for each in to_queue:
             q.put(each)
 
-    log(f'paths found: {len(traces)}')
+    log(f"paths found: {len(traces)}")
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     main()

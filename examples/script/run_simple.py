@@ -8,9 +8,8 @@ from manticore.native import Manticore
 # and producing basic information about the paths explored
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     path = sys.argv[1]
     # Create a new Manticore object
     m = Manticore(path)
     m.run()
-

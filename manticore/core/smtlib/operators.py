@@ -1,8 +1,16 @@
-
 from .expression import (
-    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant, BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
+    BitVec,
+    BitVecExtract,
+    BitVecSignExtend,
+    BitVecZeroExtend,
+    BitVecConstant,
+    BitVecConcat,
+    Bool,
+    BitVecITE,
+    BoolConstant,
+    BoolITE,
 )
-from ...utils.helpers import issymbolic
+from . import issymbolic
 import math
 
 
@@ -13,7 +21,7 @@ def ORD(s):
         else:
             return BitVecExtract(s, 0, 7)
     elif isinstance(s, int):
-        return s & 0xff
+        return s & 0xFF
     else:
         return ord(s)
 
@@ -25,7 +33,7 @@ def CHR(s):
         else:
             return BitVecExtract(s, 0, 8)
     elif isinstance(s, int):
-        return bytes([s & 0xff])
+        return bytes([s & 0xFF])
     else:
         assert len(s) == 1
         return s
@@ -154,10 +162,12 @@ def CONCAT(total_size, *args):
     arg_size = total_size // len(args)
     if any(issymbolic(x) for x in args):
         if len(args) > 1:
+
             def cast(x):
                 if isinstance(x, int):
                     return BitVecConstant(arg_size, x)
                 return x
+
             return BitVecConcat(total_size, *list(map(cast, args)))
         else:
             return args[0]
@@ -191,7 +201,7 @@ def ITEBV(size, cond, true_value, false_value):
     if isinstance(cond, BitVec):
         cond = cond.Bool()
     if isinstance(cond, int):
-        cond = (cond != 0)
+        cond = cond != 0
 
     assert isinstance(cond, (Bool, bool))
     assert isinstance(true_value, (BitVec, int))

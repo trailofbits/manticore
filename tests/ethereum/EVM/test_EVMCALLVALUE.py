@@ -1,4 +1,3 @@
-
 import struct
 import unittest
 import json
@@ -10,7 +9,8 @@ import os
 
 class EVMTest_CALLVALUE(unittest.TestCase):
     _multiprocess_can_split_ = True
-    maxDiff=None 
+    maxDiff = None
+
     def _execute(self, new_vm):
         last_returned = None
         last_exception = None
@@ -31,34 +31,30 @@ class EVMTest_CALLVALUE(unittest.TestCase):
             last_returned = e.data
         except evm.Revert:
             last_exception = "REVERT"
-            
+
         return last_exception, last_returned
 
     def test_CALLVALUE_1(self):
-            #Make the constraint store
-            constraints = ConstraintSet()
-            #make the ethereum world state
-            world = evm.EVMWorld(constraints)
+        # Make the constraint store
+        constraints = ConstraintSet()
+        # make the ethereum world state
+        world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=b'4'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+        address = 0x222222222222222222222222222222222222200
+        caller = origin = 0x111111111111111111111111111111111111100
+        price = 0
+        value = 10000
+        bytecode = b"4"
+        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            last_exception, last_returned = self._execute(new_vm)
-            self.assertEqual(last_exception, None)
-            self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [10000])
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        last_exception, last_returned = self._execute(new_vm)
+        self.assertEqual(last_exception, None)
+        self.assertEqual(new_vm.pc, 1)
+        self.assertEqual(new_vm.stack, [10000])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

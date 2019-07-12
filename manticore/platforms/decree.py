@@ -1,12 +1,11 @@
-
 from . import cgcrandom
+
 # TODO use cpu factory
 from ..native.cpu.x86 import I386Cpu
 from ..native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
 from ..native.memory import SMemory32, Memory32
 from ..core.smtlib import *
-from ..core.executor import TerminateState
-from ..utils.helpers import issymbolic
+from ..core.state import TerminateState
 from ..binary import CGCElf
 from ..platforms.platform import Platform
 import logging
@@ -24,8 +23,8 @@ class Deadlock(Exception):
 
 
 class SymbolicSyscallArgument(ConcretizeRegister):
-    def __init__(self, cpu, number, message='Concretizing syscall argument', policy='SAMPLED'):
-        reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'][number]
+    def __init__(self, cpu, number, message="Concretizing syscall argument", policy="SAMPLED"):
+        reg_name = ["EBX", "ECX", "EDX", "ESI", "EDI", "EBP"][number]
         super().__init__(cpu, reg_name, message, policy)
 
 
@@ -78,10 +77,11 @@ class Socket:
 
 
 class Decree(Platform):
-    '''
+    """
     A simple Decree Operating System.
     This class emulates the most common Decree system calls
-    '''
+    """
+
     CGC_EBADF = 1
     CGC_EFAULT = 2
     CGC_EINVAL = 3
@@ -93,13 +93,13 @@ class Decree(Platform):
     CGC_FD_SETSIZE = 32
 
     def __init__(self, programs, **kwargs):
-        '''
+        """
         Builds a Decree OS
         :param cpus: CPU for this platform
         :param mem: memory for this platform
         :todo: generalize for more CPUs
         :todo: fix deps?
-        '''
+        """
         programs = programs.split(",")
         super().__init__(path=programs[0], **kwargs)
 
@@ -169,17 +169,17 @@ class Decree(Platform):
 
     def __getstate__(self):
         state = super().__getstate__()
-        state['clocks'] = self.clocks
-        state['input'] = self.input.buffer
-        state['output'] = self.output.buffer
-        state['files'] = [x.buffer for x in self.files]
-        state['procs'] = self.procs
-        state['current'] = self._current
-        state['running'] = self.running
-        state['rwait'] = self.rwait
-        state['twait'] = self.twait
-        state['timers'] = self.timers
-        state['syscall_trace'] = self.syscall_trace
+        state["clocks"] = self.clocks
+        state["input"] = self.input.buffer
+        state["output"] = self.output.buffer
+        state["files"] = [x.buffer for x in self.files]
+        state["procs"] = self.procs
+        state["current"] = self._current
+        state["running"] = self.running
+        state["rwait"] = self.rwait
+        state["twait"] = self.twait
+        state["timers"] = self.timers
+        state["syscall_trace"] = self.syscall_trace
         return state
 
     def __setstate__(self, state):
@@ -189,12 +189,12 @@ class Decree(Platform):
         """
         super().__setstate__(state)
         self.input = Socket()
-        self.input.buffer = state['input']
+        self.input.buffer = state["input"]
         self.output = Socket()
-        self.output.buffer = state['output']
+        self.output.buffer = state["output"]
 
         self.files = []
-        for buf in state['files']:
+        for buf in state["files"]:
             f = Socket()
             f.buffer = buf
             self.files.append(f)
@@ -207,15 +207,15 @@ class Decree(Platform):
         self.files[2].peer = self.output
         self.input.peer = self.files[0]
 
-        self.procs = state['procs']
-        self._current = state['current']
-        self.running = state['running']
-        self.rwait = state['rwait']
-        self.twait = state['twait']
-        self.timers = state['timers']
-        self.clocks = state['clocks']
+        self.procs = state["procs"]
+        self._current = state["current"]
+        self.running = state["running"]
+        self.rwait = state["rwait"]
+        self.twait = state["twait"]
+        self.timers = state["timers"]
+        self.clocks = state["clocks"]
 
-        self.syscall_trace = state['syscall_trace']
+        self.syscall_trace = state["syscall_trace"]
 
         # Install event forwarders
         for proc in self.procs:
@@ -229,33 +229,33 @@ class Decree(Platform):
         filename = ""
         for i in range(0, 1024):
             c = Operators.CHR(cpu.read_int(buf + i, 8))
-            if c == '\x00':
+            if c == "\x00":
                 break
             filename += c
         return filename
 
     def load(self, filename):
-        '''
+        """
         Loads a CGC-ELF program in memory and prepares the initial CPU state
         and the stack.
 
         :param filename: pathname of the file to be executed.
-        '''
+        """
         CGC_MIN_PAGE_SIZE = 4096
         CGC_MIN_ALIGN = CGC_MIN_PAGE_SIZE
         TASK_SIZE = 0x80000000
 
         def CGC_PAGESTART(_v):
-            return ((_v) & ~ (CGC_MIN_ALIGN - 1))
+            return (_v) & ~(CGC_MIN_ALIGN - 1)
 
         def CGC_PAGEOFFSET(_v):
-            return ((_v) & (CGC_MIN_ALIGN - 1))
+            return (_v) & (CGC_MIN_ALIGN - 1)
 
         def CGC_PAGEALIGN(_v):
-            return (((_v) + CGC_MIN_ALIGN - 1) & ~(CGC_MIN_ALIGN - 1))
+            return ((_v) + CGC_MIN_ALIGN - 1) & ~(CGC_MIN_ALIGN - 1)
 
         def BAD_ADDR(x):
-            return ((x) >= TASK_SIZE)
+            return (x) >= TASK_SIZE
 
         # load elf See https://github.com/CyberdyneNYC/linux-source-3.13.2-cgc/blob/master/fs/binfmt_cgc.c
         # read the ELF object file
@@ -265,7 +265,7 @@ class Decree(Platform):
         cpu = self._mk_proc()
 
         bss = brk = 0
-        start_code = 0xffffffff
+        start_code = 0xFFFFFFFF
         end_code = start_data = end_data = 0
 
         for (vaddr, memsz, perms, name, offset, filesz) in cgc.maps():
@@ -274,8 +274,12 @@ class Decree(Platform):
             if start_data < vaddr:
                 start_data = vaddr
 
-            if vaddr > TASK_SIZE or filesz > memsz or \
-                    memsz > TASK_SIZE or TASK_SIZE - memsz < vaddr:
+            if (
+                vaddr > TASK_SIZE
+                or filesz > memsz
+                or memsz > TASK_SIZE
+                or TASK_SIZE - memsz < vaddr
+            ):
                 raise Exception("Set_brk can never work. avoid overflows")
 
             # CGCMAP--
@@ -303,9 +307,9 @@ class Decree(Platform):
             hi = CGC_PAGEALIGN(vaddr + memsz)
             if hi - lo > 0:
                 old_perms = cpu.memory.perms(lo)
-                cpu.memory.mprotect(lo, hi - lo, 'rw')
+                cpu.memory.mprotect(lo, hi - lo, "rw")
                 try:
-                    cpu.memory[lo:hi] = '\x00' * (hi - lo)
+                    cpu.memory[lo:hi] = "\x00" * (hi - lo)
                 except Exception as e:
                     logger.debug("Exception zeroing main elf fractional pages: %s" % str(e))
                 cpu.memory.mprotect(lo, hi, old_perms)
@@ -317,7 +321,7 @@ class Decree(Platform):
             k = vaddr + filesz
             if k > bss:
                 bss = k
-            if 'x' in perms and end_code < k:
+            if "x" in perms and end_code < k:
                 end_code = k
             if end_data < k:
                 end_data = k
@@ -327,42 +331,46 @@ class Decree(Platform):
                 brk = k
 
         bss = brk
-        stack_base = 0xbaaaaffc
+        stack_base = 0xBAAAAFFC
         stack_size = 0x800000
-        stack = cpu.memory.mmap(0xbaaab000 - stack_size, stack_size, 'rwx') + stack_size - 4
+        stack = cpu.memory.mmap(0xBAAAB000 - stack_size, stack_size, "rwx") + stack_size - 4
         assert (stack_base) in cpu.memory and (stack_base - stack_size + 4) in cpu.memory
 
         # Only one thread in Decree
         status, thread = next(cgc.threads())
-        assert status == 'Running'
+        assert status == "Running"
 
         logger.info("Setting initial cpu state")
-        # set initial CPU state
-        cpu.write_register('EAX', 0x0)
-        cpu.write_register('ECX', 0x0)
-        cpu.write_register('EDX', 0x0)
-        cpu.write_register('EBX', 0x0)
-        cpu.write_register('ESP', stack)
-        cpu.write_register('EBP', 0x0)
-        cpu.write_register('ESI', 0x0)
-        cpu.write_register('EDI', 0x0)
-        cpu.write_register('EIP', thread['EIP'])
-        cpu.write_register('RFLAGS', 0x202)
-        cpu.write_register('CS', 0x0)
-        cpu.write_register('SS', 0x0)
-        cpu.write_register('DS', 0x0)
-        cpu.write_register('ES', 0x0)
-        cpu.write_register('FS', 0x0)
-        cpu.write_register('GS', 0x0)
+        cpu.write_register("EAX", 0x0)
+        cpu.write_register(
+            "ECX",
+            cpu.memory.mmap(
+                CGC_PAGESTART(0x4347C000), CGC_PAGEALIGN(4096 + CGC_PAGEOFFSET(0x4347C000)), "rwx"
+            ),
+        )
+        cpu.write_register("EDX", 0x0)
+        cpu.write_register("EBX", 0x0)
+        cpu.write_register("ESP", stack)
+        cpu.write_register("EBP", 0x0)
+        cpu.write_register("ESI", 0x0)
+        cpu.write_register("EDI", 0x0)
+        cpu.write_register("EIP", thread["EIP"])
+        cpu.write_register("RFLAGS", 0x202)
+        cpu.write_register("CS", 0x0)
+        cpu.write_register("SS", 0x0)
+        cpu.write_register("DS", 0x0)
+        cpu.write_register("ES", 0x0)
+        cpu.write_register("FS", 0x0)
+        cpu.write_register("GS", 0x0)
 
-        cpu.memory.mmap(0x4347c000, 0x1000, 'r')
+        cpu.memory.mmap(0x4347C000, 0x1000, "r")
         # cpu.memory[0x4347c000:0x4347d000] = 'A' 0x1000
 
         logger.info("Entry point: %016x", cpu.EIP)
         logger.info("Stack start: %016x", cpu.ESP)
         logger.info("Brk: %016x", brk)
         logger.info("Mappings:")
-        for m in str(cpu.memory).split('\n'):
+        for m in str(cpu.memory).split("\n"):
             logger.info("  %s", m)
         return [cpu]
 
@@ -376,28 +384,28 @@ class Decree(Platform):
         return fd
 
     def _close(self, fd):
-        '''
+        """
         Closes a file descriptor
         :rtype: int
         :param fd: the file descriptor to close.
         :return: C{0} on success.
-        '''
+        """
         self.files[fd] = None
 
     def _dup(self, fd):
-        '''
+        """
         Duplicates a file descriptor
         :rtype: int
         :param fd: the file descriptor to close.
         :return: C{0} on success.
-        '''
+        """
         return self._open(self.files[fd])
 
     def _is_open(self, fd):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
     def sys_allocate(self, cpu, length, isX, addr):
-        ''' allocate - allocate virtual memory
+        """ allocate - allocate virtual memory
 
            The  allocate  system call creates a new allocation in the virtual address
            space of the calling process.  The length argument specifies the length of
@@ -425,13 +433,13 @@ class Decree(Platform):
                    EFAULT   addr points to an invalid address.
                    ENOMEM   No memory is available or the process' maximum number of allocations
                             would have been exceeded.
-        '''
+        """
         # TODO: check 4 bytes from addr
         if addr not in cpu.memory:
             logger.info("ALLOCATE: addr points to invalid address. Returning EFAULT")
             return Decree.CGC_EFAULT
 
-        perms = ['rw ', 'rwx'][bool(isX)]
+        perms = ["rw ", "rwx"][bool(isX)]
         try:
             result = cpu.memory.mmap(None, length, perms)
         except Exception as e:
@@ -443,7 +451,7 @@ class Decree(Platform):
         return 0
 
     def sys_random(self, cpu, buf, count, rnd_bytes):
-        ''' random - fill a buffer with random data
+        """ random - fill a buffer with random data
 
            The  random  system call populates the buffer referenced by buf with up to
            count bytes of random data. If count is zero, random returns 0 and optionally
@@ -457,7 +465,7 @@ class Decree(Platform):
            :return:  0        On success
                      EINVAL   count is invalid.
                      EFAULT   buf or rnd_bytes points to an invalid address.
-        '''
+        """
 
         ret = 0
         if count != 0:
@@ -482,11 +490,13 @@ class Decree(Platform):
                 return Decree.CGC_EFAULT
             cpu.write_int(rnd_bytes, len(data), 32)
 
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> <%s>)" % (buf, count, rnd_bytes, repr(data[:10])))
+        logger.info(
+            "RANDOM(0x%08x, %d, 0x%08x) -> <%s>)" % (buf, count, rnd_bytes, repr(data[:10]))
+        )
         return ret
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
-        ''' receive - receive bytes from a file descriptor
+        """ receive - receive bytes from a file descriptor
 
             The receive system call reads up to count bytes from file descriptor fd to the
             buffer pointed to by buf. If count is zero, receive returns 0 and optionally
@@ -500,8 +510,8 @@ class Decree(Platform):
             :return: 0            Success
                      EBADF        fd is not a valid file descriptor or is not open
                      EFAULT       buf or rx_bytes points to an invalid address.
-        '''
-        data = ''
+        """
+        data = ""
         if count != 0:
             if not self._is_open(fd):
                 logger.info("RECEIVE: Not valid file descriptor on receive. Returning EBADF")
@@ -512,8 +522,8 @@ class Decree(Platform):
                 logger.info("RECEIVE: buf points to invalid address. Returning EFAULT")
                 return Decree.CGC_EFAULT
 
-            #import random
-            #count = random.randint(1,count)
+            # import random
+            # count = random.randint(1,count)
             if fd > 2 and self.files[fd].is_empty():
                 cpu.PC -= cpu.instruction.size
                 self.wait([fd], [], None)
@@ -537,11 +547,14 @@ class Decree(Platform):
                 return Decree.CGC_EFAULT
             cpu.write_int(rx_bytes, len(data), 32)
 
-        logger.info("RECEIVE(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)" % (fd, buf, count, rx_bytes, repr(data)[:min(count, 10)], len(data)))
+        logger.info(
+            "RECEIVE(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)"
+            % (fd, buf, count, rx_bytes, repr(data)[: min(count, 10)], len(data))
+        )
         return 0
 
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
-        ''' transmit - send bytes through a file descriptor
+        """ transmit - send bytes through a file descriptor
           The  transmit system call writes up to count bytes from the buffer pointed
           to by buf to the file descriptor fd. If count is zero, transmit returns 0
           and optionally sets *tx_bytes to zero.
@@ -554,7 +567,7 @@ class Decree(Platform):
           :return: 0            Success
                    EBADF        fd is not a valid file descriptor or is not open.
                    EFAULT       buf or tx_bytes points to an invalid address.
-        '''
+        """
         data = []
         if count != 0:
 
@@ -576,11 +589,14 @@ class Decree(Platform):
                 value = Operators.CHR(cpu.read_int(buf + i, 8))
                 if not isinstance(value, str):
                     logger.debug("TRANSMIT: Writing symbolic values to file %d", fd)
-                    #value = str(value)
+                    # value = str(value)
                 data.append(value)
             self.files[fd].transmit(data)
 
-            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join([str(x) for x in data])))
+            logger.info(
+                "TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>"
+                % (fd, buf, count, tx_bytes, "".join([str(x) for x in data]))
+            )
             self.syscall_trace.append(("_transmit", fd, data))
             self.signal_transmit(fd)
 
@@ -594,25 +610,29 @@ class Decree(Platform):
         return 0
 
     def sys_terminate(self, cpu, error_code):
-        '''
+        """
         Exits all threads in a process
         :param cpu: current CPU.
         :raises Exception: 'Finished'
-        '''
+        """
         procid = self.procs.index(cpu)
         self.sched()
         self.running.remove(procid)
         # self.procs[procid] = None #let it there so we can report?
         if issymbolic(error_code):
-            logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(self.constraints, error_code))
+            logger.info(
+                "TERMINATE PROC_%02d with symbolic exit code [%d,%d]",
+                procid,
+                solver.minmax(self.constraints, error_code),
+            )
         else:
             logger.info("TERMINATE PROC_%02d %x", procid, error_code)
         if len(self.running) == 0:
-            raise TerminateState(f'Process exited correctly. Code: {error_code}')
+            raise TerminateState(f"Process exited correctly. Code: {error_code}")
         return error_code
 
     def sys_deallocate(self, cpu, addr, size):
-        ''' deallocate - remove allocations
+        """ deallocate - remove allocations
         The  deallocate  system call deletes the allocations for the specified
         address range, and causes further references to the addresses within the
         range to generate invalid memory accesses. The region is also
@@ -637,10 +657,10 @@ class Decree(Platform):
 
         :param cpu: current CPU.
         :return: C{0} on success.
-        '''
+        """
         logger.info("DEALLOCATE(0x%08x, %d)" % (addr, size))
 
-        if addr & 0xfff != 0:
+        if addr & 0xFFF != 0:
             logger.info("DEALLOCATE: addr is not page aligned")
             return Decree.CGC_EINVAL
         if size == 0:
@@ -656,9 +676,12 @@ class Decree(Platform):
         return 0
 
     def sys_fdwait(self, cpu, nfds, readfds, writefds, timeout, readyfds):
-        ''' fdwait - wait for file descriptors to become ready
-        '''
-        logger.debug("FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)" % (nfds, readfds, writefds, timeout, readyfds))
+        """ fdwait - wait for file descriptors to become ready
+        """
+        logger.debug(
+            "FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)"
+            % (nfds, readfds, writefds, timeout, readyfds)
+        )
 
         if timeout:
             if timeout not in cpu.memory:  # todo: size
@@ -681,7 +704,7 @@ class Decree(Platform):
             bits = cpu.read_int(writefds, fds_bitsize)
 
             for fd in range(nfds):
-                if (bits & 1 << fd):
+                if bits & 1 << fd:
                     if self.files[fd].is_full():
                         writefds_wait.add(fd)
                     else:
@@ -695,7 +718,7 @@ class Decree(Platform):
                 return Decree.CGC_EFAULT
             bits = cpu.read_int(readfds, fds_bitsize)
             for fd in range(nfds):
-                if (bits & 1 << fd):
+                if bits & 1 << fd:
                     if self.files[fd].is_empty():
                         readfds_wait.add(fd)
                     else:
@@ -706,14 +729,21 @@ class Decree(Platform):
             if timeout != 0:
                 seconds = cpu.read_int(timeout, 32)
                 microseconds = cpu.read_int(timeout + 4, 32)
-                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: %d", repr(
-                    list(readfds_wait)), repr(list(writefds_wait)), microseconds + 1000 * seconds)
+                logger.info(
+                    "FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: %d",
+                    repr(list(readfds_wait)),
+                    repr(list(writefds_wait)),
+                    microseconds + 1000 * seconds,
+                )
                 to = microseconds + 1000 * seconds
                 # no ready file, wait
             else:
                 to = None
-                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: INDIFENITELY",
-                            repr(list(readfds_wait)), repr(list(writefds_wait)))
+                logger.info(
+                    "FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: INDIFENITELY",
+                    repr(list(readfds_wait)),
+                    repr(list(writefds_wait)),
+                )
 
             cpu.PC -= cpu.instruction.size
             self.wait(readfds_wait, writefds_wait, to)
@@ -725,13 +755,13 @@ class Decree(Platform):
             for fd in readfds_ready:
                 bits |= 1 << fd
             for byte in range(0, nfds, 8):
-                cpu.write_int(readfds, (bits >> byte) & 0xff, 8)
+                cpu.write_int(readfds, (bits >> byte) & 0xFF, 8)
         if writefds:
             bits = 0
             for fd in writefds_ready:
                 bits |= 1 << fd
             for byte in range(0, nfds, 8):
-                cpu.write_int(writefds, (bits >> byte) & 0xff, 8)
+                cpu.write_int(writefds, (bits >> byte) & 0xFF, 8)
 
         logger.info("FDWAIT: continuing. Some file is ready Readyfds: %08x", readyfds)
         if readyfds:
@@ -741,33 +771,34 @@ class Decree(Platform):
         return 0
 
     def int80(self, cpu):
-        '''
+        """
         32 bit dispatcher.
         :param cpu: current CPU.
         _terminate, transmit, receive, fdwait, allocate, deallocate and random
-        '''
-        syscalls = {0x00000001: self.sys_terminate,
-                    0x00000002: self.sys_transmit,
-                    0x00000003: self.sys_receive,
-                    0x00000004: self.sys_fdwait,
-                    0x00000005: self.sys_allocate,
-                    0x00000006: self.sys_deallocate,
-                    0x00000007: self.sys_random,
-                    }
+        """
+        syscalls = {
+            0x00000001: self.sys_terminate,
+            0x00000002: self.sys_transmit,
+            0x00000003: self.sys_receive,
+            0x00000004: self.sys_fdwait,
+            0x00000005: self.sys_allocate,
+            0x00000006: self.sys_deallocate,
+            0x00000007: self.sys_random,
+        }
         if cpu.EAX not in syscalls.keys():
             raise TerminateState(f"32 bit DECREE system call number {cpu.EAX} Not Implemented")
         func = syscalls[cpu.EAX]
         logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)
         nargs = func.__code__.co_argcount
         args = [cpu, cpu.EBX, cpu.ECX, cpu.EDX, cpu.ESI, cpu.EDI, cpu.EBP]
-        cpu.EAX = func(*args[:nargs - 1])
+        cpu.EAX = func(*args[: nargs - 1])
 
     def sched(self):
-        ''' Yield CPU.
+        """ Yield CPU.
             This will choose another process from the RUNNNIG list and change
             current running process. May give the same cpu if only one running
             process.
-        '''
+        """
         if len(self.procs) > 1:
             logger.info("SCHED:")
             logger.info("\tProcess: %r", self.procs)
@@ -794,12 +825,18 @@ class Decree(Platform):
         self._current = next
 
     def wait(self, readfds, writefds, timeout):
-        ''' Wait for filedescriptors or timeout.
+        """ Wait for filedescriptors or timeout.
             Adds the current process to the corresponding waiting list and
             yields the cpu to another running process.
-        '''
+        """
         logger.info("WAIT:")
-        logger.info("\tProcess %d is going to wait for [ %r %r %r ]", self._current, readfds, writefds, timeout)
+        logger.info(
+            "\tProcess %d is going to wait for [ %r %r %r ]",
+            self._current,
+            readfds,
+            writefds,
+            timeout,
+        )
         logger.info("\tProcess: %r", self.procs)
         logger.info("\tRunning: %r", self.running)
         logger.info("\tRWait: %r", self.rwait)
@@ -829,8 +866,10 @@ class Decree(Platform):
             self.check_timers()
 
     def awake(self, procid):
-        ''' Remove procid from waitlists and reestablish it in the running list '''
-        logger.info("Remove procid:%d from waitlists and reestablish it in the running list", procid)
+        """ Remove procid from waitlists and reestablish it in the running list """
+        logger.info(
+            "Remove procid:%d from waitlists and reestablish it in the running list", procid
+        )
         for wait_list in self.rwait:
             if procid in wait_list:
                 wait_list.remove(procid)
@@ -851,21 +890,21 @@ class Decree(Platform):
             return fd - 1
 
     def signal_receive(self, fd):
-        ''' Awake one process waiting to receive data on fd '''
+        """ Awake one process waiting to receive data on fd """
         connections = self.connections
         if connections(fd) and self.twait[connections(fd)]:
             procid = random.sample(self.twait[connections(fd)], 1)[0]
             self.awake(procid)
 
     def signal_transmit(self, fd):
-        ''' Awake one process waiting to transmit data on fd '''
+        """ Awake one process waiting to transmit data on fd """
         connections = self.connections
         if connections(fd) and self.rwait[connections(fd)]:
             procid = random.sample(self.rwait[connections(fd)], 1)[0]
             self.awake(procid)
 
     def check_timers(self):
-        ''' Awake process if timer has expired '''
+        """ Awake process if timer has expired """
         if self._current is None:
             # Advance the clocks. Go to future!!
             advance = min([x for x in self.timers if x is not None]) + 1
@@ -901,22 +940,23 @@ class Decree(Platform):
 
         return True
 
+
 ############################################################################
 # Symbolic versions follows
 
 
 class SDecree(Decree):
-    '''
+    """
     A symbolic extension of a Decree Operating System .
-    '''
+    """
 
     def __init__(self, constraints, programs, symbolic_random=None):
-        '''
+        """
         Builds a symbolic extension of a Decree OS
         :param constraints: a constraint set
         :param cpus: CPU for this platform
         :param mem: memory for this platform
-        '''
+        """
         self.random = 0
         self._constraints = constraints
         super().__init__(programs)
@@ -937,19 +977,19 @@ class SDecree(Decree):
     # marshaling/pickle
     def __getstate__(self):
         state = super().__getstate__()
-        state['constraints'] = self.constraints
-        state['random'] = self.random
+        state["constraints"] = self.constraints
+        state["random"] = self.random
         return state
 
     def __setstate__(self, state):
-        self._constraints = state['constraints']
-        self.random = state['random']
+        self._constraints = state["constraints"]
+        self.random = state["random"]
         super().__setstate__(state)
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
-        '''
+        """
         Symbolic version of Decree.sys_receive
-        '''
+        """
         if issymbolic(fd):
             logger.info("Ask to read from a symbolic file descriptor!!")
             cpu.PC = cpu.PC - cpu.instruction.size
@@ -973,9 +1013,9 @@ class SDecree(Decree):
         return super().sys_receive(cpu, fd, buf, count, rx_bytes)
 
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
-        '''
+        """
         Symbolic version of Decree.sys_transmit
-        '''
+        """
         if issymbolic(fd):
             logger.info("Ask to write to a symbolic file descriptor!!")
             cpu.PC = cpu.PC - cpu.instruction.size
@@ -1070,6 +1110,7 @@ class DecreeEmu:
     @staticmethod
     def cgc_random(platform, buf, count, rnd_bytes):
         from . import cgcrandom
+
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
             raise ConcretizeArgument(platform.current, 0)
