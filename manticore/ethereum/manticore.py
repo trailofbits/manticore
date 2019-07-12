@@ -1288,7 +1288,7 @@ class ManticoreEVM(ManticoreBase):
                             xb, yb = symbolic_pairs[j]
 
                             if len(xa) == len(xb):
-                                constraint = Operators.IFF(xa == xb, ya == yb)
+                                constraint = simplify(Operators.IFF(xa == xb, ya == yb))
                             else:
                                 constraint = ya != yb
                             state.constrain(constraint)  # bijective
