@@ -283,7 +283,9 @@ class ConstantFolderSimplifier(Visitor):
         BoolNot: operator.__not__,
         BitVecUnsignedDiv: lambda x, y: (x & (1 << 256) - 1) // (y & (1 << 256) - 1),
         UnsignedLessThan: lambda x, y: x < y,
-        UnsignedGreaterThan: lambda x, y: x > y
+        UnsignedLessOrEqual: lambda x, y: x <= y,
+        UnsignedGreaterThan: lambda x, y: x > y,
+        UnsignedGreaterOrEqual: lambda x, y: x >= y
     }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -417,10 +419,6 @@ class ArithmeticSimplifier(Visitor):
                         value1 = operandab.value  # := operandbb.value
                         beg = min(operandaa.begining, operandba.begining)
                         end = max(operandaa.end, operandba.end)
-                        print (operandaa.begining, operandba.begining)
-                        print (operandaa.end, operandba.end)
-                        print (beg, end, BitVecExtract(value0, beg, end - beg+1), BitVecExtract(value0, beg, end - beg+1).size)
-                        print (value0.size, value1.size)
                         return BitVecExtract(value0, beg, end - beg+1) == BitVecExtract(
                             value1, beg, end - beg+1
                         )
@@ -430,8 +428,8 @@ class ArithmeticSimplifier(Visitor):
             return expression.operands[0].operands[0]
 
     def visit_BoolEqual(self, expression, *operands):
-        """ (EQ, ITE(cond, constant1, contant2), constant1) -> cond
-            (EQ, ITE(cond, constant1, contant2), constant2) -> NOT cond
+        """ (EQ, ITE(cond, constant1, constant2), constant1) -> cond
+            (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
             (EQ (extract a, b, c) (extract a, b, c))
         """
         if isinstance(expression.operands[0], BitVecITE) and isinstance(
@@ -478,11 +476,11 @@ class ArithmeticSimplifier(Visitor):
 
     def visit_BitVecITE(self, expression, *operands):
         # FIXME Enable some taint propagating optimization
-        if isinstance(expression.operands[0], Constant) and not expression.operands[0].taint:
-            if expression.operands[0].value:
-                result = expression.operands[1]
+        if isinstance(operands[0], Constant) and not expression.operands[0].taint:
+            if operands[0].value:
+                result = operands[1]
             else:
-                result = expression.operands[2]
+                result = operands[2]
             return result
 
         if self._changed(expression, operands):

@@ -1274,20 +1274,19 @@ class ManticoreEVM(ManticoreBase):
         # Called at the end of a run(). Need to filter out the unreproducible/
         # unfeasible states
         # Caveat: It will add redundant constraints from previous run()
+        import pdb; pdb.set_trace()
         for state in self.all_states:
             # Save concrete unction
             with self.locked_context("ethereum", dict) as ethereum_context:
                 functions = ethereum_context.get("symbolic_func", dict())
                 for table in functions:
-                    constraint = True
                     symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
                     for xa, ya in symbolic_pairs:
                         for xb, yb in symbolic_pairs:
                             if xa is not xb:
-                                constraint = Operators.AND(
-                                    Operators.IFF(xa == xb, ya == yb), constraint
-                                )
-                    state.constrain(constraint)  # bijective
+                                #Thinkme maybe put a binding for x?
+                                constraint = Operators.IFF(xa == xb, ya == yb)
+                                state.constrain(constraint)  # bijective
 
                     # IDEA/caveat Forcing this here prevents the user from opening
                     # the state and adding more constraints. Or multi tx analisys.
@@ -1311,7 +1310,7 @@ class ManticoreEVM(ManticoreBase):
                         for ordered_symbolic_pairs in itertools.permutations(symbolic_pairs):
                             with state as temp_state:
                                 for x, y in ordered_symbolic_pairs:
-                                    x_concrete = temp_state.solve_one(x)
+                                    x_concrete = temp_state.solve_one(x) # FIXME catch exception!
                                     y_concrete = functions[table](x_concrete)
                                     # We should check that y_concrete can be equal to y(sym)
                                     # and if not then try a few times
@@ -1322,7 +1321,6 @@ class ManticoreEVM(ManticoreBase):
                                         if len(x) == len(xc):
                                             cond = Operators.OR(Operators.AND(x == xc, y == yc), cond)
                                     temp_state.constrain(cond)
-
                                 if temp_state.can_be_true(True):
                                     #Stop the search if we found 1 matching set
                                     break

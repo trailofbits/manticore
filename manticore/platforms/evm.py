@@ -943,7 +943,7 @@ class EVM(Eventful):
         # pesimistic: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
         # ignore: Ignore gas. Do not account for it. Do not OOG.
 
-        # optimization that speed up concrete fees sometimes
+        # optimization that speed up concrete fees over symbolic gas sometimes
         if not issymbolic(fee) and issymbolic(self._gas):
             reps, m = getattr(self, "_mgas", (0, None))
             reps += 1
