@@ -55,6 +55,7 @@ consts = config.get_group("evm")
 
 
 def globalsha3(data):
+    print ("sha3",data)
     return int(sha3.keccak_256(data).hexdigest(), 16)
 
 
@@ -2322,6 +2323,7 @@ class EVMWorld(Platform):
 
             return result[0]
         except Exception as e:
+            print ("ERRR")
             logger.info("error! %r", e)
             return int(sha3.keccak_256(data).hexdigest(), 16)
 
@@ -3046,7 +3048,7 @@ class EVMWorld(Platform):
             stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain.get_storage(account_address)
-            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
+            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 
             all_used_indexes = []
             with state.constraints as temp_cs:

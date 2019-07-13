@@ -1253,9 +1253,9 @@ class ManticoreEVM(ManticoreBase):
             """table: is a string used internally to identify the symbolic function
                 data: is the symbolic value of the function domain
                 known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
-            pipi = state.new_symbolic_buffer(len(data))
-            state.constrain(pipi == data)
-            data = pipi
+            #data_var= state.new_symbolic_buffer(len(data))
+            #state.constrain(data_var == data)
+            #data = data_var
 
             # local_known_pairs is the pairs known locally for this symbolic function
             local_known_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
@@ -1264,17 +1264,20 @@ class ManticoreEVM(ManticoreBase):
             local_known_pairs.append((data, value))
             state.context[f"symbolic_func_sym_{name}"] = local_known_pairs
             # let it return just new_hash
+            print ("No concreeeeete!", state.solve_one(data))
         else:
             value = func(data)
             with self.locked_context("ethereum", dict) as ethereum_context:
                 global_known_pairs = ethereum_context.get(f"symbolic_func_conc_{name}", set())
                 global_known_pairs.add((data, value))
                 ethereum_context[f"symbolic_func_conc_{name}"] = global_known_pairs
-
+            print (f"Found a concrete {name} {data} -> {value}")
             logger.info(f"Found a concrete {name} {data} -> {value}")
 
         result.append(value)
 
+    def remove_unsound_states(self):
+        self._on_did_run_unsound_symbolication()
     def _on_did_run_unsound_symbolication(self):
         # Called at the end of a run(). Need to filter out the unreproducible/
         # unfeasible states
@@ -1286,6 +1289,7 @@ class ManticoreEVM(ManticoreBase):
                 functions = ethereum_context.get("symbolic_func", dict())
                 for table in functions:
                     symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
+                    print (f"Adding bijectivity constraints to {table}")
                     for i in range(len(symbolic_pairs)):
                         xa, ya = symbolic_pairs[i]
                         for j in range(i+1, len(symbolic_pairs)):
@@ -1312,9 +1316,10 @@ class ManticoreEVM(ManticoreBase):
                     known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}",
                                              set())
 
-                    import pdb; pdb.set_trace()
+                    print ("Trying to match the harvested pairs to the symbolic pairs", known_pairs)
+
                     #If UF complies with bijectiveness lets try to find a set of
-                    # pairs that makes it sat.
+                    # concrete pairs that makes it sat.
                     if state.can_be_true(True):
                         # Search for a matching solution for all UF applications
                         # if the gathered knowledge is not sufficient it will ask
@@ -1325,23 +1330,43 @@ class ManticoreEVM(ManticoreBase):
                         # symbolic pairs in different ordering just in case
                         # they depend on each other
 
-                        for ordered_symbolic_pairs in itertools.permutations(symbolic_pairs):
-                            local_pairs = set()
+                        for n, ordered_symbolic_pairs in enumerate(itertools.permutations(symbolic_pairs)):
+                            print (f"Trying permutstion {n} ")
+                            local_pairs = set(known_pairs)
+                            print (local_pairs)
                             with state as temp_state:
                                 try:
                                     for x, y in ordered_symbolic_pairs:
-                                        x_concrete = temp_state.solve_one(x, constraint=True) # FIXME catch exception!
-                                        y_concrete = functions[table](x_concrete)
-                                        # We should check that y_concrete can be equal to y(sym)
-                                        # and if not then try a few times
-                                        local_pairs.add((x_concrete, y_concrete))
+                                        for _  in range(5):
+                                            x_concrete = temp_state.solve_one(x) # FIXME catch exception!
+                                            y_concrete = functions[table](x_concrete)
+                                            # We should check that y_concrete can be equal to y(sym)
+                                            # and if not then try a few times
+                                            if  temp_state.can_be_true(Operators.AND(x==x_concrete, y==y_concrete)):
+                                                local_pairs.add((x_concrete, y_concrete))
+                                                break
+                                            else:
+                                                temp_state.constrain(x != x_concrete)
 
-                                        temp_state.constrain(y==y_concrete)
-                                except:
-                                    print ("Unmatching concret pairs")
+                                        # Now paste the known pairs in this temp_state so the
+                                        # solving of the next domain value use it if expressions
+                                        # are related
+                                        cond = False
+                                        for xc, yc in local_pairs:
+                                            if len(x) == len(xc):
+                                                cond = Operators.OR(Operators.AND(x == xc, y == yc), cond)
+                                        temp_state.constrain(cond)
+                                        if not temp_state.can_be_true(True):
+                                            print ("Ouch already not matching pairs!")
+                                            break
+
+                                except Exception as e:
+                                    print ("Unmatching concret pairs exception", e)
+
                                 if temp_state.can_be_true(True):
                                     #Stop the search if we found 1 matching set
                                     known_pairs = known_pairs.union(local_pairs)
+                                    print ("We got a matching set. Enough!")
                                     break #or not
 
                         #Now paste the known pairs in the state constraints
@@ -1352,14 +1377,15 @@ class ManticoreEVM(ManticoreBase):
                                     cond = Operators.OR(Operators.AND(xa == xc, ya == yc), cond)
                             state.constrain(cond)
 
-                    if not state.can_be_true(True):
-                        if state.id in self._terminated_states:
-                            self._terminated_states.remove(state.id)
-                        elif state.id in self._ready_states:
-                            self._ready_states.remove(state.id)
-                        else:
-                            self._killed_states.remove(state.id)
-                        continue
+                if not state.can_be_true(True):
+                    print ("Fuck", state.id)
+                    if state.id in self._terminated_states:
+                        self._terminated_states.remove(state.id)
+                    elif state.id in self._ready_states:
+                        self._ready_states.remove(state.id)
+                    else:
+                        self._killed_states.remove(state.id)
+                    continue
 
     def _terminate_state_callback(self, state, e):
         """ INTERNAL USE
@@ -1553,12 +1579,14 @@ class ManticoreEVM(ManticoreBase):
         with testcase.open_stream("summary") as stream:
             is_something_symbolic = state.platform.dump(stream, state, self, message)
 
-            with self.locked_context("ethereum") as context:
-                known_sha3 = context.get("_known_sha3", None)
-                if known_sha3:
-                    stream.write("Known hashes:\n")
-                    for key, value in known_sha3:
-                        stream.write("%s::%x\n" % (binascii.hexlify(key), value))
+            with self.locked_context("ethereum") as ethereum_context:
+                functions = ethereum_context.get("symbolic_func", dict())
+                for table in functions:
+                    concrete_pairs = state.context.get(f"symbolic_func_conc_{table}", ())
+                    if concrete_pairs:
+                        stream.write(f"Known for {table}:\n")
+                        for key, value in concrete_pairs:
+                            stream.write("%s::%x\n" % (binascii.hexlify(key), value))
 
             if is_something_symbolic:
                 stream.write(
