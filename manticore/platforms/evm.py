@@ -55,7 +55,6 @@ consts = config.get_group("evm")
 
 
 def globalsha3(data):
-    print ("sha3",data)
     return int(sha3.keccak_256(data).hexdigest(), 16)
 
 
@@ -1209,7 +1208,6 @@ class EVM(Eventful):
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
         #print (self)
-        #assert(Z3Solver.instance().can_be_true(self.constraints))
         try:
             # import time
             # limbo = 0.0
@@ -1523,7 +1521,7 @@ class EVM(Eventful):
         memfee = self._get_memfee(start, size)
         return GSHA3WORD * (ceil32(size) // 32) + memfee
 
-    @concretized_args(size="SAMPLED")
+    @concretized_args(size="ALL")
     def SHA3(self, start, size):
         """Compute Keccak-256 hash
             If the size is symbolic the potential solutions will be sampled as
@@ -1625,11 +1623,11 @@ class EVM(Eventful):
         calldata_overflow = 32
         calldata_underflow = 32
         #if const.calldata_overlap:
-        if False:
-            self.constraints.add(data_offset + 32 <= len(self.data) + calldata_overflow)
+        if True:
+            self.constraints.add(data_offset + size <= len(self.data) + calldata_overflow)
             self.constraints.add(data_offset >= -calldata_underflow)
         else:
-            self.constraints.add(Operators.ULE(data_offset + 32, len(self.data) + calldata_overflow))
+            self.constraints.add(Operators.ULE(data_offset + size, len(self.data) + calldata_overflow))
             self.constraints.add(Operators.UGE(data_offset, self._used_calldata_size))
 
         #if issymbolic(offset):
@@ -1638,7 +1636,9 @@ class EVM(Eventful):
         #    raise ConcretizeArgument(1, policy="SAMPLED")
 
         self._use_calldata(data_offset, size)
-        max_size = Z3Solver.instance().max(self.constraints, size)
+        max_size = size
+        if issymbolic(max_size):
+            max_size = Z3Solver.instance().max(self.constraints, size)
         #@max_size = min(max_size, consts.calldata_maxsize)
         max_size = min(max_size, 324)
         logger.info(f"Constraining CALLDATACOPY size to {max_size}")
@@ -1646,47 +1646,18 @@ class EVM(Eventful):
 
         for i in range(max_size):
             try:
-                c = Operators.ITEBV(
+                c1 = Operators.ITEBV(
                     8,
                     data_offset + i < len(self.data),
                     Operators.ORD(self.data[data_offset + i]),
-                    0,
-                )
+                    0)
+
             except IndexError:
                 # data_offset + i is concrete and outside data
-                c = 0
-            self._store(mem_offset + i, c)
+                c1 = 0
 
 
-
-
-
-
-
-        if issymbolic(size):
-            if Z3Solver().can_be_true(self._constraints, Operators.ULE(size, len(self.data) + data_offset+ 32)):
-                self.constraints.add(Operators.ULE(size, len(self.data) + data_offset+ 32))
-            raise ConcretizeArgument(3, policy="SAMPLED")
-
-        if issymbolic(data_offset):
-            if Z3Solver().can_be_true(self._constraints, data_offset == self._used_calldata_size):
-                self.constraints.add(data_offset == self._used_calldata_size)
-            raise ConcretizeArgument(2, policy="SAMPLED")
-
-        # account for calldata usage
-        self._use_calldata(data_offset, size)
-        self._allocate(mem_offset, size)
-        for i in range(size):
-            try:
-                c = Operators.ITEBV(
-                    8,
-                    data_offset + i < len(self.data),
-                    Operators.ORD(self.data[data_offset + i]),
-                    0,
-                )
-            except IndexError:
-                # data_offset + i is concrete and outside data
-                c = 0
+            c = Operators.ITEBV(8,  i < size, c1, self.memory[mem_offset + i])
             self._store(mem_offset + i, c)
 
     def CODESIZE(self):

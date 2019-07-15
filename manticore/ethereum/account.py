@@ -28,6 +28,9 @@ class EVMAccount:
             return self._address == other._address
         return super().__eq__(other)
 
+    def __hash__(self):
+        return self._address
+
     @property
     def name_(self):
         """
