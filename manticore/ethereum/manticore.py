@@ -6,6 +6,7 @@ from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from subprocess import check_output, Popen, PIPE
 from typing import Dict, Optional, Union
+from pkg_resources import parse_version
 
 import io
 import os
@@ -16,6 +17,7 @@ import sha3
 import tempfile
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
+from crytic_compile.platform.solc import get_version
 
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import (
@@ -732,6 +734,14 @@ class ManticoreEVM(ManticoreBase):
         while contract_names:
             contract_name_i = contract_names.pop()
             try:
+                # version check
+                binary = crytic_compile_args.get("solc", "solc")
+                version = get_version(binary)
+                if not parse_version(version) < parse_version("0.5.0"):
+                    raise EthereumError(
+                        f"Manticore requires a solc version < 0.5.0 and {version} was found"
+                    )
+
                 compile_results = self._compile(
                     source_code,
                     contract_name_i,
