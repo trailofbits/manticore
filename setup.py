@@ -43,6 +43,7 @@ setup(
         "rlp",
         "ply",
         "crytic-compile>=0.1.1",
+        "wasm",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
