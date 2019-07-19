@@ -1,6 +1,29 @@
 import typing
 from dataclasses import dataclass
-from .types import U32, Byte, ValType, FunctionType, TableType, MemoryType, GlobalType, LimitType
+from .types import (
+    Indices,
+    Byte,
+    ValType,
+    FunctionType,
+    TableType,
+    MemoryType,
+    GlobalType,
+    LimitType,
+    Name,
+)
+from .runtime_structure import (
+    Store,
+    ModuleInstance,
+    FuncAddr,
+    TableAddr,
+    MemAddr,
+    GlobalAddr,
+    FuncInst,
+    TableInst,
+    MemInst,
+    GlobalInst,
+    Value,
+)
 from wasm import decode_module, Section, Opcode
 from wasm.wasmtypes import (
     SEC_TYPE,
@@ -16,21 +39,9 @@ from wasm.wasmtypes import (
     SEC_DATA,
 )
 
-
-class Indices:
-    typeidx: type = U32
-    funcidx: type = U32
-    tableidx: type = U32
-    memidx: type = U32
-    globalidx: type = U32
-    localidx: type = U32
-    labelidx: type = U32
-
-
 Expression = typing.Sequence[Opcode]
 ExportDesc = typing.Union[Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx]
 ImportDesc = typing.Union[Indices.typeidx, TableType, MemoryType, GlobalType]
-Name: type = str
 
 
 @dataclass
@@ -39,21 +50,50 @@ class Function:
     locals: typing.List[ValType]
     body: Expression
 
+    def allocate(self, store: Store, module: ModuleInstance) -> FuncAddr:
+        a = FuncAddr(len(store.funcs))
+        store.funcs.append(FuncInst(module.types[self.type], module, self))
+        return a
+
 
 @dataclass
 class Table:
     type: TableType
+
+    def allocate(self, store: Store, table_type: TableType) -> TableAddr:
+        a = TableAddr(len(store.tables))
+        store.tables.append(
+            TableInst([None for _i in range(table_type.limits.min)], table_type.limits.max)
+        )
+        return a
 
 
 @dataclass
 class Memory:
     type: MemoryType
 
+    def allocate(self, store: Store, mem_type: MemoryType) -> MemAddr:
+        a = MemAddr(len(store.mems))
+        store.mems.append(
+            MemInst(
+                [
+                    0x0 for _i in range(mem_type.min - (64 * 1024))
+                ],  # TODO - these should be symbolic, right?
+                mem_type.max,
+            )
+        )
+        return a
+
 
 @dataclass
 class Global:
     type: GlobalType
     init: Expression
+
+    def allocate(self, store: Store, global_type: GlobalType, val: Value) -> GlobalAddr:
+        a = GlobalAddr(len(store.globals))
+        store.append(GlobalInst(val, global_type.mut))
+        return a
 
 
 @dataclass
@@ -84,7 +124,19 @@ class Export:
 
 
 class Module:
-
+    __slots__ = [
+        "types",
+        "funcs",
+        "tables",
+        "mems",
+        "globals",
+        "elem",
+        "data",
+        "start",
+        "imports",
+        "exports",
+        "_raw",
+    ]
     _raw: bytes
 
     def __init__(self):
