@@ -2977,7 +2977,7 @@ class SLinux(Linux):
         if symbolic_path:
             import tempfile
 
-            fd, path = tempfile.mkstemp()
+            fd, path = tempfile.TemporaryFile()
             with open(path, "wb+") as f:
                 f.write("+" * 64)
             self.symbolic_files.append(path)
