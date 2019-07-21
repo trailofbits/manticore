@@ -223,7 +223,7 @@ class ManticoreBase(Eventful):
         *State list: TERMINATED*
 
         TERMINATED contains states that have reached a final condition and raised
-        TerminateState. Workers mainloop simpliy move the states that requested
+        TerminateState. Worker's mainloop simply moves the states that requested
         termination to the TERMINATED list. This is a final list.
 
         ```An inherited Manticore class like ManticoreEVM could internally revive
