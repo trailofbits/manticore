@@ -75,10 +75,11 @@ class Memory:
 
     def allocate(self, store: Store, mem_type: MemoryType) -> MemAddr:
         a = MemAddr(len(store.mems))
+        print(f"Allocating Memory of with size: min:{mem_type.min},max:{mem_type.max}")
         store.mems.append(
             MemInst(
                 [
-                    0x0 for _i in range(mem_type.min - (64 * 1024))
+                    0x0 for _i in range(mem_type.min * (64 * 1024))
                 ],  # TODO - these should be symbolic, right?
                 mem_type.max,
             )
@@ -101,7 +102,7 @@ class Global:
 class Elem:
     table: Indices.tableidx
     offset: Expression
-    init: typing.List[Indices.tableidx]
+    init: typing.List[Indices.funcidx]
 
 
 @dataclass

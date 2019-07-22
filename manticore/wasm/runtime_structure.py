@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from wasm.decode import Instruction
 from .types import (
     U32,
+    I32,
     Value,
     FunctionType,
     TableType,
@@ -87,6 +88,13 @@ class ModuleInstance:
         self.exports = []
 
     def instantiate(self, store: Store, module: "Module", extern_vals: typing.List[ExternVal]):
+        """
+        https://www.w3.org/TR/wasm-core-1/#instantiation%E2%91%A1
+        :param store:
+        :param module:
+        :param extern_vals:
+        :return:
+        """
         # #1 Assert: module is valid
         assert module  # close enough
 
@@ -100,27 +108,61 @@ class ModuleInstance:
         # #4 TODO
 
         # #5
+        stack = Stack()
 
-        # #6
+        aux_mod = ModuleInstance()
+        aux_mod.globaladdrs = [i for i in extern_vals if isinstance(i, GlobalAddr)]
+        aux_frame = Frame([], aux_mod)
+        stack.push(Activation(0, aux_frame))
 
-        # #7
-        # f = Frame(locals=[], module=self)
+        vals = []  # TODO: implement exec_global [exec_global(gb) for gb in module.globals]
 
-        # #8
+        last_frame = stack.pop()
+        assert isinstance(last_frame, Activation)
+        assert last_frame.frame == aux_frame
 
-        # #9
+        # #6, #7, #8
+        self.allocate(store, module, extern_vals, vals)
+        f = Frame(locals=[], module=self)
+        stack.push(Activation(0, f))
 
-        # #10
+        # #9 & #13
+        for elem in module.elem:
+            eoval = I32(0)  # exec_elem(elem.offset) TODO - implement exec_element
+            assert isinstance(eoval, I32)
+            assert elem.table in range(len(self.tableaddrs))
+            tableaddr: TableAddr = self.tableaddrs[elem.table]
+            assert tableaddr in range(len(store.tables))
+            tableinst: TableInst = store.tables[tableaddr]
+            eend = eoval + len(elem.init)
+            assert eend <= len(tableinst.elem)
 
-        # #11
+            funcidx: Indices.funcidx
+            for j, funcidx in enumerate(elem.init):
+                assert funcidx in range(len(self.funcaddrs))
+                funcaddr = self.funcaddrs[funcidx]
+                tableinst.elem[eoval + j] = funcaddr
 
-        # #12
+        # #10 & #14
+        for data in module.data:
+            doval = I32(0)  # exec_data(data.offset) TODO - implement exec_data
+            assert isinstance(doval, I32)
+            assert data.data in range(len(self.memaddrs))
+            memaddr = self.memaddrs[data.data]
+            assert memaddr in range(len(store.mems))
+            meminst = store.mems[memaddr]
+            dend = doval + len(data.init)
+            assert dend <= len(meminst.data)
 
-        # #13
+            for j, b in enumerate(data.init):
+                meminst.data[doval + j] = b
 
-        # #14
+        # #11 & #12
+        last_frame = stack.pop()
+        assert isinstance(last_frame, Activation)
+        assert last_frame.frame == f
 
-        # #15
+        # #15  TODO run start function
 
     def allocate(
         self,
@@ -129,6 +171,14 @@ class ModuleInstance:
         extern_vals: typing.List[ExternVal],
         values: typing.List[Value],
     ):
+        """
+        https://www.w3.org/TR/wasm-core-1/#allocation%E2%91%A0
+        :param store:
+        :param module:
+        :param extern_vals:
+        :param values:
+        :return:
+        """
         self.types = module.types
 
         for ev in extern_vals:
@@ -180,9 +230,17 @@ class Activation:
     frame: Frame
 
 
-@dataclass
 class Stack:
     data: typing.List[typing.Union[Value, Label, Activation]]
+
+    def __init__(self, init_data=None):
+        self.data = init_data if init_data else []
+
+    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+        self.data.append(val)
+
+    def pop(self) -> typing.Union[Value, Label, Activation]:
+        return self.data.pop()
 
 
 @dataclass

@@ -21,7 +21,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
             # TODO - create function stubs that have the correct signatures
             self.store.funcs.append(HostFunc(self.module.types[i.desc], stub))
             imports.append(FuncAddr(len(self.store.funcs) - 1))
-        self.instance.allocate(self.store, self.module, imports, [])
+        self.instance.instantiate(self.store, self.module, imports)
 
     def execute(self):
         """
