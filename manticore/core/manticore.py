@@ -646,6 +646,8 @@ class ManticoreBase(Eventful):
         return len(self._terminated_states)
 
     def generate_testcase(self, state, message="test", name="test"):
+        if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
+            message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)
         with testcase.open_stream("pkl", binary=True) as statef:
             PickleSerializer().serialize(state, statef)

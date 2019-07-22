@@ -12,10 +12,13 @@ from io import BytesIO
 
 from manticore.core.smtlib import Expression
 from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.state import Concretize
 from manticore.native.memory import *
+from manticore.utils import config
 from manticore import issymbolic
 
 solver = Z3Solver.instance()
+consts = config.get_group("native")
 
 
 def isconcrete(value):
@@ -214,9 +217,19 @@ class MemoryTest(unittest.TestCase):
         # alloc/map a byte
         first = mem.mmap(0x1000, 0x1000, "r")
 
+        consts.fast_crash = True
         self.assertEqual(first, 0x1000)
         self.assertEqual(mem[0x1000], b"\x00")
         self.assertRaises(MemoryException, mem.__getitem__, sym)
+        self.assertRaises(MemoryException, mem.__setitem__, 0x1000, "\x41")
+        self.assertRaises(MemoryException, mem.__setitem__, 0x1000, val)
+        self.assertRaises(MemoryException, mem.__setitem__, sym, "\x41")
+        self.assertRaises(MemoryException, mem.__setitem__, sym, val)
+
+        consts.fast_crash = False
+        self.assertEqual(first, 0x1000)
+        self.assertEqual(mem[0x1000], b"\x00")
+        self.assertRaises(Concretize, mem.__getitem__, sym)
         self.assertRaises(MemoryException, mem.__setitem__, 0x1000, "\x41")
         self.assertRaises(MemoryException, mem.__setitem__, 0x1000, val)
         self.assertRaises(MemoryException, mem.__setitem__, sym, "\x41")
@@ -242,6 +255,7 @@ class MemoryTest(unittest.TestCase):
         # alloc/map a byte
         first = mem.mmap(0x1000, 0x1000, "w")
 
+        consts.fast_crash = True
         self.assertEqual(first, 0x1000)
         self.assertRaises(MemoryException, mem.__getitem__, 0x1000)
         self.assertRaises(MemoryException, mem.__getitem__, sym)
@@ -249,6 +263,14 @@ class MemoryTest(unittest.TestCase):
         mem[0x1000] = val
         self.assertRaises(MemoryException, mem.__setitem__, sym, "\x41")
         self.assertRaises(MemoryException, mem.__setitem__, sym, val)
+
+        consts.fast_crash = False
+        self.assertRaises(MemoryException, mem.__getitem__, 0x1000)
+        self.assertRaises(MemoryException, mem.__getitem__, sym)
+        mem[0x1000] = "\x40"
+        mem[0x1000] = val
+        self.assertRaises(Concretize, mem.__setitem__, sym, "\x41")
+        self.assertRaises(Concretize, mem.__setitem__, sym, val)
 
         cs.add(sym.uge(0x1000))
 
@@ -1741,7 +1763,13 @@ class MemoryTest(unittest.TestCase):
         cs.add(addr1 <= (ro + 16))
 
         # Can write to unmapped memory, should raise despite force
+        consts.fast_crash = True
         with self.assertRaises(InvalidSymbolicMemoryAccess):
+            mem.write(addr1, msg, force=True)
+
+        # Under normal conditions, this concretizes on memory safety
+        consts.fast_crash = False
+        with self.assertRaises(Concretize):
             mem.write(addr1, msg, force=True)
 
         # 2. Force write to mapped memory, should not raise; no force should
@@ -1757,7 +1785,13 @@ class MemoryTest(unittest.TestCase):
         cs.add(addr3 > (nul_end - 16))
         # single byte into unmapped memory
         cs.add(addr3 <= (nul_end - len(msg) + 1))
+        consts.fast_crash = True
         with self.assertRaises(InvalidSymbolicMemoryAccess):
+            mem.write(addr3, msg, force=True)
+
+        # Normally, concretize on memory safety
+        consts.fast_crash = False
+        with self.assertRaises(Concretize):
             mem.write(addr3, msg, force=True)
 
         # 4. Try to force-read a span from mapped, but unreadable memory, should not raise

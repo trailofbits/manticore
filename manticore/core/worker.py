@@ -148,6 +148,8 @@ class Worker:
                         m._publish("will_terminate_state", current_state, exc)
                         # Update the stored version of the current state
 
+                        current_state._terminated_by = exc
+
                         m._save(current_state, state_id=current_state.id)
                         # Add the state to the terminated state list re-using
                         # the same id. No other worker will use this state in
