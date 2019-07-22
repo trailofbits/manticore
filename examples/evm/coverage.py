@@ -29,7 +29,7 @@ m.transaction(
 )
 
 print(f"[+] There are {m.count_terminated_states()} reverted states now")
-print(f"[+] There are {m.count_running_states()} alive states now")
+print(f"[+] There are {m.count_busy_states()} alive states now")
 # for state_id in m.running_state_ids:
 #     print(m.report(state_id))
 
