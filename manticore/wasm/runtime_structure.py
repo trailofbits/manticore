@@ -211,7 +211,9 @@ class ModuleInstance:
                 val = self.globaladdrs[export_i.desc]
             self.exports.append(ExportInst(export_i.name, val))
 
-    def invoke(self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]) -> typing.List[Value]:
+    def invoke(
+        self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]
+    ) -> typing.List[Value]:
         assert funcaddr in range(len(store.funcs))
         funcinst = store.funcs[funcaddr]
         ty = funcinst.type
