@@ -40,7 +40,7 @@ from wasm.wasmtypes import (
     SEC_DATA,
 )
 
-Expression = typing.Sequence[Instruction]
+Expression = typing.List[Instruction]
 ExportDesc = typing.Union[Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx]
 ImportDesc = typing.Union[Indices.typeidx, TableType, MemoryType, GlobalType]
 
@@ -75,7 +75,6 @@ class Memory:
 
     def allocate(self, store: Store, mem_type: MemoryType) -> MemAddr:
         a = MemAddr(len(store.mems))
-        print(f"Allocating Memory of with size: min:{mem_type.min},max:{mem_type.max}")
         store.mems.append(
             MemInst(
                 [
@@ -94,7 +93,7 @@ class Global:
 
     def allocate(self, store: Store, global_type: GlobalType, val: Value) -> GlobalAddr:
         a = GlobalAddr(len(store.globals))
-        store.append(GlobalInst(val, global_type.mut))
+        store.globals.append(GlobalInst(val, global_type.mut))
         return a
 
 
@@ -164,7 +163,6 @@ class Module:
         _header = next(module_iter)
         section: Section
         for section, section_data in module_iter:
-            print(section.to_string(section_data))
 
             sec_id = section_data.id
             if sec_id == SEC_TYPE:
@@ -207,7 +205,7 @@ class Module:
                     ty = e.get_decoder_meta()["types"]["field_str"]
                     m.exports.append(
                         Export(eval(ty.to_string(e.field_str)), mapping[e.kind](e.index))
-                    )  # TODO - This is definitely unsafe
+                    )  # TODO - This is definitely an unsafe way to strip the quotes
             elif sec_id == SEC_START:
                 pass  # TODO - Start func
             elif sec_id == SEC_ELEMENT:
@@ -222,7 +220,7 @@ class Module:
                 for d in section_data.payload.entries:
                     m.data.append(
                         Data(Indices.memidx(d.index), d.offset, d.data)
-                    )  # TODO - the offset and data are probably raw types
+                    )  # TODO - the offset and data are probably raw types that we need to process into something
             # TODO - custom sections
 
         return m

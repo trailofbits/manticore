@@ -58,10 +58,10 @@ class ExportInst:
 
 class Store:
     __slots__ = ["funcs", "tables", "mems", "globals"]
-    funcs: typing.Sequence[ProtoFuncInst]
-    tables: typing.Sequence[TableInst]
-    mems: typing.Sequence[MemInst]
-    globals: typing.Sequence[GlobalInst]
+    funcs: typing.List[ProtoFuncInst]
+    tables: typing.List[TableInst]
+    mems: typing.List[MemInst]
+    globals: typing.List[GlobalInst]
 
     def __init__(self):
         self.funcs = []
@@ -72,12 +72,12 @@ class Store:
 
 class ModuleInstance:
     __slots__ = ["types", "funcaddrs", "tableaddrs", "memaddrs", "globaladdrs", "exports"]
-    types: typing.Sequence[FunctionType]
-    funcaddrs: typing.Sequence[FuncAddr]
-    tableaddrs: typing.Sequence[TableAddr]
-    memaddrs: typing.Sequence[MemAddr]
-    globaladdrs: typing.Sequence[GlobalAddr]
-    exports: typing.Sequence[ExportInst]
+    types: typing.List[FunctionType]
+    funcaddrs: typing.List[FuncAddr]
+    tableaddrs: typing.List[TableAddr]
+    memaddrs: typing.List[MemAddr]
+    globaladdrs: typing.List[GlobalAddr]
+    exports: typing.List[ExportInst]
 
     def __init__(self):
         self.types = []
@@ -115,7 +115,7 @@ class ModuleInstance:
         aux_frame = Frame([], aux_mod)
         stack.push(Activation(0, aux_frame))
 
-        vals = []  # TODO: implement exec_global [exec_global(gb) for gb in module.globals]
+        vals = []  # [exec_global(gb) for gb in module.globals] TODO: implement exec_global
 
         last_frame = stack.pop()
         assert isinstance(last_frame, Activation)
@@ -215,12 +215,12 @@ class ModuleInstance:
 @dataclass
 class Label:
     arity: int
-    instr: typing.Sequence[Instruction]
+    instr: typing.List[Instruction]
 
 
 @dataclass
 class Frame:
-    locals: typing.Sequence[Value]
+    locals: typing.List[Value]
     module: ModuleInstance
 
 
