@@ -51,5 +51,6 @@ class Indices:
     localidx: type = U32
     labelidx: type = U32
 
+
 MemoryType = LimitType
 ExternType = typing.Union[FunctionType, TableType, MemoryType, GlobalType]

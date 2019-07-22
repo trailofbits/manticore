@@ -12,7 +12,7 @@ from .types import (
     Byte,
     Name,
     ExternType,
-    Indices
+    Indices,
 )
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
