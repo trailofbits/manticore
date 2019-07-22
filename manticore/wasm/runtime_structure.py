@@ -1,7 +1,7 @@
 import typing
 import types
 from dataclasses import dataclass
-from wasm import Opcode
+from wasm.decode import Instruction
 from .types import (
     U32,
     Value,
@@ -150,22 +150,22 @@ class ModuleInstance:
         for idx, global_i in enumerate(module.globals):
             assert isinstance(values[idx], global_i.type)  # TODO - might be wrong
             self.globaladdrs.append(global_i.allocate(store, global_i.type, values[idx]))
-        # for idx, export_i in enumerate(module.exports):
-        #     if isinstance(export_i.desc, Indices.funcidx):
-        #         val = self.funcaddrs[export_i.desc]
-        #     if isinstance(export_i.desc, Indices.tableidx):
-        #         val = self.tableaddrs[export_i.desc]
-        #     if isinstance(export_i.desc, Indices.memidx):
-        #         val = self.memaddrs[export_i.desc]
-        #     if isinstance(export_i.desc, Indices.globalidx):
-        #         val = self.globaladdrs[export_i.desc]
-        #     self.exports.append(ExportInst(export_i.name, val))
+        for idx, export_i in enumerate(module.exports):
+            if isinstance(export_i.desc, Indices.funcidx):
+                val = self.funcaddrs[export_i.desc]
+            if isinstance(export_i.desc, Indices.tableidx):
+                val = self.tableaddrs[export_i.desc]
+            if isinstance(export_i.desc, Indices.memidx):
+                val = self.memaddrs[export_i.desc]
+            if isinstance(export_i.desc, Indices.globalidx):
+                val = self.globaladdrs[export_i.desc]
+            self.exports.append(ExportInst(export_i.name, val))
 
 
 @dataclass
 class Label:
     arity: int
-    instr: typing.Sequence[Opcode]
+    instr: typing.Sequence[Instruction]
 
 
 @dataclass

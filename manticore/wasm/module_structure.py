@@ -24,7 +24,8 @@ from .runtime_structure import (
     GlobalInst,
     Value,
 )
-from wasm import decode_module, Section, Opcode
+from wasm import decode_module, Section
+from wasm.decode import Instruction
 from wasm.wasmtypes import (
     SEC_TYPE,
     SEC_IMPORT,
@@ -39,7 +40,7 @@ from wasm.wasmtypes import (
     SEC_DATA,
 )
 
-Expression = typing.Sequence[Opcode]
+Expression = typing.Sequence[Instruction]
 ExportDesc = typing.Union[Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx]
 ImportDesc = typing.Union[Indices.typeidx, TableType, MemoryType, GlobalType]
 
@@ -171,7 +172,16 @@ class Module:
                         FunctionType(ft.param_types, [ft.return_type])
                     )  # TODO: Decode numeric return types to actual returns
             elif sec_id == SEC_IMPORT:
-                pass
+                mapping = (Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx)
+                for i in section_data.payload.entries:
+                    ty_map = i.get_decoder_meta()["types"]
+                    m.imports.append(
+                        Import(
+                            ty_map["module_str"].to_string(i.module_str),
+                            ty_map["field_str"].to_string(i.field_str),
+                            mapping[i.kind](i.type.type),
+                        )
+                    )
             elif sec_id == SEC_FUNCTION:
                 for f in section_data.payload.types:
                     m.funcs.append(
@@ -191,15 +201,16 @@ class Module:
                 for g in section_data.payload.globals:
                     pass  # TODO: Create the globals
             elif sec_id == SEC_EXPORT:
-                mapping = [Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx]
+                mapping = (Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx)
                 for e in section_data.payload.entries:
+                    ty = e.get_decoder_meta()["types"]["field_str"]
                     m.exports.append(
-                        Export(e.field_str, mapping[e.kind](e.index))
-                    )  # TODO - Is this the right way to create an ExportDesc?
+                        Export(eval(ty.to_string(e.field_str)), mapping[e.kind](e.index))
+                    )  # TODO - This is definitely unsafe
             elif sec_id == SEC_START:
-                pass
+                pass  # TODO - Start func
             elif sec_id == SEC_ELEMENT:
-                pass
+                pass  # TODO - ELEMENT Section
             elif sec_id == SEC_CODE:
                 for idx, c in enumerate(
                     section_data.payload.bodies
@@ -207,6 +218,10 @@ class Module:
                     m.funcs[idx].locals = c.locals
                     m.funcs[idx].body = c.code
             elif sec_id == SEC_DATA:
-                pass
+                for d in section_data.payload.entries:
+                    m.data.append(
+                        Data(Indices.memidx(d.index), d.offset, d.data)
+                    )  # TODO - the offset and data are probably raw types
+            # TODO - custom sections
 
         return m
