@@ -211,6 +211,24 @@ class ModuleInstance:
                 val = self.globaladdrs[export_i.desc]
             self.exports.append(ExportInst(export_i.name, val))
 
+    def invoke(self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]) -> typing.List[Value]:
+        assert funcaddr in range(len(store.funcs))
+        funcinst = store.funcs[funcaddr]
+        ty = funcinst.type
+        assert len(ty.param_types) == len(argv)
+        # for t, v in zip(ty.param_types, argv):
+        #     assert type(v) == type(t)
+
+        dummy_frame = Frame([], ModuleInstance())
+        stack.push(dummy_frame)
+        for v in argv:
+            stack.push(v)
+
+        # TODO - invoke function instance at address funcaddr
+        # https://www.w3.org/TR/wasm-core-1/#exec-invoke
+
+        return [stack.pop() for _i in range(len(ty.result_types))]
+
 
 @dataclass
 class Label:

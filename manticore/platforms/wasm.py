@@ -1,6 +1,6 @@
 from .platform import Platform
 from ..wasm.module_structure import Module
-from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc
+from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc, Stack
 from ..core.state import TerminateState
 
 
@@ -16,12 +16,20 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         self.module: Module = Module.load(filename)
         self.store = Store()
         self.instance = ModuleInstance()
+        self.stack = Stack()
         imports = []
         for i in self.module.imports:
             # TODO - create function stubs that have the correct signatures
             self.store.funcs.append(HostFunc(self.module.types[i.desc], stub))
             imports.append(FuncAddr(len(self.store.funcs) - 1))
         self.instance.instantiate(self.store, self.module, imports)
+
+    def start(self):
+        """
+        Calls the start function. Requires manual invocation
+        :return:
+        """
+        pass
 
     def execute(self):
         """
