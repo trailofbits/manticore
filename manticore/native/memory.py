@@ -1193,16 +1193,16 @@ class SMemory(Memory):
                         raise InvalidMemoryAccess(address + offset, "w")
                     self._symbols[address + offset] = [(True, value[offset])]
                 else:
-                    sizeArea+=1
+                    sizeArea += 1
             if sizeArea > 0:
                 areas.append((startArea, sizeArea))
             for (startArea, sizeArea) in areas:
                 if sizeArea == 1:
-                    super().write1(address+startArea, value[startArea], force)
+                    super().write1(address + startArea, value[startArea], force)
                 else:
-                    super().write(address+startArea, value[startArea:startArea+sizeArea], force)
-
-
+                    super().write(
+                        address + startArea, value[startArea : startArea + sizeArea], force
+                    )
 
     def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
         """
