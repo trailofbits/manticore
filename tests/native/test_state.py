@@ -289,15 +289,15 @@ class StateMergeTest(unittest.TestCase):
                 ctx["max_states"] = new_val
 
     def setUp(self):
+        core = config.get_group("core")
+        core.seed = 61
+        core.mprocessing = core.mprocessing.single
+
         dirname = os.path.dirname(__file__)
         self.m = Manticore(
             os.path.join(dirname, "binaries", "basic_state_merging"), policy="random"
         )
         self.plugin = self.StateCounter()
-
-        core = config.get_group("core")
-        core.seed = 2
-        core.mprocessing = core.mprocessing.single
 
         self.m.register_plugin(Merger())
         self.m.register_plugin(self.plugin)
@@ -314,4 +314,9 @@ class StateMergeTest(unittest.TestCase):
                 )
 
         self.m.run()
-        self.assertLess(self.m.context["state_count"], self.plugin.max_states)
+        s = config.get_group("core").seed
+        self.assertLess(
+            self.m.context["state_count"],
+            self.plugin.max_states,
+            f"State merging failed with seed: {s}",
+        )

@@ -63,7 +63,11 @@ consts.add(
     default=MProcessingType.multiprocessing,
     description="single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes",
 )
-consts.add("seed", default=1337, description="The seed to use when randomly selecting states")
+consts.add(
+    "seed",
+    default=random.getrandbits(32),
+    description="The seed to use when randomly selecting states",
+)
 
 
 class ManticoreBase(Eventful):
@@ -79,6 +83,7 @@ class ManticoreBase(Eventful):
             bases[idx] = cl
             cls.__bases__ = tuple(bases)
 
+        random.seed(consts.seed)
         return super().__new__(cls)
 
     # Decorators added first for convenience.
