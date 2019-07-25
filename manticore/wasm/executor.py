@@ -211,7 +211,8 @@ class Executor(object):  # TODO - should be Eventful
         pass
 
     def drop(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("drop")
+        stack.has_type_on_top(Value.__args__, 1)
+        stack.pop()
 
     def select(self, store: "Store", stack: "Stack"):
         c = stack.pop()
@@ -286,12 +287,6 @@ class Executor(object):  # TODO - should be Eventful
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
         stack.push(I32(c))
 
-    def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f32.load")
-
-    def f64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f64.load")
-
     def i32_load8_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
         raise NotImplementedError("i32.load8_s")
 
@@ -350,12 +345,6 @@ class Executor(object):  # TODO - should be Eventful
     def i64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
         self.int_store(store, stack, imm, I64)
 
-    def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f32.store")
-
-    def f64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f64.store")
-
     def i32_store8(self, store: "Store", stack: "Stack", imm: MemoryImm):
         self.int_store(store, stack, imm, I32, 8)
 
@@ -382,12 +371,6 @@ class Executor(object):  # TODO - should be Eventful
 
     def i64_const(self, store: "Store", stack: "Stack", imm: I64ConstImm):
         stack.push(I64(imm.value))
-
-    def f32_const(self, store: "Store", stack: "Stack", imm: F32ConstImm):
-        stack.push(F32(imm.value))
-
-    def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
-        stack.push(F64(imm.value))
 
     def i32_eqz(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.eqz")
@@ -454,42 +437,6 @@ class Executor(object):  # TODO - should be Eventful
 
     def i64_ge_u(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.ge_u")
-
-    def f32_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.eq")
-
-    def f32_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ne")
-
-    def f32_lt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.lt")
-
-    def f32_gt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.gt")
-
-    def f32_le(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.le")
-
-    def f32_ge(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ge")
-
-    def f64_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.eq")
-
-    def f64_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.ne")
-
-    def f64_lt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.lt")
-
-    def f64_gt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.gt")
-
-    def f64_le(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.le")
-
-    def f64_ge(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.ge")
 
     def i32_clz(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.clz")
@@ -606,6 +553,101 @@ class Executor(object):  # TODO - should be Eventful
     def i64_rotr(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.rotr")
 
+    def i32_wrap_i64(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i32.wrap/i64")
+
+    def i32_trunc_s_f32(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i32.trunc_s/f32")
+
+    def i32_trunc_u_f32(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i32.trunc_u/f32")
+
+    def i32_trunc_s_f64(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i32.trunc_s/f64")
+
+    def i32_trunc_u_f64(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i32.trunc_u/f64")
+
+    def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i64.extend_s/i32")
+
+    def i64_extend_u_i32(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i64.extend_u/i32")
+
+    def i64_trunc_s_f32(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i64.trunc_s/f32")
+
+    def i64_trunc_u_f32(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i64.trunc_u/f32")
+
+    def i64_trunc_s_f64(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i64.trunc_s/f64")
+
+    def i64_trunc_u_f64(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i64.trunc_u/f64")
+
+    def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i32.reinterpret/f32")
+
+    def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("i64.reinterpret/f64")
+
+    # Floating point instructions
+
+    def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
+        raise NotImplementedError("f32.load")
+
+    def f64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
+        raise NotImplementedError("f64.load")
+
+    def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
+        raise NotImplementedError("f32.store")
+
+    def f64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
+        raise NotImplementedError("f64.store")
+
+    def f32_const(self, store: "Store", stack: "Stack", imm: F32ConstImm):
+        stack.push(F32(imm.value))
+
+    def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
+        stack.push(F64(imm.value))
+
+    def f32_eq(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f32.eq")
+
+    def f32_ne(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f32.ne")
+
+    def f32_lt(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f32.lt")
+
+    def f32_gt(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f32.gt")
+
+    def f32_le(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f32.le")
+
+    def f32_ge(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f32.ge")
+
+    def f64_eq(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f64.eq")
+
+    def f64_ne(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f64.ne")
+
+    def f64_lt(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f64.lt")
+
+    def f64_gt(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f64.gt")
+
+    def f64_le(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f64.le")
+
+    def f64_ge(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("f64.ge")
+
     def f32_abs(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.abs")
 
@@ -690,39 +732,6 @@ class Executor(object):  # TODO - should be Eventful
     def f64_copysign(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f64.copysign")
 
-    def i32_wrap_i64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.wrap/i64")
-
-    def i32_trunc_s_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_s/f32")
-
-    def i32_trunc_u_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_u/f32")
-
-    def i32_trunc_s_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_s/f64")
-
-    def i32_trunc_u_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_u/f64")
-
-    def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.extend_s/i32")
-
-    def i64_extend_u_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.extend_u/i32")
-
-    def i64_trunc_s_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_s/f32")
-
-    def i64_trunc_u_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_u/f32")
-
-    def i64_trunc_s_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_s/f64")
-
-    def i64_trunc_u_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_u/f64")
-
     def f32_convert_s_i32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.convert_s/i32")
 
@@ -752,12 +761,6 @@ class Executor(object):  # TODO - should be Eventful
 
     def f64_promote_f32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f64.promote/f32")
-
-    def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.reinterpret/f32")
-
-    def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.reinterpret/f64")
 
     def f32_reinterpret_i32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.reinterpret/i32")
