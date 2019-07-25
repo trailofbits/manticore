@@ -243,10 +243,20 @@ class Executor(object):  # TODO - should be Eventful
         self.set_local(store, stack, imm)
 
     def get_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
-        raise NotImplementedError("get_global")
+        f = stack.get_frame()
+        assert imm.global_index in range(len(f.module.globaladdrs))
+        a = f.module.globaladdrs[imm.global_index]
+        assert a in range(len(store.globals))
+        glob = store.globals[a]
+        stack.push(glob.value)
 
     def set_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
-        raise NotImplementedError("set_global")
+        f = stack.get_frame()
+        assert imm.global_index in range(len(f.module.globaladdrs))
+        a = f.module.globaladdrs[imm.global_index]
+        assert a in range(len(store.globals))
+        stack.has_type_on_top(Value.__args__, 1)
+        store.globals[a].value = stack.pop()
 
     def i32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
         f = stack.get_frame()
