@@ -1,5 +1,6 @@
 import typing
 from dataclasses import dataclass
+from wasm.decode import Instruction
 
 # TODO - These need to be symbolic fixed-size representations
 U32: type = type("U32", (int,), {})
@@ -10,7 +11,7 @@ F32: type = type("F32", (float,), {})
 F64: type = type("F64", (float,), {})
 Byte: type = type("Byte", (int,), {})
 
-ValType = typing.Union[U32, U64, F32, F64]
+ValType = typing.Union[type(I32), type(I64), type(F32), type(F64)]
 Value = typing.Union[I32, I64, F32, F64]
 Name: type = type("Name", (str,), {})
 ResultType = typing.Optional[
@@ -54,3 +55,4 @@ class Indices:
 
 MemoryType = LimitType
 ExternType = typing.Union[FunctionType, TableType, MemoryType, GlobalType]
+WASMExpression = typing.List[Instruction]

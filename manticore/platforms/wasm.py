@@ -23,6 +23,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
             self.store.funcs.append(HostFunc(self.module.types[i.desc], stub))
             imports.append(FuncAddr(len(self.store.funcs) - 1))
         self.instance.instantiate(self.store, self.module, imports)
+        print(self.instance.invoke_by_name("main", self.stack, self.store, []))
 
     def start(self):
         """
@@ -36,4 +37,5 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         """
         # Handle interrupts et al in a try/except here
         # self.current.execute()
+        # self.instance.invoke_by_name("main", self.stack, self.store, [])
         raise TerminateState("Done!")

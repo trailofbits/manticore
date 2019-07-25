@@ -10,6 +10,11 @@ from .types import (
     GlobalType,
     LimitType,
     Name,
+    WASMExpression,
+    I32,
+    I64,
+    F32,
+    F64,
 )
 from .runtime_structure import (
     Store,
@@ -24,7 +29,7 @@ from .runtime_structure import (
     GlobalInst,
     Value,
 )
-from wasm import decode_module, Section
+from wasm import decode_module, decode_bytecode, Section
 from wasm.decode import Instruction
 from wasm.wasmtypes import (
     SEC_TYPE,
@@ -40,7 +45,6 @@ from wasm.wasmtypes import (
     SEC_DATA,
 )
 
-Expression = typing.List[Instruction]
 ExportDesc = typing.Union[Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx]
 ImportDesc = typing.Union[Indices.typeidx, TableType, MemoryType, GlobalType]
 
@@ -49,7 +53,7 @@ ImportDesc = typing.Union[Indices.typeidx, TableType, MemoryType, GlobalType]
 class Function:
     type: Indices.typeidx
     locals: typing.List[ValType]
-    body: Expression
+    body: WASMExpression
 
     def allocate(self, store: Store, module: ModuleInstance) -> FuncAddr:
         a = FuncAddr(len(store.funcs))
@@ -89,7 +93,7 @@ class Memory:
 @dataclass
 class Global:
     type: GlobalType
-    init: Expression
+    init: WASMExpression
 
     def allocate(self, store: Store, global_type: GlobalType, val: Value) -> GlobalAddr:
         a = GlobalAddr(len(store.globals))
@@ -100,14 +104,14 @@ class Global:
 @dataclass
 class Elem:
     table: Indices.tableidx
-    offset: Expression
+    offset: WASMExpression
     init: typing.List[Indices.funcidx]
 
 
 @dataclass
 class Data:
     data: Indices.memidx
-    offset: Expression
+    offset: WASMExpression
     init: typing.List[Byte]
 
 
@@ -154,6 +158,7 @@ class Module:
 
     @classmethod
     def load(cls, filename: str):
+        type_map = [F64, F32, I64, I32]
 
         m = Module()
         with open(filename, "rb") as wasm_file:
@@ -163,13 +168,15 @@ class Module:
         _header = next(module_iter)
         section: Section
         for section, section_data in module_iter:
-
             sec_id = section_data.id
             if sec_id == SEC_TYPE:
                 for ft in section_data.payload.entries:
                     m.types.append(
-                        FunctionType(ft.param_types, [ft.return_type])
-                    )  # TODO: Decode numeric return types to actual returns
+                        FunctionType(
+                            ft.param_types,
+                            [type_map[ft.return_type] for _i in range(ft.return_count)],
+                        )
+                    )
             elif sec_id == SEC_IMPORT:
                 mapping = (Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx)
                 for i in section_data.payload.entries:
@@ -211,11 +218,11 @@ class Module:
             elif sec_id == SEC_ELEMENT:
                 pass  # TODO - ELEMENT Section
             elif sec_id == SEC_CODE:
-                for idx, c in enumerate(
-                    section_data.payload.bodies
-                ):  # TODO - Is the index guaranteed to match here?
-                    m.funcs[idx].locals = c.locals
-                    m.funcs[idx].body = c.code
+                for idx, c in enumerate(section_data.payload.bodies):
+                    m.funcs[idx].locals = [
+                        type_map[e.type] for e in c.locals for _i in range(e.count)
+                    ]
+                    m.funcs[idx].body = list(decode_bytecode(c.code))
             elif sec_id == SEC_DATA:
                 for d in section_data.payload.entries:
                     m.data.append(

@@ -1,11 +1,16 @@
 import typing
 import types
+import copy
 from dataclasses import dataclass
 from wasm.decode import Instruction
+from .executor import Executor
+from collections import deque
+from wasm.immtypes import BlockImm, BranchImm, BranchTableImm, CallImm, CallIndirectImm
 from .types import (
     U32,
     I32,
     Value,
+    ValType,
     FunctionType,
     TableType,
     MemoryType,
@@ -14,7 +19,11 @@ from .types import (
     Name,
     ExternType,
     Indices,
+    WASMExpression,
 )
+
+def debug(imm):
+    return getattr(imm, 'value', imm)
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
@@ -71,13 +80,25 @@ class Store:
 
 
 class ModuleInstance:
-    __slots__ = ["types", "funcaddrs", "tableaddrs", "memaddrs", "globaladdrs", "exports"]
+    __slots__ = [
+        "types",
+        "funcaddrs",
+        "tableaddrs",
+        "memaddrs",
+        "globaladdrs",
+        "exports",
+        "executor",
+        "_instruction_queue",
+        "_pc",
+    ]
     types: typing.List[FunctionType]
     funcaddrs: typing.List[FuncAddr]
     tableaddrs: typing.List[TableAddr]
     memaddrs: typing.List[MemAddr]
     globaladdrs: typing.List[GlobalAddr]
     exports: typing.List[ExportInst]
+    executor: Executor
+    _instruction_queue: typing.Deque[Instruction]
 
     def __init__(self):
         self.types = []
@@ -86,6 +107,8 @@ class ModuleInstance:
         self.memaddrs = []
         self.globaladdrs = []
         self.exports = []
+        self.executor = Executor()
+        self._instruction_queue = deque()
 
     def instantiate(self, store: Store, module: "Module", extern_vals: typing.List[ExternVal]):
         """
@@ -115,7 +138,7 @@ class ModuleInstance:
         aux_frame = Frame([], aux_mod)
         stack.push(Activation(0, aux_frame))
 
-        vals = []  # [exec_global(gb) for gb in module.globals] TODO: implement exec_global
+        vals = [self.exec_expression(store, stack, gb.init) for gb in module.globals]
 
         last_frame = stack.pop()
         assert isinstance(last_frame, Activation)
@@ -128,7 +151,7 @@ class ModuleInstance:
 
         # #9 & #13
         for elem in module.elem:
-            eoval = I32(0)  # exec_elem(elem.offset) TODO - implement exec_element
+            eoval = self.exec_expression(store, stack, elem.offset)
             assert isinstance(eoval, I32)
             assert elem.table in range(len(self.tableaddrs))
             tableaddr: TableAddr = self.tableaddrs[elem.table]
@@ -145,7 +168,7 @@ class ModuleInstance:
 
         # #10 & #14
         for data in module.data:
-            doval = I32(0)  # exec_data(data.offset) TODO - implement exec_data
+            doval = self.exec_expression(store, stack, data.offset)
             assert isinstance(doval, I32)
             assert data.data in range(len(self.memaddrs))
             memaddr = self.memaddrs[data.data]
@@ -211,6 +234,11 @@ class ModuleInstance:
                 val = self.globaladdrs[export_i.desc]
             self.exports.append(ExportInst(export_i.name, val))
 
+    def invoke_by_name(self, name: str, stack, store, argv):
+        for export in self.exports:
+            if export.name == name and isinstance(export.value, FuncAddr):
+                return self.invoke(stack, export.value, store, argv)
+
     def invoke(
         self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]
     ) -> typing.List[Value]:
@@ -226,10 +254,127 @@ class ModuleInstance:
         for v in argv:
             stack.push(v)
 
-        # TODO - invoke function instance at address funcaddr
         # https://www.w3.org/TR/wasm-core-1/#exec-invoke
+        self._invoke_inner(stack, funcaddr, store)
 
         return [stack.pop() for _i in range(len(ty.result_types))]
+
+    def _invoke_inner(self, stack: "Stack", funcaddr: FuncAddr, store: Store):
+        assert funcaddr in range(len(store.funcs))
+        f: FuncInst = store.funcs[funcaddr]
+        ty = f.type
+        assert len(ty.result_types) <= 1
+        locals = [stack.pop() for _t in ty.param_types]
+        for cast in f.code.locals:
+            locals.append(cast(0))
+        frame = Frame(locals, f.module)
+        stack.push(Activation(len(ty.result_types), frame))
+        self.block(store, stack, ty.result_types, f.code.body)
+        while self.exec_instruction(store, stack):
+            pass
+
+    def exec_expression(self, store: Store, stack: "Stack", expr: WASMExpression):
+        self.push_instructions(expr)
+        while self.exec_instruction(store, stack):
+            pass
+        return stack.pop()
+
+    def enter_instruction(self, insts, label: "Label", stack: "Stack"):
+        stack.push(label)
+        self.push_instructions(insts)
+
+    def exit_instruction(self, stack: "Stack"):
+        i = -1
+        while True:
+            if isinstance(stack.data[i], Value.__args__):
+                i -= 1
+            else:
+                i = abs(i)
+                break
+        vals = [stack.pop() for _i in range(i)]
+        l = stack.pop
+        assert isinstance(l, Label)
+        for v in vals[::-1]:
+            stack.push(v)
+
+        self.push_instructions(l.instr)
+
+    def push_instructions(self, insts: WASMExpression):
+        for i in insts[::-1]:
+            self._instruction_queue.appendleft(i)
+
+    def exec_instruction(self, store, stack) -> bool:
+        if self._instruction_queue:
+            inst = self._instruction_queue.pop()
+            print(f"{inst.op.id}:", inst.op.mnemonic, f"({debug(inst.imm)})" if inst.imm else "")
+            if 0x2 <= inst.op.id <= 0x11:
+                if inst.op.id == 0x02:  # block
+                    self.block(store, stack, [], [])  # TODO
+                # elif inst.op.id == 0x03:  # loop
+                #
+                # elif inst.op.id == 0x04:  # if
+                #
+                # elif inst.op.id == 0x05:  # else
+
+                elif inst.op.id == 0x0B:  # end
+                    pass
+                    # self.exit_instruction(stack)
+                # elif inst.op.id == 0x0C:  # br
+                #
+                # elif inst.op.id == 0x0D:  # br_if
+                #
+                # elif inst.op.id == 0x0E:  # br_table
+                #
+                # elif inst.op.id == 0x0F:  # return
+                #
+                # elif inst.op.id == 0x10:  # call
+                #
+                # elif inst.op.id == 0x11:  # call_indirect
+
+                else:
+                    raise Exception("Unhandled control flow instruction")
+            else:
+                self.executor.dispatch(inst, store, stack)
+            return True
+        return False
+
+    def block(
+        self, store: "Store", stack: "Stack", ret_type: typing.List[ValType], insts: WASMExpression
+    ):
+        arity = len(ret_type)
+        l = Label(arity, list(self._instruction_queue.copy()))
+        self._instruction_queue.clear()
+        self.enter_instruction(insts, l, stack)
+
+    def loop(self, store: "Store", stack: "Stack", imm: BlockImm):
+        raise NotImplementedError("loop")
+
+    def if_(self, store: "Store", stack: "Stack", imm: BlockImm):
+        raise NotImplementedError("if")
+
+    def else_(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("else")
+
+    def end(self, store: "Store", stack: "Stack"):
+        self.exit_instruction()
+
+    def br(self, store: "Store", stack: "Stack", imm: BranchImm):
+        raise NotImplementedError("br")
+
+    def br_if(self, store: "Store", stack: "Stack", imm: BranchImm):
+        raise NotImplementedError("br_if")
+
+    def br_table(self, store: "Store", stack: "Stack", imm: BranchTableImm):
+        raise NotImplementedError("br_table")
+
+    def return_(self, store: "Store", stack: "Stack"):
+        raise NotImplementedError("return")
+
+    def call(self, store: "Store", stack: "Stack", imm: CallImm):
+        raise NotImplementedError("call")
+
+    def call_indirect(self, store: "Store", stack: "Stack", imm: CallIndirectImm):
+        raise NotImplementedError("call_indirect")
 
 
 @dataclass
@@ -251,16 +396,32 @@ class Activation:
 
 
 class Stack:
-    data: typing.List[typing.Union[Value, Label, Activation]]
+    data: typing.Deque[typing.Union[Value, Label, Activation]]
 
     def __init__(self, init_data=None):
-        self.data = init_data if init_data else []
+        self.data = init_data if init_data else deque()
 
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         self.data.append(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
         return self.data.pop()
+
+    def peek(self):
+        return self.data[-1]
+
+    def empty(self):
+        return len(self.data) == 0
+
+    def has_type_on_top(self, t: type, n: int):
+        for i in range(1, n + 1):
+            assert isinstance(self.data[i * -1], t)
+        return True
+
+    def pop_all(self):
+        out = copy.copy(self.data)
+        self.data.clear()
+        return out
 
 
 @dataclass
