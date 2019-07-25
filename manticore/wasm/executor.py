@@ -219,7 +219,6 @@ class Executor(object):  # TODO - should be Eventful
         else:
             stack.push(v2)
 
-
     def get_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
         raise NotImplementedError("get_local")
 

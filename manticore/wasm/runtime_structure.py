@@ -22,8 +22,10 @@ from .types import (
     WASMExpression,
 )
 
+
 def debug(imm):
-    return getattr(imm, 'value', imm)
+    return getattr(imm, "value", imm)
+
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
