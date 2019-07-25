@@ -189,6 +189,8 @@ class ModuleInstance:
 
         # #15  TODO run start function
 
+        print("Initialization Complete")
+
     def allocate(
         self,
         store: Store,
@@ -303,7 +305,7 @@ class ModuleInstance:
 
     def push_instructions(self, insts: WASMExpression):
         for i in insts[::-1]:
-            self._instruction_queue.appendleft(i)
+            self._instruction_queue.append(i)
 
     def exec_instruction(self, store, stack) -> bool:
         if self._instruction_queue:
@@ -358,7 +360,7 @@ class ModuleInstance:
         raise NotImplementedError("else")
 
     def end(self, store: "Store", stack: "Stack"):
-        self.exit_instruction()
+        self.exit_instruction()  # TODO - this shouldn't happen after exec_expression - not sure if it should happen at all, but idk how else you exit from a block
 
     def br(self, store: "Store", stack: "Stack", imm: BranchImm):
         raise NotImplementedError("br")
@@ -404,9 +406,11 @@ class Stack:
         self.data = init_data if init_data else deque()
 
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+        # print("Pushing", val)
         self.data.append(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
+        # print("Removing", self.peek())
         return self.data.pop()
 
     def peek(self):
@@ -417,13 +421,20 @@ class Stack:
 
     def has_type_on_top(self, t: type, n: int):
         for i in range(1, n + 1):
-            assert isinstance(self.data[i * -1], t)
+            assert isinstance(self.data[i * -1], t), f"{type(self.data[i * -1])} is not a Value!"
         return True
 
     def pop_all(self):
         out = copy.copy(self.data)
         self.data.clear()
         return out
+
+    def get_frame(self) -> Frame:
+        for item in reversed(self.data):
+            if isinstance(item, Activation):
+                return item.frame
+            if isinstance(item, Frame):
+                return item
 
 
 @dataclass

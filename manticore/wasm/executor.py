@@ -9,7 +9,12 @@ from wasm.immtypes import (
     F32ConstImm,
     F64ConstImm,
 )
-from .types import I32, I64, F32, F64
+from .types import I32, I64, F32, F64, Value
+from ..core.smtlib import Operators
+
+
+class Trap(Exception):
+    pass
 
 
 class Executor(object):  # TODO - should be Eventful
@@ -200,7 +205,7 @@ class Executor(object):  # TODO - should be Eventful
             return func(store, stack)
 
     def unreachable(self, store: "Store", stack: "Stack"):
-        raise Exception("Trap")
+        raise Trap()
 
     def nop(self, store: "Store", stack: "Stack"):
         pass
@@ -214,19 +219,28 @@ class Executor(object):  # TODO - should be Eventful
         v1 = stack.pop()
         assert isinstance(c, I32), f"{type(c)} is not I32"
         assert type(v2) == type(v1)
-        if c != 0:
+        if c != 0:  # TODO we'll probably need to fork here if this is symbolic
             stack.push(v1)
         else:
             stack.push(v2)
 
     def get_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
-        raise NotImplementedError("get_local")
+        f = stack.get_frame()
+        assert imm.local_index in range(len(f.locals))
+        stack.push(f.locals[imm.local_index])
 
     def set_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
-        raise NotImplementedError("set_local")
+        f = stack.get_frame()
+        assert imm.local_index in range(len(f.locals))
+        stack.has_type_on_top(Value.__args__, 1)
+        f.locals[imm.local_index] = stack.pop()
 
     def tee_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
-        raise NotImplementedError("tee_local")
+        stack.has_type_on_top(Value.__args__, 1)
+        v = stack.pop()
+        stack.push(v)
+        stack.push(v)
+        self.set_local(store, stack, imm)
 
     def get_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
         raise NotImplementedError("get_global")
@@ -235,10 +249,32 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("set_global")
 
     def i32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.load")
+        f = stack.get_frame()
+        assert f.module.memaddrs
+        a = f.module.memaddrs[0]
+        assert a in range(len(store.mems))
+        mem = store.mems[a]
+        assert isinstance(stack.peek(), I32)
+        i = stack.pop()
+        ea = i + imm.offset
+        if (ea + 4) > len(mem.data):
+            raise Trap()
+        c = Operators.CONCAT(32, *map(Operators.ORD, reversed(mem.data[ea : ea + 4])))
+        stack.push(I32(c))
 
     def i64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.load")
+        f = stack.get_frame()
+        assert f.module.memaddrs
+        a = f.module.memaddrs[0]
+        assert a in range(len(store.mems))
+        mem = store.mems[a]
+        assert isinstance(stack.peek(), I32)
+        i = stack.pop()
+        ea = i + imm.offset
+        if (ea + 8) > len(mem.data):
+            raise Trap()
+        c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
+        stack.push(I32(c))
 
     def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
         raise NotImplementedError("f32.load")
@@ -276,11 +312,33 @@ class Executor(object):  # TODO - should be Eventful
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
         raise NotImplementedError("i64.load32_u")
 
+    def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
+        f = stack.get_frame()
+        assert f.module.memaddrs
+        a = f.module.memaddrs[0]
+        assert a in range(len(store.mems))
+        mem = store.mems[a]
+        assert isinstance(stack.peek(), ty)
+        c = stack.pop()
+        assert isinstance(stack.peek(), I32)
+        i = stack.pop()
+        ea = i + imm.offset
+        N = n if n else {I32: 32, I64: 64}[ty]
+        if (ea + (N // 8)) > len(mem.data):
+            raise Trap()
+        if n:
+            raise NotImplementedError("TODO")
+        else:
+            b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, N, 8)]
+
+        for idx, v in enumerate(b):
+            mem.data[ea + idx] = v
+
     def i32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.store")
+        self.int_store(store, stack, imm, I32)
 
     def i64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.store")
+        self.int_store(store, stack, imm, I64)
 
     def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
         raise NotImplementedError("f32.store")
@@ -289,19 +347,19 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("f64.store")
 
     def i32_store8(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.store8")
+        self.int_store(store, stack, imm, I32, 8)
 
     def i32_store16(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.store16")
+        self.int_store(store, stack, imm, I32, 16)
 
     def i64_store8(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.store8")
+        self.int_store(store, stack, imm, I64, 8)
 
     def i64_store16(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.store16")
+        self.int_store(store, stack, imm, I64, 16)
 
     def i64_store32(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.store32")
+        self.int_store(store, stack, imm, I64, 32)
 
     def current_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
         raise NotImplementedError("current_memory")
@@ -433,10 +491,17 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i32.popcnt")
 
     def i32_add(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.add")
+        # The x86 module has a complicated way of doing addition. TODO - is that necessary for WASM?
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32(c2 + c1))
 
     def i32_sub(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.sub")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32(c2 - c1))
 
     def i32_mul(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.mul")
