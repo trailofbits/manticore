@@ -1,3 +1,4 @@
+from __future__ import annotations
 import typing
 import types
 import copy
@@ -24,6 +25,16 @@ from .types import (
 
 
 def debug(imm):
+    if hasattr(imm, "value"):
+        return imm.value
+    if hasattr(imm, "function_index"):
+        return f"Func Idx {imm.function_index}"
+    if hasattr(imm, "offset"):
+        return f"Offset {imm.offset}"
+    if hasattr(imm, "local_index"):
+        return f"Local {imm.local_index}"
+    if hasattr(imm, "global_index"):
+        return f"Global {imm.global_index}"
     return getattr(imm, "value", imm)
 
 
@@ -265,17 +276,24 @@ class ModuleInstance:
 
     def _invoke_inner(self, stack: "Stack", funcaddr: FuncAddr, store: Store):
         assert funcaddr in range(len(store.funcs))
-        f: FuncInst = store.funcs[funcaddr]
+        f: ProtoFuncInst = store.funcs[funcaddr]
         ty = f.type
         assert len(ty.result_types) <= 1
         locals = [stack.pop() for _t in ty.param_types]
-        for cast in f.code.locals:
-            locals.append(cast(0))
-        frame = Frame(locals, f.module)
-        stack.push(Activation(len(ty.result_types), frame))
-        self.block(store, stack, ty.result_types, f.code.body)
-        while self.exec_instruction(store, stack):
-            pass
+        if isinstance(f, HostFunc):
+            res = list(f.hostcode(*locals))
+            print("HostFunc returned", res)
+            assert len(res) == len(ty.result_types)
+            for r, t in zip(res, ty.result_types):
+                stack.push(t(r))
+        else:
+            for cast in f.code.locals:
+                locals.append(cast(0))
+            frame = Frame(locals, f.module)
+            stack.push(Activation(len(ty.result_types), frame))
+            self.block(store, stack, ty.result_types, f.code.body)
+            while self.exec_instruction(store, stack):
+                pass
 
     def exec_expression(self, store: Store, stack: "Stack", expr: WASMExpression):
         self.push_instructions(expr)
@@ -331,8 +349,9 @@ class ModuleInstance:
                 #
                 # elif inst.op.id == 0x0F:  # return
                 #
-                # elif inst.op.id == 0x10:  # call
-                #
+                elif inst.op.id == 0x10:
+                    self.call(store, stack, inst.imm)
+
                 # elif inst.op.id == 0x11:  # call_indirect
 
                 else:
@@ -361,6 +380,7 @@ class ModuleInstance:
 
     def end(self, store: "Store", stack: "Stack"):
         self.exit_instruction()  # TODO - this shouldn't happen after exec_expression - not sure if it should happen at all, but idk how else you exit from a block
+        # MAybe you call exit_instruction whenever the instruction queue is empty?
 
     def br(self, store: "Store", stack: "Stack", imm: BranchImm):
         raise NotImplementedError("br")
@@ -375,7 +395,10 @@ class ModuleInstance:
         raise NotImplementedError("return")
 
     def call(self, store: "Store", stack: "Stack", imm: CallImm):
-        raise NotImplementedError("call")
+        f = stack.get_frame()
+        assert imm.function_index in range(len(f.module.funcaddrs))
+        a = f.module.funcaddrs[imm.function_index]
+        self._invoke_inner(stack, a, store)
 
     def call_indirect(self, store: "Store", stack: "Stack", imm: CallIndirectImm):
         raise NotImplementedError("call_indirect")

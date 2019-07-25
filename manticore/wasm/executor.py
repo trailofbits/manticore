@@ -379,7 +379,10 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i32.eq")
 
     def i32_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.ne")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32(1 if c2 != c1 else 0))
 
     def i32_lt_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.lt_s")
@@ -476,7 +479,10 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i32.rem_u")
 
     def i32_and(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.and")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32(c2 & c1))
 
     def i32_or(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.or")

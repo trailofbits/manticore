@@ -4,9 +4,9 @@ from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc, 
 from ..core.state import TerminateState
 
 
-def stub(*args, **kwargs):
-    print("Called stub function")
-    return 0
+def stub(*args):
+    print("Called stub function with args:", args)
+    return [13]
 
 
 class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
