@@ -2047,7 +2047,7 @@ class EVM(Eventful):
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         """Message-call into an account"""
         self.world.start_transaction(
-            "STATICCALL",
+            "CALL",
             address,
             data=self.read_buffer(in_offset, in_size),
             caller=self.address,
@@ -2873,7 +2873,7 @@ class EVMWorld(Platform):
             return
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
-        if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE"}:
+        if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
             if sort == "STATICCALL":
                 # TODO: Remove this once Issue #1168 is resolved
                 raise EVMException(
