@@ -76,12 +76,9 @@ class ManticoreBase(Eventful):
             raise Exception("Should not instantiate this")
 
         cl = consts.mprocessing.to_class()
-        if cl not in cls.__bases__:
-            # change ManticoreBase for the more specific class
-            idx = cls.__bases__.index(ManticoreBase)
-            bases = list(cls.__bases__)
-            bases[idx] = cl
-            cls.__bases__ = tuple(bases)
+        # change ManticoreBase for the more specific class
+        bases = {cl if issubclass(base, ManticoreBase) else base for base in cls.__bases__}
+        cls.__bases__ = tuple(bases)
 
         random.seed(consts.seed)
         return super().__new__(cls)
