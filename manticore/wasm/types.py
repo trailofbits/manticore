@@ -43,14 +43,13 @@ class GlobalType:
     value: ValType
 
 
-class Indices:
-    typeidx: type = type("typeidx", (U32,), {})
-    funcidx: type = type("funcidx", (U32,), {})
-    tableidx: type = type("tableidx", (U32,), {})
-    memidx: type = type("memidx", (U32,), {})
-    globalidx: type = type("globalidx", (U32,), {})
-    localidx: type = type("localidx", (U32,), {})
-    labelidx: type = type("labelidx", (U32,), {})
+TypeIdx: type = type("TypeIdx", (U32,), {})
+FuncIdx: type = type("FuncIdx", (U32,), {})
+TableIdx: type = type("TableIdx", (U32,), {})
+MemIdx: type = type("MemIdx", (U32,), {})
+GlobalIdx: type = type("GlobalIdx", (U32,), {})
+LocalIdx: type = type("LocalIdx", (U32,), {})
+LabelIdx: type = type("LabelIdx", (U32,), {})
 
 
 MemoryType = LimitType

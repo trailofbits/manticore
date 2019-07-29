@@ -23,7 +23,21 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
             self.store.funcs.append(HostFunc(self.module.types[i.desc], stub))
             imports.append(FuncAddr(len(self.store.funcs) - 1))
         self.instance.instantiate(self.store, self.module, imports)
-        print(self.instance.invoke_by_name("main", self.stack, self.store, []))
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["module"] = self.module
+        state["store"] = self.store
+        state["instance"] = self.instance
+        state["stack"] = self.stack
+        return state
+
+    def __setstate__(self, state):
+        self.module = state["module"]
+        self.store = state["store"]
+        self.instance = state["instance"]
+        self.stack = state["stack"]
+        super().__setstate__(state)
 
     def start(self):
         """
@@ -37,5 +51,5 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         """
         # Handle interrupts et al in a try/except here
         # self.current.execute()
-        # self.instance.invoke_by_name("main", self.stack, self.store, [])
+        print(self.instance.invoke_by_name("main", self.stack, self.store, []))
         raise TerminateState("Done!")

@@ -1,7 +1,11 @@
 import typing
 from dataclasses import dataclass
 from .types import (
-    Indices,
+    TypeIdx,
+    TableIdx,
+    FuncIdx,
+    GlobalIdx,
+    MemIdx,
     Byte,
     ValType,
     FunctionType,
@@ -45,13 +49,13 @@ from wasm.wasmtypes import (
     SEC_DATA,
 )
 
-ExportDesc = typing.Union[Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx]
-ImportDesc = typing.Union[Indices.typeidx, TableType, MemoryType, GlobalType]
+ExportDesc = typing.Union[FuncIdx, TableIdx, MemIdx, GlobalIdx]
+ImportDesc = typing.Union[TypeIdx, TableType, MemoryType, GlobalType]
 
 
 @dataclass
 class Function:
-    type: Indices.typeidx
+    type: TypeIdx
     locals: typing.List[ValType]
     body: WASMExpression
 
@@ -103,14 +107,14 @@ class Global:
 
 @dataclass
 class Elem:
-    table: Indices.tableidx
+    table: TableIdx
     offset: WASMExpression
-    init: typing.List[Indices.funcidx]
+    init: typing.List[FuncIdx]
 
 
 @dataclass
 class Data:
-    data: Indices.memidx
+    data: MemIdx
     offset: WASMExpression
     init: typing.List[Byte]
 
@@ -152,9 +156,38 @@ class Module:
         self.globals: typing.List[Global] = []
         self.elem: typing.List[Elem] = []
         self.data: typing.List[Data] = []
-        self.start: typing.Optional[Indices.funcidx] = None
+        self.start: typing.Optional[FuncIdx] = None
         self.imports: typing.List[Import] = []
         self.exports: typing.List[Export] = []
+
+    def __getstate__(self):
+        state = {
+            "types": self.types,
+            "funcs": self.funcs,
+            "tables": self.tables,
+            "mems": self.mems,
+            "globals": self.globals,
+            "elem": self.elem,
+            "data": self.data,
+            "start": self.start,
+            "imports": self.imports,
+            "exports": self.exports,
+            "_raw": self._raw
+        }
+        return state
+
+    def __setstate__(self, state):
+        self.types = state["types"]
+        self.funcs = state["funcs"]
+        self.tables = state["tables"]
+        self.mems = state["mems"]
+        self.globals = state["globals"]
+        self.elem = state["elem"]
+        self.data = state["data"]
+        self.start = state["start"]
+        self.imports = state["imports"]
+        self.exports = state["exports"]
+        self._raw = state["_raw"]
 
     @classmethod
     def load(cls, filename: str):
@@ -178,7 +211,7 @@ class Module:
                         )
                     )
             elif sec_id == SEC_IMPORT:
-                mapping = (Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx)
+                mapping = (FuncIdx, TableIdx, MemIdx, GlobalIdx)
                 for i in section_data.payload.entries:
                     ty_map = i.get_decoder_meta()["types"]
                     m.imports.append(
@@ -191,7 +224,7 @@ class Module:
             elif sec_id == SEC_FUNCTION:
                 for f in section_data.payload.types:
                     m.funcs.append(
-                        Function(Indices.typeidx(f), [], [])
+                        Function(TypeIdx(f), [], [])
                     )  # Get the expressions and locals from the code section
             elif sec_id == SEC_TABLE:
                 for t in section_data.payload.entries:
@@ -207,7 +240,7 @@ class Module:
                 for g in section_data.payload.globals:
                     pass  # TODO: Create the globals
             elif sec_id == SEC_EXPORT:
-                mapping = (Indices.funcidx, Indices.tableidx, Indices.memidx, Indices.globalidx)
+                mapping = (FuncIdx, TableIdx, MemIdx, GlobalIdx)
                 for e in section_data.payload.entries:
                     ty = e.get_decoder_meta()["types"]["field_str"]
                     m.exports.append(
@@ -226,7 +259,7 @@ class Module:
             elif sec_id == SEC_DATA:
                 for d in section_data.payload.entries:
                     m.data.append(
-                        Data(Indices.memidx(d.index), d.offset, d.data)
+                        Data(MemIdx(d.index), d.offset, d.data)
                     )  # TODO - the offset and data are probably raw types that we need to process into something
             # TODO - custom sections
 

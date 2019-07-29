@@ -19,7 +19,10 @@ from .types import (
     Byte,
     Name,
     ExternType,
-    Indices,
+    FuncIdx,
+    TableIdx,
+    MemIdx,
+    GlobalIdx,
     WASMExpression,
 )
 
@@ -91,6 +94,21 @@ class Store:
         self.mems = []
         self.globals = []
 
+    def __getstate__(self):
+        state = {
+            "funcs": self.funcs,
+            "tables": self.tables,
+            "mems": self.mems,
+            "globals": self.globals,
+        }
+        return state
+
+    def __setstate__(self, state):
+        self.funcs = state["funcs"]
+        self.tables = state["tables"]
+        self.mems = state["mems"]
+        self.globals = state["globals"]
+
 
 class ModuleInstance:
     __slots__ = [
@@ -102,8 +120,8 @@ class ModuleInstance:
         "exports",
         "executor",
         "_instruction_queue",
-        "_pc",
     ]
+
     types: typing.List[FunctionType]
     funcaddrs: typing.List[FuncAddr]
     tableaddrs: typing.List[TableAddr]
@@ -122,6 +140,29 @@ class ModuleInstance:
         self.exports = []
         self.executor = Executor()
         self._instruction_queue = deque()
+
+    def __getstate__(self):
+        state = {
+            "types": self.types,
+            "funcaddrs": self.funcaddrs,
+            "tableaddrs": self.tableaddrs,
+            "memaddrs": self.memaddrs,
+            "globaladdrs": self.globaladdrs,
+            "exports": self.exports,
+            "executor": self.executor,
+            "_instruction_queue": self._instruction_queue
+        }
+        return state
+
+    def __setstate__(self, state):
+        self.types = state["types"]
+        self.funcaddrs = state["funcaddrs"]
+        self.tableaddrs = state["tableaddrs"]
+        self.memaddrs = state["memaddrs"]
+        self.globaladdrs = state["globaladdrs"]
+        self.exports = state["exports"]
+        self.executor = state["executor"]
+        self._instruction_queue = state["_instruction_queue"]
 
     def instantiate(self, store: Store, module: "Module", extern_vals: typing.List[ExternVal]):
         """
@@ -173,10 +214,10 @@ class ModuleInstance:
             eend = eoval + len(elem.init)
             assert eend <= len(tableinst.elem)
 
-            funcidx: Indices.funcidx
-            for j, funcidx in enumerate(elem.init):
-                assert funcidx in range(len(self.funcaddrs))
-                funcaddr = self.funcaddrs[funcidx]
+            FuncIdx: FuncIdx
+            for j, FuncIdx in enumerate(elem.init):
+                assert FuncIdx in range(len(self.funcaddrs))
+                funcaddr = self.funcaddrs[FuncIdx]
                 tableinst.elem[eoval + j] = funcaddr
 
         # #10 & #14
@@ -239,13 +280,13 @@ class ModuleInstance:
             assert isinstance(values[idx], global_i.type)  # TODO - might be wrong
             self.globaladdrs.append(global_i.allocate(store, global_i.type, values[idx]))
         for idx, export_i in enumerate(module.exports):
-            if isinstance(export_i.desc, Indices.funcidx):
+            if isinstance(export_i.desc, FuncIdx):
                 val = self.funcaddrs[export_i.desc]
-            if isinstance(export_i.desc, Indices.tableidx):
+            if isinstance(export_i.desc, TableIdx):
                 val = self.tableaddrs[export_i.desc]
-            if isinstance(export_i.desc, Indices.memidx):
+            if isinstance(export_i.desc, MemIdx):
                 val = self.memaddrs[export_i.desc]
-            if isinstance(export_i.desc, Indices.globalidx):
+            if isinstance(export_i.desc, GlobalIdx):
                 val = self.globaladdrs[export_i.desc]
             self.exports.append(ExportInst(export_i.name, val))
 
@@ -427,6 +468,13 @@ class Stack:
 
     def __init__(self, init_data=None):
         self.data = init_data if init_data else deque()
+
+    def __getstate__(self):
+        state = {"data": self.data}
+        return state
+
+    def __setstate__(self, state):
+        self.data = state["data"]
 
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         # print("Pushing", val)
