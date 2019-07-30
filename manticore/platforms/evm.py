@@ -1511,15 +1511,15 @@ class EVM(Eventful):
 
     def SHL(self, a, b):
         """Shift Left operation"""
-        raise NotImplementedError("SHL")
+        return b << a
 
     def SHR(self, a, b):
         """Logical Shift Right operation"""
-        raise NotImplementedError("SHR")
+        return b >> a
 
     def SAR(self, a, b):
         """Arithmetic Shift Right operation"""
-        raise NotImplementedError("SAR")
+        return Operators.SAR(256, b, a)
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
