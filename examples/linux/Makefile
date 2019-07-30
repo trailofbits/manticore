@@ -6,7 +6,7 @@ PYTHON=python3
 EXAMPLES=basic sindex  strncmp  arguments ibranch sendmail crackme indexhell  helloworld simple_copy simpleassert
 OTHER_EXAMPLES=nostdlib
 
-all: $(EXAMPLES) $(OTHER_EXAMPLES) 
+all: $(EXAMPLES) $(OTHER_EXAMPLES)
 
 arm: CC=arm-linux-gnueabi-gcc
 arm: $(EXAMPLES)
@@ -21,7 +21,7 @@ clean:
 % : %.c
 	$(CC) $(CFLAGS) $< -o $@
 
-nostdlib: nostdlib.c 
+nostdlib: nostdlib.c
 	$(CC) -m32 $(NOSTDLIBFLAGS) $< -o $@
 
 # simpleassert needs -O0
@@ -32,3 +32,5 @@ simpleassert: simpleassert.c
 crackme.c: crackme.py
 	$(PYTHON) crackme.py > $@
 
+crackme: crackme.c
+	$(CC) $(CFLAGS) -O0 $< -o $@
