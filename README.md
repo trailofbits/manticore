@@ -215,6 +215,10 @@ brew install unicorn
 UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
 ```
 
+### Solidity Versions
+Note that we're still in the process of implementing full support for the EVM Constantinople instruction semantics, so certain opcodes may not be supported.
+You may want to consider using a version of `solc` that's less likely to generate these opcodes (eg pre-0.5.0).
+
 ## Getting Help
 
 Feel free to stop by our #manticore slack channel in [Empire Hacking](https://empireslacking.herokuapp.com/) for help using or extending Manticore.
