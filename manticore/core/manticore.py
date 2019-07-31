@@ -566,6 +566,13 @@ class ManticoreBase(Eventful):
             self._save(state, state_id=state_id)
 
     @property
+    def running_states(self):
+        logger.warning(
+            "manticore.running_states is deprecated! (You probably want manticore.ready_states)"
+        )
+        return self.ready_states
+
+    @property
     @sync
     def terminated_states(self):
         """
@@ -807,6 +814,10 @@ class ManticoreBase(Eventful):
         """
         self._killed.value = True
         self._lock.notify_all()
+
+    def terminate(self):
+        logger.warning("manticore.terminate is deprecated (Use manticore.kill)")
+        self.kill()
 
     @sync
     def is_running(self):
