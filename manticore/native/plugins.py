@@ -1,5 +1,8 @@
 from ..core.plugin import Plugin
 from .state_merging import merge_constraints, is_merge_possible, merge
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Merger(Plugin):
@@ -111,7 +114,7 @@ class Merger(Plugin):
                     + " and "
                     + str(new_state_id)
                 )
-                print(debug_string)
+                logger.debug(debug_string)
 
             for i in merged_ids:
                 states_at_pc.remove(i)

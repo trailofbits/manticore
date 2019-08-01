@@ -115,7 +115,7 @@ class ManticoreBase(Eventful):
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if self.is_running():
-                print("Calling at running not allowed")
+                logger.error("Calling at running not allowed")
                 raise Exception(f"{func.__name__} only allowed while NOT exploring states")
             return func(self, *args, **kw)
 
