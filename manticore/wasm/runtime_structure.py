@@ -43,10 +43,10 @@ def debug(imm):
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
-FuncAddr: type = type("Addr", (Addr,), {})
-TableAddr: type = type("Addr", (Addr,), {})
-MemAddr: type = type("Addr", (Addr,), {})
-GlobalAddr: type = type("Addr", (Addr,), {})
+FuncAddr: type = type("FuncAddr", (Addr,), {})
+TableAddr: type = type("TableAddr", (Addr,), {})
+MemAddr: type = type("MemAddr", (Addr,), {})
+GlobalAddr: type = type("GlobalAddr", (Addr,), {})
 
 ExternVal: type = typing.Union[FuncAddr, TableAddr, MemAddr, GlobalAddr]
 FuncElem: type = typing.Optional[FuncAddr]
