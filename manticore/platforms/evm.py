@@ -73,7 +73,7 @@ TT256M1 = 2 ** 256 - 1
 MASK160 = 2 ** 160 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
-DEFAULT_FORK = "byzantium"
+DEFAULT_FORK = "constantinople"
 
 # FIXME. We should just use a Transaction() for this
 PendingTransaction = namedtuple(
@@ -1508,6 +1508,18 @@ class EVM(Eventful):
         """Retrieve single byte from word"""
         offset = Operators.ITEBV(256, offset < 32, (31 - offset) * 8, 256)
         return Operators.ZEXTEND(Operators.EXTRACT(value, offset, 8), 256)
+
+    def SHL(self, a, b):
+        """Shift Left operation"""
+        return b << a
+
+    def SHR(self, a, b):
+        """Logical Shift Right operation"""
+        return b >> a
+
+    def SAR(self, a, b):
+        """Arithmetic Shift Right operation"""
+        return Operators.SAR(256, b, a)
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()

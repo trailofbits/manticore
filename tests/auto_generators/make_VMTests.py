@@ -375,7 +375,9 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
                 continue
 
             filename = os.path.join(folder, filename)
-            testcase = dict(json.loads(open(filename).read()))
+            fp = open(filename)
+            testcase = dict(json.loads(fp.read()))
+            fp.close()
             for name, testcase in testcase.items():
                 output += (
                     gen_test(testcase, filename, symbolic=symbolic, skip="Performance" in filename)
@@ -387,7 +389,9 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
     else:
         folder = None
         filename = os.path.abspath(filename_or_folder)
-        testcase = dict(json.loads(open(filename).read()))
+        fp = open(filename)
+        testcase = dict(json.loads(fp.read()))
+        fp.close()
         for name, testcase in testcase.items():
             output += (
                 gen_test(testcase, filename, symbolic=symbolic, skip="Performance" in filename)
