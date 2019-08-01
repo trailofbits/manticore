@@ -3,7 +3,6 @@ import typing
 import types
 import copy
 from dataclasses import dataclass
-from wasm.decode import Instruction
 from .executor import Executor
 from collections import deque
 from wasm.immtypes import BlockImm, BranchImm, BranchTableImm, CallImm, CallIndirectImm
@@ -24,6 +23,7 @@ from .types import (
     MemIdx,
     GlobalIdx,
     WASMExpression,
+    Instruction,
 )
 
 
@@ -150,7 +150,7 @@ class ModuleInstance:
             "globaladdrs": self.globaladdrs,
             "exports": self.exports,
             "executor": self.executor,
-            "_instruction_queue": self._instruction_queue
+            "_instruction_queue": self._instruction_queue,
         }
         return state
 
@@ -369,31 +369,31 @@ class ModuleInstance:
     def exec_instruction(self, store, stack) -> bool:
         if self._instruction_queue:
             inst = self._instruction_queue.pop()
-            print(f"{inst.op.id}:", inst.op.mnemonic, f"({debug(inst.imm)})" if inst.imm else "")
-            if 0x2 <= inst.op.id <= 0x11:
-                if inst.op.id == 0x02:  # block
+            print(f"{inst.opcode}:", inst.mnemonic, f"({debug(inst.imm)})" if inst.imm else "")
+            if 0x2 <= inst.opcode <= 0x11:
+                if inst.opcode == 0x02:  # block
                     self.block(store, stack, [], [])  # TODO
-                # elif inst.op.id == 0x03:  # loop
+                # elif inst.opcode == 0x03:  # loop
                 #
-                # elif inst.op.id == 0x04:  # if
+                # elif inst.opcode == 0x04:  # if
                 #
-                # elif inst.op.id == 0x05:  # else
+                # elif inst.opcode == 0x05:  # else
 
-                elif inst.op.id == 0x0B:  # end
+                elif inst.opcode == 0x0B:  # end
                     pass
                     # self.exit_instruction(stack)
-                # elif inst.op.id == 0x0C:  # br
+                # elif inst.opcode == 0x0C:  # br
                 #
-                # elif inst.op.id == 0x0D:  # br_if
+                # elif inst.opcode == 0x0D:  # br_if
                 #
-                # elif inst.op.id == 0x0E:  # br_table
+                # elif inst.opcode == 0x0E:  # br_table
                 #
-                # elif inst.op.id == 0x0F:  # return
+                # elif inst.opcode == 0x0F:  # return
                 #
-                elif inst.op.id == 0x10:
+                elif inst.opcode == 0x10:
                     self.call(store, stack, inst.imm)
 
-                # elif inst.op.id == 0x11:  # call_indirect
+                # elif inst.opcode == 0x11:  # call_indirect
 
                 else:
                     raise Exception("Unhandled control flow instruction")

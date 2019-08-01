@@ -196,7 +196,7 @@ class Executor(object):  # TODO - should be Eventful
         }
 
     def dispatch(self, inst: "Instruction", store: "Store", stack: "Stack"):
-        opcode = inst.op.id
+        opcode = inst.opcode
         assert opcode in self._mapping
         func = self._mapping[opcode]
         if inst.imm:

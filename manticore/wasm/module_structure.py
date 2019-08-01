@@ -15,6 +15,7 @@ from .types import (
     LimitType,
     Name,
     WASMExpression,
+    convert_instructions,
     I32,
     I64,
     F32,
@@ -33,8 +34,7 @@ from .runtime_structure import (
     GlobalInst,
     Value,
 )
-from wasm import decode_module, decode_bytecode, Section
-from wasm.decode import Instruction
+from wasm import decode_module, Section
 from wasm.wasmtypes import (
     SEC_TYPE,
     SEC_IMPORT,
@@ -172,7 +172,7 @@ class Module:
             "start": self.start,
             "imports": self.imports,
             "exports": self.exports,
-            "_raw": self._raw
+            "_raw": self._raw,
         }
         return state
 
@@ -255,11 +255,11 @@ class Module:
                     m.funcs[idx].locals = [
                         type_map[e.type] for e in c.locals for _i in range(e.count)
                     ]
-                    m.funcs[idx].body = list(decode_bytecode(c.code))
+                    m.funcs[idx].body = convert_instructions(c.code)
             elif sec_id == SEC_DATA:
                 for d in section_data.payload.entries:
                     m.data.append(
-                        Data(MemIdx(d.index), d.offset, d.data)
+                        Data(MemIdx(d.index), convert_instructions(d.offset), d.data.tolist())
                     )  # TODO - the offset and data are probably raw types that we need to process into something
             # TODO - custom sections
 
