@@ -70,7 +70,7 @@ consts.add(
 consts.add(
     "calldata_max_offset",
     default=1024 * 1024,
-    description="Max calldata offset to explore with. Iff offset or size in a calldata related instruction are symbolic it wil wbe constrained to this constant",
+    description="Max calldata offset to explore with. Iff offset or size in a calldata related instruction are symbolic it will be constrained to this constant",
 )
 
 # Auxiliary constants and functions
