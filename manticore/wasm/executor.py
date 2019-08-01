@@ -10,7 +10,8 @@ from wasm.immtypes import (
     F64ConstImm,
 )
 from .types import I32, I64, F32, F64, Value
-from ..core.smtlib import Operators
+from ..core.smtlib import Operators, BitVec, issymbolic
+from ..core.state import Concretize
 
 
 class Trap(Exception):
@@ -271,7 +272,7 @@ class Executor(object):  # TODO - should be Eventful
         if (ea + 4) > len(mem.data):
             raise Trap()
         c = Operators.CONCAT(32, *map(Operators.ORD, reversed(mem.data[ea : ea + 4])))
-        stack.push(I32(c))
+        stack.push(I32.cast(c))
 
     def i64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
         f = stack.get_frame()
@@ -285,7 +286,7 @@ class Executor(object):  # TODO - should be Eventful
         if (ea + 8) > len(mem.data):
             raise Trap()
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
-        stack.push(I32(c))
+        stack.push(I32.cast(c))
 
     def i32_load8_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
         raise NotImplementedError("i32.load8_s")
@@ -323,7 +324,7 @@ class Executor(object):  # TODO - should be Eventful
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
         mem = store.mems[a]
-        assert isinstance(stack.peek(), ty)
+        assert isinstance(stack.peek(), (ty, BitVec))
         c = stack.pop()
         assert isinstance(stack.peek(), I32)
         i = stack.pop()
@@ -367,7 +368,7 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("grow_memory")
 
     def i32_const(self, store: "Store", stack: "Stack", imm: I32ConstImm):
-        stack.push(I32(imm.value))
+        stack.push(I32.cast(imm.value))
 
     def i64_const(self, store: "Store", stack: "Stack", imm: I64ConstImm):
         stack.push(I64(imm.value))
@@ -382,7 +383,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32(1 if c2 != c1 else 0))
+        stack.push(I32.cast(1 if c2 != c1 else 0))
 
     def i32_lt_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.lt_s")
@@ -455,13 +456,13 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32(c2 + c1))
+        stack.push(I32.cast(c2 + c1))
 
     def i32_sub(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32(c2 - c1))
+        stack.push(I32.cast(c2 - c1))
 
     def i32_mul(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.mul")
@@ -482,7 +483,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32(c2 & c1))
+        stack.push(I32.cast(c2 & c1))
 
     def i32_or(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.or")

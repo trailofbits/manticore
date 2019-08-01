@@ -25,6 +25,7 @@ from .types import (
     WASMExpression,
     Instruction,
 )
+from ..core.smtlib import BitVec
 
 
 def debug(imm):
@@ -223,7 +224,7 @@ class ModuleInstance:
         # #10 & #14
         for data in module.data:
             doval = self.exec_expression(store, stack, data.offset)
-            assert isinstance(doval, I32)
+            assert isinstance(doval, I32), f"{type(doval)} is not an I32"
             assert data.data in range(len(self.memaddrs))
             memaddr = self.memaddrs[data.data]
             assert memaddr in range(len(store.mems))
@@ -326,7 +327,7 @@ class ModuleInstance:
             print("HostFunc returned", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
-                stack.push(t(r))
+                stack.push(t.cast(r))
         else:
             for cast in f.code.locals:
                 locals.append(cast(0))
@@ -492,7 +493,7 @@ class Stack:
 
     def has_type_on_top(self, t: type, n: int):
         for i in range(1, n + 1):
-            assert isinstance(self.data[i * -1], t), f"{type(self.data[i * -1])} is not a Value!"
+            assert isinstance(self.data[i * -1], (t, BitVec)), f"{type(self.data[i * -1])} is not an {t}!"
         return True
 
     def pop_all(self):

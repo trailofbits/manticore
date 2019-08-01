@@ -1,18 +1,52 @@
 import typing
 from dataclasses import dataclass
+from ..core.smtlib import issymbolic, BitVec
 import wasm
 
 # TODO - These need to be symbolic fixed-size representations
 U32: type = type("U32", (int,), {})
 U64: type = type("U64", (int,), {})
-I32: type = type("I32", (int,), {})
-I64: type = type("I64", (int,), {})
-F32: type = type("F32", (float,), {})
-F64: type = type("F64", (float,), {})
 Byte: type = type("Byte", (int,), {})
 
-ValType = typing.Union[type(I32), type(I64), type(F32), type(F64)]
-Value = typing.Union[I32, I64, F32, F64]
+
+class I32(int):
+
+    @classmethod
+    def cast(cls, other):
+        if issymbolic(other):
+            return other
+        return I32(other)
+
+
+class I64(int):
+
+    @classmethod
+    def cast(cls, other):
+        if issymbolic(other):
+            return other
+        return I64(other)
+
+
+class F32(float):
+
+    @classmethod
+    def cast(cls, other):
+        if issymbolic(other):
+            return other
+        return F32(other)
+
+
+class F64(float):
+
+    @classmethod
+    def cast(cls, other):
+        if issymbolic(other):
+            return other
+        return F64(other)
+
+
+ValType = typing.Union[type(I32), type(I64), type(F32), type(F64), type(BitVec)]
+Value = typing.Union[I32, I64, F32, F64, BitVec]
 Name: type = type("Name", (str,), {})
 ResultType = typing.Optional[
     ValType

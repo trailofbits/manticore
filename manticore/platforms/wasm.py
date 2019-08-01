@@ -2,12 +2,13 @@ from .platform import Platform
 from ..wasm.module_structure import Module
 from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc, Stack
 from ..core.state import TerminateState
-
+from ..core.smtlib import ConstraintSet
 
 def stub(*args):
     print("Called stub function with args:", args)
-    return [13]
-
+    if not len(args):
+        return [13]
+    return [0]
 
 class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
     def __init__(self, filename, **kwargs):
@@ -17,6 +18,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         self.store = Store()
         self.instance = ModuleInstance()
         self.stack = Stack()
+        self.constraints = ConstraintSet()
         imports = []
         for i in self.module.imports:
             # TODO - create function stubs that have the correct signatures
@@ -30,6 +32,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         state["store"] = self.store
         state["instance"] = self.instance
         state["stack"] = self.stack
+        state["constraints"] = self.constraints
         return state
 
     def __setstate__(self, state):
@@ -37,6 +40,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         self.store = state["store"]
         self.instance = state["instance"]
         self.stack = state["stack"]
+        self.constraints = state["constraints"]
         super().__setstate__(state)
 
     def start(self):
@@ -51,5 +55,5 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         """
         # Handle interrupts et al in a try/except here
         # self.current.execute()
-        print(self.instance.invoke_by_name("main", self.stack, self.store, []))
+        self.instance.exec_instruction(self.store, self.stack)
         raise TerminateState("Done!")
