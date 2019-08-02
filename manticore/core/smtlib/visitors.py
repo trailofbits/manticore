@@ -53,6 +53,8 @@ class Visitor:
 
     def _method(self, expression, *args):
         assert expression.__class__.__mro__[-1] is object
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = "visit_%s" % sort

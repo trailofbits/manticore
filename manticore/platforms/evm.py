@@ -1,4 +1,5 @@
 """Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf"""
+import uuid
 import binascii
 import random
 import io
@@ -35,7 +36,6 @@ import logging
 from collections import namedtuple
 import sha3
 import rlp
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ def globalsha3(data):
 
 consts.add(
     "oog",
-    default="pedantic",
+    default="complete",
     description=(
         "Default behavior for symbolic gas."
         "pedantic: Fully faithful. Test at every instruction. Forks."
@@ -575,6 +575,7 @@ class EVM(Eventful):
         "evm_read_memory",
         "evm_write_memory",
         "evm_read_code",
+        "evm_write_code",
         "decode_instruction",
         "on_unsound_symbolication",
     }
@@ -948,6 +949,7 @@ class EVM(Eventful):
             reps, m = getattr(self, "_mgas", (0, None))
             reps += 1
             if m is None and reps > 10:
+                print (translate_to_smtlib(self._gas), self._gas.size)
                 m = Z3Solver.instance().min(self.constraints, self._gas)
             self._mgas = reps, m
 
@@ -1518,8 +1520,9 @@ class EVM(Eventful):
 
     def SHA3_gas(self, start, size):
         GSHA3WORD = 6  # Cost of SHA3 per word
+        sha3fee = self.safe_mul(GSHA3WORD, ceil32(size) // 32)
         memfee = self._get_memfee(start, size)
-        return GSHA3WORD * (ceil32(size) // 32) + memfee
+        return  self.safe_add(sha3fee, memfee)
 
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
@@ -1559,23 +1562,15 @@ class EVM(Eventful):
 
     def CALLDATALOAD(self, offset):
         """Get input data of current environment"""
-
+        print ("CALLDATALOAD", offset)
         #calldata_overflow = const.calldata_overflow
         #calldata_underflow = const.calldata_underflow
         calldata_overflow = 32
         calldata_underflow = 32
         #if const.calldata_overlap:
-        if True:
-            self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
-            self.constraints.add(offset >= -calldata_underflow)
-        else:
-            if not Z3Solver.instance().can_be_true(self.constraints, Operators.AND(
-                    Operators.ULE(offset + 32, len(self.data) + calldata_overflow),
-                    Operators.UGE(offset, self._used_calldata_size))):
-                import pdb; pdb.set_trace()
+        self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
+        self.constraints.add(offset >= -calldata_underflow)
 
-            self.constraints.add(Operators.ULE(offset + 32, len(self.data) + calldata_overflow))
-            self.constraints.add(Operators.UGE(offset, self._used_calldata_size))
 
         #if issymbolic(offset):
         #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
@@ -1583,16 +1578,17 @@ class EVM(Eventful):
         #    raise ConcretizeArgument(1, policy="SAMPLED")
 
         self._use_calldata(offset, 32)
+        print (self.data)
 
         data_length = len(self.data)
         bytes = []
         for i in range(32):
             try:
-                c = Operators.ITEBV(8, offset + i < data_length, self.data[offset + i], 0)
+                c = simplify(Operators.ITEBV(8, offset + i < data_length, self.data[offset + i], 0))
             except IndexError:
+                print ("index error", i, len(self.data))
                 # offset + i is concrete and outside data
                 c = 0
-
             bytes.append(c)
         return Operators.CONCAT(256, *bytes)
 
@@ -1616,10 +1612,12 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
 
+    @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         #calldata_overflow = const.calldata_overflow
         #calldata_underflow = const.calldata_underflow
+        print ("CALLDATACOPY", size)
         calldata_overflow = 32
         calldata_underflow = 32
         #if const.calldata_overlap:
@@ -1639,10 +1637,18 @@ class EVM(Eventful):
         max_size = size
         if issymbolic(max_size):
             max_size = Z3Solver.instance().max(self.constraints, size)
+
         #@max_size = min(max_size, consts.calldata_maxsize)
-        max_size = min(max_size, 324)
-        logger.info(f"Constraining CALLDATACOPY size to {max_size}")
-        self.constraints.add(Operators.ULE(size, max_size))
+        cap = len(self.data) + calldata_overflow
+        if max_size > cap:
+            print (f"MAX SIZE too great constraining to {cap}")
+            logger.info(f"Constraining CALLDATACOPY size to {cap}")
+            max_size = cap
+            self.constraints.add(Operators.ULE(size, cap))
+            #cond = Operators.OR(size == 0, size==4)
+            #for conc_size in range(8,max_size, 32):
+            #   cond = Operators.OR(size==conc_size, cond)
+            #self.constraints.add(cond)
 
         for i in range(max_size):
             try:
@@ -1653,12 +1659,16 @@ class EVM(Eventful):
                     0)
 
             except IndexError:
+                print("index errorrrrr", i)
                 # data_offset + i is concrete and outside data
                 c1 = 0
 
 
             c = Operators.ITEBV(8,  i < size, c1, self.memory[mem_offset + i])
-            self._store(mem_offset + i, c)
+            x = self.constraints.new_bitvec(8, name="temp{}".format(uuid.uuid1()) )
+            self.constraints.add(x==c)
+            self._store(mem_offset + i, x)
+            #print (str(self.constraints))
 
     def CODESIZE(self):
         """Get size of code running in current environment"""
@@ -1705,7 +1715,7 @@ class EVM(Eventful):
                 else:
                     value = self.bytecode[code_offset + i]
             self._store(mem_offset + i, value)
-        self._publish("did_evm_read_code", code_offset, size)
+        self._publish("did_evm_read_code", self.address, code_offset, size)
 
     def GASPRICE(self):
         """Get price of gas in current environment"""
@@ -1733,6 +1743,7 @@ class EVM(Eventful):
                 self._store(address + i, extbytecode[offset + i])
             else:
                 self._store(address + i, 0)
+            self._publish("did_evm_read_code", address, offset, size)
 
     def RETURNDATACOPY_gas(self, mem_offset, return_offset, size):
         return self._get_memfee(mem_offset, size)
@@ -2185,6 +2196,7 @@ class EVMWorld(Platform):
         "evm_read_storage",
         "evm_write_storage",
         "evm_read_code",
+        "evm_write_code"
         "decode_instruction",
         "execute_instruction",
         "open_transaction",
@@ -3028,6 +3040,7 @@ class EVMWorld(Platform):
                 temp_cs.add(storage.get(index) != 0)
 
                 try:
+                    #FIXME do this only if it has symbolic writes?
                     while True:
                         a_index = Z3Solver().get_value(temp_cs, index)
                         all_used_indexes.append(a_index)

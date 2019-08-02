@@ -216,6 +216,9 @@ def ITEBV(size, cond, true_value, false_value):
     assert isinstance(false_value, (BitVec, int))
     assert isinstance(size, int)
 
+    if isinstance(cond, BoolConstant) and not cond.taint:
+        cond = cond.value
+
     if isinstance(cond, bool):
         if cond:
             return true_value

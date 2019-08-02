@@ -546,6 +546,42 @@ class ManticoreBase(Eventful):
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
 
+    @sync
+    def kill_state(self, state, delete=False):
+        """ Kill a state.
+             A state is moved from any list to the kill list or fully
+             removed from secondary storage
+
+            :param state_id: a estate id
+            :type state_id: int
+            :param delete: if true remove the state from the secondary storage
+            :type delete: bool
+        """
+        state_id = state.id
+        try:
+            self._busy_states.remove(state_id)
+        except:
+            pass
+        try:
+            self._kill_states.remove(state_id)
+        except:
+            pass
+        try:
+            self._terminated_states.remove(state_id)
+        except:
+            pass
+        try:
+            self._ready_states.remove(state_id)
+        except:
+            pass
+
+        if delete:
+            self._remove(state_id)
+        else:
+            # add the state_id to the terminated list
+            self._killed_states.append(state_id)
+
+
     @property
     @sync
     def ready_states(self):
@@ -602,7 +638,7 @@ class ManticoreBase(Eventful):
             (At running we can have states at busy)
         """
         return (
-            tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
+            tuple(self._ready_states) + tuple(self._terminated_states)# + tuple(self._killed_states)
         )
 
     @property
@@ -622,6 +658,11 @@ class ManticoreBase(Eventful):
 
     @sync
     def count_states(self):
+        """ Total states count """
+        return len(self._all_states)
+
+    @sync
+    def count_all_states(self):
         """ Total states count """
         return len(self._all_states)
 
