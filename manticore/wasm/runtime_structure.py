@@ -2,6 +2,7 @@ from __future__ import annotations
 import typing
 import types
 import copy
+import logging
 from dataclasses import dataclass
 from .executor import Executor
 from collections import deque
@@ -26,6 +27,8 @@ from .types import (
     Instruction,
 )
 from ..core.smtlib import BitVec
+
+logger = logging.getLogger(__name__)
 
 
 def debug(imm):
@@ -109,6 +112,33 @@ class Store:
         self.tables = state["tables"]
         self.mems = state["mems"]
         self.globals = state["globals"]
+
+    def __hash__(self):
+        return hash((self.funcs, self.tables, self.mems, self.globals))
+
+
+class AtomicStore(Store):
+
+    def __init__(self, parent: Store):
+        self.parent = parent
+        self.hash = None  # hash(self.parent)
+
+    def __getstate__(self):
+        state = {"parent": self.parent,
+                 "hash": self.hash}
+        return state
+
+    def __setstate__(self, state):
+        self.parent = state["parent"]
+        self.hash = state["hash"]
+
+    def __enter__(self):
+        return self.parent
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+        # if exc_val and hash(self.parent) != self.hash:  # TODO - make sure the exception is concretization
+        #     logger.warning("An exception occurred _after_ the store was changed. Further execution may be incorrect")
 
 
 class ModuleInstance:
@@ -363,42 +393,44 @@ class ModuleInstance:
         for i in insts[::-1]:
             self._instruction_queue.append(i)
 
-    def exec_instruction(self, store, stack) -> bool:
-        if self._instruction_queue:
-            inst = self._instruction_queue.pop()
-            print(f"{inst.opcode}:", inst.mnemonic, f"({debug(inst.imm)})" if inst.imm else "")
-            if 0x2 <= inst.opcode <= 0x11:
-                if inst.opcode == 0x02:
-                    self.block(store, stack, [], [])  # TODO
-                elif inst.opcode == 0x03:
-                    self.loop(store, stack, inst.imm)
-                elif inst.opcode == 0x04:
-                    self.if_(store, stack, inst.imm)
-                elif inst.opcode == 0x05:
-                    self.else_(store, stack)
-                elif inst.opcode == 0x0B:
-                    self.end(store, stack)
-                elif inst.opcode == 0x0C:
-                    self.br(store, stack, inst.imm)
-                elif inst.opcode == 0x0D:
-                    self.br_if(store, stack, inst.imm)
-                elif inst.opcode == 0x0E:
-                    self.br_table(store, stack, inst.imm)
-                elif inst.opcode == 0x0F:
-                    self.return_(store, stack)
-                elif inst.opcode == 0x10:
-                    self.call(store, stack, inst.imm)
-                elif inst.opcode == 0x11:
-                    self.call_indirect(store, stack, inst.imm)
-                else:
-                    raise Exception("Unhandled control flow instruction")
-            else:
-                self.executor.dispatch(inst, store, stack)
-            return True
-        elif stack.find_type(Label):
-            self.exit_instruction(stack)
-            return True
-        return False
+    def exec_instruction(self, store: Store, stack: Stack) -> bool:
+        with AtomicStack(stack) as aStack:
+            with AtomicStore(store) as aStore:
+                if self._instruction_queue:
+                    inst = self._instruction_queue.pop()
+                    print(f"{inst.opcode}:", inst.mnemonic, f"({debug(inst.imm)})" if inst.imm else "")
+                    if 0x2 <= inst.opcode <= 0x11:
+                        if inst.opcode == 0x02:
+                            self.block(aStore, aStack, [], [])  # TODO - fill out arguments here
+                        elif inst.opcode == 0x03:
+                            self.loop(aStore, aStack, inst.imm)
+                        elif inst.opcode == 0x04:
+                            self.if_(aStore, aStack, inst.imm)
+                        elif inst.opcode == 0x05:
+                            self.else_(aStore, aStack)
+                        elif inst.opcode == 0x0B:
+                            self.end(aStore, aStack)
+                        elif inst.opcode == 0x0C:
+                            self.br(aStore, aStack, inst.imm)
+                        elif inst.opcode == 0x0D:
+                            self.br_if(aStore, aStack, inst.imm)
+                        elif inst.opcode == 0x0E:
+                            self.br_table(aStore, aStack, inst.imm)
+                        elif inst.opcode == 0x0F:
+                            self.return_(aStore, aStack)
+                        elif inst.opcode == 0x10:
+                            self.call(aStore, aStack, inst.imm)
+                        elif inst.opcode == 0x11:
+                            self.call_indirect(aStore, aStack, inst.imm)
+                        else:
+                            raise Exception("Unhandled control flow instruction")
+                    else:
+                        self.executor.dispatch(inst, aStore, aStack)
+                    return True
+                elif aStack.find_type(Label):
+                    self.exit_instruction(aStack)
+                    return True
+            return False
 
     def block(
         self, store: "Store", stack: "Stack", ret_type: typing.List[ValType], insts: WASMExpression
@@ -498,17 +530,63 @@ class Stack:
                 return -1 * idx
         return None
 
-    def pop_all(self):
-        out = copy.copy(self.data)
-        self.data.clear()
-        return out
-
     def get_frame(self) -> Frame:
         for item in reversed(self.data):
             if isinstance(item, Activation):
                 return item.frame
             if isinstance(item, Frame):
                 return item
+
+
+class AtomicStack(Stack):
+    """
+    Allows for the rolling-back of the stack in the event of a concretization exception. Inherits from Stack so that the types will be correct, but never calls `super`
+    TODO - make this more efficient by eliminating the full copy and instead doing a CoW-esque thing
+    """
+
+    def __init__(self, parent: Stack):
+        self.parent = parent
+        self.copy = copy.copy(self.parent.data)
+
+    def __getstate__(self):
+        state = {"parent": self.parent,
+                 "copy": self.copy}
+        return state
+
+    def __setstate__(self, state):
+        self.parent = state["parent"]
+        self.copy = state["copy"]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_val:
+            logger.info("Exception occurred, not applying stack changes")
+            self.parent.data = self.copy
+        else:
+            pass
+    
+    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+        self.parent.push(val)
+
+    def pop(self) -> typing.Union[Value, Label, Activation]:
+        return self.parent.pop()
+
+    def peek(self):
+        return self.parent.peek()
+
+    def empty(self):
+        return self.parent.empty()
+
+    def has_type_on_top(self, t: type, n: int):
+        return self.parent.has_type_on_top(t, n)
+
+    def find_type(self, t: type):
+        return self.parent.find_type(t)
+
+    def get_frame(self) -> Frame:
+        return self.parent.get_frame()
 
 
 @dataclass
