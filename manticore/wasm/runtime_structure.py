@@ -27,6 +27,7 @@ from .types import (
     Instruction,
 )
 from ..core.smtlib import BitVec
+from ..core.state import Concretize
 
 logger = logging.getLogger(__name__)
 
@@ -118,14 +119,12 @@ class Store:
 
 
 class AtomicStore(Store):
-
     def __init__(self, parent: Store):
         self.parent = parent
         self.hash = None  # hash(self.parent)
 
     def __getstate__(self):
-        state = {"parent": self.parent,
-                 "hash": self.hash}
+        state = {"parent": self.parent, "hash": self.hash}
         return state
 
     def __setstate__(self, state):
@@ -397,36 +396,45 @@ class ModuleInstance:
         with AtomicStack(stack) as aStack:
             with AtomicStore(store) as aStore:
                 if self._instruction_queue:
-                    inst = self._instruction_queue.pop()
-                    print(f"{inst.opcode}:", inst.mnemonic, f"({debug(inst.imm)})" if inst.imm else "")
-                    if 0x2 <= inst.opcode <= 0x11:
-                        if inst.opcode == 0x02:
-                            self.block(aStore, aStack, [], [])  # TODO - fill out arguments here
-                        elif inst.opcode == 0x03:
-                            self.loop(aStore, aStack, inst.imm)
-                        elif inst.opcode == 0x04:
-                            self.if_(aStore, aStack, inst.imm)
-                        elif inst.opcode == 0x05:
-                            self.else_(aStore, aStack)
-                        elif inst.opcode == 0x0B:
-                            self.end(aStore, aStack)
-                        elif inst.opcode == 0x0C:
-                            self.br(aStore, aStack, inst.imm)
-                        elif inst.opcode == 0x0D:
-                            self.br_if(aStore, aStack, inst.imm)
-                        elif inst.opcode == 0x0E:
-                            self.br_table(aStore, aStack, inst.imm)
-                        elif inst.opcode == 0x0F:
-                            self.return_(aStore, aStack)
-                        elif inst.opcode == 0x10:
-                            self.call(aStore, aStack, inst.imm)
-                        elif inst.opcode == 0x11:
-                            self.call_indirect(aStore, aStack, inst.imm)
+                    try:
+                        inst = self._instruction_queue.pop()
+                        print(
+                            f"{inst.opcode}:",
+                            inst.mnemonic,
+                            f"({debug(inst.imm)})" if inst.imm else "",
+                        )
+                        if 0x2 <= inst.opcode <= 0x11:
+                            if inst.opcode == 0x02:
+                                self.block(aStore, aStack, [], [])  # TODO - fill out arguments here
+                            elif inst.opcode == 0x03:
+                                self.loop(aStore, aStack, inst.imm)
+                            elif inst.opcode == 0x04:
+                                self.if_(aStore, aStack, inst.imm)
+                            elif inst.opcode == 0x05:
+                                self.else_(aStore, aStack)
+                            elif inst.opcode == 0x0B:
+                                self.end(aStore, aStack)
+                            elif inst.opcode == 0x0C:
+                                self.br(aStore, aStack, inst.imm)
+                            elif inst.opcode == 0x0D:
+                                self.br_if(aStore, aStack, inst.imm)
+                            elif inst.opcode == 0x0E:
+                                self.br_table(aStore, aStack, inst.imm)
+                            elif inst.opcode == 0x0F:
+                                self.return_(aStore, aStack)
+                            elif inst.opcode == 0x10:
+                                self.call(aStore, aStack, inst.imm)
+                            elif inst.opcode == 0x11:
+                                self.call_indirect(aStore, aStack, inst.imm)
+                            else:
+                                raise Exception("Unhandled control flow instruction")
                         else:
-                            raise Exception("Unhandled control flow instruction")
-                    else:
-                        self.executor.dispatch(inst, aStore, aStack)
-                    return True
+                            self.executor.dispatch(inst, aStore, aStack)
+                        return True
+                    except Concretize as exc:
+                        self._instruction_queue.append(inst)
+                        raise exc
+
                 elif aStack.find_type(Label):
                     self.exit_instruction(aStack)
                     return True
@@ -521,7 +529,9 @@ class Stack:
 
     def has_type_on_top(self, t: type, n: int):
         for i in range(1, n + 1):
-            assert isinstance(self.data[i * -1], (t, BitVec)), f"{type(self.data[i * -1])} is not an {t}!"
+            assert isinstance(
+                self.data[i * -1], (t, BitVec)
+            ), f"{type(self.data[i * -1])} is not an {t}!"
         return True
 
     def find_type(self, t: type):
@@ -549,8 +559,7 @@ class AtomicStack(Stack):
         self.copy = copy.copy(self.parent.data)
 
     def __getstate__(self):
-        state = {"parent": self.parent,
-                 "copy": self.copy}
+        state = {"parent": self.parent, "copy": self.copy}
         return state
 
     def __setstate__(self, state):
@@ -561,12 +570,13 @@ class AtomicStack(Stack):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val:
+        if exc_val and isinstance(exc_val, Concretize):
             logger.info("Exception occurred, not applying stack changes")
+            print("Exception caught, rolling back stack")
             self.parent.data = self.copy
         else:
             pass
-    
+
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         self.parent.push(val)
 

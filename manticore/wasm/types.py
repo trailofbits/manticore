@@ -10,7 +10,6 @@ Byte: type = type("Byte", (int,), {})
 
 
 class I32(int):
-
     @classmethod
     def cast(cls, other):
         if issymbolic(other):
@@ -19,7 +18,6 @@ class I32(int):
 
 
 class I64(int):
-
     @classmethod
     def cast(cls, other):
         if issymbolic(other):
@@ -28,7 +26,6 @@ class I64(int):
 
 
 class F32(float):
-
     @classmethod
     def cast(cls, other):
         if issymbolic(other):
@@ -37,7 +34,6 @@ class F32(float):
 
 
 class F64(float):
-
     @classmethod
     def cast(cls, other):
         if issymbolic(other):

@@ -321,7 +321,7 @@ class ManticoreBase(Eventful):
         to the ready list.
 
         """
-        assert isinstance(expression, Expression)
+        assert isinstance(expression, Expression), f"{type(expression)} is not an Expression"
 
         if setstate is None:
 

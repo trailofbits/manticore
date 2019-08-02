@@ -217,7 +217,9 @@ class Module:
                     m.imports.append(
                         Import(
                             ty_map["module_str"].to_string(i.module_str),
-                            ty_map["field_str"].to_string(i.field_str),
+                            eval(
+                                ty_map["field_str"].to_string(i.field_str)
+                            ),  # TODO - this is also horribly unsafe
                             mapping[i.kind](i.type.type),
                         )
                     )

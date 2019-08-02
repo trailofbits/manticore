@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import functools
 
 from .state import State
 from ..core.manticore import ManticoreBase
@@ -58,6 +59,11 @@ def _make_initial_state(binary_path, **kwargs):
     #     state = _make_wasm_watf(binary_path, **kwargs)
 
 
+def getchar(constraints, *args):
+    print("Called getchar with args:", args)
+    return [constraints.new_bitvec(32, "getchar_output")]
+
+
 def _make_wasm_bin(program, **kwargs):
     from ..platforms import wasm
 
@@ -65,6 +71,9 @@ def _make_wasm_bin(program, **kwargs):
 
     constraints = ConstraintSet()
     platform = wasm.WASMWorld(program)
+
+    platform.instantiate({"getchar": functools.partial(getchar, constraints)})
+    platform.invoke("main")
 
     initial_state = State(constraints, platform)
 

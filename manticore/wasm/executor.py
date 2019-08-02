@@ -220,7 +220,8 @@ class Executor(object):  # TODO - should be Eventful
         v2 = stack.pop()
         v1 = stack.pop()
         assert isinstance(c, I32), f"{type(c)} is not I32"
-        assert type(v2) == type(v1)
+        if not issymbolic(v2) and not issymbolic(v1):
+            assert type(v2) == type(v1), f"{type(v2)} is not the same as {type(v1)}"
         if c != 0:  # TODO we'll probably need to fork here if this is symbolic
             stack.push(v1)
         else:
@@ -382,7 +383,19 @@ class Executor(object):  # TODO - should be Eventful
     def i32_ne(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
+        if issymbolic(c2):
+
+            def setstate(state, value):
+                state.platform.stack.data[-1] = I32(value)
+
+            raise Concretize("Concretizing stack variable c2", c2, setstate=setstate)
         c1 = stack.pop()
+        if issymbolic(c1):
+
+            def setstate(state, value):
+                state.platform.stack.data[-2] = I32(value)
+
+            raise Concretize("Concretizing stack variable c1", c1, setstate=setstate)
         stack.push(I32.cast(1 if c2 != c1 else 0))
 
     def i32_lt_s(self, store: "Store", stack: "Stack"):
