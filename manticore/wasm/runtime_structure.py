@@ -334,8 +334,6 @@ class ModuleInstance:
             frame = Frame(locals, f.module)
             stack.push(Activation(len(ty.result_types), frame))
             self.block(store, stack, ty.result_types, f.code.body)
-            while self.exec_instruction(store, stack):
-                pass
 
     def exec_expression(self, store: Store, stack: "Stack", expr: WASMExpression):
         self.push_instructions(expr)
@@ -348,20 +346,18 @@ class ModuleInstance:
         self.push_instructions(insts)
 
     def exit_instruction(self, stack: "Stack"):
-        i = -1
-        while True:
-            if isinstance(stack.data[i], Value.__args__):
+        label_idx = stack.find_type(Label)
+        if label_idx is not None:
+            i = -1
+            while isinstance(stack.data[i], Value.__args__):
                 i -= 1
-            else:
-                i = abs(i)
-                break
-        vals = [stack.pop() for _i in range(i)]
-        l = stack.pop
-        assert isinstance(l, Label)
-        for v in vals[::-1]:
-            stack.push(v)
+            vals = [stack.pop() for _i in range(abs(i))]  # TODO  - Confirm this isn't an off-by-one
+            label = stack.pop()
+            assert isinstance(label, Label)
+            for v in vals[::-1]:
+                stack.push(v)
 
-        self.push_instructions(l.instr)
+            self.push_instructions(label.instr)
 
     def push_instructions(self, insts: WASMExpression):
         for i in insts[::-1]:
@@ -372,34 +368,35 @@ class ModuleInstance:
             inst = self._instruction_queue.pop()
             print(f"{inst.opcode}:", inst.mnemonic, f"({debug(inst.imm)})" if inst.imm else "")
             if 0x2 <= inst.opcode <= 0x11:
-                if inst.opcode == 0x02:  # block
+                if inst.opcode == 0x02:
                     self.block(store, stack, [], [])  # TODO
-                # elif inst.opcode == 0x03:  # loop
-                #
-                # elif inst.opcode == 0x04:  # if
-                #
-                # elif inst.opcode == 0x05:  # else
-
-                elif inst.opcode == 0x0B:  # end
-                    pass
-                    # self.exit_instruction(stack)
-                # elif inst.opcode == 0x0C:  # br
-                #
-                # elif inst.opcode == 0x0D:  # br_if
-                #
-                # elif inst.opcode == 0x0E:  # br_table
-                #
-                # elif inst.opcode == 0x0F:  # return
-                #
+                elif inst.opcode == 0x03:
+                    self.loop(store, stack, inst.imm)
+                elif inst.opcode == 0x04:
+                    self.if_(store, stack, inst.imm)
+                elif inst.opcode == 0x05:
+                    self.else_(store, stack)
+                elif inst.opcode == 0x0B:
+                    self.end(store, stack)
+                elif inst.opcode == 0x0C:
+                    self.br(store, stack, inst.imm)
+                elif inst.opcode == 0x0D:
+                    self.br_if(store, stack, inst.imm)
+                elif inst.opcode == 0x0E:
+                    self.br_table(store, stack, inst.imm)
+                elif inst.opcode == 0x0F:
+                    self.return_(store, stack)
                 elif inst.opcode == 0x10:
                     self.call(store, stack, inst.imm)
-
-                # elif inst.opcode == 0x11:  # call_indirect
-
+                elif inst.opcode == 0x11:
+                    self.call_indirect(store, stack, inst.imm)
                 else:
                     raise Exception("Unhandled control flow instruction")
             else:
                 self.executor.dispatch(inst, store, stack)
+            return True
+        elif stack.find_type(Label):
+            self.exit_instruction(stack)
             return True
         return False
 
@@ -421,8 +418,7 @@ class ModuleInstance:
         raise NotImplementedError("else")
 
     def end(self, store: "Store", stack: "Stack"):
-        self.exit_instruction()  # TODO - this shouldn't happen after exec_expression - not sure if it should happen at all, but idk how else you exit from a block
-        # MAybe you call exit_instruction whenever the instruction queue is empty?
+        pass
 
     def br(self, store: "Store", stack: "Stack", imm: BranchImm):
         raise NotImplementedError("br")
@@ -495,6 +491,12 @@ class Stack:
         for i in range(1, n + 1):
             assert isinstance(self.data[i * -1], (t, BitVec)), f"{type(self.data[i * -1])} is not an {t}!"
         return True
+
+    def find_type(self, t: type):
+        for idx, v in enumerate(reversed(self.data)):
+            if isinstance(v, t):
+                return -1 * idx
+        return None
 
     def pop_all(self):
         out = copy.copy(self.data)
