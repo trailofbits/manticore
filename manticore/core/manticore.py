@@ -64,6 +64,11 @@ consts.add(
     default=MProcessingType.multiprocessing,
     description="single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes",
 )
+consts.add(
+    "seed",
+    default=random.getrandbits(32),
+    description="The seed to use when randomly selecting states",
+)
 
 
 class ManticoreBase(Eventful):
@@ -72,13 +77,11 @@ class ManticoreBase(Eventful):
             raise Exception("Should not instantiate this")
 
         cl = consts.mprocessing.to_class()
-        if cl not in cls.__bases__:
-            # change ManticoreBase for the more specific class
-            idx = cls.__bases__.index(ManticoreBase)
-            bases = list(cls.__bases__)
-            bases[idx] = cl
-            cls.__bases__ = tuple(bases)
+        # change ManticoreBase for the more specific class
+        bases = {cl if issubclass(base, ManticoreBase) else base for base in cls.__bases__}
+        cls.__bases__ = tuple(bases)
 
+        random.seed(consts.seed)
         return super().__new__(cls)
 
     # Decorators added first for convenience.
@@ -113,6 +116,7 @@ class ManticoreBase(Eventful):
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if self.is_running():
+                logger.error("Calling at running not allowed")
                 raise Exception(f"{func.__name__} only allowed while NOT exploring states")
             return func(self, *args, **kw)
 
@@ -351,12 +355,8 @@ class ManticoreBase(Eventful):
                 setstate(new_state, new_value)
 
                 # enqueue new_state, assign new state id
-                new_state_id = self._save(new_state, state_id=None)
-                with self._lock:
-                    self._ready_states.append(new_state_id)
-                    self._lock.notify_all()  # Must notify one!
+                new_state_id = self._put_state(new_state)
 
-                self._publish("did_fork_state", new_state, expression, new_value, policy)
                 # maintain a list of children for logging purpose
                 children.append(new_state_id)
 
@@ -365,6 +365,8 @@ class ManticoreBase(Eventful):
             self._remove(state.id)
             state._id = None
             self._lock.notify_all()
+
+        self._publish("did_fork_state", new_state, expression, new_value, policy)
 
         logger.debug("Forking current state %r into states %r", state.id, children)
 
@@ -378,6 +380,7 @@ class ManticoreBase(Eventful):
         set_verbosity(level)
 
     # State storage
+    @Eventful.will_did("save_state")
     def _save(self, state, state_id=None):
         """ Store or update a state in secondary storage under state_id.
             Use a fresh id is None is provided.
@@ -390,6 +393,7 @@ class ManticoreBase(Eventful):
         state._id = self._workspace.save_state(state, state_id=state_id)
         return state.id
 
+    @Eventful.will_did("load_state")
     def _load(self, state_id):
         """ Load the state from the secondary storage
 
@@ -397,19 +401,17 @@ class ManticoreBase(Eventful):
             :type state_id: int
             :returns: the state id used
         """
-
         if not hasattr(self, "stcache"):
             self.stcache = weakref.WeakValueDictionary()
         if state_id in self.stcache:
             return self.stcache[state_id]
-        self._publish("will_load_state", state_id)
         state = self._workspace.load_state(state_id, delete=False)
         state._id = state_id
         self.forward_events_from(state, True)
-        self._publish("did_load_state", state, state_id)
         self.stcache[state_id] = state
         return state
 
+    @Eventful.will_did("remove_state")
     def _remove(self, state_id):
         """ Remove a state from secondary storage
 

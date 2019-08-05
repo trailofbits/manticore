@@ -1,6 +1,7 @@
 import copy
 import inspect
 import logging
+import functools
 from itertools import takewhile
 from weakref import WeakKeyDictionary, ref
 
@@ -71,6 +72,22 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         for cls, evts in cls.__all_events__.items():
             all_evts.update(evts)
         return all_evts
+
+    @staticmethod
+    def will_did(name):
+        """Pre/pos emiting signal"""
+
+        def deco(func):
+            @functools.wraps(func)
+            def newFunction(self, *args, **kw):
+                self._publish(f"will_{name}", *args, **kw)
+                result = func(self, *args, **kw)
+                self._publish(f"did_{name}", result)
+                return result
+
+            return newFunction
+
+        return deco
 
     def __init__(self, *args, **kwargs):
         # A dictionary from "event name" -> callback methods
