@@ -16,9 +16,10 @@ from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
 from ..utils import config
-from ..utils.log import set_verbosity
+from ..utils.deprecated import deprecated
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
+from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace
 from .worker import WorkerSingle, WorkerThread, WorkerProcess
@@ -222,7 +223,7 @@ class ManticoreBase(Eventful):
         *State list: TERMINATED*
 
         TERMINATED contains states that have reached a final condition and raised
-        TerminateState. Workers mainloop simpliy move the states that requested
+        TerminateState. Worker's mainloop simply moves the states that requested
         termination to the TERMINATED list. This is a final list.
 
         ```An inherited Manticore class like ManticoreEVM could internally revive
@@ -368,12 +369,12 @@ class ManticoreBase(Eventful):
         logger.debug("Forking current state %r into states %r", state.id, children)
 
     @staticmethod
+    @deprecated("Use utils.log.set_verbosity instead.")
     def verbosity(level):
         """ Sets global vervosity level.
             This will activate different logging profiles globally depending
             on the provided numeric value
         """
-        logger.info("Deprecated!")
         set_verbosity(level)
 
     # State storage
@@ -602,6 +603,13 @@ class ManticoreBase(Eventful):
             self._save(state, state_id=state_id)
 
     @property
+    def running_states(self):
+        logger.warning(
+            "manticore.running_states is deprecated! (You probably want manticore.ready_states)"
+        )
+        return self.ready_states
+
+    @property
     @sync
     def terminated_states(self):
         """
@@ -687,6 +695,8 @@ class ManticoreBase(Eventful):
         return len(self._terminated_states)
 
     def generate_testcase(self, state, message="test", name="test"):
+        if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
+            message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)
         with testcase.open_stream("pkl", binary=True) as statef:
             PickleSerializer().serialize(state, statef)
@@ -846,6 +856,10 @@ class ManticoreBase(Eventful):
         """
         self._killed.value = True
         self._lock.notify_all()
+
+    def terminate(self):
+        logger.warning("manticore.terminate is deprecated (Use manticore.kill)")
+        self.kill()
 
     @sync
     def is_running(self):

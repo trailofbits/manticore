@@ -91,7 +91,16 @@ class Armv7Operand(Operand):
                 value += self.cpu.instruction.size
             if self.is_shifted():
                 shift = self.op.shift
-                value, carry = self.cpu._shift(value, shift.type, shift.value, carry)
+                # XXX: This is unnecessary repetition.
+                if shift.type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
+                    if self.cpu.mode == cs.CS_MODE_THUMB:
+                        amount = shift.value.read()
+                    else:
+                        src_reg = self.cpu.instruction.reg_name(shift.value).upper()
+                        amount = self.cpu.regfile.read(src_reg)
+                else:
+                    amount = shift.value
+                value, carry = self.cpu._shift(value, shift.type, amount, carry)
             if self.op.subtracted:
                 value = -value
             if with_carry:
@@ -580,12 +589,7 @@ class Armv7Cpu(Cpu):
             amount = 1
 
         elif _type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
-            if cpu.mode == cs.CS_MODE_THUMB:
-                src = amount.read()
-            else:
-                src_reg = cpu.instruction.reg_name(amount).upper()
-                src = cpu.regfile.read(src_reg)
-            amount = Operators.EXTRACT(src, 0, 8)
+            amount = Operators.EXTRACT(amount, 0, 8)
 
         if amount == 0:
             return value, carry
@@ -1494,12 +1498,15 @@ class Armv7Cpu(Cpu):
         carry = cpu.regfile.read("APSR_C")
         if rest and rest[0].type == "register":
             # FIXME we should make Operand.op private (and not accessible)
-            result, carry = cpu._shift(op.read(), srtype, rest[0].op.reg, carry)
+            src_reg = cpu.instruction.reg_name(rest[0].op.reg).upper()
+            amount = cpu.regfile.read(src_reg)
+            result, carry = cpu._shift(op.read(), srtype, amount, carry)
         elif rest and rest[0].type == "immediate":
             amount = rest[0].read()
             result, carry = cpu._shift(op.read(), srtype, amount, carry)
         elif cpu.mode == cs.CS_MODE_THUMB:
-            result, carry = cpu._shift(dest.read(), srtype, op, carry)
+            amount = op.read()
+            result, carry = cpu._shift(dest.read(), srtype, amount, carry)
         else:
             result, carry = op.read(with_carry=True)
         dest.write(result)
