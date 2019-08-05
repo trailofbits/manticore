@@ -789,6 +789,7 @@ class ManticoreEVM(ManticoreBase):
                 self.kill()
                 raise
             except Exception as e:
+                logger.info("Failed to compile contract", str(e))
                 self.kill()
                 raise
 
@@ -796,6 +797,7 @@ class ManticoreEVM(ManticoreBase):
         for state in self.ready_states:
             if state.platform.get_code(int(contract_account)):
                 return contract_account
+        logger.info("Failed to compile contract", contract_names)
         return None
 
     def get_nonce(self, address):
@@ -1648,7 +1650,10 @@ class ManticoreEVM(ManticoreBase):
             logger.debug("Generating testcase for state_id %d", state_id)
             last_tx = st.platform.last_transaction
             message = last_tx.result if last_tx else "NO STATE RESULT (?)"
-            self.generate_testcase(st, message=message)
+            try:
+                self.generate_testcase(st, message=message)
+            except Exception as e:
+                print(e)
 
         def worker_finalize(q):
             try:

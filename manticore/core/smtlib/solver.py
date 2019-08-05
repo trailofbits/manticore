@@ -27,6 +27,7 @@ from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
 from ...utils import config
 from . import issymbolic
+import time
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -433,6 +434,7 @@ class Z3Solver(Solver):
 
             result = []
 
+            start = time.time()
             while self._is_sat():
                 value = self._getvalue(var)
                 result.append(value)
@@ -447,7 +449,8 @@ class Z3Solver(Solver):
                         break
                     else:
                         raise TooManySolutions(result)
-
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
             return result
 
     def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, M=10000):
@@ -471,6 +474,7 @@ class Z3Solver(Solver):
             self._reset(temp_cs.to_string(related_to=X))
             self._send(aux.declaration)
 
+            start = time.time()
             if getattr(self, f"support_{goal}"):
                 self._push()
                 try:
@@ -511,6 +515,8 @@ class Z3Solver(Solver):
                 i = i + 1
                 if i > M:
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
             if last_value is not None:
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
@@ -522,6 +528,7 @@ class Z3Solver(Solver):
         if not issymbolic(expression):
             return expression
         assert isinstance(expression, (Bool, BitVec, Array))
+        start = time.time()
         with constraints as temp_cs:
             if isinstance(expression, Bool):
                 var = temp_cs.new_bool()
@@ -547,6 +554,8 @@ class Z3Solver(Solver):
                     m = pattern.match(ret)
                     expr, value = m.group("expr"), m.group("value")
                     result.append(int(value, base))
+                    if time.time() - start > consts.timeout:
+                        raise SolverError("Timeout")
                 return bytes(result)
 
             temp_cs.add(var == expression)
