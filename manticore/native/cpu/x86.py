@@ -1479,6 +1479,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         """
         size = dest.size
+        half_size = size // 2
         cmp_reg_name_l = {64: "EAX", 128: "RAX"}[size]
         cmp_reg_name_h = {64: "EDX", 128: "RDX"}[size]
         src_reg_name_l = {64: "EBX", 128: "RBX"}[size]
@@ -1499,12 +1500,12 @@ class X86Cpu(Cpu):
         dest.write(Operators.ITEBV(size, cpu.ZF, Operators.CONCAT(size, srch, srcl), arg_dest))
         cpu.write_register(
             cmp_reg_name_l,
-            Operators.ITEBV(size // 2, cpu.ZF, cmpl, Operators.EXTRACT(arg_dest, 0, size // 2)),
+            Operators.ITEBV(half_size, cpu.ZF, cmpl, Operators.EXTRACT(arg_dest, 0, half_size)),
         )
         cpu.write_register(
             cmp_reg_name_h,
             Operators.ITEBV(
-                size // 2, cpu.ZF, cmph, Operators.EXTRACT(arg_dest, size // 2, size // 2)
+                half_size, cpu.ZF, cmph, Operators.EXTRACT(arg_dest, half_size, half_size)
             ),
         )
 
