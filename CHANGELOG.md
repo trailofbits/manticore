@@ -1,6 +1,32 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.0...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.1...HEAD)
+
+## 0.3.1 - 2019-08-06
+
+Thanks to our external contributors!
+
+ - [arcz](https://github.com/trailofbits/manticore/commits?author=arcz)
+
+### Ethereum
+* Smart contracts are now compiled using [Crytic-Compile](https://github.com/crytic/crytic-compile) [#1406](https://github.com/trailofbits/manticore/pull/1406)
+* Added detector for strict comparisons to BALANCE [#1481](https://github.com/trailofbits/manticore/pull/1481)
+* Added bitshift instructions [#1498](https://github.com/trailofbits/manticore/pull/1498)
+* Added stub for STATICCALL (does not enforce static nature) [#1494](https://github.com/trailofbits/manticore/pull/1494)
+* Updated EVM Examples [#1486](https://github.com/trailofbits/manticore/pull/1486)
+
+### Native
+* Fixed `getdents` syscall [#1472](https://github.com/trailofbits/manticore/pull/1472)
+* Fixed state merging examples [#1482](https://github.com/trailofbits/manticore/pull/1482)
+* Support LSR.W on ARMV7 [#1363](https://github.com/trailofbits/manticore/pull/1363)
+* Fixed CrackMe Example [#1502](https://github.com/trailofbits/manticore/pull/1502)
+* Optimize CMPXCHG8B [#1501](https://github.com/trailofbits/manticore/pull/1501)
+* Added `fast_crash` configuration setting that causes Manticore to immediately produce a finding on memory unsafety [#1485](https://github.com/trailofbits/manticore/pull/1485)
+
+### Other
+* **[changed API]** Moved `issymbolic` into SMTLib to improve performance [#1456](https://github.com/trailofbits/manticore/pull/1456)
+* Refactored API Docs [#1469](https://github.com/trailofbits/manticore/pull/1469)
+* Fixed `FileNotFound` Error on state loading [#1480](https://github.com/trailofbits/manticore/pull/1480)
 
 ## 0.3.0 - 2019-06-06
 
