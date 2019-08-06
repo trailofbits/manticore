@@ -219,13 +219,22 @@ class Executor(object):  # TODO - should be Eventful
         c = stack.pop()
         v2 = stack.pop()
         v1 = stack.pop()
-        assert isinstance(c, I32), f"{type(c)} is not I32"
+        assert isinstance(c, (I32, BitVec)), f"{type(c)} is not I32"
         if not issymbolic(v2) and not issymbolic(v1):
             assert type(v2) == type(v1), f"{type(v2)} is not the same as {type(v1)}"
-        if c != 0:  # TODO we'll probably need to fork here if this is symbolic
-            stack.push(v1)
+
+        if issymbolic(c):
+
+            # def setstate(state, value):
+            #     state.platform.stack.data[-1] = I32(value)
+            #
+            # raise Concretize("Concretizing stack variable c", c, setstate=setstate)
+            stack.push(Operators.ITEBV(32, c != 0, v1, v2))
         else:
-            stack.push(v2)
+            if c != 0:
+                stack.push(v1)
+            else:
+                stack.push(v2)
 
     def get_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
         f = stack.get_frame()
@@ -383,20 +392,12 @@ class Executor(object):  # TODO - should be Eventful
     def i32_ne(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
-        if issymbolic(c2):
-
-            def setstate(state, value):
-                state.platform.stack.data[-1] = I32(value)
-
-            raise Concretize("Concretizing stack variable c2", c2, setstate=setstate)
         c1 = stack.pop()
-        if issymbolic(c1):
-
-            def setstate(state, value):
-                state.platform.stack.data[-2] = I32(value)
-
-            raise Concretize("Concretizing stack variable c1", c1, setstate=setstate)
-        stack.push(I32.cast(1 if c2 != c1 else 0))
+        v = c2 != c1
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_lt_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.lt_s")

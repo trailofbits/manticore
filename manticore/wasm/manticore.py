@@ -59,7 +59,7 @@ def _make_initial_state(binary_path, **kwargs):
     #     state = _make_wasm_watf(binary_path, **kwargs)
 
 
-def getchar(constraints, *args):
+def getchar(constraints: ConstraintSet, *args):
     print("Called getchar with args:", args)
     return [constraints.new_bitvec(32, "getchar_output")]
 
