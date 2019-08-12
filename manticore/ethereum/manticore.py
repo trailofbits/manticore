@@ -1815,7 +1815,7 @@ class ManticoreEVM(ManticoreBase):
         with testcase.open_stream("summary") as stream:
             is_something_symbolic = state.platform.dump(stream, state, self, message)
 
-            with self.locked_context("ethereum") as ethereum_context:
+            with self.locked_context("ethereum", dict) as ethereum_context:
                 functions = ethereum_context.get("symbolic_func", dict())
 
                 for table in functions:
