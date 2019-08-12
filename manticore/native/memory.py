@@ -13,11 +13,20 @@ from ..core.smtlib import (
 )
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
+from ..utils import config
 
 import functools
 import logging
 
 logger = logging.getLogger(__name__)
+
+consts = config.get_group("native")
+consts.add(
+    "fast_crash",
+    default=False,
+    description="If True, throws a memory safety error if ANY concretization of a pointer is"
+    " out of bounds. Otherwise, forks into valid and invalid memory access states.",
+)
 
 
 class MemoryException(Exception):
@@ -1104,7 +1113,7 @@ class SMemory(Memory):
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition)
-                from .state import ForkState
+                from ..core.state import ForkState
 
                 raise ForkState("Forking state on incomplete result", condition)
 
@@ -1196,7 +1205,19 @@ class SMemory(Memory):
             if not self.access_ok(slice(base, base + size), access, force):
                 crashing_condition = Operators.OR(address == base, crashing_condition)
 
-        if solver.can_be_true(self.constraints, crashing_condition):
+        crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=3)
+
+        if not consts.fast_crash and len(crash_or_not) == 2:
+            from ..core.state import Concretize
+
+            def setstate(state, _value):
+                """ Roll back PC to redo last instruction """
+                state.cpu.PC = state.cpu._last_pc
+
+            raise Concretize(
+                "Forking on memory safety", expression=crashing_condition, setstate=setstate
+            )
+        elif any(crash_or_not):
             raise InvalidSymbolicMemoryAccess(address, access, size, crashing_condition)
 
         return solutions

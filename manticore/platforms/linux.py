@@ -1869,6 +1869,10 @@ class Linux(Platform):
         :param size: the size of the portion to unmap.
         :return: C{0} on success.
         """
+        if issymbolic(addr):
+            raise ConcretizeArgument(self, 0)
+        if issymbolic(size):
+            raise ConcretizeArgument(self, 1)
         self.current.memory.munmap(addr, size)
         return 0
 
@@ -1955,6 +1959,9 @@ class Linux(Platform):
         for i in range(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
+
+            if issymbolic(size):
+                size = Z3Solver().get_value(self.constraints, size)
 
             data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
@@ -2525,10 +2532,10 @@ class Linux(Platform):
         bufstat += add(4, stat.st_uid)  # unsigned long   st_uid;
         bufstat += add(4, stat.st_gid)  # unsigned long   st_gid;
         bufstat += add(8, stat.st_rdev)  # unsigned long long st_rdev;
-        bufstat += add(8, 0)  # unsigned long long __pad1;
+        bufstat += add(4, 0)  # unsigned long long __pad1;
         bufstat += add(8, stat.st_size)  # long long       st_size;
         bufstat += add(4, stat.st_blksize)  # int   st_blksize;
-        bufstat += add(4, 0)  # int   __pad2;
+        # bufstat += add(4, 0)  # int   __pad2;
         bufstat += add(8, stat.st_blocks)  # unsigned long long st_blocks;
         bufstat += to_timespec(stat.st_atime)  # unsigned long   st_atime;
         bufstat += to_timespec(stat.st_mtime)  # unsigned long   st_mtime;

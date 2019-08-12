@@ -76,7 +76,7 @@ value = m.make_symbolic_value()
 
 contract_account.incremented(value)
 
-for state in m.running_states:
+for state in m.ready_states:
     print("can value be 1? {}".format(state.can_be_true(value == 1)))
     print("can value be 200? {}".format(state.can_be_true(value == 200)))
 ```
@@ -98,7 +98,7 @@ def hook(state):
   print('eax', cpu.EAX)
   print(cpu.read_int(cpu.ESP))
 
-  m.terminate()  # tell Manticore to stop
+  m.kill()  # tell Manticore to stop
 
 m.run()
 ```
@@ -214,6 +214,10 @@ export MACOS_UNIVERSAL=no && pip install capstone
 brew install unicorn
 UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
 ```
+
+### Solidity Versions
+Note that we're still in the process of implementing full support for the EVM Constantinople instruction semantics, so certain opcodes may not be supported.
+You may want to consider using a version of `solc` that's less likely to generate these opcodes (eg pre-0.5.0).
 
 ## Getting Help
 

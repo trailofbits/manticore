@@ -38,7 +38,7 @@ class Concretize(StateException):
 
     """
 
-    _ValidPolicies = ["MINMAX", "ALL", "SAMPLED", "ONE"]
+    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE"]
 
     def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
         if policy is None:
@@ -83,6 +83,7 @@ class StateBase(Eventful):
         self._input_symbols = list()
         self._child = None
         self._context = dict()
+        self._terminated_by = None
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(platform)
@@ -94,6 +95,7 @@ class StateBase(Eventful):
         state["input_symbols"] = self._input_symbols
         state["child"] = self._child
         state["context"] = self._context
+        state["terminated_by"] = self._terminated_by
         return state
 
     def __setstate__(self, state):
@@ -103,6 +105,7 @@ class StateBase(Eventful):
         self._input_symbols = state["input_symbols"]
         self._child = state["child"]
         self._context = state["context"]
+        self._terminated_by = state["terminated_by"]
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._platform)
@@ -244,9 +247,9 @@ class StateBase(Eventful):
         if policy == "MINMAX":
             vals = self._solver.minmax(self._constraints, symbolic)
         elif policy == "MAX":
-            vals = self._solver.max(self._constraints, symbolic)
+            vals = (self._solver.max(self._constraints, symbolic),)
         elif policy == "MIN":
-            vals = self._solver.min(self._constraints, symbolic)
+            vals = (self._solver.min(self._constraints, symbolic),)
         elif policy == "SAMPLED":
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]

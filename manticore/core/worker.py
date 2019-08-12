@@ -132,7 +132,7 @@ class Worker:
                         assert current_state is None
                     # Handling Forking and terminating exceptions
                     except Concretize as exc:
-                        logger.debug("[%r] Debug %r", self.id, exc)
+                        logger.info("[%r] Debug %r", self.id, exc)
                         # The fork() method can decides which state to keep
                         # exploring. For example when the fork results in a
                         # single state it is better to just keep going.
@@ -147,6 +147,8 @@ class Worker:
                         # Notify this state is done
                         m._publish("will_terminate_state", current_state, exc)
                         # Update the stored version of the current state
+
+                        current_state._terminated_by = exc
 
                         m._save(current_state, state_id=current_state.id)
                         # Add the state to the terminated state list re-using

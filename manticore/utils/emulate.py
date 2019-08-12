@@ -10,7 +10,7 @@ from unicorn import *
 from unicorn.arm_const import *
 from unicorn.x86_const import *
 
-from ..core.smtlib import Operators, solver, issymbolic
+from ..core.smtlib import Operators, Z3Solver, issymbolic
 from ..native.memory import MemoryException
 
 logger = logging.getLogger(__name__)
@@ -251,7 +251,7 @@ class ConcreteUnicornEmulator:
             return globals()["UC_ARM_REG_" + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
-            custom_mapping = {"PC": "RIP", "STACK": "RSP"}
+            custom_mapping = {"PC": "RIP", "STACK": "RSP", "FRAME": "RBP"}
             try:
                 return globals()["UC_X86_REG_" + custom_mapping.get(reg_name, reg_name)]
             except KeyError:
@@ -351,7 +351,7 @@ class ConcreteUnicornEmulator:
                 concrete_data = []
                 for c in data:
                     if issymbolic(c):
-                        c = chr(solver.get_value(self._cpu.memory.constraints, c))
+                        c = chr(Z3Solver.instance().get_value(self._cpu.memory.constraints, c))
                     concrete_data.append(c)
                 data = concrete_data
             else:

@@ -13,7 +13,7 @@ PROGRAM = """
 /* This program parses a command line argument.
  *
  * Compile with :
- *   $ gcc -static -Os crackme.c -o crackme
+ *   $ gcc -static -O0 crackme.c -o crackme
  *
  * Analyze it with:
  *   $ manticore crackme
@@ -39,25 +39,25 @@ PROGRAM = """
  *  Look at ./mcore_IJ2sPb for results, you will find something like this:
  *
  *  $ head -c 4 *.stdin
- *  ==> test_00000001.stdin <==
+ *  ==> test_00000000.stdin <==
  *  �CMM
- *  ==> test_00000002.stdin <==
+ *  ==> test_00000001.stdin <==
  *  �C��
- *  ==> test_00000003.stdin <==
+ *  ==> test_00000002.stdin <==
  *  ��SS
- *  ==> test_00000004.stdin <==
+ *  ==> test_00000003.stdin <==
  *  ����
- *  ==> test_00000005.stdin <==
+ *  ==> test_00000004.stdin <==
  *  SCR
- *  ==> test_00000006.stdin <==
+ *  ==> test_00000005.stdin <==
  *  S�TT
- *  ==> test_00000007.stdin <==
+ *  ==> test_00000006.stdin <==
  *  SCRT
- *  ==> test_00000008.stdin <==
+ *  ==> test_00000007.stdin <==
  *  S���
- *  ==> test_00000009.stdin <==
+ *  ==> test_00000008.stdin <==
  *  SC�@
- *  ==> test_0000000a.stdin <==
+ *  ==> test_00000009.stdin <==
  *  SC�8
  *
 */

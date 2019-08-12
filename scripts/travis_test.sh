@@ -88,11 +88,14 @@ run_truffle_tests(){
     cd truffle_tests
     truffle unbox metacoin
     manticore . --contract MetaCoin --workspace output
+    ### The original comment says we should get 41 states, but after implementing the shift
+    ### insructions, we get 31. Was the original comment a typo?
+
     # The correct answer should be 41
     # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
     # see https://github.com/trailofbits/manticore/issues/1166
     # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
-    if [ "$(ls output/*tx -l | wc -l)" != "3" ]; then
+    if [ "$(ls output/*tx -l | wc -l)" != "31" ]; then
         echo "Truffle test failed"
         return 1
     fi
