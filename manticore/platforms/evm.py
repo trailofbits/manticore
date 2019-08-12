@@ -949,7 +949,6 @@ class EVM(Eventful):
             reps, m = getattr(self, "_mgas", (0, None))
             reps += 1
             if m is None and reps > 10:
-                print (translate_to_smtlib(self._gas), self._gas.size)
                 m = Z3Solver.instance().min(self.constraints, self._gas)
             self._mgas = reps, m
 
@@ -968,10 +967,9 @@ class EVM(Eventful):
 
                 constraint = simplify(Operators.UGT(self._gas, fee))
                 if isinstance(constraint, Constant):
-                    enough_gas_solutions = (constraint.value,) #(self._gas - fee >= 0,)
+                    enough_gas_solutions = (constraint.value,)  # (self._gas - fee >= 0,)
                 elif isinstance(constraint, bool):
-                        enough_gas_solutions = (
-                        constraint,)  # (self._gas - fee >= 0,)
+                    enough_gas_solutions = (constraint,)  # (self._gas - fee >= 0,)
                 else:
                     enough_gas_solutions = Z3Solver.instance().get_all_values(
                         self.constraints, constraint
@@ -1209,7 +1207,7 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        #print (self)
+        # print (self)
         try:
             # import time
             # limbo = 0.0
@@ -1552,7 +1550,7 @@ class EVM(Eventful):
         GSHA3WORD = 6  # Cost of SHA3 per word
         sha3fee = self.safe_mul(GSHA3WORD, ceil32(size) // 32)
         memfee = self._get_memfee(start, size)
-        return  self.safe_add(sha3fee, memfee)
+        return self.safe_add(sha3fee, memfee)
 
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
@@ -1592,23 +1590,20 @@ class EVM(Eventful):
 
     def CALLDATALOAD(self, offset):
         """Get input data of current environment"""
-        print ("CALLDATALOAD", offset)
-        #calldata_overflow = const.calldata_overflow
-        #calldata_underflow = const.calldata_underflow
+        # calldata_overflow = const.calldata_overflow
+        # calldata_underflow = const.calldata_underflow
         calldata_overflow = 32
         calldata_underflow = 32
-        #if const.calldata_overlap:
+        # if const.calldata_overlap:
         self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
         self.constraints.add(offset >= -calldata_underflow)
 
-
-        #if issymbolic(offset):
+        # if issymbolic(offset):
         #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
         #        self.constraints.add(offset == self._used_calldata_size+32)
         #    raise ConcretizeArgument(1, policy="SAMPLED")
 
         self._use_calldata(offset, 32)
-        print (self.data)
 
         data_length = len(self.data)
         bytes = []
@@ -1622,13 +1617,10 @@ class EVM(Eventful):
         return Operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, offset, size):
-        ''' To improve reporting we maintain how much of the calldata is actually
-        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly '''
+        """ To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly """
         self._used_calldata_size = Operators.ITEBV(
-            256,
-            size != 0,
-            self._used_calldata_size + offset + size,
-            self._used_calldata_size,
+            256, size != 0, self._used_calldata_size + offset + size, self._used_calldata_size
         )
 
     def CALLDATASIZE(self):
@@ -1644,20 +1636,22 @@ class EVM(Eventful):
     @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
-        #calldata_overflow = const.calldata_overflow
-        #calldata_underflow = const.calldata_underflow
-        print ("CALLDATACOPY", size)
+        # calldata_overflow = const.calldata_overflow
+        # calldata_underflow = const.calldata_underflow
+        print("CALLDATACOPY", size)
         calldata_overflow = 32
         calldata_underflow = 32
-        #if const.calldata_overlap:
+        # if const.calldata_overlap:
         if True:
             self.constraints.add(data_offset + size <= len(self.data) + calldata_overflow)
             self.constraints.add(data_offset >= -calldata_underflow)
         else:
-            self.constraints.add(Operators.ULE(data_offset + size, len(self.data) + calldata_overflow))
+            self.constraints.add(
+                Operators.ULE(data_offset + size, len(self.data) + calldata_overflow)
+            )
             self.constraints.add(Operators.UGE(data_offset, self._used_calldata_size))
 
-        #if issymbolic(offset):
+        # if issymbolic(offset):
         #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
         #        self.constraints.add(offset == self._used_calldata_size+32)
         #    raise ConcretizeArgument(1, policy="SAMPLED")
@@ -1667,17 +1661,17 @@ class EVM(Eventful):
         if issymbolic(max_size):
             max_size = Z3Solver.instance().max(self.constraints, size)
 
-        #@max_size = min(max_size, consts.calldata_maxsize)
+        # @max_size = min(max_size, consts.calldata_maxsize)
         cap = len(self.data) + calldata_overflow
         if max_size > cap:
-            print (f"MAX SIZE too great constraining to {cap}")
+            print(f"MAX SIZE too great constraining to {cap}")
             logger.info(f"Constraining CALLDATACOPY size to {cap}")
             max_size = cap
             self.constraints.add(Operators.ULE(size, cap))
-            #cond = Operators.OR(size == 0, size==4)
-            #for conc_size in range(8,max_size, 32):
+            # cond = Operators.OR(size == 0, size==4)
+            # for conc_size in range(8,max_size, 32):
             #   cond = Operators.OR(size==conc_size, cond)
-            #self.constraints.add(cond)
+            # self.constraints.add(cond)
 
         for i in range(max_size):
             try:
@@ -1685,19 +1679,19 @@ class EVM(Eventful):
                     8,
                     data_offset + i < len(self.data),
                     Operators.ORD(self.data[data_offset + i]),
-                    0)
+                    0,
+                )
 
             except IndexError:
                 print("index errorrrrr", i)
                 # data_offset + i is concrete and outside data
                 c1 = 0
 
-
-            c = Operators.ITEBV(8,  i < size, c1, self.memory[mem_offset + i])
-            x = self.constraints.new_bitvec(8, name="temp{}".format(uuid.uuid1()) )
-            self.constraints.add(x==c)
+            c = Operators.ITEBV(8, i < size, c1, self.memory[mem_offset + i])
+            x = self.constraints.new_bitvec(8, name="temp{}".format(uuid.uuid1()))
+            self.constraints.add(x == c)
             self._store(mem_offset + i, x)
-            #print (str(self.constraints))
+            # print (str(self.constraints))
 
     def CODESIZE(self):
         """Get size of code running in current environment"""
@@ -2225,8 +2219,7 @@ class EVMWorld(Platform):
         "evm_read_storage",
         "evm_write_storage",
         "evm_read_code",
-        "evm_write_code"
-        "decode_instruction",
+        "evm_write_code" "decode_instruction",
         "execute_instruction",
         "open_transaction",
         "close_transaction",
@@ -2335,7 +2328,7 @@ class EVMWorld(Platform):
 
             return result[0]
         except Exception as e:
-            print ("ERRR")
+            print("ERRR")
             logger.info("error! %r", e)
             return int(sha3.keccak_256(data).hexdigest(), 16)
 
@@ -3069,7 +3062,7 @@ class EVMWorld(Platform):
                 temp_cs.add(storage.get(index) != 0)
 
                 try:
-                    #FIXME do this only if it has symbolic writes?
+                    # FIXME do this only if it has symbolic writes?
                     while True:
                         a_index = Z3Solver().get_value(temp_cs, index)
                         all_used_indexes.append(a_index)

@@ -97,7 +97,9 @@ def ethereum_main(args, logger):
         logger.info("Beginning analysis")
 
         with m.kill_timeout():
-            import pdb; pdb.set_trace()
+            import pdb
+
+            pdb.set_trace()
             m.multi_tx_analysis(
                 args.argv[0],
                 contract_name=args.contract,
@@ -106,7 +108,7 @@ def ethereum_main(args, logger):
                 tx_send_ether=not args.txnoether,
                 tx_account=args.txaccount,
                 tx_preconstrain=args.txpreconstrain,
-                compile_args=vars(args),#FIXME
+                compile_args=vars(args),  # FIXME
             )
 
         if not args.no_testcases:

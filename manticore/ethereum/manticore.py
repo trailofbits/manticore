@@ -27,7 +27,7 @@ from ..core.smtlib import (
     BoolOperation,
     Expression,
     issymbolic,
-    simplify
+    simplify,
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -191,8 +191,8 @@ class ManticoreEVM(ManticoreBase):
         """
         if select not in ("both", "normal", "contract"):
             raise EthereumError("Wrong selection type")
-        #if select in ("normal", "contract"):
-            # FIXME need to select contracts or normal accounts
+        # if select in ("normal", "contract"):
+        # FIXME need to select contracts or normal accounts
         #    raise NotImplemented
         if not accounts:
             accounts = self._accounts.values()
@@ -207,9 +207,9 @@ class ManticoreEVM(ManticoreBase):
 
         constraint = symbolic_address == 0
         for account in accounts:
-            if select == 'contract' and not self.get_code(account):
+            if select == "contract" and not self.get_code(account):
                 continue
-            if select == 'normal' and self.get_code(account):
+            if select == "normal" and self.get_code(account):
                 continue
             constraint = Operators.OR(symbolic_address == int(account), constraint)
         self.constrain(constraint)
@@ -395,7 +395,7 @@ class ManticoreEVM(ManticoreBase):
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
-        consts.sha3 =consts.sha3.symbolicate
+        consts.sha3 = consts.sha3.symbolicate
         if consts.sha3 is consts.sha3.timetravel:
             self.subscribe("on_symbolic_function", self._on_timetravel)
         elif consts.sha3 is consts.sha3.concretize:
@@ -412,7 +412,6 @@ class ManticoreEVM(ManticoreBase):
         self.constraints = constraints
         self.detectors = {}
         self.metadata: Dict[int, SolidityMetadata] = {}
-
 
     @property
     def world(self):
@@ -565,10 +564,7 @@ class ManticoreEVM(ManticoreBase):
             contract_name_i = contract_names.pop()
             try:
                 compile_results = self._compile(
-                    source_code,
-                    contract_name_i,
-                    libraries=deps,
-                    crytic_compile_args=compile_args,
+                    source_code, contract_name_i, libraries=deps, crytic_compile_args=compile_args
                 )
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
@@ -1168,7 +1164,6 @@ class ManticoreEVM(ManticoreBase):
             if known_sha3 is None:
                 known_sha3 = set()
 
-
             sha3_states = context.get("_sha3_states", None)
             if sha3_states is None:
                 sha3_states = dict()
@@ -1255,7 +1250,7 @@ class ManticoreEVM(ManticoreBase):
             """table: is a string used internally to identify the symbolic function
                 data: is the symbolic value of the function domain
                 known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
-            data_var= state.new_symbolic_buffer(len(data))
+            data_var = state.new_symbolic_buffer(len(data))
             state.constrain(data_var == data)
             data = data_var
 
@@ -1272,9 +1267,9 @@ class ManticoreEVM(ManticoreBase):
                 global_known_pairs = ethereum_context.get(f"symbolic_func_conc_{name}", set())
                 global_known_pairs.add((data, value))
                 ethereum_context[f"symbolic_func_conc_{name}"] = global_known_pairs
-            local_known_pairs = state.context.get( f"symbolic_func_conc_{name}", set())
+            local_known_pairs = state.context.get(f"symbolic_func_conc_{name}", set())
             local_known_pairs.add((data, value))
-            state.context[f"symbolic_func_conc_{name}"]=local_known_pairs
+            state.context[f"symbolic_func_conc_{name}"] = local_known_pairs
             logger.info(f"Found a concrete {name} {data} -> {value}")
             print("SHA3:", data, hex(value))
 
@@ -1284,24 +1279,24 @@ class ManticoreEVM(ManticoreBase):
         def concretize_known_pairs(state, symbolic_pairs, known_pairs):
             # Each symbolic pair must match at least one of the concrete
             # pairs we know
+
             for xa, ya in symbolic_pairs:
                 cond = False
                 for xc, yc in known_pairs:
                     if len(xa) == len(xc):
-                        cond = Operators.OR(
-                            Operators.AND(xa == xc, ya == yc),
-                            cond)
+                        cond = Operators.OR(Operators.AND(xa == xc, ya == yc), cond)
                 state.constrain(cond)
                 if cond is False:
+                    print("AFalse!!!!!!!!!!!!!!!!!!!!!!! inconcrete")
                     return
 
         def constrain_bijectivity(state, symbolic_pairs):
             for i in range(len(symbolic_pairs)):
                 xa, ya = symbolic_pairs[i]
-                for j in range(i+1, len(symbolic_pairs)):
+                for j in range(i + 1, len(symbolic_pairs)):
                     xb, yb = symbolic_pairs[j]
                     if len(xa) == len(xb):
-                        constraint = simplify( (xa == xb) == (ya == yb))
+                        constraint = simplify((xa == xb) == (ya == yb))
                     else:
                         constraint = ya != yb
                     state.constrain(constraint)  # bijective
@@ -1310,6 +1305,7 @@ class ManticoreEVM(ManticoreBase):
         def graph_sort(state, symbolic_pairs):
             import networkx as ng
             from manticore.core.smtlib.visitors import get_variables
+
             G = ng.DiGraph()
             for c in state.constraints:
                 vars = get_variables(c)
@@ -1330,49 +1326,57 @@ class ManticoreEVM(ManticoreBase):
             return list(sorted(symbolic_pairs, key=lambda x: C[x[0].name]))
 
         def match(state, func, symbolic_pairs, concrete_pairs, depth=0):
+            if not symbolic_pairs:
+                if state.can_be_true(True):
+                    return True
             for i in range(len(symbolic_pairs)):
-                x,y = symbolic_pairs[i]
-                new_symbolic_pairs = symbolic_pairs[:i]+ symbolic_pairs[i+1:]
+                # shuffle and if it failed X times at some depth bail configurable
+
+                # import pdb; pdb.set_trace()
+                print(f"Testin {i} at depth {depth}")
+                x, y = symbolic_pairs[i]
+                new_symbolic_pairs = symbolic_pairs[:i] + symbolic_pairs[i + 1 :]
                 new_concrete_pairs = set(concrete_pairs)
                 unseen = True  # Is added only unseen pairs could make it sat
                 for x_concrete, y_concrete in concrete_pairs:
-                    if len(x) == len(
-                            x_concrete):  # If the size of the buffer wont
+                    if len(x) == len(x_concrete):  # If the size of the buffer wont
                         # match it does not matter
                         unseen = Operators.AND(
-                            Operators.AND(x != x_concrete, y != y_concrete),
-                            unseen)
+                            Operators.AND(x != x_concrete, y != y_concrete), unseen
+                        )
 
                 try:
                     with state as temp_state:
-                        print("Unseen is SAT let solve a domain-> range ",
-                              depth)
-                        temp_state.constraint(unseen)
+                        print("Unseen is SAT let solve a domain-> range ", depth)
+                        temp_state.constrain(unseen)
                         new_x_concretes = temp_state.solve_n(x, nsolves=3)
                         new_y_concretes = map(func, new_x_concretes)
-                        print("Got this (over 3)", new_x_concretes)
+                        # print("Got this (over 3)", new_x_concretes)
                         new_concrete_pairs.update(zip(new_x_concretes, new_y_concretes))
-                except:
-                    print ("no new items here")
+                except Exception as e:
+                    print("no new items here", e)
 
-                unseen = True
+                print("new_concrete_pairs", new_concrete_pairs)
+                seen = False
                 for x_concrete, y_concrete in new_concrete_pairs:
-                    if len(x) == len(
-                            x_concrete):  # If the size of the buffer wont
+                    if len(x) == len(x_concrete):  # If the size of the buffer wont
                         # match it does not matter
-                        unseen = Operators.AND(
-                            Operators.AND(x != x_concrete, y != y_concrete),
-                            unseen)
+                        seen = Operators.OR(Operators.AND(x == x_concrete, y == y_concrete), seen)
                 with state as temp_state:
-                    temp_state.constrain(Operators.NOT(unseen))
+                    temp_state.constrain(seen)
+                    if state.can_be_true(True):
+                        print(f"So far it matches at level{depth} keep going")
                     # explore if there is a match in this situation
-                    if match(temp_state, func, new_symbolic_pairs, new_concrete_pairs, depth+1):
-                        print (f"Found a match from known concrete_pairs at level {len(symbolic_pairs)} id: {temp_state.id}", depth )
+                    if match(temp_state, func, new_symbolic_pairs, new_concrete_pairs, depth + 1):
+                        print(
+                            f"Found a match from known concrete_pairs at level {len(symbolic_pairs)} id: {temp_state.id}",
+                            depth,
+                        )
                         concrete_pairs.update(new_concrete_pairs)
                         return True
+                    else:
+                        print(f"it did not go well deeper than {depth}")
             return False
-
-
 
         # Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1384,23 +1388,32 @@ class ManticoreEVM(ManticoreBase):
                     # If UF does not comply with bijectiveness bail
                     return False
 
-                symbolic_pairs = graph_sort(state, symbolic_pairs)
-                known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}",
-                                         set())
+                # symbolic_pairs = graph_sort(state, symbolic_pairs)
+                known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
 
-                if not match(state, functions[table], symbolic_pairs, known_pairs):
-                    print ("No match state?", state.id)
+                new_known_pairs = set(known_pairs)
+                if not match(state, functions[table], symbolic_pairs, new_known_pairs):
+                    print(
+                        "No match state? NEEDITEEEEEEERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR DANGER",
+                        state.id,
+                    )
+                else:
+                    with state as temp_state:
+                        concretize_known_pairs(temp_state, symbolic_pairs, new_known_pairs)
+                        if state.can_be_true(True):
+                            break
 
                 # Now paste the known pairs in the state constraints
-                if concretize_known_pairs(state, symbolic_pairs, known_pairs):
-                    print("Sound state!!", state.id)
+                concretize_known_pairs(state, symbolic_pairs, new_known_pairs)
+                if not state.can_be_true(True):
+                    return False
 
                 ethereum_context[f"symbolic_func_conc_{table}"] = known_pairs
 
-        print (f"Ok all functions had a match for {state.id}")
+        print(f"Ok all functions had a match for {state.id}")
         return True
 
-    '''
+    """
     def fix_unsound_symbolication1(self, state):
         def concretize_known_pairs(state, symbolic_pairs, known_pairs):
             # Each symbolic pair must match at least one of the concrete
@@ -1603,7 +1616,7 @@ class ManticoreEVM(ManticoreBase):
                 ethereum_context[f"symbolic_func_conc_{table}"] = known_pairs
         print (f"Ok all functions had a match for {state.id}")
         return True
-    '''
+    """
 
     def concretize_unsound_symbolication(self):
         self._on_did_run_unsound_symbolication()
@@ -1676,7 +1689,6 @@ class ManticoreEVM(ManticoreBase):
         state.context.setdefault("evm.trace", []).append(
             (state.platform.current_vm.address, instruction.pc, at_init)
         )
-
 
     def get_metadata(self, address) -> Optional[SolidityMetadata]:
         """ Gets the solidity metadata for address.
@@ -1812,7 +1824,7 @@ class ManticoreEVM(ManticoreBase):
                         stream.write(f"Known for {table}:\n")
                         for key, value in concrete_pairs:
                             stream.write("%s::%x\n" % (binascii.hexlify(key), value))
-                        print (concrete_pairs)
+                        print(concrete_pairs)
 
             if is_something_symbolic:
                 stream.write(
@@ -1914,7 +1926,7 @@ class ManticoreEVM(ManticoreBase):
 
         def finalizer(state_id):
             st = self._load(state_id)
-            if (self.fix_unsound_symbolication(st)):
+            if self.fix_unsound_symbolication(st):
                 logger.debug("Generating testcase for state_id %d", state_id)
                 last_tx = st.platform.last_transaction
                 message = last_tx.result if last_tx else "NO STATE RESULT (?)"
@@ -1927,7 +1939,7 @@ class ManticoreEVM(ManticoreBase):
             except EmptyQueue:
                 pass
 
-        #Generate testcases for all but killed states
+        # Generate testcases for all but killed states
         q = Queue()
         for state_id in self._all_states:
             # we need to remove -1 state before forking because it may be in memory
@@ -1975,8 +1987,6 @@ class ManticoreEVM(ManticoreBase):
                         global_summary.write(f"Known for {table}:\n")
                         for key, value in concrete_pairs:
                             global_summary.write("%s::%x\n" % (binascii.hexlify(key), value))
-
-
 
         for address, md in self.metadata.items():
             with self._output.save_stream("global_%s.sol" % md.name) as global_src:

@@ -582,7 +582,6 @@ class ManticoreBase(Eventful):
             # add the state_id to the terminated list
             self._killed_states.append(state_id)
 
-
     @property
     @sync
     def ready_states(self):
@@ -645,9 +644,9 @@ class ManticoreBase(Eventful):
         """ Only allowed at not running.
             (At running we can have states at busy)
         """
-        return (
-            tuple(self._ready_states) + tuple(self._terminated_states)# + tuple(self._killed_states)
-        )
+        return tuple(self._ready_states) + tuple(
+            self._terminated_states
+        )  # + tuple(self._killed_states)
 
     @property
     @sync
