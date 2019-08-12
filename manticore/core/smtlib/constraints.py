@@ -15,13 +15,7 @@ from .expression import (
     Variable,
     Constant,
 )
-from .visitors import (
-    GetDeclarations,
-    TranslatorSmtlib,
-    get_variables,
-    simplify,
-    replace
-)
+from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 import logging
 
 logger = logging.getLogger(__name__)

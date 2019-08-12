@@ -287,7 +287,7 @@ class ConstantFolderSimplifier(Visitor):
         UnsignedLessThan: lambda x, y: x < y,
         UnsignedLessOrEqual: lambda x, y: x <= y,
         UnsignedGreaterThan: lambda x, y: x > y,
-        UnsignedGreaterOrEqual: lambda x, y: x >= y
+        UnsignedGreaterOrEqual: lambda x, y: x >= y,
     }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -410,7 +410,7 @@ class ArithmeticSimplifier(Visitor):
                 if (
                     operandaa.value is operandba.value
                     and operandab.value is operandbb.value
-                    and (operandaa.begining, operandaa.end) == (operandab.begining, operandab.end) 
+                    and (operandaa.begining, operandaa.end) == (operandab.begining, operandab.end)
                     and (operandba.begining, operandba.end) == (operandbb.begining, operandbb.end)
                 ):
                     if ((operandaa.end + 1) == operandba.begining) or (
@@ -421,8 +421,8 @@ class ArithmeticSimplifier(Visitor):
                         value1 = operandab.value  # := operandbb.value
                         beg = min(operandaa.begining, operandba.begining)
                         end = max(operandaa.end, operandba.end)
-                        return BitVecExtract(value0, beg, end - beg+1) == BitVecExtract(
-                            value1, beg, end - beg+1
+                        return BitVecExtract(value0, beg, end - beg + 1) == BitVecExtract(
+                            value1, beg, end - beg + 1
                         )
 
     def visit_BoolNot(self, expression, *operands):
@@ -573,25 +573,25 @@ class ArithmeticSimplifier(Visitor):
             for item in reversed(op.operands):
                 if size == 0:
                     assert expression.size == sum([x.size for x in new_operands])
-                    return BitVecConcat(expression.size, *reversed(new_operands), taint=expression.taint)
+                    return BitVecConcat(
+                        expression.size, *reversed(new_operands), taint=expression.taint
+                    )
 
                 if begining >= item.size:
-                    #skip the item
+                    # skip the item
                     begining -= item.size
                 else:
                     if begining == 0 and size == item.size:
                         new_operands.append(item)
                         size = 0
                     else:
-                        if size <= item.size-begining:
+                        if size <= item.size - begining:
                             new_operands.append(BitVecExtract(item, begining, size))
-                            size=0
+                            size = 0
                         else:
-                            new_operands.append(BitVecExtract(item, begining, item.size-begining))
+                            new_operands.append(BitVecExtract(item, begining, item.size - begining))
                             size -= item.size - begining
                             begining = 0
-
-
 
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
