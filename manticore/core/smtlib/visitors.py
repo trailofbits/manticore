@@ -563,7 +563,6 @@ class ArithmeticSimplifier(Visitor):
         begining = expression.begining
         end = expression.end
         size = end - begining + 1
-
         # extract(sizeof(a), 0)(a)  ==> a
         if begining == 0 and end + 1 == op.size:
             return op
@@ -571,21 +570,29 @@ class ArithmeticSimplifier(Visitor):
             return BitVecExtract(op.value, op.begining + begining, size, taint=expression.taint)
         elif isinstance(op, BitVecConcat):
             new_operands = []
-            bitcount = 0
             for item in reversed(op.operands):
+                if size == 0:
+                    assert expression.size == sum([x.size for x in new_operands])
+                    return BitVecConcat(expression.size, *reversed(new_operands), taint=expression.taint)
+
                 if begining >= item.size:
+                    #skip the item
                     begining -= item.size
                 else:
-                    if bitcount < expression.size:
+                    if begining == 0 and size == item.size:
                         new_operands.append(item)
-                    bitcount += item.size
-            if begining != expression.begining:
-                return BitVecExtract(
-                    BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
-                    begining,
-                    expression.size,
-                    taint=expression.taint,
-                )
+                        size = 0
+                    else:
+                        if size <= item.size-begining:
+                            new_operands.append(BitVecExtract(item, begining, size))
+                            size=0
+                        else:
+                            new_operands.append(BitVecExtract(item, begining, item.size-begining))
+                            size -= item.size - begining
+                            begining = 0
+
+
+
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
             return op.__class__(

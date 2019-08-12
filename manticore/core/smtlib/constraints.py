@@ -170,7 +170,7 @@ class ConstraintSet:
                 continue
             tmp.add(var.declaration)
             result += var.declaration + "\n"
-        translator = TranslatorSmtlib(use_bindings=False)
+        translator = TranslatorSmtlib(use_bindings=True)
         for constraint in related_constraints:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
