@@ -97,9 +97,6 @@ def ethereum_main(args, logger):
         logger.info("Beginning analysis")
 
         with m.kill_timeout():
-            import pdb
-
-            pdb.set_trace()
             m.multi_tx_analysis(
                 args.argv[0],
                 contract_name=args.contract,
