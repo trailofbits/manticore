@@ -1979,7 +1979,7 @@ class ManticoreEVM(ManticoreBase):
                     global_summary.write("\n\nCompiler warnings for %s:\n" % md.name)
                     global_summary.write(md.warnings)
 
-            with self.locked_context("ethereum") as ethereum_context:
+            with self.locked_context("ethereum", dict) as ethereum_context:
                 functions = ethereum_context.get("symbolic_func", dict())
                 for table in functions:
                     concrete_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", ())
