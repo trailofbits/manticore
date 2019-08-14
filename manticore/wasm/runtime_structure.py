@@ -271,8 +271,6 @@ class ModuleInstance:
 
         # #15  TODO run start function
 
-        print("Initialization Complete")
-
     def allocate(
         self,
         store: Store,

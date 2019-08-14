@@ -60,6 +60,11 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
     def invoke(self, name="main", *argv):
         self.instance.invoke_by_name(name, self.stack, self.store, list(argv))
 
+    def exec_for_test(self):
+        while self.instance.exec_instruction(self.store, self.stack):
+            pass
+        return self.stack.pop()
+
     def execute(self):
         """
         """

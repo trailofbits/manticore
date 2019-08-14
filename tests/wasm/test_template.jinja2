@@ -1,0 +1,31 @@
+{%block imports %}
+import unittest
+from os.path import dirname, abspath, join
+from manticore.platforms import wasm
+from manticore.core import state
+from manticore.core.smtlib import Operators, ConstraintSet
+from manticore.wasm.types import I32, F32, I64, F64
+{% endblock %}
+
+{% for module in modules %}
+class WASMTest_{{ module.name }}(unittest.TestCase):
+    _multiprocess_can_split_ = True
+    filename = join(dirname(abspath(__file__)), "{{ module.filename }}")
+
+{% for test in module.tests %}
+    def test_{{ test.func | replace(".", "_") | replace("-", "_") }}(self):
+        constraints = ConstraintSet()
+        world = wasm.WASMWorld(self.filename)
+
+        world.instantiate({})
+        {% if test.args | length > 0 %}
+        world.invoke("{{ test.func }}", {{ test.args }})
+        {% else %}
+        world.invoke("{{ test.func }}")
+        {% endif %}
+        self.assertEqual([world.exec_for_test()], [{{ test.rets }}])
+{% endfor %}
+{% endfor %}
+
+if __name__ == "__main__":
+    unittest.main()

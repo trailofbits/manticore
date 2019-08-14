@@ -276,7 +276,7 @@ class Executor(object):  # TODO - should be Eventful
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
         mem = store.mems[a]
-        assert isinstance(stack.peek(), I32)
+        assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
         if (ea + 4) > len(mem.data):
@@ -290,7 +290,7 @@ class Executor(object):  # TODO - should be Eventful
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
         mem = store.mems[a]
-        assert isinstance(stack.peek(), I32)
+        assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
         if (ea + 8) > len(mem.data):
