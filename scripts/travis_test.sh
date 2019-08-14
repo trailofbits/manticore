@@ -156,10 +156,10 @@ case $1 in
         run_tests_from_dir $1
         RV=$(($RV + $?))
         ;;
-
+    wasm)
+        make_wasm_tests     ;&  # Fallthrough
     native)                 ;&  # Fallthrough
     ethereum)               ;&  # Fallthrough
-    wasm)                   ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
