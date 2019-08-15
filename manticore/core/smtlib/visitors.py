@@ -78,7 +78,6 @@ class Visitor:
         else:
             node = node_arg
 
-
         cache = self._cache
         visited = set()
         stack = []
@@ -114,8 +113,7 @@ class Visitor:
                 new_value = ArrayProxy(new_value)
                 new_value._default = node_arg._default
                 new_value._written = set(node_arg.written)
-                new_value._concrete_cache = dict(
-                    node_arg._concrete_cache)
+                new_value._concrete_cache = dict(node_arg._concrete_cache)
 
             self.push(new_value)
 
@@ -780,7 +778,7 @@ def to_constant(expression):
                 return bytes(ba)
             return expression
     try:
-        print (translate_to_smtlib(value))
+        print(translate_to_smtlib(value))
     except:
         pass
     return value
@@ -788,7 +786,7 @@ def to_constant(expression):
 
 @lru_cache(maxsize=128)
 def simplify(expression):
-    #expression = constant_folder(expression)
+    # expression = constant_folder(expression)
     expression = arithmetic_simplify(expression)
     return expression
 

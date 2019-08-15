@@ -1032,7 +1032,7 @@ class ArrayProxy(Array):
                     array_proxy_slice._concrete_cache[k - start] = v
 
             for i in self.written:
-                array_proxy_slice.written.add(i-start)
+                array_proxy_slice.written.add(i - start)
             return array_proxy_slice
         else:
             if self.index_max is not None:
@@ -1109,6 +1109,7 @@ class ArrayProxy(Array):
 
         if self.index_max is not None:
             from .visitors import simplify
+
             index = simplify(
                 BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index)
             )

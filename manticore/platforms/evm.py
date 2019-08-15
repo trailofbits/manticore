@@ -1208,8 +1208,8 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        #assert Z3Solver.instance().check(self.constraints)
-        #print (self)
+        # assert Z3Solver.instance().check(self.constraints)
+        # print (self)
         try:
             # import time
             # limbo = 0.0
@@ -1594,8 +1594,8 @@ class EVM(Eventful):
         """Get input data of current environment"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
-        calldata_overflow = None#32
-        calldata_underflow = None#32
+        calldata_overflow = None  # 32
+        calldata_underflow = None  # 32
         # if const.calldata_overlap:
         if calldata_overflow is not None:
             self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
@@ -1637,13 +1637,13 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
 
-    #@concretized_args(size="SAMPLED")
+    # @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
-        calldata_overflow = None#32
-        calldata_underflow = None#32
+        calldata_overflow = None  # 32
+        calldata_underflow = None  # 32
         # if const.calldata_overlap:
         if calldata_underflow is not None:
             self.constraints.add(data_offset + size <= len(self.data) + calldata_overflow)
