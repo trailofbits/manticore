@@ -35,9 +35,9 @@ for d in data:
     if d["type"] == "action":
         raise NotImplementedError("action")
     elif d["type"] == "assert_exhaustion":
-        raise NotImplementedError("assert_exhaustion")
+        pass
     elif d["type"] == "assert_invalid":
-        raise NotImplementedError("assert_invalid")
+        current_module = None
     elif d["type"] == "assert_malformed":
         current_module = None
     elif d["type"] == "assert_return":
@@ -68,7 +68,7 @@ for d in data:
     elif d["type"] == "assert_uninstantiable":
         current_module = None
     elif d["type"] == "assert_unlinkable":
-        raise NotImplementedError("assert_unlinkable")
+        current_module = None
     elif d["type"] == "module":
         modules.append(Module(d["filename"], []))
         current_module = len(modules) - 1
