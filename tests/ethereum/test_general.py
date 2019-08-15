@@ -800,7 +800,7 @@ class EthTests(unittest.TestCase):
         owner_account = m.create_account(balance=1000)
         attacker_account = m.create_account(balance=1000)
         contract_account = m.solidity_create_contract(contract_src, owner=owner_account, balance=0)
-
+        import pdb; pdb.set_trace()
         # Some global expression `sym_add1`
         sym_add1 = m.make_symbolic_value(name="sym_add1")
         # Let's constrain it on the global fake constraintset
@@ -1343,74 +1343,6 @@ class EthHelpersTest(unittest.TestCase):
         inner_func(None, self.bv, 123)
 
 
-class EthSolidityCompilerTest(unittest.TestCase):
-    def test_run_solc(self):
-        source_a = """
-        import "./B.sol";
-        contract A {
-            function callB(B _b) public { _b.fromA(); }
-            function fromB() public { revert(); }
-        }
-        """
-        source_b = """
-        import "./A.sol";
-        contract B {
-            function callA(A _a) public { _a.fromB(); }
-            function fromA() public { revert(); }
-        }
-        """
-        tmp_dir = tempfile.mkdtemp()
-        try:
-            with open(os.path.join(tmp_dir, "A.sol"), "w") as a, open(
-                os.path.join(tmp_dir, "B.sol"), "w"
-            ) as b:
-                a.write(source_a)
-                a.flush()
-                b.write(source_b)
-                b.flush()
-                output, warnings = ManticoreEVM._run_solc(a, working_dir=tmp_dir)
-                source_list = output.get("sourceList", [])
-                self.assertIn(os.path.split(a.name)[-1], source_list)
-                self.assertIn(os.path.split(b.name)[-1], source_list)
-        finally:
-            shutil.rmtree(tmp_dir)
-
-    def test_run_solc_with_remappings(self):
-        source_a = """
-        import "test/B.sol";
-        contract A {
-            function callB(B _b) public { _b.fromA(); }
-            function fromB() public { revert(); }
-        }
-        """
-        source_b = """
-        import "../A.sol";
-        contract B {
-            function callA(A _a) public { _a.fromB(); }
-            function fromA() public { revert(); }
-        }
-        """
-        tmp_dir = tempfile.mkdtemp()
-        lib_dir = os.path.join(tmp_dir, "lib")
-        os.makedirs(lib_dir)
-        try:
-            with open(os.path.join(tmp_dir, "A.sol"), "w") as a, open(
-                os.path.join(lib_dir, "B.sol"), "w"
-            ) as b:
-                a.write(source_a)
-                a.flush()
-                b.write(source_b)
-                b.flush()
-                output, warnings = ManticoreEVM._run_solc(
-                    a, solc_remaps=["test=lib"], working_dir=tmp_dir
-                )
-                source_list = output.get("sourceList", [])
-                self.assertIn("A.sol", source_list)
-                self.assertIn("lib/B.sol", source_list)
-        finally:
-            shutil.rmtree(tmp_dir)
-
-
 class EthSolidityMetadataTests(unittest.TestCase):
     def test_tuple_signature_for_components(self):
         self.assertEqual(SolidityMetadata.tuple_signature_for_components([]), "()")
@@ -1579,30 +1511,6 @@ class EthSolidityMetadataTests(unittest.TestCase):
                     "type": "constructor",
                 },
             )
-
-
-class TruffleTests(unittest.TestCase):
-    def test_truffle_contract_schema(self):
-        filename = os.path.join(THIS_DIR, "data/MetaCoin.json")
-        with open(filename, "rb") as f:
-            truffle_json = f.read()
-        m = ManticoreEVM()
-        user_account = m.create_account(balance=1000, name="user_account")
-        contract_account = m.json_create_contract(
-            truffle_json, owner=user_account, name="contract_account"
-        )
-        md: SolidityMetadata = m.get_metadata(contract_account)
-        self.assertEqual(
-            md.runtime_bytecode,
-            b"```@Rc\xff\xff\xff\xff`\xe0`\x02\n`\x005\x04\x16c{\xd7\x03\xe8\x81\x14a\x007W\x80c\x90\xb9\x8a\x11\x14a\x00eW\x80c\xf8\xb2\xcbO\x14a\x00\x98W[\xfe[4\x15a\x00?W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x00\xc6V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00mW\xfe[a\x00\x84`\x01`\xa0`\x02\n\x03`\x045\x16`$5a\x01MV[`@\x80Q\x91\x15\x15\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00\xa0W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x01\xe5V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[`\x00s{\xccc\xd4W\x90\xe2?n\x9b\xc3QN\x1a\xb5\xafd\x93\x02\xd0c\x96\xe4\xee=a\x00\xeb\x84a\x01\xe5V[`\x02`\x00`@Q` \x01R`@Q\x83c\xff\xff\xff\xff\x16`\xe0`\x02\n\x02\x81R`\x04\x01\x80\x83\x81R` \x01\x82\x81R` \x01\x92PPP` `@Q\x80\x83\x03\x81\x86\x80;\x15\x15a\x010W\xfe[a\x02\xc6Z\x03\xf4\x15\x15a\x01>W\xfe[PP`@QQ\x91PP[\x91\x90PV[`\x01`\xa0`\x02\n\x033\x16`\x00\x90\x81R` \x81\x90R`@\x81 T\x82\x90\x10\x15a\x01vWP`\x00a\x01\xdfV[`\x01`\xa0`\x02\n\x033\x81\x16`\x00\x81\x81R` \x81\x81R`@\x80\x83 \x80T\x88\x90\x03\x90U\x93\x87\x16\x80\x83R\x91\x84\x90 \x80T\x87\x01\x90U\x83Q\x86\x81R\x93Q\x91\x93\x7f\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef\x92\x90\x81\x90\x03\x90\x91\x01\x90\xa3P`\x01[\x92\x91PPV[`\x01`\xa0`\x02\n\x03\x81\x16`\x00\x90\x81R` \x81\x90R`@\x90 T[\x91\x90PV\x00",
-        )
-        self.assertEqual(
-            md.init_bytecode,
-            b"```@R4\x15a\x00\x0cW\xfe[[`\x01`\xa0`\x02\n\x032\x16`\x00\x90\x81R` \x81\x90R`@\x90 a'\x10\x90U[[a\x020\x80a\x00;`\x009`\x00\xf3\x00```@Rc\xff\xff\xff\xff`\xe0`\x02\n`\x005\x04\x16c{\xd7\x03\xe8\x81\x14a\x007W\x80c\x90\xb9\x8a\x11\x14a\x00eW\x80c\xf8\xb2\xcbO\x14a\x00\x98W[\xfe[4\x15a\x00?W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x00\xc6V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00mW\xfe[a\x00\x84`\x01`\xa0`\x02\n\x03`\x045\x16`$5a\x01MV[`@\x80Q\x91\x15\x15\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00\xa0W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x01\xe5V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[`\x00s{\xccc\xd4W\x90\xe2?n\x9b\xc3QN\x1a\xb5\xafd\x93\x02\xd0c\x96\xe4\xee=a\x00\xeb\x84a\x01\xe5V[`\x02`\x00`@Q` \x01R`@Q\x83c\xff\xff\xff\xff\x16`\xe0`\x02\n\x02\x81R`\x04\x01\x80\x83\x81R` \x01\x82\x81R` \x01\x92PPP` `@Q\x80\x83\x03\x81\x86\x80;\x15\x15a\x010W\xfe[a\x02\xc6Z\x03\xf4\x15\x15a\x01>W\xfe[PP`@QQ\x91PP[\x91\x90PV[`\x01`\xa0`\x02\n\x033\x16`\x00\x90\x81R` \x81\x90R`@\x81 T\x82\x90\x10\x15a\x01vWP`\x00a\x01\xdfV[`\x01`\xa0`\x02\n\x033\x81\x16`\x00\x81\x81R` \x81\x81R`@\x80\x83 \x80T\x88\x90\x03\x90U\x93\x87\x16\x80\x83R\x91\x84\x90 \x80T\x87\x01\x90U\x83Q\x86\x81R\x93Q\x91\x93\x7f\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef\x92\x90\x81\x90\x03\x90\x91\x01\x90\xa3P`\x01[\x92\x91PPV[`\x01`\xa0`\x02\n\x03\x81\x16`\x00\x90\x81R` \x81\x90R`@\x90 T[\x91\x90PV\x00",
-        )
-        self.assertSequenceEqual(
-            md.function_selectors, (b"{\xd7\x03\xe8", b"\x90\xb9\x8a\x11", b"\xf8\xb2\xcbO")
-        )
 
 
 class EthSpecificTxIntructionTests(unittest.TestCase):
