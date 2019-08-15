@@ -428,9 +428,9 @@ class Z3Solver(Solver):
                     f"get_all_values only implemented for {type(expression)} expression type."
                 )
 
+            from manticore.core.smtlib import translate_to_smtlib
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
-
             result = []
 
             while self._is_sat():
@@ -446,6 +446,7 @@ class Z3Solver(Solver):
                         # of returned vals list (previous smtlib behavior)
                         break
                     else:
+                        print (result)
                         raise TooManySolutions(result)
 
             return result

@@ -21,6 +21,7 @@ from ..core.smtlib import (
     translate_to_smtlib,
     to_constant,
     simplify,
+    get_depth,
     issymbolic,
     get_taints,
     istainted,
@@ -1207,7 +1208,8 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        # print (self)
+        #assert Z3Solver.instance().check(self.constraints)
+        #print (self)
         try:
             # import time
             # limbo = 0.0
@@ -1592,11 +1594,13 @@ class EVM(Eventful):
         """Get input data of current environment"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
-        calldata_overflow = 32
-        calldata_underflow = 32
+        calldata_overflow = None#32
+        calldata_underflow = None#32
         # if const.calldata_overlap:
-        self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
-        self.constraints.add(offset >= -calldata_underflow)
+        if calldata_overflow is not None:
+            self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
+        if calldata_underflow is not None:
+            self.constraints.add(offset >= -calldata_underflow)
 
         # if issymbolic(offset):
         #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
@@ -1633,23 +1637,17 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
 
-    @concretized_args(size="SAMPLED")
+    #@concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
-        print("CALLDATACOPY", size)
-        calldata_overflow = 32
-        calldata_underflow = 32
+        calldata_overflow = None#32
+        calldata_underflow = None#32
         # if const.calldata_overlap:
-        if True:
+        if calldata_underflow is not None:
             self.constraints.add(data_offset + size <= len(self.data) + calldata_overflow)
             self.constraints.add(data_offset >= -calldata_underflow)
-        else:
-            self.constraints.add(
-                Operators.ULE(data_offset + size, len(self.data) + calldata_overflow)
-            )
-            self.constraints.add(Operators.UGE(data_offset, self._used_calldata_size))
 
         # if issymbolic(offset):
         #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
@@ -1662,16 +1660,18 @@ class EVM(Eventful):
             max_size = Z3Solver.instance().max(self.constraints, size)
 
         # @max_size = min(max_size, consts.calldata_maxsize)
-        cap = len(self.data) + calldata_overflow
-        if max_size > cap:
-            print(f"MAX SIZE too great constraining to {cap}")
-            logger.info(f"Constraining CALLDATACOPY size to {cap}")
-            max_size = cap
-            self.constraints.add(Operators.ULE(size, cap))
-            # cond = Operators.OR(size == 0, size==4)
-            # for conc_size in range(8,max_size, 32):
-            #   cond = Operators.OR(size==conc_size, cond)
-            # self.constraints.add(cond)
+        if calldata_overflow is not None:
+            cap = len(self.data) + calldata_overflow
+            if max_size > cap:
+                logger.info(f"Constraining CALLDATACOPY size to {cap}")
+                max_size = cap
+                self.constraints.add(Operators.ULE(size, cap))
+                # cond = Operators.OR(size == 0, size==4)
+                # for conc_size in range(8,max_size, 32):
+                #   cond = Operators.OR(size==conc_size, cond)
+                # self.constraints.add(cond)
+
+        self._allocate(mem_offset, size)
 
         for i in range(max_size):
             try:
@@ -1683,13 +1683,16 @@ class EVM(Eventful):
                 )
 
             except IndexError:
-                print("index errorrrrr", i)
                 # data_offset + i is concrete and outside data
                 c1 = 0
 
-            c = Operators.ITEBV(8, i < size, c1, self.memory[mem_offset + i])
-            x = self.constraints.new_bitvec(8, name="temp{}".format(uuid.uuid1()))
-            self.constraints.add(x == c)
+            c = simplify(Operators.ITEBV(8, i < size, c1, self.memory[mem_offset + i]))
+            if not issymbolic(c) or get_depth(c) < 3:
+                x = c
+            else:
+                # if te expression is deep enough lets replace it by a binding
+                x = self.constraints.new_bitvec(8, name="temp{}".format(uuid.uuid1()))
+                self.constraints.add(x == c)
             self._store(mem_offset + i, x)
             # print (str(self.constraints))
 
@@ -2328,9 +2331,9 @@ class EVMWorld(Platform):
 
             return result[0]
         except Exception as e:
-            print("ERRR")
-            logger.info("error! %r", e)
-            return int(sha3.keccak_256(data).hexdigest(), 16)
+            logger.info("Error! %r", e)
+            data_c = Z3Solver.instance().get_value(self.constraints, data)
+            return int(sha3.keccak_256(data_c).hexdigest(), 16)
 
     @property
     def PC(self):
@@ -3064,7 +3067,7 @@ class EVMWorld(Platform):
                 try:
                     # FIXME do this only if it has symbolic writes?
                     while True:
-                        a_index = Z3Solver().get_value(temp_cs, index)
+                        a_index = Z3Solver.instance().get_value(temp_cs, index)
                         all_used_indexes.append(a_index)
 
                         temp_cs.add(storage.get(a_index) != 0)
