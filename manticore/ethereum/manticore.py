@@ -1410,7 +1410,7 @@ class ManticoreEVM(ManticoreBase):
 
                 ethereum_context[f"symbolic_func_conc_{table}"] = known_pairs
 
-        print(f"Ok all functions had a match for {state.id}")
+        # Ok all functions had a match for current state
         return True
 
     """

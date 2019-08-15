@@ -1637,8 +1637,9 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
 
-    # @concretized_args(size="SAMPLED")
+    @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
+
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
