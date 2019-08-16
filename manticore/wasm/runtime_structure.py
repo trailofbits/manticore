@@ -305,7 +305,7 @@ class ModuleInstance:
         for memory_i in module.mems:
             self.memaddrs.append(memory_i.allocate(store, memory_i.type))
         for idx, global_i in enumerate(module.globals):
-            assert isinstance(values[idx], global_i.type)  # TODO - might be wrong
+            assert isinstance(values[idx], global_i.type.value)
             self.globaladdrs.append(global_i.allocate(store, global_i.type, values[idx]))
         for idx, export_i in enumerate(module.exports):
             if isinstance(export_i.desc, FuncIdx):

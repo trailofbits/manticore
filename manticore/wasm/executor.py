@@ -301,7 +301,7 @@ class Executor(object):  # TODO - should be Eventful
     def int_load(
         self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, size: int, signed: bool
     ):
-        assert isinstance(ty, (I32, I64))
+        assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
         f = stack.get_frame()
         assert f.module.memaddrs
         a = f.module.memaddrs[0]

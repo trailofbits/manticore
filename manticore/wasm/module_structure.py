@@ -240,7 +240,12 @@ class Module:
                     m.mems.append(Memory(LimitType(mem.limits.initial, mem.limits.maximum)))
             elif sec_id == SEC_GLOBAL:
                 for g in section_data.payload.globals:
-                    pass  # TODO: Create the globals
+                    m.globals.append(
+                        Global(
+                            GlobalType(g.type.mutability, type_map[g.type.content_type]),
+                            convert_instructions(g.init),
+                        )
+                    )
             elif sec_id == SEC_EXPORT:
                 mapping = (FuncIdx, TableIdx, MemIdx, GlobalIdx)
                 for e in section_data.payload.entries:
