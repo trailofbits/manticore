@@ -322,6 +322,7 @@ class ModuleInstance:
         for export in self.exports:
             if export.name == name and isinstance(export.value, FuncAddr):
                 return self.invoke(stack, export.value, store, argv)
+        raise RuntimeError("Can't find a function called", name)
 
     def invoke(
         self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]
@@ -372,11 +373,11 @@ class ModuleInstance:
         stack.push(label)
         self.push_instructions(insts)
 
-    def exit_instruction(self, stack: "Stack"):
+    def exit_instruction(self, stack: "AtomicStack"):
         label_idx = stack.find_type(Label)
         if label_idx is not None:
             i = -1
-            while isinstance(stack.data[i], Value.__args__):
+            while isinstance(stack.parent.data[i], Value.__args__):
                 i -= 1
             vals = [stack.pop() for _i in range(abs(i))]  # TODO  - Confirm this isn't an off-by-one
             label = stack.pop()
@@ -513,6 +514,8 @@ class Stack:
 
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         # print("Pushing", val)
+        if isinstance(val, list):
+            raise RuntimeError("Don't push lists")
         self.data.append(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:

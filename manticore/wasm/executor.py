@@ -298,35 +298,57 @@ class Executor(object):  # TODO - should be Eventful
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
         stack.push(I32.cast(c))
 
+    def int_load(
+        self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, size: int, signed: bool
+    ):
+        assert isinstance(ty, (I32, I64))
+        f = stack.get_frame()
+        assert f.module.memaddrs
+        a = f.module.memaddrs[0]
+        assert a in range(len(store.mems))
+        mem = store.mems[a]
+        assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
+        i = stack.pop()
+        ea = i + imm.offset
+        if (ea + (size // 8)) > len(mem.data):
+            raise Trap()
+        c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
+        width = 32 if ty is I32 else 64
+        if signed:
+            c = Operators.SEXTEND(c, size, width)
+        else:
+            c = Operators.ZEXTEND(c, width)
+        stack.push(ty.cast(c))
+
     def i32_load8_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.load8_s")
+        self.int_load(store, stack, imm, I32, 8, True)
 
     def i32_load8_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.load8_u")
+        self.int_load(store, stack, imm, I32, 8, False)
 
     def i32_load16_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.load16_s")
+        self.int_load(store, stack, imm, I32, 16, True)
 
     def i32_load16_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i32.load16_u")
+        self.int_load(store, stack, imm, I32, 16, False)
 
     def i64_load8_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.load8_s")
+        self.int_load(store, stack, imm, I64, 8, True)
 
     def i64_load8_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.load8_u")
+        self.int_load(store, stack, imm, I64, 8, False)
 
     def i64_load16_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.load16_s")
+        self.int_load(store, stack, imm, I64, 16, True)
 
     def i64_load16_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.load16_u")
+        self.int_load(store, stack, imm, I64, 16, False)
 
     def i64_load32_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.load32_s")
+        self.int_load(store, stack, imm, I64, 32, True)
 
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("i64.load32_u")
+        self.int_load(store, stack, imm, I64, 64, True)
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame()
@@ -372,7 +394,12 @@ class Executor(object):  # TODO - should be Eventful
         self.int_store(store, stack, imm, I64, 32)
 
     def current_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
-        raise NotImplementedError("current_memory")
+        f = stack.get_frame()
+        assert f.module.memaddrs
+        a = f.module.memaddrs[0]
+        assert a in range(len(store.mems))
+        mem = store.mems[a]
+        stack.push(I32(len(mem.data) // 65536))
 
     def grow_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
         raise NotImplementedError("grow_memory")
@@ -381,13 +408,26 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(imm.value))
 
     def i64_const(self, store: "Store", stack: "Stack", imm: I64ConstImm):
-        stack.push(I64(imm.value))
+        stack.push(I32(imm.value))
 
     def i32_eqz(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.eqz")
+        stack.has_type_on_top(I32, 1)
+        c1 = stack.pop()
+        v = c1 == 0
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.eq")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c2 == c1
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_ne(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
@@ -400,61 +440,193 @@ class Executor(object):  # TODO - should be Eventful
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_lt_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.lt_s")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 < c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_lt_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.lt_u")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.ULT(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_gt_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.gt_s")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 > c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_gt_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.gt_u")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.UGT(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_le_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.le_s")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 <= c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_le_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.le_u")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.ULE(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_ge_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.ge_s")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 >= c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_ge_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.ge_u")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.UGE(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_eqz(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.eqz")
+        stack.has_type_on_top(I64, 1)
+        c1 = stack.pop()
+        v = c1 == 0
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.eq")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c2 == c1
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.ne")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c2 != c1
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_lt_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.lt_s")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 < c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_lt_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.lt_u")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.ULT(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_gt_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.gt_s")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 > c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_gt_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.gt_u")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.UGT(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_le_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.le_s")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 <= c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_le_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.le_u")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.ULE(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_ge_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.ge_s")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = c1 >= c2
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i64_ge_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.ge_u")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        v = Operators.UGE(c1, c2)
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_clz(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.clz")

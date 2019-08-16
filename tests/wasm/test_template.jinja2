@@ -19,11 +19,12 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
 
         world.instantiate({})
         {% if test.args | length > 0 %}
-        world.invoke("{{ test.func }}", {{ test.args }})
+        argv=[{{ test.args }}]
         {% else %}
-        world.invoke("{{ test.func }}")
+        argv=[]
         {% endif %}
-        self.assertEqual([world.exec_for_test()], [{{ test.rets }}])
+        world.invoke(name="{{ test.func }}", argv=argv)
+        self.assertEqual(world.exec_for_test("{{test.func}}"), [{{ test.rets }}])
 {% endfor %}
 {% endfor %}
 

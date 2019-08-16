@@ -251,7 +251,14 @@ class Module:
             elif sec_id == SEC_START:
                 pass  # TODO - Start func
             elif sec_id == SEC_ELEMENT:
-                pass  # TODO - ELEMENT Section
+                for e in section_data.payload.entries:
+                    m.elem.append(
+                        Elem(
+                            TableIdx(e.index),
+                            convert_instructions(e.offset),
+                            [FuncIdx(i) for i in e.elems],
+                        )
+                    )
             elif sec_id == SEC_CODE:
                 for idx, c in enumerate(section_data.payload.bodies):
                     m.funcs[idx].locals = [

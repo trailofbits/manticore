@@ -57,13 +57,23 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         self.instance.instantiate(self.store, self.module, imports)
         self.instantiated = True
 
-    def invoke(self, name="main", *argv):
+    def invoke(self, name="main", argv=[]):
         self.instance.invoke_by_name(name, self.stack, self.store, list(argv))
 
-    def exec_for_test(self):
+    def exec_for_test(self, funcname):
+        rets = 0
+        for export in self.instance.exports:
+            if export.name == funcname and isinstance(export.value, FuncAddr):
+                rets = len(self.store.funcs[export.value].type.result_types)
+
         while self.instance.exec_instruction(self.store, self.stack):
             pass
-        return self.stack.pop()
+        if rets == 0:
+            return []
+        if rets == 1:
+            return [self.stack.pop()]
+        else:
+            return [self.stack.pop() for _i in range(rets)]
 
     def execute(self):
         """
@@ -73,6 +83,8 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         if not self.instantiated:
             raise RuntimeError("Trying to execute before instantiation!")
         if not self.instance.exec_instruction(self.store, self.stack):
-            ret = self.stack.pop()
-            print("WASM Execution returned", ret)
+            ret = None
+            if not self.stack.empty():
+                ret = self.stack.pop()
+                print("WASM Execution returned", ret)
             raise TerminateState(f"Execution returned {ret}")
