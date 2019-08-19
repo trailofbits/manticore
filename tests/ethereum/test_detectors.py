@@ -74,7 +74,7 @@ class EthDetectorTest(unittest.TestCase):
                 filepath,
                 contract_name="DetectThis",
                 args=ctor_arg,
-                crytic_compile_args={"solc_working_dir": dir},
+                compile_args={"solc_working_dir": dir},
             )
 
         expected_findings = set(((finding, at_init) for finding, at_init in should_find))

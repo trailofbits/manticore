@@ -71,6 +71,14 @@ def OR(a, b, *others):
     return result
 
 
+def IMPLIES(a, b):
+    return OR(NOT(b), a)
+
+
+def IFF(a, b):
+    return AND(IMPLIES(a, b), IMPLIES(b, a))
+
+
 def XOR(a, b):
     result = a ^ b
     if isinstance(result, (BitVec, int)):
@@ -207,6 +215,9 @@ def ITEBV(size, cond, true_value, false_value):
     assert isinstance(true_value, (BitVec, int))
     assert isinstance(false_value, (BitVec, int))
     assert isinstance(size, int)
+
+    if isinstance(cond, BoolConstant) and not cond.taint:
+        cond = cond.value
 
     if isinstance(cond, bool):
         if cond:

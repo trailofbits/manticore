@@ -150,7 +150,14 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.items():
             for callback in methods:
-                callback(robj(), *args, **kwargs)
+                try:
+                    callback(robj(), *args, **kwargs)
+                except Exception as e:
+                    import traceback
+
+                    # traceback.print_stack()
+                    traceback.print_last()
+                    print("Exception", e, callback)
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to

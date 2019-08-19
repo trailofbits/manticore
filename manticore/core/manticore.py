@@ -549,6 +549,41 @@ class ManticoreBase(Eventful):
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
 
+    @sync
+    def kill_state(self, state, delete=False):
+        """ Kill a state.
+             A state is moved from any list to the kill list or fully
+             removed from secondary storage
+
+            :param state_id: a estate id
+            :type state_id: int
+            :param delete: if true remove the state from the secondary storage
+            :type delete: bool
+        """
+        state_id = state.id
+        try:
+            self._busy_states.remove(state_id)
+        except:
+            pass
+        try:
+            self._kill_states.remove(state_id)
+        except:
+            pass
+        try:
+            self._terminated_states.remove(state_id)
+        except:
+            pass
+        try:
+            self._ready_states.remove(state_id)
+        except:
+            pass
+
+        if delete:
+            self._remove(state_id)
+        else:
+            # add the state_id to the terminated list
+            self._killed_states.append(state_id)
+
     @property
     @sync
     def ready_states(self):
@@ -561,7 +596,8 @@ class ManticoreBase(Eventful):
 
         This means it is not possible to change the state used by Manticore with `states = list(m.ready_states)`.
         """
-        for state_id in self._ready_states:
+        _ready_states = self._ready_states
+        for state_id in _ready_states:
             state = self._load(state_id)
             yield state
             # Re-save the state in case the user changed its data
@@ -610,9 +646,9 @@ class ManticoreBase(Eventful):
         """ Only allowed at not running.
             (At running we can have states at busy)
         """
-        return (
-            tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
-        )
+        return tuple(self._ready_states) + tuple(
+            self._terminated_states
+        )  # + tuple(self._killed_states)
 
     @property
     @sync
@@ -631,6 +667,11 @@ class ManticoreBase(Eventful):
 
     @sync
     def count_states(self):
+        """ Total states count """
+        return len(self._all_states)
+
+    @sync
+    def count_all_states(self):
         """ Total states count """
         return len(self._all_states)
 
@@ -866,11 +907,9 @@ class ManticoreBase(Eventful):
             timer.cancel()
 
     @at_not_running
-    def run(self, timeout=None):
+    def run(self):
         """
         Runs analysis.
-
-        :param timeout: Analysis timeout, in seconds
         """
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a
