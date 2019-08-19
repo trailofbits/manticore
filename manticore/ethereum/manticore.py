@@ -1694,7 +1694,7 @@ class ManticoreEVM(ManticoreBase):
         """ Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         """
-        return self.metadata.get(int(address))
+        return self.metadata.get(address)
 
     def register_detector(self, d):
         """

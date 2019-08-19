@@ -73,6 +73,12 @@ consts.add(
     ),
 )
 
+consts.add(
+    "calldata_max_offset",
+    default=1024 * 1024,
+    description="Max calldata offset to explore with. Iff offset or size in a calldata related instruction are symbolic it will be constrained to this constant",
+)
+
 # Auxiliary constants and functions
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
@@ -549,7 +555,9 @@ def concretized_args(**policies):
                         f"Concretizing {func.__name__}'s {index} argument and dropping its taints: "
                         "the value might not be tracked properly (in case of using detectors)"
                     )
-                logger.info(f"Concretizing instruction argument {arg} by {policy}")
+                logger.info(
+                    f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}"
+                )
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
 
@@ -1208,8 +1216,7 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        # assert Z3Solver.instance().check(self.constraints)
-        # print (self)
+        # print(self.instruction)
         try:
             # import time
             # limbo = 0.0
@@ -1602,11 +1609,6 @@ class EVM(Eventful):
         if calldata_underflow is not None:
             self.constraints.add(offset >= -calldata_underflow)
 
-        # if issymbolic(offset):
-        #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
-        #        self.constraints.add(offset == self._used_calldata_size+32)
-        #    raise ConcretizeArgument(1, policy="SAMPLED")
-
         self._use_calldata(offset, 32)
 
         data_length = len(self.data)
@@ -1639,7 +1641,6 @@ class EVM(Eventful):
 
     @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
-
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
@@ -1649,11 +1650,6 @@ class EVM(Eventful):
         if calldata_underflow is not None:
             self.constraints.add(data_offset + size <= len(self.data) + calldata_overflow)
             self.constraints.add(data_offset >= -calldata_underflow)
-
-        # if issymbolic(offset):
-        #    if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size+32):
-        #        self.constraints.add(offset == self._used_calldata_size+32)
-        #    raise ConcretizeArgument(1, policy="SAMPLED")
 
         self._use_calldata(data_offset, size)
         max_size = size
@@ -1837,8 +1833,7 @@ class EVM(Eventful):
     def MSTORE(self, address, value):
         """Save word to memory"""
         if istainted(self.pc):
-            for taint in get_taints(self.pc):
-                value = taint_with(value, taint)
+            value = taint_with(value, *get_taints(self.pc))
         self._allocate(address, 32)
         self._store(address, value, 32)
 
