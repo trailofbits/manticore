@@ -651,7 +651,10 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(c2 - c1))
 
     def i32_mul(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.mul")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32.cast(c2 * c1))
 
     def i32_div_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.div_s")
@@ -687,7 +690,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 << c1))
+        stack.push(Operators.ITEBV(32, c1 > 32, I32(0), I32.cast(c2 << c1)))
 
     def i32_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
@@ -717,13 +720,22 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i64.popcnt")
 
     def i64_add(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.add")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I64.cast(c2 + c1))
 
     def i64_sub(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.sub")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I64.cast(c2 - c1))
 
     def i64_mul(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.mul")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I64.cast(c2 * c1))
 
     def i64_div_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.div_s")
@@ -759,7 +771,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 << c1))
+        stack.push(Operators.ITEBV(64, c1 > 64, I64(0), I64.cast(c2 << c1)))
 
     def i64_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
