@@ -2057,6 +2057,8 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context("evm.coverage") as coverage:
             seen = {off for addr, off, init in coverage if addr == account_address and not init}
         return calculate_coverage(runtime_bytecode, seen)
+
+
 import copy
 import itertools
 import binascii

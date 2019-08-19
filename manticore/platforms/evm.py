@@ -3127,4 +3127,3 @@ def _hexdump(src, length=16):
         printable = "".join(p1(x) for x in chars)
         lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
     return lines
-
