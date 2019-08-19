@@ -49,6 +49,9 @@ class EVMAccount:
     def __str__(self):
         return str(self._address)
 
+    def __hash__(self):
+        return self._address
+
 
 class EVMContract(EVMAccount):
     """

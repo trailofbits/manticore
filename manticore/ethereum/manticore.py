@@ -617,6 +617,7 @@ class ManticoreEVM(ManticoreBase):
                 self.kill()
                 raise
             except Exception as e:
+                logger.info("Failed to compile contract", str(e))
                 self.kill()
                 raise
 
@@ -624,6 +625,7 @@ class ManticoreEVM(ManticoreBase):
         for state in self.ready_states:
             if state.platform.get_code(int(contract_account)):
                 return contract_account
+        logger.info("Failed to compile contract", contract_names)
         return None
 
     def get_nonce(self, address):
@@ -1973,12 +1975,6 @@ class ManticoreEVM(ManticoreBase):
                 global_summary.write(
                     "{:x}: {:2.2f}%\n".format(int(address), self.global_coverage(address))
                 )
-
-                md = self.get_metadata(address)
-                if md is not None and len(md.warnings) > 0:
-                    global_summary.write("\n\nCompiler warnings for %s:\n" % md.name)
-                    global_summary.write(md.warnings)
-
             with self.locked_context("ethereum", dict) as ethereum_context:
                 functions = ethereum_context.get("symbolic_func", dict())
                 for table in functions:
@@ -1988,17 +1984,10 @@ class ManticoreEVM(ManticoreBase):
                         for key, value in concrete_pairs:
                             global_summary.write("%s::%x\n" % (binascii.hexlify(key), value))
 
+        md = self.get_metadata(address)
         for address, md in self.metadata.items():
             with self._output.save_stream("global_%s.sol" % md.name) as global_src:
                 global_src.write(md.source_code)
-            with self._output.save_stream(
-                "global_%s_runtime.bytecode" % md.name, binary=True
-            ) as global_runtime_bytecode:
-                global_runtime_bytecode.write(md.runtime_bytecode)
-            with self._output.save_stream(
-                "global_%s_init.bytecode" % md.name, binary=True
-            ) as global_init_bytecode:
-                global_init_bytecode.write(md.init_bytecode)
 
             with self._output.save_stream(
                 "global_%s.runtime_asm" % md.name
@@ -2068,3 +2057,20 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context("evm.coverage") as coverage:
             seen = {off for addr, off, init in coverage if addr == account_address and not init}
         return calculate_coverage(runtime_bytecode, seen)
+import copy
+import itertools
+import binascii
+import json
+import logging
+import string
+from multiprocessing import Queue, Process
+from queue import Empty as EmptyQueue
+from typing import Dict, Optional, Union
+from enum import Enum
+import io
+import pyevmasm as EVMAsm
+import random
+import sha3
+import tempfile
+
+from crytic_compile import CryticCompile, InvalidCompilation, is_supported
