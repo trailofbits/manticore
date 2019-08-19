@@ -5,6 +5,10 @@ from manticore.utils.event import Eventful
 from manticore.platforms import linux
 from manticore.native.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
+from manticore.native import Manticore
+from manticore.native.plugins import Merger
+from manticore.core.plugin import Plugin
+from manticore.utils import config
 
 
 class FakeMemory:
@@ -257,3 +261,62 @@ class StateTest(unittest.TestCase):
         self.assertEqual(new_state.context["step"], 20)
         new_new_state = pickle.loads(new_new_file)
         self.assertEqual(new_new_state.context["step"], 30)
+
+
+class StateMergeTest(unittest.TestCase):
+
+    # Need to add a plugin that counts the number of states in did_fork_state, and records the max
+    # Then, when we hit
+
+    class StateCounter(Plugin):
+        def did_fork_state_callback(self, *_args, **_kwargs):
+            self.max_states = max(
+                self.max_states,
+                self.manticore.count_busy_states()
+                + self.manticore.count_ready_states()
+                + self.manticore.count_killed_states()
+                + self.manticore.count_terminated_states(),
+            )
+
+        @property
+        def max_states(self):
+            with self.manticore.locked_context() as ctx:
+                return ctx.setdefault("max_states", 0)
+
+        @max_states.setter
+        def max_states(self, new_val):
+            with self.manticore.locked_context() as ctx:
+                ctx["max_states"] = new_val
+
+    def setUp(self):
+        core = config.get_group("core")
+        core.seed = 61
+        core.mprocessing = core.mprocessing.single
+
+        dirname = os.path.dirname(__file__)
+        self.m = Manticore(
+            os.path.join(dirname, "binaries", "basic_state_merging"), policy="random"
+        )
+        self.plugin = self.StateCounter()
+
+        self.m.register_plugin(Merger())
+        self.m.register_plugin(self.plugin)
+
+    def test_state_merging(self):
+        @self.m.hook(0x40065D)
+        def hook_post_merge(*_args, **_kwargs):
+            with self.m.locked_context() as ctx:
+                ctx["state_count"] = (
+                    self.m.count_busy_states()
+                    + self.m.count_ready_states()
+                    + self.m.count_killed_states()
+                    + self.m.count_terminated_states()
+                )
+
+        self.m.run()
+        s = config.get_group("core").seed
+        self.assertLess(
+            self.m.context["state_count"],
+            self.plugin.max_states,
+            f"State merging failed with seed: {s}",
+        )

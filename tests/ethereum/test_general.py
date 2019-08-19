@@ -1315,8 +1315,17 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
+        class X:
+            class Y:
+                class Z:
+                    instruction = "instruction"
+
+                current_vm = Z()
+
+            world = Y()
+
         with self.assertRaises(ConcretizeArgument) as cm:
-            inner_func(None, self.bv, 34)
+            inner_func(X(), self.bv, 34)
 
         self.assertEqual(cm.exception.pos, 1)
         self.assertEqual(cm.exception.policy, policy)
@@ -1326,8 +1335,17 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
+        class X:
+            class Y:
+                class Z:
+                    instruction = "instruction"
+
+                current_vm = Z()
+
+            world = Y()
+
         with self.assertRaises(ConcretizeArgument) as cm:
-            inner_func(None, 34, self.bv)
+            inner_func(X(), 34, self.bv)
 
         self.assertEqual(cm.exception.pos, 2)
         # Make sure the policy isn't blank, i.e. we didn't pass through

@@ -27,6 +27,7 @@ from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
 from ...utils import config
 from . import issymbolic
+import time
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -434,6 +435,7 @@ class Z3Solver(Solver):
             self._reset(temp_cs.to_string(related_to=var))
             result = []
 
+            start = time.time()
             while self._is_sat():
                 value = self._getvalue(var)
                 result.append(value)
@@ -449,7 +451,8 @@ class Z3Solver(Solver):
                     else:
                         print(result)
                         raise TooManySolutions(result)
-
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
             return result
 
     def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, M=10000):
@@ -473,6 +476,7 @@ class Z3Solver(Solver):
             self._reset(temp_cs.to_string(related_to=X))
             self._send(aux.declaration)
 
+            start = time.time()
             if getattr(self, f"support_{goal}"):
                 self._push()
                 try:
@@ -513,6 +517,8 @@ class Z3Solver(Solver):
                 i = i + 1
                 if i > M:
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
             if last_value is not None:
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
@@ -523,6 +529,7 @@ class Z3Solver(Solver):
         given set of constraints.
         """
         values = []
+        start = time.time()
         with constraints as temp_cs:
             for expression in expressions:
                 if not issymbolic(expression):
@@ -554,6 +561,8 @@ class Z3Solver(Solver):
                         expr, value = m.group("expr"), m.group("value")
                         result.append(int(value, base))
                     values.append(bytes(result))
+                    if time.time() - start > consts.timeout:
+                        raise SolverError("Timeout")
                     continue
 
                 temp_cs.add(var == expression)
@@ -575,6 +584,8 @@ class Z3Solver(Solver):
                     m = pattern.match(ret)
                     expr, value = m.group("expr"), m.group("value")
                     values.append(int(value, base))
+            if time.time() - start > consts.timeout:
+                raise SolverError("Timeout")
 
         if len(expressions) == 1:
             return values[0]

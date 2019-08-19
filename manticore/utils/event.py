@@ -1,6 +1,7 @@
 import copy
 import inspect
 import logging
+import functools
 from itertools import takewhile
 from weakref import WeakKeyDictionary, ref
 
@@ -72,6 +73,22 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
             all_evts.update(evts)
         return all_evts
 
+    @staticmethod
+    def will_did(name):
+        """Pre/pos emiting signal"""
+
+        def deco(func):
+            @functools.wraps(func)
+            def newFunction(self, *args, **kw):
+                self._publish(f"will_{name}", *args, **kw)
+                result = func(self, *args, **kw)
+                self._publish(f"did_{name}", result)
+                return result
+
+            return newFunction
+
+        return deco
+
     def __init__(self, *args, **kwargs):
         # A dictionary from "event name" -> callback methods
         # Note that several methods can be associated with the same object
@@ -137,9 +154,10 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
                     callback(robj(), *args, **kwargs)
                 except Exception as e:
                     import traceback
-                    #traceback.print_stack()
+
+                    # traceback.print_stack()
                     traceback.print_last()
-                    print ("Exception", e, callback)
+                    print("Exception", e, callback)
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
