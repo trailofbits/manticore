@@ -185,21 +185,16 @@ class TXStorageChanged(Plugin):
     def did_run_callback(self):
         '''When  human tx/run just ended remove the states that have not changed
          the storage'''
-        try:
-            with self.manticore.locked_context("ethereum.saved_states", list) as saved_states:
-                for state_id in list(saved_states):
-                    st = self.manticore._load(state_id)
-                    if not st.context['written'][-1]:
-                        try:
-                            self._terminated_states.append(st.id)
-                            self._ready_states.remove(st.id)
-                        except:
-                            pass
+        with self.manticore.locked_context("ethereum.saved_states", list) as saved_states:
+            for state_id in list(saved_states):
+                st = self.manticore._load(state_id)
+                if not st.context['written'][-1]:
+                    if st.id in _ready_states:
+                        self._terminated_states.append(st.id)
+                        self._ready_states.remove(st.id)
                         saved_states.remove(st.id)
-        except Exception as e:
-            print (e)
 
     def generate_testcase(self, state, testcase, message):
         with testcase.open_stream("summary") as stream:
-            if not state.context.get('written',(False,))[-1]:
-                stream.write( "State was removed from ready list because the last tx did not write to the storage")
+            if not state.context.get("written", (False,))[-1]:
+                stream.write("State was removed from ready list because the last tx did not write to the storage")
