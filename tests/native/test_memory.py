@@ -21,10 +21,6 @@ solver = Z3Solver.instance()
 consts = config.get_group("native")
 
 
-def isconcrete(value):
-    return not issymbolic(value)
-
-
 class MemoryTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -1129,44 +1125,43 @@ class MemoryTest(unittest.TestCase):
 
         start_mapping_addr = mem.mmap(None, 0x1000, "rwx")
 
-        concretes = [0, 2, 4, 6]
-        symbolics = [1, 3, 5, 7]
+        concretes = tuple(start_mapping_addr+a for a in (0, 2, 4, 6))
+        symbolics = tuple(start_mapping_addr+a for a in (1, 3, 5, 7))
 
-        for range in concretes:
-            mem[start_mapping_addr + range] = "C"
+        # Initialize
+        for addr in concretes:
+            mem[addr] = "C"
 
-        for range in symbolics:
-            mem[start_mapping_addr + range] = cs.new_bitvec(8)
+        for addr in symbolics:
+            mem[addr] = cs.new_bitvec(8)
 
-        for range in concretes:
-            self.assertTrue(isconcrete(mem[start_mapping_addr + range]))
+        # Check if they are concretes/symbolics
+        for addr in concretes:
+            byte = mem[addr]
+            self.assertFalse(issymbolic(byte))
 
-        for range in concretes:
-            self.assertFalse(issymbolic(mem[start_mapping_addr + range]))
+        for addr in symbolics:
+            byte = mem[addr]
+            self.assertTrue(issymbolic(byte))
 
-        for range in symbolics:
-            self.assertTrue(issymbolic(mem[start_mapping_addr + range]))
+        # Swap concrete and symbolic bytes
+        concretes, symbolics = symbolics, concretes
 
-        for range in symbolics:
-            self.assertFalse(isconcrete(mem[start_mapping_addr + range]))
+        # Reinitialize
+        for addr in concretes:
+            mem[addr] = "C"
 
-        for range in symbolics:
-            mem[start_mapping_addr + range] = "C"
+        for addr in symbolics:
+            mem[addr] = cs.new_bitvec(8)
 
-        for range in concretes:
-            mem[start_mapping_addr + range] = cs.new_bitvec(8)
+        # Assert again
+        for addr in concretes:
+            byte = mem[addr]
+            self.assertFalse(issymbolic(byte))
 
-        for range in symbolics:
-            self.assertTrue(isconcrete(mem[start_mapping_addr + range]))
-
-        for range in symbolics:
-            self.assertFalse(issymbolic(mem[start_mapping_addr + range]))
-
-        for range in concretes:
-            self.assertTrue(issymbolic(mem[start_mapping_addr + range]))
-
-        for range in concretes:
-            self.assertFalse(isconcrete(mem[start_mapping_addr + range]))
+        for addr in symbolics:
+            byte = mem[addr]
+            self.assertTrue(issymbolic(byte))
 
     def test_one_concrete_one_symbolic(self):
         # global mainsolver
