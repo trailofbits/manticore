@@ -1998,7 +1998,7 @@ class ManticoreEVM(ManticoreBase):
                 for i in EVMAsm.disassemble_all(runtime_bytecode):
                     if (address, i.pc) in seen:
                         count += 1
-                        globalmanticore/ethereum/manticore.py_runtime_asm.write("*")
+                        globalmanticore / ethereum / manticore.py_runtime_asm.write("*")
                     else:
                         global_runtime_asm.write(" ")
 
