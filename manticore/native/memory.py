@@ -1025,8 +1025,14 @@ class SMemory(Memory):
         """
         Builds a memory.
 
-        :param constraints:  a set of constraints
-        :param symbols: Symbolic chunks
+        :param constraints:  a set of initial constraints
+        :param symbols: Symbolic chunks in format: {chunk_start_addr: (condition, value), ...}
+
+        `symbols` or `self._symbols` is a mapping of symbolic chunks/memory cells starting addresses
+        to their condition and value.
+
+        The condition of a symbolic chunk can be concrete (True/False) or symbolic. The value should
+        always be symbolic (e.g. a BitVecVariable).
         """
         super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
