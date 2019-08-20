@@ -1998,7 +1998,7 @@ class ManticoreEVM(ManticoreBase):
                 for i in EVMAsm.disassemble_all(runtime_bytecode):
                     if (address, i.pc) in seen:
                         count += 1
-                        global_runtime_asm.write("*")
+                        globalmanticore/ethereum/manticore.py_runtime_asm.write("*")
                     else:
                         global_runtime_asm.write(" ")
 
@@ -2057,22 +2057,3 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context("evm.coverage") as coverage:
             seen = {off for addr, off, init in coverage if addr == account_address and not init}
         return calculate_coverage(runtime_bytecode, seen)
-
-
-import copy
-import itertools
-import binascii
-import json
-import logging
-import string
-from multiprocessing import Queue, Process
-from queue import Empty as EmptyQueue
-from typing import Dict, Optional, Union
-from enum import Enum
-import io
-import pyevmasm as EVMAsm
-import random
-import sha3
-import tempfile
-
-from crytic_compile import CryticCompile, InvalidCompilation, is_supported
