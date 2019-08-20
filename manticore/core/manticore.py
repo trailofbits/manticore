@@ -561,22 +561,12 @@ class ManticoreBase(Eventful):
             :type delete: bool
         """
         state_id = state.id
-        try:
+        if state_id in self._busy_states:
             self._busy_states.remove(state_id)
-        except:
-            pass
-        try:
-            self._kill_states.remove(state_id)
-        except:
-            pass
-        try:
+        if state_id in self._terminated_states:
             self._terminated_states.remove(state_id)
-        except:
-            pass
-        try:
+        if state_id in self._ready_states:
             self._ready_states.remove(state_id)
-        except:
-            pass
 
         if delete:
             self._remove(state_id)
