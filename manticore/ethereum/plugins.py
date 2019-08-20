@@ -145,50 +145,50 @@ class VerboseTraceStdout(Plugin):
 
 
 class TXStorageChanged(Plugin):
-    ''' TODO: reword
+    """ TODO: reword
         This state will ignore states that are the result of executing a
         transaction that did not write to the storage.
 
         When this plugin is enabled transactions that wont write to the storage
         are considered not to change the evm world state and hence ignored as a
         starting point for the following human transaction.
-    '''
+    """
 
     def did_open_transaction_callback(self, state, tx, *args):
-        ''' We need a stack. Each tx (internal or not) starts with a "False" flag
+        """ We need a stack. Each tx (internal or not) starts with a "False" flag
             denoting that it did not write anything to the storage
-        '''
-        state.context['written'].append(False)
+        """
+        state.context["written"].append(False)
 
     def did_close_transaction_callback(self, state, tx, *args):
-        ''' When a tx (internal or not) is closed a value is popped out from the
+        """ When a tx (internal or not) is closed a value is popped out from the
         flag stack. Depending on the result if the storage is not rolled back the
         next flag in the stack is updated. Not that if the a tx is reverted the
         changes it may have done on the storage will not affect the final result.
 
-        '''
-        flag = state.context['written'].pop()
+        """
+        flag = state.context["written"].pop()
         if tx.result in {"RETURN", "STOP"}:
-            flag = flag or ((tx.result == "RETURN") and (tx.sort == 'CREATE'))
-            state.context['written'][-1] = state.context['written'][-1] or flag
+            flag = flag or ((tx.result == "RETURN") and (tx.sort == "CREATE"))
+            state.context["written"][-1] = state.context["written"][-1] or flag
 
     def did_evm_write_storage_callback(self, state, *args):
-        ''' Turn on the corresponding flag is the storage has been modified.
-        Note: subject to change if the current transaction is reverted'''
-        state.context['written'][-1] = True
+        """ Turn on the corresponding flag is the storage has been modified.
+        Note: subject to change if the current transaction is reverted"""
+        state.context["written"][-1] = True
 
     def will_run_callback(self, *args):
-        '''Initialize the flag stack at each human tx/run()'''
+        """Initialize the flag stack at each human tx/run()"""
         for st in self.manticore.ready_states:
-            st.context['written'] = [False]
+            st.context["written"] = [False]
 
     def did_run_callback(self):
-        '''When  human tx/run just ended remove the states that have not changed
-         the storage'''
+        """When  human tx/run just ended remove the states that have not changed
+         the storage"""
         with self.manticore.locked_context("ethereum.saved_states", list) as saved_states:
             for state_id in list(saved_states):
                 st = self.manticore._load(state_id)
-                if not st.context['written'][-1]:
+                if not st.context["written"][-1]:
                     if st.id in _ready_states:
                         self._terminated_states.append(st.id)
                         self._ready_states.remove(st.id)
@@ -197,4 +197,6 @@ class TXStorageChanged(Plugin):
     def generate_testcase(self, state, testcase, message):
         with testcase.open_stream("summary") as stream:
             if not state.context.get("written", (False,))[-1]:
-                stream.write("State was removed from ready list because the last tx did not write to the storage")
+                stream.write(
+                    "State was removed from ready list because the last tx did not write to the storage"
+                )
