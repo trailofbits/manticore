@@ -1123,10 +1123,10 @@ class MemoryTest(unittest.TestCase):
         cs = ConstraintSet()
         mem = SMemory32(cs)
 
-        start_mapping_addr = mem.mmap(None, 0x1000, "rwx")
+        buf = mem.mmap(None, 0x20, "rwx")
 
-        concretes = tuple(start_mapping_addr+a for a in (0, 2, 4, 6))
-        symbolics = tuple(start_mapping_addr+a for a in (1, 3, 5, 7))
+        concretes = tuple(buf+idx for idx in (0, 2, 4, 6))
+        symbolics = tuple(buf+idx for idx in (1, 3, 5, 7))
         symbolic_vectors = tuple(cs.new_bitvec(8) for _ in symbolics)
 
         # Initialize
@@ -1171,9 +1171,28 @@ class MemoryTest(unittest.TestCase):
             self.assertTrue(issymbolic(byte))
 
         # And reassert the internal symbolic chunks dict representation
-        self.assertDictEqual(mem._symbols, {
+        expected_symbolic_chunks = {
             addr: [(True, symbolic_vector)] for addr, symbolic_vector in zip(symbolics, symbolic_vectors)
-        })
+        }
+        self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
+
+        # Do a write to memory that combines concrete and symbolic value and see if it succeeds
+        symbolic_bytes =[cs.new_bitvec(8) for _ in range(3)]
+        mem[buf+0x10:buf+0x15] = (symbolic_bytes[0], "A", symbolic_bytes[1], "B", symbolic_bytes[2])
+
+        # And assert it!
+        expected_symbolic_chunks[buf+0x10] = [(True, symbolic_bytes[0])]
+        expected_symbolic_chunks[buf+0x12] = [(True, symbolic_bytes[1])]
+        expected_symbolic_chunks[buf+0x14] = [(True, symbolic_bytes[2])]
+
+        for idx in (0x10, 0x12, 0x14):
+            self.assertTrue(issymbolic(mem[buf+idx]))
+
+        for idx in (0x11, 0x13):
+            self.assertFalse(issymbolic(mem[buf+idx]))
+
+        self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
+        self.assertEqual(len(mem._symbols), 7)  # Sanity check if keys didn't overlap
 
     def test_one_concrete_one_symbolic(self):
         # global mainsolver
