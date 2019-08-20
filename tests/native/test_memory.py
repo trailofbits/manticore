@@ -1127,13 +1127,14 @@ class MemoryTest(unittest.TestCase):
 
         concretes = tuple(start_mapping_addr+a for a in (0, 2, 4, 6))
         symbolics = tuple(start_mapping_addr+a for a in (1, 3, 5, 7))
+        symbolic_vectors = tuple(cs.new_bitvec(8) for _ in symbolics)
 
         # Initialize
         for addr in concretes:
             mem[addr] = "C"
 
-        for addr in symbolics:
-            mem[addr] = cs.new_bitvec(8)
+        for addr, symbolic_vector in zip(symbolics, symbolic_vectors):
+            mem[addr] = symbolic_vector
 
         # Check if they are concretes/symbolics
         for addr in concretes:
@@ -1144,15 +1145,21 @@ class MemoryTest(unittest.TestCase):
             byte = mem[addr]
             self.assertTrue(issymbolic(byte))
 
-        # Swap concrete and symbolic bytes
+        # And assert the internal symbolic chunks dict representation
+        self.assertDictEqual(mem._symbols, {
+            addr: [(True, symbolic_vector)] for addr, symbolic_vector in zip(symbolics, symbolic_vectors)
+        })
+
+        # Swap concrete and symbolic bytes; create new symbolic_vectors
         concretes, symbolics = symbolics, concretes
+        symbolic_vectors = tuple(cs.new_bitvec(8) for _ in symbolics)
 
         # Reinitialize
         for addr in concretes:
             mem[addr] = "C"
 
-        for addr in symbolics:
-            mem[addr] = cs.new_bitvec(8)
+        for addr, symbolic_vector in zip(symbolics, symbolic_vectors):
+            mem[addr] = symbolic_vector
 
         # Assert again
         for addr in concretes:
@@ -1162,6 +1169,11 @@ class MemoryTest(unittest.TestCase):
         for addr in symbolics:
             byte = mem[addr]
             self.assertTrue(issymbolic(byte))
+
+        # And reassert the internal symbolic chunks dict representation
+        self.assertDictEqual(mem._symbols, {
+            addr: [(True, symbolic_vector)] for addr, symbolic_vector in zip(symbolics, symbolic_vectors)
+        })
 
     def test_one_concrete_one_symbolic(self):
         # global mainsolver
