@@ -21,10 +21,6 @@ solver = Z3Solver.instance()
 consts = config.get_group("native")
 
 
-def isconcrete(value):
-    return not issymbolic(value)
-
-
 class MemoryTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -1127,46 +1123,87 @@ class MemoryTest(unittest.TestCase):
         cs = ConstraintSet()
         mem = SMemory32(cs)
 
-        start_mapping_addr = mem.mmap(None, 0x1000, "rwx")
+        buf = mem.mmap(None, 0x20, "rwx")
 
-        concretes = [0, 2, 4, 6]
-        symbolics = [1, 3, 5, 7]
+        concretes = tuple(buf + idx for idx in (0, 2, 4, 6))
+        symbolics = tuple(buf + idx for idx in (1, 3, 5, 7))
+        symbolic_vectors = tuple(cs.new_bitvec(8) for _ in symbolics)
 
-        for range in concretes:
-            mem[start_mapping_addr + range] = "C"
+        # Initialize
+        for addr in concretes:
+            mem[addr] = "C"
 
-        for range in symbolics:
-            mem[start_mapping_addr + range] = cs.new_bitvec(8)
+        for addr, symbolic_vector in zip(symbolics, symbolic_vectors):
+            mem[addr] = symbolic_vector
 
-        for range in concretes:
-            self.assertTrue(isconcrete(mem[start_mapping_addr + range]))
+        # Check if they are concretes/symbolics
+        for addr in concretes:
+            byte = mem[addr]
+            self.assertFalse(issymbolic(byte))
 
-        for range in concretes:
-            self.assertFalse(issymbolic(mem[start_mapping_addr + range]))
+        for addr in symbolics:
+            byte = mem[addr]
+            self.assertTrue(issymbolic(byte))
 
-        for range in symbolics:
-            self.assertTrue(issymbolic(mem[start_mapping_addr + range]))
+        # And assert the internal symbolic chunks dict representation
+        self.assertDictEqual(
+            mem._symbols,
+            {
+                addr: [(True, symbolic_vector)]
+                for addr, symbolic_vector in zip(symbolics, symbolic_vectors)
+            },
+        )
 
-        for range in symbolics:
-            self.assertFalse(isconcrete(mem[start_mapping_addr + range]))
+        # Swap concrete and symbolic bytes; create new symbolic_vectors
+        concretes, symbolics = symbolics, concretes
+        symbolic_vectors = tuple(cs.new_bitvec(8) for _ in symbolics)
 
-        for range in symbolics:
-            mem[start_mapping_addr + range] = "C"
+        # Reinitialize
+        for addr in concretes:
+            mem[addr] = "C"
 
-        for range in concretes:
-            mem[start_mapping_addr + range] = cs.new_bitvec(8)
+        for addr, symbolic_vector in zip(symbolics, symbolic_vectors):
+            mem[addr] = symbolic_vector
 
-        for range in symbolics:
-            self.assertTrue(isconcrete(mem[start_mapping_addr + range]))
+        # Assert again
+        for addr in concretes:
+            byte = mem[addr]
+            self.assertFalse(issymbolic(byte))
 
-        for range in symbolics:
-            self.assertFalse(issymbolic(mem[start_mapping_addr + range]))
+        for addr in symbolics:
+            byte = mem[addr]
+            self.assertTrue(issymbolic(byte))
 
-        for range in concretes:
-            self.assertTrue(issymbolic(mem[start_mapping_addr + range]))
+        # And reassert the internal symbolic chunks dict representation
+        expected_symbolic_chunks = {
+            addr: [(True, symbolic_vector)]
+            for addr, symbolic_vector in zip(symbolics, symbolic_vectors)
+        }
+        self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
 
-        for range in concretes:
-            self.assertFalse(isconcrete(mem[start_mapping_addr + range]))
+        # Do a write to memory that combines concrete and symbolic value and see if it succeeds
+        symbolic_bytes = [cs.new_bitvec(8) for _ in range(3)]
+        mem[buf + 0x10 : buf + 0x15] = (
+            symbolic_bytes[0],
+            "A",
+            symbolic_bytes[1],
+            "B",
+            symbolic_bytes[2],
+        )
+
+        # And assert it!
+        expected_symbolic_chunks[buf + 0x10] = [(True, symbolic_bytes[0])]
+        expected_symbolic_chunks[buf + 0x12] = [(True, symbolic_bytes[1])]
+        expected_symbolic_chunks[buf + 0x14] = [(True, symbolic_bytes[2])]
+
+        for idx in (0x10, 0x12, 0x14):
+            self.assertTrue(issymbolic(mem[buf + idx]))
+
+        for idx in (0x11, 0x13):
+            self.assertFalse(issymbolic(mem[buf + idx]))
+
+        self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
+        self.assertEqual(len(mem._symbols), 7)  # Sanity check if keys didn't overlap
 
     def test_one_concrete_one_symbolic(self):
         # global mainsolver
