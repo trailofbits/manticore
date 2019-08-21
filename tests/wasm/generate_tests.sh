@@ -2,10 +2,10 @@
 
 rm -rf */
 touch __init__.py
-wget -O wabt.tgz -c https://github.com/WebAssembly/wabt/releases/download/1.0.11/wabt-1.0.11-linux.tar.gz
-wget -O spec.zip -c https://github.com/WebAssembly/spec/archive/ace189a8f906f4f0760656a2aa53b6dc7046e771.zip
+wget -nv -O wabt.tgz -c https://github.com/WebAssembly/wabt/releases/download/1.0.11/wabt-1.0.11-linux.tar.gz
+wget -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/ace189a8f906f4f0760656a2aa53b6dc7046e771.zip
 
-yes | unzip -j spec.zip 'spec-*/test/core/*' -d .
+yes | unzip -q -j spec.zip 'spec-*/test/core/*' -d .
 rm run.py README.md spec.zip
 
 tar --wildcards --strip=1 -xf wabt.tgz 'wabt-*/wast2json'

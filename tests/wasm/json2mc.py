@@ -7,7 +7,7 @@ parser.add_argument("filename", type=argparse.FileType("r"), help="JSON file out
 args = parser.parse_args()
 
 data = json.load(args.filename)["commands"]
-
+args.filename.close()
 
 class Module:
     def __init__(self, filename, tests):
