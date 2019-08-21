@@ -1699,8 +1699,8 @@ class MemoryTest(unittest.TestCase):
         mem.write(addr + 1, "b")
         writes = mem.pop_record_writes()
 
-        self.assertIn((addr, ["a"]), writes)
-        self.assertIn((addr + 1, ["b"]), writes)
+        self.assertIn((addr, "a"), writes)
+        self.assertIn((addr + 1, "b"), writes)
 
     def test_mem_trace_no_overwrites(self):
         cs = ConstraintSet()
@@ -1713,8 +1713,8 @@ class MemoryTest(unittest.TestCase):
         mem.write(addr, "b")
         writes = mem.pop_record_writes()
 
-        self.assertIn((addr, ["a"]), writes)
-        self.assertIn((addr, ["b"]), writes)
+        self.assertIn((addr, "a"), writes)
+        self.assertIn((addr, "b"), writes)
 
     def test_mem_trace_nested(self):
         cs = ConstraintSet()
@@ -1732,17 +1732,17 @@ class MemoryTest(unittest.TestCase):
         outer_writes = mem.pop_record_writes()
 
         # Make sure writes do not appear in a trace started after them
-        self.assertNotIn((addr, ["a"]), inner_writes)
-        self.assertNotIn((addr + 1, ["b"]), inner_writes)
+        self.assertNotIn((addr, "a"), inner_writes)
+        self.assertNotIn((addr + 1, "b"), inner_writes)
         # Make sure the first two are in the outer write
-        self.assertIn((addr, ["a"]), outer_writes)
-        self.assertIn((addr + 1, ["b"]), outer_writes)
+        self.assertIn((addr, "a"), outer_writes)
+        self.assertIn((addr + 1, "b"), outer_writes)
         # Make sure the last two are in the inner write
-        self.assertIn((addr + 2, ["c"]), inner_writes)
-        self.assertIn((addr + 3, ["d"]), inner_writes)
+        self.assertIn((addr + 2, "c"), inner_writes)
+        self.assertIn((addr + 3, "d"), inner_writes)
         # Make sure the last two are also in the outer write
-        self.assertIn((addr + 2, ["c"]), outer_writes)
-        self.assertIn((addr + 3, ["d"]), outer_writes)
+        self.assertIn((addr + 2, "c"), outer_writes)
+        self.assertIn((addr + 3, "d"), outer_writes)
 
     def test_mem_trace_ignores_failing(self):
         cs = ConstraintSet()
