@@ -1181,15 +1181,17 @@ class SMemory(Memory):
         else:
 
             for offset in range(size):
+                ea = address + offset
+
                 if issymbolic(value[offset]):
-                    if not self.access_ok(address + offset, "w", force):
-                        raise InvalidMemoryAccess(address + offset, "w")
-                    self._symbols[address + offset] = [(True, value[offset])]
+                    if not self.access_ok(ea, "w", force):
+                        raise InvalidMemoryAccess(ea, "w")
+                    self._symbols[ea] = [(True, value[offset])]
                 else:
                     # overwrite all previous items
-                    if address + offset in self._symbols:
-                        del self._symbols[address + offset]
-                    super().write(address + offset, [value[offset]], force)
+                    if ea in self._symbols:
+                        del self._symbols[ea]
+                    super().write(ea, [value[offset]], force)
 
     def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
         """
