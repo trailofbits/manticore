@@ -1180,18 +1180,41 @@ class SMemory(Memory):
                     self._symbols.setdefault(base + offset, []).append((condition, value[offset]))
         else:
 
+            # Symbolic writes are stored in self._symbols and concrete writes are offloaded to super().write(...)
+            #
+            # Symbolic values are written one by one and concrete are written in chunks
+            # To do this, the logic below tracks start index of the part where concrete values are
+            # and commits/triggers writes of those concrete values when a symbolic value is hit or after the loop
+            #
+            concrete_start = None
+
             for offset in range(size):
                 ea = address + offset
 
                 if issymbolic(value[offset]):
+                    # Commit (offload) concrete write
+                    if concrete_start is not None:
+                        super().write(address+concrete_start, value[concrete_start:offset], force)
+                        concrete_start = None
+
+                    # Commit symbolic write if access is okay
                     if not self.access_ok(ea, "w", force):
                         raise InvalidMemoryAccess(ea, "w")
                     self._symbols[ea] = [(True, value[offset])]
+
                 else:
-                    # overwrite all previous items
+                    # For concrete value, remove symbolic chunks that were stored there
+                    # (Note: there might be many because of conditions later leading to different program paths)
                     if ea in self._symbols:
                         del self._symbols[ea]
-                    super().write(ea, [value[offset]], force)
+
+                    # Set concrete part start index if previous values weren't concrete
+                    if concrete_start is None:
+                        concrete_start = offset
+
+            # Commit (offload) the last concrete write
+            if concrete_start is not None:
+                super().write(address + concrete_start, value[concrete_start:], force)
 
     def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
         """
