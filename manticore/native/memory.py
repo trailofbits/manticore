@@ -1194,7 +1194,7 @@ class SMemory(Memory):
                 if issymbolic(value[offset]):
                     # Commit (offload) concrete write
                     if concrete_start is not None:
-                        super().write(address+concrete_start, value[concrete_start:offset], force)
+                        super().write(address + concrete_start, value[concrete_start:offset], force)
                         concrete_start = None
 
                     # Commit symbolic write if access is okay
