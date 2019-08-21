@@ -732,30 +732,10 @@ class Cpu(Eventful):
         :type data: str or list
         :param force: whether to ignore memory permissions
         """
-
-        mp = self.memory.map_containing(where)
-        # TODO (ehennenfent) - fast write can have some yet-unstudied unintended side effects.
-        # At the very least, using it in non-concrete mode will break the symbolic strcmp/strlen models. The 1024 byte
-        # minimum is intended to minimize the potential effects of this by ensuring that if there _are_ any other
-        # issues, they'll only crop up when we're doing very large writes, which are fairly uncommon.
-        can_write_raw = (
-            type(mp) is AnonMap
-            and isinstance(data, (str, bytes))
-            and (mp.end - mp.start + 1) >= len(data) >= 1024
-            and not issymbolic(data)
-            and self._concrete
-        )
-
-        if can_write_raw:
-            logger.debug("Using fast write")
-            offset = mp._get_offset(where)
-            if isinstance(data, str):
-                data = bytes(data.encode("utf-8"))
-            mp._data[offset : offset + len(data)] = data
-            self._publish("did_write_memory", where, data, 8 * len(data))
-        else:
-            for i in range(len(data)):
-                self.write_int(where + i, Operators.ORD(data[i]), 8, force)
+        size = len(data)
+        self._publish("will_write_memory", where, data, size)
+        self._memory.write(where, data, force)
+        self._publish("did_write_memory", where, data, size)
 
     def read_bytes(self, where, size, force=False):
         """
@@ -767,10 +747,10 @@ class Cpu(Eventful):
         :return: data
         :rtype: list[int or Expression]
         """
-        result = []
-        for i in range(size):
-            result.append(Operators.CHR(self.read_int(where + i, 8, force)))
-        return result
+        self._publish("will_read_memory", where, size)
+        data = self._memory.read(where, size, force)
+        self._publish("did_read_memory", where, data, size)
+        return data
 
     def write_string(self, where, string, max_length=None, force=False):
         """
