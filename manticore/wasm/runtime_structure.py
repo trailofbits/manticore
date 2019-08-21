@@ -383,7 +383,9 @@ class ModuleInstance:
             # print("Popping", abs(i), "values from the stack")
             vals = [stack.pop() for _i in range(abs(i))]  # TODO  - Confirm this isn't an off-by-one
             label = stack.pop()
-            assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label: {stack.parent.data}"
+            assert isinstance(
+                label, Label
+            ), f"Stack contained a {type(label)} instead of a Label: {stack.parent.data}"
             for v in vals[::-1]:
                 stack.push(v)
 

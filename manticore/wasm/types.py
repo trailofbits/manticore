@@ -13,7 +13,9 @@ class I32(int):
     def __new__(cls, val):
         val &= 0xFFFFFFFF
         if val > 0x7FFFFFFF:
-            val = struct.unpack('i', struct.pack('I', val))[0]  # TODO - this is probably unsound overall
+            val = struct.unpack("i", struct.pack("I", val))[
+                0
+            ]  # TODO - this is probably unsound overall
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
