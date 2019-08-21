@@ -270,6 +270,7 @@ class ModuleInstance:
         assert last_frame.frame == f
 
         # #15  TODO run start function
+        print("Initialization Complete")
 
     def allocate(
         self,
@@ -336,7 +337,7 @@ class ModuleInstance:
 
         dummy_frame = Frame([], ModuleInstance())
         stack.push(dummy_frame)
-        for v in argv:
+        for v in argv[::-1]:  # TODO - should be reversed?
             stack.push(v)
 
         # https://www.w3.org/TR/wasm-core-1/#exec-invoke
@@ -379,9 +380,10 @@ class ModuleInstance:
             i = -1
             while isinstance(stack.parent.data[i], Value.__args__):
                 i -= 1
+            # print("Popping", abs(i), "values from the stack")
             vals = [stack.pop() for _i in range(abs(i))]  # TODO  - Confirm this isn't an off-by-one
             label = stack.pop()
-            assert isinstance(label, Label)
+            assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label: {stack.parent.data}"
             for v in vals[::-1]:
                 stack.push(v)
 
@@ -390,6 +392,21 @@ class ModuleInstance:
     def push_instructions(self, insts: WASMExpression):
         for i in insts[::-1]:
             self._instruction_queue.append(i)
+
+    def look_forward(self, opcode):
+        """
+        TODO - this needs to properly handle nested blocks/loops
+        :param opcode:
+        :return:
+        """
+        out = []
+        i = self._instruction_queue.pop()
+        while i.opcode != opcode:
+            out.append(i)
+            if len(self._instruction_queue) == 0:
+                raise RuntimeError("Could not find an instruction with opcode", opcode)
+            i = self._instruction_queue.pop()
+        out.append(i)
 
     def exec_instruction(self, store: Store, stack: Stack) -> bool:
         with AtomicStack(stack) as aStack:
@@ -404,11 +421,21 @@ class ModuleInstance:
                         )
                         if 0x2 <= inst.opcode <= 0x11:
                             if inst.opcode == 0x02:
-                                self.block(aStore, aStack, [], [])  # TODO - fill out arguments here
+                                if inst.imm.sig != -1:
+                                    raise RuntimeError(
+                                        f"I don't know what a type sig of {inst.imm.sig} means!"
+                                    )
+                                # TODO - look forward to the end of the block. All the instructions after that are the
+                                # ones we should pass in as the continuation
+                                self.block(aStore, aStack, [I32], self.look_forward(0x0B))
                             elif inst.opcode == 0x03:
-                                self.loop(aStore, aStack, inst.imm)
+                                self.loop(aStore, aStack, inst)
                             elif inst.opcode == 0x04:
-                                self.if_(aStore, aStack, inst.imm)
+                                if inst.imm.sig != -1:
+                                    raise RuntimeError(
+                                        f"I don't know what a type sig of {inst.imm.sig} means!"
+                                    )
+                                self.if_(aStore, aStack, [I32])
                             elif inst.opcode == 0x05:
                                 self.else_(aStore, aStack)
                             elif inst.opcode == 0x0B:
@@ -435,8 +462,7 @@ class ModuleInstance:
                         raise exc
 
                 elif aStack.find_type(Label):
-                    self.exit_instruction(aStack)
-                    return True
+                    raise RuntimeError("This should never happen")
             return False
 
     def block(
@@ -447,29 +473,51 @@ class ModuleInstance:
         self._instruction_queue.clear()
         self.enter_instruction(insts, l, stack)
 
-    def loop(self, store: "Store", stack: "Stack", imm: BlockImm):
-        raise NotImplementedError("loop")
+    def loop(self, store: "Store", stack: "Stack", loop_inst):
+        insts = self.look_forward(0x0B)
+        l = Label(0, [loop_inst] + insts)
+        self.enter_instruction(insts, l, stack)
 
-    def if_(self, store: "Store", stack: "Stack", imm: BlockImm):
-        raise NotImplementedError("if")
+    def if_(self, store: "Store", stack: "Stack", ret_type: typing.List[type]):
+        stack.has_type_on_top(I32, 1)
+        c = stack.pop()
+        t_block = self.look_forward(0x05)
+        f_block = self.look_forward(0x0B)
+        l = Label(len(ret_type), list(self._instruction_queue.copy()))
+        self._instruction_queue.clear()
+        if c != 0:
+            self.enter_instruction(t_block, l, stack)
+        else:
+            self.enter_instruction(f_block, l, stack)
 
     def else_(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("else")
+        self.end(store, stack)
 
     def end(self, store: "Store", stack: "Stack"):
-        pass
+        self.exit_instruction(stack)
 
     def br(self, store: "Store", stack: "Stack", imm: BranchImm):
         raise NotImplementedError("br")
 
     def br_if(self, store: "Store", stack: "Stack", imm: BranchImm):
-        raise NotImplementedError("br_if")
+        stack.has_type_on_top(I32, 1)
+        c = stack.pop()
+        if c != 0:
+            self.br(store, stack, imm)
 
     def br_table(self, store: "Store", stack: "Stack", imm: BranchTableImm):
         raise NotImplementedError("br_table")
 
     def return_(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("return")
+        f = stack.get_frame()
+        n = len(f.locals)
+        stack.has_type_on_top(Value.__args__, n)
+        ret = [stack.pop() for _i in range(n)]
+        while not isinstance(stack.peek(), type(f)):
+            stack.pop()
+        for r in ret:
+            stack.push(r)
+        # If we did everything right, the next instruction should already be in the instruction queue
 
     def call(self, store: "Store", stack: "Stack", imm: CallImm):
         f = stack.get_frame()
@@ -513,13 +561,13 @@ class Stack:
         self.data = state["data"]
 
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
-        # print("Pushing", val)
         if isinstance(val, list):
             raise RuntimeError("Don't push lists")
+        # print(f"+{len(self.data)}", val, f"({type(val)})")
         self.data.append(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
-        # print("Removing", self.peek())
+        # print(f"-{len(self.data)-1}", self.peek(), f"({type(self.peek())})")
         return self.data.pop()
 
     def peek(self):
