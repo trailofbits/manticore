@@ -1181,22 +1181,24 @@ class MemoryTest(unittest.TestCase):
         symbolic_bytes = [cs.new_bitvec(8) for _ in range(4)]
         mem[buf + 0x10 : buf + 0x17] = (
             symbolic_bytes[0],
-            'A',  # will be converted to b'A'
+            "A",  # will be converted to b'A'
             symbolic_bytes[1],
             symbolic_bytes[2],
-            b'B',
-            b'C',
+            b"B",
+            b"C",
             symbolic_bytes[3],
         )
 
         # And assert it!
         for idx, symbolic_val in zip((0x10, 0x12, 0x13, 0x16), symbolic_bytes):
             addr = buf + idx
-            self.assertIs(mem[addr], symbolic_val)  # We can't do assertEqual as `==` operator leads to an expression
+            self.assertIs(
+                mem[addr], symbolic_val
+            )  # We can't do assertEqual as `==` operator leads to an expression
             self.assertTrue(issymbolic(mem[addr]))
             expected_symbolic_chunks[addr] = [(True, symbolic_val)]
 
-        for idx, val in ((0x11, b'A'), (0x14, b'B'), (0x15, b'C')):
+        for idx, val in ((0x11, b"A"), (0x14, b"B"), (0x15, b"C")):
             byte = mem[buf + idx]
             self.assertEqual(byte, val)
             self.assertFalse(issymbolic(byte))
