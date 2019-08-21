@@ -9,6 +9,7 @@ args = parser.parse_args()
 data = json.load(args.filename)["commands"]
 args.filename.close()
 
+
 class Module:
     def __init__(self, filename, tests):
         self.name = filename.replace(".wasm", "").replace(".wast", "").replace(".", "_").strip()
