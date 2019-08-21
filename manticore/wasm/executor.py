@@ -690,19 +690,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(Operators.ITEBV(32, c1 > 32, I32(0), I32.cast(c2 << c1)))
+        stack.push(I32.cast(c2 << (c1 % 32)))
 
     def i32_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(Operators.SAR(c2, c1)))
+        stack.push(I32.cast(Operators.SAR(32, c2, (c1 % 32))))
 
     def i32_shr_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 >> c1))
+        stack.push(I32.cast(c2 >> (c1 % 32)))
 
     def i32_rotl(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.rotl")
@@ -771,19 +771,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(Operators.ITEBV(64, c1 > 64, I64(0), I64.cast(c2 << c1)))
+        stack.push(I64.cast(c2 << (c1 % 64)))
 
     def i64_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(Operators.SAR(c2, c1)))
+        stack.push(I64.cast(Operators.SAR(64, c2, c1 % 64)))
 
     def i64_shr_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 >> c1))
+        stack.push(I64.cast(c2 >> (c1 % 64)))
 
     def i64_rotl(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.rotl")

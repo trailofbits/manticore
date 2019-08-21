@@ -59,7 +59,7 @@ for d in data:
         raise NotImplementedError("assert_return_canonical_nan")
     elif d["type"] == "assert_trap":
         if d["action"]["type"] == "invoke":
-            pass
+            pass  # TODO - implement support for the trap tests
             # if isinstance(current_module, int):
             #     modules[current_module].tests.append({"func": d["action"]["field"],
             #                                           "args": convert_types(d["action"]["args"]),
