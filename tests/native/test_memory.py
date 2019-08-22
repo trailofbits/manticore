@@ -1138,12 +1138,10 @@ class MemoryTest(unittest.TestCase):
 
         # Check if they are concretes/symbolics
         for addr in concretes:
-            byte = mem[addr]
-            self.assertFalse(issymbolic(byte))
+            self.assertFalse(issymbolic(mem[addr]))
 
         for addr in symbolics:
-            byte = mem[addr]
-            self.assertTrue(issymbolic(byte))
+            self.assertTrue(issymbolic(mem[addr]))
 
         # And assert the internal symbolic chunks dict representation
         self.assertDictEqual(
@@ -1167,12 +1165,10 @@ class MemoryTest(unittest.TestCase):
 
         # Assert again
         for addr in concretes:
-            byte = mem[addr]
-            self.assertFalse(issymbolic(byte))
+            self.assertFalse(issymbolic(mem[addr]))
 
         for addr in symbolics:
-            byte = mem[addr]
-            self.assertTrue(issymbolic(byte))
+            self.assertTrue(issymbolic(mem[addr]))
 
         # And reassert the internal symbolic chunks dict representation
         expected_symbolic_chunks = {
@@ -1182,28 +1178,33 @@ class MemoryTest(unittest.TestCase):
         self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
 
         # Do a write to memory that combines concrete and symbolic value and see if it succeeds
-        symbolic_bytes = [cs.new_bitvec(8) for _ in range(3)]
-        mem[buf + 0x10 : buf + 0x15] = (
+        symbolic_bytes = [cs.new_bitvec(8) for _ in range(4)]
+        mem[buf + 0x10 : buf + 0x17] = (
             symbolic_bytes[0],
-            "A",
+            "A",  # will be converted to b'A'
             symbolic_bytes[1],
-            "B",
             symbolic_bytes[2],
+            b"B",
+            b"C",
+            symbolic_bytes[3],
         )
 
         # And assert it!
-        expected_symbolic_chunks[buf + 0x10] = [(True, symbolic_bytes[0])]
-        expected_symbolic_chunks[buf + 0x12] = [(True, symbolic_bytes[1])]
-        expected_symbolic_chunks[buf + 0x14] = [(True, symbolic_bytes[2])]
+        for idx, symbolic_val in zip((0x10, 0x12, 0x13, 0x16), symbolic_bytes):
+            addr = buf + idx
+            self.assertIs(
+                mem[addr], symbolic_val
+            )  # We can't do assertEqual as `==` operator leads to an expression
+            self.assertTrue(issymbolic(mem[addr]))
+            expected_symbolic_chunks[addr] = [(True, symbolic_val)]
 
-        for idx in (0x10, 0x12, 0x14):
-            self.assertTrue(issymbolic(mem[buf + idx]))
-
-        for idx in (0x11, 0x13):
-            self.assertFalse(issymbolic(mem[buf + idx]))
+        for idx, val in ((0x11, b"A"), (0x14, b"B"), (0x15, b"C")):
+            byte = mem[buf + idx]
+            self.assertEqual(byte, val)
+            self.assertFalse(issymbolic(byte))
 
         self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
-        self.assertEqual(len(mem._symbols), 7)  # Sanity check if keys didn't overlap
+        self.assertEqual(len(mem._symbols), 8)  # Sanity check if keys didn't overlap
 
     def test_one_concrete_one_symbolic(self):
         # global mainsolver
@@ -1700,8 +1701,8 @@ class MemoryTest(unittest.TestCase):
         mem.write(addr + 1, "b")
         writes = mem.pop_record_writes()
 
-        self.assertIn((addr, ["a"]), writes)
-        self.assertIn((addr + 1, ["b"]), writes)
+        self.assertIn((addr, "a"), writes)
+        self.assertIn((addr + 1, "b"), writes)
 
     def test_mem_trace_no_overwrites(self):
         cs = ConstraintSet()
@@ -1714,8 +1715,8 @@ class MemoryTest(unittest.TestCase):
         mem.write(addr, "b")
         writes = mem.pop_record_writes()
 
-        self.assertIn((addr, ["a"]), writes)
-        self.assertIn((addr, ["b"]), writes)
+        self.assertIn((addr, "a"), writes)
+        self.assertIn((addr, "b"), writes)
 
     def test_mem_trace_nested(self):
         cs = ConstraintSet()
@@ -1733,17 +1734,17 @@ class MemoryTest(unittest.TestCase):
         outer_writes = mem.pop_record_writes()
 
         # Make sure writes do not appear in a trace started after them
-        self.assertNotIn((addr, ["a"]), inner_writes)
-        self.assertNotIn((addr + 1, ["b"]), inner_writes)
+        self.assertNotIn((addr, "a"), inner_writes)
+        self.assertNotIn((addr + 1, "b"), inner_writes)
         # Make sure the first two are in the outer write
-        self.assertIn((addr, ["a"]), outer_writes)
-        self.assertIn((addr + 1, ["b"]), outer_writes)
+        self.assertIn((addr, "a"), outer_writes)
+        self.assertIn((addr + 1, "b"), outer_writes)
         # Make sure the last two are in the inner write
-        self.assertIn((addr + 2, ["c"]), inner_writes)
-        self.assertIn((addr + 3, ["d"]), inner_writes)
+        self.assertIn((addr + 2, "c"), inner_writes)
+        self.assertIn((addr + 3, "d"), inner_writes)
         # Make sure the last two are also in the outer write
-        self.assertIn((addr + 2, ["c"]), outer_writes)
-        self.assertIn((addr + 3, ["d"]), outer_writes)
+        self.assertIn((addr + 2, "c"), outer_writes)
+        self.assertIn((addr + 3, "d"), outer_writes)
 
     def test_mem_trace_ignores_failing(self):
         cs = ConstraintSet()
