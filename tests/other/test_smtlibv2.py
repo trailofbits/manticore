@@ -813,6 +813,15 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), ord("Z"))
 
+    def test_ORD_proper_extract(self):
+        solver = Z3Solver.instance()
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32)
+        cs.add(Operators.ORD(a) == Operators.ORD("\xff"))
+
+        self.assertTrue(solver.check(cs))
+        self.assertEqual(solver.get_value(cs, a), ord("\xff"))
+
     def test_CHR(self):
         solver = Z3Solver.instance()
         cs = ConstraintSet()
