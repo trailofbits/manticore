@@ -81,6 +81,18 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue("SOURCE3" in x.taint)
         self.assertTrue("SOURCE4" in x.taint)
 
+    def test_cs_new_bitvec_invalid_size(self):
+        cs = ConstraintSet()
+        with self.assertRaises(ValueError) as e:
+            cs.new_bitvec(size=0)
+
+        self.assertEqual(str(e.exception), "Bitvec size (0) can't be equal to or less than 0")
+
+        with self.assertRaises(ValueError) as e:
+            cs.new_bitvec(size=-23)
+
+        self.assertEqual(str(e.exception), "Bitvec size (-23) can't be equal to or less than 0")
+
     def testBasicConstraints(self):
         cs = ConstraintSet()
         a = cs.new_bitvec(32)
