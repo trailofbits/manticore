@@ -1228,6 +1228,7 @@ class ManticoreEVM(ManticoreBase):
                     self.count_ready_states(),
                     self.count_terminated_states(),
                 )
+
             except NoAliveStates:
                 break
 
@@ -1663,7 +1664,7 @@ class ManticoreEVM(ManticoreBase):
                 pass
 
         q = Queue()
-        for state_id in self._all_states:
+        for state_id in self._ready_states:
             # we need to remove -1 state before forking because it may be in memory
             q.put(state_id)
 
