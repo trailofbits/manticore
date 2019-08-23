@@ -404,6 +404,8 @@ class ModuleInstance:
         out = []
         i = self._instruction_queue.pop()
         while i.opcode != opcode:
+            if i.opcode in {0x02, 0x03, 0x04}:
+                out += self.look_forward(0x0B)
             out.append(i)
             if len(self._instruction_queue) == 0:
                 raise RuntimeError("Could not find an instruction with opcode", opcode)
