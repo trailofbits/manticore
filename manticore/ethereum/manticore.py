@@ -1664,7 +1664,7 @@ class ManticoreEVM(ManticoreBase):
                 pass
 
         q = Queue()
-        for state_id in self._ready_states:
+        for state_id in self._all_states:
             # we need to remove -1 state before forking because it may be in memory
             q.put(state_id)
 

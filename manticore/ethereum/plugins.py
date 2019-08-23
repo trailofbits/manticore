@@ -175,9 +175,9 @@ class KeepOnlyIfStorageChanges(Plugin):
             # it does not matter if a state can affect the balances or not.
             # The same reachability should be obtained as the account original
             # balances must be symbolic and free-ish
-            # if not flag:
-            #    ether_sent = state.can_be_true(tx.value != 0)
-            #    flag = flag or ether_sent
+            if not flag:
+                ether_sent = state.can_be_true(tx.value != 0)
+                flag = flag or ether_sent
             state.context["written"][-1] = state.context["written"][-1] or flag
 
     def did_evm_write_storage_callback(self, state, *args):
@@ -203,7 +203,7 @@ class KeepOnlyIfStorageChanges(Plugin):
             for state_id in list(saved_states):
                 st = self.manticore._load(state_id)
                 if not st.context["written"][-1]:
-                    self.manticore._killed_states.append(st.id)
+                    self.manticore._terminated_states.append(st.id)
                     saved_states.remove(st.id)
 
     def generate_testcase(self, state, testcase, message):
