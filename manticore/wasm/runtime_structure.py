@@ -10,6 +10,9 @@ from wasm.immtypes import BlockImm, BranchImm, BranchTableImm, CallImm, CallIndi
 from .types import (
     U32,
     I32,
+    I64,
+    F32,
+    F64,
     Value,
     ValType,
     FunctionType,
@@ -414,6 +417,7 @@ class ModuleInstance:
         return out
 
     def exec_instruction(self, store: Store, stack: Stack) -> bool:
+        ret_type_map = {-1: [I32], -2: [I64], -3: [F32], -4: [F64], -64: []}
         with AtomicStack(stack) as aStack:
             with AtomicStore(store) as aStore:
                 if self._instruction_queue:
@@ -426,21 +430,16 @@ class ModuleInstance:
                         )
                         if 0x2 <= inst.opcode <= 0x11:
                             if inst.opcode == 0x02:
-                                if inst.imm.sig != -1:
-                                    raise RuntimeError(
-                                        f"I don't know what a type sig of {inst.imm.sig} means!"
-                                    )
-                                # TODO - look forward to the end of the block. All the instructions after that are the
-                                # ones we should pass in as the continuation
-                                self.block(aStore, aStack, [I32], self.look_forward(0x0B))
+                                self.block(
+                                    aStore,
+                                    aStack,
+                                    ret_type_map[inst.imm.sig],
+                                    self.look_forward(0x0B),
+                                )
                             elif inst.opcode == 0x03:
                                 self.loop(aStore, aStack, inst)
                             elif inst.opcode == 0x04:
-                                if inst.imm.sig != -1:
-                                    raise RuntimeError(
-                                        f"I don't know what a type sig of {inst.imm.sig} means!"
-                                    )
-                                self.if_(aStore, aStack, [I32])
+                                self.if_(aStore, aStack, ret_type_map[inst.imm.sig])
                             elif inst.opcode == 0x05:
                                 self.else_(aStore, aStack)
                             elif inst.opcode == 0x0B:

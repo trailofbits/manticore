@@ -296,7 +296,7 @@ class Executor(object):  # TODO - should be Eventful
         if (ea + 8) > len(mem.data):
             raise Trap()
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
-        stack.push(I32.cast(c))
+        stack.push(I64.cast(c))
 
     def int_load(
         self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, size: int, signed: bool
@@ -348,7 +348,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_load(store, stack, imm, I64, 32, True)
 
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        self.int_load(store, stack, imm, I64, 64, True)
+        self.int_load(store, stack, imm, I64, 32, False)
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame().frame
@@ -408,7 +408,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(imm.value))
 
     def i64_const(self, store: "Store", stack: "Stack", imm: I64ConstImm):
-        stack.push(I32(imm.value))
+        stack.push(I64(imm.value))
 
     def i32_eqz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
@@ -642,19 +642,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 + c1))
+        stack.push(I32.cast((c2 + c1) % 2 ** 32))
 
     def i32_sub(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 - c1))
+        stack.push(I32.cast((c1 - c2 + 2 ** 32) % 2 ** 32))
 
     def i32_mul(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 * c1))
+        stack.push(I32.cast((c2 * c1) % 2 ** 32))
 
     def i32_div_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.div_s")
@@ -723,19 +723,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 + c1))
+        stack.push(I64.cast((c2 + c1) % 2 ** 64))
 
     def i64_sub(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 - c1))
+        stack.push(I64.cast((c1 - c2 + 2 ** 64) % 2 ** 64))
 
     def i64_mul(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 * c1))
+        stack.push(I64.cast((c2 * c1) % 2 ** 64))
 
     def i64_div_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.div_s")
