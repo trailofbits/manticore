@@ -777,10 +777,6 @@ def to_constant(expression):
             else:
                 return bytes(ba)
             return expression
-    try:
-        print(translate_to_smtlib(value))
-    except:
-        pass
     return value
 
 
