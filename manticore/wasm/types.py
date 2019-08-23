@@ -8,6 +8,18 @@ U32: type = type("U32", (int,), {})
 U64: type = type("U64", (int,), {})
 Byte: type = type("Byte", (int,), {})
 
+def debug(imm):
+    if hasattr(imm, "value"):
+        return imm.value
+    if hasattr(imm, "function_index"):
+        return f"Func Idx {imm.function_index}"
+    if hasattr(imm, "offset"):
+        return f"Offset {imm.offset}"
+    if hasattr(imm, "local_index"):
+        return f"Local {imm.local_index}"
+    if hasattr(imm, "global_index"):
+        return f"Global {imm.global_index}"
+    return getattr(imm, "value", imm)
 
 class I32(int):
     def __new__(cls, val):
@@ -185,6 +197,9 @@ class Instruction:
         self.opcode = inst.op.id
         self.mnemonic = inst.op.mnemonic
         self.imm = imm
+
+    def __repr__(self):
+        return f"<Instruction: {self.mnemonic} ({debug(self.imm)})>"
 
 
 MemoryType = LimitType
