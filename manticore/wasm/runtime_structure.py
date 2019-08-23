@@ -28,7 +28,7 @@ from .types import (
     GlobalIdx,
     WASMExpression,
     Instruction,
-    debug
+    debug,
 )
 from ..core.smtlib import BitVec
 from ..core.state import Concretize
@@ -371,9 +371,7 @@ class ModuleInstance:
             while not isinstance(stack.peek(), Label):
                 vals.append(stack.pop())
             label = stack.pop()
-            assert isinstance(
-                label, Label
-            ), f"Stack contained a {type(label)} instead of a Label"
+            assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label"
             for v in vals[::-1]:
                 stack.push(v)
 

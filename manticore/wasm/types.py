@@ -8,6 +8,7 @@ U32: type = type("U32", (int,), {})
 U64: type = type("U64", (int,), {})
 Byte: type = type("Byte", (int,), {})
 
+
 def debug(imm):
     if hasattr(imm, "value"):
         return imm.value
@@ -20,6 +21,7 @@ def debug(imm):
     if hasattr(imm, "global_index"):
         return f"Global {imm.global_index}"
     return getattr(imm, "value", imm)
+
 
 class I32(int):
     def __new__(cls, val):
