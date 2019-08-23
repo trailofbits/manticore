@@ -169,23 +169,21 @@ class KeepOnlyIfStorageChanges(Plugin):
         """
         flag = state.context["written"].pop()
         if tx.result in {"RETURN", "STOP"}:
-            code_written = ((tx.result == "RETURN") and (tx.sort == "CREATE"))
+            code_written = (tx.result == "RETURN") and (tx.sort == "CREATE")
             flag = flag or code_written
             # As the ether balance of any account can be manipulated beforehand
             # it does not matter if a state can affect the balances or not.
             # The same reachability should be obtained as the account original
             # balances must be symbolic and free-ish
-            #if not flag:
+            # if not flag:
             #    ether_sent = state.can_be_true(tx.value != 0)
             #    flag = flag or ether_sent
             state.context["written"][-1] = state.context["written"][-1] or flag
-
 
     def did_evm_write_storage_callback(self, state, *args):
         """ Turn on the corresponding flag is the storage has been modified.
         Note: subject to change if the current transaction is reverted"""
         state.context["written"][-1] = True
-
 
     def will_run_callback(self, *args):
         """Initialize the flag stack at each human tx/run()"""
@@ -196,10 +194,10 @@ class KeepOnlyIfStorageChanges(Plugin):
         """When  human tx/run just ended remove the states that have not changed
          the storage"""
         with self.manticore.locked_context("ethereum.saved_states", list) as saved_states:
-            #Normallyy the ready states are consumed and forked, eth save the 
+            # Normallyy the ready states are consumed and forked, eth save the
             # states that finished ok in a special context list. This list will
             # compose the ready states for the next human transaction.
-            # The actual "ready_states" list at this point contain the states 
+            # The actual "ready_states" list at this point contain the states
             # that have not finished the previous TX due to a timeout. Those will
             # be ignored.
             for state_id in list(saved_states):
@@ -207,7 +205,6 @@ class KeepOnlyIfStorageChanges(Plugin):
                 if not st.context["written"][-1]:
                     self.manticore._killed_states.append(st.id)
                     saved_states.remove(st.id)
-
 
     def generate_testcase(self, state, testcase, message):
         with testcase.open_stream("summary") as stream:

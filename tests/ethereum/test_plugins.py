@@ -27,11 +27,11 @@ class EthPluginsTests(unittest.TestCase):
 
         with m.kill_timeout():
             m.multi_tx_analysis(filename)
-    
+
         for st in m.all_states:
             if st.platform.logs:
                 return
-        self.assertEqual(0,1)
+        self.assertEqual(0, 1)
 
     @unittest.skip("failing")
     def test_verbose_trace(self):
