@@ -237,12 +237,12 @@ class Executor(object):  # TODO - should be Eventful
                 stack.push(v2)
 
     def get_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
         stack.push(f.locals[imm.local_index])
 
     def set_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
         stack.has_type_on_top(Value.__args__, 1)
         f.locals[imm.local_index] = stack.pop()
@@ -255,7 +255,7 @@ class Executor(object):  # TODO - should be Eventful
         self.set_local(store, stack, imm)
 
     def get_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.global_index in range(len(f.module.globaladdrs))
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
@@ -263,7 +263,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(glob.value)
 
     def set_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.global_index in range(len(f.module.globaladdrs))
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
@@ -271,7 +271,7 @@ class Executor(object):  # TODO - should be Eventful
         store.globals[a].value = stack.pop()
 
     def i32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -285,7 +285,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(c))
 
     def i64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -302,7 +302,7 @@ class Executor(object):  # TODO - should be Eventful
         self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, size: int, signed: bool
     ):
         assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -351,7 +351,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_load(store, stack, imm, I64, 64, True)
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -394,7 +394,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_store(store, stack, imm, I64, 32)
 
     def current_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))

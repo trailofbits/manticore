@@ -512,19 +512,21 @@ class ModuleInstance:
 
     def return_(self, store: "Store", stack: "Stack"):
         f = stack.get_frame()
-        n = len(f.locals)
+        n = f.arity
         stack.has_type_on_top(Value.__args__, n)
         ret = [stack.pop() for _i in range(n)]
-        while not isinstance(stack.peek(), type(f)):
+        while not isinstance(stack.peek(), (Activation, Frame)):
             stack.pop()
+        assert stack.peek() == f
         for r in ret:
             stack.push(r)
+        self.look_forward(0x0B)
         # If we did everything right, the next instruction should already be in the instruction queue
 
     def call(self, store: "Store", stack: "Stack", imm: CallImm):
         f = stack.get_frame()
-        assert imm.function_index in range(len(f.module.funcaddrs))
-        a = f.module.funcaddrs[imm.function_index]
+        assert imm.function_index in range(len(f.frame.module.funcaddrs))
+        a = f.frame.module.funcaddrs[imm.function_index]
         self._invoke_inner(stack, a, store)
 
     def call_indirect(self, store: "Store", stack: "Stack", imm: CallIndirectImm):
@@ -591,11 +593,9 @@ class Stack:
                 return -1 * idx
         return None
 
-    def get_frame(self) -> Frame:
+    def get_frame(self) -> Activation:
         for item in reversed(self.data):
             if isinstance(item, Activation):
-                return item.frame
-            if isinstance(item, Frame):
                 return item
 
 
@@ -646,7 +646,7 @@ class AtomicStack(Stack):
     def find_type(self, t: type):
         return self.parent.find_type(t)
 
-    def get_frame(self) -> Frame:
+    def get_frame(self) -> Activation:
         return self.parent.get_frame()
 
 

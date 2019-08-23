@@ -2,7 +2,8 @@ from .platform import Platform
 from ..wasm.module_structure import Module
 from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc, Stack
 from ..core.state import TerminateState
-from ..core.smtlib import ConstraintSet
+from ..core.smtlib import ConstraintSet, issymbolic
+from ..core.smtlib.solver import Z3Solver
 import typing, types
 import logging
 
@@ -87,4 +88,10 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
             if not self.stack.empty():
                 ret = self.stack.pop()
                 print("WASM Execution returned", ret)
+                if issymbolic(ret):
+                    print(
+                        "Symbolic return detected, possible values:",
+                        Z3Solver.instance().get_all_values(self.constraints, ret),
+                    )
+
             raise TerminateState(f"Execution returned {ret}")
