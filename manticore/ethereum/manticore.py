@@ -1056,6 +1056,7 @@ class ManticoreEVM(ManticoreBase):
                     self.count_ready_states(),
                     self.count_terminated_states(),
                 )
+
             except NoAliveStates:
                 break
 

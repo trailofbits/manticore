@@ -22,7 +22,8 @@ from manticore.ethereum import (
     DetectManipulableBalance,
     State,
 )
-from manticore.ethereum.plugins import LoopDepthLimiter
+from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
+
 from manticore.utils import config
 
 consts = config.get_group("core")
@@ -46,6 +47,7 @@ class EthDetectorTest(unittest.TestCase):
 
     def setUp(self):
         self.mevm = ManticoreEVM()
+        self.mevm.register_plugin(KeepOnlyIfStorageChanges())
         self.mevm.verbosity(0)
         self.worksp = self.mevm.workspace
 

@@ -142,3 +142,73 @@ class VerboseTraceStdout(Plugin):
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         print(state.platform.current_vm)
+
+
+class KeepOnlyIfStorageChanges(Plugin):
+    """ TODO: reword
+        This state will ignore states that are the result of executing a
+        transaction that did not write to the storage.
+
+        When this plugin is enabled transactions that wont write to the storage
+        are considered not to change the evm world state and hence ignored as a
+        starting point for the following human transaction.
+    """
+
+    def did_open_transaction_callback(self, state, tx, *args):
+        """ We need a stack. Each tx (internal or not) starts with a "False" flag
+            denoting that it did not write anything to the storage
+        """
+        state.context["written"].append(False)
+
+    def did_close_transaction_callback(self, state, tx, *args):
+        """ When a tx (internal or not) is closed a value is popped out from the
+        flag stack. Depending on the result if the storage is not rolled back the
+        next flag in the stack is updated. Not that if the a tx is reverted the
+        changes it may have done on the storage will not affect the final result.
+
+        """
+        flag = state.context["written"].pop()
+        if tx.result in {"RETURN", "STOP"}:
+            code_written = (tx.result == "RETURN") and (tx.sort == "CREATE")
+            flag = flag or code_written
+            # As the ether balance of any account can be manipulated beforehand
+            # it does not matter if a state can affect the balances or not.
+            # The same reachability should be obtained as the account original
+            # balances must be symbolic and free-ish
+            if not flag:
+                ether_sent = state.can_be_true(tx.value != 0)
+                flag = flag or ether_sent
+            state.context["written"][-1] = state.context["written"][-1] or flag
+
+    def did_evm_write_storage_callback(self, state, *args):
+        """ Turn on the corresponding flag is the storage has been modified.
+        Note: subject to change if the current transaction is reverted"""
+        state.context["written"][-1] = True
+
+    def will_run_callback(self, *args):
+        """Initialize the flag stack at each human tx/run()"""
+        for st in self.manticore.ready_states:
+            st.context["written"] = [False]
+
+    def did_run_callback(self):
+        """When  human tx/run just ended remove the states that have not changed
+         the storage"""
+        with self.manticore.locked_context("ethereum.saved_states", list) as saved_states:
+            # Normallyy the ready states are consumed and forked, eth save the
+            # states that finished ok in a special context list. This list will
+            # compose the ready states for the next human transaction.
+            # The actual "ready_states" list at this point contain the states
+            # that have not finished the previous TX due to a timeout. Those will
+            # be ignored.
+            for state_id in list(saved_states):
+                st = self.manticore._load(state_id)
+                if not st.context["written"][-1]:
+                    self.manticore._terminated_states.append(st.id)
+                    saved_states.remove(st.id)
+
+    def generate_testcase(self, state, testcase, message):
+        with testcase.open_stream("summary") as stream:
+            if not state.context.get("written", (False,))[-1]:
+                stream.write(
+                    "State was removed from ready list because the last tx did not write to the storage"
+                )

@@ -16,7 +16,7 @@ from .detectors import (
 )
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
-from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
+from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIfStorageChanges
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config
 
@@ -72,6 +72,7 @@ def choose_detectors(args):
 def ethereum_main(args, logger):
     m = ManticoreEVM(workspace_url=args.workspace)
     with WithKeyboardInterruptAs(m.kill):
+        m.register_plugin(KeepOnlyIfStorageChanges())
 
         if args.verbose_trace:
             m.register_plugin(VerboseTrace())
