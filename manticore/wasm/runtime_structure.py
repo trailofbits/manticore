@@ -340,7 +340,7 @@ class ModuleInstance:
         f: ProtoFuncInst = store.funcs[funcaddr]
         ty = f.type
         assert len(ty.result_types) <= 1
-        locals = [stack.pop() for _t in ty.param_types]
+        locals = [stack.pop() for _t in ty.param_types][::-1]
         if isinstance(f, HostFunc):
             res = list(f.hostcode(*locals))
             print("HostFunc returned", res)
