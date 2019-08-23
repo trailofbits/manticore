@@ -395,7 +395,7 @@ class ModuleInstance:
         for i in insts[::-1]:
             self._instruction_queue.append(i)
 
-    def look_forward(self, opcode):
+    def look_forward(self, opcode) -> typing.List[Instruction]:
         """
         TODO - this needs to properly handle nested blocks/loops
         :param opcode:
@@ -409,6 +409,7 @@ class ModuleInstance:
                 raise RuntimeError("Could not find an instruction with opcode", opcode)
             i = self._instruction_queue.pop()
         out.append(i)
+        return out
 
     def exec_instruction(self, store: Store, stack: Stack) -> bool:
         with AtomicStack(stack) as aStack:
