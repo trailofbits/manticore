@@ -835,7 +835,7 @@ class Executor(object):  # TODO - should be Eventful
             size=32
         elif ty==F64:
             size=64
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         a = f.module.memaddrs[0]
         mem = store.mems[a]
         i = stack.pop()
@@ -852,7 +852,7 @@ class Executor(object):  # TODO - should be Eventful
         return self.float_load(store, stack, imm, F64)
 
     def float_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         a = f.module.memaddrs[0]
         mem = store.mems[a]
         c = stack.pop()
