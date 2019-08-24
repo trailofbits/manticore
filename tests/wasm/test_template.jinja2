@@ -5,6 +5,17 @@ from manticore.platforms import wasm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
 from manticore.wasm.types import I32, F32, I64, F64
+import math
+
+
+def equalIncludingNan(a, b):
+    equal = False
+    if math.isnan(b[0]):
+        equal = math.isnan(a[0])
+    else:
+        equal = (a==b)
+    return equal
+
 {% endblock %}
 
 {% for module in modules %}
@@ -24,7 +35,10 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         argv=[]
         {% endif %}
         world.invoke(name="{{ test.func }}", argv=argv)
-        self.assertEqual(world.exec_for_test("{{test.func}}"), [{{ test.rets }}])
+        real = world.exec_for_test("{{test.func}}")
+        expected = [{{ test.rets }}]
+        equal = equalIncludingNan(real, expected)
+        self.assertTrue(equal)
 {% endfor %}
 {% endfor %}
 
