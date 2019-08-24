@@ -310,8 +310,6 @@ class Executor(object):  # TODO - should be Eventful
         assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
-        if (ea + (size // 8)) > len(mem.data):
-            raise Trap()
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         width = 32 if ty is I32 else 64
         if signed:
@@ -348,7 +346,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_load(store, stack, imm, I64, 32, True)
 
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        self.int_load(store, stack, imm, I64, 64, True)
+        self.int_load(store, stack, imm, I32, 64, True)
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame()
@@ -830,19 +828,55 @@ class Executor(object):  # TODO - should be Eventful
     def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.reinterpret/f64")
 
-    # Floating point instructions
 
+
+    def float_load( self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type):
+        if ty==F32:
+            size=32
+        elif ty==F64:
+            size=64
+        f = stack.get_frame()
+        a = f.module.memaddrs[0]
+        mem = store.mems[a]
+        i = stack.pop()
+        ea = i + imm.offset
+        c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
+        ret = ty.cast(c)
+        stack.push(ret)
+
+    # Floating point instructions
     def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f32.load")
+        return self.float_load(store, stack, imm, F32)
 
     def f64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f64.load")
+        return self.float_load(store, stack, imm, F64)
+
+    def float_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
+        f = stack.get_frame()
+        a = f.module.memaddrs[0]
+        mem = store.mems[a]
+        c = stack.pop()
+        i = stack.pop()
+        ea = i + imm.offset
+        if ty==F32:
+            size=32
+        else:
+            size=64
+        b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
+        for idx, v in enumerate(b):
+            mem.data[ea + idx] = v
+
+    def f32_pushValue(self, stack, v):
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, F32(1), F32(0)))
+        else:
+            stack.push(F32.cast(F32(1) if v else F32(0)))
 
     def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f32.store")
+        self.float_store(store, stack, imm, F32)
 
     def f64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f64.store")
+        self.float_store(store, stack, imm, F64)
 
     def f32_const(self, store: "Store", stack: "Stack", imm: F32ConstImm):
         stack.push(F32(imm.value))
@@ -851,10 +885,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(F64(imm.value))
 
     def f32_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.eq")
+        stack.has_type_on_top(F32,2)
+        v2 = stack.pop()
+        v1 = stack.pop()
+        v = (v1==v2)
+        self.f32_pushValue(stack, v)
 
     def f32_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ne")
+        stack.has_type_on_top(F32,2)
+        v2 = stack.pop()
+        v1 = stack.pop()
+        v = (v1!=v2)
+        self.f32_pushValue(stack,v)
+        
 
     def f32_lt(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.lt")

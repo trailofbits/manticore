@@ -33,6 +33,7 @@ template = env.get_template("test_template.jinja2")
 modules = []
 current_module = None
 for d in data:
+    
     if d["type"] == "action":
         raise NotImplementedError("action")
     elif d["type"] == "assert_exhaustion":
@@ -46,6 +47,7 @@ for d in data:
             if isinstance(current_module, int):
                 modules[current_module].tests.append(
                     {
+                        "line": d["line"],
                         "func": d["action"]["field"],
                         "args": convert_types(d["action"]["args"]),
                         "rets": convert_types(d["expected"]),
