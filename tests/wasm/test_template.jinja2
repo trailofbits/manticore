@@ -13,11 +13,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
     filename = join(dirname(abspath(__file__)), "{{ module.filename }}")
 
 {% for test in module.tests %}
-<<<<<<< HEAD
-    def test_{{ test.line }}(self):
-=======
     def test_{{ test.dedup_name }}(self):
->>>>>>> cd86e6065b8eaebdaa7e3aeb5beb4f598bb4b3b3
         constraints = ConstraintSet()
         world = wasm.WASMWorld(self.filename)
 

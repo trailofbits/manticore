@@ -346,11 +346,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_load(store, stack, imm, I64, 32, True)
 
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-<<<<<<< HEAD
         self.int_load(store, stack, imm, I32, 64, True)
-=======
-        self.int_load(store, stack, imm, I64, 32, False)
->>>>>>> cd86e6065b8eaebdaa7e3aeb5beb4f598bb4b3b3
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame().frame
