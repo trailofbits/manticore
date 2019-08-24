@@ -13,6 +13,7 @@ from .types import I32, I64, F32, F64, Value
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..core.state import Concretize
 
+import operator
 
 class Trap(Exception):
     pass
@@ -872,6 +873,12 @@ class Executor(object):  # TODO - should be Eventful
         else:
             stack.push(F32.cast(F32(1) if v else F32(0)))
 
+    def f64_pushValue(self, stack, v):
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(64, v, F64(1), F64(0)))
+        else:
+            stack.push(F32.cast(F64(1) if v else F64(0)))
+
     def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
         self.float_store(store, stack, imm, F32)
 
@@ -884,50 +891,57 @@ class Executor(object):  # TODO - should be Eventful
     def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
         stack.push(F64(imm.value))
 
-    def f32_eq(self, store: "Store", stack: "Stack"):
-        stack.has_type_on_top(F32,2)
+
+    def f32_operator(self, store: "Store", stack: "Stack", op):
+        stack.has_type_on_top(F32, 2)
         v2 = stack.pop()
         v1 = stack.pop()
-        v = (v1==v2)
+        v = op(v1, v2)
         self.f32_pushValue(stack, v)
 
-    def f32_ne(self, store: "Store", stack: "Stack"):
-        stack.has_type_on_top(F32,2)
+
+    def f64_operator(self, store: "Store", stack: "Stack", op):
+        stack.has_type_on_top(F64, 2)
         v2 = stack.pop()
         v1 = stack.pop()
-        v = (v1!=v2)
-        self.f32_pushValue(stack,v)
-        
+        v = op(v1, v2)
+        self.f64_pushValue(stack, v)
 
+    def f32_eq(self, store: "Store", stack: "Stack"):
+        return self.f32_operator(store, stack, operator.eq)
+
+    def f32_ne(self, store: "Store", stack: "Stack"):
+        return self.f32_operator(store, stack, operator.ne)
+        
     def f32_lt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.lt")
+        return self.f32_operator(store, stack, operator.lt)
 
     def f32_gt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.gt")
+        return self.f32_operator(store, stack, operator.gt)
 
     def f32_le(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.le")
+        return self.f32_operator(store, stack, operator.le)
 
     def f32_ge(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ge")
+        return self.f32_operator(store, stack, operator.ge)
 
     def f64_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.eq")
+        return self.f64_operator(store, stack, operator.eq)
 
     def f64_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.ne")
+        return self.f64_operator(store, stack, operator.ne)
 
     def f64_lt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.lt")
+        return self.f64_operator(store, stack, operator.lt)
 
     def f64_gt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.gt")
+        return self.f64_operator(store, stack, operator.gt)
 
     def f64_le(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.le")
+        return self.f64_operator(store, stack, operator.le)
 
     def f64_ge(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.ge")
+        return self.f64_operator(store, stack, operator.ge)
 
     def f32_abs(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.abs")

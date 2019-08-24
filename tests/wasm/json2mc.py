@@ -17,11 +17,12 @@ class Module:
         self.tests = tests
         self.dedup_names = {}
 
-    def add_test(self, name, args, rets):
+    def add_test(self, name, line, args, rets):
         count = self.dedup_names.setdefault(name, 0)
         self.tests.append(
             {
                 "func": name,
+                "line": line,
                 "args": args,
                 "rets": rets,
                 "dedup_name": f"{name}_{count}".replace(".", "_").replace("-", "_"),
@@ -60,6 +61,7 @@ for d in data:
             if isinstance(current_module, int):
                 modules[current_module].add_test(
                     d["action"]["field"],
+                    d["line"],
                     convert_types(d["action"]["args"]),
                     convert_types(d["expected"]),
                 )
