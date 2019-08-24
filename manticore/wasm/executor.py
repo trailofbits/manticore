@@ -237,12 +237,12 @@ class Executor(object):  # TODO - should be Eventful
                 stack.push(v2)
 
     def get_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
         stack.push(f.locals[imm.local_index])
 
     def set_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
         stack.has_type_on_top(Value.__args__, 1)
         f.locals[imm.local_index] = stack.pop()
@@ -255,7 +255,7 @@ class Executor(object):  # TODO - should be Eventful
         self.set_local(store, stack, imm)
 
     def get_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.global_index in range(len(f.module.globaladdrs))
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
@@ -263,7 +263,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(glob.value)
 
     def set_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert imm.global_index in range(len(f.module.globaladdrs))
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
@@ -271,7 +271,7 @@ class Executor(object):  # TODO - should be Eventful
         store.globals[a].value = stack.pop()
 
     def i32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -285,7 +285,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(c))
 
     def i64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -296,13 +296,13 @@ class Executor(object):  # TODO - should be Eventful
         if (ea + 8) > len(mem.data):
             raise Trap()
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
-        stack.push(I32.cast(c))
+        stack.push(I64.cast(c))
 
     def int_load(
         self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, size: int, signed: bool
     ):
         assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -346,10 +346,14 @@ class Executor(object):  # TODO - should be Eventful
         self.int_load(store, stack, imm, I64, 32, True)
 
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
+<<<<<<< HEAD
         self.int_load(store, stack, imm, I32, 64, True)
+=======
+        self.int_load(store, stack, imm, I64, 32, False)
+>>>>>>> cd86e6065b8eaebdaa7e3aeb5beb4f598bb4b3b3
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -392,7 +396,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_store(store, stack, imm, I64, 32)
 
     def current_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
-        f = stack.get_frame()
+        f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
@@ -406,7 +410,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(imm.value))
 
     def i64_const(self, store: "Store", stack: "Stack", imm: I64ConstImm):
-        stack.push(I32(imm.value))
+        stack.push(I64(imm.value))
 
     def i32_eqz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
@@ -640,19 +644,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 + c1))
+        stack.push(I32.cast((c2 + c1) % 2 ** 32))
 
     def i32_sub(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 - c1))
+        stack.push(I32.cast((c1 - c2 + 2 ** 32) % 2 ** 32))
 
     def i32_mul(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 * c1))
+        stack.push(I32.cast((c2 * c1) % 2 ** 32))
 
     def i32_div_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.div_s")
@@ -688,19 +692,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(Operators.ITEBV(32, c1 > 32, I32(0), I32.cast(c2 << c1)))
+        stack.push(I32.cast(c2 << (c1 % 32)))
 
     def i32_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(Operators.SAR(c2, c1)))
+        stack.push(I32.cast(Operators.SAR(32, c2, (c1 % 32))))
 
     def i32_shr_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 >> c1))
+        stack.push(I32.cast(c2 >> (c1 % 32)))
 
     def i32_rotl(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.rotl")
@@ -721,19 +725,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 + c1))
+        stack.push(I64.cast((c2 + c1) % 2 ** 64))
 
     def i64_sub(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 - c1))
+        stack.push(I64.cast((c1 - c2 + 2 ** 64) % 2 ** 64))
 
     def i64_mul(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 * c1))
+        stack.push(I64.cast((c2 * c1) % 2 ** 64))
 
     def i64_div_s(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.div_s")
@@ -769,19 +773,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(Operators.ITEBV(64, c1 > 64, I64(0), I64.cast(c2 << c1)))
+        stack.push(I64.cast(c2 << (c1 % 64)))
 
     def i64_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(Operators.SAR(c2, c1)))
+        stack.push(I64.cast(Operators.SAR(64, c2, c1 % 64)))
 
     def i64_shr_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 >> c1))
+        stack.push(I64.cast(c2 >> (c1 % 64)))
 
     def i64_rotl(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.rotl")

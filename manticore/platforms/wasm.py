@@ -89,5 +89,9 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
                 ret = self.stack.pop()
                 print("WASM Execution returned", ret)
                 if issymbolic(ret):
-                     print("Symbolic return detected, possible values:", Z3Solver.instance().get_all_values(self.constraints, ret))
+                    print(
+                        "Symbolic return detected, possible values:",
+                        Z3Solver.instance().get_all_values(self.constraints, ret),
+                    )
+
             raise TerminateState(f"Execution returned {ret}")

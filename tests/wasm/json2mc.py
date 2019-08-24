@@ -15,6 +15,19 @@ class Module:
         self.name = filename.replace(".wasm", "").replace(".wast", "").replace(".", "_").strip()
         self.filename = filename
         self.tests = tests
+        self.dedup_names = {}
+
+    def add_test(self, name, args, rets):
+        count = self.dedup_names.setdefault(name, 0)
+        self.tests.append(
+            {
+                "func": name,
+                "args": args,
+                "rets": rets,
+                "dedup_name": f"{name}_{count}".replace(".", "_").replace("-", "_"),
+            }
+        )
+        self.dedup_names[name] += 1
 
     def __repr__(self):
         return f"<Module {self.filename} containing {len(self.tests)} tests>"
@@ -45,13 +58,10 @@ for d in data:
     elif d["type"] == "assert_return":
         if d["action"]["type"] == "invoke":
             if isinstance(current_module, int):
-                modules[current_module].tests.append(
-                    {
-                        "line": d["line"],
-                        "func": d["action"]["field"],
-                        "args": convert_types(d["action"]["args"]),
-                        "rets": convert_types(d["expected"]),
-                    }
+                modules[current_module].add_test(
+                    d["action"]["field"],
+                    convert_types(d["action"]["args"]),
+                    convert_types(d["expected"]),
                 )
         else:
             raise NotImplementedError("assert_return")
@@ -61,7 +71,7 @@ for d in data:
         raise NotImplementedError("assert_return_canonical_nan")
     elif d["type"] == "assert_trap":
         if d["action"]["type"] == "invoke":
-            pass
+            pass  # TODO - implement support for the trap tests
             # if isinstance(current_module, int):
             #     modules[current_module].tests.append({"func": d["action"]["field"],
             #                                           "args": convert_types(d["action"]["args"]),
