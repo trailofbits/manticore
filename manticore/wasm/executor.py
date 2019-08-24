@@ -14,6 +14,7 @@ from ..core.smtlib import Operators, BitVec, issymbolic
 from ..core.state import Concretize
 
 import operator
+import math
 
 class Trap(Exception):
     pass
@@ -865,12 +866,11 @@ class Executor(object):  # TODO - should be Eventful
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
 
-    def float_pushCompareReturn(self, stack, v):
+    def float_pushCompareReturn(self, stack, v, rettype=I32):
         if issymbolic(v):
             stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
         else:
-            #stack.push(I32(1) if v else I32(0))
-            stack.push(I32(v))
+            stack.push(rettype(v))
 
     def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
         self.float_store(store, stack, imm, F32)
@@ -884,12 +884,18 @@ class Executor(object):  # TODO - should be Eventful
     def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
         stack.push(F64(imm.value))
 
-    def f32_comparator(self, store: "Store", stack: "Stack", op):
+    def f32_unary(self, store: "Store", stack: "Stack", op, rettype=I32):
+        stack.has_type_on_top(F32, 1)
+        v1 = stack.pop()
+        v = op(v1)
+        self.float_pushCompareReturn(stack, v, rettype)
+
+    def f32_binary(self, store: "Store", stack: "Stack", op, rettype=I32):
         stack.has_type_on_top(F32, 2)
         v2 = stack.pop()
         v1 = stack.pop()
         v = op(v1, v2)
-        self.float_pushCompareReturn(stack, v)
+        self.float_pushCompareReturn(stack, v, rettype)
 
     def f64_comparator(self, store: "Store", stack: "Stack", op):
         stack.has_type_on_top(F64, 2)
@@ -898,23 +904,25 @@ class Executor(object):  # TODO - should be Eventful
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v)
 
+
+        
     def f32_eq(self, store: "Store", stack: "Stack"):
-        return self.f32_comparator(store, stack, operator.eq)
+        return self.f32_binary(store, stack, operator.eq)
 
     def f32_ne(self, store: "Store", stack: "Stack"):
-        return self.f32_comparator(store, stack, operator.ne)
+        return self.f32_binary(store, stack, operator.ne)
         
     def f32_lt(self, store: "Store", stack: "Stack"):
-        return self.f32_comparator(store, stack, operator.lt)
+        return self.f32_binary(store, stack, operator.lt)
 
     def f32_gt(self, store: "Store", stack: "Stack"):
-        return self.f32_comparator(store, stack, operator.gt)
+        return self.f32_binary(store, stack, operator.gt)
 
     def f32_le(self, store: "Store", stack: "Stack"):
-        return self.f32_comparator(store, stack, operator.le)
+        return self.f32_binary(store, stack, operator.le)
 
     def f32_ge(self, store: "Store", stack: "Stack"):
-        return self.f32_comparator(store, stack, operator.ge)
+        return self.f32_binary(store, stack, operator.ge)
 
     def f64_eq(self, store: "Store", stack: "Stack"):
         return self.f64_comparator(store, stack, operator.eq)
@@ -935,13 +943,13 @@ class Executor(object):  # TODO - should be Eventful
         return self.f64_comparator(store, stack, operator.ge)
 
     def f32_abs(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.abs")
+        return self.f32_unary(store, stack, operator.abs, F32)
 
     def f32_neg(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.neg")
+        return self.f32_unary(store, stack, operator.neg, F32)
 
     def f32_ceil(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ceil")
+        return self.f32_binary(store, stack, math.ceil, F32)
 
     def f32_floor(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.floor")
@@ -974,7 +982,7 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("f32.max")
 
     def f32_copysign(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.copysign")
+        return self.f32_binary(store, stack, math.copysign, F32)
 
     def f64_abs(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f64.abs")
