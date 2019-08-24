@@ -35,7 +35,6 @@ class I64(int):
 
 
 class F32(float):
-
     def __new__(cls, val):
         if int==type(val):
             val &= 0xFFFFFFFF
@@ -52,6 +51,13 @@ class F32(float):
 
 
 class F64(float):
+    def __new__(cls, val):
+        if int==type(val):
+            ptr = pointer(c_ulong(val))
+            fl = cast(ptr, POINTER(c_double))
+            val = fl.contents.value
+        return super(F64, cls).__new__(cls,val)
+
     @classmethod
     def cast(cls, other):
         if issymbolic(other):

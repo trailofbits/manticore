@@ -829,8 +829,6 @@ class Executor(object):  # TODO - should be Eventful
     def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.reinterpret/f64")
 
-
-
     def float_load( self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type):
         if ty==F32:
             size=32
@@ -867,17 +865,12 @@ class Executor(object):  # TODO - should be Eventful
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
 
-    def f32_pushValue(self, stack, v):
+    def float_pushCompareReturn(self, stack, v):
         if issymbolic(v):
             stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
         else:
-            stack.push(F32.cast(I32(1) if v else I32(0)))
-
-    def f64_pushValue(self, stack, v):
-        if issymbolic(v):
-            stack.push(Operators.ITEBV(64, v, F64(1), F64(0)))
-        else:
-            stack.push(F32.cast(F64(1) if v else F64(0)))
+            #stack.push(I32(1) if v else I32(0))
+            stack.push(I32(v))
 
     def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
         self.float_store(store, stack, imm, F32)
@@ -891,57 +884,55 @@ class Executor(object):  # TODO - should be Eventful
     def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
         stack.push(F64(imm.value))
 
-
-    def f32_operator(self, store: "Store", stack: "Stack", op):
+    def f32_comparator(self, store: "Store", stack: "Stack", op):
         stack.has_type_on_top(F32, 2)
         v2 = stack.pop()
         v1 = stack.pop()
         v = op(v1, v2)
-        self.f32_pushValue(stack, v)
+        self.float_pushCompareReturn(stack, v)
 
-
-    def f64_operator(self, store: "Store", stack: "Stack", op):
+    def f64_comparator(self, store: "Store", stack: "Stack", op):
         stack.has_type_on_top(F64, 2)
         v2 = stack.pop()
         v1 = stack.pop()
         v = op(v1, v2)
-        self.f64_pushValue(stack, v)
+        self.float_pushCompareReturn(stack, v)
 
     def f32_eq(self, store: "Store", stack: "Stack"):
-        return self.f32_operator(store, stack, operator.eq)
+        return self.f32_comparator(store, stack, operator.eq)
 
     def f32_ne(self, store: "Store", stack: "Stack"):
-        return self.f32_operator(store, stack, operator.ne)
+        return self.f32_comparator(store, stack, operator.ne)
         
     def f32_lt(self, store: "Store", stack: "Stack"):
-        return self.f32_operator(store, stack, operator.lt)
+        return self.f32_comparator(store, stack, operator.lt)
 
     def f32_gt(self, store: "Store", stack: "Stack"):
-        return self.f32_operator(store, stack, operator.gt)
+        return self.f32_comparator(store, stack, operator.gt)
 
     def f32_le(self, store: "Store", stack: "Stack"):
-        return self.f32_operator(store, stack, operator.le)
+        return self.f32_comparator(store, stack, operator.le)
 
     def f32_ge(self, store: "Store", stack: "Stack"):
-        return self.f32_operator(store, stack, operator.ge)
+        return self.f32_comparator(store, stack, operator.ge)
 
     def f64_eq(self, store: "Store", stack: "Stack"):
-        return self.f64_operator(store, stack, operator.eq)
+        return self.f64_comparator(store, stack, operator.eq)
 
     def f64_ne(self, store: "Store", stack: "Stack"):
-        return self.f64_operator(store, stack, operator.ne)
+        return self.f64_comparator(store, stack, operator.ne)
 
     def f64_lt(self, store: "Store", stack: "Stack"):
-        return self.f64_operator(store, stack, operator.lt)
+        return self.f64_comparator(store, stack, operator.lt)
 
     def f64_gt(self, store: "Store", stack: "Stack"):
-        return self.f64_operator(store, stack, operator.gt)
+        return self.f64_comparator(store, stack, operator.gt)
 
     def f64_le(self, store: "Store", stack: "Stack"):
-        return self.f64_operator(store, stack, operator.le)
+        return self.f64_comparator(store, stack, operator.le)
 
     def f64_ge(self, store: "Store", stack: "Stack"):
-        return self.f64_operator(store, stack, operator.ge)
+        return self.f64_comparator(store, stack, operator.ge)
 
     def f32_abs(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.abs")
