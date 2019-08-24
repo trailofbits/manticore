@@ -1,6 +1,7 @@
 import typing
 from dataclasses import dataclass
 from ..core.smtlib import issymbolic, BitVec
+from ctypes import *
 import wasm
 import struct
 
@@ -34,6 +35,15 @@ class I64(int):
 
 
 class F32(float):
+
+    def __new__(cls, val):
+        if int==type(val):
+            val &= 0xFFFFFFFF
+            ptr = pointer(c_int(val))
+            fl = cast(ptr, POINTER(c_float))
+            val = fl.contents.value
+        return super(F32, cls).__new__(cls,val)
+
     @classmethod
     def cast(cls, other):
         if issymbolic(other):

@@ -869,9 +869,9 @@ class Executor(object):  # TODO - should be Eventful
 
     def f32_pushValue(self, stack, v):
         if issymbolic(v):
-            stack.push(Operators.ITEBV(32, v, F32(1), F32(0)))
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
         else:
-            stack.push(F32.cast(F32(1) if v else F32(0)))
+            stack.push(F32.cast(I32(1) if v else I32(0)))
 
     def f64_pushValue(self, stack, v):
         if issymbolic(v):
