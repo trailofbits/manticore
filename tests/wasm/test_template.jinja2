@@ -7,15 +7,11 @@ from manticore.core.smtlib import Operators, ConstraintSet
 from manticore.wasm.types import I32, F32, I64, F64
 import math
 
-
-def equalIncludingNan(a, b):
-    equal = False
+def assertEqualNan(testcase, a, b):
     if math.isnan(b[0]):
-        equal = math.isnan(a[0])
+        testcase.assertTrue(math.isnan(a[0]))
     else:
-        equal = (a==b)
-    return equal
-
+        testcase.assertEqual(a, b)
 {% endblock %}
 
 {% for module in modules %}
@@ -34,11 +30,12 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         {% else %}
         argv=[]
         {% endif %}
+        expected = [{{ test.rets }}]
+        
         world.invoke(name="{{ test.func }}", argv=argv)
         real = world.exec_for_test("{{test.func}}")
-        expected = [{{ test.rets }}]
-        equal = equalIncludingNan(real, expected)
-        self.assertTrue(equal)
+        assertEqualNan(self, real, expected)
+
 {% endfor %}
 {% endfor %}
 

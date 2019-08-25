@@ -958,16 +958,16 @@ class Executor(object):  # TODO - should be Eventful
         return self.f32_unary(store, stack, operator.neg, F32)
 
     def f32_ceil(self, store: "Store", stack: "Stack"):
-        return self.f32_unary(store, stack, math.ceil, F32)
+        return self.f32_unary(store, stack, operator_ceil, F32)
 
     def f32_floor(self, store: "Store", stack: "Stack"):
-        return self.f32_unary(store, stack, math.floor, F32)
+        return self.f32_unary(store, stack, operator_floor, F32)
 
     def f32_trunc(self, store: "Store", stack: "Stack"):
-        return self.f32_unary(store, stack, math.trunc, F32)
+        return self.f32_unary(store, stack, operator_trunc, F32)
 
     def f32_nearest(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.neareast")
+        return self.f32_unary(store, stack, operator_nearest, F32)
 
     def f32_sqrt(self, store: "Store", stack: "Stack"):
         return self.f32_unary(store, stack, math.sqrt, F32)
@@ -982,7 +982,7 @@ class Executor(object):  # TODO - should be Eventful
         return self.f32_binary(store, stack, operator.mul, F32)
 
     def f32_div(self, store: "Store", stack: "Stack"):
-        return self.f32_binary(store, stack, operator.truediv, F32)
+        return self.f32_binary(store, stack, operator_div, F32)
 
     def f32_min(self, store: "Store", stack: "Stack"):
         return self.f32_binary(store, stack, operator_min, F32)
@@ -1001,13 +1001,13 @@ class Executor(object):  # TODO - should be Eventful
         return self.f64_unary(store, stack, operator.neg, F64)
 
     def f64_ceil(self, store: "Store", stack: "Stack"):
-        return self.f64_unary(store, stack, math.ceil, F64)
+        return self.f64_unary(store, stack, operator_ceil, F64)
 
     def f64_floor(self, store: "Store", stack: "Stack"):
-        return self.f64_unary(store, stack, math.floor, F64)
+        return self.f64_unary(store, stack, operator_floor, F64)
 
     def f64_trunc(self, store: "Store", stack: "Stack"):
-        return self.f64_unary(store, stack, math.trunc, F64)
+        return self.f64_unary(store, stack, operator_trunc, F64)
 
     def f64_nearest(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f64.neareast")
@@ -1025,7 +1025,7 @@ class Executor(object):  # TODO - should be Eventful
         return self.f64_binary(store, stack, operator.mul, F64)
 
     def f64_div(self, store: "Store", stack: "Stack"):
-        return self.f64_binary(store, stack, operator.truediv, F64)
+        return self.f64_binary(store, stack, operator_div, F64)
 
     def f64_min(self, store: "Store", stack: "Stack"):
         return self.f64_binary(store, stack, operator_min, F64)
@@ -1077,10 +1077,41 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("f64.reinterpret/i64")
 
 
+################################################################################################
+# Unary and binary operators for floats that don't fit python
+def operator_nearest(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return round(a)
 
-def operator_min(self, a, b):
+def operator_trunc(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return math.trunc(a)
+
+def operator_ceil(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return math.ceil(a)
+
+def operator_floor(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return math.floor(a)
+
+def operator_div(a, b):
+    if b==0:
+        return math.inf
+    else:
+        return operator.truediv(a, b)
+
+def operator_min(a, b):
     return a if a<b else b
 
-def operator_max(self, a, b):
+def operator_max(a, b):
     return a if a>b else b
 

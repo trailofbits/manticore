@@ -41,7 +41,9 @@ class F32(float):
             ptr = pointer(c_int(val))
             fl = cast(ptr, POINTER(c_float))
             val = fl.contents.value
-        return super(F32, cls).__new__(cls,val)
+        self=super(F32, cls).__new__(cls,val)
+        self.integer = val
+        return self
 
     @classmethod
     def cast(cls, other):

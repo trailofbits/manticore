@@ -68,9 +68,15 @@ for d in data:
         else:
             raise NotImplementedError("assert_return")
     elif d["type"] == "assert_return_arithmetic_nan":
-        raise NotImplementedError("assert_return_arithmetic_nan")
+        # XXX Eventually implement, but if we raise here it eliminates other valid tests
+        #raise NotImplementedError("assert_return_arithmetic_nan")
+        pass
+        
     elif d["type"] == "assert_return_canonical_nan":
-        raise NotImplementedError("assert_return_canonical_nan")
+        # XXX Eventually implement, but if we raise here it eliminates other valid tests
+        #raise NotImplementedError("assert_return_canonical_nan")
+        pass
+        
     elif d["type"] == "assert_trap":
         if d["action"]["type"] == "invoke":
             pass  # TODO - implement support for the trap tests
