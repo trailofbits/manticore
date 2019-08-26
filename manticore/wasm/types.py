@@ -72,7 +72,9 @@ class F64(float):
             ptr = pointer(c_ulong(val))
             fl = cast(ptr, POINTER(c_double))
             val = fl.contents.value
-        return super(F64, cls).__new__(cls, val)
+        self=super(F64, cls).__new__(cls,val)
+        self.integer = val
+        return self
 
     @classmethod
     def cast(cls, other):
