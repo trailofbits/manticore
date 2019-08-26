@@ -366,7 +366,9 @@ class Executor(object):  # TODO - should be Eventful
         if (ea + (N // 8)) > len(mem.data):
             raise Trap()
         if n:
-            raise NotImplementedError("TODO")
+            b = [
+                Operators.CHR(Operators.EXTRACT(c % 2 ** N, offset, 8)) for offset in range(0, N, 8)
+            ]
         else:
             b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, N, 8)]
 

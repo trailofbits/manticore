@@ -327,7 +327,7 @@ class ModuleInstance:
 
         dummy_frame = Frame([], ModuleInstance())
         stack.push(dummy_frame)
-        for v in argv[::-1]:  # TODO - should be reversed?
+        for v in argv:
             stack.push(v)
 
         # https://www.w3.org/TR/wasm-core-1/#exec-invoke
