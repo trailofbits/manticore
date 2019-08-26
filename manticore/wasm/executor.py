@@ -1006,7 +1006,7 @@ class Executor(object):  # TODO - should be Eventful
         return self.f64_unary(store, stack, operator_trunc, F64)
 
     def f64_nearest(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.neareast")
+        return self.f32_unary(store, stack, operator_nearest, F64)
 
     def f64_sqrt(self, store: "Store", stack: "Stack"):
         return self.f64_unary(store, stack, math.sqrt, F64)
