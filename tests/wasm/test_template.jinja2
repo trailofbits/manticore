@@ -5,6 +5,13 @@ from manticore.platforms import wasm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
 from manticore.wasm.types import I32, F32, I64, F64
+import math
+
+def assertEqualNan(testcase, a, b):
+    if math.isnan(b[0]):
+        testcase.assertTrue(math.isnan(a[0]))
+    else:
+        testcase.assertEqual(a, b)
 {% endblock %}
 
 {% for module in modules %}
@@ -13,7 +20,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
     filename = join(dirname(abspath(__file__)), "{{ module.filename }}")
 
 {% for test in module.tests %}
-    def test_{{ test.dedup_name }}(self):
+    def test_{{ test.dedup_name }}_line{{test.line}}(self):
         constraints = ConstraintSet()
         world = wasm.WASMWorld(self.filename)
 
@@ -23,8 +30,12 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         {% else %}
         argv=[]
         {% endif %}
+        expected = [{{ test.rets }}]
+        
         world.invoke(name="{{ test.func }}", argv=argv)
-        self.assertEqual(world.exec_for_test("{{test.func}}"), [{{ test.rets }}])
+        real = world.exec_for_test("{{test.func}}")
+        assertEqualNan(self, real, expected)
+
 {% endfor %}
 {% endfor %}
 

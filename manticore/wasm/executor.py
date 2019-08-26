@@ -13,6 +13,8 @@ from .types import I32, I64, F32, F64, Value
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..core.state import Concretize
 
+import operator
+import math
 
 class Trap(Exception):
     pass
@@ -310,8 +312,6 @@ class Executor(object):  # TODO - should be Eventful
         assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
-        if (ea + (size // 8)) > len(mem.data):
-            raise Trap()
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         width = 32 if ty is I32 else 64
         if signed:
@@ -348,7 +348,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_load(store, stack, imm, I64, 32, True)
 
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        self.int_load(store, stack, imm, I64, 32, False)
+        self.int_load(store, stack, imm, I32, 64, True)
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame().frame
@@ -830,19 +830,55 @@ class Executor(object):  # TODO - should be Eventful
     def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.reinterpret/f64")
 
-    # Floating point instructions
+    ###########################################################################################################
+    # Floating point instructions# Floating point instructions
+    def float_load( self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type):
+        if ty==F32:
+            size=32
+        elif ty==F64:
+            size=64
+        f = stack.get_frame().frame
+        a = f.module.memaddrs[0]
+        mem = store.mems[a]
+        i = stack.pop()
+        ea = i + imm.offset
+        c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
+        ret = ty.cast(c)
+        stack.push(ret)
+
 
     def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f32.load")
+        return self.float_load(store, stack, imm, F32)
 
     def f64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f64.load")
+        return self.float_load(store, stack, imm, F64)
+
+    def float_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
+        f = stack.get_frame().frame
+        a = f.module.memaddrs[0]
+        mem = store.mems[a]
+        c = stack.pop()
+        i = stack.pop()
+        ea = i + imm.offset
+        if ty==F32:
+            size=32
+        else:
+            size=64
+        b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
+        for idx, v in enumerate(b):
+            mem.data[ea + idx] = v
+
+    def float_pushCompareReturn(self, stack, v, rettype=I32):
+        if issymbolic(v):
+            stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
+        else:
+            stack.push(rettype(v))
 
     def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f32.store")
+        self.float_store(store, stack, imm, F32)
 
     def f64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        raise NotImplementedError("f64.store")
+        self.float_store(store, stack, imm, F64)
 
     def f32_const(self, store: "Store", stack: "Stack", imm: F32ConstImm):
         stack.push(F32(imm.value))
@@ -850,125 +886,159 @@ class Executor(object):  # TODO - should be Eventful
     def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
         stack.push(F64(imm.value))
 
+    def f32_unary(self, store: "Store", stack: "Stack", op, rettype=I32):
+        stack.has_type_on_top(F32, 1)
+        v1 = stack.pop()
+        v = op(v1)
+        self.float_pushCompareReturn(stack, v, rettype)
+
+    def f32_binary(self, store: "Store", stack: "Stack", op, rettype=I32):
+        stack.has_type_on_top(F32, 2)
+        v2 = stack.pop()
+        v1 = stack.pop()
+        v = op(v1, v2)
+        self.float_pushCompareReturn(stack, v, rettype)
+
+
+    def f64_unary(self, store: "Store", stack: "Stack", op, rettype=I64):
+        stack.has_type_on_top(F64, 1)
+        v1 = stack.pop()
+        v = op(v1)
+        self.float_pushCompareReturn(stack, v, rettype)
+
+    def f64_binary(self, store: "Store", stack: "Stack", op, rettype=I64):
+        stack.has_type_on_top(F64, 2)
+        v2 = stack.pop()
+        v1 = stack.pop()
+        v = op(v1, v2)
+        self.float_pushCompareReturn(stack, v, rettype)
+
+
+
     def f32_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.eq")
+        return self.f32_binary(store, stack, operator.eq)
 
     def f32_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ne")
-
+        return self.f32_binary(store, stack, operator.ne)
+        
     def f32_lt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.lt")
+        return self.f32_binary(store, stack, operator.lt)
 
     def f32_gt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.gt")
+        return self.f32_binary(store, stack, operator.gt)
 
     def f32_le(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.le")
+        return self.f32_binary(store, stack, operator.le)
 
     def f32_ge(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ge")
+        return self.f32_binary(store, stack, operator.ge)
 
     def f64_eq(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.eq")
+        return self.f64_binary(store, stack, operator.eq)
 
     def f64_ne(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.ne")
+        return self.f64_binary(store, stack, operator.ne)
 
     def f64_lt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.lt")
+        return self.f64_binary(store, stack, operator.lt)
 
     def f64_gt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.gt")
+        return self.f64_binary(store, stack, operator.gt)
 
     def f64_le(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.le")
+        return self.f64_binary(store, stack, operator.le)
 
     def f64_ge(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.ge")
+        return self.f64_binary(store, stack, operator.ge)
 
     def f32_abs(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.abs")
+        return self.f32_unary(store, stack, operator.abs, F32)
 
     def f32_neg(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.neg")
+        return self.f32_unary(store, stack, operator.neg, F32)
 
     def f32_ceil(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.ceil")
+        return self.f32_unary(store, stack, operator_ceil, F32)
 
     def f32_floor(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.floor")
+        return self.f32_unary(store, stack, operator_floor, F32)
 
     def f32_trunc(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.trunc")
+        return self.f32_unary(store, stack, operator_trunc, F32)
 
     def f32_nearest(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.nearest")
+        return self.f32_unary(store, stack, operator_nearest, F32)
 
     def f32_sqrt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.sqrt")
+        return self.f32_unary(store, stack, math.sqrt, F32)
 
     def f32_add(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.add")
+        return self.f32_binary(store, stack, operator.add, F32)
 
     def f32_sub(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.sub")
+        return self.f32_binary(store, stack, operator.sub, F32)
 
     def f32_mul(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.mul")
+        return self.f32_binary(store, stack, operator.mul, F32)
 
     def f32_div(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.div")
+        return self.f32_binary(store, stack, operator_div, F32)
 
     def f32_min(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.min")
+        return self.f32_binary(store, stack, operator_min, F32)
 
     def f32_max(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.max")
+        return self.f32_binary(store, stack, operator_max, F32)
 
     def f32_copysign(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.copysign")
+        return self.f32_binary(store, stack, math.copysign, F32)
+
 
     def f64_abs(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.abs")
+        return self.f64_unary(store, stack, operator.abs, F64)
 
     def f64_neg(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.neg")
+        return self.f64_unary(store, stack, operator.neg, F64)
 
     def f64_ceil(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.ceil")
+        return self.f64_unary(store, stack, operator_ceil, F64)
 
     def f64_floor(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.floor")
+        return self.f64_unary(store, stack, operator_floor, F64)
 
     def f64_trunc(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.trunc")
+        return self.f64_unary(store, stack, operator_trunc, F64)
 
     def f64_nearest(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.nearest")
+        raise NotImplementedError("f64.neareast")
 
     def f64_sqrt(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.sqrt")
+        return self.f64_unary(store, stack, math.sqrt, F64)
 
     def f64_add(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.add")
+        return self.f64_binary(store, stack, operator.add, F64)
 
     def f64_sub(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.sub")
+        return self.f64_binary(store, stack, operator.sub, F64)
 
     def f64_mul(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.mul")
+        return self.f64_binary(store, stack, operator.mul, F64)
 
     def f64_div(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.div")
+        return self.f64_binary(store, stack, operator_div, F64)
 
     def f64_min(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.min")
+        return self.f64_binary(store, stack, operator_min, F64)
 
     def f64_max(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.max")
+        return self.f64_binary(store, stack, operator_max, F64)
 
     def f64_copysign(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.copysign")
+        return self.f64_binary(store, stack, math.copysign, F64)
+
+
+
+
 
     def f32_convert_s_i32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.convert_s/i32")
@@ -1005,3 +1075,43 @@ class Executor(object):  # TODO - should be Eventful
 
     def f64_reinterpret_i64(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f64.reinterpret/i64")
+
+
+################################################################################################
+# Unary and binary operators for floats that don't fit python
+def operator_nearest(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return round(a)
+
+def operator_trunc(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return math.trunc(a)
+
+def operator_ceil(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return math.ceil(a)
+
+def operator_floor(a):
+    if math.isnan(a) or math.isinf(a):
+        return a.integer
+    else:
+        return math.floor(a)
+
+def operator_div(a, b):
+    if b==0:
+        return math.inf
+    else:
+        return operator.truediv(a, b)
+
+def operator_min(a, b):
+    return a if a<b else b
+
+def operator_max(a, b):
+    return a if a>b else b
+
