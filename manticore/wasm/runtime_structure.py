@@ -406,7 +406,7 @@ class ModuleInstance:
                 if self._instruction_queue:
                     try:
                         inst = self._instruction_queue.popleft()
-                        print(
+                        logger.info(
                             f"{inst.opcode}:",
                             inst.mnemonic,
                             f"({debug(inst.imm)})" if inst.imm else "",
@@ -552,11 +552,11 @@ class Stack:
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         if isinstance(val, list):
             raise RuntimeError("Don't push lists")
-        # print(f"+{len(self.data)}", val, f"({type(val)})")
+        logger.debug(f"+{len(self.data)}", val, f"({type(val)})")
         self.data.append(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
-        # print(f"-{len(self.data)-1}", self.peek(), f"({type(self.peek())})")
+        logger.debug(f"-{len(self.data)-1}", self.peek(), f"({type(self.peek())})")
         return self.data.pop()
 
     def peek(self):
