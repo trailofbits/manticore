@@ -34,7 +34,7 @@ from ..core.smtlib import BitVec
 from ..core.state import Concretize
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.DEBUG)
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
@@ -370,12 +370,11 @@ class ModuleInstance:
             vals = []
             while not isinstance(stack.peek(), Label):
                 vals.append(stack.pop())
+                assert isinstance(vals[-1], Value.__args__), f"{type(vals[-1])} is not a value or a label"
             label = stack.pop()
             assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label"
             for v in vals[::-1]:
                 stack.push(v)
-
-            self.push_instructions(label.instr)
 
     def push_instructions(self, insts: WASMExpression):
         for i in insts[::-1]:
@@ -407,9 +406,10 @@ class ModuleInstance:
                     try:
                         inst = self._instruction_queue.popleft()
                         logger.info(
-                            f"{inst.opcode}:",
+                            "%x: %s (%s)",
+                            inst.opcode,
                             inst.mnemonic,
-                            f"({debug(inst.imm)})" if inst.imm else "",
+                            debug(inst.imm) if inst.imm else "",
                         )
                         if 0x2 <= inst.opcode <= 0x11:
                             if inst.opcode == 0x02:
@@ -456,8 +456,7 @@ class ModuleInstance:
         self, store: "Store", stack: "Stack", ret_type: typing.List[ValType], insts: WASMExpression
     ):
         arity = len(ret_type)
-        l = Label(arity, list(self._instruction_queue.copy()))
-        self._instruction_queue.clear()
+        l = Label(arity, [])
         self.enter_instruction(insts, l, stack)
 
     def loop(self, store: "Store", stack: "Stack", loop_inst):
@@ -470,8 +469,7 @@ class ModuleInstance:
         c = stack.pop()
         t_block = self.look_forward(0x05)
         f_block = self.look_forward(0x0B)
-        l = Label(len(ret_type), list(self._instruction_queue.copy()))
-        self._instruction_queue.clear()
+        l = Label(len(ret_type), [])
         if c != 0:
             self.enter_instruction(t_block, l, stack)
         else:
@@ -552,11 +550,11 @@ class Stack:
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         if isinstance(val, list):
             raise RuntimeError("Don't push lists")
-        logger.debug(f"+{len(self.data)}", val, f"({type(val)})")
+        logger.debug("+%d %s (%s)", len(self.data), val, type(val))
         self.data.append(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
-        logger.debug(f"-{len(self.data)-1}", self.peek(), f"({type(self.peek())})")
+        logger.debug("-%d %s (%s)", len(self.data) - 1, self.peek(), type(self.peek()))
         return self.data.pop()
 
     def peek(self):
