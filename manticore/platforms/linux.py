@@ -2130,6 +2130,28 @@ class Linux(Platform):
 
         return len(data)
 
+    def sys_recvfrom(self, sockfd, buf, count, flags, src_addr, addrlen):
+        if src_addr != 0:
+            logger.warning("sys_recvfrom: Unimplemented non-NULL src_addr")
+
+        if addrlen != 0:
+            logger.warning("sys_recvfrom: Unimplemented non-NULL addrlen")
+
+        # TODO Unimplemented src_addr and addrlen, so act like sys_recv
+        try:
+            sock = self.files[sockfd]
+        except IndexError:
+            return -errno.EINVAL
+
+        if not isinstance(sock, Socket):
+            return -errno.ENOTSOCK
+
+        data = sock.read(count)
+        self.current.write_bytes(buf, data)
+        self.syscall_trace.append(("_recvfrom", sockfd, data))
+
+        return len(data)
+
     def sys_send(self, sockfd, buf, count, flags):
         try:
             sock = self.files[sockfd]
@@ -2959,6 +2981,33 @@ class SLinux(Linux):
 
         return super().sys_recv(sockfd, buf, count, flags)
 
+    def sys_recvfrom(self, sockfd, buf, count, flags, src_addr, addrlen):
+        if issymbolic(sockfd):
+            logger.debug("Ask to read from a symbolic file descriptor!!")
+            raise ConcretizeArgument(self, 0)
+
+        if issymbolic(buf):
+            logger.debug("Ask to read to a symbolic buffer")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(count):
+            logger.debug("Ask to read a symbolic number of bytes ")
+            raise ConcretizeArgument(self, 2)
+
+        if issymbolic(flags):
+            logger.debug("Submitted a symbolic flags")
+            raise ConcretizeArgument(self, 3)
+
+        if issymbolic(src_addr):
+            logger.debug("Submitted a symbolic source address")
+            raise ConcretizeArgument(self, 4)
+
+        if issymbolic(addrlen):
+            logger.debug("Submitted a symbolic address length")
+            raise ConcretizeArgument(self, 5)
+
+        return super().sys_recvfrom(sockfd, buf, count, flags, src_addr, addrlen)
+
     def sys_accept(self, sockfd, addr, addrlen):
         # TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
@@ -3079,7 +3128,7 @@ class SLinux(Linux):
                     solve_to_fd(data, out)
                 elif fd == 2:
                     solve_to_fd(data, err)
-            if name in ("_recv"):
+            if name in ("_recv", "_recvfrom"):
                 solve_to_fd(data, net)
             if name in ("_receive", "_read") and fd == 0:
                 solve_to_fd(data, inn)
