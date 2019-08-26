@@ -16,6 +16,7 @@ from ..core.state import Concretize
 import operator
 import math
 
+
 class Trap(Exception):
     pass
 
@@ -832,11 +833,11 @@ class Executor(object):  # TODO - should be Eventful
 
     ###########################################################################################################
     # Floating point instructions# Floating point instructions
-    def float_load( self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type):
-        if ty==F32:
-            size=32
-        elif ty==F64:
-            size=64
+    def float_load(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type):
+        if ty == F32:
+            size = 32
+        elif ty == F64:
+            size = 64
         f = stack.get_frame().frame
         a = f.module.memaddrs[0]
         mem = store.mems[a]
@@ -845,7 +846,6 @@ class Executor(object):  # TODO - should be Eventful
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         ret = ty.cast(c)
         stack.push(ret)
-
 
     def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
         return self.float_load(store, stack, imm, F32)
@@ -860,10 +860,10 @@ class Executor(object):  # TODO - should be Eventful
         c = stack.pop()
         i = stack.pop()
         ea = i + imm.offset
-        if ty==F32:
-            size=32
+        if ty == F32:
+            size = 32
         else:
-            size=64
+            size = 64
         b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
@@ -899,7 +899,6 @@ class Executor(object):  # TODO - should be Eventful
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v, rettype)
 
-
     def f64_unary(self, store: "Store", stack: "Stack", op, rettype=I64):
         stack.has_type_on_top(F64, 1)
         v1 = stack.pop()
@@ -913,14 +912,12 @@ class Executor(object):  # TODO - should be Eventful
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v, rettype)
 
-
-
     def f32_eq(self, store: "Store", stack: "Stack"):
         return self.f32_binary(store, stack, operator.eq)
 
     def f32_ne(self, store: "Store", stack: "Stack"):
         return self.f32_binary(store, stack, operator.ne)
-        
+
     def f32_lt(self, store: "Store", stack: "Stack"):
         return self.f32_binary(store, stack, operator.lt)
 
@@ -993,7 +990,6 @@ class Executor(object):  # TODO - should be Eventful
     def f32_copysign(self, store: "Store", stack: "Stack"):
         return self.f32_binary(store, stack, math.copysign, F32)
 
-
     def f64_abs(self, store: "Store", stack: "Stack"):
         return self.f64_unary(store, stack, operator.abs, F64)
 
@@ -1035,10 +1031,6 @@ class Executor(object):  # TODO - should be Eventful
 
     def f64_copysign(self, store: "Store", stack: "Stack"):
         return self.f64_binary(store, stack, math.copysign, F64)
-
-
-
-
 
     def f32_convert_s_i32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.convert_s/i32")
@@ -1085,11 +1077,13 @@ def operator_nearest(a):
     else:
         return round(a)
 
+
 def operator_trunc(a):
     if math.isnan(a) or math.isinf(a):
         return a.integer
     else:
         return math.trunc(a)
+
 
 def operator_ceil(a):
     if math.isnan(a) or math.isinf(a):
@@ -1097,21 +1091,24 @@ def operator_ceil(a):
     else:
         return math.ceil(a)
 
+
 def operator_floor(a):
     if math.isnan(a) or math.isinf(a):
         return a.integer
     else:
         return math.floor(a)
 
+
 def operator_div(a, b):
-    if b==0:
+    if b == 0:
         return math.inf
     else:
         return operator.truediv(a, b)
 
+
 def operator_min(a, b):
-    return a if a<b else b
+    return a if a < b else b
+
 
 def operator_max(a, b):
-    return a if a>b else b
-
+    return a if a > b else b

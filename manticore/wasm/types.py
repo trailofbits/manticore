@@ -50,12 +50,12 @@ class I64(int):
 
 class F32(float):
     def __new__(cls, val):
-        if int==type(val):
+        if int == type(val):
             val &= 0xFFFFFFFF
             ptr = pointer(c_int(val))
             fl = cast(ptr, POINTER(c_float))
             val = fl.contents.value
-        self=super(F32, cls).__new__(cls,val)
+        self = super(F32, cls).__new__(cls, val)
         self.integer = val
         return self
 
@@ -68,11 +68,11 @@ class F32(float):
 
 class F64(float):
     def __new__(cls, val):
-        if int==type(val):
+        if int == type(val):
             ptr = pointer(c_ulong(val))
             fl = cast(ptr, POINTER(c_double))
             val = fl.contents.value
-        return super(F64, cls).__new__(cls,val)
+        return super(F64, cls).__new__(cls, val)
 
     @classmethod
     def cast(cls, other):
