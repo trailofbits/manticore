@@ -28,25 +28,12 @@ from .types import (
     GlobalIdx,
     WASMExpression,
     Instruction,
+    debug,
 )
 from ..core.smtlib import BitVec
 from ..core.state import Concretize
 
 logger = logging.getLogger(__name__)
-
-
-def debug(imm):
-    if hasattr(imm, "value"):
-        return imm.value
-    if hasattr(imm, "function_index"):
-        return f"Func Idx {imm.function_index}"
-    if hasattr(imm, "offset"):
-        return f"Offset {imm.offset}"
-    if hasattr(imm, "local_index"):
-        return f"Local {imm.local_index}"
-    if hasattr(imm, "global_index"):
-        return f"Global {imm.global_index}"
-    return getattr(imm, "value", imm)
 
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
@@ -353,7 +340,7 @@ class ModuleInstance:
         f: ProtoFuncInst = store.funcs[funcaddr]
         ty = f.type
         assert len(ty.result_types) <= 1
-        locals = [stack.pop() for _t in ty.param_types]
+        locals = [stack.pop() for _t in ty.param_types][::-1]
         if isinstance(f, HostFunc):
             res = list(f.hostcode(*locals))
             print("HostFunc returned", res)
@@ -380,15 +367,11 @@ class ModuleInstance:
     def exit_instruction(self, stack: "AtomicStack"):
         label_idx = stack.find_type(Label)
         if label_idx is not None:
-            i = -1
-            while isinstance(stack.parent.data[i], Value.__args__):
-                i -= 1
-            # print("Popping", abs(i), "values from the stack")
-            vals = [stack.pop() for _i in range(abs(i))]  # TODO  - Confirm this isn't an off-by-one
+            vals = []
+            while not isinstance(stack.peek(), Label):
+                vals.append(stack.pop())
             label = stack.pop()
-            assert isinstance(
-                label, Label
-            ), f"Stack contained a {type(label)} instead of a Label: {stack.parent.data}"
+            assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label"
             for v in vals[::-1]:
                 stack.push(v)
 
@@ -411,7 +394,7 @@ class ModuleInstance:
                 out += self.look_forward(0x0B)
             out.append(i)
             if len(self._instruction_queue) == 0:
-                raise RuntimeError("Could not find an instruction with opcode", opcode)
+                raise RuntimeError("Could not find an instruction with opcode " + hex(opcode))
             i = self._instruction_queue.pop()
         out.append(i)
         return out
