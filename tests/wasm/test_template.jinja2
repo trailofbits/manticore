@@ -16,27 +16,30 @@ def assertEqualNan(testcase, a, b):
 
 {% for module in modules %}
 class WASMTest_{{ module.name }}(unittest.TestCase):
-    _multiprocess_can_split_ = True
+    _multiprocess_can_split_ = False
     filename = join(dirname(abspath(__file__)), "{{ module.filename }}")
 
-{% for test in module.tests %}
-    def test_{{ test.dedup_name }}_line{{test.line}}(self):
+    def test_{{ module.name }}(self):
         constraints = ConstraintSet()
         world = wasm.WASMWorld(self.filename)
 
         world.instantiate({})
-        {% if test.args | length > 0 %}
-        argv=[{{ test.args }}]
-        {% else %}
-        argv=[]
-        {% endif %}
-        expected = [{{ test.rets }}]
-        
-        world.invoke(name="{{ test.func }}", argv=argv)
-        real = world.exec_for_test("{{test.func}}")
-        assertEqualNan(self, real, expected)
+        {% for test in module.tests %}
+        with self.subTest(msg="{{ test.func}}_l{{test.line}}"):
+            print("==V== SUBTEST :", "{{test.func}}", "==V==")
+            {% if test.args | length > 0 %}
+            argv=[{{ test.args }}]
+            {% else %}
+            argv=[]
+            {% endif %}
+            expected = [{{ test.rets }}]
 
-{% endfor %}
+            world.invoke(name="{{ test.func }}", argv=argv)
+            real = world.exec_for_test("{{test.func}}")
+            assertEqualNan(self, real, expected)
+
+        {% endfor %}
+
 {% endfor %}
 
 if __name__ == "__main__":

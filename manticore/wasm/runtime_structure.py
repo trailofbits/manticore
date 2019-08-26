@@ -379,7 +379,7 @@ class ModuleInstance:
 
     def push_instructions(self, insts: WASMExpression):
         for i in insts[::-1]:
-            self._instruction_queue.append(i)
+            self._instruction_queue.appendleft(i)
 
     def look_forward(self, opcode) -> typing.List[Instruction]:
         """
@@ -388,14 +388,14 @@ class ModuleInstance:
         :return:
         """
         out = []
-        i = self._instruction_queue.pop()
+        i = self._instruction_queue.popleft()
         while i.opcode != opcode:
+            out.append(i)
             if i.opcode in {0x02, 0x03, 0x04}:
                 out += self.look_forward(0x0B)
-            out.append(i)
             if len(self._instruction_queue) == 0:
                 raise RuntimeError("Could not find an instruction with opcode " + hex(opcode))
-            i = self._instruction_queue.pop()
+            i = self._instruction_queue.popleft()
         out.append(i)
         return out
 
@@ -405,7 +405,7 @@ class ModuleInstance:
             with AtomicStore(store) as aStore:
                 if self._instruction_queue:
                     try:
-                        inst = self._instruction_queue.pop()
+                        inst = self._instruction_queue.popleft()
                         print(
                             f"{inst.opcode}:",
                             inst.mnemonic,
@@ -445,7 +445,7 @@ class ModuleInstance:
                             self.executor.dispatch(inst, aStore, aStack)
                         return True
                     except Concretize as exc:
-                        self._instruction_queue.append(inst)
+                        self._instruction_queue.appendleft(inst)
                         raise exc
 
                 elif aStack.find_type(Label):
