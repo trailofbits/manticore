@@ -2115,18 +2115,23 @@ class Linux(Platform):
         fd = self._open(sock)
         return fd
 
-    def sys_recv(self, sockfd, buf, count, flags):
-        try:
-            sock = self.files[sockfd]
-        except IndexError:
-            return -errno.EINVAL
+    def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
+        data: bytes = bytes()
+        if count != 0:
+            if buf not in self.current.memory:
+                logger.info("buf points to invalid address. Returning EFAULT")
+                return -errno.EFAULT
 
-        if not isinstance(sock, Socket):
-            return -errno.ENOTSOCK
+            try:
+                sock = self._get_fd(sockfd)
+            except FdError:
+                return -errno.EINVAL
 
-        data = sock.read(count)
-        self.current.write_bytes(buf, data)
-        self.syscall_trace.append(("_recv", sockfd, data))
+            if not isinstance(sock, Socket):
+                return -errno.ENOTSOCK
+            data = sock.read(count)
+            self.syscall_trace.append((trace_str, sockfd, data))
+            self.current.write_bytes(buf, data)
 
         return len(data)
 
@@ -2138,19 +2143,7 @@ class Linux(Platform):
             logger.warning("sys_recvfrom: Unimplemented non-NULL addrlen")
 
         # TODO Unimplemented src_addr and addrlen, so act like sys_recv
-        try:
-            sock = self.files[sockfd]
-        except IndexError:
-            return -errno.EINVAL
-
-        if not isinstance(sock, Socket):
-            return -errno.ENOTSOCK
-
-        data = sock.read(count)
-        self.current.write_bytes(buf, data)
-        self.syscall_trace.append(("_recvfrom", sockfd, data))
-
-        return len(data)
+        return self.sys_recv(sockfd, buf, count, flags, trace_str="_recvfrom")
 
     def sys_send(self, sockfd, buf, count, flags):
         try:
@@ -2962,7 +2955,7 @@ class SLinux(Linux):
 
         return super().sys_write(fd, buf, count)
 
-    def sys_recv(self, sockfd, buf, count, flags):
+    def sys_recv(self, sockfd, buf, count, flags, trace_str='_recv'):
         if issymbolic(sockfd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
             raise ConcretizeArgument(self, 0)
