@@ -2955,7 +2955,7 @@ class SLinux(Linux):
 
         return super().sys_write(fd, buf, count)
 
-    def sys_recv(self, sockfd, buf, count, flags, trace_str='_recv'):
+    def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
         if issymbolic(sockfd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
             raise ConcretizeArgument(self, 0)
