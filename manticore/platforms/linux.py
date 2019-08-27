@@ -435,6 +435,10 @@ class Linux(Platform):
     # from /usr/include/asm-generic/resource.h
     FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
+    # Hard-coded base load address for dynamic elf binaries (ET_DYN in pyelftools)
+    BASE_DYN_ADDR_32 = 0x56555000
+    BASE_DYN_ADDR = 0x555555554000
+
     def __init__(self, program, argv=None, envp=None, disasm="capstone", **kwargs):
         """
         Builds a Linux OS platform
@@ -1003,9 +1007,9 @@ class Linux(Platform):
             if base == 0 and elf.header.e_type == "ET_DYN":
                 assert vaddr == 0
                 if addressbitsize == 32:
-                    base = 0x56555000
+                    base = self.BASE_DYN_ADDR_32
                 else:
-                    base = 0x555555554000
+                    base = self.BASE_DYN_ADDR
 
             perms = perms_from_elf(flags)
             hint = base + vaddr
