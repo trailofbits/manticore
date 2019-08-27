@@ -34,7 +34,7 @@ from ..core.smtlib import BitVec
 from ..core.state import Concretize
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
@@ -260,7 +260,7 @@ class ModuleInstance:
         assert last_frame.frame == f
 
         # #15  TODO run start function
-        print("Initialization Complete")
+        logger.info("Initialization Complete")
 
     def allocate(
         self,
@@ -507,6 +507,7 @@ class ModuleInstance:
         # If we did everything right, the next instruction should already be in the instruction queue
 
     def call(self, store: "Store", stack: "Stack", imm: CallImm):
+        raise NotImplementedError("Call has some problems right now")
         f = stack.get_frame()
         assert imm.function_index in range(len(f.frame.module.funcaddrs))
         a = f.frame.module.funcaddrs[imm.function_index]
