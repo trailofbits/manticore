@@ -1,4 +1,5 @@
 import random
+import socket
 import unittest
 
 import os
@@ -140,6 +141,41 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(-errno.EACCES, self.linux.sys_open(0x1100, os.O_WRONLY, 0o777))
 
         self.assertEqual(-errno.EPERM, self.linux.sys_chown(0x1100, 0, 0))
+
+    def test_recvfrom(self):
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+
+        sock_fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        self.assertEqual(sock_fd, 3)
+        # Unimplemented
+        # self.linux.current.write_int(0x1000, 1, size=8 * 4)
+        # self.linux.sys_setsockopt(sock_fd, socket.SOL_SOCKET, socket.SO_REUSEPORT, 0x1000, 4)
+        self.linux.sys_bind(sock_fd, None, None)
+        self.linux.sys_listen(sock_fd, None)
+        conn_fd = self.linux.sys_accept(sock_fd, None, 0)
+        self.assertEqual(conn_fd, 4)
+
+        sock_obj = self.linux.files[conn_fd]
+        init_len = len(sock_obj.buffer)
+        BYTES = 5
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
+        self.assertEqual(wrote, BYTES)
+
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x0, 100, 0x0, 0x0, 0x0)
+        self.assertEqual(wrote, -errno.EFAULT)
+
+        remain_len = init_len - BYTES
+        self.assertEqual(remain_len, len(sock_obj.buffer))
+
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, remain_len + 10, 0x0, 0x0, 0x0)
+        self.assertEqual(wrote, remain_len)
+
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
+        self.assertEqual(wrote, 0)
+
+        self.linux.sys_close(conn_fd)
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
+        self.assertEqual(wrote, -errno.EINVAL)
 
     def test_unimplemented(self):
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
