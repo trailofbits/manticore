@@ -1001,7 +1001,6 @@ class EthTests(unittest.TestCase):
                         with self.locked_context(name) as d:
                             d.append(instruction.pc)
                 except Exception as e:
-                    print(e)
                     raise
 
         mevm = self.mevm

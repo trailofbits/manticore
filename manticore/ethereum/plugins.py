@@ -145,13 +145,17 @@ class VerboseTraceStdout(Plugin):
 
 
 class KeepOnlyIfStorageChanges(Plugin):
-    """ TODO: reword
-        This state will ignore states that are the result of executing a
-        transaction that did not write to the storage.
+    """ This plugin discards all transactions that results in states where
+        the underlying EVM storage did not change or in other words,
+        there were no writes to it.
 
-        When this plugin is enabled transactions that wont write to the storage
-        are considered not to change the evm world state and hence ignored as a
-        starting point for the following human transaction.
+        This allows to speed-up EVM engine exploration as we don't
+        explore states that have the same storage (contract data).
+
+        However, keep in mind that if the (contract) code relies on
+        account balance and the balance is not a symbolic value
+        it might be that a certain state will not be covered by the
+        execution when this plugin is used.
     """
 
     def did_open_transaction_callback(self, state, tx, *args):
