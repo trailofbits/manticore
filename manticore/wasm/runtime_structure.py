@@ -34,7 +34,7 @@ from ..core.smtlib import BitVec
 from ..core.state import Concretize
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
@@ -458,7 +458,7 @@ class ModuleInstance:
                             elif inst.opcode == 0x0B:
                                 self.end(aStore, aStack)
                             elif inst.opcode == 0x0C:
-                                self.br(aStore, aStack, inst.imm)
+                                self.br(aStore, aStack, inst.imm.relative_depth)
                             elif inst.opcode == 0x0D:
                                 self.br_if(aStore, aStack, inst.imm)
                             elif inst.opcode == 0x0E:
@@ -516,17 +516,46 @@ class ModuleInstance:
         if self._block_depths[-1] == 0:
             self.exit_function(stack)
 
-    def br(self, store: "Store", stack: "Stack", imm: BranchImm):
-        raise NotImplementedError("br")
+    def br(self, store: "Store", stack: "Stack", label_depth: int):
+        assert stack.has_at_least(Label, label_depth + 1)
+
+        label: Label = stack.get_nth(Label, label_depth)
+        stack.has_type_on_top(Value.__args__, label.arity)
+        vals = [stack.pop() for _ in range(label.arity)]
+
+        for _ in range(label_depth + 1):
+            while isinstance(stack.peek(), Value.__args__):
+                stack.pop()
+            assert isinstance(stack.peek(), Label)
+            stack.pop()
+            assert self._block_depths[-1] > 0, "Trying to break out of a function call"
+            self._block_depths[-1] -= 1
+
+        for v in vals[::-1]:
+            stack.push(v)
+
+        # TODO - is this the correct way to jump to the continuation of L?
+        for _ in range(label_depth):
+            self.look_forward(0x0B)
+        self.push_instructions(label.instr)
+
 
     def br_if(self, store: "Store", stack: "Stack", imm: BranchImm):
         stack.has_type_on_top(I32, 1)
         c = stack.pop()
         if c != 0:
-            self.br(store, stack, imm)
+            self.br(store, stack, imm.relative_depth)
 
     def br_table(self, store: "Store", stack: "Stack", imm: BranchTableImm):
-        raise NotImplementedError("br_table")
+        stack.has_type_on_top(I32, 1)
+        i = stack.pop()
+        if i < 0:
+            raise RuntimeError("Can't use a negative number as a jump index in a br_table")
+        if i < imm.target_count:
+            lab = imm.target_table[i]
+        else:
+            lab = imm.default_target
+        self.br(store, stack, lab)
 
     def return_(self, store: "Store", stack: "Stack"):
         f = stack.get_frame()
@@ -612,6 +641,23 @@ class Stack:
                 return -1 * idx
         return None
 
+    def has_at_least(self, t: type, n: int):
+        count = 0
+        for v in reversed(self.data):
+            if isinstance(v, t):
+                count += 1
+            if count == n:
+                return True
+        return False
+
+    def get_nth(self, t: type, n: int):
+        seen = 0
+        for v in reversed(self.data):
+            if isinstance(v, t):
+                if seen == n:
+                    return v
+                seen += 1
+
     def get_frame(self) -> Activation:
         for item in reversed(self.data):
             if isinstance(item, Activation):
@@ -663,6 +709,12 @@ class AtomicStack(Stack):
 
     def find_type(self, t: type):
         return self.parent.find_type(t)
+
+    def has_at_least(self, t: type, n: int):
+        return self.parent.has_at_least(t, n)
+
+    def get_nth(self, t: type, n: int):
+        return self.parent.get_nth(t, n)
 
     def get_frame(self) -> Activation:
         return self.parent.get_frame()
