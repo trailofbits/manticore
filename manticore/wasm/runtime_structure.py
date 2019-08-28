@@ -375,7 +375,9 @@ class ModuleInstance:
     def exit_block(self, stack: "AtomicStack"):
         label_idx = stack.find_type(Label)
         if label_idx is not None:
-            logger.debug("EXITING BLOCK (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1])
+            logger.debug(
+                "EXITING BLOCK (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1]
+            )
             vals = []
             while not isinstance(stack.peek(), Label):
                 vals.append(stack.pop())
@@ -390,12 +392,16 @@ class ModuleInstance:
 
     def exit_function(self, stack: "AtomicStack"):
         if len(self._block_depths) > 1:  # Only if we're in a _real_ function, not initialization
-            logger.debug("EXITING FUNCTION (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1])
+            logger.debug(
+                "EXITING FUNCTION (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1]
+            )
             f = stack.get_frame()
             n = f.arity
             stack.has_type_on_top(Value.__args__, n)
             vals = [stack.pop() for _ in range(n)]
-            assert isinstance(stack.peek(), Activation), f"Stack should have an activation on top, instead has {type(stack.peek())}"
+            assert isinstance(
+                stack.peek(), Activation
+            ), f"Stack should have an activation on top, instead has {type(stack.peek())}"
             self._block_depths.pop()
             stack.pop()
             for v in vals[::-1]:
