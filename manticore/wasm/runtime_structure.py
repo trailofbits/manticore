@@ -34,7 +34,7 @@ from ..core.smtlib import BitVec
 from ..core.state import Concretize
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
@@ -140,6 +140,7 @@ class ModuleInstance:
         "exports",
         "executor",
         "_instruction_queue",
+        "_block_depths",
     ]
 
     types: typing.List[FunctionType]
@@ -150,6 +151,8 @@ class ModuleInstance:
     exports: typing.List[ExportInst]
     executor: Executor
     _instruction_queue: typing.Deque[Instruction]
+    _block_depths: typing.List[int]
+    instantiated: bool
 
     def __init__(self):
         self.types = []
@@ -160,6 +163,7 @@ class ModuleInstance:
         self.exports = []
         self.executor = Executor()
         self._instruction_queue = deque()
+        self._block_depths = [0]
 
     def __getstate__(self):
         state = {
@@ -171,6 +175,7 @@ class ModuleInstance:
             "exports": self.exports,
             "executor": self.executor,
             "_instruction_queue": self._instruction_queue,
+            "_block_depths": self._block_depths,
         }
         return state
 
@@ -183,6 +188,7 @@ class ModuleInstance:
         self.exports = state["exports"]
         self.executor = state["executor"]
         self._instruction_queue = state["_instruction_queue"]
+        self._block_depths = state["_block_depths"]
 
     def instantiate(self, store: Store, module: "Module", extern_vals: typing.List[ExternVal]):
         """
@@ -210,7 +216,7 @@ class ModuleInstance:
         aux_mod = ModuleInstance()
         aux_mod.globaladdrs = [i for i in extern_vals if isinstance(i, GlobalAddr)]
         aux_frame = Frame([], aux_mod)
-        stack.push(Activation(0, aux_frame))
+        stack.push(Activation(1, aux_frame))
 
         vals = [self.exec_expression(store, stack, gb.init) for gb in module.globals]
 
@@ -343,7 +349,7 @@ class ModuleInstance:
         locals = [stack.pop() for _t in ty.param_types][::-1]
         if isinstance(f, HostFunc):
             res = list(f.hostcode(*locals))
-            print("HostFunc returned", res)
+            logger.info("HostFunc returned", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
                 stack.push(t.cast(r))
@@ -352,6 +358,7 @@ class ModuleInstance:
                 locals.append(cast(0))
             frame = Frame(locals, f.module)
             stack.push(Activation(len(ty.result_types), frame))
+            self._block_depths.append(0)
             self.block(store, stack, ty.result_types, f.code.body)
 
     def exec_expression(self, store: Store, stack: "Stack", expr: WASMExpression):
@@ -360,13 +367,15 @@ class ModuleInstance:
             pass
         return stack.pop()
 
-    def enter_instruction(self, insts, label: "Label", stack: "Stack"):
+    def enter_block(self, insts, label: "Label", stack: "Stack"):
         stack.push(label)
+        self._block_depths[-1] += 1
         self.push_instructions(insts)
 
-    def exit_instruction(self, stack: "AtomicStack"):
+    def exit_block(self, stack: "AtomicStack"):
         label_idx = stack.find_type(Label)
         if label_idx is not None:
+            logger.debug("EXITING BLOCK (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1])
             vals = []
             while not isinstance(stack.peek(), Label):
                 vals.append(stack.pop())
@@ -375,6 +384,20 @@ class ModuleInstance:
                 ), f"{type(vals[-1])} is not a value or a label"
             label = stack.pop()
             assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label"
+            self._block_depths[-1] -= 1
+            for v in vals[::-1]:
+                stack.push(v)
+
+    def exit_function(self, stack: "AtomicStack"):
+        if len(self._block_depths) > 1:  # Only if we're in a _real_ function, not initialization
+            logger.debug("EXITING FUNCTION (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1])
+            f = stack.get_frame()
+            n = f.arity
+            stack.has_type_on_top(Value.__args__, n)
+            vals = [stack.pop() for _ in range(n)]
+            assert isinstance(stack.peek(), Activation), f"Stack should have an activation on top, instead has {type(stack.peek())}"
+            self._block_depths.pop()
+            stack.pop()
             for v in vals[::-1]:
                 stack.push(v)
 
@@ -384,7 +407,6 @@ class ModuleInstance:
 
     def look_forward(self, opcode) -> typing.List[Instruction]:
         """
-        TODO - this needs to properly handle nested blocks/loops
         :param opcode:
         :return:
         """
@@ -408,8 +430,8 @@ class ModuleInstance:
                     try:
                         inst = self._instruction_queue.popleft()
                         logger.info(
-                            "%x: %s (%s)",
-                            inst.opcode,
+                            "%s: %s (%s)",
+                            hex(inst.opcode),
                             inst.mnemonic,
                             debug(inst.imm) if inst.imm else "",
                         )
@@ -452,6 +474,8 @@ class ModuleInstance:
 
                 elif aStack.find_type(Label):
                     raise RuntimeError("This should never happen")
+            # if len(self._block_depths) > 1:
+            #     self._block_depths.pop()
             return False
 
     def block(
@@ -459,12 +483,12 @@ class ModuleInstance:
     ):
         arity = len(ret_type)
         l = Label(arity, [])
-        self.enter_instruction(insts, l, stack)
+        self.enter_block(insts, l, stack)
 
     def loop(self, store: "Store", stack: "Stack", loop_inst):
         insts = self.look_forward(0x0B)
         l = Label(0, [loop_inst] + insts)
-        self.enter_instruction(insts, l, stack)
+        self.enter_block(insts, l, stack)
 
     def if_(self, store: "Store", stack: "Stack", ret_type: typing.List[type]):
         stack.has_type_on_top(I32, 1)
@@ -473,15 +497,18 @@ class ModuleInstance:
         f_block = self.look_forward(0x0B)
         l = Label(len(ret_type), [])
         if c != 0:
-            self.enter_instruction(t_block, l, stack)
+            self.enter_block(t_block, l, stack)
         else:
-            self.enter_instruction(f_block, l, stack)
+            self.enter_block(f_block, l, stack)
 
     def else_(self, store: "Store", stack: "Stack"):
-        self.end(store, stack)
+        self.exit_block(stack)
 
     def end(self, store: "Store", stack: "Stack"):
-        self.exit_instruction(stack)
+        if self._block_depths[-1] > 0:
+            self.exit_block(stack)
+        if self._block_depths[-1] == 0:
+            self.exit_function(stack)
 
     def br(self, store: "Store", stack: "Stack", imm: BranchImm):
         raise NotImplementedError("br")
@@ -503,13 +530,13 @@ class ModuleInstance:
         while not isinstance(stack.peek(), (Activation, Frame)):
             stack.pop()
         assert stack.peek() == f
-        for r in ret:
+        stack.pop()
+        self._block_depths.pop()
+        for r in ret[::-1]:
             stack.push(r)
-        self.look_forward(0x0B)
-        # If we did everything right, the next instruction should already be in the instruction queue
+        self.look_forward(0x0B)  # Discard the rest of the function
 
     def call(self, store: "Store", stack: "Stack", imm: CallImm):
-        raise NotImplementedError("Call has some problems right now")
         f = stack.get_frame()
         assert imm.function_index in range(len(f.frame.module.funcaddrs))
         a = f.frame.module.funcaddrs[imm.function_index]
@@ -609,7 +636,6 @@ class AtomicStack(Stack):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_val and isinstance(exc_val, Concretize):
             logger.info("Exception occurred, not applying stack changes")
-            print("Exception caught, rolling back stack")
             self.parent.data = self.copy
         else:
             pass
