@@ -801,7 +801,9 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i64.rotr")
 
     def i32_wrap_i64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.wrap/i64")
+        stack.has_type_on_top(I64, 1)
+        c1: I64 = stack.pop()
+        stack.push(I32.cast(c1 % 2**32))
 
     def i32_trunc_s_f32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.trunc_s/f32")
