@@ -666,16 +666,29 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast((c2 * c1) % 2 ** 32))
 
     def i32_div_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.div_s")
+        # TODO  - handle truncation and 0-divisors for div_s through rem_u
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32.cast(Operators.SDIV(c1, c2)))
 
     def i32_div_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.div_u")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32.cast(Operators.UDIV(c1, c2)))
 
     def i32_rem_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.rem_s")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32.cast(Operators.SREM(c1, c2)))
 
     def i32_rem_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.rem_u")
+        stack.has_type_on_top(I32, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I32.cast(Operators.UREM(c1, c2)))
 
     def i32_and(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
@@ -747,16 +760,29 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I64.cast((c2 * c1) % 2 ** 64))
 
     def i64_div_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.div_s")
+        # TODO  - handle truncation and 0-divisors for div_s through rem_u
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I64.cast(Operators.SDIV(c1, c2)))
 
     def i64_div_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.div_u")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I64.cast(Operators.UDIV(c1, c2)))
 
     def i64_rem_s(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.rem_s")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I64.cast(Operators.SREM(c1, c2)))
 
     def i64_rem_u(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.rem_u")
+        stack.has_type_on_top(I64, 2)
+        c2 = stack.pop()
+        c1 = stack.pop()
+        stack.push(I64.cast(Operators.UREM(c1, c2)))
 
     def i64_and(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
@@ -818,10 +844,14 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i32.trunc_u/f64")
 
     def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.extend_s/i32")
+        stack.has_type_on_top(I32, 1)
+        c1: I32 = stack.pop()
+        stack.push(I64.cast(Operators.SEXTEND(c1, 64)))  # TODO - confirm operator behavior
 
     def i64_extend_u_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.extend_u/i32")
+        stack.has_type_on_top(I32, 1)
+        c1: I32 = stack.pop()
+        stack.push(I64.cast(Operators.ZEXTEND(c1, 64)))  # TODO - confirm operator behavior
 
     def i64_trunc_s_f32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.trunc_s/f32")
@@ -836,10 +866,14 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i64.trunc_u/f64")
 
     def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.reinterpret/f32")
+        stack.has_type_on_top(F32, 1)
+        c1: F32 = stack.pop()
+        stack.push(I32.cast(c1))
 
     def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.reinterpret/f64")
+        stack.has_type_on_top(F64, 1)
+        c1: F64 = stack.pop()
+        stack.push(I64.cast(c1))
 
     ###########################################################################################################
     # Floating point instructions# Floating point instructions
