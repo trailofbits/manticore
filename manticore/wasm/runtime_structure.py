@@ -580,7 +580,7 @@ class ModuleInstance:
             stack.push(v)
 
         # TODO - is this the correct way to jump to the continuation of L?
-        for _ in range(label_depth):
+        for _ in range(label_depth+1):
             self.look_forward(0x0B)
         self.push_instructions(label.instr)
 
