@@ -29,6 +29,7 @@ from .types import (
     WASMExpression,
     Instruction,
     debug,
+    Trap,
 )
 from ..core.smtlib import BitVec
 from ..core.state import Concretize
@@ -436,7 +437,6 @@ class ModuleInstance:
         with AtomicStack(stack) as aStack:
             with AtomicStore(store) as aStore:
                 if self._instruction_queue:
-                    print("INSNS", self._instruction_queue)
                     try:
                         inst = self._instruction_queue.popleft()
                         logger.info(
@@ -611,7 +611,26 @@ class ModuleInstance:
         self._invoke_inner(stack, a, store)
 
     def call_indirect(self, store: "Store", stack: "Stack", imm: CallIndirectImm):
-        raise NotImplementedError("call_indirect")
+        f = stack.get_frame()
+        assert f.frame.module.tableaddrs
+        ta = f.frame.module.tableaddrs[0]
+        assert len(store.tables) > ta
+        tab = store.tables[ta]
+        assert len(f.frame.module.types) > imm.type_index
+        ft_expect = f.frame.module.types[imm.type_index]
+        stack.has_type_on_top(I32, 1)
+        i = stack.pop()
+        if i >= len(tab.elem):
+            raise Trap()
+        if not tab.elem[i]:
+            raise Trap()
+        a = tab.elem[i]
+        assert len(store.funcs) > a
+        f = store.funcs[a]
+        ft_actual = f.type
+        if ft_actual != ft_expect:
+            raise Trap()
+        self._invoke_inner(stack, a, store)
 
 
 @dataclass

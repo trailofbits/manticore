@@ -9,16 +9,12 @@ from wasm.immtypes import (
     F32ConstImm,
     F64ConstImm,
 )
-from .types import I32, I64, F32, F64, Value
+from .types import I32, I64, F32, F64, Value, Trap
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..core.state import Concretize
 
 import operator
 import math
-
-
-class Trap(Exception):
-    pass
 
 
 class Executor(object):  # TODO - should be Eventful

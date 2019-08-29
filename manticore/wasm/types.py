@@ -269,3 +269,7 @@ def convert_instructions(inst_seq) -> WASMExpression:
             out.append(Instruction(i))
 
     return out
+
+
+class Trap(Exception):
+    pass
