@@ -640,8 +640,16 @@ class Executor(object):  # TODO - should be Eventful
     def i32_clz(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.clz")
 
-    def i32_ctz(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.ctz")
+    def i32_ctz(self, store: "Store", stack: "Stack"):  # Copied from x86 TZCNT
+        stack.has_type_on_top(I32, 1)
+        c1 = stack.pop()
+        flag = Operators.EXTRACT(c1, 0, 1) == 1
+        res = 0
+        for pos in range(1, 32):
+            res = Operators.ITEBV(32, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
+
+        stack.push(I32.cast(res))
 
     def i32_popcnt(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.popcnt")
@@ -736,7 +744,15 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i64.clz")
 
     def i64_ctz(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.ctz")
+        stack.has_type_on_top(I64, 1)
+        c1 = stack.pop()
+        flag = Operators.EXTRACT(c1, 0, 1) == 1
+        res = 0
+        for pos in range(1, 64):
+            res = Operators.ITEBV(64, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
+
+        stack.push(I64.cast(res))
 
     def i64_popcnt(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.popcnt")
