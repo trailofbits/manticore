@@ -8,7 +8,7 @@ from manticore.wasm.types import I32, F32, I64, F64
 import math
 
 def assertEqualNan(testcase, a, b):
-    if math.isnan(b[0]):
+    if len(b) and len(a) and math.isnan(b[0]):
         testcase.assertTrue(math.isnan(a[0]))
     else:
         testcase.assertEqual(a, b)

@@ -411,19 +411,22 @@ class ModuleInstance:
         for i in insts[::-1]:
             self._instruction_queue.appendleft(i)
 
-    def look_forward(self, opcode) -> typing.List[Instruction]:
+    def look_forward(self, *opcodes) -> typing.List[Instruction]:
         """
         :param opcode:
         :return:
         """
         out = []
         i = self._instruction_queue.popleft()
-        while i.opcode != opcode:
+        while i.opcode not in opcodes:
             out.append(i)
             if i.opcode in {0x02, 0x03, 0x04}:
                 out += self.look_forward(0x0B)
             if len(self._instruction_queue) == 0:
-                raise RuntimeError("Could not find an instruction with opcode " + hex(opcode))
+                raise RuntimeError(
+                    "Couldn't find an instruction with opcode "
+                    + ", ".join(hex(op) for op in opcodes)
+                )
             i = self._instruction_queue.popleft()
         out.append(i)
         return out
@@ -433,6 +436,7 @@ class ModuleInstance:
         with AtomicStack(stack) as aStack:
             with AtomicStore(store) as aStore:
                 if self._instruction_queue:
+                    print("INSNS", self._instruction_queue)
                     try:
                         inst = self._instruction_queue.popleft()
                         logger.info(
@@ -496,16 +500,46 @@ class ModuleInstance:
         l = Label(0, [loop_inst] + insts)
         self.enter_block(insts, l, stack)
 
+    def extract_block(self, partial_list: typing.Deque[Instruction]) -> typing.Deque[Instruction]:
+        out = deque()
+        i = partial_list.popleft()
+        while i.opcode != 0x0B:
+            out.append(i)
+            if i.opcode in {0x02, 0x03, 0x04}:
+                out += self.extract_block(partial_list)
+            if len(partial_list) == 0:
+                raise RuntimeError("Couldn't find an end to this block!")
+            i = partial_list.popleft()
+        out.append(i)
+        return out
+
+    def _split_if_block(
+        self, partial_list: typing.Deque[Instruction]
+    ) -> typing.Tuple[typing.Deque[Instruction], typing.Deque[Instruction]]:
+        t_block = deque()
+        assert partial_list[-1].opcode == 0x0B, "This block is missing an end instruction!"
+        i = partial_list.popleft()
+        while i.opcode not in {0x05, 0x0B}:
+            t_block.append(i)
+            if i.opcode in {0x02, 0x03, 0x04}:
+                t_block += self.extract_block(partial_list)
+            if len(partial_list) == 0:
+                raise RuntimeError("Couldn't find an end to this if statement!")
+            i = partial_list.popleft()
+        t_block.append(i)
+
+        return t_block, partial_list
+
     def if_(self, store: "Store", stack: "Stack", ret_type: typing.List[type]):
         stack.has_type_on_top(I32, 1)
         c = stack.pop()
-        t_block = self.look_forward(0x05)
-        f_block = self.look_forward(0x0B)
+        insn_block = self.look_forward(0x0B)
+        t_block, f_block = self._split_if_block(deque(insn_block))
         l = Label(len(ret_type), [])
         if c != 0:
-            self.enter_block(t_block, l, stack)
+            self.enter_block(list(t_block), l, stack)
         else:
-            self.enter_block(f_block, l, stack)
+            self.enter_block(list(f_block), l, stack)
 
     def else_(self, store: "Store", stack: "Stack"):
         self.exit_block(stack)
@@ -538,7 +572,6 @@ class ModuleInstance:
         for _ in range(label_depth):
             self.look_forward(0x0B)
         self.push_instructions(label.instr)
-
 
     def br_if(self, store: "Store", stack: "Stack", imm: BranchImm):
         stack.has_type_on_top(I32, 1)
