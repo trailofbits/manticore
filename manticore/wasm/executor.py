@@ -401,7 +401,17 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32(len(mem.data) // 65536))
 
     def grow_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
-        raise NotImplementedError("grow_memory")
+        f = stack.get_frame().frame
+        assert f.module.memaddrs
+        a = f.module.memaddrs[0]
+        assert a in range(len(store.mems))
+        mem = store.mems[a]
+        sz = len(mem.data) // 65536
+        stack.has_type_on_top(I32, 1)
+        if mem.grow(stack.pop()):
+            stack.push(I32(sz))
+        else:
+            stack.push(I32(-1))
 
     def i32_const(self, store: "Store", stack: "Stack", imm: I32ConstImm):
         stack.push(I32.cast(imm.value))

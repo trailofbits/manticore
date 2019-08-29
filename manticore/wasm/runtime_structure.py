@@ -64,6 +64,17 @@ class MemInst:
     data: typing.List[Byte]
     max: typing.Optional[U32]
 
+    def grow(self, n: int):
+        assert len(self.data) % 65536 == 0
+        ln = n + (len(self.data) // 65536)
+        if ln > (2 ** 16):
+            return False
+        if self.max:
+            if ln > max:
+                return False
+        self.data.extend(0x0 for _ in range(n * 65536))  # TODO - these should also be symbolic
+        return True
+
 
 @dataclass
 class GlobalInst:
