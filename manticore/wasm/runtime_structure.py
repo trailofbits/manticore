@@ -636,7 +636,7 @@ class ModuleInstance:
         i = stack.pop()
         if i >= len(tab.elem):
             raise Trap()
-        if not tab.elem[i]:
+        if tab.elem[i] is None:
             raise Trap()
         a = tab.elem[i]
         assert len(store.funcs) > a

@@ -946,26 +946,26 @@ class Executor(object):  # TODO - should be Eventful
     def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
         stack.push(F64(imm.value))
 
-    def f32_unary(self, store: "Store", stack: "Stack", op, rettype=I32):
+    def f32_unary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
         stack.has_type_on_top(F32, 1)
         v1 = stack.pop()
         v = op(v1)
         self.float_pushCompareReturn(stack, v, rettype)
 
-    def f32_binary(self, store: "Store", stack: "Stack", op, rettype=I32):
+    def f32_binary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
         stack.has_type_on_top(F32, 2)
         v2 = stack.pop()
         v1 = stack.pop()
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v, rettype)
 
-    def f64_unary(self, store: "Store", stack: "Stack", op, rettype=I64):
+    def f64_unary(self, store: "Store", stack: "Stack", op, rettype: type = F64):
         stack.has_type_on_top(F64, 1)
         v1 = stack.pop()
         v = op(v1)
         self.float_pushCompareReturn(stack, v, rettype)
 
-    def f64_binary(self, store: "Store", stack: "Stack", op, rettype=I64):
+    def f64_binary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
         stack.has_type_on_top(F64, 2)
         v2 = stack.pop()
         v1 = stack.pop()
