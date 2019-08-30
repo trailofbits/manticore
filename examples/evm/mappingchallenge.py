@@ -64,4 +64,4 @@ for st in m.all_states:
     if st.can_be_true(flag_value != 0):
         print("Flag Found! Check ", m.workspace)
         st.constraints.add(flag_value != 0)
-        m.generate_testcase(st, "Flag Found", "")
+        m.generate_testcase(st, "Flag Found")
