@@ -550,6 +550,9 @@ class ModuleInstance:
         if c != 0:
             self.enter_block(list(t_block), l, stack)
         else:
+            if len(f_block) == 0:
+                assert t_block[-1].opcode == 0x0B
+                f_block.append(t_block[-1])
             self.enter_block(list(f_block), l, stack)
 
     def else_(self, store: "Store", stack: "Stack"):
