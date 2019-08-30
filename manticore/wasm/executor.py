@@ -862,7 +862,7 @@ class Executor(object):  # TODO - should be Eventful
     def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
-        stack.push(I64.cast(Operators.SEXTEND(c1, 64)))  # TODO - confirm operator behavior
+        stack.push(I64.cast(Operators.SEXTEND(c1, 32, 64)))  # TODO - confirm operator behavior
 
     def i64_extend_u_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
