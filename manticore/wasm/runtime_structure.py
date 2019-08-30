@@ -596,9 +596,11 @@ class ModuleInstance:
     def br_table(self, store: "Store", stack: "Stack", imm: BranchTableImm):
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
-        if i < 0:
-            raise RuntimeError("Can't use a negative number as a jump index in a br_table")
-        if i < imm.target_count:
+
+        # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
+        # execute br target_table[i]. The tests, however, pass a negative i, which doesn't make sense in this
+        # situation. For that reason, we use `in range` even though it's a different behavior.
+        if i in range(imm.target_count):
             lab = imm.target_table[i]
         else:
             lab = imm.default_target
