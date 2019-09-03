@@ -79,7 +79,7 @@ class PickleSerializer(StateSerializer):
         sys.setrecursionlimit(PickleSerializer.DEFAULT_RECURSION)
 
     def serialize(self, state, f):
-        logger.info(f"Serializing %s", f.name)
+        logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unkown>")
         try:
             f.write(pickle.dumps(state, 2))
         except RuntimeError:
@@ -93,5 +93,5 @@ class PickleSerializer(StateSerializer):
             self.serialize(state, f)
 
     def deserialize(self, f):
-        logger.info(f"Deserializing %s", f.name)
+        logger.info("Deserializing %s", f.name if hasattr(f, "name") else "<unkown>")
         return pickle.load(f)
