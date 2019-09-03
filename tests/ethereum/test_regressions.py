@@ -97,8 +97,8 @@ class IntegrationTest(unittest.TestCase):
         # but this seems as a good default
         self.assertGreaterEqual(len(output), 3)
         # self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b"m.main:INFO: Registered plugins: ", output[0])
-        self.assertIn(b"m.main:INFO: Beginning analysis", output[1])
+        self.assertIn(b"m.ethereum:INFO: Registered plugins: ", output[0])
+        self.assertIn(b"m.ethereum:INFO: Beginning analysis", output[1])
         self.assertTrue(
             any(b"m.e.manticore:INFO: Starting symbolic create contract" in o for o in output)
         )
