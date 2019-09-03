@@ -89,31 +89,26 @@ def get_levels():
         [(x, DEFAULT_LOG_LEVEL) for x in all_loggers],
         # 1
         [
-            ("manticore.manticore", logging.INFO),
-            ("manticore.main", logging.INFO),
             ("manticore.ethereum.*", logging.INFO),
             ("manticore.native.*", logging.INFO),
             ("manticore.core.manticore", logging.INFO),
         ],
         # 2 (-v)
         [
-            ("manticore.core.executor", logging.INFO),
+            ("manticore.core.worker", logging.INFO),
             ("manticore.platforms.*", logging.DEBUG),
             ("manticore.ethereum", logging.DEBUG),
             ("manticore.core.plugin", logging.DEBUG),
-            ("manticore.util.emulate", logging.INFO),
+            ("manticore.utils.emulate", logging.INFO),
+            ("manticore.utils.helpers", logging.INFO),
         ],
         # 3 (-vv)
         [("manticore.native.cpu.*", logging.DEBUG)],
         # 4 (-vvv)
-        [
-            ("manticore.native.memory", logging.DEBUG),
-            ("manticore.native.cpu.*", logging.DEBUG),
-            ("manticore.native.cpu.*.registers", logging.DEBUG),
-        ],
+        [("manticore.native.memory", logging.DEBUG)],
         # 5 (-vvvv)
         [
-            ("manticore.manticore", logging.DEBUG),
+            ("manticore.core.manticore", logging.DEBUG),
             ("manticore.ethereum.*", logging.DEBUG),
             ("manticore.native.*", logging.DEBUG),
             ("manticore.core.smtlib", logging.DEBUG),
