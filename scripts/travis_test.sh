@@ -95,8 +95,8 @@ run_truffle_tests(){
     # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
     # see https://github.com/trailofbits/manticore/issues/1166
     # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
-    if [ "$(ls output/*tx -l | wc -l)" != "31" ]; then
-        echo "Truffle test failed"
+    if [ "$(ls output/*tx -l | wc -l)" != "19" ]; then
+        echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 19"
         return 1
     fi
     echo "Truffle test succeded"
@@ -107,7 +107,7 @@ run_truffle_tests(){
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    coverage run -m unittest discover "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
+    coverage run -m unittest discover -c -v "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
     DID_OK=$(tail -n1 travis_tests.log)
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some tests failed :("
