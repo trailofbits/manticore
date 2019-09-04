@@ -890,12 +890,12 @@ class Cpu(Eventful):
 
         # Read Instruction from memory
         maxexecsize = self.memory.max_access_size(pc, self.max_instr_width, 'x')
-        for address in range(pc, pc + maxexecsize):
+        instr_memory = self.memory[pc: pc + maxexecsize]
+        for i in range(maxexecsize):
             # This reads a byte from memory ignoring permissions
             # and concretize it if symbolic
 
-            c = self.memory[address]
-
+            c = instr_memory[i]
             if issymbolic(c):
                 # In case of fully symbolic memory, eagerly get a valid ptr
                 if isinstance(self.memory, LazySMemory):
