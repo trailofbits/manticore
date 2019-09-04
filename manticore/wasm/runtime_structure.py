@@ -69,8 +69,8 @@ class MemInst:
         ln = n + (len(self.data) // 65536)
         if ln > (2 ** 16):
             return False
-        if self.max:
-            if ln > max:
+        if self.max is not None:
+            if ln > self.max:
                 return False
         self.data.extend(0x0 for _ in range(n * 65536))  # TODO - these should also be symbolic
         return True
@@ -351,8 +351,6 @@ class ModuleInstance:
         # https://www.w3.org/TR/wasm-core-1/#exec-invoke
         self._invoke_inner(stack, funcaddr, store)
 
-        return [stack.pop() for _i in range(len(ty.result_types))]
-
     def _invoke_inner(self, stack: "Stack", funcaddr: FuncAddr, store: Store):
         assert funcaddr in range(len(store.funcs))
         f: ProtoFuncInst = store.funcs[funcaddr]
@@ -361,7 +359,7 @@ class ModuleInstance:
         locals = [stack.pop() for _t in ty.param_types][::-1]
         if isinstance(f, HostFunc):
             res = list(f.hostcode(*locals))
-            logger.info("HostFunc returned", res)
+            logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
                 stack.push(t.cast(r))
@@ -369,7 +367,7 @@ class ModuleInstance:
             for cast in f.code.locals:
                 locals.append(cast(0))
             frame = Frame(locals, f.module)
-            stack.push(Activation(len(ty.result_types), frame))
+            stack.push(Activation(len(ty.result_types), frame, expected_block_depth=len(self._block_depths)))
             self._block_depths.append(0)
             self.block(store, stack, ty.result_types, f.code.body)
 
@@ -661,10 +659,15 @@ class Frame:
     module: ModuleInstance
 
 
-@dataclass
 class Activation:
     arity: int
     frame: Frame
+    expected_block_depth: int
+
+    def __init__(self, arity, frame, expected_block_depth=0):
+        self.arity = arity
+        self.frame = frame
+        self.expected_block_depth = expected_block_depth
 
 
 class Stack:
