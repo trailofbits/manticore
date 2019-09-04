@@ -889,7 +889,7 @@ class Cpu(Eventful):
         text = b""
 
         # Read Instruction from memory
-        maxexecsize = self.memory.max_exec_size(pc, self.max_instr_width)
+        maxexecsize = self.memory.max_access_size(pc, self.max_instr_width, 'x')
         for address in range(pc, pc + maxexecsize):
             # This reads a byte from memory ignoring permissions
             # and concretize it if symbolic
@@ -923,7 +923,7 @@ class Cpu(Eventful):
             raise DecodeException(pc, code)
 
         # Check that the decoded instruction is contained in executable memory
-        if not self.memory.access_ok(slice(pc, pc + insn.size), "x"):
+        if insn.size > maxexecsize:
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, "x")
 

@@ -892,21 +892,22 @@ class Memory(object, metaclass=ABCMeta):
         else:
             return self.map_containing(index).perms
 
-    def max_exec_size(self, addr, max_size):
+    def max_access_size(self, addr, max_size, access):
         """
         Finds maximum executable memory size
         starting from addr and up to max_size.
 
         :param addr: the starting address.
         :param size: the maximum size.
+        :param access: the wished access.
         """
         size = 0
         while addr < index + max_size:
             if addr not in self:
                 return size
             m = self.map_containing(addr)
-            # could it be ? if 'x' in m.perm
-            if not m.access_ok("x"):
+            # could it be ? if access in m.perm
+            if not m.access_ok(access):
                 return size
             size += m.end - addr
             addr = m.end
