@@ -892,6 +892,19 @@ class Memory(object, metaclass=ABCMeta):
         else:
             return self.map_containing(index).perms
 
+    def max_exec_size(self, index, size):
+        r = 0
+        addr = index
+        while addr < index + size:
+            if addr not in self:
+                return r
+            m = self.map_containing(addr)
+            if not m.access_ok("x"):
+                return r
+            r += m.end - addr
+            addr = m.end
+        return size
+
     def access_ok(self, index, access, force=False):
         if isinstance(index, slice):
             assert index.stop - index.start >= 0

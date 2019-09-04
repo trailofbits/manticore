@@ -889,11 +889,10 @@ class Cpu(Eventful):
         text = b""
 
         # Read Instruction from memory
-        for address in range(pc, pc + self.max_instr_width):
+        maxexecsize = self.memory.max_exec_size(pc, self.max_instr_width)
+        for address in range(pc, pc + maxexecsize):
             # This reads a byte from memory ignoring permissions
             # and concretize it if symbolic
-            if not self.memory.access_ok(address, "x"):
-                break
 
             c = self.memory[address]
 
