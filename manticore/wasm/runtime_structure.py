@@ -367,7 +367,11 @@ class ModuleInstance:
             for cast in f.code.locals:
                 locals.append(cast(0))
             frame = Frame(locals, f.module)
-            stack.push(Activation(len(ty.result_types), frame, expected_block_depth=len(self._block_depths)))
+            stack.push(
+                Activation(
+                    len(ty.result_types), frame, expected_block_depth=len(self._block_depths)
+                )
+            )
             self._block_depths.append(0)
             self.block(store, stack, ty.result_types, f.code.body)
 
