@@ -40,7 +40,6 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             {% endif %}
             {% if test.type == "assert_trap" %}
             world.invoke(name="{{ test.func }}", argv=argv)
-            real = world.exec_for_test("{{test.func}}")
             with self.assertRaises(Trap):
                 world.exec_for_test("{{test.func}}")
             {% endif %}
@@ -48,7 +47,6 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             world.invoke(name="{{ test.func }}", argv=argv)
             world.exec_for_test("{{test.func}}")
             {% endif %}
-
         {% endfor %}
 
 {% endfor %}
