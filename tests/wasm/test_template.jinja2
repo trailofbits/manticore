@@ -4,7 +4,7 @@ from os.path import dirname, abspath, join
 from manticore.platforms import wasm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
-from manticore.wasm.types import I32, F32, I64, F64
+from manticore.wasm.types import I32, F32, I64, F64, Trap
 import math
 
 def assertEqualNan(testcase, a, b):
@@ -33,10 +33,21 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             argv=[]
             {% endif %}
             expected = [{{ test.rets }}]
-
+            {% if test.type == "assert_return" %}
             world.invoke(name="{{ test.func }}", argv=argv)
             real = world.exec_for_test("{{test.func}}")
             assertEqualNan(self, real, expected)
+            {% endif %}
+            {% if test.type == "assert_trap" %}
+            world.invoke(name="{{ test.func }}", argv=argv)
+            real = world.exec_for_test("{{test.func}}")
+            with self.assertRaises(Trap):
+                world.exec_for_test("{{test.func}}")
+            {% endif %}
+            {% if test.type == "action" %}
+            world.invoke(name="{{ test.func }}", argv=argv)
+            world.exec_for_test("{{test.func}}")
+            {% endif %}
 
         {% endfor %}
 

@@ -15,20 +15,9 @@ class Module:
         self.name = filename.replace(".wasm", "").replace(".wast", "").replace(".", "_").strip()
         self.filename = filename
         self.tests = tests
-        self.dedup_names = {}
 
-    def add_test(self, name, line, args, rets):
-        count = self.dedup_names.setdefault(name, 0)
-        self.tests.append(
-            {
-                "func": name,
-                "line": line,
-                "args": args,
-                "rets": rets,
-                "dedup_name": f"{name}_{count}".replace(".", "_").replace("-", "_"),
-            }
-        )
-        self.dedup_names[name] += 1
+    def add_test(self, name, line, args, rets, type_="assert_return"):
+        self.tests.append({"func": name, "line": line, "args": args, "rets": rets, "type": type_})
 
     def __repr__(self):
         return f"<Module {self.filename} containing {len(self.tests)} tests>"
@@ -49,7 +38,17 @@ current_module = None
 for d in data:
 
     if d["type"] == "action":
-        raise NotImplementedError("action")
+        if d["action"]["type"] == "invoke":
+            if isinstance(current_module, int):
+                modules[current_module].add_test(
+                    d["action"]["field"],
+                    d["line"],
+                    convert_types(d["action"]["args"]),
+                    convert_types(d["expected"]),
+                    "action",
+                )
+        else:
+            raise NotImplementedError("action with action type: " + d["action"]["type"])
     elif d["type"] == "assert_exhaustion":
         pass
     elif d["type"] == "assert_invalid":
@@ -66,7 +65,7 @@ for d in data:
                     convert_types(d["expected"]),
                 )
         else:
-            raise NotImplementedError("assert_return")
+            raise NotImplementedError("assert_return with action type: " + d["action"]["type"])
     elif d["type"] == "assert_return_arithmetic_nan":
         # XXX Eventually implement, but if we raise here it eliminates other valid tests
         # raise NotImplementedError("assert_return_arithmetic_nan")
@@ -79,13 +78,16 @@ for d in data:
 
     elif d["type"] == "assert_trap":
         if d["action"]["type"] == "invoke":
-            pass  # TODO - implement support for the trap tests
-            # if isinstance(current_module, int):
-            #     modules[current_module].tests.append({"func": d["action"]["field"],
-            #                                           "args": convert_types(d["action"]["args"]),
-            #                                           "rets": convert_types(d["expected"])})
+            if isinstance(current_module, int):
+                modules[current_module].add_test(
+                    d["action"]["field"],
+                    d["line"],
+                    convert_types(d["action"]["args"]),
+                    convert_types(d["expected"]),
+                    "assert_trap",
+                )
         else:
-            raise NotImplementedError("assert_trap")
+            raise NotImplementedError("assert_trap with action type: " + d["action"]["type"])
     elif d["type"] == "assert_uninstantiable":
         current_module = None
     elif d["type"] == "assert_unlinkable":
