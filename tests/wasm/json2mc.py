@@ -26,7 +26,7 @@ class Module:
 def convert_types(to_convert):
     out = []
     for item in to_convert:
-        out.append(f"{item['type'].upper()}({item.get('value', None)})")
+        out.append(f"{item['type'].upper()}({item.get('value', 0)})")
     return ", ".join(out)
 
 

@@ -309,6 +309,8 @@ class Executor(object):  # TODO - should be Eventful
         assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
+        if ea + (size // 8) > len(mem.data):
+            raise Trap()
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         width = 32 if ty is I32 else 64
         if signed:
@@ -345,7 +347,7 @@ class Executor(object):  # TODO - should be Eventful
         self.int_load(store, stack, imm, I64, 32, True)
 
     def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
-        self.int_load(store, stack, imm, I32, 64, True)
+        self.int_load(store, stack, imm, I64, 32, False)
 
     def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame().frame
@@ -903,6 +905,8 @@ class Executor(object):  # TODO - should be Eventful
         mem = store.mems[a]
         i = stack.pop()
         ea = i + imm.offset
+        if ea + (size // 8) > len(mem.data):
+            raise Trap()
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         ret = ty.cast(c)
         stack.push(ret)
