@@ -445,6 +445,7 @@ class ModuleInstance:
         ret_type_map = {-1: [I32], -2: [I64], -3: [F32], -4: [F64], -64: []}
         with AtomicStack(stack) as aStack:
             with AtomicStore(store) as aStore:
+                # print("Instructions:", self._instruction_queue)
                 if self._instruction_queue:
                     try:
                         inst = self._instruction_queue.popleft()
@@ -582,7 +583,7 @@ class ModuleInstance:
 
         # TODO - is this the correct way to jump to the continuation of L?
         for _ in range(label_depth + 1):
-            self.look_forward(0x0B)
+            self.look_forward(0x0B, 0x05)
         self.push_instructions(label.instr)
 
     def br_if(self, store: "Store", stack: "Stack", imm: BranchImm):
@@ -613,10 +614,12 @@ class ModuleInstance:
             stack.pop()
         assert stack.peek() == f
         stack.pop()
-        self._block_depths.pop()
         for r in ret[::-1]:
             stack.push(r)
-        self.look_forward(0x0B)  # Discard the rest of the function
+        while len(self._block_depths) > f.expected_block_depth:
+            for i in range(self._block_depths[-1]):
+                self.look_forward(0x0B, 0x05)  # Discard the rest of the function
+            self._block_depths.pop()
 
     def call(self, store: "Store", stack: "Stack", imm: CallImm):
         f = stack.get_frame()
@@ -659,6 +662,7 @@ class Frame:
     module: ModuleInstance
 
 
+@dataclass
 class Activation:
     arity: int
     frame: Frame
