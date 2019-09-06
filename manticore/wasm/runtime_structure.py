@@ -202,6 +202,10 @@ class ModuleInstance:
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
 
+    def reset_internal(self):
+        self._instruction_queue.clear()
+        self._block_depths.clear()
+
     def instantiate(self, store: Store, module: "Module", extern_vals: typing.List[ExternVal]):
         """
         https://www.w3.org/TR/wasm-core-1/#instantiation%E2%91%A1
@@ -497,9 +501,7 @@ class ModuleInstance:
                         raise exc
 
                 elif aStack.find_type(Label):
-                    raise RuntimeError("This should never happen")
-            # if len(self._block_depths) > 1:
-            #     self._block_depths.pop()
+                    raise RuntimeError("The instruction queue is empty, but there are still labels on the stack!")
             return False
 
     def block(

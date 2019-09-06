@@ -1,6 +1,7 @@
 from .platform import Platform
 from ..wasm.module_structure import Module
 from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc, Stack
+from ..wasm.types import Trap
 from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, issymbolic
 from ..core.smtlib.solver import Z3Solver
@@ -67,14 +68,20 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
             if export.name == funcname and isinstance(export.value, FuncAddr):
                 rets = len(self.store.funcs[export.value].type.result_types)
 
-        while self.instance.exec_instruction(self.store, self.stack):
-            pass
-        if rets == 0:
-            return []
-        if rets == 1:
-            return [self.stack.pop()]
-        else:
-            return [self.stack.pop() for _i in range(rets)]
+        try:
+            while self.instance.exec_instruction(self.store, self.stack):
+                pass
+            if rets == 0:
+                return []
+            if rets == 1:
+                return [self.stack.pop()]
+            else:
+                return [self.stack.pop() for _i in range(rets)]
+        except (Trap, NotImplementedError) as e:
+            self.instance.reset_internal()
+            self.stack = Stack()
+            raise e
+
 
     def execute(self):
         """
