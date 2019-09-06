@@ -2118,8 +2118,8 @@ class Linux(Platform):
     def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
         data: bytes = bytes()
         if count != 0:
-            if buf not in self.current.memory:
-                logger.info("buf points to invalid address. Returning EFAULT")
+            if buf not in self.current.memory or (buf + count) not in self.current.memory:
+                logger.info("buf or (buf + count) points to invalid address. Returning EFAULT")
                 return -errno.EFAULT
 
             try:
