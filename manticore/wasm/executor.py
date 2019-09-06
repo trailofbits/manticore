@@ -281,7 +281,7 @@ class Executor(object):  # TODO - should be Eventful
         assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
-        if (ea + 4) > len(mem.data):
+        if (ea + 4) not in range(len(mem.data) + 1):
             raise Trap()
         c = Operators.CONCAT(32, *map(Operators.ORD, reversed(mem.data[ea : ea + 4])))
         stack.push(I32.cast(c))
@@ -295,7 +295,7 @@ class Executor(object):  # TODO - should be Eventful
         assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
-        if (ea + 8) > len(mem.data):
+        if (ea + 8) not in range(len(mem.data) + 1):
             raise Trap()
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
         stack.push(I64.cast(c))
@@ -312,7 +312,7 @@ class Executor(object):  # TODO - should be Eventful
         assert isinstance(stack.peek(), I32), f"{type(stack.peek())} is not I32"
         i = stack.pop()
         ea = i + imm.offset
-        if ea + (size // 8) > len(mem.data):
+        if ea + (size // 8) not in range(len(mem.data) + 1):
             raise Trap()
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         width = 32 if ty is I32 else 64
@@ -364,7 +364,7 @@ class Executor(object):  # TODO - should be Eventful
         i = stack.pop()
         ea = i + imm.offset
         N = n if n else {I32: 32, I64: 64}[ty]
-        if (ea + (N // 8)) > len(mem.data):
+        if (ea + (N // 8)) not in range(len(mem.data) + 1):
             raise Trap()
         if n:
             b = [
