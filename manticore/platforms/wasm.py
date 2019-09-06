@@ -82,7 +82,6 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
             self.stack = Stack()
             raise e
 
-
     def execute(self):
         """
         """

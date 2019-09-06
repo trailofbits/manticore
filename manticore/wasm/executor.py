@@ -199,10 +199,13 @@ class Executor(object):  # TODO - should be Eventful
         opcode = inst.opcode
         assert opcode in self._mapping
         func = self._mapping[opcode]
-        if inst.imm:
-            return func(store, stack, inst.imm)
-        else:
-            return func(store, stack)
+        try:
+            if inst.imm:
+                return func(store, stack, inst.imm)
+            else:
+                return func(store, stack)
+        except (ZeroDivisionError):
+            raise Trap("Zero division")
 
     def unreachable(self, store: "Store", stack: "Stack"):
         raise Trap()

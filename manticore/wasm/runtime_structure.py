@@ -501,7 +501,9 @@ class ModuleInstance:
                         raise exc
 
                 elif aStack.find_type(Label):
-                    raise RuntimeError("The instruction queue is empty, but there are still labels on the stack!")
+                    raise RuntimeError(
+                        "The instruction queue is empty, but there are still labels on the stack!"
+                    )
             return False
 
     def block(
