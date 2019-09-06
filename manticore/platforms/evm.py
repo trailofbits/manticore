@@ -739,6 +739,14 @@ class EVM(Eventful):
         self._valid_jmpdests = set()
 
     @property
+    def pc(self):
+        return self._pc
+
+    @pc.setter
+    def pc(self, pc):
+        self._pc = simplify(pc)
+
+    @property
     def bytecode(self):
         return self._bytecode
 
