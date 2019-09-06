@@ -5,17 +5,16 @@ from ..wasm.types import Trap
 from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, issymbolic
 from ..core.smtlib.solver import Z3Solver
+from functools import partial
 import typing, types
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def stub(*args):
-    print("Called stub function with args:", args)
-    if not len(args):
-        return [13]
-    return [0]
+def stub(arity, *args):
+    logger.info("Called stub function with args:", args)
+    return [0 for _ in  range(arity)]
 
 
 class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
@@ -52,8 +51,9 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         imports = []
         for i in self.module.imports:
             # TODO - create function stubs that have the correct signatures
+            func_type = self.module.types[i.desc]
             self.store.funcs.append(
-                HostFunc(self.module.types[i.desc], import_dict.get(i.name, stub))
+                HostFunc(func_type, import_dict.get(i.name, partial(stub, len(func_type.result_types))))
             )
             imports.append(FuncAddr(len(self.store.funcs) - 1))
         self.instance.instantiate(self.store, self.module, imports)
