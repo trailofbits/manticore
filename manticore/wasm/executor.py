@@ -640,9 +640,6 @@ class Executor(object):  # TODO - should be Eventful
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
     def i32_clz(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.clz")
-
-    def i32_ctz(self, store: "Store", stack: "Stack"):  # Copied from x86 TZCNT
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) == 1
@@ -650,7 +647,18 @@ class Executor(object):  # TODO - should be Eventful
         for pos in range(1, 32):
             res = Operators.ITEBV(32, flag, res, pos)
             flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
+        res = Operators.ITEBV(32, c1 == 0, 32, res)
+        stack.push(I32.cast(res))
 
+    def i32_ctz(self, store: "Store", stack: "Stack"):  # Copied from x86 TZCNT
+        stack.has_type_on_top(I32, 1)
+        c1 = stack.pop()
+        flag = Operators.EXTRACT(c1, 32 - 0, 1) == 1
+        res = 0
+        for pos in range(1, 32):
+            res = Operators.ITEBV(32, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, 32 - pos, 1) == 1)
+        res = Operators.ITEBV(32, c1 == 0, 32, res)
         stack.push(I32.cast(res))
 
     def i32_popcnt(self, store: "Store", stack: "Stack"):
@@ -743,9 +751,6 @@ class Executor(object):  # TODO - should be Eventful
         raise NotImplementedError("i32.rotr")
 
     def i64_clz(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.clz")
-
-    def i64_ctz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) == 1
@@ -754,6 +759,18 @@ class Executor(object):  # TODO - should be Eventful
             res = Operators.ITEBV(64, flag, res, pos)
             flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
 
+        res = Operators.ITEBV(64, c1 == 0, 64, res)
+        stack.push(I64.cast(res))
+
+    def i64_ctz(self, store: "Store", stack: "Stack"):
+        stack.has_type_on_top(I64, 1)
+        c1 = stack.pop()
+        flag = Operators.EXTRACT(c1, 64 - 0, 1) == 1
+        res = 0
+        for pos in range(1, 64):
+            res = Operators.ITEBV(64, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, 64 - pos, 1) == 1)
+        res = Operators.ITEBV(64, c1 == 0, 64, res)
         stack.push(I64.cast(res))
 
     def i64_popcnt(self, store: "Store", stack: "Stack"):
