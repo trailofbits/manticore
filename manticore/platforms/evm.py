@@ -720,7 +720,7 @@ class EVM(Eventful):
         # self.invalid = set()
 
         # Machine state
-        self.pc = 0
+        self._pc = 0
         self.stack = []
         # We maintain gas as a 512 bits internally to avoid overflows
         # it is shortened to 256 bits when it is used by the GAS instruction
