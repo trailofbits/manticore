@@ -645,22 +645,22 @@ class Executor(object):  # TODO - should be Eventful
     def i32_clz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
-        flag = Operators.EXTRACT(c1, 0, 1) == 1
+        flag = Operators.EXTRACT(c1, 32 - 0, 1) == 1
         res = 0
         for pos in range(1, 32):
             res = Operators.ITEBV(32, flag, res, pos)
-            flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, 32 - pos, 1) == 1)
         res = Operators.ITEBV(32, c1 == 0, 32, res)
         stack.push(I32.cast(res))
 
     def i32_ctz(self, store: "Store", stack: "Stack"):  # Copied from x86 TZCNT
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
-        flag = Operators.EXTRACT(c1, 32 - 0, 1) == 1
+        flag = Operators.EXTRACT(c1, 0, 1) == 1
         res = 0
         for pos in range(1, 32):
             res = Operators.ITEBV(32, flag, res, pos)
-            flag = Operators.OR(flag, Operators.EXTRACT(c1, 32 - pos, 1) == 1)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
         res = Operators.ITEBV(32, c1 == 0, 32, res)
         stack.push(I32.cast(res))
 
@@ -756,11 +756,11 @@ class Executor(object):  # TODO - should be Eventful
     def i64_clz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
-        flag = Operators.EXTRACT(c1, 0, 1) == 1
+        flag = Operators.EXTRACT(c1, 64 - 0, 1) == 1
         res = 0
         for pos in range(1, 64):
             res = Operators.ITEBV(64, flag, res, pos)
-            flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, 64 - pos, 1) == 1)
 
         res = Operators.ITEBV(64, c1 == 0, 64, res)
         stack.push(I64.cast(res))
@@ -768,11 +768,11 @@ class Executor(object):  # TODO - should be Eventful
     def i64_ctz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
-        flag = Operators.EXTRACT(c1, 64 - 0, 1) == 1
+        flag = Operators.EXTRACT(c1, 0, 1) == 1
         res = 0
         for pos in range(1, 64):
             res = Operators.ITEBV(64, flag, res, pos)
-            flag = Operators.OR(flag, Operators.EXTRACT(c1, 64 - pos, 1) == 1)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
         res = Operators.ITEBV(64, c1 == 0, 64, res)
         stack.push(I64.cast(res))
 
