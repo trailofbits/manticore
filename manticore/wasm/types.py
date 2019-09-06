@@ -26,7 +26,6 @@ def debug(imm):
 
 class I32(int):
     def __new__(cls, val):
-        if val >
         val = struct.unpack("i", c_int32(val))[0]  # TODO - this is probably unsound overall
         return super(I32, cls).__new__(cls, val)
 
