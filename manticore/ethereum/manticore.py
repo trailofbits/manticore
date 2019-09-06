@@ -1242,7 +1242,7 @@ class ManticoreEVM(ManticoreBase):
 
     # Callbacks for generic SYMB TABLE
     def on_unsound_symbolication(self, state, func, data, result):
-        '''Apply the function func to data
+        """Apply the function func to data
         state: a manticore state
         func: a concrete normal python function like `sha3()`
         data: a concrete or symbolic value of the domain of func
@@ -1253,7 +1253,7 @@ class ManticoreEVM(ManticoreBase):
         In the case of a symbolic data this method returns a fresh free symbol Y
         representing all the potential results of applying func to data.
         The relations between the data and Y is saved in an internal table.
-        '''
+        """
         name = func.__name__
         # Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1290,9 +1290,10 @@ class ManticoreEVM(ManticoreBase):
         result.append(value)
 
     def fix_unsound_symbolication(self, state):
-        ''' This method goes through all the applied symbolic functions and tries
+        """ This method goes through all the applied symbolic functions and tries
             to find a concrete matching set of pairs
-        '''
+        """
+
         def concretize_known_pairs(state, symbolic_pairs, known_pairs):
             # Each symbolic pair must match at least one of the concrete
             # pairs we know
@@ -1360,7 +1361,7 @@ class ManticoreEVM(ManticoreBase):
 
             """
 
-            #The base case. No symbolic pairs. Just check if the state is feasible.
+            # The base case. No symbolic pairs. Just check if the state is feasible.
             if not symbolic_pairs:
                 return state.can_be_true(True)
 

@@ -33,6 +33,7 @@ class EthSha3Test(unittest.TestCase):
     def tearDown(self):
         self.mevm = None
         shutil.rmtree(self.worksp)
+
     def ManticoreEVM(self):
         return self.mevm
 
