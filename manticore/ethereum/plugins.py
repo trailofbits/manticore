@@ -194,7 +194,7 @@ class KeepOnlyIfStorageChanges(Plugin):
         """When  human tx/run just ended remove the states that have not changed
          the storage"""
         with self.manticore.locked_context("ethereum.saved_states", list) as saved_states:
-            # Normallyy the ready states are consumed and forked, eth save the
+            # Normally the ready states are consumed and forked, eth save the
             # states that finished ok in a special context list. This list will
             # compose the ready states for the next human transaction.
             # The actual "ready_states" list at this point contain the states
@@ -203,7 +203,9 @@ class KeepOnlyIfStorageChanges(Plugin):
             for state_id in list(saved_states):
                 st = self.manticore._load(state_id)
                 if not st.context["written"][-1]:
-                    self.manticore._terminated_states.append(st.id)
+                    if st.id in self.manticore._ready_states:
+                        self.manticore._ready_states.remove(st.id)
+                        self.manticore._terminated_states.append(st.id)
                     saved_states.remove(st.id)
 
     def generate_testcase(self, state, testcase, message):

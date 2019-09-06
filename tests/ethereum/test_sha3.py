@@ -10,6 +10,7 @@ import shutil
 from manticore.platforms.evm import EVMWorld
 from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import ManticoreEVM
+from manticore.ethereum.plugins import KeepOnlyIfStorageChanges
 from manticore.utils import config
 
 consts = config.get_group("core")
@@ -31,7 +32,9 @@ class EthSha3Test(unittest.TestCase):
 
     def tearDown(self):
         self.mevm = None
-        # shutil.rmtree(self.worksp)
+        shutil.rmtree(self.worksp)
+    def ManticoreEVM(self):
+        return self.mevm
 
     def test_example1(self):
         source_code = """
@@ -45,7 +48,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -75,7 +78,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -106,7 +109,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -141,7 +144,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -178,7 +181,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -214,7 +217,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -251,7 +254,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -288,7 +291,7 @@ class EthSha3Test(unittest.TestCase):
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -317,14 +320,14 @@ class EthSha3Test(unittest.TestCase):
             event Log(string);
             function foo(bytes x) public {
                 //# x1 keccak
-                if (keccak256("tob") == keccak256( abi.encodePacked(x))){
+                if (keccak256("tob") == keccak256(abi.encodePacked(x))){
                     emit Log("bug");
                 }
             }
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -349,14 +352,15 @@ class EthSha3Test(unittest.TestCase):
             event Log(string);
             function foo(bytes x) public {
                 //# x10 keccak
-                if (keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob")))))))))) == keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)))))))))))){
+                if (keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob")))))))))) == 
+                    keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)))))))))))){
                     emit Log("bug");
                 }
             }
         }
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -392,7 +396,8 @@ class EthSha3Test(unittest.TestCase):
 
         """
 
-        m = ManticoreEVM()
+        m = self.ManticoreEVM()
+        m.register_plugin(KeepOnlyIfStorageChanges())
         owner = m.create_account(balance=1000, name="owner")
         attacker = m.create_account(balance=1000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
@@ -402,6 +407,8 @@ class EthSha3Test(unittest.TestCase):
         x2 = m.make_symbolic_value()
         contract.foo(x2)
 
+        self.assertEqual(m.count_all_states(), 5)
+
         found = 0
         for st in m.all_states:
             if not m.fix_unsound_symbolication(st):
@@ -410,7 +417,6 @@ class EthSha3Test(unittest.TestCase):
             m.generate_testcase(st)
             found += len(st.platform.logs)
         self.assertEqual(found, 1)  # log is reachable
-        self.assertEqual(m.count_all_states(), 5)
 
 
 if __name__ == "__main__":
