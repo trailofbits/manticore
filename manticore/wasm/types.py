@@ -26,11 +26,8 @@ def debug(imm):
 
 class I32(int):
     def __new__(cls, val):
-        val &= 0xFFFFFFFF
-        if val > 0x7FFFFFFF:
-            val = struct.unpack("i", struct.pack("I", val))[
-                0
-            ]  # TODO - this is probably unsound overall
+        if val >
+        val = struct.unpack("i", c_int32(val))[0]  # TODO - this is probably unsound overall
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
@@ -41,6 +38,10 @@ class I32(int):
 
 
 class I64(int):
+    def __new__(cls, val):
+        val = struct.unpack("q", c_int64(val))[0]  # TODO - this is probably unsound overall
+        return super(I64, cls).__new__(cls, val)
+
     @classmethod
     def cast(cls, other):
         if issymbolic(other):
