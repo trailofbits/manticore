@@ -1,6 +1,7 @@
 from ...utils.helpers import CacheDict
 from .expression import *
 from functools import lru_cache
+import copy
 import logging
 import operator
 
@@ -111,8 +112,6 @@ class Visitor:
     def _rebuild(expression, operands):
         if isinstance(expression, Operation):
             if any(x is not y for x, y in zip(expression.operands, operands)):
-                import copy
-
                 aux = copy.copy(expression)
                 aux._operands = operands
                 return aux
@@ -384,7 +383,10 @@ class ArithmeticSimplifier(Visitor):
                 result = expression.operands[1]
             else:
                 result = expression.operands[2]
-            result._taint |= expression.operands[0].taint
+            new_taint = result._taint | expression.operands[0].taint
+            if result._taint != new_taint:
+                result = copy.copy(result)
+                result._taint = new_taint
             return result
 
         if self._changed(expression, operands):
