@@ -206,7 +206,14 @@ class ModuleInstance:
         self._instruction_queue.clear()
         self._block_depths.clear()
 
-    def instantiate(self, store: Store, module: "Module", extern_vals: typing.List[ExternVal]):
+    def instantiate(
+        self,
+        stack: Stack,
+        store: Store,
+        module: "Module",
+        extern_vals: typing.List[ExternVal],
+        exec_start: bool = False,
+    ):
         """
         https://www.w3.org/TR/wasm-core-1/#instantiation%E2%91%A1
         :param store:
@@ -282,6 +289,11 @@ class ModuleInstance:
         assert last_frame.frame == f
 
         # #15  TODO run start function
+        if module.start is not None:
+            assert module.start in range(len(self.funcaddrs))
+            self.invoke(stack, self.funcaddrs[module.start], store, [])
+            if exec_start:
+                stack.push(self.exec_expression(store, stack, []))
         logger.info("Initialization Complete")
 
     def allocate(

@@ -254,7 +254,7 @@ class Module:
                         Export(eval(ty.to_string(e.field_str)), mapping[e.kind](e.index))
                     )  # TODO - This is definitely an unsafe way to strip the quotes
             elif sec_id == SEC_START:
-                pass  # TODO - Start func
+                m.start = section_data.payload.index
             elif sec_id == SEC_ELEMENT:
                 for e in section_data.payload.entries:
                     m.elem.append(

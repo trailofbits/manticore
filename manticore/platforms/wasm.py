@@ -47,7 +47,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         self.instantiated = state["instantiated"]
         super().__setstate__(state)
 
-    def instantiate(self, import_dict: typing.Dict[str, types.FunctionType]):
+    def instantiate(self, import_dict: typing.Dict[str, types.FunctionType], exec_start=False):
         imports = []
         for i in self.module.imports:
             # TODO - create function stubs that have the correct signatures
@@ -58,13 +58,14 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
                 )
             )
             imports.append(FuncAddr(len(self.store.funcs) - 1))
-        self.instance.instantiate(self.store, self.module, imports)
+        self.instance.instantiate(self.stack, self.store, self.module, imports, exec_start)
         self.instantiated = True
 
     def invoke(self, name="main", argv=[]):
         self.instance.invoke_by_name(name, self.stack, self.store, list(argv))
 
     def exec_for_test(self, funcname):
+
         rets = 0
         for export in self.instance.exports:
             if export.name == funcname and isinstance(export.value, FuncAddr):
