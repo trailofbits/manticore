@@ -26,7 +26,7 @@ def debug(imm):
 
 class I32(int):
     def __new__(cls, val):
-        val = struct.unpack("i", c_int32(val))[0]  # TODO - this is probably unsound overall
+        val = struct.unpack("i", c_int32(int(val)))[0]  # TODO - this is probably unsound overall
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
@@ -38,7 +38,7 @@ class I32(int):
 
 class I64(int):
     def __new__(cls, val):
-        val = struct.unpack("q", c_int64(val))[0]  # TODO - this is probably unsound overall
+        val = struct.unpack("q", c_int64(int(val)))[0]  # TODO - this is probably unsound overall
         return super(I64, cls).__new__(cls, val)
 
     @classmethod
@@ -55,6 +55,7 @@ class F32(float):
             ptr = pointer(c_int(val))
             fl = cast(ptr, POINTER(c_float))
             val = fl.contents.value
+        val = struct.unpack("f", c_float(val))[0]
         self = super(F32, cls).__new__(cls, val)
         self.integer = val
         return self
@@ -72,6 +73,7 @@ class F64(float):
             ptr = pointer(c_ulong(val))
             fl = cast(ptr, POINTER(c_double))
             val = fl.contents.value
+        val = struct.unpack("d", c_double(val))[0]
         self = super(F64, cls).__new__(cls, val)
         self.integer = val
         return self

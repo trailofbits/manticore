@@ -639,18 +639,18 @@ class ModuleInstance:
         f = stack.get_frame()
         assert f.frame.module.tableaddrs
         ta = f.frame.module.tableaddrs[0]
-        assert len(store.tables) > ta
+        assert ta in range(len(store.tables))
         tab = store.tables[ta]
-        assert len(f.frame.module.types) > imm.type_index
+        assert imm.type_index in range(len(f.frame.module.types))
         ft_expect = f.frame.module.types[imm.type_index]
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
-        if i >= len(tab.elem):
+        if i not in range(len(tab.elem)):
             raise Trap()
         if tab.elem[i] is None:
             raise Trap()
         a = tab.elem[i]
-        assert len(store.funcs) > a
+        assert a in range(len(store.funcs))
         f = store.funcs[a]
         ft_actual = f.type
         if ft_actual != ft_expect:

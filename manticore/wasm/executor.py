@@ -9,6 +9,8 @@ from wasm.immtypes import (
     F32ConstImm,
     F64ConstImm,
 )
+import struct
+from ctypes import c_int32, c_int64
 from .types import I32, I64, F32, F64, Value, Trap
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..core.state import Concretize
@@ -889,7 +891,13 @@ class Executor(object):  # TODO - should be Eventful
     def i64_extend_u_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
-        stack.push(I64.cast(Operators.ZEXTEND(c1, 64)))  # TODO - confirm operator behavior
+        if issymbolic(
+            c1
+        ):  # ZEXTEND doesn't have a concept of sized ints, so it will promote a negative I32
+            # to a negative I64 with the same value.
+            stack.push(I64.cast(Operators.ZEXTEND(c1, 64)))  # TODO - confirm operator behavior
+        else:
+            stack.push(I64.cast(struct.unpack("q", bytes(c_int32(c1)) + b"\x00" * 4)[0]))
 
     def i64_trunc_s_f32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.trunc_s/f32")
