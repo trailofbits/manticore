@@ -96,7 +96,7 @@ run_truffle_tests(){
     # see https://github.com/trailofbits/manticore/issues/1166
     # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
     if [ "$(ls output/*tx -l | wc -l)" != "19" ]; then
-        echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 19"
+        echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 13"
         return 1
     fi
     echo "Truffle test succeded"
