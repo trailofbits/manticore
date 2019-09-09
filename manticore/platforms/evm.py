@@ -553,7 +553,7 @@ def concretized_args(**policies):
                     # TODO / FIXME: The taint should persist!
                     logger.warning(
                         f"Concretizing {func.__name__}'s {index} argument and dropping its taints: "
-                        "the value might not be tracked properly (in case of using detectors)"
+                        "the value might not be tracked properly (This may affect detectors)"
                     )
                 logger.info(
                     f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}"
@@ -1216,7 +1216,7 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        # print(self.instruction)
+        #print(self.instruction)
         try:
             # import time
             # limbo = 0.0
@@ -1247,9 +1247,7 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 current_vm = state.platform.current_vm
-                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = (
-                    current_vm._checkpoint_data
-                )
+                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = current_vm._checkpoint_data
                 current_vm._checkpoint_data = (
                     _pc,
                     _old_gas,
@@ -1261,7 +1259,7 @@ class EVM(Eventful):
 
             raise Concretize(
                 "Concretize current instruction fee",
-                expression=fee,
+                expression=self._checkpoint_data[4],
                 setstate=setstate,
                 policy=ex.policy,
             )
@@ -1652,6 +1650,8 @@ class EVM(Eventful):
             self.constraints.add(data_offset >= -calldata_underflow)
 
         self._use_calldata(data_offset, size)
+        self._allocate(mem_offset, size)
+
         max_size = size
         if issymbolic(max_size):
             max_size = Z3Solver.instance().max(self.constraints, size)
@@ -1668,7 +1668,6 @@ class EVM(Eventful):
                 #   cond = Operators.OR(size==conc_size, cond)
                 # self.constraints.add(cond)
 
-        self._allocate(mem_offset, size)
 
         for i in range(max_size):
             try:
