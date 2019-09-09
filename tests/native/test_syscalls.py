@@ -175,7 +175,7 @@ class LinuxTest(unittest.TestCase):
 
         self.linux.sys_close(conn_fd)
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
-        self.assertEqual(wrote, -errno.EINVAL)
+        self.assertEqual(wrote, -errno.EBADF)
 
     @unittest.expectedFailure
     def test_multiple_sockets(self):
