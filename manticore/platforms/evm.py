@@ -1668,7 +1668,6 @@ class EVM(Eventful):
                 #   cond = Operators.OR(size==conc_size, cond)
                 # self.constraints.add(cond)
 
-
         for i in range(max_size):
             try:
                 c1 = Operators.ITEBV(
