@@ -2117,21 +2117,21 @@ class Linux(Platform):
 
     def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
         data: bytes = bytes()
-        if count != 0:
-            if buf not in self.current.memory or (buf + count) not in self.current.memory:
-                logger.info("buf or (buf + count) points to invalid address. Returning EFAULT")
-                return -errno.EFAULT
+        if buf not in self.current.memory or (buf + count) not in self.current.memory:
+            logger.info("buf or (buf + count) points to invalid address. Returning EFAULT")
+            return -errno.EFAULT
 
-            try:
-                sock = self._get_fd(sockfd)
-            except FdError:
-                return -errno.EINVAL
+        try:
+            sock = self._get_fd(sockfd)
+        except FdError:
+            return -errno.EBADF
 
-            if not isinstance(sock, Socket):
-                return -errno.ENOTSOCK
-            data = sock.read(count)
-            self.syscall_trace.append((trace_str, sockfd, data))
-            self.current.write_bytes(buf, data)
+        if not isinstance(sock, Socket):
+            return -errno.ENOTSOCK
+
+        data = sock.read(count)
+        self.syscall_trace.append((trace_str, sockfd, data))
+        self.current.write_bytes(buf, data)
 
         return len(data)
 
