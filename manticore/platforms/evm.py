@@ -1216,7 +1216,7 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        #print(self.instruction)
+        # print(self.instruction)
         try:
             # import time
             # limbo = 0.0
@@ -1247,7 +1247,9 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 current_vm = state.platform.current_vm
-                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = current_vm._checkpoint_data
+                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = (
+                    current_vm._checkpoint_data
+                )
                 current_vm._checkpoint_data = (
                     _pc,
                     _old_gas,
