@@ -1637,7 +1637,7 @@ class EVM(Eventful):
         GCOPY = 3  # cost to copy one 32 byte word
         copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
         memfee = self._get_memfee(mem_offset, size)
-        return copyfee + memfee
+        return self.safe_add(copyfee, memfee)
 
     @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
