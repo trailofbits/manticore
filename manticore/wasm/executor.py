@@ -653,8 +653,10 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 32 - 0, 1) == 1
         res = 0
-        for pos in range(1, 32):
-            res = Operators.ITEBV(32, flag, res, pos)
+        # TODO - iterating through 33 and using pos-1 as the count is what makes the tests pass. I'm not sure why.
+        # Need to document this presumable off-by-one error.
+        for pos in range(1, 33):
+            res = Operators.ITEBV(32, flag, res, pos-1)
             flag = Operators.OR(flag, Operators.EXTRACT(c1, 32 - pos, 1) == 1)
         res = Operators.ITEBV(32, c1 == 0, 32, res)
         stack.push(I32.cast(res))
@@ -697,12 +699,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(Operators.SDIV(c1, c2)))
+        if c2 == 0:
+            raise Trap()
+        res = Operators.SDIV(c1, c2)
+        if res == 2 ** 31:
+            raise Trap()
+        stack.push(I32.cast(res))
 
     def i32_div_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if c2 == 0:
+            raise Trap()
         stack.push(I32.cast(Operators.UDIV(c1, c2)))
 
     def i32_rem_s(self, store: "Store", stack: "Stack"):
@@ -739,19 +748,20 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 << (c1 % 32)))
+        stack.push(I32.cast((c1 << (c2 % 32)) % 2**32))
 
     def i32_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(Operators.SAR(32, c2, (c1 % 32))))
+        k = c2 % 32
+        stack.push(I32.cast(Operators.SAR(32, c1, k)))
 
     def i32_shr_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast(c2 >> (c1 % 32)))
+        stack.push(I32.cast(c1 >> (c2 % 32)))
 
     def i32_rotl(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i32.rotl")
@@ -764,8 +774,8 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 64 - 0, 1) == 1
         res = 0
-        for pos in range(1, 64):
-            res = Operators.ITEBV(64, flag, res, pos)
+        for pos in range(1, 65):
+            res = Operators.ITEBV(64, flag, res, pos-1)
             flag = Operators.OR(flag, Operators.EXTRACT(c1, 64 - pos, 1) == 1)
 
         res = Operators.ITEBV(64, c1 == 0, 64, res)
@@ -808,12 +818,19 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(Operators.SDIV(c1, c2)))
+        if c2 == 0:
+            raise Trap()
+        res = Operators.SDIV(c1, c2)
+        if res == 2 ** 63:
+            raise Trap()
+        stack.push(I64.cast(res))
 
     def i64_div_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if c2 == 0:
+            raise Trap()
         stack.push(I64.cast(Operators.UDIV(c1, c2)))
 
     def i64_rem_s(self, store: "Store", stack: "Stack"):
@@ -850,19 +867,20 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 << (c1 % 64)))
+        stack.push(I32.cast((c1 << (c2 % 64)) % 2**64))
 
     def i64_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(Operators.SAR(64, c2, c1 % 64)))
+        k = c2 % 64
+        stack.push(I32.cast(Operators.SAR(64, c1, k)))
 
     def i64_shr_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(c2 >> (c1 % 64)))
+        stack.push(I64.cast(c1 >> (c2 % 64)))
 
     def i64_rotl(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("i64.rotl")
