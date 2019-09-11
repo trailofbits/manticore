@@ -54,7 +54,8 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
                 func_type = self.module.types[i.desc]
                 self.store.funcs.append(
                     HostFunc(
-                        func_type, import_dict.get(i.name, partial(stub, len(func_type.result_types)))
+                        func_type,
+                        import_dict.get(i.name, partial(stub, len(func_type.result_types))),
                     )
                 )
                 imports.append(FuncAddr(len(self.store.funcs) - 1))
