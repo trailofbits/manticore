@@ -1,6 +1,19 @@
 from .platform import Platform
 from ..wasm.module_structure import Module
-from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc, Stack
+from ..wasm.runtime_structure import (
+    ModuleInstance,
+    Store,
+    FuncAddr,
+    HostFunc,
+    Stack,
+    MemInst,
+    MemAddr,
+    GlobalInst,
+    GlobalAddr,
+    TableInst,
+    TableAddr,
+    ExternVal,
+)
 from ..wasm.types import Trap, TypeIdx, TableType, MemoryType, GlobalType
 from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, issymbolic
@@ -48,7 +61,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         super().__setstate__(state)
 
     def instantiate(self, import_dict: typing.Dict[str, types.FunctionType], exec_start=False):
-        imports = []
+        imports: typing.List[ExternVal] = []
         for i in self.module.imports:
             if isinstance(i.desc, TypeIdx):
                 func_type = self.module.types[i.desc]
@@ -62,9 +75,20 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
             elif isinstance(i.desc, TableType):
                 raise NotImplementedError("Currently unable to handle imported TableTypes")
             elif isinstance(i.desc, MemoryType):
-                raise NotImplementedError("Currently unable to handle imported MemoryTypes")
+                self.store.mems.append(
+                    MemInst(
+                        [
+                            0x0 for _i in range(max(i.desc.min, 1) * (64 * 1024))
+                        ],  # TODO - these should be symbolic, and the user should be able to provide them.
+                        i.desc.max,
+                    )
+                )
+                imports.append(MemAddr(len(self.store.mems) - 1))
             elif isinstance(i.desc, GlobalType):
-                raise NotImplementedError("Currently unable to handle imported GlobalTypes")
+                self.store.globals.append(
+                    GlobalInst(i.desc.value(0), i.desc.mut)
+                )  # TODO - let the user specify the value
+                imports.append(GlobalAddr(len(self.store.globals) - 1))
 
         self.instance.instantiate(self.stack, self.store, self.module, imports, exec_start)
         self.instantiated = True
