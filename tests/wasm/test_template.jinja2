@@ -5,13 +5,17 @@ from manticore.platforms import wasm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
 from manticore.wasm.types import I32, F32, I64, F64, Trap
+from base64 import b64decode
 import math
 
 def assertEqualNan(testcase, a, b):
     if len(b) and len(a) and math.isnan(b[0]):
         testcase.assertTrue(math.isnan(a[0]))
     else:
-        testcase.assertEqual(a, b)
+        assert len(a) == len(b)
+        for a_item, b_item in zip(a, b):
+            # Tests for equality out to 10^-7, helpful for avoiding floating-point rounding errors
+            testcase.assertAlmostEqual(a_item, b_item)
 {% endblock %}
 
 {% for module in modules %}
@@ -25,8 +29,8 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
 
         world.instantiate({}, exec_start=True)
         {% for test in module.tests %}
-        with self.subTest(msg="{{ test.func}}_L{{test.line}}"):
-            print("======V====== SUBTEST :", "{{ test.func}}_L{{test.line}}", "======V======")
+        with self.subTest(msg={{ test.func | escape_null }} + "_L{{test.line}}"):
+            print("======V====== SUBTEST :", {{ test.func | escape_null }} + "_L{{test.line}}", "======V======")
             {% if test.args | length > 0 %}
             argv=[{{ test.args }}]
             {% else %}
@@ -34,18 +38,18 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             {% endif %}
             expected = [{{ test.rets }}]
             {% if test.type == "assert_return" %}
-            world.invoke(name="{{ test.func }}", argv=argv)
-            real = world.exec_for_test("{{test.func}}")
+            world.invoke(name={{ test.func | escape_null }}, argv=argv)
+            real = world.exec_for_test({{ test.func | escape_null }})
             assertEqualNan(self, real, expected)
             {% endif %}
             {% if test.type == "assert_trap" %}
-            world.invoke(name="{{ test.func }}", argv=argv)
+            world.invoke(name={{ test.func | escape_null }}, argv=argv)
             with self.assertRaises(Trap):
-                world.exec_for_test("{{test.func}}")
+                world.exec_for_test({{ test.func | escape_null }})
             {% endif %}
             {% if test.type == "action" %}
-            world.invoke(name="{{ test.func }}", argv=argv)
-            world.exec_for_test("{{test.func}}")
+            world.invoke(name={{ test.func | escape_null }}, argv=argv)
+            world.exec_for_test({{ test.func | escape_null }})
             {% endif %}
         {% endfor %}
 

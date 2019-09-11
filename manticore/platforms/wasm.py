@@ -1,7 +1,7 @@
 from .platform import Platform
 from ..wasm.module_structure import Module
 from ..wasm.runtime_structure import ModuleInstance, Store, FuncAddr, HostFunc, Stack
-from ..wasm.types import Trap
+from ..wasm.types import Trap, TypeIdx, TableType, MemoryType, GlobalType
 from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, issymbolic
 from ..core.smtlib.solver import Z3Solver
@@ -50,14 +50,21 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
     def instantiate(self, import_dict: typing.Dict[str, types.FunctionType], exec_start=False):
         imports = []
         for i in self.module.imports:
-            # TODO - create function stubs that have the correct signatures
-            func_type = self.module.types[i.desc]
-            self.store.funcs.append(
-                HostFunc(
-                    func_type, import_dict.get(i.name, partial(stub, len(func_type.result_types)))
+            if isinstance(i.desc, TypeIdx):
+                func_type = self.module.types[i.desc]
+                self.store.funcs.append(
+                    HostFunc(
+                        func_type, import_dict.get(i.name, partial(stub, len(func_type.result_types)))
+                    )
                 )
-            )
-            imports.append(FuncAddr(len(self.store.funcs) - 1))
+                imports.append(FuncAddr(len(self.store.funcs) - 1))
+            elif isinstance(i.desc, TableType):
+                raise NotImplementedError("Currently unable to handle imported TableTypes")
+            elif isinstance(i.desc, MemoryType):
+                raise NotImplementedError("Currently unable to handle imported MemoryTypes")
+            elif isinstance(i.desc, GlobalType):
+                raise NotImplementedError("Currently unable to handle imported GlobalTypes")
+
         self.instance.instantiate(self.stack, self.store, self.module, imports, exec_start)
         self.instantiated = True
 

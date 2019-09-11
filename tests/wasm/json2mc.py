@@ -1,6 +1,8 @@
 import argparse
 import json
 from jinja2 import Environment, FileSystemLoader
+from base64 import b64encode
+import string
 
 parser = argparse.ArgumentParser("Generate Manticore tests from the WASM Spec")
 parser.add_argument("filename", type=argparse.FileType("r"), help="JSON file output from wast2json")
@@ -31,7 +33,19 @@ def convert_types(to_convert):
 
 
 env = Environment(loader=FileSystemLoader("."))
+
+
+def escape_null(in_str: str):
+    if in_str.isprintable() and not any((c in in_str) for c in {'"', "'", ";"}):
+        return f'"{in_str}"'
+    else:
+        return f"str(b64decode(\"{b64encode(in_str.encode('utf-8')).decode('utf-8')}\"), 'utf-8')"
+
+
+env.filters["escape_null"] = escape_null
+
 template = env.get_template("test_template.jinja2")
+
 
 modules = []
 current_module = None

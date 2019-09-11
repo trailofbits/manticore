@@ -132,6 +132,10 @@ class Export:
     desc: ExportDesc
 
 
+def strip_quotes(rough_name):
+    return rough_name[1:-1]
+
+
 class Module:
     __slots__ = [
         "types",
@@ -211,16 +215,26 @@ class Module:
                         )
                     )
             elif sec_id == SEC_IMPORT:
-                mapping = (FuncIdx, TableIdx, MemIdx, GlobalIdx)
                 for i in section_data.payload.entries:
                     ty_map = i.get_decoder_meta()["types"]
+                    if i.kind == 0:
+                        desc = TypeIdx(i.type.type)
+                    elif i.kind == 1:
+                        desc = TableType(
+                            LimitType(i.type.limits.initial, i.type.limits.maximum),
+                            type_map[i.type.element_type],
+                        )
+                    elif i.kind == 2:
+                        desc = MemoryType(i.type.limits.initial, i.type.limits.maximum)
+                    elif i.kind == 3:
+                        desc = GlobalType(bool(i.type.mutability), type_map[i.type.content_type])
+                    else:
+                        raise RuntimeError("Can't decode kind field of:", i.kind)
                     m.imports.append(
                         Import(
                             ty_map["module_str"].to_string(i.module_str),
-                            eval(
-                                ty_map["field_str"].to_string(i.field_str)
-                            ),  # TODO - this is also horribly unsafe
-                            mapping[i.kind](i.type.type),
+                            strip_quotes(ty_map["field_str"].to_string(i.field_str)),
+                            desc,
                         )
                     )
             elif sec_id == SEC_FUNCTION:
@@ -251,8 +265,8 @@ class Module:
                 for e in section_data.payload.entries:
                     ty = e.get_decoder_meta()["types"]["field_str"]
                     m.exports.append(
-                        Export(eval(ty.to_string(e.field_str)), mapping[e.kind](e.index))
-                    )  # TODO - This is definitely an unsafe way to strip the quotes
+                        Export(strip_quotes(ty.to_string(e.field_str)), mapping[e.kind](e.index))
+                    )
             elif sec_id == SEC_START:
                 m.start = section_data.payload.index
             elif sec_id == SEC_ELEMENT:
