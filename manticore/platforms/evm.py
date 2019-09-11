@@ -986,10 +986,7 @@ class EVM(Eventful):
                 if len(enough_gas_solutions) == 2:
                     # if gas can be both enough and insufficient, fork
                     raise Concretize(
-                        "Concretize gas fee",
-                        expression=constraint,
-                        setstate=None,
-                        policy="ALL",
+                        "Concretize gas fee", expression=constraint, setstate=None, policy="ALL"
                     )
                 elif enough_gas_solutions[0] is False:
                     # if gas if only insuficient OOG!
@@ -1654,7 +1651,7 @@ class EVM(Eventful):
         self._use_calldata(data_offset, size)
         self._allocate(mem_offset, size)
 
-        if consts.oog == 'complete':
+        if consts.oog == "complete":
             # gas reduced
             cond = Operators.ULT(self.gas, self._checkpoint_data[1])
             if not Z3Solver.instance().can_be_true(self.constraints, cond):
