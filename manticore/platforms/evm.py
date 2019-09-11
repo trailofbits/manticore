@@ -970,11 +970,10 @@ class EVM(Eventful):
             # gas is faithfully accounted and ogg checked at instruction/BB level.
             if consts.oog == "pedantic" or self.instruction.is_terminator:
                 # explore both options / fork
+                constraint = simplify(Operators.UGT(self._gas, fee))
 
                 # FIXME if gas can be both enough and insufficient this will
                 #  reenter here and generate redundant queries
-
-                constraint = simplify(Operators.UGT(self._gas, fee))
                 if isinstance(constraint, Constant):
                     enough_gas_solutions = (constraint.value,)  # (self._gas - fee >= 0,)
                 elif isinstance(constraint, bool):
@@ -988,7 +987,7 @@ class EVM(Eventful):
                     # if gas can be both enough and insufficient, fork
                     raise Concretize(
                         "Concretize gas fee",
-                        expression=Operators.UGT(self._gas, fee),
+                        expression=constraint,
                         setstate=None,
                         policy="ALL",
                     )
@@ -1001,6 +1000,7 @@ class EVM(Eventful):
                 else:
                     assert enough_gas_solutions[0] is True
                     # if there is enough gas keep going
+
         elif consts.oog == "concrete":
             # Keep gas concrete. Concretize symbolic fees to some values.
             # this can happen only if symbolic gas is provided for the TX
@@ -1654,6 +1654,13 @@ class EVM(Eventful):
         self._use_calldata(data_offset, size)
         self._allocate(mem_offset, size)
 
+        if consts.oog == 'complete':
+            # gas reduced
+            cond = Operators.ULT(self.gas, self._checkpoint_data[1])
+            if not Z3Solver.instance().can_be_true(self.constraints, cond):
+                raise NotEnoughGas()
+            self.constraints.add(cond)
+
         max_size = size
         if issymbolic(max_size):
             max_size = Z3Solver.instance().max(self.constraints, size)
@@ -1945,7 +1952,7 @@ class EVM(Eventful):
     @concretized_args(size="ONE")
     def LOG(self, address, size, *topics):
         GLOGBYTE = 8
-        self._consume(size * GLOGBYTE)
+        self._consume(self.safe_mul(size, GLOGBYTE))
         memlog = self.read_buffer(address, size)
         self.world.log(self.address, topics, memlog)
 
