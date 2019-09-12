@@ -1260,6 +1260,8 @@ class ManticoreEVM(ManticoreBase):
             functions = ethereum_context.get("symbolic_func", dict())
             functions[name] = func
             ethereum_context["symbolic_func"] = functions
+            if ethereum_context.get("soundcheck", None) == True:
+                ethereum_context["soundcheck"] = None
 
         if issymbolic(data):
             """table: is a string used internally to identify the symbolic function
@@ -1411,6 +1413,9 @@ class ManticoreEVM(ManticoreBase):
 
         # Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
+            soundcheck = ethereum_context.get("soundcheck", None)
+            if soundcheck is not None:
+                return soundcheck
             functions = ethereum_context.get("symbolic_func", dict())
             for table in functions:
                 symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
@@ -1422,14 +1427,17 @@ class ManticoreEVM(ManticoreBase):
                 known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
                 new_known_pairs = set(known_pairs)
                 if not match(state, functions[table], symbolic_pairs, new_known_pairs):
+                    ethereum_context["soundcheck"]=False
                     return False
 
                 # Now paste the known pairs in the state constraints
                 concretize_known_pairs(state, symbolic_pairs, new_known_pairs)
                 ethereum_context[f"symbolic_func_conc_{table}"] = new_known_pairs
+                state.context[f"symbolic_func_sym_{table}_done"]= symbolic_pairs
 
         # Ok all functions had a match for current state
-        return state.can_be_true(True)
+        ethereum_context["soundcheck"] = state.can_be_true(True)
+        return ethereum_context["soundcheck"]
 
     def concretize_unsound_symbolication(self):
         self._on_did_run_unsound_symbolication()
@@ -1542,6 +1550,13 @@ class ManticoreEVM(ManticoreBase):
     def workspace(self):
         return self._workspace._store.uri
 
+    @property
+    def global_findings(self):
+        try:
+            return self._global_findings
+        except:
+            return set()
+
     def current_location(self, state):
         world = state.platform
         address = world.current_vm.address
@@ -1645,7 +1660,6 @@ class ManticoreEVM(ManticoreBase):
                 )
 
         # Transactions
-
         with testcase.open_stream("tx") as tx_summary:
             with testcase.open_stream("tx.json") as txjson:
                 txlist = []
@@ -1758,16 +1772,19 @@ class ManticoreEVM(ManticoreBase):
 
         global_findings = set()
         for state in self.all_states:
+            if not self.fix_unsound_symbolication(state):
+                continue
             for detector in self.detectors.values():
                 for address, pc, finding, at_init, constraint in detector.get_findings(state):
                     if (address, pc, finding, at_init) not in global_findings:
                         if state.can_be_true(constraint):
                             global_findings.add((address, pc, finding, at_init))
-        self.global_findings = global_findings
+        self._global_findings = global_findings
+
 
         # global summary
         with self._output.save_stream("global.findings") as global_findings_stream:
-            for address, pc, finding, at_init in global_findings:
+            for address, pc, finding, at_init in self.global_findings:
                 global_findings_stream.write("- %s -\n" % finding)
                 write_findings(global_findings_stream, "  ", address, pc, at_init)
                 md = self.get_metadata(address)
