@@ -1265,16 +1265,26 @@ class ManticoreEVM(ManticoreBase):
             """table: is a string used internally to identify the symbolic function
                 data: is the symbolic value of the function domain
                 known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
-            data_var = state.new_symbolic_buffer(len(data))
+            data_var = state.new_symbolic_buffer(len(data)) #FIXME: generalize to bitvec
             state.constrain(data_var == data)
             data = data_var
-
-            # local_known_pairs is the pairs known locally for this symbolic function
-            local_known_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
+            # symbolic_pairs is the pairs known locally for this symbolic function
+            symbolic_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
             # lets make a fresh 256 bit symbol representing any potential hash
             value = state.new_symbolic_value(256)
-            local_known_pairs.append((data, value))
-            state.context[f"symbolic_func_sym_{name}"] = local_known_pairs
+
+            #bijactive
+            for i in range(len(symbolic_pairs)):
+                xa, ya = symbolic_pairs[i]
+                xb, yb = data, value
+                if len(xa) == len(xb):
+                    constraint = simplify((xa == xb) == (ya == yb))
+                else:
+                    constraint = ya != yb
+                state.constrain(constraint)  # bijective
+
+            symbolic_pairs.append((data, value))
+            state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
             # let it return just new_hash
         else:
             value = func(data)
@@ -1282,9 +1292,9 @@ class ManticoreEVM(ManticoreBase):
                 global_known_pairs = ethereum_context.get(f"symbolic_func_conc_{name}", set())
                 global_known_pairs.add((data, value))
                 ethereum_context[f"symbolic_func_conc_{name}"] = global_known_pairs
-            local_known_pairs = state.context.get(f"symbolic_func_conc_{name}", set())
-            local_known_pairs.add((data, value))
-            state.context[f"symbolic_func_conc_{name}"] = local_known_pairs
+            concrete_pairs = state.context.get(f"symbolic_func_conc_{name}", set())
+            concrete_pairs.add((data, value))
+            state.context[f"symbolic_func_conc_{name}"] = concrete_pairs
             logger.info(f"Found a concrete {name} {data} -> {value}")
 
         result.append(value)
@@ -1404,9 +1414,9 @@ class ManticoreEVM(ManticoreBase):
             functions = ethereum_context.get("symbolic_func", dict())
             for table in functions:
                 symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
-                if not constrain_bijectivity(state, symbolic_pairs):
-                    # If UF does not comply with bijectiveness bail
-                    return False
+                #if not constrain_bijectivity(state, symbolic_pairs):
+                #    # If UF does not comply with bijectiveness bail
+                #    return False
 
                 # symbolic_pairs = graph_sort(state, symbolic_pairs)
                 known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
@@ -1601,7 +1611,8 @@ class ManticoreEVM(ManticoreBase):
         for detector in self.detectors.values():
             for address, pc, finding, at_init, constraint in detector.get_findings(state):
                 if (address, pc, finding, at_init) not in local_findings:
-                    local_findings.add((address, pc, finding, at_init, constraint))
+                    if state.can_be_true(constraint):
+                        local_findings.add((address, pc, finding, at_init, constraint))
 
         if len(local_findings):
             with testcase.open_stream("findings") as findings:
@@ -1705,15 +1716,6 @@ class ManticoreEVM(ManticoreBase):
             ln = "0x{:x}:0x{:x} {}\n".format(contract, pc, "*" if at_init else "")
             filestream.write(ln)
 
-    @property
-    def global_findings(self):
-        global_findings = set()
-        for detector in self.detectors.values():
-            for address, pc, finding, at_init in detector.global_findings:
-                if (address, pc, finding, at_init) not in global_findings:
-                    global_findings.add((address, pc, finding, at_init))
-        return global_findings
-
     @ManticoreBase.at_not_running
     def finalize(self, procs=45):
         """
@@ -1754,9 +1756,18 @@ class ManticoreEVM(ManticoreBase):
         for proc in report_workers:
             proc.join()
 
+        global_findings = set()
+        for state in self.all_states:
+            for detector in self.detectors.values():
+                for address, pc, finding, at_init, constraint in detector.get_findings(state):
+                    if (address, pc, finding, at_init) not in global_findings:
+                        if state.can_be_true(constraint):
+                            global_findings.add((address, pc, finding, at_init))
+        self.global_findings = global_findings
+
         # global summary
         with self._output.save_stream("global.findings") as global_findings_stream:
-            for address, pc, finding, at_init in self.global_findings:
+            for address, pc, finding, at_init in global_findings:
                 global_findings_stream.write("- %s -\n" % finding)
                 write_findings(global_findings_stream, "  ", address, pc, at_init)
                 md = self.get_metadata(address)
