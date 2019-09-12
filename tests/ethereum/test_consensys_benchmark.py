@@ -20,7 +20,7 @@ class EthBenchmark(unittest.TestCase):
 
     def setUp(self):
         self.mevm = ManticoreEVM()
-        #self.mevm.register_plugin(KeepOnlyIfStorageChanges())
+        # self.mevm.register_plugin(KeepOnlyIfStorageChanges())
         self.mevm.verbosity(0)
         self.worksp = self.mevm.workspace
 
@@ -46,7 +46,7 @@ class EthBenchmark(unittest.TestCase):
 
         mevm.multi_tx_analysis(filename, contract_name="Benchmark", args=ctor_arg)
         mevm.finalize()
-        
+
         expected_findings = set(((c, d) for b, c, d in should_find))
         actual_findings = set(((c, d) for a, b, c, d in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)

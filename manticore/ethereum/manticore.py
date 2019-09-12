@@ -1265,7 +1265,7 @@ class ManticoreEVM(ManticoreBase):
             """table: is a string used internally to identify the symbolic function
                 data: is the symbolic value of the function domain
                 known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
-            data_var = state.new_symbolic_buffer(len(data)) #FIXME: generalize to bitvec
+            data_var = state.new_symbolic_buffer(len(data))  # FIXME: generalize to bitvec
             state.constrain(data_var == data)
             data = data_var
             # symbolic_pairs is the pairs known locally for this symbolic function
@@ -1273,7 +1273,7 @@ class ManticoreEVM(ManticoreBase):
             # lets make a fresh 256 bit symbol representing any potential hash
             value = state.new_symbolic_value(256)
 
-            #bijactive
+            # bijactive
             for i in range(len(symbolic_pairs)):
                 xa, ya = symbolic_pairs[i]
                 xb, yb = data, value
@@ -1414,7 +1414,7 @@ class ManticoreEVM(ManticoreBase):
             functions = ethereum_context.get("symbolic_func", dict())
             for table in functions:
                 symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
-                #if not constrain_bijectivity(state, symbolic_pairs):
+                # if not constrain_bijectivity(state, symbolic_pairs):
                 #    # If UF does not comply with bijectiveness bail
                 #    return False
 
