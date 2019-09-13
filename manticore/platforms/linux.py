@@ -1047,7 +1047,7 @@ class Linux(Platform):
             logger.debug(
                 f"Zeroing main elf fractional pages. From bss({elf_bss:x}) to brk({elf_brk:x}), {bytes_to_clear} bytes."
             )
-            cpu.write_bytes(elf_bss, "\x00" * bytes_to_clear, force=True)
+            cpu.memory.write(elf_bss, "\x00" * bytes_to_clear, force=True)
 
         stack_size = 0x21000
 
@@ -1128,7 +1128,7 @@ class Linux(Platform):
                 logger.debug(
                     f"Zeroing interpreter elf fractional pages. From bss({elf_bss:x}) to brk({elf_brk:x}), {bytes_to_clear} bytes."
                 )
-                cpu.write_bytes(elf_bss, "\x00" * bytes_to_clear, force=True)
+                cpu.memory.write(elf_bss, "\x00" * bytes_to_clear, force=True)
 
         # free reserved brk space
         cpu.memory.munmap(reserved, 0x1000000)
