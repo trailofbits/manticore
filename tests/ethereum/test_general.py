@@ -800,9 +800,7 @@ class EthTests(unittest.TestCase):
         owner_account = m.create_account(balance=1000)
         attacker_account = m.create_account(balance=1000)
         contract_account = m.solidity_create_contract(contract_src, owner=owner_account, balance=0)
-        import pdb
 
-        pdb.set_trace()
         # Some global expression `sym_add1`
         sym_add1 = m.make_symbolic_value(name="sym_add1")
         # Let's constrain it on the global fake constraintset
@@ -1108,6 +1106,7 @@ class EthTests(unittest.TestCase):
         attacker = m.create_account(name="attacker", balance=0)
 
         wallet.luckyNumber(m.make_symbolic_value(), caller=attacker)
+        m.finalize()
 
         self.assertListEqual([x[2] for x in m.global_findings], ["Reachable ether leak to sender"])
 

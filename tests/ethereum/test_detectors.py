@@ -78,7 +78,7 @@ class EthDetectorTest(unittest.TestCase):
                 args=ctor_arg,
                 compile_args={"solc_working_dir": dir},
             )
-
+        mevm.finalize()
         expected_findings = set(((finding, at_init) for finding, at_init in should_find))
         actual_findings = set(
             ((finding, at_init) for _addr, _pc, finding, at_init in mevm.global_findings)
