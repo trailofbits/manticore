@@ -522,13 +522,13 @@ class ModuleInstance:
         self, store: "Store", stack: "Stack", ret_type: typing.List[ValType], insts: WASMExpression
     ):
         arity = len(ret_type)
-        l = Label(arity, [])
-        self.enter_block(insts, l, stack)
+        label = Label(arity, [])
+        self.enter_block(insts, label, stack)
 
     def loop(self, store: "Store", stack: "Stack", loop_inst):
         insts = self.look_forward(0x0B)
-        l = Label(0, [loop_inst] + insts)
-        self.enter_block(insts, l, stack)
+        label = Label(0, [loop_inst] + insts)
+        self.enter_block(insts, label, stack)
 
     def extract_block(self, partial_list: typing.Deque[Instruction]) -> typing.Deque[Instruction]:
         out = deque()
@@ -565,14 +565,14 @@ class ModuleInstance:
         c = stack.pop()
         insn_block = self.look_forward(0x0B)
         t_block, f_block = self._split_if_block(deque(insn_block))
-        l = Label(len(ret_type), [])
+        label = Label(len(ret_type), [])
         if c != 0:
-            self.enter_block(list(t_block), l, stack)
+            self.enter_block(list(t_block), label, stack)
         else:
             if len(f_block) == 0:
                 assert t_block[-1].opcode == 0x0B
                 f_block.append(t_block[-1])
-            self.enter_block(list(f_block), l, stack)
+            self.enter_block(list(f_block), label, stack)
 
     def else_(self, store: "Store", stack: "Stack"):
         self.exit_block(stack)

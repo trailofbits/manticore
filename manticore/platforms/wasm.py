@@ -19,7 +19,8 @@ from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, issymbolic
 from ..core.smtlib.solver import Z3Solver
 from functools import partial
-import typing, types
+import typing
+import types
 import logging
 
 logger = logging.getLogger(__name__)
