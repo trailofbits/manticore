@@ -1254,14 +1254,15 @@ class ManticoreEVM(ManticoreBase):
         representing all the potential results of applying func to data.
         The relations between the data and Y is saved in an internal table.
         """
+        if state.context.get("soundcheck", None) == True:
+            state.context["soundcheck"] = None
+
         name = func.__name__
         # Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
             functions = ethereum_context.get("symbolic_func", dict())
             functions[name] = func
             ethereum_context["symbolic_func"] = functions
-            if ethereum_context.get("soundcheck", None) == True:
-                ethereum_context["soundcheck"] = None
 
         if issymbolic(data):
             """table: is a string used internally to identify the symbolic function
@@ -1413,7 +1414,7 @@ class ManticoreEVM(ManticoreBase):
 
         # Save concrete unction
         with self.locked_context("ethereum", dict) as ethereum_context:
-            soundcheck = ethereum_context.get("soundcheck", None)
+            soundcheck = state.context.get("soundcheck", None)
             if soundcheck is not None:
                 return soundcheck
             functions = ethereum_context.get("symbolic_func", dict())
@@ -1435,9 +1436,9 @@ class ManticoreEVM(ManticoreBase):
                 ethereum_context[f"symbolic_func_conc_{table}"] = new_known_pairs
                 state.context[f"symbolic_func_sym_{table}_done"] = symbolic_pairs
 
-        # Ok all functions had a match for current state
-        ethereum_context["soundcheck"] = state.can_be_true(True)
-        return ethereum_context["soundcheck"]
+            # Ok all functions had a match for current state
+            state.context["soundcheck"] = state.can_be_true(True)
+        return state.context["soundcheck"]
 
     def concretize_unsound_symbolication(self):
         self._on_did_run_unsound_symbolication()
