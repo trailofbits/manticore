@@ -1427,13 +1427,13 @@ class ManticoreEVM(ManticoreBase):
                 known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
                 new_known_pairs = set(known_pairs)
                 if not match(state, functions[table], symbolic_pairs, new_known_pairs):
-                    ethereum_context["soundcheck"]=False
+                    ethereum_context["soundcheck"] = False
                     return False
 
                 # Now paste the known pairs in the state constraints
                 concretize_known_pairs(state, symbolic_pairs, new_known_pairs)
                 ethereum_context[f"symbolic_func_conc_{table}"] = new_known_pairs
-                state.context[f"symbolic_func_sym_{table}_done"]= symbolic_pairs
+                state.context[f"symbolic_func_sym_{table}_done"] = symbolic_pairs
 
         # Ok all functions had a match for current state
         ethereum_context["soundcheck"] = state.can_be_true(True)
@@ -1554,7 +1554,7 @@ class ManticoreEVM(ManticoreBase):
     def global_findings(self):
         try:
             return self._global_findings
-        except:
+        except AttributeError:
             return set()
 
     def current_location(self, state):
@@ -1780,7 +1780,6 @@ class ManticoreEVM(ManticoreBase):
                         if state.can_be_true(constraint):
                             global_findings.add((address, pc, finding, at_init))
         self._global_findings = global_findings
-
 
         # global summary
         with self._output.save_stream("global.findings") as global_findings_stream:
