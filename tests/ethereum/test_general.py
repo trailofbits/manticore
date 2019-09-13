@@ -53,6 +53,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         mevm.register_detector(DetectIntegerOverflow())
         filename = os.path.join(THIS_DIR, "contracts/int_overflow.sol")
         mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.finalize()
         self.assertEqual(len(mevm.global_findings), 3)
         all_findings = "".join([x[2] for x in mevm.global_findings])
         self.assertIn("Unsigned integer overflow at SUB instruction", all_findings)
