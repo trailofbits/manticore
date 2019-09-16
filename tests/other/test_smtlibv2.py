@@ -835,6 +835,23 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7 & 0xFF)
 
+    def test_ULE(self):
+        solver = Z3Solver.instance()
+        cs = ConstraintSet()
+        a = cs.new_bitvec(8)
+        b = cs.new_bitvec(8)
+        c = cs.new_bitvec(8)
+
+        cs.add(a == 0x1)  # 1
+        cs.add(b == 0x86)  # -122
+        cs.add(c == 0x11)  # 17
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(a, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(a, c)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(c, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(a, 0xF2)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(b, 0xF9)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(c, 0xF2)))
+
     def test_check_solver_min(self):
         self.solver._received_version = '(:version "4.4.1")'
         self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))

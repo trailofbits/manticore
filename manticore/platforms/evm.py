@@ -1694,7 +1694,6 @@ class EVM(Eventful):
                 x = self.constraints.new_bitvec(8, name="temp{}".format(uuid.uuid1()))
                 self.constraints.add(x == c)
             self._store(mem_offset + i, x)
-            # print (str(self.constraints))
 
     def CODESIZE(self):
         """Get size of code running in current environment"""
