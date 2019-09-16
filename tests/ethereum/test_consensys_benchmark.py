@@ -3,7 +3,7 @@ import unittest
 import os
 import shutil
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
-
+from manticore.utils import log
 
 from manticore.ethereum import (
     ManticoreEVM,
@@ -20,8 +20,7 @@ class EthBenchmark(unittest.TestCase):
 
     def setUp(self):
         self.mevm = ManticoreEVM()
-        self.mevm.register_plugin(KeepOnlyIfStorageChanges())
-        self.mevm.verbosity(0)
+        log.set_verbosity(0)
         self.worksp = self.mevm.workspace
 
     def tearDown(self):
@@ -45,6 +44,7 @@ class EthBenchmark(unittest.TestCase):
             ctor_arg = ()
 
         mevm.multi_tx_analysis(filename, contract_name="Benchmark", args=ctor_arg)
+        mevm.finalize()
 
         expected_findings = set(((c, d) for b, c, d in should_find))
         actual_findings = set(((c, d) for a, b, c, d in mevm.global_findings))
