@@ -49,8 +49,6 @@ class Sha3Type(Enum):
 
     concretize = "concretize"
     symbolicate = "symbolicate"
-    timetravel = "timetravel"
-    functions = "functions"
 
     def title(self):
         return self._name_.title()
@@ -65,7 +63,7 @@ consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions."
 consts.add(
     "sha3",
     default=Sha3Type.concretize,
-    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing\ntimetravel: best effort is done on the spot using current and future information :-O\nfunctions: sha3 is replaced by a uninstantiated function, requires solver support",
+    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing",
 )
 
 
@@ -396,8 +394,6 @@ class ManticoreEVM(ManticoreBase):
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         consts.sha3 = consts.sha3.symbolicate
-        if consts.sha3 is consts.sha3.timetravel:
-            self.subscribe("on_symbolic_function", self._on_timetravel)
         elif consts.sha3 is consts.sha3.concretize:
             self.subscribe("on_symbolic_function", self._on_concretize)
         elif consts.sha3 is consts.sha3.symbolicate:
@@ -1130,34 +1126,6 @@ class ManticoreEVM(ManticoreBase):
 
         result.append(y_concrete)
 
-    def _on_timetravel(self, state, func, data, result):
-        if issymbolic(data):
-            # will be updated with the buf->hash pairs to use
-            known_hashes = {}
-            # This updates the local copy of sha3 with the pairs we need to explore
-            self._on_symbolic_sha3_callback_tt(state, data, known_hashes)
-
-            # This builds a symbol in `value` that represents all the known sha3
-            # as reported by ManticoreEVM
-            value = None  # never used
-            known_hashes_cond = False
-            for key, hsh in known_hashes.items():
-                # Ignore the key if the size wont match
-                if len(key) == len(data):
-                    cond = key == data
-                    if known_hashes_cond is False:
-                        value = hsh
-                        known_hashes_cond = cond
-                    else:
-                        value = Operators.ITEBV(256, cond, hsh, value)
-                        known_hashes_cond = Operators.OR(cond, known_hashes_cond)
-        else:
-            value = func(data)
-            self._on_concrete_sha3_callback_tt(state, data, value)
-            logger.info("Found a concrete SHA3 example %r -> %x", data, value)
-
-        result.append(value)
-
     # Callbacks
     def _on_symbolic_sha3_callback_tt(self, state, data, known_hashes):
         """ INTERNAL USE """
@@ -1288,18 +1256,22 @@ class ManticoreEVM(ManticoreBase):
             # lets make a fresh 256 bit symbol representing any potential hash
             value = state.new_symbolic_value(256)
 
-            # bijectiveness
-            for i in range(len(symbolic_pairs)):
-                xa, ya = symbolic_pairs[i]
-                if len(xa) == len(data):
-                    constraint = simplify((xa == data) == (ya == value))
-                else:
-                    constraint = ya != value
-                state.constrain(constraint)  # bijective
-
-            symbolic_pairs.append((data, value))
-            state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
-            # let it return just new_hash
+            for x,y in symbolic_pairs:
+                if state.must_be_true(Operators.OR(x==data, y==value)):
+                    constraint = simplify((x == data) == (y == value))
+                    state.constrain(constraint)
+                    data, value = x, y
+                    break
+            else:
+                # bijectiveness
+                for xa, ya in symbolic_pairs:
+                    if len(xa) == len(data):
+                        constraint = simplify((xa == data) == (ya == value))
+                    else:
+                        constraint = ya != value
+                    state.constrain(constraint)  # bijective
+                symbolic_pairs.append((data, value))
+                state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
         else:
             value = func(data)
             with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1311,6 +1283,7 @@ class ManticoreEVM(ManticoreBase):
             state.context[f"symbolic_func_conc_{name}"] = concrete_pairs
             logger.info(f"Found a concrete {name} {data} -> {value}")
 
+        # let it return just new_hash
         result.append(value)
 
     def fix_unsound_symbolication(self, state):
