@@ -1658,12 +1658,10 @@ class EVM(Eventful):
                 raise NotEnoughGas()
             self.constraints.add(cond)
 
-
         max_size = size
         if issymbolic(max_size):
             max_size = Z3Solver.instance().max(self.constraints, size)
 
-        # @max_size = min(max_size, consts.calldata_maxsize)
         if calldata_overflow is not None:
             cap = len(self.data) + calldata_overflow
             if max_size > cap:
