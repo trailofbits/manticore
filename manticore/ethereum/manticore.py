@@ -394,7 +394,7 @@ class ManticoreEVM(ManticoreBase):
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         consts.sha3 = consts.sha3.symbolicate
-        elif consts.sha3 is consts.sha3.concretize:
+        if consts.sha3 is consts.sha3.concretize:
             self.subscribe("on_symbolic_function", self._on_concretize)
         elif consts.sha3 is consts.sha3.symbolicate:
             self.subscribe("on_symbolic_function", self.on_unsound_symbolication)
@@ -1174,8 +1174,8 @@ class ManticoreEVM(ManticoreBase):
             # lets make a fresh 256 bit symbol representing any potential hash
             value = state.new_symbolic_value(256)
 
-            for x,y in symbolic_pairs:
-                if state.must_be_true(Operators.OR(x==data, y==value)):
+            for x, y in symbolic_pairs:
+                if state.must_be_true(Operators.OR(x == data, y == value)):
                     constraint = simplify((x == data) == (y == value))
                     state.constrain(constraint)
                     data, value = x, y
