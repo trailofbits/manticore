@@ -71,13 +71,6 @@ def OR(a, b, *others):
     return result
 
 
-def XOR(a, b):
-    result = a ^ b
-    if isinstance(result, (BitVec, int)):
-        result = ITE(result != 0, True, False)
-    return result
-
-
 def UGT(a, b):
     if isinstance(a, BitVec):
         return a.ugt(b)
