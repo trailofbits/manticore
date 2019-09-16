@@ -399,7 +399,6 @@ class ManticoreEVM(ManticoreBase):
         elif consts.sha3 is consts.sha3.symbolicate:
             self.subscribe("on_symbolic_function", self.on_unsound_symbolication)
         else:
-            # if consts.sha3 is consts.sha3.function:
             raise NotImplemented
 
         self._accounts = dict()
