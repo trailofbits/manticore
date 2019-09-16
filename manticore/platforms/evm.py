@@ -1658,6 +1658,7 @@ class EVM(Eventful):
                 raise NotEnoughGas()
             self.constraints.add(cond)
 
+
         max_size = size
         if issymbolic(max_size):
             max_size = Z3Solver.instance().max(self.constraints, size)

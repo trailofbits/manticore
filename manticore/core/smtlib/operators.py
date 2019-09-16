@@ -19,7 +19,7 @@ def ORD(s):
         if s.size == 8:
             return s
         else:
-            return BitVecExtract(s, 0, 7)
+            return BitVecExtract(s, 0, 8)
     elif isinstance(s, int):
         return s & 0xFF
     else:
@@ -264,12 +264,6 @@ def UREM(a, b):
     elif isinstance(b, BitVec):
         return b.rurem(a)
     return a % b
-
-
-def simplify(value):
-    if issymbolic(value):
-        return value.simplify()
-    return value
 
 
 def SAR(size, a, b):

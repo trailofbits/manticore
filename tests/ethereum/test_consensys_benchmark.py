@@ -3,7 +3,7 @@ import unittest
 import os
 import shutil
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
-
+from manticore.utils import log
 
 from manticore.ethereum import (
     ManticoreEVM,
@@ -21,7 +21,7 @@ class EthBenchmark(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()
         # self.mevm.register_plugin(KeepOnlyIfStorageChanges())
-        self.mevm.verbosity(0)
+        log.set_verbosity(0)
         self.worksp = self.mevm.workspace
 
     def tearDown(self):

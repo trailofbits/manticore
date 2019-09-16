@@ -1253,9 +1253,16 @@ class ManticoreEVM(ManticoreBase):
         In the case of a symbolic data this method returns a fresh free symbol Y
         representing all the potential results of applying func to data.
         The relations between the data and Y is saved in an internal table.
+
+
+                        result func(data)                     data is concrete
+                      / concrete_pairs.append((data, result))
+        func(data)   |
+                     \ result = constraints.new_bitvec()     data is symbolic
+                       symbolic_pairs.append((data, result))
+                       constraints.add(func_table is bijective)
+
         """
-        if state.context.get("soundcheck", None) == True:
-            state.context["soundcheck"] = None
 
         name = func.__name__
         # Save concrete unction
@@ -1268,6 +1275,11 @@ class ManticoreEVM(ManticoreBase):
             """table: is a string used internally to identify the symbolic function
                 data: is the symbolic value of the function domain
                 known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
+            # We are adding a new pair to the symbolic pairs
+            # Reset the soundcheck if True
+            if state.context.get("soundcheck", None) == True:
+                state.context["soundcheck"] = None
+
             data_var = state.new_symbolic_buffer(len(data))  # FIXME: generalize to bitvec
             state.constrain(data_var == data)
             data = data_var
@@ -1276,14 +1288,13 @@ class ManticoreEVM(ManticoreBase):
             # lets make a fresh 256 bit symbol representing any potential hash
             value = state.new_symbolic_value(256)
 
-            # bijactive
+            # bijectiveness
             for i in range(len(symbolic_pairs)):
                 xa, ya = symbolic_pairs[i]
-                xb, yb = data, value
-                if len(xa) == len(xb):
-                    constraint = simplify((xa == xb) == (ya == yb))
+                if len(xa) == len(data):
+                    constraint = simplify((xa == data) == (ya == value))
                 else:
-                    constraint = ya != yb
+                    constraint = ya != value
                 state.constrain(constraint)  # bijective
 
             symbolic_pairs.append((data, value))
@@ -1320,52 +1331,10 @@ class ManticoreEVM(ManticoreBase):
                 if cond is False:
                     return
 
-        def constrain_bijectivity(state, symbolic_pairs):
-            """ Assumes the relation in symbolic pairs is bijective
-            For each element in the domain there is exactly one element
-            in the range.
-
-            For example in the case of sha3 this will catch and make unfeasible
-            any state that requires the existence of a collision to be reachable"""
-            for i in range(len(symbolic_pairs)):
-                xa, ya = symbolic_pairs[i]
-                for j in range(i + 1, len(symbolic_pairs)):
-                    xb, yb = symbolic_pairs[j]
-                    if len(xa) == len(xb):
-                        constraint = simplify((xa == xb) == (ya == yb))
-                    else:
-                        constraint = ya != yb
-                    state.constrain(constraint)  # bijective
-            return state.can_be_true(True)
-
-        def graph_sort(state, symbolic_pairs):
-            import networkx as ng
-            from manticore.core.smtlib.visitors import get_variables
-
-            G = ng.DiGraph()
-            for c in state.constraints:
-                vars = get_variables(c)
-                for var1 in vars:
-                    for var2 in vars:
-                        if var1 is not var2:
-                            G.add_edge(var1.name, var2.name)
-            for x, y in symbolic_pairs:
-                xs = get_variables(x)
-                ys = get_variables(y)
-                vars = xs.union(ys)
-                for var1 in vars:
-                    for var2 in vars:
-                        if var1 is not var2:
-                            G.add_edge(var1.name, var2.name)
-
-            C = ng.closeness_centrality(G)
-            return list(sorted(symbolic_pairs, key=lambda x: C[x[0].name]))
-
         def match(state, func, symbolic_pairs, concrete_pairs, depth=0):
-            """ Tries to find a concrete match for symbolic pairs. It uses
-            concrete_pairs (and potentially extends with solved pairs) until it
-            finds a set of concrete pairs that could be used as sustitutions for
-             the symbolic pairs, or fail.
+            """ Tries to find a concrete match for the symbolic pairs. It uses
+            concrete_pairs (and potentially extends it with solved pairs) until
+            a matching set of concrete pairs is found, or fail.
 
             state: the current state
             func: the relation between domain and range in symbolic_pairs/concrete_pairs
