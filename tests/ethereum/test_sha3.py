@@ -422,6 +422,7 @@ class EthSha3Test(unittest.TestCase):
             found += len(st.platform.logs)
         self.assertEqual(found, 1)  # log is reachable
 
+
 class EthSha3TestConcrete(unittest.TestCase):
     """
     Subclasses must assign this class variable to the class for the detector
@@ -442,7 +443,6 @@ class EthSha3TestConcrete(unittest.TestCase):
 
     def ManticoreEVM(self):
         return self.mevm
-
 
     def test_example_concrete_1(self):
         source_code = """
