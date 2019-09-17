@@ -61,7 +61,8 @@ class NativeIntegrationTest(unittest.TestCase):
         with open(os.path.join(os.pardir, self.test_dir, "output.log"), "w") as output:
             subprocess.check_call(
                 [
-                    "coverage", "run", #PYTHON_BIN,
+                    "coverage",
+                    "run",  # PYTHON_BIN,
                     "-m",
                     "manticore",
                     "--workspace",
