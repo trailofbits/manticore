@@ -428,7 +428,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(imm.value))
 
     def i64_const(self, store: "Store", stack: "Stack", imm: I64ConstImm):
-        stack.push(I64(imm.value))
+        stack.push(I64.cast(imm.value))
 
     def i32_eqz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
@@ -978,6 +978,8 @@ class Executor(object):  # TODO - should be Eventful
             size = 32
         else:
             size = 64
+        if not issymbolic(c):
+            c = struct.pack("f" if size == 32 else "d", c)
         b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
@@ -995,10 +997,10 @@ class Executor(object):  # TODO - should be Eventful
         self.float_store(store, stack, imm, F64)
 
     def f32_const(self, store: "Store", stack: "Stack", imm: F32ConstImm):
-        stack.push(F32(imm.value))
+        stack.push(F32.cast(imm.value))
 
     def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
-        stack.push(F64(imm.value))
+        stack.push(F64.cast(imm.value))
 
     def f32_unary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
         stack.has_type_on_top(F32, 1)
