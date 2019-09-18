@@ -35,7 +35,7 @@ from ..core.smtlib import BitVec
 from ..core.state import Concretize
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
+# logger.setLevel(logging.DEBUG)
 
 Result: type = typing.Union[typing.Sequence[Value]]  # Could also be an exception (trap)
 Addr: type = type("Addr", (int,), {})
