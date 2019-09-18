@@ -50,15 +50,9 @@ class I64(int):
 
 class F32(float):
     def __new__(cls, val):
-        if int == type(val):
-            val &= 0xFFFFFFFF
-            ptr = pointer(c_int(val))
-            fl = cast(ptr, POINTER(c_float))
-            val = fl.contents.value
-        val = struct.unpack("f", c_float(val))[0]
-        self = super(F32, cls).__new__(cls, val)
-        self.integer = val
-        return self
+        if isinstance(val, int):
+            val = struct.unpack("f", c_int32(val))[0]
+        return super(F32, cls).__new__(cls, val)
 
     @classmethod
     def cast(cls, other):
@@ -69,14 +63,9 @@ class F32(float):
 
 class F64(float):
     def __new__(cls, val):
-        if int == type(val):
-            ptr = pointer(c_ulong(val))
-            fl = cast(ptr, POINTER(c_double))
-            val = fl.contents.value
-        val = struct.unpack("d", c_double(val))[0]
-        self = super(F64, cls).__new__(cls, val)
-        self.integer = val
-        return self
+        if isinstance(val, int):
+            val = struct.unpack("d", c_int64(val))[0]
+        return super(F64, cls).__new__(cls, val)
 
     @classmethod
     def cast(cls, other):
