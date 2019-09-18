@@ -979,7 +979,7 @@ class Executor(object):  # TODO - should be Eventful
         else:
             size = 64
         if not issymbolic(c):
-            c = struct.pack("f" if size == 32 else "d", c)
+            c = struct.unpack("i" if size == 32 else "q", struct.pack("f" if size == 32 else "d", c))[0]
         b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
