@@ -5,6 +5,7 @@ from ctypes import *
 import wasm
 import struct
 
+
 U32: type = type("U32", (int,), {})
 U64: type = type("U64", (int,), {})
 Byte: type = type("Byte", (int,), {})
@@ -28,9 +29,12 @@ def _reinterpret(ty1: type, ty2: type, val):
     ptr = pointer(ty1(val))
     return cast(ptr, POINTER(ty2)).contents.value
 
+
 class I32(int):
     def __new__(cls, val):
-        val = struct.unpack("i", c_int32(int(val) & 0xFFFFFFFF))[0]  # TODO - this is probably unsound overall
+        val = struct.unpack("i", c_int32(int(val) & 0xFFFFFFFF))[
+            0
+        ]  # TODO - this is probably unsound overall
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
