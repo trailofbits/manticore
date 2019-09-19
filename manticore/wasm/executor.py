@@ -887,14 +887,14 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast((c1 << (c2 % 64)) % 2 ** 64))
+        stack.push(I64.cast((c1 << (c2 % 64)) % 2 ** 64))
 
     def i64_shr_s(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         k = c2 % 64
-        stack.push(I32.cast(Operators.SAR(64, c1, k)))
+        stack.push(I64.cast(Operators.SAR(64, c1, k)))
 
     def i64_shr_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
