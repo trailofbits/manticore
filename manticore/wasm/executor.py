@@ -712,6 +712,10 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         if c2 == 0:
             raise Trap()
+        if not issymbolic(c2):
+            c2 = I32.to_unsigned(c2)
+        if not issymbolic(c1):
+            c1 = I32.to_unsigned(c1)
         stack.push(I32.cast(Operators.UDIV(c1, c2)))
 
     def i32_rem_s(self, store: "Store", stack: "Stack"):
@@ -724,6 +728,10 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if not issymbolic(c2):
+            c2 = I32.to_unsigned(c2)
+        if not issymbolic(c1):
+            c1 = I32.to_unsigned(c1)
         stack.push(I32.cast(Operators.UREM(c1, c2)))
 
     def i32_and(self, store: "Store", stack: "Stack"):
@@ -761,6 +769,10 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if not issymbolic(c2):
+            c2 = I32.to_unsigned(c2)
+        if not issymbolic(c1):
+            c1 = I32.to_unsigned(c1)
         stack.push(I32.cast(c1 >> (c2 % 32)))
 
     def i32_rotl(self, store: "Store", stack: "Stack"):
@@ -831,6 +843,10 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         if c2 == 0:
             raise Trap()
+        if not issymbolic(c2):
+            c2 = I64.to_unsigned(c2)
+        if not issymbolic(c1):
+            c1 = I64.to_unsigned(c1)
         stack.push(I64.cast(Operators.UDIV(c1, c2)))
 
     def i64_rem_s(self, store: "Store", stack: "Stack"):
@@ -843,6 +859,10 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if not issymbolic(c2):
+            c2 = I64.to_unsigned(c2)
+        if not issymbolic(c1):
+            c1 = I64.to_unsigned(c1)
         stack.push(I64.cast(Operators.UREM(c1, c2)))
 
     def i64_and(self, store: "Store", stack: "Stack"):
@@ -880,6 +900,10 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if not issymbolic(c2):
+            c2 = I64.to_unsigned(c2)
+        if not issymbolic(c1):
+            c1 = I64.to_unsigned(c1)
         stack.push(I64.cast(c1 >> (c2 % 64)))
 
     def i64_rotl(self, store: "Store", stack: "Stack"):

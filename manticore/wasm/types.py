@@ -43,6 +43,10 @@ class I32(int):
             return other
         return I32(other)
 
+    @classmethod
+    def to_unsigned(cls, val):
+        return _reinterpret(c_int32, c_uint32, val)
+
 
 class I64(int):
     def __new__(cls, val):
@@ -54,6 +58,10 @@ class I64(int):
         if issymbolic(other):
             return other
         return I64(other)
+
+    @classmethod
+    def to_unsigned(cls, val):
+        return _reinterpret(c_int64, c_uint64, val)
 
 
 class F32(float):
