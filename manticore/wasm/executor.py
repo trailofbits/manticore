@@ -955,7 +955,9 @@ class Executor(object):  # TODO - should be Eventful
         mem = store.mems[a]
         i = stack.pop()
         ea = i + imm.offset
-        if ea + (size // 8) > len(mem.data):
+        if ea not in range(len(mem.data)):
+            raise Trap()
+        if (ea + (size // 8)) not in range(len(mem.data) + 1):
             raise Trap()
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         ret = ty.cast(c)
@@ -978,6 +980,10 @@ class Executor(object):  # TODO - should be Eventful
             size = 32
         else:
             size = 64
+        if ea not in range(len(mem.data)):
+            raise Trap()
+        if (ea + (size // 8)) not in range(len(mem.data) + 1):
+            raise Trap()
         if not issymbolic(c):
             c = struct.unpack(
                 "i" if size == 32 else "q", struct.pack("f" if size == 32 else "d", c)
