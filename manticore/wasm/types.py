@@ -24,9 +24,13 @@ def debug(imm):
     return getattr(imm, "value", imm)
 
 
+def _reinterpret(ty1: type, ty2: type, val):
+    ptr = pointer(ty1(val))
+    return cast(ptr, POINTER(ty2)).contents.value
+
 class I32(int):
     def __new__(cls, val):
-        val = struct.unpack("i", c_int32(int(val)))[0]  # TODO - this is probably unsound overall
+        val = struct.unpack("i", c_int32(int(val) & 0xFFFFFFFF))[0]  # TODO - this is probably unsound overall
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
@@ -51,8 +55,11 @@ class I64(int):
 class F32(float):
     def __new__(cls, val):
         if isinstance(val, int):
-            val = struct.unpack("f", c_int32(val))[0]
-        return super(F32, cls).__new__(cls, val)
+            val = _reinterpret(c_int32, c_float, val & 0xFFFFFFFF)
+        val = struct.unpack("f", c_float(val))[0]
+        self = super(F32, cls).__new__(cls, val)
+        self.integer = val
+        return self
 
     @classmethod
     def cast(cls, other):
@@ -64,8 +71,11 @@ class F32(float):
 class F64(float):
     def __new__(cls, val):
         if isinstance(val, int):
-            val = struct.unpack("d", c_int64(val))[0]
-        return super(F64, cls).__new__(cls, val)
+            val = _reinterpret(c_int64, c_double, val)
+        val = struct.unpack("d", c_double(val))[0]
+        self = super(F64, cls).__new__(cls, val)
+        self.integer = val
+        return self
 
     @classmethod
     def cast(cls, other):
