@@ -956,16 +956,48 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(c1 % 2 ** 32))
 
     def i32_trunc_s_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_s/f32")
+        stack.has_type_on_top(F32, 1)
+        c1: F32 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 31 or c1 <= -(2 ** 31) - 1:
+            raise Trap()
+        stack.push(I32.cast(c1))
 
     def i32_trunc_u_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_u/f32")
+        stack.has_type_on_top(F32, 1)
+        c1: F32 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 32 or c1 <= -1:
+            raise Trap()
+        stack.push(I32.cast(c1))
 
     def i32_trunc_s_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_s/f64")
+        stack.has_type_on_top(F64, 1)
+        c1: F64 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 31 or c1 <= -(2 ** 31) - 1:
+            raise Trap()
+        stack.push(I32.cast(c1))
 
     def i32_trunc_u_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i32.trunc_u/f64")
+        stack.has_type_on_top(F64, 1)
+        c1: F64 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 32 or c1 <= -1:
+            raise Trap()
+        stack.push(I32.cast(c1))
 
     def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
@@ -984,16 +1016,48 @@ class Executor(object):  # TODO - should be Eventful
             stack.push(I64.cast(struct.unpack("q", bytes(c_int32(c1)) + b"\x00" * 4)[0]))
 
     def i64_trunc_s_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_s/f32")
+        stack.has_type_on_top(F32, 1)
+        c1: F32 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 63 or c1 <= -(2 ** 63) - 1:
+            raise Trap()
+        stack.push(I64.cast(c1))
 
     def i64_trunc_u_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_u/f32")
+        stack.has_type_on_top(F32, 1)
+        c1: F32 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 64 or c1 <= -1:
+            raise Trap()
+        stack.push(I64.cast(c1))
 
     def i64_trunc_s_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_s/f64")
+        stack.has_type_on_top(F64, 1)
+        c1: F64 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 63 or c1 <= -(2 ** 63) - 1:
+            raise Trap()
+        stack.push(I64.cast(c1))
 
     def i64_trunc_u_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("i64.trunc_u/f64")
+        stack.has_type_on_top(F64, 1)
+        c1: F64 = stack.pop()
+        if math.isnan(c1):
+            raise Trap()
+        if math.isinf(c1):
+            raise Trap()
+        if c1 >= 2 ** 64 or c1 <= -1:
+            raise Trap()
+        stack.push(I64.cast(c1))
 
     def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
@@ -1221,22 +1285,22 @@ class Executor(object):  # TODO - should be Eventful
     def f32_convert_s_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
-        stack.push(F32.cast(c1))
+        stack.push(F32.cast(float(c1)))
 
     def f32_convert_u_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
-        stack.push(F32.cast(I32.to_unsigned(c1)))
+        stack.push(F32.cast(float(I32.to_unsigned(c1))))
 
     def f32_convert_s_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
-        stack.push(F32.cast((c1)))
+        stack.push(F32.cast(float(c1)))
 
     def f32_convert_u_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
-        stack.push(F32.cast(I64.to_unsigned(c1)))
+        stack.push(F32.cast(float(I64.to_unsigned(c1))))
 
     def f32_demote_f64(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.demote/f64")
@@ -1244,27 +1308,27 @@ class Executor(object):  # TODO - should be Eventful
     def f64_convert_s_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
-        stack.push(F64.cast(c1))
+        stack.push(F64.cast(float(c1)))
 
     def f64_convert_u_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
-        stack.push(F64.cast(I32.to_unsigned(c1)))
+        stack.push(F64.cast(float(I32.to_unsigned(c1))))
 
     def f64_convert_s_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
-        stack.push(F64.cast((c1)))
+        stack.push(F64.cast(float(c1)))
 
     def f64_convert_u_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
-        stack.push(F64.cast(I64.to_unsigned(c1)))
+        stack.push(F64.cast(float(I64.to_unsigned(c1))))
 
     def f64_promote_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
-        stack.push(F32.cast(c1))
+        stack.push(F64.cast(c1))
 
     def f32_reinterpret_i32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.reinterpret/i32")
