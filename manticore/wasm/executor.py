@@ -1062,11 +1062,13 @@ class Executor(object):  # TODO - should be Eventful
     def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
+        c1 = struct.unpack("i", struct.pack("f", c1))[0]
         stack.push(I32.cast(c1))
 
     def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
+        c1 = struct.unpack("q", struct.pack("d", c1))[0]
         stack.push(I64.cast(c1))
 
     ###########################################################################################################
@@ -1303,7 +1305,14 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(F32.cast(float(I64.to_unsigned(c1))))
 
     def f32_demote_f64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.demote/f64")
+        stack.has_type_on_top(F64, 1)
+        c1: F64 = stack.pop()
+        if math.isnan(c1) or math.isinf(c1) or c1 == 0.0 or c1 == -0.0:
+            stack.push(F32.cast(c1))
+            return
+        raise NotImplementedError("f32_demote_f64")
+        c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
+        stack.push(F32.cast(c1))
 
     def f64_convert_s_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
@@ -1331,10 +1340,16 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(F64.cast(c1))
 
     def f32_reinterpret_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.reinterpret/i32")
+        stack.has_type_on_top(I32, 1)
+        c1: I32 = stack.pop()
+        c1 = struct.unpack("f", struct.pack("i", c1))[0]
+        stack.push(F32.cast(c1))
 
     def f64_reinterpret_i64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.reinterpret/i64")
+        stack.has_type_on_top(I64, 1)
+        c1: I64 = stack.pop()
+        c1 = struct.unpack("d", struct.pack("q", c1))[0]
+        stack.push(F64.cast(c1))
 
 
 ################################################################################################
