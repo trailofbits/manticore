@@ -14,6 +14,7 @@ from ctypes import c_int32, c_int64
 from .types import I32, I64, F32, F64, Value, Trap
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..core.state import Concretize
+from decimal import Decimal, InvalidOperation
 
 import operator
 import math
@@ -206,7 +207,7 @@ class Executor(object):  # TODO - should be Eventful
                 return func(store, stack, inst.imm)
             else:
                 return func(store, stack)
-        except (ZeroDivisionError):
+        except (ZeroDivisionError, InvalidOperation):
             raise Trap("Zero division")
 
     def unreachable(self, store: "Store", stack: "Stack"):
@@ -832,7 +833,10 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         if c2 == 0:
             raise Trap()
-        res = Operators.SDIV(c1, c2)
+        if issymbolic(c1) or issymbolic(c2):
+            res = Operators.SDIV(c1, c2)
+        else:
+            res = int(math.trunc(Decimal(c1) / Decimal(c2)))
         if res == 2 ** 63:
             raise Trap()
         stack.push(I64.cast(res))
@@ -853,7 +857,11 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast(Operators.SREM(c1, c2)))
+        if issymbolic(c1) or issymbolic(c2):
+            res = Operators.SREM(c1, c2)
+        else:
+            res = c1 - int(Decimal(c1) / Decimal(c2)) * c2
+        stack.push(I64.cast(res))
 
     def i64_rem_u(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
