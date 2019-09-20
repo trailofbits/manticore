@@ -826,7 +826,7 @@ class Executor(object):  # TODO - should be Eventful
         flag = Operators.EXTRACT(c1, 0, 1) != 0
         res = 0
         for pos in range(1, 65):
-            res = Operators.ITEBV(64, flag, res+1, res)
+            res = Operators.ITEBV(64, flag, res + 1, res)
             flag = Operators.EXTRACT(c1, pos, 1) != 0
         stack.push(I64.cast(res))
 
