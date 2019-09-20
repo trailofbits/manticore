@@ -1219,34 +1219,52 @@ class Executor(object):  # TODO - should be Eventful
         return self.f64_binary(store, stack, math.copysign, F64)
 
     def f32_convert_s_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.convert_s/i32")
+        stack.has_type_on_top(I32, 1)
+        c1: I32 = stack.pop()
+        stack.push(F32.cast(c1))
 
     def f32_convert_u_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.convert_u/i32")
+        stack.has_type_on_top(I32, 1)
+        c1: I32 = stack.pop()
+        stack.push(F32.cast(I32.to_unsigned(c1)))
 
     def f32_convert_s_i64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.convert_s/i64")
+        stack.has_type_on_top(I64, 1)
+        c1: I64 = stack.pop()
+        stack.push(F32.cast((c1)))
 
     def f32_convert_u_i64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f32.convert_u/i64")
+        stack.has_type_on_top(I64, 1)
+        c1: I64 = stack.pop()
+        stack.push(F32.cast(I64.to_unsigned(c1)))
 
     def f32_demote_f64(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.demote/f64")
 
     def f64_convert_s_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.convert_s/i32")
+        stack.has_type_on_top(I32, 1)
+        c1: I32 = stack.pop()
+        stack.push(F64.cast(c1))
 
     def f64_convert_u_i32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.convert_u/i32")
+        stack.has_type_on_top(I32, 1)
+        c1: I32 = stack.pop()
+        stack.push(F64.cast(I32.to_unsigned(c1)))
 
     def f64_convert_s_i64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.convert_s/i64")
+        stack.has_type_on_top(I64, 1)
+        c1: I64 = stack.pop()
+        stack.push(F64.cast((c1)))
 
     def f64_convert_u_i64(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.convert_u/i64")
+        stack.has_type_on_top(I64, 1)
+        c1: I64 = stack.pop()
+        stack.push(F64.cast(I64.to_unsigned(c1)))
 
     def f64_promote_f32(self, store: "Store", stack: "Stack"):
-        raise NotImplementedError("f64.promote/f32")
+        stack.has_type_on_top(F32, 1)
+        c1: F32 = stack.pop()
+        stack.push(F32.cast(c1))
 
     def f32_reinterpret_i32(self, store: "Store", stack: "Stack"):
         raise NotImplementedError("f32.reinterpret/i32")
