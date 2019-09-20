@@ -21,6 +21,11 @@ rm spec.zip
 #tar --wildcards --strip=1 -xf wabt.tgz 'wabt-*/wast2json'
 rm wabt.tgz
 
+mkdir skipped_tests
+while read skip; do
+    mv $skip.wast skipped_tests/
+done < skipped_test_sets
+
 ls *.wast | sed 's/\.wast//g' > modules.txt
 while read module; do
     echo "Preparing $module"
