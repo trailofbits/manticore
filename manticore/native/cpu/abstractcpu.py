@@ -959,9 +959,9 @@ class Cpu(Eventful):
         self._publish("will_decode_instruction", curpc)
 
         insn = self.decode_instruction(curpc)
-        self._last_pc = curpc
+        self._last_pc = self.PC
 
-        self._publish("will_execute_instruction", curpc, insn)
+        self._publish("will_execute_instruction", self._last_pc, insn)
 
         # FIXME (theo) why just return here?
         # hook changed PC, so we trust that there is nothing more to do
