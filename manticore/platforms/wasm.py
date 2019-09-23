@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def stub(arity, *args):
-    logger.info("Called stub function with args:", args)
+    logger.info("Called stub function with args: %s", args)
     return [0 for _ in range(arity)]
 
 
