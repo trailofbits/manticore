@@ -34,8 +34,7 @@ def stub(arity, *args):
 class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
     def __init__(self, filename, **kwargs):
         super().__init__(filename, **kwargs)
-        assert 'constraints' in kwargs
-        self.constraints = kwargs.get('constraints', ConstraintSet())
+        self.constraints = kwargs.get("constraints", ConstraintSet())
 
         self.module: Module = Module.load(filename)
         self.store = Store()

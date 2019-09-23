@@ -711,12 +711,16 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        can_div_0 = (c2 == 0)
-        if solver.must_be_true(self.constraints, can_div_0):  # TODO - should fork on possibilities here
+        can_div_0 = c2 == 0
+        if solver.must_be_true(
+            self.constraints, can_div_0
+        ):  # TODO - should fork on possibilities here
             raise Trap()
         res = Operators.SDIV(c1, c2)
-        can_overflow = (res == 2 ** 31)
-        if solver.must_be_true(self.constraints, can_overflow):  # TODO - should fork on possibilities here:
+        can_overflow = res == 2 ** 31
+        if solver.must_be_true(
+            self.constraints, can_overflow
+        ):  # TODO - should fork on possibilities here:
             raise Trap()
         stack.push(I32.cast(res))
 
@@ -724,8 +728,10 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        can_div_0 = (c2 == 0)
-        if solver.must_be_true(self.constraints, can_div_0):  # TODO - should fork on possibilities here:
+        can_div_0 = c2 == 0
+        if solver.must_be_true(
+            self.constraints, can_div_0
+        ):  # TODO - should fork on possibilities here:
             raise Trap()
         if not issymbolic(c2):
             c2 = I32.to_unsigned(c2)
