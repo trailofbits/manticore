@@ -13,15 +13,18 @@ import struct
 from ctypes import c_int32, c_int64
 from .types import I32, I64, F32, F64, Value, Trap
 from ..core.smtlib import Operators, BitVec, issymbolic
+from ..core.smtlib.solver import Z3Solver
 from ..core.state import Concretize
 from decimal import Decimal, InvalidOperation
 
 import operator
 import math
 
+solver = Z3Solver.instance()
+
 
 class Executor(object):  # TODO - should be Eventful
-    def __init__(self, *args, **kwargs):
+    def __init__(self, constraints, *args, **kwargs):
 
         self._mapping = {
             0x00: self.unreachable,
@@ -197,6 +200,7 @@ class Executor(object):  # TODO - should be Eventful
             0xBE: self.f32_reinterpret_i32,
             0xBF: self.f64_reinterpret_i64,
         }
+        self.constraints = constraints
 
     def dispatch(self, inst: "Instruction", store: "Store", stack: "Stack"):
         opcode = inst.opcode
@@ -707,10 +711,12 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        if c2 == 0:
+        can_div_0 = (c2 == 0)
+        if solver.must_be_true(self.constraints, can_div_0):  # TODO - should fork on possibilities here
             raise Trap()
         res = Operators.SDIV(c1, c2)
-        if res == 2 ** 31:
+        can_overflow = (res == 2 ** 31)
+        if solver.must_be_true(self.constraints, can_overflow):  # TODO - should fork on possibilities here:
             raise Trap()
         stack.push(I32.cast(res))
 
@@ -718,7 +724,8 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        if c2 == 0:
+        can_div_0 = (c2 == 0)
+        if solver.must_be_true(self.constraints, can_div_0):  # TODO - should fork on possibilities here:
             raise Trap()
         if not issymbolic(c2):
             c2 = I32.to_unsigned(c2)

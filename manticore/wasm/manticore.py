@@ -70,7 +70,7 @@ def _make_wasm_bin(program, **kwargs):
     logger.info("Loading program %s", program)
 
     constraints = ConstraintSet()
-    platform = wasm.WASMWorld(program)
+    platform = wasm.WASMWorld(program, constraints=constraints)
 
     platform.instantiate({"getchar": functools.partial(getchar, constraints)})
     platform.invoke("main")

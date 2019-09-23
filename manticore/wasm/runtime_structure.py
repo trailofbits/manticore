@@ -166,14 +166,14 @@ class ModuleInstance:
     _block_depths: typing.List[int]
     instantiated: bool
 
-    def __init__(self):
+    def __init__(self, constraints=None):
         self.types = []
         self.funcaddrs = []
         self.tableaddrs = []
         self.memaddrs = []
         self.globaladdrs = []
         self.exports = []
-        self.executor = Executor()
+        self.executor = Executor(constraints)
         self._instruction_queue = deque()
         self._block_depths = [0]
 
