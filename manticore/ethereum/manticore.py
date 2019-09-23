@@ -13,6 +13,7 @@ import pyevmasm as EVMAsm
 import random
 import sha3
 import tempfile
+import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
 
@@ -65,6 +66,7 @@ consts.add(
     default=Sha3Type.concretize,
     description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing",
 )
+consts.add("sha3timeout", 60*20, "Default timeout for matching sha3 for unsound states (see unsound symbolication).")
 
 
 def flagged(flag):
@@ -1175,7 +1177,7 @@ class ManticoreEVM(ManticoreBase):
 
             for x, y in symbolic_pairs:
                 if state.must_be_true(Operators.OR(x == data, y == value)):
-                    constraint = simplify((x == data) == (y == value))
+                    constraint = simplify(Operators.AND(x == data, y == value))
                     state.constrain(constraint)
                     data, value = x, y
                     break
@@ -1221,7 +1223,7 @@ class ManticoreEVM(ManticoreBase):
                 if cond is False:
                     return
 
-        def match(state, func, symbolic_pairs, concrete_pairs, depth=0):
+        def match(state, func, symbolic_pairs, concrete_pairs, depth=0, start=None):
             """ Tries to find a concrete match for the symbolic pairs. It uses
             concrete_pairs (and potentially extends it with solved pairs) until
             a matching set of concrete pairs is found, or fail.
@@ -1232,6 +1234,8 @@ class ManticoreEVM(ManticoreBase):
             concrete_pairs: Known of concrete pairs that may match some of the symbolic pairs
 
             """
+            if time.time() - start > consts.sha3timeout:
+                return False
 
             # The base case. No symbolic pairs. Just check if the state is feasible.
             if not symbolic_pairs:
@@ -1266,7 +1270,7 @@ class ManticoreEVM(ManticoreBase):
                         seen = Operators.OR(Operators.AND(x == x_concrete, y == y_concrete), seen)
                 with state as temp_state:
                     temp_state.constrain(seen)
-                    if match(temp_state, func, new_symbolic_pairs, new_concrete_pairs, depth + 1):
+                    if match(temp_state, func, new_symbolic_pairs, new_concrete_pairs, depth + 1, start=start):
                         concrete_pairs.update(new_concrete_pairs)
                         return True
             return False
@@ -1286,7 +1290,7 @@ class ManticoreEVM(ManticoreBase):
                 # symbolic_pairs = graph_sort(state, symbolic_pairs)
                 known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
                 new_known_pairs = set(known_pairs)
-                if not match(state, functions[table], symbolic_pairs, new_known_pairs):
+                if not match(state, functions[table], symbolic_pairs, new_known_pairs, start=time.time()):
                     ethereum_context["soundcheck"] = False
                     return False
 
