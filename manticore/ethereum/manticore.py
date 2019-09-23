@@ -66,7 +66,11 @@ consts.add(
     default=Sha3Type.concretize,
     description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing",
 )
-consts.add("sha3timeout", 60*20, "Default timeout for matching sha3 for unsound states (see unsound symbolication).")
+consts.add(
+    "sha3timeout",
+    60 * 20,
+    "Default timeout for matching sha3 for unsound states (see unsound symbolication).",
+)
 
 
 def flagged(flag):
@@ -1270,7 +1274,14 @@ class ManticoreEVM(ManticoreBase):
                         seen = Operators.OR(Operators.AND(x == x_concrete, y == y_concrete), seen)
                 with state as temp_state:
                     temp_state.constrain(seen)
-                    if match(temp_state, func, new_symbolic_pairs, new_concrete_pairs, depth + 1, start=start):
+                    if match(
+                        temp_state,
+                        func,
+                        new_symbolic_pairs,
+                        new_concrete_pairs,
+                        depth + 1,
+                        start=start,
+                    ):
                         concrete_pairs.update(new_concrete_pairs)
                         return True
             return False
@@ -1290,7 +1301,9 @@ class ManticoreEVM(ManticoreBase):
                 # symbolic_pairs = graph_sort(state, symbolic_pairs)
                 known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
                 new_known_pairs = set(known_pairs)
-                if not match(state, functions[table], symbolic_pairs, new_known_pairs, start=time.time()):
+                if not match(
+                    state, functions[table], symbolic_pairs, new_known_pairs, start=time.time()
+                ):
                     ethereum_context["soundcheck"] = False
                     return False
 
