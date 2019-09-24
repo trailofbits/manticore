@@ -64,7 +64,7 @@ consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions."
 consts.add(
     "sha3",
     default=Sha3Type.concretize,
-    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with gout of cycle FP killing",
+    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with out of cycle false positive killing",
 )
 consts.add(
     "sha3timeout",
@@ -1315,17 +1315,6 @@ class ManticoreEVM(ManticoreBase):
             # Ok all functions had a match for current state
             state.context["soundcheck"] = state.can_be_true(True)
         return state.context["soundcheck"]
-
-    def concretize_unsound_symbolication(self):
-        self._on_did_run_unsound_symbolication()
-
-    def _on_did_run_unsound_symbolication(self):
-        # Called at the end of a run(). Need to filter out the unreproducible/
-        # unfeasible states
-        # Caveat: It will add redundant constraints from previous run()
-        for state in self.all_states:
-            if not self.fix_unsound_symbolication(state):
-                self.kill_state(state)
 
     def _terminate_state_callback(self, state, e):
         """ INTERNAL USE
