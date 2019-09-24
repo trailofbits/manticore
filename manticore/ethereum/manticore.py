@@ -1432,7 +1432,7 @@ class ManticoreEVM(ManticoreBase):
         try:
             return self._global_findings
         except AttributeError:
-            return set()
+            raise Exception("You need to call finalize() first")
 
     def current_location(self, state):
         world = state.platform

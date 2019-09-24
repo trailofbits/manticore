@@ -20,6 +20,7 @@ class EthBenchmark(unittest.TestCase):
 
     def setUp(self):
         self.mevm = ManticoreEVM()
+        self.mevm.register_plugin(KeepOnlyIfStorageChanges())
         log.set_verbosity(0)
         self.worksp = self.mevm.workspace
 
