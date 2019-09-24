@@ -418,8 +418,10 @@ class ArithmeticSimplifier(Visitor):
                 if (
                     operand_0_0.value is operand_1_0.value
                     and operand_0_1.value is operand_1_1.value
-                    and (operand_0_0.begining, operand_0_0.end) == (operand_0_1.begining, operand_0_1.end)
-                    and (operand_1_0.begining, operand_1_0.end) == (operand_1_1.begining, operand_1_1.end)
+                    and (operand_0_0.begining, operand_0_0.end)
+                    == (operand_0_1.begining, operand_0_1.end)
+                    and (operand_1_0.begining, operand_1_0.end)
+                    == (operand_1_1.begining, operand_1_1.end)
                 ):
                     if ((operand_0_0.end + 1) == operand_1_0.begining) or (
                         operand_0_0.begining == (operand_1_0.end + 1)
@@ -454,7 +456,9 @@ class ArithmeticSimplifier(Visitor):
                     expression.operands[0].operands[2].value,
                 )
                 if value1 == value2 and value1 != value3:
-                    return expression.operands[0].operands[0]  # FIXME: this may break taint propagation
+                    return expression.operands[0].operands[
+                        0
+                    ]  # FIXME: this may break taint propagation
                 elif value1 == value3 and value1 != value2:
                     return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
 
