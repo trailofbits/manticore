@@ -2220,7 +2220,8 @@ class EVMWorld(Platform):
         "evm_read_storage",
         "evm_write_storage",
         "evm_read_code",
-        "evm_write_code" "decode_instruction",
+        "evm_write_code",
+        "decode_instruction",
         "execute_instruction",
         "open_transaction",
         "close_transaction",
@@ -3058,20 +3059,14 @@ class EVMWorld(Platform):
 
             all_used_indexes = []
             with state.constraints as temp_cs:
+                # make a free symbolic idex that could address any storage slot
                 index = temp_cs.new_bitvec(256)
+                #get the storage for accounbt_address
                 storage = blockchain.get_storage(account_address)
+                #we are interested only in used slots
                 temp_cs.add(storage.get(index) != 0)
-
-                try:
-                    # FIXME do this only if it has symbolic writes?
-                    while True:
-                        a_index = Z3Solver.instance().get_value(temp_cs, index)
-                        all_used_indexes.append(a_index)
-
-                        temp_cs.add(storage.get(a_index) != 0)
-                        temp_cs.add(index != a_index)
-                except Exception:
-                    pass
+                #Query the solver to get all storage indexes with used slots
+                all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
 
             if all_used_indexes:
                 stream.write("Storage:\n")

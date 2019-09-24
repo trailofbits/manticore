@@ -449,7 +449,6 @@ class Z3Solver(Solver):
                         # of returned vals list (previous smtlib behavior)
                         break
                     else:
-                        print(result)
                         raise TooManySolutions(result)
                 if time.time() - start > consts.timeout:
                     raise SolverError("Timeout")

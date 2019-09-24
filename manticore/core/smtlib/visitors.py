@@ -400,35 +400,35 @@ class ArithmeticSimplifier(Visitor):
             expression.operands[1], BoolEqual
         ):
             # Eq operands
-            operanda = expression.operands[0]
-            operandb = expression.operands[1]
+            operand_0 = expression.operands[0]
+            operand_1 = expression.operands[1]
             # Extract operands
-            operandaa = operanda.operands[0]
-            operandab = operanda.operands[1]
-            operandba = operandb.operands[0]
-            operandbb = operandb.operands[1]
+            operand_0_0 = operand_0.operands[0]
+            operand_0_1 = operand_0.operands[1]
+            operand_1_0 = operand_1.operands[0]
+            operand_1_1 = operand_1.operands[1]
 
             if (
-                isinstance(operandaa, BitVecExtract)
-                and isinstance(operandab, BitVecExtract)
-                and isinstance(operandba, BitVecExtract)
-                and isinstance(operandbb, BitVecExtract)
+                isinstance(operand_0_0, BitVecExtract)
+                and isinstance(operand_0_1, BitVecExtract)
+                and isinstance(operand_1_0, BitVecExtract)
+                and isinstance(operand_1_1, BitVecExtract)
             ):
 
                 if (
-                    operandaa.value is operandba.value
-                    and operandab.value is operandbb.value
-                    and (operandaa.begining, operandaa.end) == (operandab.begining, operandab.end)
-                    and (operandba.begining, operandba.end) == (operandbb.begining, operandbb.end)
+                    operand_0_0.value is operand_1_0.value
+                    and operand_0_1.value is operand_1_1.value
+                    and (operand_0_0.begining, operand_0_0.end) == (operand_0_1.begining, operand_0_1.end)
+                    and (operand_1_0.begining, operand_1_0.end) == (operand_1_1.begining, operand_1_1.end)
                 ):
-                    if ((operandaa.end + 1) == operandba.begining) or (
-                        operandaa.begining == (operandba.end + 1)
+                    if ((operand_0_0.end + 1) == operand_1_0.begining) or (
+                        operand_0_0.begining == (operand_1_0.end + 1)
                     ):
 
-                        value0 = operandaa.value  # := operandba.value
-                        value1 = operandab.value  # := operandbb.value
-                        beg = min(operandaa.begining, operandba.begining)
-                        end = max(operandaa.end, operandba.end)
+                        value0 = operand_0_0.value
+                        value1 = operand_0_1.value
+                        beg = min(operand_0_0.begining, operand_1_0.begining)
+                        end = max(operand_0_0.end, operand_1_0.end)
                         return BitVecExtract(value0, beg, end - beg + 1) == BitVecExtract(
                             value1, beg, end - beg + 1
                         )
@@ -454,7 +454,7 @@ class ArithmeticSimplifier(Visitor):
                     expression.operands[0].operands[2].value,
                 )
                 if value1 == value2 and value1 != value3:
-                    return expression.operands[0].operands[0]  # FIXME:taint
+                    return expression.operands[0].operands[0]  # FIXME: this may break taint propagation
                 elif value1 == value3 and value1 != value2:
                     return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
 

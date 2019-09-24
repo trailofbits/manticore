@@ -1608,14 +1608,17 @@ class ManticoreEVM(ManticoreBase):
             filestream.write(ln)
 
     @ManticoreBase.at_not_running
-    def finalize(self, procs=45):
+    def finalize(self, procs=None):
         """
         Terminate and generate testcases for all currently alive states (contract
         states that cleanly executed to a STOP or RETURN in the last symbolic
         transaction).
 
-        :param procs: nomber of local processes to use in the reporting generation
+        :param procs: force the number of local processes to use in the reporting
+        generation. Uses global configuration constant by default
         """
+        if procs is None:
+            procs = config.get_group("core").procs
 
         logger.debug("Finalizing %d states.", self.count_states())
 
