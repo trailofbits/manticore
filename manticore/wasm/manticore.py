@@ -6,7 +6,6 @@ import functools
 from .state import State
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet, issymbolic, Z3Solver
-from ..platforms.wasm import WASMWorld
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class ManticoreWASM(ManticoreBase):
     def collect_returns(self):
         out = []
         for state in self.terminated_states:
-            p: WASMWorld = state.platform
+            p = state.platform
             ret = None
             if not p.stack.empty():
                 ret = p.stack.pop()
@@ -78,11 +77,12 @@ def _make_initial_state(binary_path, env={}, **kwargs):
 
 
 def _make_wasm_bin(program, env={}, **kwargs):
+    from ..platforms import wasm
 
     logger.info("Loading program %s", program)
 
     constraints = ConstraintSet()
-    platform = WASMWorld(program, constraints=constraints)
+    platform = wasm.WASMWorld(program, constraints=constraints)
     platform.instantiate(env, exec_start=kwargs.get("exec_start", False))
     initial_state = State(constraints, platform)
 
