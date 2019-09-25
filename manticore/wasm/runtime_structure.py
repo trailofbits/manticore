@@ -374,7 +374,7 @@ class ModuleInstance:
         assert len(ty.result_types) <= 1
         locals = [stack.pop() for _t in ty.param_types][::-1]
         if isinstance(f, HostFunc):
-            res = list(f.hostcode(*locals))
+            res = list(f.hostcode(self.executor.constraints, *locals))
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):

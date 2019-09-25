@@ -26,7 +26,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def stub(arity, *args):
+def stub(arity, _constraints, *args):
     logger.info("Called stub function with args: %s", args)
     return [0 for _ in range(arity)]
 
@@ -121,19 +121,7 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
     def execute(self):
         """
         """
-        # Handle interrupts et al in a try/except here
-        # self.current.execute()
         if not self.instantiated:
             raise RuntimeError("Trying to execute before instantiation!")
         if not self.instance.exec_instruction(self.store, self.stack):
-            ret = None
-            if not self.stack.empty():
-                ret = self.stack.pop()
-                print("WASM Execution returned", ret)
-                if issymbolic(ret):
-                    print(
-                        "Symbolic return detected, possible values:",
-                        Z3Solver.instance().get_all_values(self.constraints, ret),
-                    )
-
-            raise TerminateState(f"Execution returned {ret}")
+            raise TerminateState(f"Execution returned {self.stack.peek()}")

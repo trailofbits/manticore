@@ -5,7 +5,8 @@ import functools
 
 from .state import State
 from ..core.manticore import ManticoreBase
-from ..core.smtlib import ConstraintSet
+from ..core.smtlib import ConstraintSet, issymbolic, Z3Solver
+from ..platforms.wasm import WASMWorld
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class ManticoreWASM(ManticoreBase):
     """
     """
 
-    def __init__(self, path_or_state, argv=None, workspace_url=None, policy="random", **kwargs):
+    def __init__(self, path_or_state, env={}, workspace_url=None, policy="random", **kwargs):
         """
         :param path_or_state: Path to binary or a state (object) to begin from.
         :param argv: arguments passed to the binary.
@@ -22,7 +23,7 @@ class ManticoreWASM(ManticoreBase):
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
                 raise OSError(f"{path_or_state} is not an existing regular file")
-            initial_state = _make_initial_state(path_or_state, argv=argv, **kwargs)
+            initial_state = _make_initial_state(path_or_state, env, **kwargs)
         else:
             initial_state = path_or_state
 
@@ -51,30 +52,38 @@ class ManticoreWASM(ManticoreBase):
             context["time_ended"] = time_ended
             context["time_elapsed"] = time_elapsed
 
+    @ManticoreBase.at_not_running
+    def invoke(self, name="main", argv=[]):
+        for state in self.ready_states:
+            state.platform.invoke(name=name, argv=argv)
 
-def _make_initial_state(binary_path, **kwargs):
+    @ManticoreBase.at_not_running
+    def collect_returns(self):
+        out = []
+        for state in self.terminated_states:
+            p: WASMWorld = state.platform
+            ret = None
+            if not p.stack.empty():
+                ret = p.stack.pop()
+                if issymbolic(ret):
+                    out.append(list(Z3Solver.instance().get_all_values(state.constraints, ret)))
+                else:
+                    out.append([ret])
+        return out
+
+
+def _make_initial_state(binary_path, env={}, **kwargs):
     if binary_path.endswith(".wasm"):
         return _make_wasm_bin(binary_path, **kwargs)
-    # elif binary_path.endswith(".wat"):
-    #     state = _make_wasm_watf(binary_path, **kwargs)
 
 
-def getchar(constraints: ConstraintSet, *args):
-    print("Called getchar with args:", args)
-    return [constraints.new_bitvec(32, "getchar_output")]
-
-
-def _make_wasm_bin(program, **kwargs):
-    from ..platforms import wasm
+def _make_wasm_bin(program, env={}, **kwargs):
 
     logger.info("Loading program %s", program)
 
     constraints = ConstraintSet()
-    platform = wasm.WASMWorld(program, constraints=constraints)
-
-    platform.instantiate({"getchar": functools.partial(getchar, constraints)})
-    platform.invoke("main")
-
+    platform = WASMWorld(program, constraints=constraints)
+    platform.instantiate(env, exec_start=kwargs.get("exec_start", False))
     initial_state = State(constraints, platform)
 
     return initial_state
