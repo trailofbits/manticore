@@ -953,10 +953,14 @@ class Cpu(Eventful):
         """
         Decode, and execute one instruction pointed by register PC
         """
-        if self._delayed_event :
+        if self._delayed_event:
             self._icount += 1
-            self._publish("did_execute_instruction", self._last_pc, self.PC,
-                          self.decode_instruction(self._last_pc))
+            self._publish(
+                "did_execute_instruction",
+                self._last_pc,
+                self.PC,
+                self.decode_instruction(self._last_pc),
+            )
             self._delayed_event = False
 
         if issymbolic(self.PC):
