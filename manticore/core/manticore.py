@@ -725,6 +725,7 @@ class ManticoreBase(Eventful):
                         )
 
         plugin.on_register()
+        return plugin
 
     @at_not_running
     def unregister_plugin(self, plugin):

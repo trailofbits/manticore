@@ -27,10 +27,12 @@ class Plugin:
         """
         plugin_context_name = str(type(self))
         with self.manticore.locked_context(plugin_context_name, dict) as context:
-            assert value_type in (list, dict, set)
-            ctx = context.get(key, value_type())
-            yield ctx
-            context[key] = ctx
+            if key is None:
+                yield context
+            else:
+                ctx = context.get(key, value_type())
+                yield ctx
+                context[key] = ctx
 
     @property
     def context(self):
