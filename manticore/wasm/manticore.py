@@ -52,9 +52,9 @@ class ManticoreWASM(ManticoreBase):
             context["time_elapsed"] = time_elapsed
 
     @ManticoreBase.at_not_running
-    def invoke(self, name="main", argv=[]):
+    def invoke(self, name="main", argv_generator=lambda s: []):
         for state in self.ready_states:
-            state.platform.invoke(name=name, argv=argv)
+            state.platform.invoke(name=name, argv=argv_generator(state))
 
     @ManticoreBase.at_not_running
     def collect_returns(self):
