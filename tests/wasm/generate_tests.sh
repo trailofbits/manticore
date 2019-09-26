@@ -26,6 +26,7 @@ while read module; do
     ./wast2json --debug-names $module.wast -o _$module/$module.json
     mv $module.wast _$module/
     python3 json2mc.py _$module/$module.json > _$module/test_$module.py
+    python3 json2smc.py _$module/$module.json > _$module/test_symbolic_$module.py
 done < modules.txt
 
 exit 0

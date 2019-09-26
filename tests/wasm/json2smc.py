@@ -31,14 +31,14 @@ def convert_args(to_convert):
         if "32" in item["type"]:
             out.append(
                 {
-                    "constraint": f'constraints.new_bitvec(32, "arg_{idx}", avoid_collisions=True)',
+                    "constraint": f'state.new_symbolic_value(32)',
                     "val": int(item.get("value", 0)),
                 }
             )
         elif "64" in item["type"]:
             out.append(
                 {
-                    "constraint": f'constraints.new_bitvec(64, "arg_{idx}", avoid_collisions=True)',
+                    "constraint": f'state.new_symbolic_value(64)',
                     "val": int(item.get("value", 0)),
                 }
             )
