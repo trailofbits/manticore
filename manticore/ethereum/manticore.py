@@ -1227,7 +1227,7 @@ class ManticoreEVM(ManticoreBase):
                 if cond is False:
                     return
 
-        def match(state, func, symbolic_pairs, concrete_pairs, depth=0, start=None):
+        def match(state, func, symbolic_pairs, concrete_pairs, start=None):
             """ Tries to find a concrete match for the symbolic pairs. It uses
             concrete_pairs (and potentially extends it with solved pairs) until
             a matching set of concrete pairs is found, or fail.
@@ -1235,7 +1235,8 @@ class ManticoreEVM(ManticoreBase):
             state: the current state
             func: the relation between domain and range in symbolic_pairs/concrete_pairs
             symbolic_pairs: related symbolic values that need a set of solutions
-            concrete_pairs: Known of concrete pairs that may match some of the symbolic pairs
+            concrete_pairs: known of concrete pairs that may match some of the symbolic pairs
+
 
             """
             if time.time() - start > consts.sha3timeout:
@@ -1260,18 +1261,22 @@ class ManticoreEVM(ManticoreBase):
                         unseen = Operators.AND(
                             Operators.AND(x != x_concrete, y != y_concrete), unseen
                         )
-
+                #Search for a new unseen sha3 pair
                 with state as temp_state:
                     temp_state.constrain(unseen)
                     new_x_concretes = temp_state.solve_n(x, nsolves=1)
                     new_y_concretes = map(func, new_x_concretes)
                     new_concrete_pairs.update(zip(new_x_concretes, new_y_concretes))
 
+                #Consider all the new set of sha3 pairs and rebuild the seen condition
                 seen = False
                 for x_concrete, y_concrete in new_concrete_pairs:
                     if len(x) == len(x_concrete):  # If the size of the buffer wont
                         # match it does not matter
                         seen = Operators.OR(Operators.AND(x == x_concrete, y == y_concrete), seen)
+
+                # With the current x,y pair being one of the known sha3 pairs try
+                # to match the following symbolic pairs
                 with state as temp_state:
                     temp_state.constrain(seen)
                     if match(
@@ -1279,7 +1284,6 @@ class ManticoreEVM(ManticoreBase):
                         func,
                         new_symbolic_pairs,
                         new_concrete_pairs,
-                        depth + 1,
                         start=start,
                     ):
                         concrete_pairs.update(new_concrete_pairs)
