@@ -533,6 +533,15 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
 
+ 
+    def test_constant_folding_udiv(self):
+        cs = ConstraintSet()
+        x = BitVecConstant(32, 0xffffffff, taint=("important",))
+        y = BitVecConstant(32, 2, taint=("stuff",))
+        z = constant_folder(x.udiv(y))
+        self.assertItemsEqual(z.taint, ("important", "stuff"))
+        self.assertEqual(z.value, 0x7fffffff)
+
     def testBasicReplace(self):
         """ Add """
         a = BitVecConstant(32, 100)

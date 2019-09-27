@@ -281,6 +281,7 @@ class ConstantFolderSimplifier(Visitor):
         BoolAnd: operator.__and__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
+        BitVecUnsignedDiv: lambda x, y: (x & (1 << 256) - 1) // (y & (1 << 256) - 1),
     }
 
     def visit_BitVecConcat(self, expression, *operands):
