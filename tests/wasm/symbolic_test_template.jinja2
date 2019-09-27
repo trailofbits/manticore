@@ -2,17 +2,17 @@
 import unittest
 from os.path import dirname, abspath, join
 from manticore.platforms import wasm
-from manticore.core import state
-from manticore.core.smtlib import Operators, ConstraintSet
-from manticore.core.smtlib.solver import Z3Solver
+from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import I32, F32, I64, F64, Trap
 from base64 import b64decode
 import math
 
-def assertEqualNan(testcase, constraints, a, b):
-    assert len(a) == len(b)
+def assertEqualNan(testcase, a, b):
+    assert len(a) == 1, "Diverged into multiple states!"
+    a = a[0]
+    assert len(a) == len(b), f"Returned {len(a)} values! (Expected {len(b)}))"
     for a_item, b_item in zip(a, b):
-        testcase.assertTrue(testcase.solver.must_be_true(constraints, a_item == b_item))
+        testcase.assertAlmostEqual(a_item, b_item)
 {% endblock %}
 
 {% for module in modules %}
@@ -20,7 +20,6 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
     _multiprocess_can_split_ = False
     filename = join(dirname(abspath(__file__)), "{{ module.filename }}")
     subtest_count = 0
-    solver = Z3Solver.instance()
 
     def run(self, result=None):
         result = super().run(result)
@@ -28,33 +27,39 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         return result
 
     def test_{{ module.name }}(self):
-        constraints = ConstraintSet()
-        world = wasm.WASMWorld(self.filename, constraints=constraints)
+        m = ManticoreWASM(self.filename)
 
-        world.instantiate({}, exec_start=True)
         {% for test in module.tests %}
         with self.subTest(msg={{ test.func | escape_null }} + "_L{{test.line}}"):
             print("======V======", {{ test.func | escape_null }} + "_L{{test.line}}", "======V======")
             self.subtest_count += 1
-            argv=[]
-            {% for arg in test.args %}
-            argv.append({{arg.constraint}})
-            constraints.add(argv[-1] == {{arg.val}})
-            {% endfor %}
+
+            def create_argv(state):
+                argv = []
+                {% for arg in test.args %}
+                argv.append({{arg.constraint}})
+                state.constrain(argv[-1] == {{arg.val}})
+                {% endfor %}
+                return argv
+
             expected = [{{ test.rets }}]
             {% if test.type == "assert_return" %}
-            world.invoke(name={{ test.func | escape_null }}, argv=argv)
-            real = world.exec_for_test({{ test.func | escape_null }})
-            assertEqualNan(self, constraints, real, expected)
+            m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
+            m.run()
+            rets = m.collect_returns()
+            m._reinit()
+            assertEqualNan(self, rets, expected)
             {% endif %}
             {% if test.type == "assert_trap" %}
-            world.invoke(name={{ test.func | escape_null }}, argv=argv)
+            m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
             with self.assertRaises(Trap):
-                world.exec_for_test({{ test.func | escape_null }})
+                m.run()
+            m._reinit()
             {% endif %}
             {% if test.type == "action" %}
-            world.invoke(name={{ test.func | escape_null }}, argv=argv)
-            world.exec_for_test({{ test.func | escape_null }})
+            m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
+            m.run()
+            m._reinit()
             {% endif %}
         {% endfor %}
 

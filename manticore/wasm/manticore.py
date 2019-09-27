@@ -1,11 +1,11 @@
 import logging
 import os
 import time
-import functools
 
 from .state import State
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet, issymbolic, Z3Solver
+from .types import I32, I64
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,8 @@ class ManticoreWASM(ManticoreBase):
             initial_state = path_or_state
 
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
+
+        self.subscribe("will_terminate_state", self._terminate_state_callback)
 
     def run(self, timeout=None):
         with self.locked_context() as context:
@@ -65,10 +67,29 @@ class ManticoreWASM(ManticoreBase):
             if not p.stack.empty():
                 ret = p.stack.pop()
                 if issymbolic(ret):
-                    out.append(list(Z3Solver.instance().get_all_values(state.constraints, ret)))
+                    if ret.size == 32:
+                        out.append(list(I32(a) for a in Z3Solver.instance().get_all_values(state.constraints, ret)))
+                    elif ret.size == 64:
+                        out.append(list(I64(a) for a in Z3Solver.instance().get_all_values(state.constraints, ret)))
                 else:
                     out.append([ret])
         return out
+
+    def _terminate_state_callback(self, state, e):
+        with self.locked_context("wasm.saved_states", list) as saved_states:
+            saved_states.append(state.id)
+
+    @ManticoreBase.at_not_running
+    def _reinit(self):
+        # If there are ready states still then it was a paused execution
+        assert not self._ready_states
+        assert not self._busy_states
+
+        with self.locked_context("wasm.saved_states", list) as saved_states:
+            while saved_states:
+                state_id = saved_states.pop()
+                self._terminated_states.remove(state_id)
+                self._ready_states.append(state_id)
 
 
 def _make_initial_state(binary_path, env={}, **kwargs):
