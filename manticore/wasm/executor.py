@@ -656,14 +656,12 @@ class Executor(object):  # TODO - should be Eventful
     def i32_clz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
-        flag = Operators.EXTRACT(c1, 32 - 0, 1) == 1
+        flag = Operators.EXTRACT(c1, 31, 1) == 1
         res = 0
-        # TODO - iterating through 33 and using pos-1 as the count is what makes the tests pass. I'm not sure why.
-        # Need to document this presumable off-by-one error.
-        for pos in range(1, 33):
-            res = Operators.ITEBV(32, flag, res, pos - 1)
-            flag = Operators.OR(flag, Operators.EXTRACT(c1, 32 - pos, 1) == 1)
-        res = Operators.ITEBV(32, c1 == 0, 32, res)
+        for pos in range(1, 32):
+            res = Operators.ITEBV(32, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, 31 - pos, 1) == 1)
+        res = Operators.ITEBV(32, flag, res, 32)
         stack.push(I32.cast(res))
 
     def i32_ctz(self, store: "Store", stack: "Stack"):  # Copied from x86 TZCNT
@@ -671,9 +669,10 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) == 1
         res = 0
-        for pos in range(1, 33):
+        for pos in range(1, 32):
             res = Operators.ITEBV(32, flag, res, pos)
             flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
+        res = Operators.ITEBV(32, flag, res, 32)
         stack.push(I32.cast(res))
 
     def i32_popcnt(self, store: "Store", stack: "Stack"):
@@ -681,10 +680,10 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) != 0
         res = 0
-        for pos in range(1, 33):
+        for pos in range(1, 32):
             res = Operators.ITEBV(32, flag, res + 1, res)
             flag = Operators.EXTRACT(c1, pos, 1) != 0
-        res = Operators.ITEBV(32, c1 == 0, 0, res)
+        res = Operators.ITEBV(32, flag, res + 1, res)
         stack.push(I32.cast(res))
 
     def i32_add(self, store: "Store", stack: "Stack"):
@@ -743,6 +742,8 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if solver.must_be_true(self.constraints, c2 == 0):
+            raise Trap()
         stack.push(I32.cast(Operators.SREM(c1, c2)))
 
     def i32_rem_u(self, store: "Store", stack: "Stack"):
@@ -753,6 +754,8 @@ class Executor(object):  # TODO - should be Eventful
             c2 = I32.to_unsigned(c2)
         if not issymbolic(c1):
             c1 = I32.to_unsigned(c1)
+        if solver.must_be_true(self.constraints, c2 == 0):
+            raise Trap()
         stack.push(I32.cast(Operators.UREM(c1, c2)))
 
     def i32_and(self, store: "Store", stack: "Stack"):
@@ -799,27 +802,31 @@ class Executor(object):  # TODO - should be Eventful
     def i32_rotl(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
-        c1 = I32.to_unsigned(stack.pop())
+        c1 = stack.pop()
+        if not issymbolic(c1):
+            c1 = I32.to_unsigned(c1)
         k = c2 % 32
         stack.push(I32.cast((c1 << k) | c1 >> (32 - k)))
 
     def i32_rotr(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
-        c1 = I32.to_unsigned(stack.pop())
+        c1 = stack.pop()
+        if not issymbolic(c1):
+            c1 = I32.to_unsigned(c1)
         k = c2 % 32
         stack.push(I32.cast((c1 >> k) | c1 << (32 - k)))
 
     def i64_clz(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
-        flag = Operators.EXTRACT(c1, 64 - 0, 1) == 1
+        flag = Operators.EXTRACT(c1, 63, 1) == 1
         res = 0
-        for pos in range(1, 65):
-            res = Operators.ITEBV(64, flag, res, pos - 1)
-            flag = Operators.OR(flag, Operators.EXTRACT(c1, 64 - pos, 1) == 1)
+        for pos in range(1, 64):
+            res = Operators.ITEBV(64, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(c1, 63 - pos, 1) == 1)
 
-        res = Operators.ITEBV(64, c1 == 0, 64, res)
+        res = Operators.ITEBV(64, flag, res, 64)
         stack.push(I64.cast(res))
 
     def i64_ctz(self, store: "Store", stack: "Stack"):
@@ -830,7 +837,7 @@ class Executor(object):  # TODO - should be Eventful
         for pos in range(1, 64):
             res = Operators.ITEBV(64, flag, res, pos)
             flag = Operators.OR(flag, Operators.EXTRACT(c1, pos, 1) == 1)
-        res = Operators.ITEBV(64, c1 == 0, 64, res)
+        res = Operators.ITEBV(64, flag, res, 64)
         stack.push(I64.cast(res))
 
     def i64_popcnt(self, store: "Store", stack: "Stack"):
@@ -838,9 +845,10 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) != 0
         res = 0
-        for pos in range(1, 65):
+        for pos in range(1, 64):
             res = Operators.ITEBV(64, flag, res + 1, res)
             flag = Operators.EXTRACT(c1, pos, 1) != 0
+        res = Operators.ITEBV(64, flag, res + 1, res)
         stack.push(I64.cast(res))
 
     def i64_add(self, store: "Store", stack: "Stack"):
@@ -862,17 +870,22 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I64.cast((c2 * c1) % 2 ** 64))
 
     def i64_div_s(self, store: "Store", stack: "Stack"):
-        # TODO  - handle truncation and 0-divisors for div_s through rem_u
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        if c2 == 0:
+        can_div_0 = c2 == 0
+        if solver.must_be_true(
+                self.constraints, can_div_0
+        ):  # TODO - should fork on possibilities here
             raise Trap()
         if issymbolic(c1) or issymbolic(c2):
             res = Operators.SDIV(c1, c2)
         else:
             res = int(math.trunc(Decimal(c1) / Decimal(c2)))
-        if res == 2 ** 63:
+        can_overflow = res == 2 ** 63
+        if solver.must_be_true(
+                self.constraints, can_overflow
+        ):  # TODO - should fork on possibilities here:
             raise Trap()
         stack.push(I64.cast(res))
 
@@ -880,7 +893,10 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        if c2 == 0:
+        can_div_0 = c2 == 0
+        if solver.must_be_true(
+                self.constraints, can_div_0
+        ):  # TODO - should fork on possibilities here:
             raise Trap()
         if not issymbolic(c2):
             c2 = I64.to_unsigned(c2)
@@ -892,6 +908,8 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
+        if solver.must_be_true(self.constraints, c2 == 0):
+            raise Trap()
         if issymbolic(c1) or issymbolic(c2):
             res = Operators.SREM(c1, c2)
         else:
@@ -906,6 +924,8 @@ class Executor(object):  # TODO - should be Eventful
             c2 = I64.to_unsigned(c2)
         if not issymbolic(c1):
             c1 = I64.to_unsigned(c1)
+        if solver.must_be_true(self.constraints, c2 == 0):
+            raise Trap()
         stack.push(I64.cast(Operators.UREM(c1, c2)))
 
     def i64_and(self, store: "Store", stack: "Stack"):
@@ -952,14 +972,18 @@ class Executor(object):  # TODO - should be Eventful
     def i64_rotl(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
-        c1 = I64.to_unsigned(stack.pop())
+        c1 = stack.pop()
+        if not issymbolic(c1):
+            c1 = I64.to_unsigned(c1)
         k = c2 % 64
         stack.push(I64.cast((c1 << k) | c1 >> (64 - k)))
 
     def i64_rotr(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
-        c1 = I64.to_unsigned(stack.pop())
+        c1 = stack.pop()
+        if not issymbolic(c1):
+            c1 = I64.to_unsigned(c1)
         k = c2 % 64
         stack.push(I64.cast((c1 >> k) | c1 << (64 - k)))
 
