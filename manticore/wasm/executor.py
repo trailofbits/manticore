@@ -875,7 +875,7 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         can_div_0 = c2 == 0
         if solver.must_be_true(
-                self.constraints, can_div_0
+            self.constraints, can_div_0
         ):  # TODO - should fork on possibilities here
             raise Trap()
         if issymbolic(c1) or issymbolic(c2):
@@ -884,7 +884,7 @@ class Executor(object):  # TODO - should be Eventful
             res = int(math.trunc(Decimal(c1) / Decimal(c2)))
         can_overflow = res == 2 ** 63
         if solver.must_be_true(
-                self.constraints, can_overflow
+            self.constraints, can_overflow
         ):  # TODO - should fork on possibilities here:
             raise Trap()
         stack.push(I64.cast(res))
@@ -895,7 +895,7 @@ class Executor(object):  # TODO - should be Eventful
         c1 = stack.pop()
         can_div_0 = c2 == 0
         if solver.must_be_true(
-                self.constraints, can_div_0
+            self.constraints, can_div_0
         ):  # TODO - should fork on possibilities here:
             raise Trap()
         if not issymbolic(c2):
