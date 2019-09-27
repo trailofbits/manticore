@@ -15,13 +15,13 @@ stages:
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
-    - JOB_COUNT=3 # Five jobs generate test coverage: ethereum, ethereum_vm, native, wasm, and other
+    - JOB_COUNT=5 # Five jobs generate test coverage: ethereum, ethereum_vm, native, wasm, and other
     - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
   matrix:
     - TEST_TYPE=examples
-#    - TEST_TYPE=ethereum
-#    - TEST_TYPE=ethereum_vm
-#    - TEST_TYPE=native
+    - TEST_TYPE=ethereum
+    - TEST_TYPE=ethereum_vm
+    - TEST_TYPE=native
     - TEST_TYPE=wasm
     - TEST_TYPE=other
 
