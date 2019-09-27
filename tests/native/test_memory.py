@@ -21,10 +21,6 @@ solver = Z3Solver.instance()
 consts = config.get_group("native")
 
 
-def isconcrete(value):
-    return not issymbolic(value)
-
-
 class MemoryTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -276,6 +272,28 @@ class MemoryTest(unittest.TestCase):
 
         mem[sym] = "\x40"
         mem[sym] = val
+
+    def test_max_exec_size(self):
+        mem = Memory32()
+        # start with no maps
+        self.assertEqual(len(mem.mappings()), 0)
+
+        # alloc/map a byte
+        notExecMap = mem.mmap(0x1000, 0x1000, "rw")
+        isExecMap = mem.mmap(0x2000, 0x1000, "x")
+        anotherExecMap = mem.mmap(0x3000, 0x1000, "rwx")
+        # Okay 2 maps
+        self.assertEqual(len(mem.mappings()), 3)
+
+        # 0 size when not executable at all
+        self.assertEqual(mem.max_exec_size(notExecMap - 1, 16), 0)
+        self.assertEqual(mem.max_exec_size(notExecMap, 16), 0)
+        # maximum size when executable
+        self.assertEqual(mem.max_exec_size(isExecMap, 16), 16)
+        # maximum size when executable across maps
+        self.assertEqual(mem.max_exec_size(isExecMap + 0x1000 - 12, 16), 16)
+        # restricted size when executable until boundary
+        self.assertEqual(mem.max_exec_size(anotherExecMap + 0x1000 - 12, 16), 12)
 
     def test_access(self):
         mem = Memory32()
@@ -1127,46 +1145,88 @@ class MemoryTest(unittest.TestCase):
         cs = ConstraintSet()
         mem = SMemory32(cs)
 
-        start_mapping_addr = mem.mmap(None, 0x1000, "rwx")
+        buf = mem.mmap(None, 0x20, "rwx")
 
-        concretes = [0, 2, 4, 6]
-        symbolics = [1, 3, 5, 7]
+        concretes = tuple(buf + idx for idx in (0, 2, 4, 6))
+        symbolics = tuple(buf + idx for idx in (1, 3, 5, 7))
+        symbolic_vectors = tuple(cs.new_bitvec(8) for _ in symbolics)
 
-        for range in concretes:
-            mem[start_mapping_addr + range] = "C"
+        # Initialize
+        for addr in concretes:
+            mem[addr] = "C"
 
-        for range in symbolics:
-            mem[start_mapping_addr + range] = cs.new_bitvec(8)
+        for addr, symbolic_vector in zip(symbolics, symbolic_vectors):
+            mem[addr] = symbolic_vector
 
-        for range in concretes:
-            self.assertTrue(isconcrete(mem[start_mapping_addr + range]))
+        # Check if they are concretes/symbolics
+        for addr in concretes:
+            self.assertFalse(issymbolic(mem[addr]))
 
-        for range in concretes:
-            self.assertFalse(issymbolic(mem[start_mapping_addr + range]))
+        for addr in symbolics:
+            self.assertTrue(issymbolic(mem[addr]))
 
-        for range in symbolics:
-            self.assertTrue(issymbolic(mem[start_mapping_addr + range]))
+        # And assert the internal symbolic chunks dict representation
+        self.assertDictEqual(
+            mem._symbols,
+            {
+                addr: [(True, symbolic_vector)]
+                for addr, symbolic_vector in zip(symbolics, symbolic_vectors)
+            },
+        )
 
-        for range in symbolics:
-            self.assertFalse(isconcrete(mem[start_mapping_addr + range]))
+        # Swap concrete and symbolic bytes; create new symbolic_vectors
+        concretes, symbolics = symbolics, concretes
+        symbolic_vectors = tuple(cs.new_bitvec(8) for _ in symbolics)
 
-        for range in symbolics:
-            mem[start_mapping_addr + range] = "C"
+        # Reinitialize
+        for addr in concretes:
+            mem[addr] = "C"
 
-        for range in concretes:
-            mem[start_mapping_addr + range] = cs.new_bitvec(8)
+        for addr, symbolic_vector in zip(symbolics, symbolic_vectors):
+            mem[addr] = symbolic_vector
 
-        for range in symbolics:
-            self.assertTrue(isconcrete(mem[start_mapping_addr + range]))
+        # Assert again
+        for addr in concretes:
+            self.assertFalse(issymbolic(mem[addr]))
 
-        for range in symbolics:
-            self.assertFalse(issymbolic(mem[start_mapping_addr + range]))
+        for addr in symbolics:
+            self.assertTrue(issymbolic(mem[addr]))
 
-        for range in concretes:
-            self.assertTrue(issymbolic(mem[start_mapping_addr + range]))
+        # And reassert the internal symbolic chunks dict representation
+        expected_symbolic_chunks = {
+            addr: [(True, symbolic_vector)]
+            for addr, symbolic_vector in zip(symbolics, symbolic_vectors)
+        }
+        self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
 
-        for range in concretes:
-            self.assertFalse(isconcrete(mem[start_mapping_addr + range]))
+        # Do a write to memory that combines concrete and symbolic value and see if it succeeds
+        symbolic_bytes = [cs.new_bitvec(8) for _ in range(4)]
+        mem[buf + 0x10 : buf + 0x17] = (
+            symbolic_bytes[0],
+            "A",  # will be converted to b'A'
+            symbolic_bytes[1],
+            symbolic_bytes[2],
+            b"B",
+            b"C",
+            symbolic_bytes[3],
+        )
+
+        # And assert it!
+        for idx, symbolic_val in zip((0x10, 0x12, 0x13, 0x16), symbolic_bytes):
+            addr = buf + idx
+            self.assertIs(
+                mem[addr], symbolic_val
+            )  # We can't do assertEqual as `==` operator leads to an expression
+            self.assertTrue(issymbolic(mem[addr]))
+            expected_symbolic_chunks[addr] = [(True, symbolic_val)]
+
+        for idx, val in ((0x11, b"A"), (0x14, b"B"), (0x15, b"C")):
+            byte = mem[buf + idx]
+            self.assertEqual(byte, val)
+            self.assertFalse(issymbolic(byte))
+
+        self.assertDictEqual(mem._symbols, expected_symbolic_chunks)
+        self.assertEqual(len(mem._symbols), 8)  # Sanity check if keys didn't overlap
 
     def test_one_concrete_one_symbolic(self):
         # global mainsolver
@@ -1663,8 +1723,8 @@ class MemoryTest(unittest.TestCase):
         mem.write(addr + 1, "b")
         writes = mem.pop_record_writes()
 
-        self.assertIn((addr, ["a"]), writes)
-        self.assertIn((addr + 1, ["b"]), writes)
+        self.assertIn((addr, "a"), writes)
+        self.assertIn((addr + 1, "b"), writes)
 
     def test_mem_trace_no_overwrites(self):
         cs = ConstraintSet()
@@ -1677,8 +1737,8 @@ class MemoryTest(unittest.TestCase):
         mem.write(addr, "b")
         writes = mem.pop_record_writes()
 
-        self.assertIn((addr, ["a"]), writes)
-        self.assertIn((addr, ["b"]), writes)
+        self.assertIn((addr, "a"), writes)
+        self.assertIn((addr, "b"), writes)
 
     def test_mem_trace_nested(self):
         cs = ConstraintSet()
@@ -1696,17 +1756,17 @@ class MemoryTest(unittest.TestCase):
         outer_writes = mem.pop_record_writes()
 
         # Make sure writes do not appear in a trace started after them
-        self.assertNotIn((addr, ["a"]), inner_writes)
-        self.assertNotIn((addr + 1, ["b"]), inner_writes)
+        self.assertNotIn((addr, "a"), inner_writes)
+        self.assertNotIn((addr + 1, "b"), inner_writes)
         # Make sure the first two are in the outer write
-        self.assertIn((addr, ["a"]), outer_writes)
-        self.assertIn((addr + 1, ["b"]), outer_writes)
+        self.assertIn((addr, "a"), outer_writes)
+        self.assertIn((addr + 1, "b"), outer_writes)
         # Make sure the last two are in the inner write
-        self.assertIn((addr + 2, ["c"]), inner_writes)
-        self.assertIn((addr + 3, ["d"]), inner_writes)
+        self.assertIn((addr + 2, "c"), inner_writes)
+        self.assertIn((addr + 3, "d"), inner_writes)
         # Make sure the last two are also in the outer write
-        self.assertIn((addr + 2, ["c"]), outer_writes)
-        self.assertIn((addr + 3, ["d"]), outer_writes)
+        self.assertIn((addr + 2, "c"), outer_writes)
+        self.assertIn((addr + 3, "d"), outer_writes)
 
     def test_mem_trace_ignores_failing(self):
         cs = ConstraintSet()

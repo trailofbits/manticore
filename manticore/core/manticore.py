@@ -315,7 +315,7 @@ class ManticoreBase(Eventful):
                             (expression = ??)
 
                    Child1                         Child2
-            (expression = True)             (expression = True)
+            (expression = True)             (expression = False)
                setstate(True)                   setstate(False)
 
         The optional setstate() function is supposed to set the concrete value

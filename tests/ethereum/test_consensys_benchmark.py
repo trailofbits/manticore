@@ -2,6 +2,8 @@ import inspect
 import unittest
 import os
 import shutil
+from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
+
 
 from manticore.ethereum import (
     ManticoreEVM,
@@ -18,6 +20,7 @@ class EthBenchmark(unittest.TestCase):
 
     def setUp(self):
         self.mevm = ManticoreEVM()
+        self.mevm.register_plugin(KeepOnlyIfStorageChanges())
         self.mevm.verbosity(0)
         self.worksp = self.mevm.workspace
 

@@ -435,6 +435,10 @@ class Linux(Platform):
     # from /usr/include/asm-generic/resource.h
     FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
+    # Hard-coded base load address for dynamic elf binaries (ET_DYN in pyelftools)
+    BASE_DYN_ADDR_32 = 0x56555000
+    BASE_DYN_ADDR = 0x555555554000
+
     def __init__(self, program, argv=None, envp=None, disasm="capstone", **kwargs):
         """
         Builds a Linux OS platform
@@ -1003,9 +1007,9 @@ class Linux(Platform):
             if base == 0 and elf.header.e_type == "ET_DYN":
                 assert vaddr == 0
                 if addressbitsize == 32:
-                    base = 0x56555000
+                    base = self.BASE_DYN_ADDR_32
                 else:
-                    base = 0x555555554000
+                    base = self.BASE_DYN_ADDR
 
             perms = perms_from_elf(flags)
             hint = base + vaddr
@@ -2111,20 +2115,35 @@ class Linux(Platform):
         fd = self._open(sock)
         return fd
 
-    def sys_recv(self, sockfd, buf, count, flags):
+    def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
+        data: bytes = bytes()
+        if not self.current.memory.access_ok(slice(buf, buf + count), "w"):
+            logger.info("RECV: buf within invalid memory. Returning EFAULT")
+            return -errno.EFAULT
+
         try:
-            sock = self.files[sockfd]
-        except IndexError:
-            return -errno.EINVAL
+            sock = self._get_fd(sockfd)
+        except FdError:
+            return -errno.EBADF
 
         if not isinstance(sock, Socket):
             return -errno.ENOTSOCK
 
         data = sock.read(count)
+        self.syscall_trace.append((trace_str, sockfd, data))
         self.current.write_bytes(buf, data)
-        self.syscall_trace.append(("_recv", sockfd, data))
 
         return len(data)
+
+    def sys_recvfrom(self, sockfd, buf, count, flags, src_addr, addrlen):
+        if src_addr != 0:
+            logger.warning("sys_recvfrom: Unimplemented non-NULL src_addr")
+
+        if addrlen != 0:
+            logger.warning("sys_recvfrom: Unimplemented non-NULL addrlen")
+
+        # TODO Unimplemented src_addr and addrlen, so act like sys_recv
+        return self.sys_recv(sockfd, buf, count, flags, trace_str="_recvfrom")
 
     def sys_send(self, sockfd, buf, count, flags):
         try:
@@ -2936,7 +2955,7 @@ class SLinux(Linux):
 
         return super().sys_write(fd, buf, count)
 
-    def sys_recv(self, sockfd, buf, count, flags):
+    def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
         if issymbolic(sockfd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
             raise ConcretizeArgument(self, 0)
@@ -2954,6 +2973,33 @@ class SLinux(Linux):
             raise ConcretizeArgument(self, 3)
 
         return super().sys_recv(sockfd, buf, count, flags)
+
+    def sys_recvfrom(self, sockfd, buf, count, flags, src_addr, addrlen):
+        if issymbolic(sockfd):
+            logger.debug("Ask to read from a symbolic file descriptor!!")
+            raise ConcretizeArgument(self, 0)
+
+        if issymbolic(buf):
+            logger.debug("Ask to read to a symbolic buffer")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(count):
+            logger.debug("Ask to read a symbolic number of bytes ")
+            raise ConcretizeArgument(self, 2)
+
+        if issymbolic(flags):
+            logger.debug("Submitted a symbolic flags")
+            raise ConcretizeArgument(self, 3)
+
+        if issymbolic(src_addr):
+            logger.debug("Submitted a symbolic source address")
+            raise ConcretizeArgument(self, 4)
+
+        if issymbolic(addrlen):
+            logger.debug("Submitted a symbolic address length")
+            raise ConcretizeArgument(self, 5)
+
+        return super().sys_recvfrom(sockfd, buf, count, flags, src_addr, addrlen)
 
     def sys_accept(self, sockfd, addr, addrlen):
         # TODO(yan): Transmit some symbolic bytes as soon as we start.
@@ -3075,7 +3121,7 @@ class SLinux(Linux):
                     solve_to_fd(data, out)
                 elif fd == 2:
                     solve_to_fd(data, err)
-            if name in ("_recv"):
+            if name in ("_recv", "_recvfrom"):
                 solve_to_fd(data, net)
             if name in ("_receive", "_read") and fd == 0:
                 solve_to_fd(data, inn)

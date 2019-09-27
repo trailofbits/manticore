@@ -356,8 +356,8 @@ class ConstraintSet:
             :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :return: a fresh BitVecVariable
         """
-        if not (size == 1 or size % 8 == 0):
-            raise Exception(f"Invalid bitvec size {size}")
+        if size <= 0:
+            raise ValueError(f"Bitvec size ({size}) can't be equal to or less than 0")
         if name is None:
             name = "BV"
             avoid_collisions = True

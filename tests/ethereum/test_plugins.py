@@ -4,7 +4,7 @@ import os
 import unittest
 
 import shutil
-from manticore.ethereum.plugins import VerboseTrace
+from manticore.ethereum.plugins import VerboseTrace, KeepOnlyIfStorageChanges
 
 from manticore.ethereum import ManticoreEVM
 
@@ -16,8 +16,22 @@ class EthPluginsTests(unittest.TestCase):
         self.mevm = ManticoreEVM()
 
     def tearDown(self):
-        # shutil.rmtree(self.mevm.workspace)
+        ws = self.mevm.workspace
         del self.mevm
+        shutil.rmtree(ws)
+
+    def test_ignore_states(self):
+        m = self.mevm
+        m.register_plugin(KeepOnlyIfStorageChanges())
+        filename = os.path.join(THIS_DIR, "contracts", "absurdrepetition.sol")
+
+        with m.kill_timeout():
+            m.multi_tx_analysis(filename)
+
+        for st in m.all_states:
+            if st.platform.logs:
+                return
+        self.assertEqual(0, 1)
 
     @unittest.skip("failing")
     def test_verbose_trace(self):

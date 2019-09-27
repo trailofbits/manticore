@@ -889,14 +889,13 @@ class Cpu(Eventful):
         text = b""
 
         # Read Instruction from memory
-        for address in range(pc, pc + self.max_instr_width):
+        exec_size = self.memory.max_exec_size(pc, self.max_instr_width)
+        instr_memory = self.memory[pc : pc + exec_size]
+        for i in range(exec_size):
             # This reads a byte from memory ignoring permissions
             # and concretize it if symbolic
-            if not self.memory.access_ok(address, "x"):
-                break
 
-            c = self.memory[address]
-
+            c = instr_memory[i]
             if issymbolic(c):
                 # In case of fully symbolic memory, eagerly get a valid ptr
                 if isinstance(self.memory, LazySMemory):
@@ -924,7 +923,7 @@ class Cpu(Eventful):
             raise DecodeException(pc, code)
 
         # Check that the decoded instruction is contained in executable memory
-        if not self.memory.access_ok(slice(pc, pc + insn.size), "x"):
+        if insn.size > exec_size:
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, "x")
 
