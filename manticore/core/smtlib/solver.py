@@ -20,14 +20,12 @@ import shlex
 import time
 from subprocess import PIPE, Popen
 import re
-
 from . import operators as Operators
 from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
 from ...utils import config
 from . import issymbolic
-import time
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -428,8 +426,6 @@ class Z3Solver(Solver):
                 raise NotImplementedError(
                     f"get_all_values only implemented for {type(expression)} expression type."
                 )
-
-            from manticore.core.smtlib import translate_to_smtlib
 
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
