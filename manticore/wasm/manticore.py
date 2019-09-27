@@ -68,9 +68,19 @@ class ManticoreWASM(ManticoreBase):
                 ret = p.stack.pop()
                 if issymbolic(ret):
                     if ret.size == 32:
-                        out.append(list(I32(a) for a in Z3Solver.instance().get_all_values(state.constraints, ret)))
+                        out.append(
+                            list(
+                                I32(a)
+                                for a in Z3Solver.instance().get_all_values(state.constraints, ret)
+                            )
+                        )
                     elif ret.size == 64:
-                        out.append(list(I64(a) for a in Z3Solver.instance().get_all_values(state.constraints, ret)))
+                        out.append(
+                            list(
+                                I64(a)
+                                for a in Z3Solver.instance().get_all_values(state.constraints, ret)
+                            )
+                        )
                 else:
                     out.append([ret])
         return out

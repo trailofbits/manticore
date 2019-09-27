@@ -30,17 +30,11 @@ def convert_args(to_convert):
     for idx, item in enumerate(to_convert):
         if "32" in item["type"]:
             out.append(
-                {
-                    "constraint": f'state.new_symbolic_value(32)',
-                    "val": int(item.get("value", 0)),
-                }
+                {"constraint": f"state.new_symbolic_value(32)", "val": int(item.get("value", 0))}
             )
         elif "64" in item["type"]:
             out.append(
-                {
-                    "constraint": f'state.new_symbolic_value(64)',
-                    "val": int(item.get("value", 0)),
-                }
+                {"constraint": f"state.new_symbolic_value(64)", "val": int(item.get("value", 0))}
             )
         else:
             raise RuntimeError("garbage type")
