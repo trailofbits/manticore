@@ -4,8 +4,14 @@ from os.path import dirname, abspath, join
 from manticore.platforms import wasm
 from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import I32, F32, I64, F64, Trap
+from manticore.core.plugin import Plugin
 from base64 import b64decode
 import math
+
+
+from manticore.utils import config
+consts = config.get_group("core")
+consts.mprocessing = consts.mprocessing.single
 
 def assertEqualNan(testcase, a, b):
     assert len(a) == 1, "Diverged into multiple states!"
@@ -14,6 +20,11 @@ def assertEqualNan(testcase, a, b):
     for a_item, b_item in zip(a, b):
         testcase.assertAlmostEqual(a_item, b_item)
 {% endblock %}
+
+class RaiseExceptionPlugin(Plugin):
+
+    def did_kill_state_callback(self, current_state, exc):
+        raise exc
 
 {% for module in modules %}
 class WASMTest_{{ module.name }}(unittest.TestCase):
@@ -28,6 +39,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
 
     def test_{{ module.name }}(self):
         m = ManticoreWASM(self.filename)
+        m.register_plugin(RaiseExceptionPlugin())
 
         {% for test in module.tests %}
         with self.subTest(msg={{ test.func | escape_null }} + "_L{{test.line}}"):
@@ -37,6 +49,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             if self.subtest_count % 50 == 0:
                 print("Reinitializing Manticore object after 50 symbolic tests")
                 m = ManticoreWASM(self.filename)
+                m.register_plugin(RaiseExceptionPlugin())
 
             def create_argv(state):
                 argv = []
@@ -58,7 +71,8 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
             with self.assertRaises(Trap):
                 m.run()
-            m._reinit()
+            m = ManticoreWASM(self.filename)
+            m.register_plugin(RaiseExceptionPlugin())
             {% endif %}
             {% if test.type == "action" %}
             m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
