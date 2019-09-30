@@ -288,7 +288,9 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing memory read", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(
+                -1, I32, "Concretizing memory read", i
+            )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if (ea + 4) not in range(len(mem.data) + 1):
             raise Trap()
@@ -304,7 +306,9 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing memory read", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(
+                -1, I32, "Concretizing memory read", i
+            )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if (ea + 8) not in range(len(mem.data) + 1):
             raise Trap()
@@ -323,7 +327,9 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing memory read", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(
+                -1, I32, "Concretizing memory read", i
+            )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if ea not in range(len(mem.data)):
             raise Trap()
@@ -378,7 +384,9 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-2, I32, "Concretizing integer memory write", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(
+                -2, I32, "Concretizing integer memory write", i
+            )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         N = n if n else {I32: 32, I64: 64}[ty]
         if ea not in range(len(mem.data)):
@@ -432,6 +440,8 @@ class Executor(object):  # TODO - should be Eventful
         mem = store.mems[a]
         sz = len(mem.data) // 65536
         stack.has_type_on_top(I32, 1)
+        if issymbolic(stack.peek()):
+            raise ConcretizeStack(-1, I32, "Concretizing memory grow operand", stack.peek())
         if mem.grow(stack.pop()):
             stack.push(I32(sz))
         else:
@@ -1003,6 +1013,8 @@ class Executor(object):  # TODO - should be Eventful
     def i32_trunc_s_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F32, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1014,6 +1026,8 @@ class Executor(object):  # TODO - should be Eventful
     def i32_trunc_u_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F32, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1025,6 +1039,8 @@ class Executor(object):  # TODO - should be Eventful
     def i32_trunc_s_f64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F64, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1036,6 +1052,8 @@ class Executor(object):  # TODO - should be Eventful
     def i32_trunc_u_f64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F64, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1129,7 +1147,9 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing float memory read", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(
+                -1, I32, "Concretizing float memory read", i
+            )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if ea not in range(len(mem.data)):
             raise Trap()

@@ -11,6 +11,8 @@ args = parser.parse_args()
 data = json.load(args.filename)["commands"]
 args.filename.close()
 
+skip = {"fib_L261"}
+
 
 class Module:
     def __init__(self, filename, tests):
@@ -66,6 +68,8 @@ template = env.get_template("symbolic_test_template.jinja2")
 modules = []
 current_module = None
 for d in data:
+    if f"{d.get('action', {}).get('field', None)}_L{d['line']}" in skip:
+        continue
 
     if d["type"] == "action":
         if d["action"]["type"] == "invoke":

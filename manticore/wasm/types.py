@@ -288,6 +288,7 @@ def convert_instructions(inst_seq) -> WASMExpression:
 class Trap(Exception):
     pass
 
+
 class ConcretizeStack(Concretize):
     def __init__(self, depth, ty, message, expression, policy=None, **kwargs):
         if policy is None:
@@ -303,4 +304,3 @@ class ConcretizeStack(Concretize):
         self.policy = policy
         self.message = f"Concretize: {message} (Policy: {policy})"
         super().__init__(message, expression, setstate=self.setstate, **kwargs)
-

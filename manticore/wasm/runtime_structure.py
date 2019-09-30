@@ -30,7 +30,7 @@ from .types import (
     Instruction,
     debug,
     Trap,
-    ConcretizeStack
+    ConcretizeStack,
 )
 from ..core.smtlib import BitVec, issymbolic
 from ..core.state import Concretize
@@ -664,6 +664,8 @@ class ModuleInstance:
         ft_expect = f.frame.module.types[imm.type_index]
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
+        if issymbolic(i):
+            raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", i)
         if i not in range(len(tab.elem)):
             raise Trap()
         if tab.elem[i] is None:
