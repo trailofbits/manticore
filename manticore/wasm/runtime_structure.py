@@ -620,6 +620,8 @@ class ModuleInstance:
     def br_table(self, store: "Store", stack: "Stack", imm: BranchTableImm):
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
+        if issymbolic(i):
+            raise ConcretizeStack(-1, I32, "Concretizing br_table", i)
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
         # execute br target_table[i]. The tests, however, pass a negative i, which doesn't make sense in this

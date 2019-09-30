@@ -288,7 +288,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing memory access", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(-1, I32, "Concretizing memory read", i)  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if (ea + 4) not in range(len(mem.data) + 1):
             raise Trap()
@@ -304,7 +304,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing memory access", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(-1, I32, "Concretizing memory read", i)  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if (ea + 8) not in range(len(mem.data) + 1):
             raise Trap()
@@ -323,7 +323,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing memory access", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(-1, I32, "Concretizing memory read", i)  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if ea not in range(len(mem.data)):
             raise Trap()
@@ -373,10 +373,12 @@ class Executor(object):  # TODO - should be Eventful
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
         mem = store.mems[a]
-        assert isinstance(stack.peek(), (ty, BitVec))
+        stack.has_type_on_top(ty, 1)
         c = stack.pop()
-        assert isinstance(stack.peek(), I32)
+        stack.has_type_on_top(I32, 1)
         i = stack.pop()
+        if issymbolic(i):
+            raise ConcretizeStack(-2, I32, "Concretizing integer memory write", i)  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         N = n if n else {I32: 32, I64: 64}[ty]
         if ea not in range(len(mem.data)):
@@ -1127,7 +1129,7 @@ class Executor(object):  # TODO - should be Eventful
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
         if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing memory access", i)  # TODO - Implement a symbolic memory model
+            raise ConcretizeStack(-1, I32, "Concretizing float memory read", i)  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if ea not in range(len(mem.data)):
             raise Trap()
