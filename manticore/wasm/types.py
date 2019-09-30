@@ -4,6 +4,7 @@ from ..core.smtlib import issymbolic, BitVec
 from ctypes import *
 import wasm
 import struct
+from ..core.state import Concretize
 
 
 U32: type = type("U32", (int,), {})
@@ -286,3 +287,20 @@ def convert_instructions(inst_seq) -> WASMExpression:
 
 class Trap(Exception):
     pass
+
+class ConcretizeStack(Concretize):
+    def __init__(self, depth, ty, message, expression, policy=None, **kwargs):
+        if policy is None:
+            policy = "ALL"
+        if policy not in self._ValidPolicies:
+            raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
+
+        def setstate(state, value):
+            state.platform.stack.data[depth] = ty(value)
+
+        self.setstate = setstate
+        self.expression = expression
+        self.policy = policy
+        self.message = f"Concretize: {message} (Policy: {policy})"
+        super().__init__(message, expression, setstate=self.setstate, **kwargs)
+

@@ -22,7 +22,10 @@ def assertEqualNan(testcase, a_list, b):
         for a in state_a:
             assert len(a) <= 1, "Found multiple possible values!"
             for a_item, b_item in zip(a, b):
-                testcase.assertAlmostEqual(a_item, b_item)
+                if math.isnan(b_item):
+                    testcase.assertTrue(math.isnan(a_item))
+                else:
+                    testcase.assertAlmostEqual(a_item, b_item)
 {% endblock %}
 
 class RaiseExceptionPlugin(Plugin):

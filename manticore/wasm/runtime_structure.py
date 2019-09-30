@@ -30,6 +30,7 @@ from .types import (
     Instruction,
     debug,
     Trap,
+    ConcretizeStack
 )
 from ..core.smtlib import BitVec, issymbolic
 from ..core.state import Concretize
@@ -86,23 +87,6 @@ class GlobalInst:
 class ExportInst:
     name: Name
     value: ExternVal
-
-
-class ConcretizeStack(Concretize):
-    def __init__(self, depth, ty, message, expression, policy=None, **kwargs):
-        if policy is None:
-            policy = "ALL"
-        if policy not in self._ValidPolicies:
-            raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
-
-        def setstate(state, value):
-            state.platform.stack.data[depth] = ty(value)
-
-        self.setstate = setstate
-        self.expression = expression
-        self.policy = policy
-        self.message = f"Concretize: {message} (Policy: {policy})"
-        super().__init__(message, expression, setstate=self.setstate, **kwargs)
 
 
 class Store:
