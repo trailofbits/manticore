@@ -45,7 +45,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         return result
 
     def test_{{ module.name }}(self):
-        m = ManticoreWASM(self.filename)
+        m = ManticoreWASM(self.filename, exec_start=True)
         m.register_plugin(RaiseExceptionPlugin())
 
         {% for test in module.tests %}
@@ -55,7 +55,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
 
             if self.subtest_count % 50 == 0:
                 print("Reinitializing Manticore object after 50 symbolic tests")
-                m = ManticoreWASM(self.filename)
+                m = ManticoreWASM(self.filename, exec_start=True)
                 m.register_plugin(RaiseExceptionPlugin())
 
             def create_argv(state):
@@ -78,7 +78,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
             with self.assertRaises(Trap):
                 m.run()
-            m = ManticoreWASM(self.filename)
+            m = ManticoreWASM(self.filename, exec_start=True)
             m.register_plugin(RaiseExceptionPlugin())
             {% endif %}
             {% if test.type == "action" %}

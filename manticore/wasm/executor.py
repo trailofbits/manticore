@@ -233,12 +233,7 @@ class Executor(object):  # TODO - should be Eventful
             assert type(v2) == type(v1), f"{type(v2)} is not the same as {type(v1)}"
 
         if issymbolic(c):
-
-            # def setstate(state, value):
-            #     state.platform.stack.data[-1] = I32(value)
-            #
-            # raise Concretize("Concretizing stack variable c", c, setstate=setstate)
-            stack.push(Operators.ITEBV(32, c != 0, v1, v2))
+            stack.push(Operators.ITEBV(v1.size, c != 0, v1, v2))
         else:
             if c != 0:
                 stack.push(v1)
