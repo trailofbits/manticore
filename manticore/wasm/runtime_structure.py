@@ -580,6 +580,8 @@ class ModuleInstance:
     def if_(self, store: "Store", stack: "Stack", ret_type: typing.List[type]):
         stack.has_type_on_top(I32, 1)
         c = stack.pop()
+        if issymbolic(c):
+            raise ConcretizeStack(-1, I32, "Concretizing if_", c)
         insn_block = self.look_forward(0x0B)
         t_block, f_block = self._split_if_block(deque(insn_block))
         label = Label(len(ret_type), [])
