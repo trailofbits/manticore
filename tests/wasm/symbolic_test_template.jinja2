@@ -13,12 +13,16 @@ from manticore.utils import config
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
 
-def assertEqualNan(testcase, a, b):
-    assert len(a) == 1, "Diverged into multiple states!"
-    a = a[0]
-    assert len(a) == len(b), f"Returned {len(a)} values! (Expected {len(b)}))"
-    for a_item, b_item in zip(a, b):
-        testcase.assertAlmostEqual(a_item, b_item)
+def assertEqualNan(testcase, a_list, b):
+    """ b_list: list of exected return values
+        a_list: 3-nested lists: One for each state, containing one for each of the n possible return values, each containing the output of solver.get_all_values """
+    assert len(a_list) == 1, f"Diverged into {len(a_list)} states!"
+    for state_a in a_list:
+        assert len(state_a) == len(b), f"Returned {len(a)} values! (Expected {len(b)})"
+        for a in state_a:
+            assert len(a) <= 1, "Found multiple possible values!"
+            for a_item, b_item in zip(a, b):
+                testcase.assertAlmostEqual(a_item, b_item)
 {% endblock %}
 
 class RaiseExceptionPlugin(Plugin):
@@ -63,7 +67,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             {% if test.type == "assert_return" %}
             m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
             m.run()
-            rets = m.collect_returns()
+            rets = m.collect_returns(len(expected))
             m._reinit()
             assertEqualNan(self, rets, expected)
             {% endif %}

@@ -59,31 +59,34 @@ class ManticoreWASM(ManticoreBase):
             state.platform.invoke(name=name, argv=argv_generator(state))
 
     @ManticoreBase.at_not_running
-    def collect_returns(self):
-        out = []
+    def collect_returns(self, n=1):
+        outer = []
         for state in self.terminated_states:
+            inner = []
             p = state.platform
-            ret = None
-            if not p.stack.empty():
-                ret = p.stack.pop()
+            for _i in range(n):
+                ret = None
+                if not p.stack.empty():
+                    ret = p.stack.pop()
                 if issymbolic(ret):
                     if ret.size == 32:
-                        out.append(
+                        inner.append(
                             list(
                                 I32(a)
                                 for a in Z3Solver.instance().get_all_values(state.constraints, ret)
                             )
                         )
                     elif ret.size == 64:
-                        out.append(
+                        inner.append(
                             list(
                                 I64(a)
                                 for a in Z3Solver.instance().get_all_values(state.constraints, ret)
                             )
                         )
                 else:
-                    out.append([ret])
-        return out
+                    inner.append([ret])
+            outer.append(inner)
+        return outer
 
     def _terminate_state_callback(self, state, e):
         with self.locked_context("wasm.saved_states", list) as saved_states:
