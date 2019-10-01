@@ -5,6 +5,7 @@ import logging
 import operator
 
 logger = logging.getLogger(__name__)
+UNSIGN_MASK = (1 << 256) - 1
 
 
 class Visitor:
@@ -281,7 +282,7 @@ class ConstantFolderSimplifier(Visitor):
         BoolAnd: operator.__and__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
-        BitVecUnsignedDiv: lambda x, y: (x & (1 << 256) - 1) // (y & (1 << 256) - 1),
+        BitVecUnsignedDiv: lambda x, y: (x & UNSIGN_MASK) // (y & UNSIGN_MASK),
     }
 
     def visit_BitVecConcat(self, expression, *operands):
