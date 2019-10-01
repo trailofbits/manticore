@@ -1261,14 +1261,14 @@ class ManticoreEVM(ManticoreBase):
                         unseen = Operators.AND(
                             Operators.AND(x != x_concrete, y != y_concrete), unseen
                         )
-                #Search for a new unseen sha3 pair
+                # Search for a new unseen sha3 pair
                 with state as temp_state:
                     temp_state.constrain(unseen)
                     new_x_concretes = temp_state.solve_n(x, nsolves=1)
                     new_y_concretes = map(func, new_x_concretes)
                     new_concrete_pairs.update(zip(new_x_concretes, new_y_concretes))
 
-                #Consider all the new set of sha3 pairs and rebuild the seen condition
+                # Consider all the new set of sha3 pairs and rebuild the seen condition
                 seen = False
                 for x_concrete, y_concrete in new_concrete_pairs:
                     if len(x) == len(x_concrete):  # If the size of the buffer wont
@@ -1279,13 +1279,7 @@ class ManticoreEVM(ManticoreBase):
                 # to match the following symbolic pairs
                 with state as temp_state:
                     temp_state.constrain(seen)
-                    if match(
-                        temp_state,
-                        func,
-                        new_symbolic_pairs,
-                        new_concrete_pairs,
-                        start=start,
-                    ):
+                    if match(temp_state, func, new_symbolic_pairs, new_concrete_pairs, start=start):
                         concrete_pairs.update(new_concrete_pairs)
                         return True
             return False
