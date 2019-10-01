@@ -1078,6 +1078,8 @@ class Executor(object):  # TODO - should be Eventful
     def i64_trunc_s_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F32, "Concretizing float", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1089,6 +1091,8 @@ class Executor(object):  # TODO - should be Eventful
     def i64_trunc_u_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F32, "Concretizing float", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1100,6 +1104,8 @@ class Executor(object):  # TODO - should be Eventful
     def i64_trunc_s_f64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F64, "Concretizing float", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1111,6 +1117,8 @@ class Executor(object):  # TODO - should be Eventful
     def i64_trunc_u_f64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F64, "Concretizing float", c1)
         if math.isnan(c1):
             raise Trap()
         if math.isinf(c1):
@@ -1122,12 +1130,16 @@ class Executor(object):  # TODO - should be Eventful
     def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F32, "Concretizing float", c1)
         c1 = struct.unpack("i", struct.pack("f", c1))[0]
         stack.push(I32.cast(c1))
 
     def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F64, "Concretizing float", c1)
         c1 = struct.unpack("q", struct.pack("d", c1))[0]
         stack.push(I64.cast(c1))
 
@@ -1168,6 +1180,8 @@ class Executor(object):  # TODO - should be Eventful
         mem = store.mems[a]
         c = stack.pop()
         i = stack.pop()
+        if issymbolic(i):
+            raise ConcretizeStack(-2, I32, "Concretizing memory address for float_store", i)
         ea = i + imm.offset
         if ty == F32:
             size = 32

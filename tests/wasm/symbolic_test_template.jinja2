@@ -49,8 +49,9 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         m.register_plugin(RaiseExceptionPlugin())
 
         {% for test in module.tests %}
-        with self.subTest(msg={{ test.func | escape_null }} + "_L{{test.line}}"):
-            print("======V======", {{ test.func | escape_null }} + "_L{{test.line}}", "(Symbolic)", "======V======")
+        name = {{ test.func | escape_null }} + "_L{{test.line}}"
+        with self.subTest(msg=name):
+            print("======V======", name, "(Symbolic)", "======V======")
             self.subtest_count += 1
 
             if self.subtest_count % 50 == 0:
@@ -68,23 +69,26 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
 
             expected = [{{ test.rets }}]
             {% if test.type == "assert_return" %}
-            m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
-            m.run()
-            rets = m.collect_returns(len(expected))
-            m._reinit()
-            assertEqualNan(self, rets, expected)
+            with m.kill_timeout(150):
+                m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
+                m.run()
+                rets = m.collect_returns(len(expected))
+                m._reinit()
+                assertEqualNan(self, rets, expected)
             {% endif %}
             {% if test.type == "assert_trap" %}
-            m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
-            with self.assertRaises(Trap):
-                m.run()
-            m = ManticoreWASM(self.filename, exec_start=True)
-            m.register_plugin(RaiseExceptionPlugin())
+            with m.kill_timeout(150):
+                m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
+                with self.assertRaises(Trap):
+                    m.run()
+                m = ManticoreWASM(self.filename, exec_start=True)
+                m.register_plugin(RaiseExceptionPlugin())
             {% endif %}
             {% if test.type == "action" %}
-            m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
-            m.run()
-            m._reinit()
+            with m.kill_timeout(150):
+                m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
+                m.run()
+                m._reinit()
             {% endif %}
         {% endfor %}
 

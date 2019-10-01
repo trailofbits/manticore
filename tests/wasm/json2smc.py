@@ -11,7 +11,7 @@ args = parser.parse_args()
 data = json.load(args.filename)["commands"]
 args.filename.close()
 
-skip = {"fib_L261"}
+skip = {"fib_L261", "check-memory-zero_L87", "odd_L269"}
 
 
 class Module:
