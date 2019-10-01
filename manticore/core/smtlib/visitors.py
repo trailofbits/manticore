@@ -786,7 +786,7 @@ def to_constant(expression):
 
 @lru_cache(maxsize=128, typed=True)
 def simplify(expression):
-    # expression = constant_folder(expression)
+    expression = constant_folder(expression)
     expression = arithmetic_simplify(expression)
     return expression
 

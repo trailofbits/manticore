@@ -75,7 +75,6 @@ class Detector(Plugin):
         self.get_findings(state).append((address, pc, finding, at_init, constraint))
         with self.locked_global_findings() as gf:
             gf.append((address, pc, finding, at_init))
-
         # Fixme for ever broken logger
         logger.warning(finding)
 

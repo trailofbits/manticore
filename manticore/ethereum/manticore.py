@@ -1502,6 +1502,9 @@ class ManticoreEVM(ManticoreBase):
         if len(local_findings):
             with testcase.open_stream("findings") as findings:
                 for address, pc, finding, at_init, constraint in local_findings:
+                    if not state.can_be_true(constraint):
+                        continue
+                    state.constrain(constraint)
                     findings.write("- %s -\n" % finding)
                     write_findings(findings, "  ", address, pc, at_init)
                     md = self.get_metadata(address)

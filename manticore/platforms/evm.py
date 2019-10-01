@@ -78,6 +78,11 @@ consts.add(
     default=1024 * 1024,
     description="Max calldata offset to explore with. Iff offset or size in a calldata related instruction are symbolic it will be constrained to this constant",
 )
+consts.add(
+    "calldata_max_size",
+    default = 64,
+    description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
+)
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -142,14 +147,17 @@ class Transaction:
         self.gas = gas
         self.set_result(result, return_data)
 
-    def concretize(self, state):
-        conc_caller = state.solve_one(self.caller)
-        conc_address = state.solve_one(self.address)
-        conc_value = state.solve_one(self.value)
-        conc_gas = state.solve_one(self.gas)
-        conc_data = state.solve_one(self.data)
-        conc_return_data = state.solve_one(self.return_data)
-
+    def concretize(self, state, constrain=False):
+        """
+        :param state: a manticore state
+        :param bool constrain: If True, constrain expr to concretized value
+        """
+        conc_caller = state.solve_one(self.caller, constrain=constrain)
+        conc_address = state.solve_one(self.address, constrain=constrain)
+        conc_value = state.solve_one(self.value, constrain=constrain)
+        conc_gas = state.solve_one(self.gas, constrain=constrain)
+        conc_data = state.solve_one(self.data, constrain=constrain)
+        conc_return_data = state.solve_one(self.return_data, constrain=constrain)
         return Transaction(
             self.sort,
             conc_address,
@@ -160,7 +168,7 @@ class Transaction:
             conc_gas,
             depth=self.depth,
             result=self.result,
-            return_data=bytearray(conc_return_data),
+            return_data=conc_return_data,
         )
 
     def to_dict(self, mevm):
@@ -556,8 +564,8 @@ def concretized_args(**policies):
                         "the value might not be tracked properly (This may affect detectors)"
                     )
                 logger.info(
-                    f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}"
-                )
+                    f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}")
+
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
 
@@ -834,7 +842,7 @@ class EVM(Eventful):
         return Operators.ITEBV(512, size == 0, 0, Operators.ITEBV(512, flag, memfee, 0))
 
     def _allocate(self, address, size=1):
-        address_c = Operators.UDIV(Operators.ZEXTEND(address, 512) + size + 31, 32) * 32
+        address_c = Operators.UDIV(self.safe_add(address, size, 31), 32) * 32
         self._allocated = Operators.ITEBV(
             512, Operators.UGT(address_c, self._allocated), address_c, self.allocated
         )
@@ -1213,7 +1221,11 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        # print(self)
+        #if self._checkpoint_data is None:
+        #    print(self)
+        #else:
+        #    print ("back from a fork")
+        #import pdb; pdb.set_trace()
         try:
             # import time
             # limbo = 0.0
@@ -1334,10 +1346,12 @@ class EVM(Eventful):
                 "did_evm_write_memory", offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8)
             )
 
-    def safe_add(self, a, b):
+    def safe_add(self, a, b, *args):
         a = Operators.ZEXTEND(a, 512)
         b = Operators.ZEXTEND(b, 512)
         result = a + b
+        if len(args) > 0:
+            result = self.safe_add(result, *args)
         return result
 
     def safe_mul(self, a, b):
@@ -1597,14 +1611,10 @@ class EVM(Eventful):
     def CALLDATALOAD(self, offset):
         """Get input data of current environment"""
         # calldata_overflow = const.calldata_overflow
-        # calldata_underflow = const.calldata_underflow
         calldata_overflow = None  # 32
-        calldata_underflow = None  # 32
-        # if const.calldata_overlap:
         if calldata_overflow is not None:
-            self.constraints.add(offset + 32 <= len(self.data) + calldata_overflow)
+            self.constraints.add(self.safe_add(offset, 32) <= len(self.data) + calldata_overflow)
         if calldata_underflow is not None:
-            self.constraints.add(offset >= -calldata_underflow)
 
         self._use_calldata(offset, 32)
 
@@ -1612,7 +1622,7 @@ class EVM(Eventful):
         bytes = []
         for i in range(32):
             try:
-                c = simplify(Operators.ITEBV(8, offset + i < data_length, self.data[offset + i], 0))
+                c = simplify(Operators.ITEBV(8, Operators.ULT(self.safe_add(offset, i), data_length), self.data[offset + i], 0))
             except IndexError:
                 # offset + i is concrete and outside data
                 c = 0
@@ -1636,17 +1646,14 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return self.safe_add(copyfee, memfee)
 
-    @concretized_args(size="SAMPLED")
+    #@concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
         calldata_overflow = None  # 32
-        calldata_underflow = None  # 32
-        # if const.calldata_overlap:
-        if calldata_underflow is not None:
-            self.constraints.add(data_offset + size <= len(self.data) + calldata_overflow)
-            self.constraints.add(data_offset >= -calldata_underflow)
+        if calldata_overflow is not None:
+            self.constraints.add(Operators.ULT( self.safe_add(data_offset, size), len(self.data) + calldata_overflow))
 
         self._use_calldata(data_offset, size)
         self._allocate(mem_offset, size)
@@ -1657,6 +1664,9 @@ class EVM(Eventful):
             if not Z3Solver.instance().can_be_true(self.constraints, cond):
                 raise NotEnoughGas()
             self.constraints.add(cond)
+
+        if consts.calldata_max_size >= 0:
+            self.constraints.add(Operators.ULE(size, consts.calldata_max_size))
 
         max_size = size
         if issymbolic(max_size):
@@ -1677,7 +1687,7 @@ class EVM(Eventful):
             try:
                 c1 = Operators.ITEBV(
                     8,
-                    data_offset + i < len(self.data),
+                    Operators.ULT(self.safe_add(data_offset, i), len(self.data)),
                     Operators.ORD(self.data[data_offset + i]),
                     0,
                 )
@@ -2202,7 +2212,7 @@ class EVM(Eventful):
         gas = self.gas
         if issymbolic(gas):
             gas = simplify(gas)
-            result.append(f"Gas: {translate_to_smtlib(gas)} {gas.taint}")
+            result.append(f"Gas: {translate_to_smtlib(gas)[:20]} {gas.taint}")
         else:
             result.append(f"Gas: {gas}")
 

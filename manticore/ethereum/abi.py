@@ -253,6 +253,7 @@ class ABI:
         elif ty[0] in ("array"):
             result = []
             dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
+            dyn_offset = to_constant(dyn_offset)
             rep = ty[1]
             ty_size = ABI._type_size(ty[2])
             if rep is None:
