@@ -1614,7 +1614,6 @@ class EVM(Eventful):
         calldata_overflow = None  # 32
         if calldata_overflow is not None:
             self.constraints.add(self.safe_add(offset, 32) <= len(self.data) + calldata_overflow)
-        if calldata_underflow is not None:
 
         self._use_calldata(offset, 32)
 
