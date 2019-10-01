@@ -233,7 +233,7 @@ class Executor(object):  # TODO - should be Eventful
             assert type(v2) == type(v1), f"{type(v2)} is not the same as {type(v1)}"
 
         if issymbolic(c):
-            stack.push(Operators.ITEBV(v1.size, c != 0, v1, v2))
+            stack.push(Operators.ITEBV(getattr(v1, 'size', 32), c != 0, v1, v2))
         else:
             if c != 0:
                 stack.push(v1)
@@ -1003,7 +1003,9 @@ class Executor(object):  # TODO - should be Eventful
     def i32_wrap_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
-        stack.push(I32.cast(c1 % 2 ** 32))
+        c1 %= 2 ** 32
+        c1 = Operators.EXTRACT(c1, 0, 32)
+        stack.push(I32.cast(c1))
 
     def i32_trunc_s_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
