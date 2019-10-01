@@ -80,7 +80,7 @@ consts.add(
 )
 consts.add(
     "calldata_max_size",
-    default = 64,
+    default=64,
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 
@@ -564,7 +564,8 @@ def concretized_args(**policies):
                         "the value might not be tracked properly (This may affect detectors)"
                     )
                 logger.info(
-                    f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}")
+                    f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}"
+                )
 
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
@@ -1221,11 +1222,11 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        #if self._checkpoint_data is None:
+        # if self._checkpoint_data is None:
         #    print(self)
-        #else:
+        # else:
         #    print ("back from a fork")
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         try:
             # import time
             # limbo = 0.0
@@ -1621,7 +1622,14 @@ class EVM(Eventful):
         bytes = []
         for i in range(32):
             try:
-                c = simplify(Operators.ITEBV(8, Operators.ULT(self.safe_add(offset, i), data_length), self.data[offset + i], 0))
+                c = simplify(
+                    Operators.ITEBV(
+                        8,
+                        Operators.ULT(self.safe_add(offset, i), data_length),
+                        self.data[offset + i],
+                        0,
+                    )
+                )
             except IndexError:
                 # offset + i is concrete and outside data
                 c = 0
@@ -1645,14 +1653,16 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return self.safe_add(copyfee, memfee)
 
-    #@concretized_args(size="SAMPLED")
+    # @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
         # calldata_underflow = const.calldata_underflow
         calldata_overflow = None  # 32
         if calldata_overflow is not None:
-            self.constraints.add(Operators.ULT( self.safe_add(data_offset, size), len(self.data) + calldata_overflow))
+            self.constraints.add(
+                Operators.ULT(self.safe_add(data_offset, size), len(self.data) + calldata_overflow)
+            )
 
         self._use_calldata(data_offset, size)
         self._allocate(mem_offset, size)
