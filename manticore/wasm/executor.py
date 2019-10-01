@@ -1219,26 +1219,38 @@ class Executor(object):  # TODO - should be Eventful
 
     def f32_unary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
         stack.has_type_on_top(F32, 1)
+        if issymbolic(stack.peek()):
+            raise ConcretizeStack(-1, F32, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1)
         self.float_pushCompareReturn(stack, v, rettype)
 
     def f32_binary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
         stack.has_type_on_top(F32, 2)
+        if issymbolic(stack.peek()):
+            raise ConcretizeStack(-1, F32, "Concretizing before float op", stack.peek())
         v2 = stack.pop()
+        if issymbolic(stack.peek()):
+            raise ConcretizeStack(-2, F32, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v, rettype)
 
     def f64_unary(self, store: "Store", stack: "Stack", op, rettype: type = F64):
         stack.has_type_on_top(F64, 1)
+        if issymbolic(stack.peek()):
+            raise ConcretizeStack(-1, F64, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1)
         self.float_pushCompareReturn(stack, v, rettype)
 
     def f64_binary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
         stack.has_type_on_top(F64, 2)
+        if issymbolic(stack.peek()):
+            raise ConcretizeStack(-1, F64, "Concretizing before float op", stack.peek())
         v2 = stack.pop()
+        if issymbolic(stack.peek()):
+            raise ConcretizeStack(-2, F64, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v, rettype)
