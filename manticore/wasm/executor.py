@@ -233,7 +233,7 @@ class Executor(object):  # TODO - should be Eventful
             assert type(v2) == type(v1), f"{type(v2)} is not the same as {type(v1)}"
 
         if issymbolic(c):
-            stack.push(Operators.ITEBV(getattr(v1, 'size', 32), c != 0, v1, v2))
+            stack.push(Operators.ITEBV(getattr(v1, "size", 32), c != 0, v1, v2))
         else:
             if c != 0:
                 stack.push(v1)
