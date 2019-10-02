@@ -953,29 +953,31 @@ class Cpu(Eventful):
         """
         Decode, and execute one instruction pointed by register PC
         """
+        curpc = self.PC
         if self._delayed_event:
             self._icount += 1
             self._publish(
                 "did_execute_instruction",
                 self._last_pc,
-                self.PC,
+                curpc,
                 self.decode_instruction(self._last_pc),
             )
             self._delayed_event = False
 
-        if issymbolic(self.PC):
+        if issymbolic(curpc):
             raise ConcretizeRegister(self, "PC", policy="ALL")
-        if not self.memory.access_ok(self.PC, "x"):
-            raise InvalidMemoryAccess(self.PC, "x")
+        if not self.memory.access_ok(curpc, "x"):
+            raise InvalidMemoryAccess(curpc, "x")
 
-        self._publish("will_decode_instruction", self.PC)
+        self._publish("will_decode_instruction", curpc)
 
-        insn = self.decode_instruction(self.PC)
+        insn = self.decode_instruction(curpc)
         self._last_pc = self.PC
 
-        self._publish("will_execute_instruction", self.PC, insn)
+        self._publish("will_execute_instruction", self._last_pc, insn)
 
         # FIXME (theo) why just return here?
+        # hook changed PC, so we trust that there is nothing more to do
         if insn.address != self.PC:
             return
 

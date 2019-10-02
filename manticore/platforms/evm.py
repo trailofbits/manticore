@@ -1414,7 +1414,8 @@ class EVM(Eventful):
     def ADDMOD(self, a, b, c):
         """Modulo addition operation"""
         try:
-            result = Operators.ITEBV(256, c == 0, 0, (a + b) % c)
+            result = Operators.EXTRACT(self.safe_add(a, b) % Operators.ZEXTEND(c, 512), 0, 256)
+            result = Operators.ITEBV(256, c == 0, 0, result)
         except ZeroDivisionError:
             result = 0
         return result
@@ -1422,7 +1423,8 @@ class EVM(Eventful):
     def MULMOD(self, a, b, c):
         """Modulo addition operation"""
         try:
-            result = Operators.ITEBV(256, c == 0, 0, (a * b) % c)
+            result = Operators.EXTRACT(self.safe_mul(a, b) % Operators.ZEXTEND(c, 512), 0, 256)
+            result = Operators.ITEBV(256, c == 0, 0, result)
         except ZeroDivisionError:
             result = 0
         return result
