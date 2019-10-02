@@ -265,30 +265,42 @@ class IntegrationTest(unittest.TestCase):
         """
         from manticore.platforms import evm
         from manticore.core.smtlib import ConstraintSet, Z3Solver, Operators
+
         constraints = ConstraintSet()
-        
 
         address = 0x41414141414141414141
-        data = b''
-        caller =  0x42424242424242424242
+        data = b""
+        caller = 0x42424242424242424242
         value = 0
-        bytecode = ''
+        bytecode = ""
         vm = evm.EVM(constraints, address, data, caller, value, bytecode)
 
-        self.assertEqual(vm.ADDMOD(12323,2343,20), 6)
-        self.assertEqual(vm.ADDMOD(12323,2343,0), 0)
+        self.assertEqual(vm.ADDMOD(12323, 2343, 20), 6)
+        self.assertEqual(vm.ADDMOD(12323, 2343, 0), 0)
 
-        A, B, C = 0x780000002090309a004201626b1400041d318000000200008a0080089c042da7, 0xf000000740403f7007c012807bed003be2ce800000060000ffffbff7e4087033, 0x338000080fffff64aaaacffcf7dbfa408000000000000270120000001e7c2acf
-        self.assertEqual(vm.ADDMOD(A, B, C), 23067954172474524581131069693479689311231082562138745684554374357070230297856)
-        a, b, c = constraints.new_bitvec(256), constraints.new_bitvec(256), constraints.new_bitvec(256)
+        A, B, C = (
+            0x780000002090309A004201626B1400041D318000000200008A0080089C042DA7,
+            0xF000000740403F7007C012807BED003BE2CE800000060000FFFFBFF7E4087033,
+            0x338000080FFFFF64AAAACFFCF7DBFA408000000000000270120000001E7C2ACF,
+        )
+        self.assertEqual(
+            vm.ADDMOD(A, B, C),
+            23067954172474524581131069693479689311231082562138745684554374357070230297856,
+        )
+        a, b, c = (
+            constraints.new_bitvec(256),
+            constraints.new_bitvec(256),
+            constraints.new_bitvec(256),
+        )
         constraints.add(a == A)
         constraints.add(b == B)
         constraints.add(c == C)
         result = vm.ADDMOD(a, b, c)
-        #0x32ffffd700d073ae080133f517d922bd000000000007f1611e003fffc9239d00
-        self.assertEqual(Z3Solver.instance().get_all_values(constraints, result), [0x32ffffd700d073ae080133f517d922bd000000000007f1611e003fffc9239d00])
-
-
+        # 0x32ffffd700d073ae080133f517d922bd000000000007f1611e003fffc9239d00
+        self.assertEqual(
+            Z3Solver.instance().get_all_values(constraints, result),
+            [0x32FFFFD700D073AE080133F517D922BD000000000007F1611E003FFFC9239D00],
+        )
 
     def test_mulmod(self):
         """
@@ -310,29 +322,36 @@ class IntegrationTest(unittest.TestCase):
         """
         from manticore.platforms import evm
         from manticore.core.smtlib import ConstraintSet, Z3Solver, Operators
+
         constraints = ConstraintSet()
-        
 
         address = 0x41414141414141414141
-        data = b''
-        caller =  0x42424242424242424242
+        data = b""
+        caller = 0x42424242424242424242
         value = 0
-        bytecode = ''
+        bytecode = ""
         vm = evm.EVM(constraints, address, data, caller, value, bytecode)
 
-        self.assertEqual(vm.MULMOD(12323,2343,20), 9)
-        self.assertEqual(vm.MULMOD(12323,2343,0), 0)
+        self.assertEqual(vm.MULMOD(12323, 2343, 20), 9)
+        self.assertEqual(vm.MULMOD(12323, 2343, 0), 0)
 
-        A, B, C = 110427941548649020598956093796432407239217743554726184882600387580788736,1048576,4194319
+        A, B, C = (
+            110427941548649020598956093796432407239217743554726184882600387580788736,
+            1048576,
+            4194319,
+        )
         self.assertEqual(vm.MULMOD(A, B, C), 2423129)
-        a, b, c = constraints.new_bitvec(256),constraints.new_bitvec(256),constraints.new_bitvec(256)
+        a, b, c = (
+            constraints.new_bitvec(256),
+            constraints.new_bitvec(256),
+            constraints.new_bitvec(256),
+        )
         constraints.add(a == A)
         constraints.add(b == B)
         constraints.add(c == C)
         result = vm.MULMOD(a, b, c)
-        #0x8000000000000000000000000000000000000000000000000000000082000011
+        # 0x8000000000000000000000000000000000000000000000000000000082000011
         self.assertEqual(Z3Solver.instance().get_all_values(constraints, result), [2423129])
-
 
 
 if __name__ == "__main__":
