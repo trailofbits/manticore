@@ -78,6 +78,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             {% if test.type == "assert_return" %}
             with m.kill_timeout(150):
                 m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
+                setattr(m, 'trapped', False)
                 m.run()
                 self.assertFalse(getattr(m, 'trapped', False))
                 if not getattr(m, '_killed', False):
