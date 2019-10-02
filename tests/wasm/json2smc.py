@@ -11,7 +11,18 @@ args = parser.parse_args()
 data = json.load(args.filename)["commands"]
 args.filename.close()
 
-skip = {"fib_L261", "check-memory-zero_L87", "odd_L269"}
+skip = {
+    "fib_L261",
+    "check-memory-zero_L87",
+    "check-memory-zero_L89",
+    "check-memory-zero_L91",
+    "check-memory-zero_L93",
+    "check-memory-zero_L95",
+    "check-memory-zero_L97",
+    "odd_L269",
+    "fib-i64_L527",
+}
+disallow_reinit_modules = {"call_0", "call_indirect_0", "memory_grow_0", "memory_grow_3"}
 
 
 class Module:
@@ -19,6 +30,7 @@ class Module:
         self.name = filename.replace(".wasm", "").replace(".wast", "").replace(".", "_").strip()
         self.filename = filename
         self.tests = tests
+        self.allow_reinit = True if self.name not in disallow_reinit_modules else False
 
     def add_test(self, name, line, args, rets, type_="assert_return"):
         self.tests.append({"func": name, "line": line, "args": args, "rets": rets, "type": type_})

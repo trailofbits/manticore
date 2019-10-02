@@ -5,6 +5,7 @@ from manticore.platforms import wasm
 from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import I32, F32, I64, F64, Trap
 from manticore.core.plugin import Plugin
+from manticore.core.state import TerminateState
 from base64 import b64decode
 import math
 
@@ -34,8 +35,9 @@ def assertEqualNan(testcase, a_list, b):
 
 class RaiseExceptionPlugin(Plugin):
 
-    def did_kill_state_callback(self, current_state, exc):
-        raise exc
+    def did_terminate_state_callback(self, current_state, exc):
+        if "raised Trap" in str(exc):
+            self.manticore.trapped = True
 
 {% for module in modules %}
 class WASMTest_{{ module.name }}(unittest.TestCase):
@@ -59,9 +61,10 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             self.subtest_count += 1
 
             if self.subtest_count % 50 == 0:
-                print("Reinitializing Manticore object after 50 symbolic tests")
-                m = ManticoreWASM(self.filename, exec_start=True)
-                m.register_plugin(RaiseExceptionPlugin())
+                if {{module.allow_reinit}}:
+                    print("Reinitializing Manticore object after 50 symbolic tests")
+                    m = ManticoreWASM(self.filename, exec_start=True)
+                    m.register_plugin(RaiseExceptionPlugin())
 
             def create_argv(state):
                 argv = []
@@ -76,17 +79,28 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             with m.kill_timeout(150):
                 m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
                 m.run()
-                rets = m.collect_returns(len(expected))
-                m._reinit()
-                assertEqualNan(self, rets, expected)
+                self.assertFalse(getattr(m, 'trapped', False))
+                if not getattr(m, '_killed', False):
+                    rets = m.collect_returns(len(expected))
+                    m._reinit()
+                    assertEqualNan(self, rets, expected)
+                else:
+                    m._killed.value = False
+                    print(name, "Timed Out, Reinitializing Manticore")
+                    m = ManticoreWASM(self.filename, exec_start=True)
+                    m.register_plugin(RaiseExceptionPlugin())
             {% endif %}
             {% if test.type == "assert_trap" %}
             with m.kill_timeout(150):
                 m.invoke(name={{ test.func | escape_null }}, argv_generator=create_argv)
-                with self.assertRaises(Trap):
-                    m.run()
-                m = ManticoreWASM(self.filename, exec_start=True)
-                m.register_plugin(RaiseExceptionPlugin())
+                m.run()
+                self.assertTrue(getattr(m, 'trapped', False))
+                if {{module.allow_reinit}}:
+                    print("Reinitializing after Trap")
+                    m = ManticoreWASM(self.filename, exec_start=True)
+                    m.register_plugin(RaiseExceptionPlugin())
+                else:
+                    m._reinit()
             {% endif %}
             {% if test.type == "action" %}
             with m.kill_timeout(150):

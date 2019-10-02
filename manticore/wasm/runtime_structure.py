@@ -512,10 +512,14 @@ class ModuleInstance:
                     except Concretize as exc:
                         self._instruction_queue.appendleft(inst)
                         raise exc
+                    except Trap as exc:
+                        self._block_depths.pop()
+                        logger.info("Trap: %s", str(exc))
+                        raise exc
 
                 elif aStack.find_type(Label):
-                    raise RuntimeError(
-                        "The instruction queue is empty, but there are still labels on the stack!"
+                    logger.info(
+                        "The instruction queue is empty, but there are still labels on the stack. This should only happen when re-executing after a Trap"
                     )
             return False
 

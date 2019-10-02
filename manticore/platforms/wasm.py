@@ -123,5 +123,8 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         """
         if not self.instantiated:
             raise RuntimeError("Trying to execute before instantiation!")
-        if not self.instance.exec_instruction(self.store, self.stack):
-            raise TerminateState(f"Execution returned {self.stack.peek()}")
+        try:
+            if not self.instance.exec_instruction(self.store, self.stack):
+                raise TerminateState(f"Execution returned {self.stack.peek()}")
+        except Trap as e:
+            raise TerminateState(f"Execution raised Trap: {str(e)}")
