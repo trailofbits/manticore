@@ -22,7 +22,13 @@ skip = {
     "odd_L269",
     "fib-i64_L527",
 }
-disallow_reinit_modules = {"call_0", "call_indirect_0", "globals_0", "memory_grow_0", "memory_grow_3"}
+disallow_reinit_modules = {
+    "call_0",
+    "call_indirect_0",
+    "globals_0",
+    "memory_grow_0",
+    "memory_grow_3",
+}
 
 
 class Module:
