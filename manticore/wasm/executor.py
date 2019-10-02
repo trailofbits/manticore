@@ -1408,21 +1408,29 @@ class Executor(object):  # TODO - should be Eventful
     def f64_convert_s_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, I32, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(c1)))
 
     def f64_convert_u_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, I32, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(I32.to_unsigned(c1))))
 
     def f64_convert_s_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, I64, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(c1)))
 
     def f64_convert_u_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, I64, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(I64.to_unsigned(c1))))
 
     def f64_promote_f32(self, store: "Store", stack: "Stack"):
@@ -1433,12 +1441,16 @@ class Executor(object):  # TODO - should be Eventful
     def f32_reinterpret_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, I32, "Concretizing int for float conversion", c1)
         c1 = struct.unpack("f", struct.pack("i", c1))[0]
         stack.push(F32.cast(c1))
 
     def f64_reinterpret_i64(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, I64, "Concretizing int for float conversion", c1)
         c1 = struct.unpack("d", struct.pack("q", c1))[0]
         stack.push(F64.cast(c1))
 
