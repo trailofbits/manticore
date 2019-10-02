@@ -22,6 +22,10 @@ def assertEqualNan(testcase, a_list, b):
         for a in state_a:
             assert len(a) <= 1, "Found multiple possible values!"
             for a_item, b_item in zip(a, b):
+                if isinstance(b_item, F32) and isinstance(a_item, int):
+                    a_item = F32.cast(a_item)
+                if isinstance(b_item, F64) and isinstance(a_item, int):
+                    a_item = F64.cast(a_item)
                 if math.isnan(b_item):
                     testcase.assertTrue(math.isnan(a_item))
                 else:
