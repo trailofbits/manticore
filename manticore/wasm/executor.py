@@ -1436,6 +1436,8 @@ class Executor(object):  # TODO - should be Eventful
     def f64_promote_f32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
+        if issymbolic(c1):
+            raise ConcretizeStack(-1, F32, "Concretizing F32 for F64 promotion", c1)
         stack.push(F64.cast(c1))
 
     def f32_reinterpret_i32(self, store: "Store", stack: "Stack"):
