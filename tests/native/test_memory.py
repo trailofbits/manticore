@@ -273,6 +273,28 @@ class MemoryTest(unittest.TestCase):
         mem[sym] = "\x40"
         mem[sym] = val
 
+    def test_max_exec_size(self):
+        mem = Memory32()
+        # start with no maps
+        self.assertEqual(len(mem.mappings()), 0)
+
+        # alloc/map a byte
+        notExecMap = mem.mmap(0x1000, 0x1000, "rw")
+        isExecMap = mem.mmap(0x2000, 0x1000, "x")
+        anotherExecMap = mem.mmap(0x3000, 0x1000, "rwx")
+        # Okay 2 maps
+        self.assertEqual(len(mem.mappings()), 3)
+
+        # 0 size when not executable at all
+        self.assertEqual(mem.max_exec_size(notExecMap - 1, 16), 0)
+        self.assertEqual(mem.max_exec_size(notExecMap, 16), 0)
+        # maximum size when executable
+        self.assertEqual(mem.max_exec_size(isExecMap, 16), 16)
+        # maximum size when executable across maps
+        self.assertEqual(mem.max_exec_size(isExecMap + 0x1000 - 12, 16), 16)
+        # restricted size when executable until boundary
+        self.assertEqual(mem.max_exec_size(anotherExecMap + 0x1000 - 12, 16), 12)
+
     def test_access(self):
         mem = Memory32()
 
