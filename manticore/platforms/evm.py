@@ -80,7 +80,7 @@ consts.add(
 )
 consts.add(
     "calldata_max_size",
-    default=64,
+    default=-1,
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 
@@ -1223,7 +1223,7 @@ class EVM(Eventful):
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
         # if self._checkpoint_data is None:
-        #    print(self)
+        #   print(self)
         # else:
         #    print ("back from a fork")
         # import pdb; pdb.set_trace()
