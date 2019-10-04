@@ -24,6 +24,14 @@ solver = Z3Solver.instance()
 
 
 class Executor(object):  # TODO - should be Eventful
+    """
+    Contains execution semantics for all WASM instructions that don't involve control flow (and thus only need access
+    to the store and the stack).
+
+    In lieu of annotating every single instruction with the relevant link to the docs, we direct you here:
+    https://www.w3.org/TR/wasm-core-1/#a7-index-of-instructions
+    """
+
     def __init__(self, constraints, *args, **kwargs):
 
         self._mapping = {
@@ -200,9 +208,19 @@ class Executor(object):  # TODO - should be Eventful
             0xBE: self.f32_reinterpret_i32,
             0xBF: self.f64_reinterpret_i64,
         }
-        self.constraints = constraints
+        self.constraints = (
+            constraints
+        )  #: Constraint set to use for checking overflows and boundary conditions
 
     def dispatch(self, inst: "Instruction", store: "Store", stack: "Stack"):
+        """
+        Selects the correct semantics for the given instruction, and executes them
+
+        :param inst: the Instruction to execute
+        :param store: the current Store
+        :param stack: the current Stack
+        :return: the result of the semantic function, which is (probably) always None
+        """
         opcode = inst.opcode
         assert opcode in self._mapping
         func = self._mapping[opcode]
@@ -215,7 +233,7 @@ class Executor(object):  # TODO - should be Eventful
             raise Trap("Zero division")
 
     def unreachable(self, store: "Store", stack: "Stack"):
-        raise Trap()
+        raise Trap("Unreachable")
 
     def nop(self, store: "Store", stack: "Stack"):
         pass
@@ -288,7 +306,7 @@ class Executor(object):  # TODO - should be Eventful
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if (ea + 4) not in range(len(mem.data) + 1):
-            raise Trap()
+            raise Trap("Memory address out of range")
         c = Operators.CONCAT(32, *map(Operators.ORD, reversed(mem.data[ea : ea + 4])))
         stack.push(I32.cast(c))
 
@@ -306,7 +324,7 @@ class Executor(object):  # TODO - should be Eventful
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if (ea + 8) not in range(len(mem.data) + 1):
-            raise Trap()
+            raise Trap("Memory address out of range")
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
         stack.push(I64.cast(c))
 
@@ -327,9 +345,9 @@ class Executor(object):  # TODO - should be Eventful
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if ea not in range(len(mem.data)):
-            raise Trap()
+            raise Trap("Memory address out of range")
         if ea + (size // 8) not in range(len(mem.data) + 1):
-            raise Trap()
+            raise Trap("Memory address out of range")
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         width = 32 if ty is I32 else 64
         if signed:
@@ -385,9 +403,9 @@ class Executor(object):  # TODO - should be Eventful
         ea = i + imm.offset
         N = n if n else {I32: 32, I64: 64}[ty]
         if ea not in range(len(mem.data)):
-            raise Trap()
+            raise Trap("Memory address out of range")
         if (ea + (N // 8)) not in range(len(mem.data) + 1):
-            raise Trap()
+            raise Trap("Memory address out of range")
         if n:
             b = [
                 Operators.CHR(Operators.EXTRACT(c % 2 ** N, offset, 8)) for offset in range(0, N, 8)
@@ -700,7 +718,6 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast(res))
 
     def i32_add(self, store: "Store", stack: "Stack"):
-        # The x86 module has a complicated way of doing addition. TODO - is that necessary for WASM?
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -719,7 +736,6 @@ class Executor(object):  # TODO - should be Eventful
         stack.push(I32.cast((c2 * c1) % 2 ** 32))
 
     def i32_div_s(self, store: "Store", stack: "Stack"):
-        # TODO  - handle truncation and 0-divisors for div_s through rem_u
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -727,13 +743,13 @@ class Executor(object):  # TODO - should be Eventful
         if solver.must_be_true(
             self.constraints, can_div_0
         ):  # TODO - should fork on possibilities here
-            raise Trap()
+            raise Trap("Zero division")
         res = Operators.SDIV(c1, c2)
         can_overflow = res == 2 ** 31
         if solver.must_be_true(
             self.constraints, can_overflow
         ):  # TODO - should fork on possibilities here:
-            raise Trap()
+            raise Trap("Overflow in signed division")
         stack.push(I32.cast(res))
 
     def i32_div_u(self, store: "Store", stack: "Stack"):
@@ -744,7 +760,7 @@ class Executor(object):  # TODO - should be Eventful
         if solver.must_be_true(
             self.constraints, can_div_0
         ):  # TODO - should fork on possibilities here:
-            raise Trap()
+            raise Trap("Zero division")
         if not issymbolic(c2):
             c2 = I32.to_unsigned(c2)
         if not issymbolic(c1):
@@ -756,7 +772,7 @@ class Executor(object):  # TODO - should be Eventful
         c2 = stack.pop()
         c1 = stack.pop()
         if solver.must_be_true(self.constraints, c2 == 0):
-            raise Trap()
+            raise Trap("Zero division")
         stack.push(I32.cast(Operators.SREM(c1, c2)))
 
     def i32_rem_u(self, store: "Store", stack: "Stack"):
@@ -768,7 +784,7 @@ class Executor(object):  # TODO - should be Eventful
         if not issymbolic(c1):
             c1 = I32.to_unsigned(c1)
         if solver.must_be_true(self.constraints, c2 == 0):
-            raise Trap()
+            raise Trap("Zero division")
         stack.push(I32.cast(Operators.UREM(c1, c2)))
 
     def i32_and(self, store: "Store", stack: "Stack"):
@@ -890,7 +906,7 @@ class Executor(object):  # TODO - should be Eventful
         if solver.must_be_true(
             self.constraints, can_div_0
         ):  # TODO - should fork on possibilities here
-            raise Trap()
+            raise Trap("Zero Division")
         if issymbolic(c1) or issymbolic(c2):
             res = Operators.SDIV(c1, c2)
         else:
@@ -899,7 +915,7 @@ class Executor(object):  # TODO - should be Eventful
         if solver.must_be_true(
             self.constraints, can_overflow
         ):  # TODO - should fork on possibilities here:
-            raise Trap()
+            raise Trap("Overflow in signed division")
         stack.push(I64.cast(res))
 
     def i64_div_u(self, store: "Store", stack: "Stack"):
@@ -910,7 +926,7 @@ class Executor(object):  # TODO - should be Eventful
         if solver.must_be_true(
             self.constraints, can_div_0
         ):  # TODO - should fork on possibilities here:
-            raise Trap()
+            raise Trap("Zero Division")
         if not issymbolic(c2):
             c2 = I64.to_unsigned(c2)
         if not issymbolic(c1):
@@ -922,7 +938,7 @@ class Executor(object):  # TODO - should be Eventful
         c2 = stack.pop()
         c1 = stack.pop()
         if solver.must_be_true(self.constraints, c2 == 0):
-            raise Trap()
+            raise Trap("Zero Division")
         if issymbolic(c1) or issymbolic(c2):
             res = Operators.SREM(c1, c2)
         else:
@@ -938,7 +954,7 @@ class Executor(object):  # TODO - should be Eventful
         if not issymbolic(c1):
             c1 = I64.to_unsigned(c1)
         if solver.must_be_true(self.constraints, c2 == 0):
-            raise Trap()
+            raise Trap("Zero Division")
         stack.push(I64.cast(Operators.UREM(c1, c2)))
 
     def i64_and(self, store: "Store", stack: "Stack"):
@@ -1013,11 +1029,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F32, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I32")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I32")
         if c1 >= 2 ** 31 or c1 <= -(2 ** 31) - 1:
-            raise Trap()
+            raise Trap("Out of range for I32")
         stack.push(I32.cast(c1))
 
     def i32_trunc_u_f32(self, store: "Store", stack: "Stack"):
@@ -1026,11 +1042,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F32, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I32")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I32")
         if c1 >= 2 ** 32 or c1 <= -1:
-            raise Trap()
+            raise Trap("Out of range for I32")
         stack.push(I32.cast(c1))
 
     def i32_trunc_s_f64(self, store: "Store", stack: "Stack"):
@@ -1039,11 +1055,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F64, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I32")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I32")
         if c1 >= 2 ** 31 or c1 <= -(2 ** 31) - 1:
-            raise Trap()
+            raise Trap("Out of range for I32")
         stack.push(I32.cast(c1))
 
     def i32_trunc_u_f64(self, store: "Store", stack: "Stack"):
@@ -1052,11 +1068,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F64, "Concretizing for float->int conversion", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I32")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I32")
         if c1 >= 2 ** 32 or c1 <= -1:
-            raise Trap()
+            raise Trap("Out of range for I32")
         stack.push(I32.cast(c1))
 
     def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
@@ -1081,11 +1097,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F32, "Concretizing float", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I64")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I64")
         if c1 >= 2 ** 63 or c1 <= -(2 ** 63) - 1:
-            raise Trap()
+            raise Trap("Out of range for I64")
         stack.push(I64.cast(c1))
 
     def i64_trunc_u_f32(self, store: "Store", stack: "Stack"):
@@ -1094,11 +1110,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F32, "Concretizing float", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I64")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I64")
         if c1 >= 2 ** 64 or c1 <= -1:
-            raise Trap()
+            raise Trap("Out of range for I64")
         stack.push(I64.cast(c1))
 
     def i64_trunc_s_f64(self, store: "Store", stack: "Stack"):
@@ -1107,11 +1123,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F64, "Concretizing float", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I64")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I64")
         if c1 >= 2 ** 63 or c1 <= -(2 ** 63) - 1:
-            raise Trap()
+            raise Trap("Out of range for I64")
         stack.push(I64.cast(c1))
 
     def i64_trunc_u_f64(self, store: "Store", stack: "Stack"):
@@ -1120,11 +1136,11 @@ class Executor(object):  # TODO - should be Eventful
         if issymbolic(c1):
             raise ConcretizeStack(-1, F64, "Concretizing float", c1)
         if math.isnan(c1):
-            raise Trap()
+            raise Trap("Can't convert NaN to I64")
         if math.isinf(c1):
-            raise Trap()
+            raise Trap("Can't convert infinity to I64")
         if c1 >= 2 ** 64 or c1 <= -1:
-            raise Trap()
+            raise Trap("Out of range for I64")
         stack.push(I64.cast(c1))
 
     def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
@@ -1161,9 +1177,9 @@ class Executor(object):  # TODO - should be Eventful
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         if ea not in range(len(mem.data)):
-            raise Trap()
+            raise Trap("Memory address out of range")
         if (ea + (size // 8)) not in range(len(mem.data) + 1):
-            raise Trap()
+            raise Trap("Memory address out of range")
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         ret = ty.cast(c)
         stack.push(ret)
@@ -1188,9 +1204,9 @@ class Executor(object):  # TODO - should be Eventful
         else:
             size = 64
         if ea not in range(len(mem.data)):
-            raise Trap()
+            raise Trap("Memory address out of range")
         if (ea + (size // 8)) not in range(len(mem.data) + 1):
-            raise Trap()
+            raise Trap("Memory address out of range")
         if not issymbolic(c):
             c = struct.unpack(
                 "i" if size == 32 else "q", struct.pack("f" if size == 32 else "d", c)

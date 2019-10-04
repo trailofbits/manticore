@@ -78,13 +78,13 @@ class WASMWorld(Platform):
         Prepares the underlying ModuleInstance for execution. Generates stub imports for globals and memories.
         Throws NotImplementedError if the module attempts to import a table.
 
-        :param import_dict: Dict mapping strings to functions. Functions should accept the current ConstraintSet as
-        the first argument.
+        :param import_dict: Dict mapping strings to functions. Functions should accept the current ConstraintSet as the first argument.
         :param exec_start: Whether or not to automatically execute the `start` function, if it is set.
         :return: None
         """
         imports: typing.List[ExternVal] = []
         for i in self.module.imports:
+            # Attempt to find the imported function in `import_dict`. If it's not there, use the stub function.
             if isinstance(i.desc, TypeIdx):
                 func_type = self.module.types[i.desc]
                 self.store.funcs.append(
@@ -94,8 +94,10 @@ class WASMWorld(Platform):
                     )
                 )
                 imports.append(FuncAddr(len(self.store.funcs) - 1))
+            # TODO - handle the imported table
             elif isinstance(i.desc, TableType):
                 raise NotImplementedError("Currently unable to handle imported TableTypes")
+            # Create an empty memory of the correct size and provide it as an import
             elif isinstance(i.desc, MemoryType):
                 self.store.mems.append(
                     MemInst(
@@ -106,6 +108,7 @@ class WASMWorld(Platform):
                     )
                 )
                 imports.append(MemAddr(len(self.store.mems) - 1))
+            # Create a global and set its value to 0.
             elif isinstance(i.desc, GlobalType):
                 self.store.globals.append(
                     GlobalInst(i.desc.value(0), i.desc.mut)
@@ -134,21 +137,19 @@ class WASMWorld(Platform):
         :param funcname: The name of the function to test
         :return: The top n items from the stack where n is the expected number of return values from the function
         """
+        # Grab the appropriate number of return values for the function being invoked
         rets = 0
         for export in self.instance.exports:
             if export.name == funcname and isinstance(export.value, FuncAddr):
                 rets = len(self.store.funcs[export.value].type.result_types)
 
+        # Call exec_instruction until it returns false or throws an error
         try:
             while self.instance.exec_instruction(self.store, self.stack):
                 pass
-            if rets == 0:
-                return []
-            if rets == 1:
-                return [self.stack.pop()]
-            else:
-                return [self.stack.pop() for _i in range(rets)]
-        except (Trap, NotImplementedError) as e:
+            # Return the top `rets` values from the stack
+            return [self.stack.pop() for _i in range(rets)]
+        except (Trap, NotImplementedError) as e:  # Reset the internals if we have any problems
             self.instance.reset_internal()
             self.stack = Stack()
             raise e

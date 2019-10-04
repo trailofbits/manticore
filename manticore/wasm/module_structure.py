@@ -356,7 +356,7 @@ class Module:
             elif sec_id == SEC_MEMORY:  # https://www.w3.org/TR/wasm-core-1/#memory-section%E2%91%A0
                 for mem in section_data.payload.entries:
                     m.mems.append(Memory(LimitType(mem.limits.initial, mem.limits.maximum)))
-            elif sec_id == SEC_GLOBAL:
+            elif sec_id == SEC_GLOBAL:  # https://www.w3.org/TR/wasm-core-1/#global-section%E2%91%A0
                 for g in section_data.payload.globals:
                     m.globals.append(
                         Global(

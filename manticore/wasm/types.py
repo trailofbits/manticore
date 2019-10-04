@@ -14,7 +14,7 @@ Byte: type = type("Byte", (int,), {})
 
 def debug(imm):
     """
-    Attempts to pull meaningful data out of an immediate, which ias a dynamic GeneratedStructure type
+    Attempts to pull meaningful data out of an immediate, which has a dynamic GeneratedStructure type
 
     :param imm: the instruction immediate
     :return: a printable representation of the immediate, or the immediate itself
