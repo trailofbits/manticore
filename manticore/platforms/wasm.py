@@ -31,15 +31,26 @@ def stub(arity, _constraints, *args):
     return [0 for _ in range(arity)]
 
 
-class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
-    def __init__(self, filename, **kwargs):
-        super().__init__(filename, **kwargs)
-        self.constraints = kwargs.get("constraints", ConstraintSet())
+class WASMWorld(Platform):
+    """Manages global environment for a WASM state. Analagous to EVMWorld."""
 
+    def __init__(self, filename, **kwargs):
+        """
+        :param filename: The WASM module to execute
+        :param kwargs: Accepts "constraints" to pass in an initial ConstraintSet
+        """
+        super().__init__(filename, **kwargs)
+        #: Initial set of constraints
+        self.constraints = kwargs.get("constraints", ConstraintSet())
+        #: Read-only reference to the WASM module, parsed by the wasm (Python) module
         self.module: Module = Module.load(filename)
+        #: Backing store for functions, memories, tables, and globals
         self.store = Store()
+        #: Does the bulk of the work of executing instructions
         self.instance = ModuleInstance(self.constraints)
+        #: Stores numeric values, branch labels, and execution frames
         self.stack = Stack()
+        #: Prevents users from calling run without instantiating the module
         self.instantiated = False
 
     def __getstate__(self):
@@ -62,6 +73,14 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         super().__setstate__(state)
 
     def instantiate(self, import_dict: typing.Dict[str, types.FunctionType], exec_start=False):
+        """
+        Prepares the underlying ModuleInstance for execution. Generates stub imports for globals and memories.
+        Throws NotImplementedError if the module attempts to import a table.
+        :param import_dict: Dict mapping strings to functions. Functions should accept the current ConstraintSet as
+                            the first argument.
+        :param exec_start: Whether or not to automatically execute the `start` function, if it is set.
+        :return: None
+        """
         imports: typing.List[ExternVal] = []
         for i in self.module.imports:
             if isinstance(i.desc, TypeIdx):
@@ -95,10 +114,22 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
         self.instantiated = True
 
     def invoke(self, name="main", argv=[]):
+        """
+        Sets up the WASMWorld to run the function specified by `name` when `ManticoreWASM.run` is called
+        :param name: Name of the function to invoke
+        :param argv: List of arguments to pass to the function. Should typically be I32, I64, F32, or F64
+        :return: None
+        """
         self.instance.invoke_by_name(name, self.stack, self.store, list(argv))
 
     def exec_for_test(self, funcname):
-
+        """
+        Helper method that simulates the evaluation loop without creating workers or states, forking, or concretizing
+        symbolic values.
+        Only used for concrete unit testing.
+        :param funcname: The name of the function to test
+        :return: The top n items from the stack where n is the expected number of return values from the function
+        """
         rets = 0
         for export in self.instance.exports:
             if export.name == funcname and isinstance(export.value, FuncAddr):
@@ -120,6 +151,8 @@ class WASMWorld(Platform):  # TODO: Should this just inherit Eventful instead?
 
     def execute(self):
         """
+        Tells the underlying ModuleInstance to execute a single WASM instruction. Raises TerminateState if there are
+        no more instructions to execute, or if the instruction raises a Trap.
         """
         if not self.instantiated:
             raise RuntimeError("Trying to execute before instantiation!")
