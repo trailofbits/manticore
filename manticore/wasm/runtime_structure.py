@@ -289,7 +289,7 @@ class ModuleInstance:
         assert isinstance(last_frame, Activation)
         assert last_frame.frame == f
 
-        # #15  TODO run start function
+        # #15 run start function
         if module.start is not None:
             assert module.start in range(len(self.funcaddrs))
             self.invoke(stack, self.funcaddrs[module.start], store, [])
@@ -306,6 +306,7 @@ class ModuleInstance:
     ):
         """
         https://www.w3.org/TR/wasm-core-1/#allocation%E2%91%A0
+        https://www.w3.org/TR/wasm-core-1/#modules%E2%91%A6
         :param store:
         :param module:
         :param extern_vals:
@@ -327,12 +328,12 @@ class ModuleInstance:
         for func_i in module.funcs:
             self.funcaddrs.append(func_i.allocate(store, self))
         for table_i in module.tables:
-            self.tableaddrs.append(table_i.allocate(store, table_i.type))
+            self.tableaddrs.append(table_i.allocate(store))
         for memory_i in module.mems:
-            self.memaddrs.append(memory_i.allocate(store, memory_i.type))
+            self.memaddrs.append(memory_i.allocate(store))
         for idx, global_i in enumerate(module.globals):
             assert isinstance(values[idx], global_i.type.value)
-            self.globaladdrs.append(global_i.allocate(store, global_i.type, values[idx]))
+            self.globaladdrs.append(global_i.allocate(store, values[idx]))
         for idx, export_i in enumerate(module.exports):
             if isinstance(export_i.desc, FuncIdx):
                 val = self.funcaddrs[export_i.desc]
@@ -350,9 +351,7 @@ class ModuleInstance:
                 return self.invoke(stack, export.value, store, argv)
         raise RuntimeError("Can't find a function called", name)
 
-    def invoke(
-        self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]
-    ) -> typing.List[Value]:
+    def invoke(self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]):
         assert funcaddr in range(len(store.funcs))
         funcinst = store.funcs[funcaddr]
         ty = funcinst.type
@@ -841,4 +840,11 @@ class HostFunc(ProtoFuncInst):
     def allocate(
         self, store: Store, functype: FunctionType, host_func: types.FunctionType
     ) -> FuncAddr:
+        """
+        https://www.w3.org/TR/wasm-core-1/#host-functions%E2%91%A2
+        :param store:
+        :param functype:
+        :param host_func:
+        :return:
+        """
         pass

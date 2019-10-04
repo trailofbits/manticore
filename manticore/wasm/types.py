@@ -129,6 +129,7 @@ class GlobalType:
     value: ValType
 
 
+# https://www.w3.org/TR/wasm-core-1/#indices%E2%91%A0
 TypeIdx: type = type("TypeIdx", (U32,), {})
 FuncIdx: type = type("FuncIdx", (U32,), {})
 TableIdx: type = type("TableIdx", (U32,), {})

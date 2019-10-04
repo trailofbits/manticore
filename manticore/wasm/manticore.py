@@ -102,7 +102,9 @@ class ManticoreWASM(ManticoreBase):
                     elif ret.size == 64:
                         inner.append(
                             list(
-                                I64(a)  # TODO - that'll probably require us to subclass bitvecs into IxxBV and FxxBV
+                                I64(
+                                    a
+                                )  # TODO - that'll probably require us to subclass bitvecs into IxxBV and FxxBV
                                 for a in Z3Solver.instance().get_all_values(state.constraints, ret)
                             )
                         )
