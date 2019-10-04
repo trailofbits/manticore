@@ -210,6 +210,7 @@ class Module:
     """
     Internal representation of a WASM Module
     """
+
     __slots__ = [
         "types",
         "funcs",

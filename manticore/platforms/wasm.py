@@ -77,7 +77,7 @@ class WASMWorld(Platform):
         Prepares the underlying ModuleInstance for execution. Generates stub imports for globals and memories.
         Throws NotImplementedError if the module attempts to import a table.
         :param import_dict: Dict mapping strings to functions. Functions should accept the current ConstraintSet as
-                            the first argument.
+        the first argument.
         :param exec_start: Whether or not to automatically execute the `start` function, if it is set.
         :return: None
         """
