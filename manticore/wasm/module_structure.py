@@ -207,6 +207,9 @@ def strip_quotes(rough_name: str) -> str:
 
 
 class Module:
+    """
+    Internal representation of a WASM Module
+    """
     __slots__ = [
         "types",
         "funcs",
