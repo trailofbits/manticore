@@ -34,6 +34,7 @@ class ManticoreWASM(ManticoreBase):
     def run(self, timeout=None):
         """
         Begins the Manticore run
+
         :param timeout: number of seconds after which to kill execution
         """
         with self.locked_context() as context:
@@ -77,6 +78,7 @@ class ManticoreWASM(ManticoreBase):
         """
         Iterates over the terminated states and collects the top n values from the stack.
         Generally only used for testing.
+
         :param n: Number of values to collect
         :return: A list of list of lists.
             > One list for each state
@@ -116,6 +118,7 @@ class ManticoreWASM(ManticoreBase):
     def _terminate_state_callback(self, state, e):
         """
         Adds state to the wasm.saved_states list
+
         :param state: the terminated state
         :param e: any exception raised
         """
@@ -142,6 +145,7 @@ class ManticoreWASM(ManticoreBase):
 def _make_initial_state(binary_path, env={}, **kwargs):
     """
     Wraps _make_wasm_bin
+
     :param binary_path:
     :param env:
     :param kwargs:
@@ -154,6 +158,7 @@ def _make_initial_state(binary_path, env={}, **kwargs):
 def _make_wasm_bin(program, env={}, **kwargs) -> State:
     """
     Returns an initial state for a binary WASM module
+    
     :param program: filenamae of the wasm module
     :param env: Import dict
     :return: initial state
