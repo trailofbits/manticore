@@ -158,7 +158,7 @@ def _make_initial_state(binary_path, env={}, **kwargs):
 def _make_wasm_bin(program, env={}, **kwargs) -> State:
     """
     Returns an initial state for a binary WASM module
-    
+
     :param program: filenamae of the wasm module
     :param env: Import dict
     :return: initial state

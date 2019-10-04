@@ -13,6 +13,12 @@ Byte: type = type("Byte", (int,), {})
 
 
 def debug(imm):
+    """
+    Attempts to pull meaningful data out of an immediate, which ias a dynamic GeneratedStructure type
+
+    :param imm: the instruction immediate
+    :return: a printable representation of the immediate, or the immediate itself
+    """
     if hasattr(imm, "value"):
         return imm.value
     if hasattr(imm, "function_index"):
@@ -27,45 +33,83 @@ def debug(imm):
 
 
 def _reinterpret(ty1: type, ty2: type, val):
+    """
+    Attempts to convert a value from one ctypes type to another
+
+    :param ty1: The type of the value
+    :param ty2: The desired type of the value
+    :param val: The value itself
+    :return: The converted value
+    """
     ptr = pointer(ty1(val))
     return cast(ptr, POINTER(ty2)).contents.value
 
 
 class I32(int):
+    """
+    Subclass of int that's restricted to 32-bit values
+    """
+
     def __new__(cls, val):
-        val = struct.unpack("i", c_int32(int(val) & 0xFFFFFFFF))[
-            0
-        ]  # TODO - this is probably unsound overall
+        val = struct.unpack("i", c_int32(int(val) & 0xFFFFFFFF))[0]
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
     def cast(cls, other):
+        """
+        :param other: Value to convert to I32
+        :return: If other is symbolic, other. Otherwise, I32(other)
+        """
         if issymbolic(other):
             return other
-        return I32(other)
+        return cls(other)
 
-    @classmethod
-    def to_unsigned(cls, val):
+    @staticmethod
+    def to_unsigned(val):
+        """
+        Reinterprets the argument from a signed integer to an unsigned 32-bit integer
+
+        :param val: Signed integer to reinterpret
+        :return: The unsigned equivalent
+        """
         return _reinterpret(c_int32, c_uint32, val)
 
 
 class I64(int):
+    """
+    Subclass of int that's restricted to 64-bit values
+    """
+
     def __new__(cls, val):
-        val = struct.unpack("q", c_int64(int(val)))[0]  # TODO - this is probably unsound overall
+        val = struct.unpack("q", c_int64(int(val)))[0]
         return super(I64, cls).__new__(cls, val)
 
     @classmethod
     def cast(cls, other):
+        """
+        :param other: Value to convert to I64
+        :return: If other is symbolic, other. Otherwise, I64(other)
+        """
         if issymbolic(other):
             return other
-        return I64(other)
+        return cls(other)
 
-    @classmethod
-    def to_unsigned(cls, val):
+    @staticmethod
+    def to_unsigned(val):
+        """
+        Reinterprets the argument from a signed integer to an unsigned 64-bit integer
+
+        :param val: Signed integer to reinterpret
+        :return: The unsigned equivalent
+        """
         return _reinterpret(c_int64, c_uint64, val)
 
 
 class F32(float):
+    """
+    Subclass of float that's restricted to 32-bit values
+    """
+
     def __new__(cls, val):
         if isinstance(val, int):
             val = _reinterpret(c_int32, c_float, val & 0xFFFFFFFF)
@@ -76,12 +120,20 @@ class F32(float):
 
     @classmethod
     def cast(cls, other):
+        """
+        :param other: Value to convert to F32
+        :return: If other is symbolic, other. Otherwise, F32(other)
+        """
         if issymbolic(other):
             return other
-        return F32(other)
+        return cls(other)
 
 
 class F64(float):
+    """
+    Subclass of float that's restricted to 64-bit values
+    """
+
     def __new__(cls, val):
         if isinstance(val, int):
             val = _reinterpret(c_int64, c_double, val)
@@ -92,14 +144,21 @@ class F64(float):
 
     @classmethod
     def cast(cls, other):
+        """
+        :param other: Value to convert to F64
+        :return: If other is symbolic, other. Otherwise, F64(other)
+        """
         if issymbolic(other):
             return other
-        return F64(other)
+        return cls(other)
 
 
-ValType = typing.Union[type(I32), type(I64), type(F32), type(F64), type(BitVec)]
+ValType = typing.Union[
+    type(I32), type(I64), type(F32), type(F64), type(BitVec)
+]  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
 Value = typing.Union[I32, I64, F32, F64, BitVec]
 Name: type = type("Name", (str,), {})
+#: https://www.w3.org/TR/wasm-core-1/#syntax-resulttype
 ResultType = typing.Optional[
     ValType
 ]  # This _should_ be a sequence, but WASM only allows single return values
@@ -107,24 +166,36 @@ ResultType = typing.Optional[
 
 @dataclass
 class FunctionType:
+    """
+    https://www.w3.org/TR/wasm-core-1/#syntax-functype
+    """
+
     param_types: typing.List[ValType]
     result_types: typing.List[ValType]
 
 
 @dataclass
 class LimitType:
+    """
+    https://www.w3.org/TR/wasm-core-1/#syntax-limits
+    """
+
     min: U32
     max: typing.Optional[U32]
 
 
 @dataclass
 class TableType:
+    """https://www.w3.org/TR/wasm-core-1/#syntax-tabletype"""
+
     limits: LimitType
     elemtype: type  # Currently, the only element type is `funcref`
 
 
 @dataclass
 class GlobalType:
+    """https://www.w3.org/TR/wasm-core-1/#syntax-globaltype"""
+
     mut: bool
     value: ValType
 
@@ -221,14 +292,16 @@ ImmType: type = typing.Union[
     I32ConstImm,
     F32ConstImm,
     F64ConstImm,
-]
+]  #: Types of all immediates
 
 
 class Instruction:
+    """Internal instruction class that's pickle-friendly and works with the type system """
+
     __slots__ = ["opcode", "mnemonic", "imm"]
-    opcode: int
-    mnemonic: str
-    imm: ImmType
+    opcode: int  #: Opcode, used for dispatching instructions
+    mnemonic: str  #: Used for debugging
+    imm: ImmType  #: A class with the immediate data for this instruction
 
     def __init__(self, inst: wasm.decode.Instruction, imm=None):
         self.opcode = inst.op.id
@@ -239,12 +312,23 @@ class Instruction:
         return f"<Instruction: {self.mnemonic} ({debug(self.imm)})>"
 
 
-MemoryType = LimitType
-ExternType = typing.Union[FunctionType, TableType, MemoryType, GlobalType]
+MemoryType = LimitType  #: https://www.w3.org/TR/wasm-core-1/#syntax-memtype
+ExternType = typing.Union[
+    FunctionType, TableType, MemoryType, GlobalType
+]  #: https://www.w3.org/TR/wasm-core-1/#external-types%E2%91%A0
 WASMExpression = typing.List[Instruction]
 
 
 def convert_instructions(inst_seq) -> WASMExpression:
+    """
+    Converts instructions output from the parser into full-fledged Python objects that will work with Manticore.
+    This is necessary because the pywasm module uses lots of reflection to generate structures on the fly, which
+    doesn't play nicely with Pickle or the type system. That's why we need the `debug` method above to print out
+    immediates, and also why we've created a separate class for every different type of immediate.
+
+    :param inst_seq: Sequence of raw instructions to process
+    :return: The properly-typed instruction sequence in a format Manticore can use
+    """
     out = []
     if not isinstance(inst_seq, list):
         inst_seq = list(wasm.decode_bytecode(inst_seq))
@@ -287,11 +371,23 @@ def convert_instructions(inst_seq) -> WASMExpression:
 
 
 class Trap(Exception):
+    """
+    Subclass of Exception, used for WASM errors
+    """
+
     pass
 
 
 class ConcretizeStack(Concretize):
-    def __init__(self, depth, ty, message, expression, policy=None, **kwargs):
+    """Tells Manticore to concretize the value `depth` values from the end of the stack. """
+
+    def __init__(self, depth: int, ty: type, message: str, expression, policy=None, **kwargs):
+        """
+        :param depth: Index in the stack (should typically be negative)
+        :param ty: The type to cast the
+        :param message: Debug message describing the reason for concretization
+        :param expression: The expression to concretize, either a Value or a BitVec
+        """
         if policy is None:
             policy = "ALL"
         if policy not in self._ValidPolicies:
