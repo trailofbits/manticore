@@ -57,6 +57,7 @@ ImportDesc: type = typing.Union[TypeIdx, TableType, MemoryType, GlobalType]
 class Function:
     """
     A WASM Function
+
     https://www.w3.org/TR/wasm-core-1/#functions%E2%91%A0
     """
 
@@ -80,6 +81,7 @@ class Function:
 class Table:
     """
     Vector of opaque values of type self.type
+
     https://www.w3.org/TR/wasm-core-1/#tables%E2%91%A0
     """
 
@@ -102,6 +104,7 @@ class Table:
 class Memory:
     """
     Big chunk o' raw bytes
+
     https://www.w3.org/TR/wasm-core-1/#memories%E2%91%A0
     """
 
@@ -132,6 +135,7 @@ class Memory:
 class Global:
     """
     A global variable of a given type
+
     https://www.w3.org/TR/wasm-core-1/#globals%E2%91%A0
     """
 
@@ -154,6 +158,7 @@ class Global:
 class Elem:
     """
     List of functions to initialize part of a table
+
     https://www.w3.org/TR/wasm-core-1/#element-segments%E2%91%A0
     """
 
@@ -166,6 +171,7 @@ class Elem:
 class Data:
     """
     Vector of bytes that initializes part of a memory
+
     https://www.w3.org/TR/wasm-core-1/#data-segments%E2%91%A0
     """
 
@@ -178,6 +184,7 @@ class Data:
 class Import:
     """
     Something imported from another module (or the environment) that we need to instantiate a module
+
     https://www.w3.org/TR/wasm-core-1/#imports%E2%91%A0
     """
 
@@ -190,6 +197,7 @@ class Import:
 class Export:
     """
     Something the module exposes to the outside world once it's been instantiated
+
     https://www.w3.org/TR/wasm-core-1/#exports%E2%91%A0
     """
 

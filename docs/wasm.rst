@@ -2,15 +2,15 @@ Web Assembly
 ------------
 
 
-Platforms
-^^^^^^^^^
+ManticoreWASM
+^^^^^^^^^^^^^
 
-.. automodule:: manticore.wasm.ManticoreWASM
+.. automodule:: manticore.wasm.manticore
     :members:
 
 
-Environment
-^^^^^^^^^^^
+WASM World
+^^^^^^^^^^
 
 .. automodule:: manticore.platforms.wasm
     :members:
@@ -23,11 +23,14 @@ Executor
     :members:
 
 
-Structure
-^^^^^^^^^
+Module Structure
+^^^^^^^^^^^^^^^^
 
 .. automodule:: manticore.wasm.module_structure
     :members:
+
+Runtime Structure
+^^^^^^^^^^^^^^^^^
 
 .. automodule:: manticore.wasm.runtime_structure
     :members:
