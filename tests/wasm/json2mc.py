@@ -26,6 +26,7 @@ class Module:
 
 
 def convert_types(to_convert):
+    """ Convert unsigned ints from JSON into WASM Types (I32, F64, etc) """
     out = []
     for item in to_convert:
         out.append(f"{item['type'].upper()}({item.get('value', 0)})")
@@ -36,6 +37,7 @@ env = Environment(loader=FileSystemLoader("."))
 
 
 def escape_null(in_str: str):
+    """Base64-encode function names if they contain nonprintable characters"""
     if in_str.isprintable() and not any((c in in_str) for c in {'"', "'", ";"}):
         return f'"{in_str}"'
     else:

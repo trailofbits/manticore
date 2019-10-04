@@ -11,6 +11,7 @@ args = parser.parse_args()
 data = json.load(args.filename)["commands"]
 args.filename.close()
 
+# Individual unit tests that we skip due to timeouts or problematic statefulness
 skip = {
     "fib_L261",
     "check-memory-zero_L87",
@@ -22,6 +23,7 @@ skip = {
     "odd_L269",
     "fib-i64_L527",
 }
+# Modules with statefeulness for which we disallow reinitialization
 disallow_reinit_modules = {
     "call_0",
     "call_indirect_0",
@@ -46,6 +48,11 @@ class Module:
 
 
 def convert_args(to_convert):
+    """
+    Convert a set of unsigned ints from JSON into an appropriate set of constraints
+    :param to_convert:
+    :return:
+    """
     out = []
     for idx, item in enumerate(to_convert):
         if "32" in item["type"]:
@@ -62,6 +69,7 @@ def convert_args(to_convert):
 
 
 def convert_rets(to_convert):
+    """Convert unsigned int from JSON into concrete values"""
     out = []
     for item in to_convert:
         out.append(f"{item['type'].upper()}({item.get('value', 0)})")
@@ -72,6 +80,7 @@ env = Environment(loader=FileSystemLoader("."))
 
 
 def escape_null(in_str: str):
+    """ Base-64 encode non-printable characters in test names so we can handle that obnoxious names module """
     if in_str.isprintable() and not any((c in in_str) for c in {'"', "'", ";"}):
         return f'"{in_str}"'
     else:
