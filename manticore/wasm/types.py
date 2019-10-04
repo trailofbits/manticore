@@ -156,7 +156,7 @@ class F64(float):
 ValType = typing.Union[
     type(I32), type(I64), type(F32), type(F64), type(BitVec)
 ]  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
-Value = typing.Union[I32, I64, F32, F64, BitVec]
+Value = typing.Union[I32, I64, F32, F64, BitVec]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
 Name: type = type("Name", (str,), {})
 #: https://www.w3.org/TR/wasm-core-1/#syntax-resulttype
 ResultType = typing.Optional[
@@ -170,8 +170,8 @@ class FunctionType:
     https://www.w3.org/TR/wasm-core-1/#syntax-functype
     """
 
-    param_types: typing.List[ValType]
-    result_types: typing.List[ValType]
+    param_types: typing.List[ValType]  #: Sequential types of each of the parameters
+    result_types: typing.List[ValType]  #: Sequential types of each of the return values
 
 
 @dataclass
@@ -188,16 +188,16 @@ class LimitType:
 class TableType:
     """https://www.w3.org/TR/wasm-core-1/#syntax-tabletype"""
 
-    limits: LimitType
-    elemtype: type  # Currently, the only element type is `funcref`
+    limits: LimitType  #: Minimum and maximum size of the table
+    elemtype: type  #: the type ot the element. Currently, the only element type is `funcref`
 
 
 @dataclass
 class GlobalType:
     """https://www.w3.org/TR/wasm-core-1/#syntax-globaltype"""
 
-    mut: bool
-    value: ValType
+    mut: bool  #: Whether or not this global is mutable
+    value: ValType  #: The value of the global
 
 
 # https://www.w3.org/TR/wasm-core-1/#indices%E2%91%A0
