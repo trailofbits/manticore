@@ -77,6 +77,7 @@ class WASMWorld(Platform):
         """
         Prepares the underlying ModuleInstance for execution. Generates stub imports for globals and memories.
         Throws NotImplementedError if the module attempts to import a table.
+
         :param import_dict: Dict mapping strings to functions. Functions should accept the current ConstraintSet as
         the first argument.
         :param exec_start: Whether or not to automatically execute the `start` function, if it is set.
@@ -117,6 +118,7 @@ class WASMWorld(Platform):
     def invoke(self, name="main", argv=[]):
         """
         Sets up the WASMWorld to run the function specified by `name` when `ManticoreWASM.run` is called
+
         :param name: Name of the function to invoke
         :param argv: List of arguments to pass to the function. Should typically be I32, I64, F32, or F64
         :return: None
@@ -128,6 +130,7 @@ class WASMWorld(Platform):
         Helper method that simulates the evaluation loop without creating workers or states, forking, or concretizing
         symbolic values.
         Only used for concrete unit testing.
+
         :param funcname: The name of the function to test
         :return: The top n items from the stack where n is the expected number of return values from the function
         """

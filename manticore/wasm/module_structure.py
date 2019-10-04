@@ -68,6 +68,7 @@ class Function:
     def allocate(self, store: Store, module: ModuleInstance) -> FuncAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#functions%E2%91%A5
+
         :param store: Destination Store that we'll insert this Function into after allocation
         :param module: The module containing the type referenced by self.type
         :return: The address of this within `store`
@@ -90,6 +91,7 @@ class Table:
     def allocate(self, store: Store) -> TableAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#tables%E2%91%A5
+
         :param store: Destination Store that we'll insert this Table into after allocation
         :return: The address of this within `store`
         """
@@ -113,6 +115,7 @@ class Memory:
     def allocate(self, store: Store) -> MemAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#memories%E2%91%A5
+
         :param store: Destination Store that we'll insert this Memory into after allocation
         :return: The address of this within `store`
         """
@@ -145,6 +148,7 @@ class Global:
     def allocate(self, store: Store, val: Value) -> GlobalAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#globals%E2%91%A5
+
         :param store: Destination Store that we'll insert this Global into after allocation
         :param val: The initial value of the new global
         :return: The address of this within `store`
@@ -208,6 +212,7 @@ class Export:
 def strip_quotes(rough_name: str) -> str:
     """
     For some reason, the parser returns the function names with quotes around them
+
     :param rough_name:
     :return:
     """
@@ -281,6 +286,7 @@ class Module:
     def load(cls, filename: str):
         """
         Converts a WASM module in binary format into Python types that Manticore can understand
+
         :param filename: name of the WASM module
         :return: Module
         """
