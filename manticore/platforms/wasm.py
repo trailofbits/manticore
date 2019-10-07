@@ -115,7 +115,7 @@ class WASMWorld(Platform):
                 )  # TODO - let the user specify the value
                 imports.append(GlobalAddr(len(self.store.globals) - 1))
 
-        self.instance.instantiate(self.stack, self.store, self.module, imports, exec_start)
+        self.instance.instantiate(self.store, self.module, imports, exec_start)
         self.instantiated = True
 
     def invoke(self, name="main", argv=[]):

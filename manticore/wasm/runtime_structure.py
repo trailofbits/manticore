@@ -135,7 +135,8 @@ class ExportInst:
 class Store:
     """
     Implementation of the WASM store. Nothing fancy here, just collects lists of functions, tables, memories, and 
-    globals. 
+    globals. Because the store is not atomic, instructions SHOULD NOT make changes to the Store or any of its contents
+    (including memories and global variables) before raising a Concretize exception. 
 
     https://www.w3.org/TR/wasm-core-1/#store%E2%91%A0
     """
@@ -191,15 +192,29 @@ class ModuleInstance:
         "_block_depths",
     ]
 
+    #: Stores the type signatures of all the functions
     types: typing.List[FunctionType]
+    #: Stores the *indices* of functions within the store
     funcaddrs: typing.List[FuncAddr]
+    #: Stores the indices of tables
     tableaddrs: typing.List[TableAddr]
+    #: Stores the indices of memories (at time of writing, WASM only allows one memory)
     memaddrs: typing.List[MemAddr]
+    #: Stores the indices of globals
     globaladdrs: typing.List[GlobalAddr]
+    #: Stores records of everything exported by this module
     exports: typing.List[ExportInst]
+    #: Contains instruction implementations for all non-control-flow instructions
     executor: Executor
+    #: Stores the unpacked sequence of instructions in the order they should be executed
     _instruction_queue: typing.Deque[Instruction]
+    #: Keeps track of the current call depth, both for functions and for code blocks. Each function call is represented
+    # by appending another 0 to the list, and each code block is represented by incrementing the digit at the end of the
+    # list. This is necessary because we unroll the WASM S-Expressions (nested execution trees) into a single
+    # instruction queue, so the meaning of an `end` instruction could be otherwise ambiguous. Loosely put, the sum of
+    # all the digits in this list is the number of `end` instructions we need to see before execution is finished.
     _block_depths: typing.List[int]
+    #: Prevents the user from invoking functions before instantiation
     instantiated: bool
 
     def __init__(self, constraints=None):
@@ -239,23 +254,29 @@ class ModuleInstance:
         self._block_depths = state["_block_depths"]
 
     def reset_internal(self):
+        """
+        Empties the instruction queue and clears the block depths
+        """
         self._instruction_queue.clear()
         self._block_depths.clear()
 
     def instantiate(
         self,
-        stack: Stack,
         store: Store,
         module: "Module",
         extern_vals: typing.List[ExternVal],
         exec_start: bool = False,
     ):
         """
+        Type checks the module, evaluates globals, performs allocation, and puts the element and data sections into
+        their proper places. Optionally calls the start function _outside_ of a symbolic context if exec_start is true.
+
         https://www.w3.org/TR/wasm-core-1/#instantiation%E2%91%A1
-        :param store:
-        :param module:
-        :param extern_vals:
-        :return:
+
+        :param store: The store to place the allocated contents in
+        :param module: The WASM Module to instantiate in this instance
+        :param extern_vals: Imports needed to instantiate the module
+        :param exec_start: whether or not to execute the start section (if present)
         """
         # #1 Assert: module is valid
         assert module  # close enough
@@ -269,7 +290,7 @@ class ModuleInstance:
 
         # #4 TODO
 
-        # #5
+        # #5 - evaluate globals
         stack = Stack()
 
         aux_mod = ModuleInstance()
@@ -283,12 +304,12 @@ class ModuleInstance:
         assert isinstance(last_frame, Activation)
         assert last_frame.frame == aux_frame
 
-        # #6, #7, #8
+        # #6, #7, #8 - Allocate all the things
         self.allocate(store, module, extern_vals, vals)
         f = Frame(locals=[], module=self)
         stack.push(Activation(0, f))
 
-        # #9 & #13
+        # #9 & #13 - emplace element sections into tables
         for elem in module.elem:
             eoval = self.exec_expression(store, stack, elem.offset)
             assert isinstance(eoval, I32)
@@ -305,7 +326,7 @@ class ModuleInstance:
                 funcaddr = self.funcaddrs[FuncIdx]
                 tableinst.elem[eoval + j] = funcaddr
 
-        # #10 & #14
+        # #10 & #14 - emplace data sections into memory
         for data in module.data:
             doval = self.exec_expression(store, stack, data.offset)
             assert isinstance(doval, I32), f"{type(doval)} is not an I32"
@@ -340,13 +361,16 @@ class ModuleInstance:
         values: typing.List[Value],
     ):
         """
+        Inserts imports into the store, then creates and inserts function instances, table instances, memory instances,
+        global instances, and export instances.
+
         https://www.w3.org/TR/wasm-core-1/#allocation%E2%91%A0
         https://www.w3.org/TR/wasm-core-1/#modules%E2%91%A6
-        :param store:
-        :param module:
-        :param extern_vals:
-        :param values:
-        :return:
+
+        :param store: The Store to put all of the allocated subcomponents in
+        :param module: Tne Module containing all the items to allocate
+        :param extern_vals: Imported values
+        :param values: precalculated global values
         """
         self.types = module.types
 
@@ -381,12 +405,32 @@ class ModuleInstance:
             self.exports.append(ExportInst(export_i.name, val))
 
     def invoke_by_name(self, name: str, stack, store, argv):
+        """
+        Iterates over the exports, attempts to find the function specified by `name`. Calls `invoke` with its FuncAddr,
+        passing argv
+
+        :param name: Name of the function to look for
+        :param argv: Arguments to pass to the function. Can be BitVecs or Values
+        """
         for export in self.exports:
             if export.name == name and isinstance(export.value, FuncAddr):
                 return self.invoke(stack, export.value, store, argv)
         raise RuntimeError("Can't find a function called", name)
 
     def invoke(self, stack: "Stack", funcaddr: FuncAddr, store: Store, argv: typing.List[Value]):
+        """
+        Invocation wrapper. Checks the function type, pushes the args to the stack, and calls _invoke_inner.
+        Unclear why the spec separates the two procedures, but I've tried to implement it as close to verbatim
+        as possible.
+
+        Note that this doesn't actually _run_ any code. It just sets up the instruction queue so that when you call
+        `exec_instruction, it'll actually have instructions to execute.
+
+        https://www.w3.org/TR/wasm-core-1/#invocation%E2%91%A1
+
+        :param funcaddr: Address (in Store) of the function to call
+        :param argv: Arguments to pass to the function. Can be BitVecs or Values
+        """
         assert funcaddr in range(len(store.funcs))
         funcinst = store.funcs[funcaddr]
         ty = funcinst.type
@@ -394,6 +438,8 @@ class ModuleInstance:
         # for t, v in zip(ty.param_types, argv):
         #     assert type(v) == type(t)
 
+        # Create dummy frame, which is required by the spec but doesn't serve any obvious purpose. It also never
+        # gets popped.
         dummy_frame = Frame([], ModuleInstance())
         stack.push(dummy_frame)
         for v in argv:
@@ -402,47 +448,86 @@ class ModuleInstance:
         # https://www.w3.org/TR/wasm-core-1/#exec-invoke
         self._invoke_inner(stack, funcaddr, store)
 
+        # In the spec, once the function has returned, you pop the returns from the stack and return them to the
+        # caller. Since Manticore executes functions via the `run` method (ie separately from invocation), we don't
+        # do that here.
+
     def _invoke_inner(self, stack: "Stack", funcaddr: FuncAddr, store: Store):
+        """
+        Invokes the function at address funcaddr. Validates the function type, sets up the Activation with the local
+        variables, and executes the function. If the function is a HostFunc (native code), it executes it blindly and
+        pushes the return values to the stack. If it's a WASM function, it enters the outermost code block.
+
+        https://www.w3.org/TR/wasm-core-1/#exec-invoke
+
+        :param stack: The current stack, to use for execution
+        :param funcaddr: The address of the function to invoke
+        :param store: The current store, to use for execution
+        """
         assert funcaddr in range(len(store.funcs))
         f: ProtoFuncInst = store.funcs[funcaddr]
         ty = f.type
         assert len(ty.result_types) <= 1
         locals = [stack.pop() for _t in ty.param_types][::-1]
-        if isinstance(f, HostFunc):
+        if isinstance(f, HostFunc):  # Call native function
             res = list(f.hostcode(self.executor.constraints, *locals))
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
                 stack.push(t.cast(r))
-        else:
+        else:  # Call WASM function
             for cast in f.code.locals:
                 locals.append(cast(0))
             frame = Frame(locals, f.module)
             stack.push(
                 Activation(
                     len(ty.result_types), frame, expected_block_depth=len(self._block_depths)
-                )
+                )  # When we pop this frame, we expect to be expected_block_depth call frames deep
             )
-            self._block_depths.append(0)
+            self._block_depths.append(0)  # We're entering a new function call context
             self.block(store, stack, ty.result_types, f.code.body)
 
     def exec_expression(self, store: Store, stack: "Stack", expr: WASMExpression):
+        """
+        Pushes the given expression to the stack, calls exec_instruction until there are no more instructions to exec,
+        then returns the top value on the stack. Used during initialization to calculate global values, memory offsets,
+        element offsets, etc.
+
+        :param expr: The expression to execute
+        :return: The result of the expression
+        """
         self.push_instructions(expr)
         while self.exec_instruction(store, stack):
             pass
         return stack.pop()
 
-    def enter_block(self, insts, label: "Label", stack: "Stack"):
+    def enter_block(self, insts, label: "Label", stack: "AtomicStack"):
+        """
+        Push the instructions for the next block to the queue and bump the block depth number
+
+        https://www.w3.org/TR/wasm-core-1/#exec-instr-seq-enter
+
+        :param insts: Instructions for this block
+        :param label: Label referencing the continuation of this block
+        :param stack: The execution stack (where we push the label)
+        """
         stack.push(label)
         self._block_depths[-1] += 1
         self.push_instructions(insts)
 
     def exit_block(self, stack: "AtomicStack"):
+        """
+        Cleans up after execution of a code block.
+
+        https://www.w3.org/TR/wasm-core-1/#exiting--hrefsyntax-instrmathitinstrast-with-label--l
+        """
+        # Look for a label on the stack
         label_idx = stack.find_type(Label)
         if label_idx is not None:
             logger.debug(
                 "EXITING BLOCK (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1]
             )
+            # Pop the values above the label
             vals = []
             while not isinstance(stack.peek(), Label):
                 vals.append(stack.pop())
@@ -451,15 +536,23 @@ class ModuleInstance:
                 ), f"{type(vals[-1])} is not a value or a label"
             label = stack.pop()
             assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label"
+            # Decrement the block number
             self._block_depths[-1] -= 1
+            # Put the values back on the stack and discard the label
             for v in vals[::-1]:
                 stack.push(v)
 
     def exit_function(self, stack: "AtomicStack"):
+        """
+        Discards the current frame, allowing execution to return to the point after the call
+
+        https://www.w3.org/TR/wasm-core-1/#returning-from-a-function%E2%91%A0
+        """
         if len(self._block_depths) > 1:  # Only if we're in a _real_ function, not initialization
             logger.debug(
                 "EXITING FUNCTION (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1]
             )
+            # Pop return values
             f = stack.get_frame()
             n = f.arity
             stack.has_type_on_top(Value.__args__, n)
@@ -467,26 +560,41 @@ class ModuleInstance:
             assert isinstance(
                 stack.peek(), Activation
             ), f"Stack should have an activation on top, instead has {type(stack.peek())}"
+
+            # Discard call frame
             self._block_depths.pop()
             stack.pop()
+
+            # Replace return values
             for v in vals[::-1]:
                 stack.push(v)
 
     def push_instructions(self, insts: WASMExpression):
+        """
+        Pushes instructions into the instruction queue.
+        :param insts: Instructions to push
+        """
         for i in insts[::-1]:
             self._instruction_queue.appendleft(i)
 
     def look_forward(self, *opcodes) -> typing.List[Instruction]:
         """
-        :param opcode:
-        :return:
+        Pops contents of the instruction queue until it finds an instruction with an opcode in the argument *opcodes.
+        Used to find the end of a code block in the flat instruction queue. For this reason, it calls itself
+        recursively (looking for the `end` instruction) if it encounters a `block`, `loop`, or `if` instruction.
+
+        :param opcode: Tuple of instruction opcodes to look for
+        :return: The list of instructions popped before encountering the target instruction.
         """
         out = []
         i = self._instruction_queue.popleft()
         while i.opcode not in opcodes:
             out.append(i)
+
+            # Call recursively if we encounter another block
             if i.opcode in {0x02, 0x03, 0x04}:
                 out += self.look_forward(0x0B)
+
             if len(self._instruction_queue) == 0:
                 raise RuntimeError(
                     "Couldn't find an instruction with opcode "
@@ -497,7 +605,19 @@ class ModuleInstance:
         return out
 
     def exec_instruction(self, store: Store, stack: Stack) -> bool:
+        """
+        The core instruction execution function. Pops an instruction from the queue, then dispatches it to the Executor
+        if it's a numeric instruction, or executes it internally if it's a control-flow instruction.
+
+        :param store: The execution Store to use, passed in from the parent WASMWorld. This is passed to almost all
+        | instruction implementations, but for brevity's sake, it's only explicitly documented here.
+        :param stack: The execution Stack to use, likewise passed in from the parent WASMWorld and only documented here,
+        | despite being passed to all the instruction implementations.
+        :return: True if execution succeeded, False if there are no more instructions to execute
+        """
+        # Maps return types from instruction immediates into actual types
         ret_type_map = {-1: [I32], -2: [I64], -3: [F32], -4: [F64], -64: []}
+        # Use the AtomicStack context manager to catch Concretization and roll back changes
         with AtomicStack(stack) as aStack:
             # print("Instructions:", self._instruction_queue)
             if self._instruction_queue:
@@ -509,20 +629,26 @@ class ModuleInstance:
                         inst.mnemonic,
                         debug(inst.imm) if inst.imm else "",
                     )
-                    if 0x2 <= inst.opcode <= 0x11:
+                    if 0x2 <= inst.opcode <= 0x11:  # This is a control-flow instruction
                         if inst.opcode == 0x02:
                             self.block(
-                                store, aStack, ret_type_map[inst.imm.sig], self.look_forward(0x0B)
+                                store,
+                                aStack,
+                                ret_type_map[inst.imm.sig],  # Get return type from the immediate
+                                self.look_forward(0x0B),  # Get the contents of this block
                             )
                         elif inst.opcode == 0x03:
                             self.loop(store, aStack, inst)
                         elif inst.opcode == 0x04:
+                            # Get the appropriate return type based on the immediate
                             self.if_(store, aStack, ret_type_map[inst.imm.sig])
                         elif inst.opcode == 0x05:
                             self.else_(store, aStack)
                         elif inst.opcode == 0x0B:
                             self.end(store, aStack)
                         elif inst.opcode == 0x0C:
+                            # Extract the relative depth from the immediate because it makes br's interface
+                            # a little bit cleaner
                             self.br(store, aStack, inst.imm.relative_depth)
                         elif inst.opcode == 0x0D:
                             self.br_if(store, aStack, inst.imm)
@@ -536,46 +662,74 @@ class ModuleInstance:
                             self.call_indirect(store, aStack, inst.imm)
                         else:
                             raise Exception("Unhandled control flow instruction")
-                    else:
+                    else:  # This is a numeric instruction, hand it to the Executor
                         self.executor.dispatch(inst, store, aStack)
                     return True
                 except Concretize as exc:
+                    # Push the last instruction back to the queue so it will be reattempted after concretization
                     self._instruction_queue.appendleft(inst)
                     raise exc
                 except Trap as exc:
+                    # Treat traps as an exit from the current call frame. This is something of a kludge to make
+                    # the tests pass. I may need to revisit this in the future because I haven't thoroughly explored
+                    # or thought about what the correct behavior is here.
                     self._block_depths.pop()
                     logger.info("Trap: %s", str(exc))
                     raise exc
 
             elif aStack.find_type(Label):
+                # This used to raise a runtime error, but since we have some capacity to recover after a trap, we
+                # demote it to a logger.info
                 logger.info(
                     "The instruction queue is empty, but there are still labels on the stack. This should only happen when re-executing after a Trap"
                 )
         return False
 
     def block(
-        self, store: "Store", stack: "Stack", ret_type: typing.List[ValType], insts: WASMExpression
+        self,
+        store: "Store",
+        stack: "AtomicStack",
+        ret_type: typing.List[ValType],
+        insts: WASMExpression,
     ):
         """
-
+        Execute a block of instructions. Creates a label with an empty continuation and the proper arity, then enters
+        the block of instructions with that label.
 
         https://www.w3.org/TR/wasm-core-1/#exec-block
+
+        :param ret_type: List of expected return types for this block. Really only need the arity
+        :param insts: Instructions to execute
         """
         arity = len(ret_type)
         label = Label(arity, [])
         self.enter_block(insts, label, stack)
 
-    def loop(self, store: "Store", stack: "Stack", loop_inst):
+    def loop(self, store: "Store", stack: "AtomicStack", loop_inst):
         """
-
+        Enter a loop block. Creates a label with a copy of the loop as a continuation, then enters the loop instructions
+        with that label.
 
         https://www.w3.org/TR/wasm-core-1/#exec-loop
+
+        :param loop_inst: The current insrtuction
         """
+        # Grab the instructions that make up the loop
         insts = self.look_forward(0x0B)
+        # Create a label with the full loop
         label = Label(0, [loop_inst] + insts)
+        # Enter the rest of the block
         self.enter_block(insts, label, stack)
 
     def extract_block(self, partial_list: typing.Deque[Instruction]) -> typing.Deque[Instruction]:
+        """
+        Recursively extracts blocks from a list of instructions, similar to self.look_forward. The primary difference
+        is that this version takes a list of instructions to operate over, instead of popping instructions from the
+        instruction queue.
+
+        :param partial_list: List of instructions to extract the block from
+        :return: The extracted block
+        """
         out = deque()
         i = partial_list.popleft()
         while i.opcode != 0x0B:
@@ -591,6 +745,13 @@ class ModuleInstance:
     def _split_if_block(
         self, partial_list: typing.Deque[Instruction]
     ) -> typing.Tuple[typing.Deque[Instruction], typing.Deque[Instruction]]:
+        """
+        Splits an if block into its true and false portions. Handles nested blocks in both the true and false branches,
+        and when one branch is empty and/or the else instruction is missing.
+
+        :param partial_list: Complete if block that needs to be split
+        :return: The true block and the false block
+        """
         t_block = deque()
         assert partial_list[-1].opcode == 0x0B, "This block is missing an end instruction!"
         i = partial_list.popleft()
@@ -605,7 +766,7 @@ class ModuleInstance:
 
         return t_block, partial_list
 
-    def if_(self, store: "Store", stack: "Stack", ret_type: typing.List[type]):
+    def if_(self, store: "Store", stack: "AtomicStack", ret_type: typing.List[type]):
         """
         Brackets two nested sequences of instructions. If the value on top of the stack is nonzero, enter the first
         block. If not, enter the second.
@@ -632,7 +793,7 @@ class ModuleInstance:
                 f_block.append(t_block[-1])
             self.enter_block(list(f_block), label, stack)
 
-    def else_(self, store: "Store", stack: "Stack"):
+    def else_(self, store: "Store", stack: "AtomicStack"):
         """
         Marks the end of the first block of an if statement.
         Typically, `if` blocks look like: `if <instructions> else <instructions> end`. That's not always the case. See:
@@ -640,7 +801,7 @@ class ModuleInstance:
         """
         self.exit_block(stack)
 
-    def end(self, store: "Store", stack: "Stack"):
+    def end(self, store: "Store", stack: "AtomicStack"):
         """
         Marks the end of an instruction block or function
         """
@@ -651,7 +812,7 @@ class ModuleInstance:
         if self._block_depths[-1] == 0:  # We've finished all the blocks in the function
             self.exit_function(stack)
 
-    def br(self, store: "Store", stack: "Stack", label_depth: int):
+    def br(self, store: "Store", stack: "AtomicStack", label_depth: int):
         """
         Branch to the `label_depth`th label deep on the stack
 
@@ -682,7 +843,7 @@ class ModuleInstance:
         # Push the instructions from the label
         self.push_instructions(label.instr)
 
-    def br_if(self, store: "Store", stack: "Stack", imm: BranchImm):
+    def br_if(self, store: "Store", stack: "AtomicStack", imm: BranchImm):
         """
         Perform a branch if the value on top of the stack is nonzero
 
@@ -695,7 +856,7 @@ class ModuleInstance:
         if c != 0:
             self.br(store, stack, imm.relative_depth)
 
-    def br_table(self, store: "Store", stack: "Stack", imm: BranchTableImm):
+    def br_table(self, store: "Store", stack: "AtomicStack", imm: BranchTableImm):
         """
         Branch to the nth label deep on the stack where n is found by looking up a value in a table given by the
         immediate, indexed by the value on top of the stack.
@@ -716,7 +877,7 @@ class ModuleInstance:
             lab = imm.default_target
         self.br(store, stack, lab)
 
-    def return_(self, store: "Store", stack: "Stack"):
+    def return_(self, store: "Store", stack: "AtomicStack"):
         """
         Return from the function (ie branch to the outermost block)
 
@@ -744,7 +905,7 @@ class ModuleInstance:
             # Pop the current function call from the block depth tracker
             self._block_depths.pop()
 
-    def call(self, store: "Store", stack: "Stack", imm: CallImm):
+    def call(self, store: "Store", stack: "AtomicStack", imm: CallImm):
         """
         Invoke the function at the address in the store given by the immediate.
 
@@ -755,7 +916,7 @@ class ModuleInstance:
         a = f.frame.module.funcaddrs[imm.function_index]
         self._invoke_inner(stack, a, store)
 
-    def call_indirect(self, store: "Store", stack: "Stack", imm: CallIndirectImm):
+    def call_indirect(self, store: "Store", stack: "AtomicStack", imm: CallIndirectImm):
         """
         A function call, but with extra steps. Specifically, you find the index of the function to call by looking in
         the table at the index given by the immediate.
