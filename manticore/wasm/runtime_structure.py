@@ -134,9 +134,9 @@ class ExportInst:
 
 class Store:
     """
-    Implementation of the WASM store. Nothing fancy here, just collects lists of functions, tables, memories, and 
+    Implementation of the WASM store. Nothing fancy here, just collects lists of functions, tables, memories, and
     globals. Because the store is not atomic, instructions SHOULD NOT make changes to the Store or any of its contents
-    (including memories and global variables) before raising a Concretize exception. 
+    (including memories and global variables) before raising a Concretize exception.
 
     https://www.w3.org/TR/wasm-core-1/#store%E2%91%A0
     """
