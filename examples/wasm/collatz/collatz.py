@@ -15,7 +15,11 @@ def arg_gen(state):
     return [arg]
 
 
-# Set up Manticore to run the collatz function with the given argument generator
+# Set up Manticore to run the collatz function with the given argument generator.
+# We use an argument generator function instead of a list of arguments because Manticore
+# might have multiple states waiting to begin execution, and we can conveniently map a
+# generator function over all the ready states and get access to their respective
+# constraint sets.
 m.invoke("collatz", arg_gen)
 
 # Run the collatz function
