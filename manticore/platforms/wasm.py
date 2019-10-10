@@ -54,6 +54,10 @@ class WASMWorld(Platform):
         #: Prevents users from calling run without instantiating the module
         self.instantiated = False
 
+        self.forward_events_from(self.stack)
+        self.forward_events_from(self.instance)
+        self.forward_events_from(self.instance.executor)
+
     def __getstate__(self):
         state = super().__getstate__()
         state["module"] = self.module
@@ -71,6 +75,9 @@ class WASMWorld(Platform):
         self.stack = state["stack"]
         self.constraints = state["constraints"]
         self.instantiated = state["instantiated"]
+        self.forward_events_from(self.stack)
+        self.forward_events_from(self.instance)
+        self.forward_events_from(self.instance.executor)
         super().__setstate__(state)
 
     def instantiate(self, import_dict: typing.Dict[str, types.FunctionType], exec_start=False):

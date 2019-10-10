@@ -221,6 +221,8 @@ class Executor(Eventful):
             constraints
         )  #: Constraint set to use for checking overflows and boundary conditions
 
+        super().__init__()
+
     def __getstate__(self):
         state = super().__getstate__()
         state["mapping"] = self._mapping

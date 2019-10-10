@@ -231,18 +231,23 @@ class ModuleInstance(Eventful):
         self._instruction_queue = deque()
         self._block_depths = [0]
 
+        super().__init__()
+
     def __getstate__(self):
-        state = {
-            "types": self.types,
-            "funcaddrs": self.funcaddrs,
-            "tableaddrs": self.tableaddrs,
-            "memaddrs": self.memaddrs,
-            "globaladdrs": self.globaladdrs,
-            "exports": self.exports,
-            "executor": self.executor,
-            "_instruction_queue": self._instruction_queue,
-            "_block_depths": self._block_depths,
-        }
+        state = super().__getstate__()
+        state.update(
+            {
+                "types": self.types,
+                "funcaddrs": self.funcaddrs,
+                "tableaddrs": self.tableaddrs,
+                "memaddrs": self.memaddrs,
+                "globaladdrs": self.globaladdrs,
+                "exports": self.exports,
+                "executor": self.executor,
+                "_instruction_queue": self._instruction_queue,
+                "_block_depths": self._block_depths,
+            }
+        )
         return state
 
     def __setstate__(self, state):
@@ -255,6 +260,7 @@ class ModuleInstance(Eventful):
         self.executor = state["executor"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
+        super().__setstate__(state)
 
     def reset_internal(self):
         """
@@ -1019,13 +1025,16 @@ class Stack(Eventful):
         :param init_data: Optional initialization value
         """
         self.data = init_data if init_data else deque()
+        super().__init__()
 
     def __getstate__(self):
-        state = {"data": self.data}
+        state = super().__getstate__()
+        state["data"] = self.data
         return state
 
     def __setstate__(self, state):
         self.data = state["data"]
+        super().__setstate__(state)
 
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         """
