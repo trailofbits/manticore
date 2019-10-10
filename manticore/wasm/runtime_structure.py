@@ -30,6 +30,7 @@ from .types import (
 )
 from ..core.smtlib import BitVec, issymbolic
 from ..core.state import Concretize
+from ..utils.event import Eventful
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
@@ -172,7 +173,7 @@ class Store:
         return hash((self.funcs, self.tables, self.mems, self.globals))
 
 
-class ModuleInstance:
+class ModuleInstance(Eventful):
     """
     Runtime instance of a module. Stores function types, list of addresses within the store, and exports. In this
     implementation, it's also responsible for managing the instruction queue and executing control-flow instructions.
@@ -191,6 +192,8 @@ class ModuleInstance:
         "_instruction_queue",
         "_block_depths",
     ]
+
+    _published_events = {"execute_instruction", "call_hostfunc", "exec_expression", "raise_trap"}
 
     #: Stores the type signatures of all the functions
     types: typing.List[FunctionType]
@@ -470,7 +473,9 @@ class ModuleInstance:
         assert len(ty.result_types) <= 1
         locals = [stack.pop() for _t in ty.param_types][::-1]
         if isinstance(f, HostFunc):  # Call native function
+            self._publish("will_call_hostfunc", f, locals)
             res = list(f.hostcode(self.executor.constraints, *locals))
+            self._publish("did_call_hostfunc", f, locals, res)
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
@@ -497,8 +502,10 @@ class ModuleInstance:
         :return: The result of the expression
         """
         self.push_instructions(expr)
+        self._publish("will_exec_expression", expr)
         while self.exec_instruction(store, stack):
             pass
+        self._publish("did_exec_expression", expr, stack.peek())
         return stack.pop()
 
     def enter_block(self, insts, label: "Label", stack: "AtomicStack"):
@@ -629,6 +636,7 @@ class ModuleInstance:
                         inst.mnemonic,
                         debug(inst.imm) if inst.imm else "",
                     )
+                    self._publish("will_execute_instruction", inst)
                     if 0x2 <= inst.opcode <= 0x11:  # This is a control-flow instruction
                         if inst.opcode == 0x02:
                             self.block(
@@ -664,6 +672,7 @@ class ModuleInstance:
                             raise Exception("Unhandled control flow instruction")
                     else:  # This is a numeric instruction, hand it to the Executor
                         self.executor.dispatch(inst, store, aStack)
+                    self._publish("did_execute_instruction", inst)
                     return True
                 except Concretize as exc:
                     # Push the last instruction back to the queue so it will be reattempted after concretization
@@ -675,6 +684,7 @@ class ModuleInstance:
                     # or thought about what the correct behavior is here.
                     self._block_depths.pop()
                     logger.info("Trap: %s", str(exc))
+                    self._publish("will_raise_trap", exc)
                     raise exc
 
             elif aStack.find_type(Label):
@@ -991,7 +1001,7 @@ class Activation:
         self.expected_block_depth = expected_block_depth
 
 
-class Stack:
+class Stack(Eventful):
     """
     Stores the execution stack & provides helper methods
 
@@ -1001,6 +1011,8 @@ class Stack:
     data: typing.Deque[
         typing.Union[Value, Label, Activation]
     ]  #: Underlying datstore for the "stack"
+
+    _published_events = {"push_item", "pop_item"}
 
     def __init__(self, init_data=None):
         """
@@ -1025,7 +1037,9 @@ class Stack:
         if isinstance(val, list):
             raise RuntimeError("Don't push lists")
         logger.debug("+%d %s (%s)", len(self.data), val, type(val))
+        self._publish("will_push_item", val, len(self.data))
         self.data.append(val)
+        self._publish("did_push_item", val, len(self.data))
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
         """
@@ -1034,7 +1048,10 @@ class Stack:
         :return: the popped value
         """
         logger.debug("-%d %s (%s)", len(self.data) - 1, self.peek(), type(self.peek()))
-        return self.data.pop()
+        self._publish("will_pop_item", len(self.data))
+        item = self.data.pop()
+        self._publish("did_pop_item", item, len(self.data))
+        return item
 
     def peek(self) -> typing.Union[Value, Label, Activation]:
         """

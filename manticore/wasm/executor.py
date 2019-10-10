@@ -14,7 +14,7 @@ from ctypes import c_int32, c_int64
 from .types import I32, I64, F32, F64, Value, Trap, ConcretizeStack
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..core.smtlib.solver import Z3Solver
-from ..core.state import Concretize
+from ..utils.event import Eventful
 from decimal import Decimal, InvalidOperation
 
 import operator
@@ -23,7 +23,7 @@ import math
 solver = Z3Solver.instance()
 
 
-class Executor(object):  # TODO - should be Eventful
+class Executor(Eventful):
     """
     Contains execution semantics for all WASM instructions that don't involve control flow (and thus only need access
     to the store and the stack).
@@ -31,6 +31,15 @@ class Executor(object):  # TODO - should be Eventful
     In lieu of annotating every single instruction with the relevant link to the docs, we direct you here:
     https://www.w3.org/TR/wasm-core-1/#a7-index-of-instructions
     """
+
+    _published_events = {
+        "write_memory",
+        "read_memory",
+        "set_global",
+        "read_global",
+        "set_local",
+        "read_local",
+    }
 
     def __init__(self, constraints, *args, **kwargs):
 
@@ -212,6 +221,17 @@ class Executor(object):  # TODO - should be Eventful
             constraints
         )  #: Constraint set to use for checking overflows and boundary conditions
 
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["mapping"] = self._mapping
+        state["constraints"] = self.constraints
+        return state
+
+    def __setstate__(self, state):
+        self._mapping = state["mapping"]
+        self.constraints = state["constraints"]
+        super().__setstate__(state)
+
     def dispatch(self, inst: "Instruction", store: "Store", stack: "Stack"):
         """
         Selects the correct semantics for the given instruction, and executes them
@@ -261,13 +281,17 @@ class Executor(object):  # TODO - should be Eventful
     def get_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
         f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
+        self._publish("will_get_local", imm.local_index)
         stack.push(f.locals[imm.local_index])
+        self._publish("did_get_local", imm.local_index, stack.peek())
 
     def set_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
         f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
         stack.has_type_on_top(Value.__args__, 1)
+        self._publish("will_set_local", imm.local_index, stack.peek())
         f.locals[imm.local_index] = stack.pop()
+        self._publish("did_set_local", imm.local_index, f.locals[imm.local_index])
 
     def tee_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
         stack.has_type_on_top(Value.__args__, 1)
@@ -282,7 +306,9 @@ class Executor(object):  # TODO - should be Eventful
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
         glob = store.globals[a]
+        self._publish("will_get_global", imm.global_index, glob.value)
         stack.push(glob.value)
+        self._publish("did_get_global", imm.global_index, stack.peek())
 
     def set_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
         f = stack.get_frame().frame
@@ -290,7 +316,9 @@ class Executor(object):  # TODO - should be Eventful
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
         stack.has_type_on_top(Value.__args__, 1)
+        self._publish("did_set_global", imm.global_index, stack.peek())
         store.globals[a].value = stack.pop()
+        self._publish("did_set_global", imm.global_index, store.globals[a].value)
 
     def i32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
         f = stack.get_frame().frame
@@ -307,8 +335,10 @@ class Executor(object):  # TODO - should be Eventful
         ea = i + imm.offset
         if (ea + 4) not in range(len(mem.data) + 1):
             raise Trap("Memory address out of range")
+        self._publish("will_read_memory", ea, ea + 4)
         c = Operators.CONCAT(32, *map(Operators.ORD, reversed(mem.data[ea : ea + 4])))
         stack.push(I32.cast(c))
+        self._publish("did_read_memory", ea, stack.peek())
 
     def i64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
         f = stack.get_frame().frame
@@ -325,8 +355,10 @@ class Executor(object):  # TODO - should be Eventful
         ea = i + imm.offset
         if (ea + 8) not in range(len(mem.data) + 1):
             raise Trap("Memory address out of range")
+        self._publish("will_read_memory", ea, ea + 8)
         c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
         stack.push(I64.cast(c))
+        self._publish("did_read_memory", ea, stack.peek())
 
     def int_load(
         self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, size: int, signed: bool
@@ -348,6 +380,7 @@ class Executor(object):  # TODO - should be Eventful
             raise Trap("Memory address out of range")
         if ea + (size // 8) not in range(len(mem.data) + 1):
             raise Trap("Memory address out of range")
+        self._publish("will_read_memory", ea, ea + size // 8)
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         width = 32 if ty is I32 else 64
         if signed:
@@ -355,6 +388,7 @@ class Executor(object):  # TODO - should be Eventful
         else:
             c = Operators.ZEXTEND(c, width)
         stack.push(ty.cast(c))
+        self._publish("did_read_memory", ea, stack.peek())
 
     def i32_load8_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
         self.int_load(store, stack, imm, I32, 8, True)
@@ -413,8 +447,10 @@ class Executor(object):  # TODO - should be Eventful
         else:
             b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, N, 8)]
 
+        self._publish("will_write_memory", ea, ea + len(b), b)
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
+        self._publish("did_write_memory", ea, b)
 
     def i32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
         self.int_store(store, stack, imm, I32)
@@ -1180,9 +1216,11 @@ class Executor(object):  # TODO - should be Eventful
             raise Trap("Memory address out of range")
         if (ea + (size // 8)) not in range(len(mem.data) + 1):
             raise Trap("Memory address out of range")
+        self._publish("will_read_memory", ea, ea + (size // 8))
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
         ret = ty.cast(c)
         stack.push(ret)
+        self._publish("did_read_memory", ea, stack.peek())
 
     def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
         return self.float_load(store, stack, imm, F32)
@@ -1212,8 +1250,10 @@ class Executor(object):  # TODO - should be Eventful
                 "i" if size == 32 else "q", struct.pack("f" if size == 32 else "d", c)
             )[0]
         b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
+        self._publish("did_write_memory", ea, ea + len(b), b)
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
+        self._publish("did_write_memory", ea, b)
 
     def float_pushCompareReturn(self, stack, v, rettype=I32):
         if issymbolic(v):
