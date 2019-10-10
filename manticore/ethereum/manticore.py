@@ -1467,6 +1467,9 @@ class ManticoreEVM(ManticoreBase):
         :param state: The state to generate information about
         :param message: Accompanying message
         """
+        if not self.fix_unsound_symbolication(state):
+            return False
+
         if only_if is not None:
             with state as temp_state:
                 temp_state.constrain(only_if)
@@ -1681,7 +1684,6 @@ class ManticoreEVM(ManticoreBase):
                         for key, value in concrete_pairs:
                             global_summary.write("%s::%x\n" % (binascii.hexlify(key), value))
 
-        md = self.get_metadata(address)
         for address, md in self.metadata.items():
             with self._output.save_stream("global_%s.sol" % md.name) as global_src:
                 global_src.write(md.source_code)

@@ -635,17 +635,20 @@ class ManticoreBase(Eventful):
     def _all_states(self):
         """ Only allowed at not running.
             (At running we can have states at busy)
+            Returns a tuple with all active state ids.
+            Notably the "killed" states are not included here.
         """
         return tuple(self._ready_states) + tuple(
             self._terminated_states
-        )  # + tuple(self._killed_states)
-
+        )
     @property
     @sync
     def all_states(self):
         """
-        Iterates over the all states (ready and terminated and cancelled)
+        Iterates over the all states (ready and terminated)
         It holds a lock so no changes state lists are allowed
+
+        Notably the cancelled states are not included here.
 
         See also `ready_states`.
         """
