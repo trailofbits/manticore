@@ -141,6 +141,20 @@ class ManticoreWASM(ManticoreBase):
                 self._terminated_states.remove(state_id)
                 self._ready_states.append(state_id)
 
+    def generate_testcase(self, state, message="test", name="test"):
+        testcase = super().generate_testcase(state, message)
+        self._output.save_input_symbols(testcase, state)
+
+        with testcase.open_stream("stack") as stackf:
+            stackf.write(str(state.platform.stack.data))
+
+        with testcase.open_stream("memory") as memoryf:
+            memoryf.write(str(state.platform.store.mems[0].data))
+
+        term = getattr(state, '_terminated_by', None)
+        if term:
+            with testcase.open_stream("status") as summary:
+                summary.write(f"{str(term)}\n\n")
 
 def _make_initial_state(binary_path, env={}, **kwargs):
     """
