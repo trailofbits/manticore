@@ -151,10 +151,11 @@ class ManticoreWASM(ManticoreBase):
         with testcase.open_stream("memory") as memoryf:
             memoryf.write(str(state.platform.store.mems[0].data))
 
-        term = getattr(state, '_terminated_by', None)
+        term = getattr(state, "_terminated_by", None)
         if term:
             with testcase.open_stream("status") as summary:
                 summary.write(f"{str(term)}\n\n")
+
 
 def _make_initial_state(binary_path, env={}, **kwargs):
     """
