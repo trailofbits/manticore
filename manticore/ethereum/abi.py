@@ -1,3 +1,4 @@
+import typing
 import logging
 import uuid
 
@@ -227,7 +228,7 @@ class ABI:
             raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
 
     @staticmethod
-    def _deserialize(ty, buf, offset=0):
+    def _deserialize(ty, buf: typing.Union[bytearray, bytes, Array], offset=0):
         assert isinstance(buf, (bytearray, bytes, Array))
         result = None
         if ty[0] == "int":

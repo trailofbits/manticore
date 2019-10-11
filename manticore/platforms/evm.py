@@ -1223,7 +1223,7 @@ class EVM(Eventful):
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
         # if self._checkpoint_data is None:
-        #   print(self)
+        #    print(self)
         # else:
         #    print ("back from a fork")
         # import pdb; pdb.set_trace()

@@ -140,8 +140,7 @@ class ConstraintSet:
             related_constraints = set(self.constraints)
         return related_variables, related_constraints
 
-    def to_string(self, related_to=None, replace_constants=True):
-        replace_constants = False
+    def to_string(self, related_to=None, replace_constants=False):
         related_variables, related_constraints = self.__get_related(related_to)
 
         if replace_constants:

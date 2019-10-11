@@ -68,7 +68,7 @@ consts.add(
 )
 consts.add(
     "sha3timeout",
-    60 * 20,
+    60 * 90,
     "Default timeout for matching sha3 for unsound states (see unsound symbolication).",
 )
 
@@ -1187,11 +1187,11 @@ class ManticoreEVM(ManticoreBase):
                     break
             else:
                 # bijectiveness
-                for xa, ya in symbolic_pairs:
-                    if len(xa) == len(data):
-                        constraint = simplify((xa == data) == (ya == value))
+                for x, y in symbolic_pairs:
+                    if len(x) == len(data):
+                        constraint = simplify((x == data) == (y == value))
                     else:
-                        constraint = ya != value
+                        constraint = y != value
                     state.constrain(constraint)  # bijective
                 symbolic_pairs.append((data, value))
                 state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
@@ -1240,6 +1240,7 @@ class ManticoreEVM(ManticoreBase):
 
             """
             if time.time() - start > consts.sha3timeout:
+                logger.info("Timeout on sound check for state %d", state.id)
                 return False
 
             # The base case. No symbolic pairs. Just check if the state is feasible.
@@ -1284,34 +1285,37 @@ class ManticoreEVM(ManticoreBase):
                         return True
             return False
 
-        # Save concrete unction
+        soundcheck = state.context.get("soundcheck", None)
+        if soundcheck is not None:
+            return soundcheck
+
         with self.locked_context("ethereum", dict) as ethereum_context:
-            soundcheck = state.context.get("soundcheck", None)
-            if soundcheck is not None:
-                return soundcheck
             functions = ethereum_context.get("symbolic_func", dict())
-            for table in functions:
-                symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
-                # if not constrain_bijectivity(state, symbolic_pairs):
-                #    # If UF does not comply with bijectiveness bail
-                #    return False
+        for table in functions:
+            symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
+            # if not constrain_bijectivity(state, symbolic_pairs):
+            #    # If UF does not comply with bijectiveness bail
+            #    return False
 
-                # symbolic_pairs = graph_sort(state, symbolic_pairs)
-                known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
-                new_known_pairs = set(known_pairs)
-                if not match(
-                    state, functions[table], symbolic_pairs, new_known_pairs, start=time.time()
-                ):
-                    ethereum_context["soundcheck"] = False
-                    return False
+            known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
+            new_known_pairs = set(known_pairs)
+            if not match(
+                state, functions[table], symbolic_pairs, new_known_pairs, start=time.time()
+            ):
+                ethereum_context["soundcheck"] = False
+                return False
 
-                # Now paste the known pairs in the state constraints
-                concretize_known_pairs(state, symbolic_pairs, new_known_pairs)
-                ethereum_context[f"symbolic_func_conc_{table}"] = new_known_pairs
-                state.context[f"symbolic_func_sym_{table}_done"] = symbolic_pairs
+            # Now paste the known pairs in the state constraints
+            concretize_known_pairs(state, symbolic_pairs, new_known_pairs)
+            state.context[f"symbolic_func_sym_{table}_done"] = symbolic_pairs
 
-            # Ok all functions had a match for current state
-            state.context["soundcheck"] = state.can_be_true(True)
+            # Share the concrete pairs with other states.
+            # Depends on the order in which the states are processed
+            # with self.locked_context("ethereum", dict) as ethereum_context:
+            #    ethereum_context[f"symbolic_func_conc_{table}"] = new_known_pairs
+
+        # Ok all functions had a match for current state
+        state.context["soundcheck"] = state.can_be_true(True)
         return state.context["soundcheck"]
 
     def _terminate_state_callback(self, state, e):

@@ -314,12 +314,11 @@ class StateBase(Eventful):
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
 
-        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :param exprs: Symbolic value to concretize. An iterable of manticore.core.smtlib.Expression
         :param bool constrain: If True, constrain expr to concretized value
-        :return: Concrete value
+        :return: Concrete value or a tuple of concrete values
         :rtype: int
         """
-        # if len(exprs)>1:
         values = []
         for expr in exprs:
             if not issymbolic(expr):

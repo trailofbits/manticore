@@ -638,9 +638,8 @@ class ManticoreBase(Eventful):
             Returns a tuple with all active state ids.
             Notably the "killed" states are not included here.
         """
-        return tuple(self._ready_states) + tuple(
-            self._terminated_states
-        )
+        return tuple(self._ready_states) + tuple(self._terminated_states)
+
     @property
     @sync
     def all_states(self):
