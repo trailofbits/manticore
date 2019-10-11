@@ -109,7 +109,7 @@ class SolidityMetadata:
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
         bytecode = self._without_metadata(bytecode)
-        if self.source_code and srcmap:
+        if self.source_code and bytecode and srcmap:
 
             asm_offset = 0
             asm_pos = 0
