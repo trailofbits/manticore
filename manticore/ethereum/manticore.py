@@ -1256,7 +1256,7 @@ class ManticoreEVM(ManticoreBase):
             for i in range(len(symbolic_pairs)):
                 # shuffle and if it failed X times at some depth bail configurable
                 x, y = symbolic_pairs[i]
-                new_symbolic_pairs = symbolic_pairs[:i] + symbolic_pairs[i + 1:]
+                new_symbolic_pairs = symbolic_pairs[:i] + symbolic_pairs[i + 1 :]
                 new_concrete_pairs = set(concrete_pairs)
                 unseen = True  # Is added only unseen pairs could make it sat
                 for x_concrete, y_concrete in concrete_pairs:
