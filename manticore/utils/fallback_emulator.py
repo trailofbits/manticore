@@ -268,7 +268,7 @@ class UnicornEmulator:
                 ]
             )
 
-            # TODO(eric_k): unicorn@778171fc9546c1fc3d1341ff1151eab379848ea0 doesn't like writing to
+            # TODO(eric_k): unicorn@1.0.2rc1 doesn't like writing to
             # the FS register, and it will segfault or hang.
             registers -= {"FS"}
 
