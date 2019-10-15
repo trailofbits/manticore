@@ -751,6 +751,7 @@ class Cpu(Eventful):
             offset = mp._get_offset(where)
             if isinstance(data, str):
                 data = bytes(data.encode("utf-8"))
+            self._publish("will_write_memory", where, data, 8 * len(data))
             mp._data[offset : offset + len(data)] = data
             self._publish("did_write_memory", where, data, 8 * len(data))
         else:
