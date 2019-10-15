@@ -1180,13 +1180,15 @@ class ManticoreEVM(ManticoreBase):
             value = state.new_symbolic_value(256)
 
             for x, y in symbolic_pairs:
+                # if we found another pair that matches use that instead
+                # the duplicated pair is not added to symbolic_pairs
                 if state.must_be_true(Operators.OR(x == data, y == value)):
                     constraint = simplify(Operators.AND(x == data, y == value))
                     state.constrain(constraint)
                     data, value = x, y
                     break
             else:
-                # bijectiveness
+                # bijectiveness; new pair is added to symbolic_pairs
                 for x, y in symbolic_pairs:
                     if len(x) == len(data):
                         constraint = simplify((x == data) == (y == value))
@@ -1195,6 +1197,7 @@ class ManticoreEVM(ManticoreBase):
                     state.constrain(constraint)  # bijective
                 symbolic_pairs.append((data, value))
                 state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
+
         else:
             value = func(data)
             with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1253,7 +1256,7 @@ class ManticoreEVM(ManticoreBase):
             for i in range(len(symbolic_pairs)):
                 # shuffle and if it failed X times at some depth bail configurable
                 x, y = symbolic_pairs[i]
-                new_symbolic_pairs = symbolic_pairs[:i] + symbolic_pairs[i + 1 :]
+                new_symbolic_pairs = symbolic_pairs[:i] + symbolic_pairs[i + 1:]
                 new_concrete_pairs = set(concrete_pairs)
                 unseen = True  # Is added only unseen pairs could make it sat
                 for x_concrete, y_concrete in concrete_pairs:
@@ -1293,9 +1296,6 @@ class ManticoreEVM(ManticoreBase):
             functions = ethereum_context.get("symbolic_func", dict())
         for table in functions:
             symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
-            # if not constrain_bijectivity(state, symbolic_pairs):
-            #    # If UF does not comply with bijectiveness bail
-            #    return False
 
             known_pairs = ethereum_context.get(f"symbolic_func_conc_{table}", set())
             new_known_pairs = set(known_pairs)
