@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 import typing
 import types
 import copy
@@ -617,7 +617,7 @@ class ModuleInstance(Eventful):
         out.append(i)
         return out
 
-    def exec_instruction(self, store: Store, stack: Stack) -> bool:
+    def exec_instruction(self, store: Store, stack: "Stack") -> bool:
         """
         The core instruction execution function. Pops an instruction from the queue, then dispatches it to the Executor
         if it's a numeric instruction, or executes it internally if it's a control-flow instruction.

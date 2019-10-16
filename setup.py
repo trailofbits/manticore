@@ -1,4 +1,5 @@
 import os
+import sys
 from setuptools import setup, find_packages
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
@@ -10,6 +11,10 @@ def rtd_dependent_deps():
         return native_deps
     else:
         return ["z3-solver"]
+
+
+version = sys.version_info
+dataclass_deps = ["dataclasses"] if version.major == 3 and version.minor < 7 else []
 
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
@@ -45,7 +50,8 @@ setup(
         "crytic-compile>=0.1.1",
         "wasm",
     ]
-    + rtd_dependent_deps(),
+    + rtd_dependent_deps()
+    + dataclass_deps,
     extras_require=extra_require,
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
 )
