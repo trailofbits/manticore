@@ -1,7 +1,6 @@
 # from __future__ import annotations
 import typing
 import types
-import copy
 import logging
 from dataclasses import dataclass
 from .executor import Executor
@@ -1144,15 +1143,15 @@ class AtomicStack(Stack):
 
     def __init__(self, parent: Stack):
         self.parent = parent
-        self.copy = copy.copy(self.parent.data)
+        self.actions = []
 
     def __getstate__(self):
-        state = {"parent": self.parent, "copy": self.copy}
+        state = {"parent": self.parent, "actions": self.actions}
         return state
 
     def __setstate__(self, state):
         self.parent = state["parent"]
-        self.copy = state["copy"]
+        self.actions = state["actions"]
 
     def __enter__(self):
         return self
@@ -1160,14 +1159,28 @@ class AtomicStack(Stack):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_val and isinstance(exc_val, Concretize):
             logger.info("Rolling back stack for concretization")
-            self.parent.data = self.copy
+            while self.actions:
+                action = self.actions.pop()
+                if isinstance(action, AtomicStack.PopItem):
+                    self.parent.push(action.val)
+                elif isinstance(action, AtomicStack.PushItem):
+                    self.parent.pop()
         else:
             pass
 
+    class PushItem:
+        pass
+
+    @dataclass
+    class PopItem:
+        val: typing.Union[Value, Label, Activation]
+
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+        self.actions.append(AtomicStack.PushItem())
         self.parent.push(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
+        self.actions.append(AtomicStack.PopItem(self.parent.peek()))
         return self.parent.pop()
 
     def peek(self):
