@@ -3,15 +3,6 @@ import ply.yacc as yacc
 import copy
 from ..smtlib import Operators
 
-
-class ParserException(Exception):
-    """
-    Parser exception
-    """
-
-    pass
-
-
 # Lexer
 # ------------------------------------------------------------
 # calclex.py
@@ -21,6 +12,15 @@ class ParserException(Exception):
 # ------------------------------------------------------------
 import ply.lex as lex
 import re
+
+
+class ParserException(Exception):
+    """
+    Parser exception
+    """
+
+    pass
+
 
 # List of token names.   This is always required
 tokens = (
