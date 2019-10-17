@@ -9,6 +9,7 @@ from .abstractcpu import (
     Abi,
     SyscallAbi,
     Cpu,
+    CpuException,
     RegisterFile,
     Operand,
     instruction,
@@ -5895,7 +5896,7 @@ class X86Cpu(Cpu):
         else:
             msg = "Invalid size in MOVQ"
             logger.error(msg)
-            raise Exception(msg)
+            raise CpuException(msg)
 
     @instruction
     def MOVSD(cpu, dest, src):

@@ -1,8 +1,16 @@
 from functools import reduce
+from ...exceptions import SmtlibError
 import uuid
 
 import re
 import copy
+
+
+class ExpressionException(SmtlibError):
+    """
+    Expression exception
+    """
+    pass
 
 
 class Expression:
@@ -118,10 +126,10 @@ class Variable(Expression):
         return self._name
 
     def __copy__(self, memo):
-        raise Exception("Copying of Variables is not allowed.")
+        raise ExpressionException("Copying of Variables is not allowed.")
 
     def __deepcopy__(self, memo):
-        raise Exception("Copying of Variables is not allowed.")
+        raise ExpressionException("Copying of Variables is not allowed.")
 
     def __repr__(self):
         return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
@@ -697,7 +705,7 @@ class Array(Expression):
 
     def __len__(self):
         if self.index_max is None:
-            raise Exception("Array max index not set")
+            raise ExpressionException("Array max index not set")
         return self.index_max
 
     @property

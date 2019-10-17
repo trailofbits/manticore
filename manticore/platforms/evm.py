@@ -1024,7 +1024,7 @@ class EVM(Eventful):
                 raise NotEnoughGas()
         else:
             if consts.oog != "ignore":
-                raise Exception("Wrong oog config variable")
+                raise EVMException("Wrong oog config variable")
             # do nothing. gas is not even changed
             return
         self._gas = simplify(self._gas - fee)

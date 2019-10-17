@@ -31,6 +31,7 @@ from ..utils import config
 from ..utils.helpers import PickleSerializer
 from .smtlib.solver import Z3Solver
 from .state import StateBase
+from ..exceptions import ManticoreError
 
 logger = logging.getLogger(__name__)
 
@@ -342,7 +343,7 @@ class MemoryStore(Store):
     @contextmanager
     def stream(self, key, mode="r", lock=False):
         if lock:
-            raise Exception("mem: does not support concurrency")
+            raise ManticoreError("mem: does not support concurrency")
         if "b" in mode:
             s = io.BytesIO(self._data.get(key, b""))
         else:

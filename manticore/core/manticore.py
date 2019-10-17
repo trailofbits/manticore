@@ -30,7 +30,6 @@ import ctypes
 import signal
 from enum import Enum
 
-
 class MProcessingType(Enum):
     """Used as configuration constant for choosing multiprocessing flavor"""
 
@@ -74,7 +73,7 @@ consts.add(
 class ManticoreBase(Eventful):
     def __new__(cls, *args, **kwargs):
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
-            raise Exception("Should not instantiate this")
+            raise ManticoreError("Should not instantiate this")
 
         cl = consts.mprocessing.to_class()
         # change ManticoreBase for the more specific class
@@ -103,7 +102,7 @@ class ManticoreBase(Eventful):
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if not self.is_running():
-                raise Exception(f"{func.__name__} only allowed while exploring states")
+                raise ManticoreError(f"{func.__name__} only allowed while exploring states")
             return func(self, *args, **kw)
 
         return newFunction
@@ -117,7 +116,7 @@ class ManticoreBase(Eventful):
         def newFunction(self, *args, **kw):
             if self.is_running():
                 logger.error("Calling at running not allowed")
-                raise Exception(f"{func.__name__} only allowed while NOT exploring states")
+                raise ManticoreError(f"{func.__name__} only allowed while NOT exploring states")
             return func(self, *args, **kw)
 
         return newFunction
@@ -265,7 +264,7 @@ class ManticoreBase(Eventful):
                 "_shared_context",
             )
         ):
-            raise Exception("Need to instantiate one of: ManticoreNative, ManticoreThreads..")
+            raise ManticoreError("Need to instantiate one of: ManticoreNative, ManticoreThreads..")
 
         # The workspace and the output
         # Manticore will use the workspace to save and share temporary states.
@@ -510,7 +509,7 @@ class ManticoreBase(Eventful):
         """
         # wait for a state id to be added to the ready list and remove it
         if state_id not in self._busy_states:
-            raise Exception("Can not terminate. State is not being analyzed")
+            raise ManticoreError("Can not terminate. State is not being analyzed")
         self._busy_states.remove(state_id)
 
         if delete:
@@ -537,7 +536,7 @@ class ManticoreBase(Eventful):
         """
         # wait for a state id to be added to the ready list and remove it
         if state_id not in self._busy_states:
-            raise Exception("Can not even kill it. State is not being analyzed")
+            raise ManticoreError("Can not even kill it. State is not being analyzed")
         self._busy_states.remove(state_id)
 
         if delete:
