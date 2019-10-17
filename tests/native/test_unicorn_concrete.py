@@ -81,38 +81,6 @@ class ManticornTest(unittest.TestCase):
             "FP7",
             "FPSW",
             "FPCW",
-            "XMM0",
-            "XMM1",
-            "XMM2",
-            "XMM3",
-            "XMM4",
-            "XMM5",
-            "XMM6",
-            "XMM7",
-            "XMM8",
-            "XMM9",
-            "XMM10",
-            "XMM11",
-            "XMM12",
-            "XMM13",
-            "XMM14",
-            "XMM15",
-            "YMM0",
-            "YMM1",
-            "YMM2",
-            "YMM3",
-            "YMM4",
-            "YMM5",
-            "YMM6",
-            "YMM7",
-            "YMM8",
-            "YMM9",
-            "YMM10",
-            "YMM11",
-            "YMM12",
-            "YMM13",
-            "YMM14",
-            "YMM15",
         }
 
         concrete_regs = {}
@@ -125,11 +93,12 @@ class ManticornTest(unittest.TestCase):
             for reg in should_match:
                 concrete_regs[reg] = getattr(st.platform.current, reg)
 
-        concrete_regs_vals = {reg: val for reg, val in concrete_regs.items() if reg in should_match}
-        normal_regs_vals = {reg: val for reg, val in normal_regs.items() if reg in should_match}
-        # To print out a diff
-        self.maxDiff = None
-        self.assertDictEqual(concrete_regs_vals, normal_regs_vals)
+        for reg in should_match:
+            self.assertEqual(
+                concrete_regs[reg],
+                normal_regs[reg],
+                f"Mismatch in {reg}: {concrete_regs[reg]} != {normal_regs[reg]}",
+            )
 
     def test_integration_basic_stdout(self):
         self.m.run()
