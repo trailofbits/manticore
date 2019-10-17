@@ -26,6 +26,7 @@ class ConstraintException(SmtlibError):
     """
     Constraint exception
     """
+
     pass
 
 

@@ -3,10 +3,12 @@ import ply.yacc as yacc
 import copy
 from ..smtlib import Operators
 
+
 class ParserException(Exception):
     """
     Parser exception
     """
+
     pass
 
 

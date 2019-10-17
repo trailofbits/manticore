@@ -61,10 +61,12 @@ class SingletonMixin(object):
             cls.__singleton_instances[(pid, tid)] = cls()
         return cls.__singleton_instances[(pid, tid)]
 
+
 class SolverException(SmtlibError):
     """
     Solver exception
     """
+
     pass
 
 

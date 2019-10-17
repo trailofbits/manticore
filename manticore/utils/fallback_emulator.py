@@ -21,7 +21,9 @@ class EmulatorException(Exception):
     """
     Emulator exception
     """
+
     pass
+
 
 class UnicornEmulator:
     """

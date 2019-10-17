@@ -10,6 +10,7 @@ class ExpressionException(SmtlibError):
     """
     Expression exception
     """
+
     pass
 
 

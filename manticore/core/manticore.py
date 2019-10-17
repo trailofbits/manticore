@@ -30,6 +30,7 @@ import ctypes
 import signal
 from enum import Enum
 
+
 class MProcessingType(Enum):
     """Used as configuration constant for choosing multiprocessing flavor"""
 

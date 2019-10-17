@@ -33,6 +33,7 @@ class BinaryException(Exception):
     """
     Binary file exception
     """
+
     pass
 
 
