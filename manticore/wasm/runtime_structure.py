@@ -25,6 +25,7 @@ from .types import (
     Instruction,
     debug,
     Trap,
+    NonExistentFunctionCallTrap,
     ConcretizeStack,
 )
 from ..core.smtlib import BitVec, issymbolic
@@ -950,15 +951,15 @@ class ModuleInstance(Eventful):
         if issymbolic(i):
             raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", i)
         if i not in range(len(tab.elem)):
-            raise Trap()
+            raise NonExistentFunctionCallTrap()
         if tab.elem[i] is None:
-            raise Trap()
+            raise NonExistentFunctionCallTrap()
         a = tab.elem[i]
         assert a in range(len(store.funcs))
         f = store.funcs[a]
         ft_actual = f.type
         if ft_actual != ft_expect:
-            raise Trap()
+            raise Trap("Function type signature mismatch")
         self._invoke_inner(stack, a, store)
 
 

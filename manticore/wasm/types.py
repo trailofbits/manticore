@@ -378,6 +378,41 @@ class Trap(Exception):
     pass
 
 
+class UnreachableInstructionTrap(Trap):
+    def __init__(self):
+        super().__init__("Tried to execute an unreachable instruction")
+
+
+class ZeroDivisionTrap(Trap):
+    def __init__(self):
+        super().__init__("Zero division")
+
+
+class OverflowDivisionTrap(Trap):
+    def __init__(self):
+        super().__init__("Overflow in signed division")
+
+
+class NonExistentFunctionCallTrap(Trap):
+    def __init__(self):
+        super().__init__("Indirect call to non-existent function")
+
+
+class OutOfBoundsMemoryTrap(Trap):
+    def __init__(self, addr):
+        super().__init__("Out of bounds memory access at " + hex(addr))
+
+
+class InvalidConversionTrap(Trap):
+    def __init__(self, ty, val):
+        super().__init__("Can't convert " + str(val) + " to " + str(ty))
+
+
+class TypeMismatchTrap(Trap):
+    def __init__(self, ty1, ty2):
+        super().__init__(f"Type signature mismatch: {ty1} != {ty2}")
+
+
 class ConcretizeStack(Concretize):
     """Tells Manticore to concretize the value `depth` values from the end of the stack. """
 
