@@ -25,12 +25,19 @@ from .types import (
     Instruction,
     debug,
     Trap,
+    ZeroDivisionTrap,
+    OverflowDivisionTrap,
     NonExistentFunctionCallTrap,
+    TypeMismatchTrap,
     ConcretizeStack,
 )
 from ..core.smtlib import BitVec, issymbolic
 from ..core.state import Concretize
 from ..utils.event import Eventful
+
+from ..core.smtlib.solver import Z3Solver
+
+solver = Z3Solver.instance()
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
@@ -171,6 +178,12 @@ class Store:
 
     def __hash__(self):
         return hash((self.funcs, self.tables, self.mems, self.globals))
+
+
+def _eval_maybe_symbolic(constraints, expression) -> bool:
+    if issymbolic(expression):
+        return solver.must_be_true(constraints, expression)
+    return True if expression else False
 
 
 class ModuleInstance(Eventful):
@@ -644,6 +657,13 @@ class ModuleInstance(Eventful):
                     )
                     self._publish("will_execute_instruction", inst)
                     if 0x2 <= inst.opcode <= 0x11:  # This is a control-flow instruction
+                        self.executor.zero_div = _eval_maybe_symbolic(self.executor.constraints, self.executor.zero_div)
+                        if self.executor.zero_div:
+                            raise ZeroDivisionTrap()
+                        self.executor.overflow = _eval_maybe_symbolic(self.executor.constraints, self.executor.overflow)
+                        if self.executor.overflow:
+                            raise OverflowDivisionTrap()
+
                         if inst.opcode == 0x02:
                             self.block(
                                 store,
@@ -959,7 +979,7 @@ class ModuleInstance(Eventful):
         f = store.funcs[a]
         ft_actual = f.type
         if ft_actual != ft_expect:
-            raise Trap("Function type signature mismatch")
+            raise TypeMismatchTrap(ft_actual, ft_expect)
         self._invoke_inner(stack, a, store)
 
 

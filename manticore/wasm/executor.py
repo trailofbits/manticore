@@ -25,14 +25,11 @@ from .types import (
     OutOfBoundsMemoryTrap,
 )
 from ..core.smtlib import Operators, BitVec, issymbolic
-from ..core.smtlib.solver import Z3Solver
 from ..utils.event import Eventful
 from decimal import Decimal, InvalidOperation
 
 import operator
 import math
-
-solver = Z3Solver.instance()
 
 
 class Executor(Eventful):
@@ -229,9 +226,12 @@ class Executor(Eventful):
             0xBE: self.f32_reinterpret_i32,
             0xBF: self.f64_reinterpret_i64,
         }
-        self.constraints = (
-            constraints
-        )  #: Constraint set to use for checking overflows and boundary conditions
+
+        #: Constraint set to use for checking overflows and boundary conditions
+        self.constraints = constraints
+
+        self.zero_div = False
+        self.overflow = False
 
         super().__init__()
 
@@ -239,12 +239,28 @@ class Executor(Eventful):
         state = super().__getstate__()
         state["mapping"] = self._mapping
         state["constraints"] = self.constraints
+        state["zero_div"] = self.zero_div
+        state["overflow"] = self.overflow
         return state
 
     def __setstate__(self, state):
         self._mapping = state["mapping"]
         self.constraints = state["constraints"]
+        self.zero_div = state["zero_div"]
+        self.overflow = state["overflow"]
         super().__setstate__(state)
+
+    def check_overflow(self, expression) -> bool:
+        if issymbolic(expression):
+            self.overflow = Operators.OR(self.overflow, expression)
+            return False
+        return expression
+
+    def check_zero_div(self, expression) -> bool:
+        if issymbolic(expression):
+            self.zero_div = Operators.OR(self.zero_div, expression)
+            return False
+        return expression
 
     def dispatch(self, inst: "Instruction", store: "Store", stack: "Stack"):
         """
@@ -790,15 +806,11 @@ class Executor(Eventful):
         c2 = stack.pop()
         c1 = stack.pop()
         can_div_0 = c2 == 0
-        if solver.must_be_true(
-            self.constraints, can_div_0
-        ):  # TODO - should fork on possibilities here
+        if self.check_zero_div(can_div_0):
             raise ZeroDivisionTrap()
         res = Operators.SDIV(c1, c2)
         can_overflow = res == 2 ** 31
-        if solver.must_be_true(
-            self.constraints, can_overflow
-        ):  # TODO - should fork on possibilities here:
+        if self.check_overflow(can_overflow):
             raise OverflowDivisionTrap()
         stack.push(I32.cast(res))
 
@@ -807,9 +819,7 @@ class Executor(Eventful):
         c2 = stack.pop()
         c1 = stack.pop()
         can_div_0 = c2 == 0
-        if solver.must_be_true(
-            self.constraints, can_div_0
-        ):  # TODO - should fork on possibilities here:
+        if self.check_zero_div(can_div_0):
             raise ZeroDivisionTrap()
         if not issymbolic(c2):
             c2 = I32.to_unsigned(c2)
@@ -821,7 +831,7 @@ class Executor(Eventful):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        if solver.must_be_true(self.constraints, c2 == 0):
+        if self.check_zero_div(c2 == 0):
             raise ZeroDivisionTrap()
         stack.push(I32.cast(Operators.SREM(c1, c2)))
 
@@ -833,7 +843,7 @@ class Executor(Eventful):
             c2 = I32.to_unsigned(c2)
         if not issymbolic(c1):
             c1 = I32.to_unsigned(c1)
-        if solver.must_be_true(self.constraints, c2 == 0):
+        if self.check_zero_div(c2 == 0):
             raise ZeroDivisionTrap()
         stack.push(I32.cast(Operators.UREM(c1, c2)))
 
@@ -953,18 +963,14 @@ class Executor(Eventful):
         c2 = stack.pop()
         c1 = stack.pop()
         can_div_0 = c2 == 0
-        if solver.must_be_true(
-            self.constraints, can_div_0
-        ):  # TODO - should fork on possibilities here
+        if self.check_zero_div(can_div_0):
             raise ZeroDivisionTrap()
         if issymbolic(c1) or issymbolic(c2):
             res = Operators.SDIV(c1, c2)
         else:
             res = int(math.trunc(Decimal(c1) / Decimal(c2)))
         can_overflow = res == 2 ** 63
-        if solver.must_be_true(
-            self.constraints, can_overflow
-        ):  # TODO - should fork on possibilities here:
+        if self.check_overflow(can_overflow):
             raise OverflowDivisionTrap()
         stack.push(I64.cast(res))
 
@@ -973,9 +979,7 @@ class Executor(Eventful):
         c2 = stack.pop()
         c1 = stack.pop()
         can_div_0 = c2 == 0
-        if solver.must_be_true(
-            self.constraints, can_div_0
-        ):  # TODO - should fork on possibilities here:
+        if self.check_zero_div(can_div_0):
             raise ZeroDivisionTrap()
         if not issymbolic(c2):
             c2 = I64.to_unsigned(c2)
@@ -987,7 +991,7 @@ class Executor(Eventful):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        if solver.must_be_true(self.constraints, c2 == 0):
+        if self.check_zero_div(c2 == 0):
             raise ZeroDivisionTrap()
         if issymbolic(c1) or issymbolic(c2):
             res = Operators.SREM(c1, c2)
@@ -1003,7 +1007,7 @@ class Executor(Eventful):
             c2 = I64.to_unsigned(c2)
         if not issymbolic(c1):
             c1 = I64.to_unsigned(c1)
-        if solver.must_be_true(self.constraints, c2 == 0):
+        if self.check_zero_div(c2 == 0):
             raise ZeroDivisionTrap()
         stack.push(I64.cast(Operators.UREM(c1, c2)))
 
