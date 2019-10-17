@@ -145,11 +145,6 @@ class UnicornEmulator:
         return True
 
     def _to_unicorn_id(self, reg_name):
-        # TODO(felipe, yan): Register naming is broken in current unicorn
-        # packages, but works on unicorn git's master. We leave this hack
-        # in until unicorn gets updated.
-        if unicorn.__version__ <= "1.0.0" and reg_name == "APSR":
-            reg_name = "CPSR"
         if self._cpu.arch == CS_ARCH_ARM:
             return globals()["UC_ARM_REG_" + reg_name]
         elif self._cpu.arch == CS_ARCH_ARM64:
@@ -220,53 +215,6 @@ class UnicornEmulator:
             # with the eflags
             registers -= set(["CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"])
             registers.add("EFLAGS")
-
-            # TODO(mark): Unicorn 1.0.1 does not support reading YMM registers,
-            # and simply returns back zero. If a unicorn emulated instruction writes to an
-            # XMM reg, we will read back the corresponding YMM register, resulting in an
-            # incorrect zero value being actually written to the XMM register. This is
-            # fixed in Unicorn PR #819, so when that is included in a release, delete
-            # these two lines.
-            registers -= set(
-                [
-                    "YMM0",
-                    "YMM1",
-                    "YMM2",
-                    "YMM3",
-                    "YMM4",
-                    "YMM5",
-                    "YMM6",
-                    "YMM7",
-                    "YMM8",
-                    "YMM9",
-                    "YMM10",
-                    "YMM11",
-                    "YMM12",
-                    "YMM13",
-                    "YMM14",
-                    "YMM15",
-                ]
-            )
-            registers |= set(
-                [
-                    "XMM0",
-                    "XMM1",
-                    "XMM2",
-                    "XMM3",
-                    "XMM4",
-                    "XMM5",
-                    "XMM6",
-                    "XMM7",
-                    "XMM8",
-                    "XMM9",
-                    "XMM10",
-                    "XMM11",
-                    "XMM12",
-                    "XMM13",
-                    "XMM14",
-                    "XMM15",
-                ]
-            )
 
             # TODO(eric_k): unicorn@1.0.2rc1 doesn't like writing to
             # the FS register, and it will segfault or hang.
