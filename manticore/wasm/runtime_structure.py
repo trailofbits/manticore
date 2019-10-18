@@ -657,10 +657,14 @@ class ModuleInstance(Eventful):
                     )
                     self._publish("will_execute_instruction", inst)
                     if 0x2 <= inst.opcode <= 0x11:  # This is a control-flow instruction
-                        self.executor.zero_div = _eval_maybe_symbolic(self.executor.constraints, self.executor.zero_div)
+                        self.executor.zero_div = _eval_maybe_symbolic(
+                            self.executor.constraints, self.executor.zero_div
+                        )
                         if self.executor.zero_div:
                             raise ZeroDivisionTrap()
-                        self.executor.overflow = _eval_maybe_symbolic(self.executor.constraints, self.executor.overflow)
+                        self.executor.overflow = _eval_maybe_symbolic(
+                            self.executor.constraints, self.executor.overflow
+                        )
                         if self.executor.overflow:
                             raise OverflowDivisionTrap()
 
