@@ -17,6 +17,14 @@ from capstone import *
 logger = logging.getLogger(__name__)
 
 
+class EmulatorException(Exception):
+    """
+    Emulator exception
+    """
+
+    pass
+
+
 class UnicornEmulator:
     """
     Helper class to emulate a single instruction via Unicorn.
@@ -41,7 +49,7 @@ class UnicornEmulator:
             self._uc_arch = UC_ARCH_ARM64
             self._uc_mode = UC_MODE_ARM
             if self._cpu.mode != UC_MODE_ARM:
-                raise Exception("Aarch64/Arm64 cannot have different uc mode than ARM.")
+                raise EmulatorException("Aarch64/Arm64 cannot have different uc mode than ARM.")
 
         elif self._cpu.arch == CS_ARCH_X86:
             self._uc_arch = UC_ARCH_X86
@@ -89,7 +97,7 @@ class UnicornEmulator:
             elif self._cpu.mode == CS_MODE_64:
                 return self._emu.reg_read(UC_X86_REG_RIP)
         else:
-            raise Exception(
+            raise EmulatorException(
                 f"Getting PC after unicorn emulation for {self._cpu.arch} architecture is not implemented"
             )
 

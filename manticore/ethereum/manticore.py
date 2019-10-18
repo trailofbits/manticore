@@ -634,7 +634,7 @@ class ManticoreEVM(ManticoreBase):
                 )
                 if "signature" in item:
                     if item["signature"] != f"0x{hashes[signature]}":
-                        raise Exception(
+                        raise EthereumError(
                             f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)"
                         )
 
@@ -643,7 +643,7 @@ class ManticoreEVM(ManticoreBase):
 
         if network_id is None:
             if len(truffle["networks"]) > 1:
-                raise Exception("Network id not specified")
+                raise EthereumError("Network id not specified")
             if len(truffle["networks"]) == 1:
                 network_id = list(truffle["networks"].keys())[0]
         if network_id in truffle["networks"]:
@@ -1261,7 +1261,7 @@ class ManticoreEVM(ManticoreBase):
         # At the begining of a human tx/run it should not be any saved state
         with self.locked_context("ethereum.saved_states", list) as saved_states:
             if saved_states:
-                raise Exception("ethereum.saved_states should be empty")
+                raise EthereumError("ethereum.saved_states should be empty")
 
         # Every state.world has its pending_transaction filled. The run will
         # process it and potentially generate several READY and.or TERMINATED states.

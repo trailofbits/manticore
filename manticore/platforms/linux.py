@@ -2249,7 +2249,7 @@ class Linux(Platform):
             if name is not None:
                 raise SyscallNotImplemented(index, name)
             else:
-                raise Exception(f"Bad syscall index, {index}")
+                raise EnvironmentError(f"Bad syscall index, {index}")
 
         return self._syscall_abi.invoke(implementation)
 
