@@ -105,6 +105,10 @@ class Elf(Binary):
             assert self.interpreter.arch == self.arch
             assert self.interpreter.elf.header.e_type in ["ET_DYN", "ET_EXEC"]
 
+    def __del__(self):
+        if self.elf is not None:
+            self.elf.stream.close()
+
     def maps(self):
         for elf_segment in self.elf.iter_segments():
             if elf_segment.header.p_type != "PT_LOAD" or elf_segment.header.p_memsz == 0:
