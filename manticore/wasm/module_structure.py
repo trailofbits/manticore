@@ -120,17 +120,7 @@ class Memory:
         :return: The address of this within `store`
         """
         a = MemAddr(len(store.mems))
-        store.mems.append(
-            MemInst(
-                [
-                    0x0
-                    for _i in range(
-                        self.type.min * (64 * 1024)
-                    )  # https://www.w3.org/TR/wasm-core-1/#page-size
-                ],  # TODO - these should be symbolic, right?
-                self.type.max,
-            )
-        )
+        store.mems.append(MemInst([0x0] * self.type.min * 64 * 1024, self.type.max))
         return a
 
 

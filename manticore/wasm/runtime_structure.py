@@ -89,6 +89,8 @@ class MemInst:
     Memory in WASM is broken up into 65536-byte pages. All pages behave the same way, but note that operations that
     deal with memory size do so in terms of pages, not bytes.
 
+    TODO: We should implement some kind of symbolic memory model
+
     https://www.w3.org/TR/wasm-core-1/#memory-instances%E2%91%A0
     """
 
@@ -1163,7 +1165,6 @@ class AtomicStack(Stack):
     Allows for the rolling-back of the stack in the event of a concretization exception.
     Inherits from Stack so that the types will be correct, but never calls `super`.
     Provides a context manager that will intercept Concretization Exceptions before raising them.
-    TODO - make this more efficient by eliminating the full copy and instead doing a CoW-esque thing
     """
 
     def __init__(self, parent: Stack):

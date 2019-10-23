@@ -44,7 +44,7 @@ class ManticoreWASM(ManticoreBase):
 
     def finalize(self):
         """
-        Finish a run and solve for test cases. TODO: do more than just dump pickled states
+        Finish a run and solve for test cases.
         Calls save_run_data
         """
         super().finalize()

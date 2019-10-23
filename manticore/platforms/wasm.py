@@ -107,12 +107,8 @@ class WASMWorld(Platform):
             # Create an empty memory of the correct size and provide it as an import
             elif isinstance(i.desc, MemoryType):
                 self.store.mems.append(
-                    MemInst(
-                        [
-                            0x0 for _i in range(max(i.desc.min, 1) * (64 * 1024))
-                        ],  # TODO - these should be symbolic, and the user should be able to provide them.
-                        i.desc.max,
-                    )
+                    # TODO - the user should be able to provide initial memory values, incl symbolic ones
+                    MemInst([0x0] * max(i.desc.min, 1) * 64 * 1024, i.desc.max)
                 )
                 imports.append(MemAddr(len(self.store.mems) - 1))
             # Create a global and set its value to 0.

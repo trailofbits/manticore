@@ -1132,7 +1132,7 @@ class Executor(Eventful):
     def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
-        stack.push(I64.cast(Operators.SEXTEND(c1, 32, 64)))  # TODO - confirm operator behavior
+        stack.push(I64.cast(Operators.SEXTEND(c1, 32, 64)))
 
     def i64_extend_u_i32(self, store: "Store", stack: "Stack"):
         stack.has_type_on_top(I32, 1)
@@ -1141,7 +1141,7 @@ class Executor(Eventful):
             c1
         ):  # ZEXTEND doesn't have a concept of sized ints, so it will promote a negative I32
             # to a negative I64 with the same value.
-            stack.push(I64.cast(Operators.ZEXTEND(c1, 64)))  # TODO - confirm operator behavior
+            stack.push(I64.cast(Operators.ZEXTEND(c1, 64)))
         else:
             stack.push(I64.cast(struct.unpack("q", bytes(c_int32(c1)) + b"\x00" * 4)[0]))
 
