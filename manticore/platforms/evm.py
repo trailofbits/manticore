@@ -1222,28 +1222,11 @@ class EVM(Eventful):
             raise Concretize(
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
-        # if self._checkpoint_data is None:
-        #    print(self)
-        # else:
-        #    print ("back from a fork")
-        # import pdb; pdb.set_trace()
         try:
-            # import time
-            # limbo = 0.0
-            # a = time.time()
             self._check_jmpdest()
-            # b = time.time()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
-            # c = time.time()
-            # d = time.time()
             result = self._handler(*arguments)
-            # e = time.time()
             self._advance(result)
-            # f = time.time()
-            # if hasattr(self, 'F'):
-            #    limbo = (a-self.F)*100
-            # print(f"{instruction}\t\t %02.4f %02.4f %02.4f %02.4f %02.4f %02.4f"%((b-a)*100, (c-b)*100, (d-c)*100, (e-d)*100, (f-e)*100, limbo))
-            # self.F = time.time()
 
         except ConcretizeGas as ex:
 
