@@ -24,7 +24,7 @@ import re
 from . import operators as Operators
 from .constraints import *
 from .visitors import *
-from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
+from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
 from . import issymbolic
 import time
@@ -62,6 +62,14 @@ class SingletonMixin(object):
         return cls.__singleton_instances[(pid, tid)]
 
 
+class SolverException(SmtlibError):
+    """
+    Solver exception
+    """
+
+    pass
+
+
 class Solver(SingletonMixin):
     def __init__(self):
         pass
@@ -75,7 +83,7 @@ class Solver(SingletonMixin):
         :param X: a symbol or expression
         :param M: maximum number of iterations allowed
         """
-        raise Exception("Abstract method not implemented")
+        raise SmtlibError("Abstract method not implemented")
 
     def check(self, constraints) -> bool:
         """Check if given constraints can be valid"""
@@ -83,7 +91,7 @@ class Solver(SingletonMixin):
 
     def can_be_true(self, constraints, expression) -> bool:
         """Check if given expression could be valid"""
-        raise Exception("Abstract method not implemented")
+        raise SolverException("Abstract method not implemented")
 
     def must_be_true(self, constraints, expression) -> bool:
         """Check if expression is True and that it can not be False with current constraints"""
@@ -92,11 +100,11 @@ class Solver(SingletonMixin):
 
     def get_all_values(self, constraints, x, maxcnt=10000, silent=False):
         """Returns a list with all the possible values for the symbol x"""
-        raise Exception("Abstract method not implemented")
+        raise SolverException("Abstract method not implemented")
 
     def get_value(self, constraints, expression):
         """Ask the solver for one possible result of given expression using given set of constraints."""
-        raise Exception("Abstract method not implemented")
+        raise SolverException("Abstract method not implemented")
 
     def max(self, constraints, X: BitVec, M=10000):
         """
@@ -246,10 +254,10 @@ class Z3Solver(Solver):
 
     # marshaling/pickle
     def __getstate__(self):
-        raise Exception()
+        raise SolverException()
 
     def __setstate__(self, state):
-        raise Exception()
+        raise SolverException()
 
     def __del__(self):
         try:
@@ -306,7 +314,7 @@ class Z3Solver(Solver):
 
         # logger.debug('<%s', buf)
         if "(error" in bufl[0]:
-            raise Exception(f"Error in smtlib: {bufl[0]}")
+            raise SolverException(f"Error in smtlib: {bufl[0]}")
         return buf
 
     def __readline_and_count(self):

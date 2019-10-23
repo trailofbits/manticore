@@ -43,4 +43,3 @@ if [ "$1" != "env" ]; then
         install_mcore $1
     fi
 fi
-

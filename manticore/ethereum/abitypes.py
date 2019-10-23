@@ -1,7 +1,7 @@
 # Minimal ethereum type signature parser.
 # This parses the signature and types used to calculate the function hash
 import warnings
-
+from ..exceptions import EthereumError
 import ply.yacc as yacc
 
 # Lexer
@@ -141,7 +141,7 @@ def t_FUNCTION(t):
 
 # Error handling rule
 def t_error(t):
-    raise Exception("Illegal character '%s'" % t.value[0])
+    raise EthereumError("Illegal character '%s'" % t.value[0])
 
 
 # Build the lexer
@@ -217,7 +217,7 @@ def p_dynamic_fixed_type(p):
 
 
 def p_error(p):
-    raise Exception("Syntax Error at abitypes")
+    raise EthereumError("Syntax Error at abitypes")
     # print(f"Syntax error at offset {lexer.lexpos:d}")
 
 
