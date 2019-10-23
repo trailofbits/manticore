@@ -29,6 +29,14 @@ class Binary:
         pass
 
 
+class BinaryException(Exception):
+    """
+    Binary file exception
+    """
+
+    pass
+
+
 class CGCElf(Binary):
     @staticmethod
     def _cgc2elf(filename):
@@ -51,7 +59,7 @@ class CGCElf(Binary):
     def maps(self):
         for elf_segment in self.elf.iter_segments():
             if elf_segment.header.p_type not in ["PT_LOAD", "PT_NULL", "PT_PHDR", "PT_CGCPOV2"]:
-                raise Exception("Not Supported Section")
+                raise BinaryException("Not Supported Section")
 
             if elf_segment.header.p_type != "PT_LOAD" or elf_segment.header.p_memsz == 0:
                 continue
@@ -60,7 +68,7 @@ class CGCElf(Binary):
             # PF_X 0x1 Execute - PF_W 0x2 Write - PF_R 0x4 Read
             perms = ["   ", "  x", " w ", " wx", "r  ", "r x", "rw ", "rwx"][flags & 7]
             if "r" not in perms:
-                raise Exception("Not readable map from cgc elf not supported")
+                raise BinaryException("Not readable map from cgc elf not supported")
 
             # CGCMAP--
             assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0
@@ -97,6 +105,10 @@ class Elf(Binary):
             assert self.interpreter.arch == self.arch
             assert self.interpreter.elf.header.e_type in ["ET_DYN", "ET_EXEC"]
 
+    def __del__(self):
+        if self.elf is not None:
+            self.elf.stream.close()
+
     def maps(self):
         for elf_segment in self.elf.iter_segments():
             if elf_segment.header.p_type != "PT_LOAD" or elf_segment.header.p_memsz == 0:
@@ -106,7 +118,7 @@ class Elf(Binary):
             # PF_X 0x1 Execute - PF_W 0x2 Write - PF_R 0x4 Read
             perms = ["   ", "  x", " w ", " wx", "r  ", "r x", "rw ", "rwx"][flags & 7]
             if "r" not in perms:
-                raise Exception("Not readable map from cgc elf not supported")
+                raise BinaryException("Not readable map from cgc elf not supported")
 
             # CGCMAP--
             assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0

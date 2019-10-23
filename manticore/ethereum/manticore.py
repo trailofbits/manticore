@@ -1090,7 +1090,7 @@ class ManticoreEVM(ManticoreBase):
         # At the begining of a human tx/run it should not be any saved state
         with self.locked_context("ethereum.saved_states", list) as saved_states:
             if saved_states:
-                raise Exception("ethereum.saved_states should be empty")
+                raise EthereumError("ethereum.saved_states should be empty")
 
         # Every state.world has its pending_transaction filled. The run will
         # process it and potentially generate several READY and.or TERMINATED states.

@@ -1,4 +1,5 @@
 from ...utils.helpers import CacheDict
+from ...exceptions import SmtlibError
 from .expression import *
 from functools import lru_cache
 import logging
@@ -146,7 +147,7 @@ class Translator(Visitor):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
                     return value
-        raise Exception(f"No translation for this {expression}")
+        raise SmtlibError(f"No translation for this {expression}")
 
 
 class GetDeclarations(Visitor):
@@ -896,7 +897,7 @@ class TranslatorSmtlib(Translator):
 
     @property
     def results(self):
-        raise Exception("NOOO")
+        raise SmtlibError("NOOO")
 
     @property
     def result(self):

@@ -2,6 +2,7 @@ import itertools
 import sys
 
 from ...utils.helpers import PickleSerializer
+from ...exceptions import SmtlibError
 from .expression import (
     BitVecVariable,
     BoolVariable,
@@ -19,6 +20,14 @@ from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class ConstraintException(SmtlibError):
+    """
+    Constraint exception
+    """
+
+    pass
 
 
 class ConstraintSet:
@@ -81,7 +90,7 @@ class ConstraintSet:
         # constraints to this one. After the child constraintSet is deleted
         # we regain the ability to add constraints.
         if self._child is not None:
-            raise Exception("ConstraintSet is frozen")
+            raise ConstraintException("ConstraintSet is frozen")
 
         if isinstance(constraint, BoolConstant):
             if not constraint.value:
@@ -184,7 +193,7 @@ class ConstraintSet:
             elif isinstance(exp, Array):
                 result += f"(declare-fun {name} () (Array (_ BitVec {exp.index_bits}) (_ BitVec {exp.value_bits})))"
             else:
-                raise Exception(f"Type not supported {exp!r}")
+                raise ConstraintException(f"Type not supported {exp!r}")
             result += f"(assert (= {name} {smtlib}))\n"
 
         constraint_str = translator.pop()
@@ -219,7 +228,7 @@ class ConstraintSet:
             except RuntimeError:
                 # TODO: (defunct) move recursion management out of PickleSerializer
                 if sys.getrecursionlimit() >= PickleSerializer.MAX_RECURSION:
-                    raise Exception(
+                    raise ConstraintException(
                         f"declarations recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting"
                     )
                 new_limit = sys.getrecursionlimit() + PickleSerializer.DEFAULT_RECURSION
