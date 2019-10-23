@@ -665,7 +665,7 @@ class ManticoreBase(Eventful):
     @sync
     def count_all_states(self):
         """ Total states count """
-        return len(self._all_states)
+        return self.count_states()
 
     @sync
     def count_ready_states(self):

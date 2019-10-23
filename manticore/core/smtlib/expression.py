@@ -236,11 +236,6 @@ class BoolNot(BoolOperation):
         super().__init__(value, **kwargs)
 
 
-class BoolEqual(BoolOperation):
-    def __init__(self, a, b, **kwargs):
-        super().__init__(a, b, **kwargs)
-
-
 class BoolAnd(BoolOperation):
     def __init__(self, a, b, **kwargs):
         super().__init__(a, b, **kwargs)

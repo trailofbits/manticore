@@ -3082,7 +3082,7 @@ class EVMWorld(Platform):
             with state.constraints as temp_cs:
                 # make a free symbolic idex that could address any storage slot
                 index = temp_cs.new_bitvec(256)
-                # get the storage for accounbt_address
+                # get the storage for account_address
                 storage = blockchain.get_storage(account_address)
                 # we are interested only in used slots
                 temp_cs.add(storage.get(index) != 0)

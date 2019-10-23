@@ -1156,7 +1156,7 @@ class ManticoreEVM(ManticoreBase):
         """
 
         name = func.__name__
-        # Save concrete unction
+        # Save concrete function
         with self.locked_context("ethereum", dict) as ethereum_context:
             functions = ethereum_context.get("symbolic_func", dict())
             functions[name] = func

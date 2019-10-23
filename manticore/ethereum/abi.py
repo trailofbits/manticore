@@ -303,7 +303,7 @@ class ABI:
         return buffer
 
     @staticmethod
-    def _serialize_int(value, size=32, padding=0):
+    def _serialize_int(value: typing.Union[int, BitVec], size=32, padding=0):
         """
         Translates a signed python integral or a BitVec into a 32 byte string, MSB first
         """
@@ -356,7 +356,9 @@ class ABI:
         return Operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
-    def _deserialize_uint(data, nbytes=32, padding=0, offset=0):
+    def _deserialize_uint(
+        data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0, offset=0
+    ):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
@@ -370,7 +372,7 @@ class ABI:
         return value
 
     @staticmethod
-    def _deserialize_int(data, nbytes=32, padding=0):
+    def _deserialize_int(data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0):
         """
         Read a `nbytes` bytes long big endian signed integer from `data` starting at `offset`
 
