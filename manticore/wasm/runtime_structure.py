@@ -178,9 +178,6 @@ class Store:
         self.mems = state["mems"]
         self.globals = state["globals"]
 
-    def __hash__(self):
-        return hash((self.funcs, self.tables, self.mems, self.globals))
-
 
 def _eval_maybe_symbolic(constraints, expression) -> bool:
     if issymbolic(expression):

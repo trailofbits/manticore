@@ -3,6 +3,7 @@ from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import I32
 from manticore.core.plugin import Plugin
 from pathlib import Path
+import glob
 
 
 def getchar(constraints, addr):
@@ -53,6 +54,16 @@ class TestExamples(unittest.TestCase):
             results.append(val_list[0][0])
 
         self.assertEqual(sorted(results), [2, 3, 8])
+
+        m.finalize()
+
+        inputs = []
+        for fn in glob.glob(m.workspace + "/*.input"):
+            with open(fn, "r") as f:
+                raw = f.read().strip()
+                inputs.append(int(raw.replace("collatz_arg: ", "")))
+
+        self.assertEqual(sorted(inputs), [4, 6, 8])
 
     def test_plugin(self):
         def arg_gen(_state):
