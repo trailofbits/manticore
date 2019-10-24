@@ -20,6 +20,8 @@ from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIf
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config
 
+import os.path
+
 consts = config.get_group("cli")
 consts.add("profile", default=False, description="Enable worker profiling mode")
 
@@ -117,7 +119,8 @@ def ethereum_main(args, logger):
             m.kill()
 
         if consts.profile:
-            with open("profiling.bin", "wb") as f:
+            profile_path = os.path.join(m.workspace, "profiling.bin")
+            with open(profile_path, "wb") as f:
                 profiler.save_profiling_data(f)
 
         for detector in list(m.detectors):
