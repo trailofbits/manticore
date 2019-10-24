@@ -27,7 +27,9 @@ class CallCounterPlugin(Plugin):
             ctx[instruction.mnemonic] = val + 1
 
 
-wasm_file = str(Path(__file__).parent.parent.parent.joinpath("examples", "wasm", "collatz", "collatz.wasm"))
+wasm_file = str(
+    Path(__file__).parent.parent.parent.joinpath("examples", "wasm", "collatz", "collatz.wasm")
+)
 
 
 class TestExamples(unittest.TestCase):
