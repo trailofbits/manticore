@@ -2,6 +2,7 @@ import unittest
 from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import I32
 from manticore.core.plugin import Plugin
+from pathlib import path
 
 
 def getchar(constraints, addr):
@@ -26,9 +27,12 @@ class CallCounterPlugin(Plugin):
             ctx[instruction.mnemonic] = val + 1
 
 
+wasm_file = path(__file__).parent.parent.joinpath("examples", "wasm", "collatz", "collatz.wasm")
+
+
 class TestExamples(unittest.TestCase):
     def test_getchar(self):
-        m = ManticoreWASM("../examples/wasm/collatz/collatz.wasm", env={"getchar": getchar})
+        m = ManticoreWASM(wasm_file, env={"getchar": getchar})
         m.invoke("main")
         m.run()
         results = []
@@ -38,7 +42,7 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(sorted(results), [0, 1, 2, 5, 7, 8, 16])
 
     def test_symbolic_args(self):
-        m = ManticoreWASM("../examples/wasm/collatz/collatz.wasm", env={})
+        m = ManticoreWASM(wasm_file, env={})
         m.invoke("collatz", arg_gen)
         m.run()
 
@@ -52,7 +56,7 @@ class TestExamples(unittest.TestCase):
         def arg_gen(_state):
             return [I32(1337)]
 
-        m = ManticoreWASM("../examples/wasm/collatz/collatz.wasm")
+        m = ManticoreWASM(wasm_file)
         plugin = CallCounterPlugin()
         m.register_plugin(plugin)
         m.invoke("collatz", arg_gen)
