@@ -21,7 +21,7 @@ class State(StateBase):
         """
         The first memory in the current execution Store
         """
-        return self._platform.store.mems[0]
+        return self.store.mems[0]
 
     def execute(self):
         return self._platform.execute()
