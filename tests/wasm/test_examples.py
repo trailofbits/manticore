@@ -28,7 +28,7 @@ class CallCounterPlugin(Plugin):
 
 class TestExamples(unittest.TestCase):
     def test_getchar(self):
-        m = ManticoreWASM("../../examples/wasm/collatz/collatz.wasm", env={"getchar": getchar})
+        m = ManticoreWASM("../examples/wasm/collatz/collatz.wasm", env={"getchar": getchar})
         m.invoke("main")
         m.run()
         results = []
@@ -38,7 +38,7 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(sorted(results), [0, 1, 2, 5, 7, 8, 16])
 
     def test_symbolic_args(self):
-        m = ManticoreWASM("../../examples/wasm/collatz/collatz.wasm", env={})
+        m = ManticoreWASM("../examples/wasm/collatz/collatz.wasm", env={})
         m.invoke("collatz", arg_gen)
         m.run()
 
@@ -52,7 +52,7 @@ class TestExamples(unittest.TestCase):
         def arg_gen(_state):
             return [I32(1337)]
 
-        m = ManticoreWASM("../../examples/wasm/collatz/collatz.wasm")
+        m = ManticoreWASM("../examples/wasm/collatz/collatz.wasm")
         plugin = CallCounterPlugin()
         m.register_plugin(plugin)
         m.invoke("collatz", arg_gen)
