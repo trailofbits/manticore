@@ -1182,12 +1182,7 @@ class AtomicStack(Stack):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_val and isinstance(exc_val, Concretize):
             logger.info("Rolling back stack for concretization")
-            while self.actions:
-                action = self.actions.pop()
-                if isinstance(action, AtomicStack.PopItem):
-                    self.parent.push(action.val)
-                elif isinstance(action, AtomicStack.PushItem):
-                    self.parent.pop()
+            self.rollback()
         else:
             pass
 
@@ -1197,6 +1192,14 @@ class AtomicStack(Stack):
     @dataclass
     class PopItem:
         val: typing.Union[Value, Label, Activation]
+
+    def rollback(self):
+        while self.actions:
+            action = self.actions.pop()
+            if isinstance(action, AtomicStack.PopItem):
+                self.parent.push(action.val)
+            elif isinstance(action, AtomicStack.PushItem):
+                self.parent.pop()
 
     def push(self, val: typing.Union[Value, Label, Activation]) -> None:
         self.actions.append(AtomicStack.PushItem())

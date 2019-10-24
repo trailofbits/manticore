@@ -70,13 +70,13 @@ class TestExamples(unittest.TestCase):
             return [I32(1337)]
 
         m = ManticoreWASM(wasm_file)
-        plugin = CallCounterPlugin()
-        m.register_plugin(plugin)
+        counter_plugin = CallCounterPlugin()
+        m.register_plugin(counter_plugin)
         m.invoke("collatz", arg_gen)
         m.run()
 
         # counts = m.context.get("<class 'test_examples.CallCounterPlugin'>").get("counter")
-        counts = plugin.context.get("counter")
+        counts = counter_plugin.context.get("counter")
 
         self.assertEqual(counts["br_if"], 45)
         self.assertEqual(counts["loop"], 44)

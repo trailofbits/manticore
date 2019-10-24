@@ -146,10 +146,10 @@ class ManticoreWASM(ManticoreBase):
         self._output.save_input_symbols(testcase, state)
 
         with testcase.open_stream("stack") as stackf:
-            stackf.write(str(state.platform.stack.data))
+            stackf.write(str(state.stack.data))
 
         with testcase.open_stream("memory") as memoryf:
-            memoryf.write(str(state.platform.store.mems[0].data))
+            memoryf.write(str(state.mem.data))
 
         term = getattr(state, "_terminated_by", None)
         if term:
