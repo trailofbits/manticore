@@ -2,7 +2,7 @@ import unittest
 from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import I32
 from manticore.core.plugin import Plugin
-from pathlib import path
+from pathlib import Path
 
 
 def getchar(constraints, addr):
@@ -27,7 +27,7 @@ class CallCounterPlugin(Plugin):
             ctx[instruction.mnemonic] = val + 1
 
 
-wasm_file = path(__file__).parent.parent.joinpath("examples", "wasm", "collatz", "collatz.wasm")
+wasm_file = Path(__file__).parent.parent.joinpath("examples", "wasm", "collatz", "collatz.wasm")
 
 
 class TestExamples(unittest.TestCase):
