@@ -13,10 +13,11 @@ args.filename.close()
 
 
 class Module:
-    def __init__(self, filename, tests):
+    def __init__(self, filename, tests, name=None):
         self.name = filename.replace(".wasm", "").replace(".wast", "").replace(".", "_").strip()
         self.filename = filename
         self.tests = tests
+        self.registered_name = name
 
     def add_test(self, name, line, args, rets, type_="assert_return"):
         self.tests.append({"func": name, "line": line, "args": args, "rets": rets, "type": type_})
@@ -50,6 +51,8 @@ template = env.get_template("test_template.jinja2")
 
 
 modules = []
+module_names = {}
+registered_modules = {}
 current_module = None
 for d in data:
 
@@ -80,6 +83,8 @@ for d in data:
                     convert_types(d["action"]["args"]),
                     convert_types(d["expected"]),
                 )
+        elif d["action"]["type"] == "get":
+            pass  # TODO - Check for export values
         else:
             raise NotImplementedError("assert_return with action type: " + d["action"]["type"])
     elif d["type"] == "assert_return_arithmetic_nan":
@@ -109,9 +114,11 @@ for d in data:
     elif d["type"] == "assert_unlinkable":
         current_module = None
     elif d["type"] == "module":
-        modules.append(Module(d["filename"], []))
+        modules.append(Module(d["filename"], [], d.get("name", None)))
         current_module = len(modules) - 1
+        if "name" in d:
+            module_names[d["name"]] = current_module
     elif d["type"] == "register":
-        raise NotImplementedError("register")
+        registered_modules[d["as"]] = module_names.get(d.get("name", None), current_module)
 
 print(template.render(modules=modules))

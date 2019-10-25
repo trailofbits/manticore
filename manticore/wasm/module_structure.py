@@ -48,6 +48,7 @@ from wasm.wasmtypes import (
     SEC_CODE,
     SEC_DATA,
 )
+import types
 
 ExportDesc: type = typing.Union[FuncIdx, TableIdx, MemIdx, GlobalIdx]
 ImportDesc: type = typing.Union[TypeIdx, TableType, MemoryType, GlobalType]
@@ -280,12 +281,7 @@ class Module:
         :param filename: name of the WASM module
         :return: Module
         """
-        type_map = [
-            F64,
-            F32,
-            I64,
-            I32,
-        ]  # Data types are negatively indexed, which is why I32 is last
+        type_map = {-16: types.FunctionType, -4: F64, -3: F32, -2: I64, -1: I32}
 
         m: Module = cls()
         with open(filename, "rb") as wasm_file:
@@ -324,7 +320,7 @@ class Module:
                         raise RuntimeError("Can't decode kind field of:", i.kind)
                     m.imports.append(
                         Import(
-                            ty_map["module_str"].to_string(i.module_str),
+                            strip_quotes(ty_map["module_str"].to_string(i.module_str)),
                             strip_quotes(ty_map["field_str"].to_string(i.field_str)),
                             desc,
                         )
