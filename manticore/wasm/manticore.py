@@ -184,7 +184,11 @@ def _make_wasm_bin(program, env={}, **kwargs) -> State:
 
     constraints = kwargs.get("constraints", ConstraintSet())
     platform = wasm.WASMWorld(program, constraints=constraints)
-    platform.instantiate(env, exec_start=kwargs.get("exec_start", False))
+    platform.instantiate(
+        env,
+        exec_start=kwargs.get("exec_start", False),
+        stub_missing=kwargs.get("stub_missing", True),
+    )
     initial_state = State(constraints, platform)
 
     return initial_state

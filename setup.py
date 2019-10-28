@@ -49,6 +49,7 @@ setup(
         "ply",
         "crytic-compile>=0.1.1",
         "wasm",
+        "black",
     ]
     + rtd_dependent_deps()
     + dataclass_deps,

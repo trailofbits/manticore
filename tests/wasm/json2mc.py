@@ -13,14 +13,23 @@ args.filename.close()
 
 
 class Module:
-    def __init__(self, filename, tests, name=None):
+    def __init__(self, filename, tests, name="self"):
         self.name = filename.replace(".wasm", "").replace(".wast", "").replace(".", "_").strip()
         self.filename = filename
         self.tests = tests
         self.registered_name = name
 
-    def add_test(self, name, line, args, rets, type_="assert_return"):
-        self.tests.append({"func": name, "line": line, "args": args, "rets": rets, "type": type_})
+    def add_test(self, name, line, args, rets, type_="assert_return", mod_name=None):
+        self.tests.append(
+            {
+                "func": name,
+                "line": line,
+                "args": args,
+                "rets": rets,
+                "type": type_,
+                "mod_name": mod_name,
+            }
+        )
 
     def __repr__(self):
         return f"<Module {self.filename} containing {len(self.tests)} tests>"
@@ -65,6 +74,7 @@ for d in data:
                     convert_types(d["action"]["args"]),
                     convert_types(d["expected"]),
                     "action",
+                    mod_name=d["action"].get("module", None),
                 )
         else:
             raise NotImplementedError("action with action type: " + d["action"]["type"])
@@ -82,9 +92,17 @@ for d in data:
                     d["line"],
                     convert_types(d["action"]["args"]),
                     convert_types(d["expected"]),
+                    mod_name=d["action"].get("module", None),
                 )
         elif d["action"]["type"] == "get":
-            pass  # TODO - Check for export values
+            modules[current_module].add_test(
+                d["action"]["field"],
+                d["line"],
+                [],
+                convert_types(d["expected"]),
+                "assert_global",
+                d["action"].get("module", "self"),
+            )
         else:
             raise NotImplementedError("assert_return with action type: " + d["action"]["type"])
     elif d["type"] == "assert_return_arithmetic_nan":
@@ -106,6 +124,7 @@ for d in data:
                     convert_types(d["action"]["args"]),
                     convert_types(d["expected"]),
                     "assert_trap",
+                    mod_name=d["action"].get("module", None),
                 )
         else:
             raise NotImplementedError("assert_trap with action type: " + d["action"]["type"])
@@ -114,11 +133,21 @@ for d in data:
     elif d["type"] == "assert_unlinkable":
         current_module = None
     elif d["type"] == "module":
-        modules.append(Module(d["filename"], [], d.get("name", None)))
+        modules.append(Module(d["filename"], [], d.get("name", "self")))
         current_module = len(modules) - 1
         if "name" in d:
             module_names[d["name"]] = current_module
+            registered_modules[d["name"]] = modules[current_module].filename
     elif d["type"] == "register":
-        registered_modules[d["as"]] = module_names.get(d.get("name", None), current_module)
+        registered_modules[d["as"]] = modules[
+            module_names.get(d.get("name", None), current_module)
+        ].filename
 
-print(template.render(modules=modules))
+print(
+    template.render(
+        modules=modules,
+        registered_modules=[
+            {"name": name, "filename": registered_modules[name]} for name in registered_modules
+        ],
+    )
+)

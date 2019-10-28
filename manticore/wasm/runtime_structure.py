@@ -200,7 +200,7 @@ class ModuleInstance(Eventful):
         "memaddrs",
         "globaladdrs",
         "exports",
-        "executor",
+        "export_map" "executor",
         "_instruction_queue",
         "_block_depths",
     ]
@@ -219,6 +219,8 @@ class ModuleInstance(Eventful):
     globaladdrs: typing.List[GlobalAddr]
     #: Stores records of everything exported by this module
     exports: typing.List[ExportInst]
+    #: Maps the names of exports to their index in the list of exports
+    export_map: typing.Dict[str, int]
     #: Contains instruction implementations for all non-control-flow instructions
     executor: Executor
     #: Stores the unpacked sequence of instructions in the order they should be executed
@@ -239,6 +241,7 @@ class ModuleInstance(Eventful):
         self.memaddrs = []
         self.globaladdrs = []
         self.exports = []
+        self.export_map = {}
         self.executor = Executor(constraints)
         self._instruction_queue = deque()
         self._block_depths = [0]
@@ -255,6 +258,7 @@ class ModuleInstance(Eventful):
                 "memaddrs": self.memaddrs,
                 "globaladdrs": self.globaladdrs,
                 "exports": self.exports,
+                "export_map": self.export_map,
                 "executor": self.executor,
                 "_instruction_queue": self._instruction_queue,
                 "_block_depths": self._block_depths,
@@ -269,6 +273,7 @@ class ModuleInstance(Eventful):
         self.memaddrs = state["memaddrs"]
         self.globaladdrs = state["globaladdrs"]
         self.exports = state["exports"]
+        self.export_map = state["export_map"]
         self.executor = state["executor"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
@@ -369,6 +374,9 @@ class ModuleInstance(Eventful):
         # #15 run start function
         if module.start is not None:
             assert module.start in range(len(self.funcaddrs))
+            funcaddr = self.funcaddrs[module.start]
+            assert funcaddr in range(len(store.funcs))
+            arg_count = len(store.funcs[funcaddr].type.param_types)
             self.invoke(stack, self.funcaddrs[module.start], store, [])
             if exec_start:
                 stack.push(self.exec_expression(store, stack, []))
@@ -455,7 +463,9 @@ class ModuleInstance(Eventful):
         assert funcaddr in range(len(store.funcs))
         funcinst = store.funcs[funcaddr]
         ty = funcinst.type
-        assert len(ty.param_types) == len(argv)
+        assert len(ty.param_types) == len(
+            argv
+        ), f"Function {funcaddr} expects {len(ty.param_types)} arguments"
         # for t, v in zip(ty.param_types, argv):
         #     assert type(v) == type(t)
 
@@ -723,6 +733,29 @@ class ModuleInstance(Eventful):
                     "The instruction queue is empty, but there are still labels on the stack. This should only happen when re-executing after a Trap"
                 )
         return False
+
+    def get_export(
+        self, name: str, store: Store
+    ) -> typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]:
+        """
+        Retrieves a value exported by this module instance from store
+
+        :param name: The name of the exported value to get
+        :param store: The current execution store (where the export values live)
+        :return: The value of the export
+        """
+        assert name in self.export_map, "Couldn't find an export called " + name
+        export: ExportInst = self.exports[self.export_map[name]]
+        assert export.name == name, f"Export name mismatch (expected {name}, got {export.name})"
+        if isinstance(export.value, FuncAddr):
+            return store.funcs[export.value]
+        if isinstance(export.value, TableAddr):
+            return store.tables[export.value]
+        if isinstance(export.value, MemAddr):
+            return store.mems[export.value]
+        if isinstance(export.value, GlobalAddr):
+            return store.globals[export.value]
+        raise RuntimeError("Unkown export type: " + str(type(export.value)))
 
     def block(
         self,

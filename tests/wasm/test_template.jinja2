@@ -4,7 +4,8 @@ from os.path import dirname, abspath, join
 from manticore.platforms import wasm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
-from manticore.wasm.types import I32, F32, I64, F64, Trap
+from manticore.wasm.types import I32, F32, I64, F64, Trap, FunctionType
+from manticore.wasm.runtime_structure import TableInst, MemInst, GlobalInst, HostFunc
 from base64 import b64decode
 import math
 
@@ -17,6 +18,22 @@ def assertEqualNan(testcase, a, b):
             # Tests for equality out to 10^-7, helpful for avoiding floating-point rounding errors
             testcase.assertAlmostEqual(a_item, b_item)
 {% endblock %}
+
+
+spectest = {
+  "print": HostFunc(FunctionType([], []), lambda ct: []),
+  "print_i32": HostFunc(FunctionType([I32], []), lambda ct, x: []),
+  "print_i32_f32": HostFunc(FunctionType([I32, F32], []), lambda ct, x, y: []),
+  "print_f64_f64": HostFunc(FunctionType([F64, F64], []), lambda ct, x, y: []),
+  "print_f32": HostFunc(FunctionType([F32], []), lambda ct, x: []),
+  "print_f64": HostFunc(FunctionType([F64], []), lambda ct, x: []),
+  "global_i32": GlobalInst(I32(666), True),
+  "global_f32": GlobalInst(F32(666), True),
+  "global_f64": GlobalInst(F64(666), True),
+  "table": TableInst([None] * 10, 20),
+  "memory": MemInst([0x0] * 64 * 1024, 2)
+}
+
 
 {% for module in modules %}
 class WASMTest_{{ module.name }}(unittest.TestCase):
@@ -31,7 +48,12 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
 
     def test_{{ module.name }}(self):
         constraints = ConstraintSet()
-        world = wasm.WASMWorld(self.filename)
+        world = wasm.WASMWorld(self.filename, name="{{ module.registered_name }}")
+        world.set_env(spectest, mod_name="spectest")
+
+        {% for item in registered_modules %}
+        world.register_module("{{ item['name'] }}", join(dirname(abspath(__file__)), "{{ item['filename'] }}"))
+        {% endfor %}
 
         world.instantiate({}, exec_start=True)
         {% for test in module.tests %}
@@ -43,27 +65,35 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             {% else %}
             argv=[]
             {% endif %}
+            {% if test.mod_name != None %}
+            module = "{{ test.mod_name }}"
+            {% else %}
+            module = None
+            {% endif %}
             expected = [{{ test.rets }}]
             {% if test.type == "assert_return" %}
-            world.invoke(name={{ test.func | escape_null }}, argv=argv)
+            world.invoke(name={{ test.func | escape_null }}, argv=argv, module=module)
             try:
-                real = world.exec_for_test({{ test.func | escape_null }})
+                real = world.exec_for_test({{ test.func | escape_null }}, module=module)
                 assertEqualNan(self, real, expected)
             except NotImplementedError as e:
                 self.skipTest(f"NotImplementedError: {str(e)}")
             {% endif %}
+            {% if test.type == "assert_global" %}
+            assertEqualNan(self, [world.get_export("{{ test.mod_name }}", "{{ test.func }}")], expected)
+            {% endif %}
             {% if test.type == "assert_trap" %}
-            world.invoke(name={{ test.func | escape_null }}, argv=argv)
+            world.invoke(name={{ test.func | escape_null }}, argv=argv, module=module)
             with self.assertRaises(Trap):
                 try:
-                    world.exec_for_test({{ test.func | escape_null }})
+                    world.exec_for_test({{ test.func | escape_null }}, module=module)
                 except NotImplementedError as e:
                     self.skipTest(f"NotImplementedError: {str(e)}")
             {% endif %}
             {% if test.type == "action" %}
-            world.invoke(name={{ test.func | escape_null }}, argv=argv)
+            world.invoke(name={{ test.func | escape_null }}, argv=argv, module=module)
             try:
-                world.exec_for_test({{ test.func | escape_null }})
+                world.exec_for_test({{ test.func | escape_null }}, module=module)
             except NotImplementedError as e:
                 self.skipTest(f"NotImplementedError: {str(e)}")
             {% endif %}
