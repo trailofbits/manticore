@@ -468,11 +468,11 @@ class ManticoreEVM(ManticoreBase):
         self.subscribe("on_symbolic_sha3", self._on_symbolic_sha3_callback)
         self.subscribe("on_concrete_sha3", self._on_concrete_sha3_callback)
 
-        self._accounts = dict()
+        self._accounts: Dict[str, EVMContract] = dict()
         self._serializer = PickleSerializer()
 
         self.constraints = constraints
-        self.detectors = {}
+        self.detectors: Dict[str, Detector] = {}
         self.metadata: Dict[int, SolidityMetadata] = {}
 
         # The following should go to manticore.context so we can use multiprocessing
@@ -486,7 +486,7 @@ class ManticoreEVM(ManticoreBase):
         return self.get_world()
 
     # deprecate this 5 in favor of for state in m.all_states: do stuff?
-    @property
+    @property  # type: ignore
     @deprecated("You should iterate over `m.all_states` instead.")
     def completed_transactions(self):
         with self.locked_context("ethereum") as context:
@@ -1114,7 +1114,7 @@ class ManticoreEVM(ManticoreBase):
         data: Array,
         value: Optional[Union[int, Expression]] = None,
         contract_metadata: Optional[SolidityMetadata] = None,
-    ) -> BoolOperation:
+    ):
         """ Returns a constraint that excludes combinations of value and data that would cause an exception in the EVM
             contract dispatcher.
 
