@@ -3024,7 +3024,9 @@ class SLinux(Linux):
             return fd
         sock = self._get_fd(fd)
         nbytes = 32
-        symb = self.constraints.new_array(name=f"socket{fd}", index_max=nbytes)
+        symb = self.constraints.new_array(
+            name=f"socket{fd}", index_max=nbytes, avoid_collisions=True
+        )
         for i in range(nbytes):
             sock.buffer.append(symb[i])
         return fd
