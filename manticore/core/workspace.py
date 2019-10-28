@@ -9,10 +9,11 @@ import io
 from contextlib import contextmanager
 
 try:
-    from contextlib import nullcontext
+    # nullcontext is not present before Python 3.7
+    from contextlib import nullcontext  # type: ignore
 except ImportError:
 
-    class nullcontext:
+    class nullcontext:  # type: ignore
         def __init__(self, enter_result=None):
             self.enter_result = enter_result
 
