@@ -1,11 +1,10 @@
-from __future__ import annotations
 from functools import reduce
 from ...exceptions import SmtlibError
 import uuid
 
 import re
 import copy
-from typing import Union, Any, Type
+from typing import Union, Any, Type, Optional
 
 
 class ExpressionException(SmtlibError):
@@ -174,7 +173,7 @@ class Bool(Expression):
     def __init__(self, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
 
-    def cast(self, value: Union[int, bool], **kwargs: Any) -> Union[BoolConstant, Bool]:
+    def cast(self, value: Union[int, bool], **kwargs: Any) -> Union["BoolConstant", "Bool"]:
         if isinstance(value, Bool):
             return value
         return BoolConstant(bool(value), **kwargs)
@@ -249,7 +248,7 @@ class BoolAnd(BoolOperation):
 
 
 class BoolOr(BoolOperation):
-    def __init__(self, a: Type[Bool], b: Type[Bool], **kwargs: Any) -> None:
+    def __init__(self, a: Type["Bool"], b: Type["Bool"], **kwargs: Any) -> None:
         super().__init__(a, b, **kwargs)
 
 
@@ -260,7 +259,7 @@ class BoolXor(BoolOperation):
 
 class BoolITE(BoolOperation):
     def __init__(
-        self, cond: Type[Bool], true: Type[Bool], false: Type[Bool], **kwargs: Any
+        self, cond: Type["Bool"], true: Type["Bool"], false: Type["Bool"], **kwargs: Any
     ) -> None:
         super().__init__(cond, true, false, **kwargs)
 
@@ -281,8 +280,8 @@ class BitVec(Expression):
         return 1 << (self.size - 1)
 
     def cast(
-        self, value: Union[Type[BitVec], str, int, bytes], **kwargs: Any
-    ) -> Union[BitVecConstant, BitVec]:
+        self, value: Union[Type["BitVec"], str, int, bytes], **kwargs: Any
+    ) -> Union["BitVecConstant", "BitVec"]:
         if isinstance(value, BitVec):
             assert value.size == self.size
             return value
@@ -564,7 +563,7 @@ class BitVecAnd(BitVecOperation):
 
 
 class BitVecOr(BitVecOperation):
-    def __init__(self, a: Type[BitVec], b: Type[BitVec], *args: Any, **kwargs: Any) -> None:
+    def __init__(self, a: Type["BitVec"], b: Type["BitVec"], *args: Any, **kwargs: Any) -> None:
         assert a.size == b.size
         super().__init__(a.size, a, b, *args, **kwargs)
 
@@ -690,14 +689,14 @@ class Array(Expression):
             return arr
         raise ValueError  # cast not implemented
 
-    def cast_index(self, index: int) -> Union[int, BitVecConstant]:
+    def cast_index(self, index: int) -> Union[int, "BitVecConstant"]:
         if isinstance(index, int):
             # assert self.index_max is None or index >= 0 and index < self.index_max
             return BitVecConstant(self.index_bits, index)
         assert index.size == self.index_bits
         return index
 
-    def cast_value(self, value: Type[BitVec]) -> Union[BitVecConstant, BitVec]:
+    def cast_value(self, value: Type["BitVec"]) -> Union["BitVecConstant", "BitVec"]:
         if isinstance(value, (str, bytes)) and len(value) == 1:
             value = ord(value)
         if isinstance(value, int):
@@ -874,7 +873,7 @@ class ArrayVariable(Array, Variable):
 
 
 class ArrayOperation(Array, Operation):
-    def __init__(self, array: Type[Array], *operands: Any, **kwargs: Any) -> None:
+    def __init__(self, array: Type["Array"], *operands: Any, **kwargs: Any) -> None:
         super().__init__(
             array.index_bits, array.index_max, array.value_bits, array, *operands, **kwargs
         )
@@ -883,9 +882,9 @@ class ArrayOperation(Array, Operation):
 class ArrayStore(ArrayOperation):
     def __init__(
         self,
-        array: Type[Array],
-        index: Type[BitVec],
-        value: Type[BitVec],
+        array: Type["Array"],
+        index: Type["BitVec"],
+        value: Type["BitVec"],
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -913,7 +912,7 @@ class ArrayStore(ArrayOperation):
 class ArraySlice(Array):
     def __init__(
         self,
-        array: Type[Union[Array, ArrayProxy]],
+        array: Type[Union["Array", "ArrayProxy"]],
         offset: int,
         size: int,
         *args: Any,
@@ -965,7 +964,7 @@ class ArraySlice(Array):
 
 
 class ArrayProxy(Array):
-    def __init__(self, array: Type[Array], default: Any = None) -> None:
+    def __init__(self, array: Type["Array"], default: Any = None) -> None:
         self._default = default
         self._concrete_cache = {}
         self._written = None
@@ -1148,7 +1147,9 @@ class ArrayProxy(Array):
 
 
 class ArraySelect(BitVec, Operation):
-    def __init__(self, array: Type[Array], index: Type[BitVec], *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, array: Type["Array"], index: Type["BitVec"], *args: Any, **kwargs: Any
+    ) -> None:
         assert index.size == array.index_bits
         super().__init__(array.value_bits, array, index, *args, **kwargs)
 
@@ -1165,14 +1166,14 @@ class ArraySelect(BitVec, Operation):
 
 
 class BitVecSignExtend(BitVecOperation):
-    def __init__(self, operand: Type[BitVec], size_dest: int, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, operand: Type["BitVec"], size_dest: int, *args: Any, **kwargs: Any) -> None:
         assert size_dest >= operand.size
         super().__init__(size_dest, operand, *args, **kwargs)
         self.extend = size_dest - operand.size
 
 
 class BitVecZeroExtend(BitVecOperation):
-    def __init__(self, size_dest: int, operand: Type[BitVec], *args: Any, **kwargs: Any) -> None:
+    def __init__(self, size_dest: int, operand: Type["BitVec"], *args: Any, **kwargs: Any) -> None:
         assert size_dest >= operand.size
         super().__init__(size_dest, operand, *args, **kwargs)
         self.extend = size_dest - operand.size
@@ -1210,8 +1211,8 @@ class BitVecITE(BitVecOperation):
         self,
         size: int,
         condition: Any,
-        true_value: Type[BitVec],
-        false_value: Type[BitVec],
+        true_value: Type["BitVec"],
+        false_value: Type["BitVec"],
         *args: Any,
         **kwargs: Any,
     ) -> None:
