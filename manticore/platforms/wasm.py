@@ -14,7 +14,7 @@ from ..wasm.runtime_structure import (
     TableAddr,
     ExternVal,
 )
-from ..wasm.types import Trap, TypeIdx, TableType, MemoryType, GlobalType
+from ..wasm.types import Trap, TypeIdx, TableType, MemoryType, GlobalType, MissingExportException
 from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, issymbolic
 from functools import partial
@@ -108,6 +108,7 @@ class WASMWorld(Platform):
         search_paths = {"."}
         # If the module isn't registered, look for it on the filesystem
         if module_name not in self.module_names:
+            logger.debug("Module %s was not provided, attempting to load from disk", module_name)
             for pth in search_paths:
                 possible_path = os.path.join(pth, module_name + ".wasm")
                 if os.path.isfile(possible_path):
@@ -121,28 +122,36 @@ class WASMWorld(Platform):
 
         imports = self.get_module_imports(module, exec_start, stub_missing)
 
-        self.instance.instantiate(self.store, self.module, imports, exec_start)
+        instance.instantiate(self.store, module, imports, exec_start)
         self.instantiated[self.module_names[module_name]] = True
+        logger.info("Imported %s", module_name)
 
     def get_export(self, mod_name, export_name):
         if mod_name in self.manual_exports:
             if export_name in self.manual_exports[mod_name]:
                 return self.manual_exports[mod_name][export_name]
-        if mod_name in self.module_names:  # TODO - handle mod_name.export_name
-            return self.modules[self.module_names[mod_name]][1].get_export(export_name, self.store)
+        try:
+            if mod_name in self.module_names:  # TODO - handle mod_name.export_name
+                return self.modules[self.module_names[mod_name]][1].get_export(export_name, self.store)
+        except MissingExportException as exc:
+            logger.error("Couldn't find export %s.%s", mod_name, exc.name)
+            raise exc
         return None
 
     def get_module_imports(self, module, exec_start, stub_missing):
         imports: typing.List[ExternVal] = []
         for i in module.imports:
             logger.info("Importing %s:%s", i.module, i.name)
-            if i.module not in self.module_names and i.module not in self.manual_exports:
-                self.import_module(
-                    i.module, exec_start, stub_missing
-                )  # TODO - prevent circular imports
-
+            if i.module not in self.module_names:  # If the module isn't registered
+                if i.module not in self.manual_exports:  # or manually provided
+                    # Attempt to load it from the filesystem
+                    self.import_module(
+                        i.module, exec_start, stub_missing
+                    )  # TODO - prevent circular imports
+            # If it's registered, but hasn't been imported yet, import it
+            elif not self.instantiated[self.module_names[i.module]]:
+                self.import_module(i.module, exec_start, stub_missing)
             imported_version = self.get_export(i.module, i.name)
-
             if not imported_version and not stub_missing:
                 raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 
@@ -180,6 +189,8 @@ class WASMWorld(Platform):
                     else GlobalInst(i.desc.value(0), i.desc.mut)
                 )
                 imports.append(GlobalAddr(len(self.store.globals) - 1))
+            else:
+                raise RuntimeError(f"Don't know how to handle imports of type {type(i.desc)}")
 
         return imports
 

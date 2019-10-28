@@ -298,7 +298,7 @@ class Module:
                 for ft in section_data.payload.entries:
                     m.types.append(
                         FunctionType(
-                            ft.param_types,
+                            [type_map[p_type] for p_type in ft.param_types],
                             [type_map[ft.return_type] for _i in range(ft.return_count)],
                         )
                     )

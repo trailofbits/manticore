@@ -29,6 +29,7 @@ from .types import (
     OverflowDivisionTrap,
     NonExistentFunctionCallTrap,
     TypeMismatchTrap,
+    MissingExportException,
     ConcretizeStack,
 )
 from ..core.smtlib import BitVec, issymbolic
@@ -312,7 +313,7 @@ class ModuleInstance(Eventful):
         #     assert isinstance(ext, ExternType.__args__)
 
         # #3 Assert the same number of imports and external values
-        assert len(module.imports) == len(extern_vals)
+        assert len(module.imports) == len(extern_vals), f"Expected {len(module.imports)} imports, got {len(extern_vals)}"
 
         # #4 TODO
 
@@ -431,6 +432,7 @@ class ModuleInstance(Eventful):
                 val = self.memaddrs[export_i.desc]
             if isinstance(export_i.desc, GlobalIdx):
                 val = self.globaladdrs[export_i.desc]
+            self.export_map[export_i.name] = len(self.exports)
             self.exports.append(ExportInst(export_i.name, val))
 
     def invoke_by_name(self, name: str, stack, store, argv):
@@ -744,7 +746,8 @@ class ModuleInstance(Eventful):
         :param store: The current execution store (where the export values live)
         :return: The value of the export
         """
-        assert name in self.export_map, "Couldn't find an export called " + name
+        if name not in self.export_map:
+            raise MissingExportException(name)
         export: ExportInst = self.exports[self.export_map[name]]
         assert export.name == name, f"Export name mismatch (expected {name}, got {export.name})"
         if isinstance(export.value, FuncAddr):

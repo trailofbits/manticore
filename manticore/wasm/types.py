@@ -436,3 +436,9 @@ class ConcretizeStack(Concretize):
         self.policy = policy
         self.message = f"Concretize: {message} (Policy: {policy})"
         super().__init__(message, expression, setstate=self.setstate, **kwargs)
+
+
+class MissingExportException(Trap):
+    def __init__(self, name):
+        self.name = name
+        super().__init__(f"Couldn't find an export called `{name}`")
