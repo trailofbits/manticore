@@ -32,7 +32,6 @@ from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
 
@@ -1251,7 +1250,7 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
-    def _transform_write_data(self, data: T) -> T:
+    def _transform_write_data(self, data: bytes) -> bytes:
         """
         Implement in subclass to transform data written by write(2)/writev(2)
         Nop by default.
