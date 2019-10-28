@@ -2649,6 +2649,7 @@ class Linux(Platform):
             l, r = Socket.pair()
             self.current.write_int(filedes, self._open(l))
             self.current.write_int(filedes + 4, self._open(r))
+            return 0
         else:
             logger.warning("sys_pipe2 doesn't handle flags")
             return -1
