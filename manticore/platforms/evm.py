@@ -1978,7 +1978,7 @@ class EVM(Eventful):
 
         raise StartTx()
 
-    @CREATE.pos
+    @CREATE.pos  # type: ignore
     def CREATE(self, value, offset, size):
         """Create a new account with associated code"""
         tx = self.world.last_transaction  # At this point last and current tx are the same.
@@ -2007,7 +2007,7 @@ class EVM(Eventful):
         )
         raise StartTx()
 
-    @CALL.pos
+    @CALL.pos  # type: ignore
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         data = self.world.last_transaction.return_data
         if data is not None:
@@ -2034,7 +2034,7 @@ class EVM(Eventful):
         )
         raise StartTx()
 
-    @CALLCODE.pos
+    @CALLCODE.pos  # type: ignore
     def CALLCODE(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         data = self.world.last_transaction.return_data
         if data is not None:
@@ -2070,7 +2070,7 @@ class EVM(Eventful):
         )
         raise StartTx()
 
-    @DELEGATECALL.pos
+    @DELEGATECALL.pos  # type: ignore
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         data = self.world.last_transaction.return_data
         if data is not None:
@@ -2097,7 +2097,7 @@ class EVM(Eventful):
         )
         raise StartTx()
 
-    @STATICCALL.pos
+    @STATICCALL.pos  # type: ignore
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         data = self.world.last_transaction.return_data
         if data is not None:
@@ -2324,6 +2324,12 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        if self.current_vm:
+            self.current_vm.constraints = constraints
+
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
         if self.depth > 0:
             origin = self.tx_origin()
@@ -2423,12 +2429,6 @@ class EVMWorld(Platform):
             if tx.depth == 0:
                 return tx
         return None
-
-    @constraints.setter
-    def constraints(self, constraints):
-        self._constraints = constraints
-        if self.current_vm:
-            self.current_vm.constraints = constraints
 
     @property
     def current_vm(self):
@@ -2611,11 +2611,6 @@ class EVMWorld(Platform):
 
     def has_code(self, address):
         return len(self._world_state[address]["code"]) > 0
-
-    def get_nonce(self, address):
-        if address not in self._world_state:
-            return 0
-        return self._world_state[address]["nonce"]
 
     def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
