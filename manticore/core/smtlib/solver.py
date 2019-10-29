@@ -18,6 +18,7 @@ import threading
 import collections
 import shlex
 import time
+from typing import Dict, Tuple
 from subprocess import PIPE, Popen
 import re
 
@@ -51,7 +52,7 @@ RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile("(?P<expr>.*?)\s+\|->\s+(?P<value>.
 
 
 class SingletonMixin(object):
-    __singleton_instances = {}
+    __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
 
     @classmethod
     def instance(cls):
@@ -496,18 +497,24 @@ class Z3Solver(Solver):
                         maybe_sat = self._recv()
                         if maybe_sat == "sat":
                             m = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
-                            expr, value = m.group("expr"), m.group("value")
-                            assert expr == aux.name
-                            return int(value)
+                            if m:
+                                expr, value = m.group("expr"), m.group("value")
+                                assert expr == aux.name
+                                return int(value)
+                            else:
+                                raise SolverError("Could not match MinMax objective value regex")
                     elif _status == "sat":
                         ret = self._recv()
                         if not (ret.startswith("(") and ret.endswith(")")):
                             raise SolverError("bad output on max, z3 may have been killed")
 
                         m = RE_OBJECTIVES_EXPR_VALUE.match(ret)
-                        expr, value = m.group("expr"), m.group("value")
-                        assert expr == aux.name
-                        return int(value)
+                        if m:
+                            expr, value = m.group("expr"), m.group("value")
+                            assert expr == aux.name
+                            return int(value)
+                        else:
+                            raise SolverError("Could not match objective value regex")
                 finally:
                     self._pop()
                     self._reset(temp_cs)
