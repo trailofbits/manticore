@@ -285,7 +285,7 @@ class ModuleInstance(Eventful):
         Empties the instruction queue and clears the block depths
         """
         self._instruction_queue.clear()
-        self._block_depths.clear()
+        self._block_depths = [0]
 
     def instantiate(
         self,
@@ -313,7 +313,9 @@ class ModuleInstance(Eventful):
         #     assert isinstance(ext, ExternType.__args__)
 
         # #3 Assert the same number of imports and external values
-        assert len(module.imports) == len(extern_vals), f"Expected {len(module.imports)} imports, got {len(extern_vals)}"
+        assert len(module.imports) == len(
+            extern_vals
+        ), f"Expected {len(module.imports)} imports, got {len(extern_vals)}"
 
         # #4 TODO
 
@@ -351,6 +353,7 @@ class ModuleInstance(Eventful):
             for j, FuncIdx in enumerate(elem.init):
                 assert FuncIdx in range(len(self.funcaddrs))
                 funcaddr = self.funcaddrs[FuncIdx]
+                print("Pushing", funcaddr, "to offset", eoval + j)
                 tableinst.elem[eoval + j] = funcaddr
 
         # #10 & #14 - emplace data sections into memory
@@ -880,11 +883,11 @@ class ModuleInstance(Eventful):
         """
         Marks the end of an instruction block or function
         """
-        if (
-            self._block_depths[-1] > 0
-        ):  # If we're at the end of a block, but haven't finished the function
+        if self._block_depths[-1] > 0:
+            # We're at the end of a block, but haven't finished the function
             self.exit_block(stack)
-        if self._block_depths[-1] == 0:  # We've finished all the blocks in the function
+        if self._block_depths[-1] == 0:
+            # We've finished all the blocks in the function
             self.exit_function(stack)
 
     def br(self, store: "Store", stack: "AtomicStack", label_depth: int):

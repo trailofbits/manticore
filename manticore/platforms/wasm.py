@@ -126,13 +126,16 @@ class WASMWorld(Platform):
         self.instantiated[self.module_names[module_name]] = True
         logger.info("Imported %s", module_name)
 
-    def get_export(self, mod_name, export_name):
+    def get_export(self, export_name, mod_name=None):
+        mod_name = self.default_module if not mod_name else mod_name
         if mod_name in self.manual_exports:
             if export_name in self.manual_exports[mod_name]:
                 return self.manual_exports[mod_name][export_name]
         try:
             if mod_name in self.module_names:  # TODO - handle mod_name.export_name
-                return self.modules[self.module_names[mod_name]][1].get_export(export_name, self.store)
+                return self.modules[self.module_names[mod_name]][1].get_export(
+                    export_name, self.store
+                )
         except MissingExportException as exc:
             logger.error("Couldn't find export %s.%s", mod_name, exc.name)
             raise exc
@@ -151,7 +154,7 @@ class WASMWorld(Platform):
             # If it's registered, but hasn't been imported yet, import it
             elif not self.instantiated[self.module_names[i.module]]:
                 self.import_module(i.module, exec_start, stub_missing)
-            imported_version = self.get_export(i.module, i.name)
+            imported_version = self.get_export(i.name, i.module)
             if not imported_version and not stub_missing:
                 raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 

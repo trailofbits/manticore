@@ -48,11 +48,16 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
 
     def test_{{ module.name }}(self):
         constraints = ConstraintSet()
+        {%  if module.registered_name != None %}
         world = wasm.WASMWorld(self.filename, name="{{ module.registered_name }}")
+        {%  else %}
+        world = wasm.WASMWorld(self.filename)
+        {%  endif %}
         world.set_env(spectest, mod_name="spectest")
 
         {% for item in registered_modules %}
         world.register_module("{{ item['name'] }}", join(dirname(abspath(__file__)), "{{ item['filename'] }}"))
+        world.import_module("{{ item['name'] }}", True, False)
         {% endfor %}
 
         world.instantiate({}, exec_start=True)
@@ -67,6 +72,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
             {% endif %}
             {% if test.mod_name != None %}
             module = "{{ test.mod_name }}"
+            world.import_module(module, True, False)
             {% else %}
             module = None
             {% endif %}
@@ -80,7 +86,11 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
                 self.skipTest(f"NotImplementedError: {str(e)}")
             {% endif %}
             {% if test.type == "assert_global" %}
-            assertEqualNan(self, [world.get_export("{{ test.mod_name }}", "{{ test.func }}")], expected)
+            {%  if test.mod_name != None %}
+            assertEqualNan(self, [world.get_export("{{ test.func }}", "{{ test.mod_name }}").value], expected)
+            {%  else %}
+            assertEqualNan(self, [world.get_export("{{ test.func }}").value], expected)
+            {%  endif %}
             {% endif %}
             {% if test.type == "assert_trap" %}
             world.invoke(name={{ test.func | escape_null }}, argv=argv, module=module)

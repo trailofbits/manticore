@@ -13,7 +13,7 @@ args.filename.close()
 
 
 class Module:
-    def __init__(self, filename, tests, name="self"):
+    def __init__(self, filename, tests, name=None):
         self.name = filename.replace(".wasm", "").replace(".wast", "").replace(".", "_").strip()
         self.filename = filename
         self.tests = tests
@@ -101,7 +101,7 @@ for d in data:
                 [],
                 convert_types(d["expected"]),
                 "assert_global",
-                d["action"].get("module", "self"),
+                d["action"].get("module", None),
             )
         else:
             raise NotImplementedError("assert_return with action type: " + d["action"]["type"])
@@ -133,7 +133,7 @@ for d in data:
     elif d["type"] == "assert_unlinkable":
         current_module = None
     elif d["type"] == "module":
-        modules.append(Module(d["filename"], [], d.get("name", "self")))
+        modules.append(Module(d["filename"], [], d.get("name", None)))
         current_module = len(modules) - 1
         if "name" in d:
             module_names[d["name"]] = current_module
