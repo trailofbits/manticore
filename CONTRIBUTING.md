@@ -30,10 +30,20 @@ more documentation, look [here](https://guides.github.com/activities/forking/).
 
 Some pull request guidelines:
 
-- We use the [`black`](https://black.readthedocs.io/en/stable/index.html) auto-formatter
-  to enforce style conventions in Manticore. To ensure your code is properly 
-  formatted, run `black .` in the manticore directory before
-  committing.
+- We use the [`black`](https://black.readthedocs.io/en/stable/index.html)
+  auto-formatter to enforce style conventions in Manticore. To ensure your code
+  is properly formatted, run `black .` in the Manticore directory before
+  committing. Although unlikely, if you are still having trouble with getting
+  your code to pass formatting, check that you have the same version of `black`
+  installed as what is used in the CI.
+- We use the [`mypy`](https://github.com/python/mypy) static typing tool to
+  catch inconsistencies in the code base. At the time of this writing, we
+  only check the [manticore](./manticore) directory for inconsistencies and do
+  not yet enforce new contributions to include type hints. However, we greatly
+  appreciate if you do include/add them in any code that you touch in your PR!
+  Though, remember the next guideline if you are adding many type-hints, and
+  ask for input on how to organize the addition of a massive amount of type
+  hints. Check the CI configuration for the exact version of `mypy`.
 - Minimize irrelevant changes (formatting, whitespace, etc) to code that would
   otherwise not be touched by this patch. Save formatting or style corrections
   for a separate pull request that does not make any semantic changes.
