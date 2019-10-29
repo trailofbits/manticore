@@ -448,6 +448,12 @@ class BitVec(Expression):
     def rudiv(self, other):
         return BitVecUnsignedDiv(self.cast(other), self)
 
+    def sdiv(self, other):
+        return BitVecDiv(self, self.cast(other))
+
+    def rsdiv(self, other):
+        return BitVecDiv(self.cast(other), self)
+
     def srem(self, other):
         return BitVecRem(self, self.cast(other))
 
