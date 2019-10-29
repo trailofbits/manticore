@@ -23,14 +23,22 @@ for x in *"-"*.wast; do
 done
 
 ls *.wast | sed 's/\.wast//g' > modules.txt
-while read module; do
-    echo "Preparing $module"
-    mkdir _$module
-    touch _$module/__init__.py
-    ./wast2json --debug-names $module.wast -o _$module/$module.json
-    mv $module.wast _$module/
-    python3 json2smc.py _$module/$module.json > _$module/test_symbolic_$module.py
-    python3 json2mc.py _$module/$module.json | black --quiet --fast - > _$module/test_$module.py
-done < modules.txt
+
+cores=$(python -c "import multiprocessing; print(max(multiprocessing.cpu_count() - 2, 1))")
+
+cat > gen.sh << EOF
+module=\$1
+echo "Preparing \$module"
+mkdir _\$module
+touch _\$module/__init__.py
+./wast2json --debug-names \$module.wast -o _\$module/\$module.json
+mv \$module.wast _\$module/
+python3 json2mc.py _\$module/\$module.json | black --quiet --fast - > _\$module/test_$module.py
+python3 json2smc.py _\$module/\$module.json | black --quiet --fast - > _\$module/test_symbolic_\$module.py
+EOF
+
+chmod +x gen.sh
+cat modules.txt | xargs -n1 -P"$cores" ./gen.sh
+rm gen.sh
 
 exit 0
