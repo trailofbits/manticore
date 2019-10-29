@@ -7,7 +7,7 @@ python:
   - 3.6.6
 
 stages:
-  - format
+  - lint
   - prepare
   - test
   - submit
@@ -37,10 +37,13 @@ cache:
 
 jobs:
   include:
-    - stage: format
-      env: TEST_TYPE=format
+    - stage: lint
+      env: TEST_TYPE=lint
       script:
-        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check || echo "Reformat required! Please run 'black <filename>' to reformat changes."
+        - black --version
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check || { echo "Reformat required! Please run 'black <filename>' to reformat changes." ; travis_terminate 1 ; }
+        - mypy --version
+        - mypy manticore || { echo "mypy type-checking error. Please read the error and fix." ; travis_terminate 1 ; }
     - stage: prepare
       env: TEST_TYPE=env
       script:
@@ -51,7 +54,7 @@ jobs:
       script:
         - true
       after_script:
-        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/ 
+        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/
         - ./cc-test-reporter sum-coverage --output - --parts $JOB_COUNT coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
 
 install:
