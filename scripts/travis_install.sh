@@ -28,7 +28,7 @@ function install_cc_env {
 
 # Install tools for initial linting stage
 if [ "$1" == "lint" ]; then
-    pip install black==19.10b0 mypy==0.740
+    pip install black==19.3b0 mypy==0.740
 fi
 
 # Install CodeClimate env
