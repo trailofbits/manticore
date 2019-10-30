@@ -63,12 +63,12 @@ consts = config.get_group("evm")
 consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
 consts.add(
     "sha3",
-    default=Sha3Type.concretize,
+    default=Sha3Type.symbolicate,
     description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with out of cycle false positive killing",
 )
 consts.add(
     "sha3timeout",
-    60 * 90,
+    60 * 60,
     "Default timeout for matching sha3 for unsound states (see unsound symbolication).",
 )
 
@@ -399,7 +399,6 @@ class ManticoreEVM(ManticoreBase):
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
-        consts.sha3 = consts.sha3.symbolicate
         if consts.sha3 is consts.sha3.concretize:
             self.subscribe("on_symbolic_function", self._on_concretize)
         elif consts.sha3 is consts.sha3.symbolicate:
