@@ -331,8 +331,6 @@ class ConstantFolderSimplifier(Visitor):
             return b
         if isinstance(b, Constant) and b.value == True:
             return a
-        if a is b:
-            return a
 
     def visit_Operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """

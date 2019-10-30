@@ -106,16 +106,43 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a + b > 100)
         self.assertTrue(self.solver.check(cs))
 
-    def testBool(self):
+    def testBool1(self):
         cs = ConstraintSet()
         bf = BoolConstant(False)
         bt = BoolConstant(True)
         cs.add(Operators.AND(bf, bt))
+        self.assertFalse(self.solver.check(cs))
+
+    def testBool2(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
         cs.add(Operators.AND(bf, bt, bt, bt))
+        self.assertFalse(self.solver.check(cs))
+
+    def testBool3(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
+        cs.add(Operators.AND(bt, bt, bf, bt))
+        self.assertFalse(self.solver.check(cs))
+
+    def testBool4(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
         cs.add(Operators.OR(True, bf))
         self.assertFalse(self.solver.check(cs))
 
-    def testBasicArray(self):
+    def testBool5(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
+        cs.add(Operators.OR(bt, bt, False))
+        self.assertFalse(self.solver.check(cs))
+
+
+def testBasicArray(self):
         cs = ConstraintSet()
         # make array of 32->8 bits
         array = cs.new_array(32)
