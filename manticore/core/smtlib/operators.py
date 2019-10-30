@@ -229,9 +229,9 @@ def UDIV(dividend, divisor):
 
 def SDIV(a, b):
     if isinstance(a, BitVec):
-        return a // b
+        return a.sdiv(b)
     elif isinstance(b, BitVec):
-        return b.__rsdiv__(a)
+        return b.rsdiv(a)
     return int(math.trunc(float(a) / float(b)))
 
 
