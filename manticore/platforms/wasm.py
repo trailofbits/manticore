@@ -117,6 +117,9 @@ class WASMWorld(Platform):
             else:
                 raise RuntimeError("Missing imported module: " + module_name)
 
+        if self.instantiated[self.module_names[module_name]]:
+            return
+        
         # Get the module and the instance from the world
         module, instance = self.modules[self.module_names[module_name]]
 
