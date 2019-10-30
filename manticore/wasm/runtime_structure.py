@@ -353,7 +353,6 @@ class ModuleInstance(Eventful):
             for j, FuncIdx in enumerate(elem.init):
                 assert FuncIdx in range(len(self.funcaddrs))
                 funcaddr = self.funcaddrs[FuncIdx]
-                print("Pushing", funcaddr, "to offset", eoval + j)
                 tableinst.elem[eoval + j] = funcaddr
 
         # #10 & #14 - emplace data sections into memory
@@ -749,19 +748,31 @@ class ModuleInstance(Eventful):
         :param store: The current execution store (where the export values live)
         :return: The value of the export
         """
+        export_addr = self.get_export_address(name)
+        if isinstance(export_addr, FuncAddr):
+            return store.funcs[export_addr]
+        if isinstance(export_addr, TableAddr):
+            return store.tables[export_addr]
+        if isinstance(export_addr, MemAddr):
+            return store.mems[export_addr]
+        if isinstance(export_addr, GlobalAddr):
+            return store.globals[export_addr]
+        raise RuntimeError("Unkown export type: " + str(type(export_addr)))
+
+    def get_export_address(
+        self, name: str
+    ) -> typing.Union[FuncAddr, TableAddr, MemAddr, GlobalAddr]:
+        """
+        Retrieves the address of a value exported by this module within the store
+
+        :param name: The name of the exported value to get
+        :return: The address of the desired export
+        """
         if name not in self.export_map:
             raise MissingExportException(name)
         export: ExportInst = self.exports[self.export_map[name]]
         assert export.name == name, f"Export name mismatch (expected {name}, got {export.name})"
-        if isinstance(export.value, FuncAddr):
-            return store.funcs[export.value]
-        if isinstance(export.value, TableAddr):
-            return store.tables[export.value]
-        if isinstance(export.value, MemAddr):
-            return store.mems[export.value]
-        if isinstance(export.value, GlobalAddr):
-            return store.globals[export.value]
-        raise RuntimeError("Unkown export type: " + str(type(export.value)))
+        return export.value
 
     def block(
         self,

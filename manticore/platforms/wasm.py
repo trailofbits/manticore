@@ -24,6 +24,7 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def stub(arity, _constraints, *args):
@@ -95,9 +96,11 @@ class WASMWorld(Platform):
     def module(self):
         return self.modules[self.module_names[self.default_module]][0]
 
-    def register_module(self, name, filename):
+    def register_module(self, name, filename_or_alias):
+        if filename_or_alias in self.module_names:
+            self.module_names[name] = self.module_names[filename_or_alias]
         if name not in self.module_names:
-            self.modules.append((Module.load(filename), ModuleInstance(self.constraints)))
+            self.modules.append((Module.load(filename_or_alias), ModuleInstance(self.constraints)))
             self.module_names[name] = len(self.modules) - 1
             self.instantiated.append(False)
 
@@ -119,7 +122,7 @@ class WASMWorld(Platform):
 
         if self.instantiated[self.module_names[module_name]]:
             return
-        
+
         # Get the module and the instance from the world
         module, instance = self.modules[self.module_names[module_name]]
 
@@ -136,12 +139,9 @@ class WASMWorld(Platform):
                 return self.manual_exports[mod_name][export_name]
         try:
             if mod_name in self.module_names:  # TODO - handle mod_name.export_name
-                return self.modules[self.module_names[mod_name]][1].get_export(
-                    export_name, self.store
-                )
+                return self.modules[self.module_names[mod_name]][1].get_export_address(export_name)
         except MissingExportException as exc:
             logger.error("Couldn't find export %s.%s", mod_name, exc.name)
-            raise exc
         return None
 
     def get_module_imports(self, module, exec_start, stub_missing):
@@ -161,42 +161,45 @@ class WASMWorld(Platform):
             if not imported_version and not stub_missing:
                 raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 
-            if isinstance(i.desc, TypeIdx):  # Imported function
-                func_type = module.types[i.desc]
-                if i.module == "env" and imported_version:
-                    imported_version = HostFunc(func_type, imported_version)
-                self.store.funcs.append(
-                    imported_version
-                    if imported_version
-                    else HostFunc(func_type, partial(stub, len(func_type.result_types)))
-                )
-                imports.append(FuncAddr(len(self.store.funcs) - 1))
-
-            elif isinstance(i.desc, TableType):
-                self.store.tables.append(
-                    imported_version
-                    if imported_version
-                    else TableInst([None] * i.desc.limits.min, i.desc.limits.max)
-                )
-                imports.append(TableAddr(len(self.store.tables) - 1))
-            # Create an empty memory of the correct size and provide it as an import
-            elif isinstance(i.desc, MemoryType):
-                self.store.mems.append(
-                    imported_version
-                    if imported_version
-                    else MemInst([0x0] * i.desc.min * 64 * 1024, i.desc.max)
-                )
-                imports.append(MemAddr(len(self.store.mems) - 1))
-            # Create a global and set its value to 0.
-            elif isinstance(i.desc, GlobalType):
-                self.store.globals.append(
-                    imported_version
-                    if imported_version
-                    else GlobalInst(i.desc.value(0), i.desc.mut)
-                )
-                imports.append(GlobalAddr(len(self.store.globals) - 1))
+            if isinstance(imported_version, ExternVal.__args__):
+                imports.append(imported_version)  # TODO - Import type matching
             else:
-                raise RuntimeError(f"Don't know how to handle imports of type {type(i.desc)}")
+                if isinstance(i.desc, TypeIdx):  # Imported function
+                    func_type = module.types[i.desc]
+                    if i.module == "env" and imported_version:
+                        imported_version = HostFunc(func_type, imported_version)
+                    self.store.funcs.append(
+                        imported_version
+                        if imported_version
+                        else HostFunc(func_type, partial(stub, len(func_type.result_types)))
+                    )
+                    imports.append(FuncAddr(len(self.store.funcs) - 1))
+
+                elif isinstance(i.desc, TableType):
+                    self.store.tables.append(
+                        imported_version
+                        if imported_version
+                        else TableInst([None] * i.desc.limits.min, i.desc.limits.max)
+                    )
+                    imports.append(TableAddr(len(self.store.tables) - 1))
+                # Create an empty memory of the correct size and provide it as an import
+                elif isinstance(i.desc, MemoryType):
+                    self.store.mems.append(
+                        imported_version
+                        if imported_version
+                        else MemInst([0x0] * i.desc.min * 64 * 1024, i.desc.max)
+                    )
+                    imports.append(MemAddr(len(self.store.mems) - 1))
+                # Create a global and set its value to 0.
+                elif isinstance(i.desc, GlobalType):
+                    self.store.globals.append(
+                        imported_version
+                        if imported_version
+                        else GlobalInst(i.desc.value(0), i.desc.mut)
+                    )
+                    imports.append(GlobalAddr(len(self.store.globals) - 1))
+                else:
+                    raise RuntimeError(f"Don't know how to handle imports of type {type(i.desc)}")
 
         return imports
 

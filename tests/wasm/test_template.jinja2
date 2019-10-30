@@ -47,6 +47,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         return result
 
     def test_{{ module.name }}(self):
+        print("\n======V======", "{{ module.name }}", "======V======")
         constraints = ConstraintSet()
         {%  if module.registered_name != None %}
         world = wasm.WASMWorld(self.filename, name="{{ module.registered_name }}")
@@ -63,7 +64,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         world.instantiate({}, exec_start=True)
         {% for test in module.tests %}
         with self.subTest(msg={{ test.func | escape_null }} + "_L{{test.line}}"):
-            print("======V======", {{ test.func | escape_null }} + "_L{{test.line}}", "======V======")
+            print("===V===", {{ test.func | escape_null }} + "_L{{test.line}}", "===V===")
             self.subtest_count += 1
             {% if test.args | length > 0 %}
             argv=[{{ test.args }}]
