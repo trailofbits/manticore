@@ -473,11 +473,8 @@ class EthSha3TestConcrete(unittest.TestCase):
                 continue
             found += len(st.platform.logs)
 
-        self.assertEqual(found, 1)  # log is reachable
-        # x==10 && y == 10
-        # x==C  && y == C && C != 10 #log
-        # x != y
-        self.assertEqual(m.count_all_states(), 3)
+        self.assertEqual(found, 1)  # log is reachable (depends on concretization)
+        self.assertEqual(m.count_all_states(), 1)  # Only 1 state concretized
 
 
 if __name__ == "__main__":

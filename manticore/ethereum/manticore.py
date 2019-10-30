@@ -1120,7 +1120,7 @@ class ManticoreEVM(ManticoreBase):
         if not issymbolic(data):
             y_concrete = func(data)
         else:
-            with self.locked_context("ethereum") as context:
+            with self.locked_context("ethereum", dict) as context:
                 # adding a single random example so we can explore further
                 x_concrete = state.solve_one(data)
                 y_concrete = func(x_concrete)
@@ -1292,7 +1292,7 @@ class ManticoreEVM(ManticoreBase):
             return soundcheck
 
         with self.locked_context("ethereum", dict) as ethereum_context:
-            functions = ethereum_context.get("symbolic_func", dict())
+            functions = ethereum_context.get("symbolic_func", list())
         for table in functions:
             symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
 
