@@ -141,8 +141,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(Operators.OR(bt, bt, False))
         self.assertFalse(self.solver.check(cs))
 
-
-def testBasicArray(self):
+    def testBasicArray(self):
         cs = ConstraintSet()
         # make array of 32->8 bits
         array = cs.new_array(32)
