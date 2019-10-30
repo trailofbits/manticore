@@ -132,14 +132,8 @@ class ExpressionTest(unittest.TestCase):
         bf = BoolConstant(False)
         bt = BoolConstant(True)
         cs.add(Operators.OR(True, bf))
-        self.assertFalse(self.solver.check(cs))
-
-    def testBool5(self):
-        cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
         cs.add(Operators.OR(bt, bt, False))
-        self.assertFalse(self.solver.check(cs))
+        self.assertTrue(self.solver.check(cs))
 
     def testBasicArray(self):
         cs = ConstraintSet()
