@@ -735,7 +735,7 @@ class EVM(Eventful):
         # self.invalid = set()
 
         # Machine state
-        self.pc = 0
+        self._pc = 0
         self.stack = []
         # We maintain gas as a 512 bits internally to avoid overflows
         # it is shortened to 256 bits when it is used by the GAS instruction
@@ -749,6 +749,14 @@ class EVM(Eventful):
         # Used calldata size
         self._used_calldata_size = 0
         self._valid_jmpdests = set()
+
+    @property
+    def pc(self):
+        return self._pc
+
+    @pc.setter
+    def pc(self, pc):
+        self._pc = simplify(pc)
 
     @property
     def bytecode(self):
@@ -1135,7 +1143,7 @@ class EVM(Eventful):
         last_pc, last_gas, last_instruction, last_arguments, fee, allocated = self._checkpoint_data
         self._push_arguments(last_arguments)
         self._gas = last_gas
-        self._pc = last_pc
+        self.pc = last_pc
         self._allocated = allocated
         self._checkpoint_data = None
 

@@ -555,6 +555,17 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
 
+    def test_arithmetic_simplify_udiv(self):
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32, name="VARA")
+        b = a + Operators.UDIV(BitVecConstant(32, 0), BitVecConstant(32, 2))
+        self.assertEqual(translate_to_smtlib(b), "(bvadd VARA (bvudiv #x00000000 #x00000002))")
+        self.assertEqual(translate_to_smtlib(simplify(b)), "VARA")
+
+        c = a + Operators.UDIV(BitVecConstant(32, 2), BitVecConstant(32, 2))
+        self.assertEqual(translate_to_smtlib(c), "(bvadd VARA (bvudiv #x00000002 #x00000002))")
+        self.assertEqual(translate_to_smtlib(simplify(c)), "(bvadd VARA #x00000001)")
+
     def test_constant_folding_udiv(self):
         cs = ConstraintSet()
         x = BitVecConstant(32, 0xFFFFFFFF, taint=("important",))

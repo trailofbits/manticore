@@ -2,6 +2,7 @@ from ...utils.helpers import CacheDict
 from ...exceptions import SmtlibError
 from .expression import *
 from functools import lru_cache
+import copy
 import logging
 import operator
 
@@ -123,8 +124,6 @@ class Visitor:
     def _rebuild(expression, operands):
         if isinstance(expression, Operation):
             if any(x is not y for x, y in zip(expression.operands, operands)):
-                import copy
-
                 aux = copy.copy(expression)
                 aux._operands = operands
                 return aux
@@ -489,12 +488,15 @@ class ArithmeticSimplifier(Visitor):
             return a
 
     def visit_BitVecITE(self, expression, *operands):
-        # FIXME Enable some taint propagating optimization
-        if isinstance(operands[0], Constant) and not expression.operands[0].taint:
+        if isinstance(operands[0], Constant):
             if operands[0].value:
                 result = operands[1]
             else:
                 result = operands[2]
+            new_taint = result._taint | operands[0].taint
+            if result._taint != new_taint:
+                result = copy.copy(result)
+                result._taint = new_taint
             return result
 
         if self._changed(expression, operands):
