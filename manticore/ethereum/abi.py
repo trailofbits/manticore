@@ -281,6 +281,8 @@ class ABI:
         if not isinstance(value, (int, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
+            # Help mypy out. Can remove this by teaching it how issymbolic works
+            assert isinstance(value, BitVec)
             # FIXME This temporary array variable should be obtained from a specific constraint store
             buffer = ArrayVariable(
                 index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
@@ -312,21 +314,21 @@ class ABI:
         if not isinstance(value, (int, BitVec)):
             raise ValueError
         if issymbolic(value):
+            # Help mypy out. Can remove this by teaching it how issymbolic works
+            assert isinstance(value, BitVec)
             buf = ArrayVariable(
                 index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
             )
             value = Operators.SEXTEND(value, value.size, size * 8)
-            buf = ArrayProxy(buf.write_BE(padding, value, size))
+            return ArrayProxy(buf.write_BE(padding, value, size))
         else:
-            value = int(value)
-            buf = bytearray()
+            buf_arr = bytearray()
             for _ in range(padding):
-                buf.append(0)
+                buf_arr.append(0)
 
             for position in reversed(range(size)):
-                buf.append(Operators.EXTRACT(value, position * 8, 8))
-            buf = bytes(buf)
-        return buf
+                buf_arr.append(Operators.EXTRACT(value, position * 8, 8))
+            return bytes(buf_arr)
 
     @staticmethod
     def _readBE(data, nbytes, padding=False, offset=0):
