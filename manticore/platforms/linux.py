@@ -942,7 +942,7 @@ class Linux(Platform):
         cpu = self.current
         elf = self.elf
         arch = self.arch
-        env = dict(var.split("=") for var in env if "=" in var)
+        env = dict(var.split("=", 1) for var in env if "=" in var)
         addressbitsize = {"x86": 32, "x64": 64, "ARM": 32, "AArch64": 64}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
