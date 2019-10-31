@@ -20,14 +20,12 @@ import shlex
 import time
 from subprocess import PIPE, Popen
 import re
-
 from . import operators as Operators
 from .constraints import *
 from .visitors import *
-from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
+from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
 from . import issymbolic
-import time
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -62,6 +60,14 @@ class SingletonMixin(object):
         return cls.__singleton_instances[(pid, tid)]
 
 
+class SolverException(SmtlibError):
+    """
+    Solver exception
+    """
+
+    pass
+
+
 class Solver(SingletonMixin):
     def __init__(self):
         pass
@@ -75,15 +81,15 @@ class Solver(SingletonMixin):
         :param X: a symbol or expression
         :param M: maximum number of iterations allowed
         """
-        raise Exception("Abstract method not implemented")
+        raise SmtlibError("Abstract method not implemented")
 
     def check(self, constraints) -> bool:
         """Check if given constraints can be valid"""
         return self.can_be_true(constraints, True)
 
-    def can_be_true(self, constraints, expression) -> bool:
+    def can_be_true(self, constraints, expression=True) -> bool:
         """Check if given expression could be valid"""
-        raise Exception("Abstract method not implemented")
+        raise SolverException("Abstract method not implemented")
 
     def must_be_true(self, constraints, expression) -> bool:
         """Check if expression is True and that it can not be False with current constraints"""
@@ -92,11 +98,11 @@ class Solver(SingletonMixin):
 
     def get_all_values(self, constraints, x, maxcnt=10000, silent=False):
         """Returns a list with all the possible values for the symbol x"""
-        raise Exception("Abstract method not implemented")
+        raise SolverException("Abstract method not implemented")
 
     def get_value(self, constraints, expression):
         """Ask the solver for one possible result of given expression using given set of constraints."""
-        raise Exception("Abstract method not implemented")
+        raise SolverException("Abstract method not implemented")
 
     def max(self, constraints, X: BitVec, M=10000):
         """
@@ -246,10 +252,10 @@ class Z3Solver(Solver):
 
     # marshaling/pickle
     def __getstate__(self):
-        raise Exception()
+        raise SolverException()
 
     def __setstate__(self, state):
-        raise Exception()
+        raise SolverException()
 
     def __del__(self):
         try:
@@ -306,7 +312,7 @@ class Z3Solver(Solver):
 
         # logger.debug('<%s', buf)
         if "(error" in bufl[0]:
-            raise Exception(f"Error in smtlib: {bufl[0]}")
+            raise SolverException(f"Error in smtlib: {bufl[0]}")
         return buf
 
     def __readline_and_count(self):
@@ -386,7 +392,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints, expression):
+    def can_be_true(self, constraints, expression=True):
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
@@ -431,7 +437,6 @@ class Z3Solver(Solver):
 
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
-
             result = []
 
             start = time.time()
@@ -521,60 +526,71 @@ class Z3Solver(Solver):
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
 
-    def get_value(self, constraints, expression):
+    def get_value(self, constraints, *expressions):
         """
-        Ask the solver for one possible result of given expression using given set of constraints.
+        Ask the solver for one possible result of given expressions using
+        given set of constraints.
         """
-        if not issymbolic(expression):
-            return expression
-        assert isinstance(expression, (Bool, BitVec, Array))
+        values = []
         start = time.time()
         with constraints as temp_cs:
-            if isinstance(expression, Bool):
-                var = temp_cs.new_bool()
-            elif isinstance(expression, BitVec):
-                var = temp_cs.new_bitvec(expression.size)
-            elif isinstance(expression, Array):
-                var = []
-                result = []
-                for i in range(expression.index_max):
-                    subvar = temp_cs.new_bitvec(expression.value_bits)
-                    var.append(subvar)
-                    temp_cs.add(subvar == simplify(expression[i]))
+            for expression in expressions:
+                if not issymbolic(expression):
+                    values.append(expression)
+                    continue
+                assert isinstance(expression, (Bool, BitVec, Array))
+                if isinstance(expression, Bool):
+                    var = temp_cs.new_bool()
+                elif isinstance(expression, BitVec):
+                    var = temp_cs.new_bitvec(expression.size)
+                elif isinstance(expression, Array):
+                    var = []
+                    result = []
+                    for i in range(expression.index_max):
+                        subvar = temp_cs.new_bitvec(expression.value_bits)
+                        var.append(subvar)
+                        temp_cs.add(subvar == simplify(expression[i]))
+
+                    self._reset(temp_cs)
+                    if not self._is_sat():
+                        raise SolverError("Model is not available")
+
+                    for i in range(expression.index_max):
+                        self._send("(get-value (%s))" % var[i].name)
+                        ret = self._recv()
+                        assert ret.startswith("((") and ret.endswith("))")
+                        pattern, base = self._get_value_fmt
+                        m = pattern.match(ret)
+                        expr, value = m.group("expr"), m.group("value")
+                        result.append(int(value, base))
+                    values.append(bytes(result))
+                    if time.time() - start > consts.timeout:
+                        raise SolverError("Timeout")
+                    continue
+
+                temp_cs.add(var == expression)
 
                 self._reset(temp_cs)
+
                 if not self._is_sat():
                     raise SolverError("Model is not available")
 
-                for i in range(expression.index_max):
-                    self._send("(get-value (%s))" % var[i].name)
-                    ret = self._recv()
-                    assert ret.startswith("((") and ret.endswith("))")
+                self._send("(get-value (%s))" % var.name)
+                ret = self._recv()
+                if not (ret.startswith("((") and ret.endswith("))")):
+                    raise SolverError("SMTLIB error parsing response: %s" % ret)
+
+                if isinstance(expression, Bool):
+                    values.append({"true": True, "false": False}[ret[2:-2].split(" ")[1]])
+                if isinstance(expression, BitVec):
                     pattern, base = self._get_value_fmt
                     m = pattern.match(ret)
                     expr, value = m.group("expr"), m.group("value")
-                    result.append(int(value, base))
-                    if time.time() - start > consts.timeout:
-                        raise SolverError("Timeout")
-                return bytes(result)
+                    values.append(int(value, base))
+            if time.time() - start > consts.timeout:
+                raise SolverError("Timeout")
 
-            temp_cs.add(var == expression)
-
-            self._reset(temp_cs)
-
-        if not self._is_sat():
-            raise SolverError("Model is not available")
-
-        self._send("(get-value (%s))" % var.name)
-        ret = self._recv()
-        if not (ret.startswith("((") and ret.endswith("))")):
-            raise SolverError("SMTLIB error parsing response: %s" % ret)
-
-        if isinstance(expression, Bool):
-            return {"true": True, "false": False}[ret[2:-2].split(" ")[1]]
-        if isinstance(expression, BitVec):
-            pattern, base = self._get_value_fmt
-            m = pattern.match(ret)
-            expr, value = m.group("expr"), m.group("value")
-            return int(value, base)
-        raise NotImplementedError("get_value only implemented for Bool and BitVec")
+        if len(expressions) == 1:
+            return values[0]
+        else:
+            return values

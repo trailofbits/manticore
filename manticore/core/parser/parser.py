@@ -13,6 +13,15 @@ from ..smtlib import Operators
 import ply.lex as lex
 import re
 
+
+class ParserException(Exception):
+    """
+    Parser exception
+    """
+
+    pass
+
+
 # List of token names.   This is always required
 tokens = (
     "NUMBER",
@@ -100,7 +109,7 @@ def t_TOKEN(t):
     elif re_SEGMENT.match(t.value):
         t.type = "SEGMENT"
     else:
-        raise Exception(f"Unknown:<{t.value}>")
+        raise ParserException(f"Unknown:<{t.value}>")
     return t
 
 
@@ -326,7 +335,7 @@ def parse(expression, read_memory=None, read_register=None, get_descriptor=None,
     elif word_size == 64:
         sizes = copy.copy(default_sizes_64)
     else:
-        raise Exception("Not Supported")
+        raise ParserException("Got unsupported word size")
     result = parser.parse(expression, tracking=True)
     del functions["read_memory"]
     del functions["read_register"]

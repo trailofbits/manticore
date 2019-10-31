@@ -2,6 +2,7 @@ import itertools
 import sys
 
 from ...utils.helpers import PickleSerializer
+from ...exceptions import SmtlibError
 from .expression import (
     BitVecVariable,
     BoolVariable,
@@ -11,7 +12,7 @@ from .expression import (
     BitVec,
     BoolConstant,
     ArrayProxy,
-    BoolEq,
+    BoolEqual,
     Variable,
     Constant,
 )
@@ -19,6 +20,14 @@ from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class ConstraintException(SmtlibError):
+    """
+    Constraint exception
+    """
+
+    pass
 
 
 class ConstraintSet:
@@ -81,7 +90,7 @@ class ConstraintSet:
         # constraints to this one. After the child constraintSet is deleted
         # we regain the ability to add constraints.
         if self._child is not None:
-            raise Exception("ConstraintSet is frozen")
+            raise ConstraintException("ConstraintSet is frozen")
 
         if isinstance(constraint, BoolConstant):
             if not constraint.value:
@@ -140,16 +149,16 @@ class ConstraintSet:
             related_constraints = set(self.constraints)
         return related_variables, related_constraints
 
-    def to_string(self, related_to=None, replace_constants=True):
+    def to_string(self, related_to=None, replace_constants=False):
         related_variables, related_constraints = self.__get_related(related_to)
 
         if replace_constants:
             constant_bindings = {}
-            for expression in self.constraints:
+            for expression in related_constraints:
                 if (
-                    isinstance(expression, BoolEq)
+                    isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
-                    and isinstance(expression.operands[1], Constant)
+                    and isinstance(expression.operands[1], (Variable, Constant))
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
@@ -163,21 +172,19 @@ class ConstraintSet:
                 continue
             tmp.add(var.declaration)
             result += var.declaration + "\n"
-
         translator = TranslatorSmtlib(use_bindings=True)
         for constraint in related_constraints:
             if replace_constants:
-                if (
-                    isinstance(constraint, BoolEq)
-                    and isinstance(constraint.operands[0], Variable)
-                    and isinstance(constraint.operands[1], Constant)
-                ):
-                    var = constraint.operands[0]
-                    expression = constraint.operands[1]
-                    expression = simplify(replace(expression, constant_bindings))
-                    constraint = var == expression
+                constraint = simplify(replace(constraint, constant_bindings))
+                # if no variables then it is a constant
+                if isinstance(constraint, Constant) and constraint.value == True:
+                    continue
 
             translator.visit(constraint)
+        if replace_constants:
+            for k, v in constant_bindings.items():
+                translator.visit(k == v)
+
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
                 result += f"(declare-fun {name} () (_ BitVec {exp.size}))"
@@ -186,7 +193,7 @@ class ConstraintSet:
             elif isinstance(exp, Array):
                 result += f"(declare-fun {name} () (Array (_ BitVec {exp.index_bits}) (_ BitVec {exp.value_bits})))"
             else:
-                raise Exception(f"Type not supported {exp!r}")
+                raise ConstraintException(f"Type not supported {exp!r}")
             result += f"(assert (= {name} {smtlib}))\n"
 
         constraint_str = translator.pop()
@@ -221,7 +228,7 @@ class ConstraintSet:
             except RuntimeError:
                 # TODO: (defunct) move recursion management out of PickleSerializer
                 if sys.getrecursionlimit() >= PickleSerializer.MAX_RECURSION:
-                    raise Exception(
+                    raise ConstraintException(
                         f"declarations recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting"
                     )
                 new_limit = sys.getrecursionlimit() + PickleSerializer.DEFAULT_RECURSION

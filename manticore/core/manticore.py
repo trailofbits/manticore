@@ -74,7 +74,7 @@ consts.add(
 class ManticoreBase(Eventful):
     def __new__(cls, *args, **kwargs):
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
-            raise Exception("Should not instantiate this")
+            raise ManticoreError("Should not instantiate this")
 
         cl = consts.mprocessing.to_class()
         # change ManticoreBase for the more specific class
@@ -103,7 +103,7 @@ class ManticoreBase(Eventful):
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if not self.is_running():
-                raise Exception(f"{func.__name__} only allowed while exploring states")
+                raise ManticoreError(f"{func.__name__} only allowed while exploring states")
             return func(self, *args, **kw)
 
         return newFunction
@@ -117,7 +117,7 @@ class ManticoreBase(Eventful):
         def newFunction(self, *args, **kw):
             if self.is_running():
                 logger.error("Calling at running not allowed")
-                raise Exception(f"{func.__name__} only allowed while NOT exploring states")
+                raise ManticoreError(f"{func.__name__} only allowed while NOT exploring states")
             return func(self, *args, **kw)
 
         return newFunction
@@ -265,7 +265,7 @@ class ManticoreBase(Eventful):
                 "_shared_context",
             )
         ):
-            raise Exception("Need to instantiate one of: ManticoreNative, ManticoreThreads..")
+            raise ManticoreError("Need to instantiate one of: ManticoreNative, ManticoreThreads..")
 
         # The workspace and the output
         # Manticore will use the workspace to save and share temporary states.
@@ -510,7 +510,7 @@ class ManticoreBase(Eventful):
         """
         # wait for a state id to be added to the ready list and remove it
         if state_id not in self._busy_states:
-            raise Exception("Can not terminate. State is not being analyzed")
+            raise ManticoreError("Can not terminate. State is not being analyzed")
         self._busy_states.remove(state_id)
 
         if delete:
@@ -537,7 +537,7 @@ class ManticoreBase(Eventful):
         """
         # wait for a state id to be added to the ready list and remove it
         if state_id not in self._busy_states:
-            raise Exception("Can not even kill it. State is not being analyzed")
+            raise ManticoreError("Can not even kill it. State is not being analyzed")
         self._busy_states.remove(state_id)
 
         if delete:
@@ -548,6 +548,31 @@ class ManticoreBase(Eventful):
 
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
+
+    @sync
+    def kill_state(self, state, delete=False):
+        """ Kill a state.
+             A state is moved from any list to the kill list or fully
+             removed from secondary storage
+
+            :param state_id: a estate id
+            :type state_id: int
+            :param delete: if true remove the state from the secondary storage
+            :type delete: bool
+        """
+        state_id = state.id
+        if state_id in self._busy_states:
+            self._busy_states.remove(state_id)
+        if state_id in self._terminated_states:
+            self._terminated_states.remove(state_id)
+        if state_id in self._ready_states:
+            self._ready_states.remove(state_id)
+
+        if delete:
+            self._remove(state_id)
+        else:
+            # add the state_id to the terminated list
+            self._killed_states.append(state_id)
 
     @property
     @sync
@@ -561,7 +586,8 @@ class ManticoreBase(Eventful):
 
         This means it is not possible to change the state used by Manticore with `states = list(m.ready_states)`.
         """
-        for state_id in self._ready_states:
+        _ready_states = self._ready_states
+        for state_id in _ready_states:
             state = self._load(state_id)
             yield state
             # Re-save the state in case the user changed its data
@@ -609,17 +635,19 @@ class ManticoreBase(Eventful):
     def _all_states(self):
         """ Only allowed at not running.
             (At running we can have states at busy)
+            Returns a tuple with all active state ids.
+            Notably the "killed" states are not included here.
         """
-        return (
-            tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
-        )
+        return tuple(self._ready_states) + tuple(self._terminated_states)
 
     @property
     @sync
     def all_states(self):
         """
-        Iterates over the all states (ready and terminated and cancelled)
+        Iterates over the all states (ready and terminated)
         It holds a lock so no changes state lists are allowed
+
+        Notably the cancelled states are not included here.
 
         See also `ready_states`.
         """
@@ -633,6 +661,11 @@ class ManticoreBase(Eventful):
     def count_states(self):
         """ Total states count """
         return len(self._all_states)
+
+    @sync
+    def count_all_states(self):
+        """ Total states count """
+        return self.count_states()
 
     @sync
     def count_ready_states(self):
@@ -866,11 +899,9 @@ class ManticoreBase(Eventful):
             timer.cancel()
 
     @at_not_running
-    def run(self, timeout=None):
+    def run(self):
         """
         Runs analysis.
-
-        :param timeout: Analysis timeout, in seconds
         """
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a

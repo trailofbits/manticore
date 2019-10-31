@@ -40,7 +40,7 @@ jobs:
     - stage: format
       env: TEST_TYPE=format
       script:
-        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check || echo "Reformat required! Please run 'black <filename>' to reformat changes."
     - stage: prepare
       env: TEST_TYPE=env
       script:

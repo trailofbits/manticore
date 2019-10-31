@@ -942,7 +942,7 @@ class Linux(Platform):
         cpu = self.current
         elf = self.elf
         arch = self.arch
-        env = dict(var.split("=") for var in env if "=" in var)
+        env = dict(var.split("=", 1) for var in env if "=" in var)
         addressbitsize = {"x86": 32, "x64": 64, "ARM": 32, "AArch64": 64}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
@@ -950,12 +950,22 @@ class Linux(Platform):
 
         # Get interpreter elf
         interpreter = None
+
+        # Need to clean up when we are done
+        def _clean_interp_stream():
+            if interpreter is not None:
+                try:
+                    interpreter.stream.close()
+                except IOError as e:
+                    logger.error(str(e))
+
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != "PT_INTERP":
                 continue
             interpreter_filename = elf_segment.data()[:-1]
             logger.info(f"Interpreter filename: {interpreter_filename}")
             if os.path.exists(interpreter_filename.decode("utf-8")):
+                _clean_interp_stream()
                 interpreter = ELFFile(open(interpreter_filename, "rb"))
             elif "LD_LIBRARY_PATH" in env:
                 for mpath in env["LD_LIBRARY_PATH"].split(":"):
@@ -964,6 +974,7 @@ class Linux(Platform):
                     )
                     logger.info(f"looking for interpreter {interpreter_path_filename}")
                     if os.path.exists(interpreter_path_filename):
+                        _clean_interp_stream()
                         interpreter = ELFFile(open(interpreter_path_filename, "rb"))
                         break
             break
@@ -1172,6 +1183,9 @@ class Linux(Platform):
             "AT_RANDOM": at_random,  # Address of 16 random bytes.
             "AT_EXECFN": at_execfn,  # Filename of executable.
         }
+
+        # Clean up interpreter ELFFile
+        _clean_interp_stream()
 
     def _to_signed_dword(self, dword):
         arch_width = self.current.address_bit_size
@@ -2249,7 +2263,7 @@ class Linux(Platform):
             if name is not None:
                 raise SyscallNotImplemented(index, name)
             else:
-                raise Exception(f"Bad syscall index, {index}")
+                raise EnvironmentError(f"Bad syscall index, {index}")
 
         return self._syscall_abi.invoke(implementation)
 
@@ -3010,7 +3024,9 @@ class SLinux(Linux):
             return fd
         sock = self._get_fd(fd)
         nbytes = 32
-        symb = self.constraints.new_array(name=f"socket{fd}", index_max=nbytes)
+        symb = self.constraints.new_array(
+            name=f"socket{fd}", index_max=nbytes, avoid_collisions=True
+        )
         for i in range(nbytes):
             sock.buffer.append(symb[i])
         return fd

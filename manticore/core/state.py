@@ -44,7 +44,9 @@ class Concretize(StateException):
         if policy is None:
             policy = "ALL"
         if policy not in self._ValidPolicies:
-            raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
+            raise StateException(
+                f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}'
+            )
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
@@ -309,24 +311,32 @@ class StateBase(Eventful):
             self._constraints, expr == False
         )
 
-    def solve_one(self, expr, constrain=False):
+    def solve_one(self, *exprs, constrain=False):
         """
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
 
-        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :param exprs: Symbolic value to concretize. An iterable of manticore.core.smtlib.Expression
         :param bool constrain: If True, constrain expr to concretized value
-        :return: Concrete value
+        :return: Concrete value or a tuple of concrete values
         :rtype: int
         """
-        expr = self.migrate_expression(expr)
-        value = self._solver.get_value(self._constraints, expr)
-        if constrain:
-            self.constrain(expr == value)
-        # Include forgiveness here
-        if isinstance(value, bytearray):
-            value = bytes(value)
-        return value
+        values = []
+        for expr in exprs:
+            if not issymbolic(expr):
+                values.append(expr)
+            else:
+                expr = self.migrate_expression(expr)
+                value = self._solver.get_value(self._constraints, expr)
+                if constrain:
+                    self.constrain(expr == value)
+                # Include forgiveness here
+                if isinstance(value, bytearray):
+                    value = bytes(value)
+                values.append(value)
+        if len(exprs) == 1:
+            values = values[0]
+        return values
 
     def solve_n(self, expr, nsolves):
         """

@@ -9,6 +9,7 @@ from .abstractcpu import (
     Abi,
     SyscallAbi,
     Cpu,
+    CpuException,
     RegisterFile,
     Operand,
     instruction,
@@ -1077,7 +1078,7 @@ class X86Cpu(Cpu):
         """
         Logical exclusive OR.
 
-        Performs a bitwise exclusive Operators.OR(XOR) operation on the destination (first)
+        Performs a bitwise exclusive-OR(XOR) operation on the destination (first)
         and source (second) operands and stores the result in the destination
         operand location.
 
@@ -5895,7 +5896,7 @@ class X86Cpu(Cpu):
         else:
             msg = "Invalid size in MOVQ"
             logger.error(msg)
-            raise Exception(msg)
+            raise CpuException(msg)
 
     @instruction
     def MOVSD(cpu, dest, src):

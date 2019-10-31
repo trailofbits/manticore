@@ -137,7 +137,7 @@ class Manticore(ManticoreBase):
                 **kwargs,
             )
         except elftools.common.exceptions.ELFError:
-            raise Exception(f"Invalid binary: {path}")
+            raise ManticoreError(f"Invalid binary: {path}")
 
     @classmethod
     def decree(cls, path, concrete_start="", **kwargs):
@@ -153,7 +153,7 @@ class Manticore(ManticoreBase):
         try:
             return cls(_make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
-            raise Exception(f"Invalid binary: {path}")
+            raise ManticoreError(f"Invalid binary: {path}")
 
     @property
     def binary_path(self):
@@ -307,8 +307,8 @@ class Manticore(ManticoreBase):
     def run(self, timeout=None):
         with self.locked_context() as context:
             context["time_started"] = time.time()
-
-        super().run(timeout=timeout)
+        with self.kill_timeout(timeout):
+            super().run()
 
     def finalize(self):
         super().finalize()
@@ -386,7 +386,7 @@ def _make_linux(
         entry_pc = platform._find_symbol(entry_symbol)
         if entry_pc is None:
             logger.error("No symbol for '%s' in %s", entry_symbol, program)
-            raise Exception("Symbol not found")
+            raise ManticoreError("Symbol not found")
         else:
             logger.info("Found symbol '%s' (%x)", entry_symbol, entry_pc)
             # TODO: use argv as arguments for function

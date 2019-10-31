@@ -177,7 +177,6 @@ class LinuxTest(unittest.TestCase):
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, -errno.EBADF)
 
-    @unittest.expectedFailure
     def test_multiple_sockets(self):
         sock_fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
         self.assertEqual(sock_fd, 3)
@@ -188,7 +187,6 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_close(conn_fd)
 
         conn_fd = -1
-        # Fails with "Name socket4 already in use"
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 

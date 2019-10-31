@@ -106,12 +106,34 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a + b > 100)
         self.assertTrue(self.solver.check(cs))
 
-    def testBool(self):
+    def testBool1(self):
         cs = ConstraintSet()
         bf = BoolConstant(False)
         bt = BoolConstant(True)
         cs.add(Operators.AND(bf, bt))
         self.assertFalse(self.solver.check(cs))
+
+    def testBool2(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
+        cs.add(Operators.AND(bf, bt, bt, bt))
+        self.assertFalse(self.solver.check(cs))
+
+    def testBool3(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
+        cs.add(Operators.AND(bt, bt, bf, bt))
+        self.assertFalse(self.solver.check(cs))
+
+    def testBool4(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
+        cs.add(Operators.OR(True, bf))
+        cs.add(Operators.OR(bt, bt, False))
+        self.assertTrue(self.solver.check(cs))
 
     def testBasicArray(self):
         cs = ConstraintSet()
@@ -853,6 +875,61 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7 & 0xFF)
+
+    def test_ULE(self):
+        solver = Z3Solver.instance()
+        cs = ConstraintSet()
+        a = cs.new_bitvec(8)
+        b = cs.new_bitvec(8)
+        c = cs.new_bitvec(8)
+
+        cs.add(a == 0x1)  # 1
+        cs.add(b == 0x86)  # -122
+        cs.add(c == 0x11)  # 17
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(a, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(a, c)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(c, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(a, 0xF2)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(b, 0x99)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(c, 0x12)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(3, 0xF2)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(3, 3)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(1, a)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(0x85, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULE(0x10, c)))
+
+    def test_ULT(self):
+        solver = Z3Solver.instance()
+        cs = ConstraintSet()
+        a = cs.new_bitvec(8)
+        b = cs.new_bitvec(8)
+        c = cs.new_bitvec(8)
+
+        cs.add(a == 0x1)  # 1
+        cs.add(b == 0x86)  # -122
+        cs.add(c == 0x11)  # 17
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(a, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(a, c)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(c, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(a, 0xF2)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(b, 0x99)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(c, 0x12)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(3, 0xF2)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(3, 4)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(0, a)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(0x85, b)))
+        self.assertTrue(solver.must_be_true(cs, Operators.ULT(0x10, c)))
+
+    def test_NOT(self):
+        solver = Z3Solver.instance()
+        cs = ConstraintSet()
+        a = cs.new_bitvec(8)
+        b = cs.new_bitvec(8)
+
+        cs.add(a == 0x1)  # 1
+        cs.add(b == 0x86)  # -122
+        self.assertTrue(solver.must_be_true(cs, Operators.NOT(False)))
+        self.assertTrue(solver.must_be_true(cs, Operators.NOT(a == b)))
 
     def test_check_solver_min(self):
         self.solver._received_version = '(:version "4.4.1")'
