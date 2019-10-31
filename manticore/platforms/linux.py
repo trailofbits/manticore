@@ -32,7 +32,6 @@ from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
 
@@ -942,7 +941,7 @@ class Linux(Platform):
         cpu = self.current
         elf = self.elf
         arch = self.arch
-        env = dict(var.split("=") for var in env if "=" in var)
+        env = dict(var.split("=", 1) for var in env if "=" in var)
         addressbitsize = {"x86": 32, "x64": 64, "ARM": 32, "AArch64": 64}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
@@ -1251,7 +1250,7 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
-    def _transform_write_data(self, data: T) -> T:
+    def _transform_write_data(self, data: bytes) -> bytes:
         """
         Implement in subclass to transform data written by write(2)/writev(2)
         Nop by default.
@@ -2649,6 +2648,7 @@ class Linux(Platform):
             l, r = Socket.pair()
             self.current.write_int(filedes, self._open(l))
             self.current.write_int(filedes + 4, self._open(r))
+            return 0
         else:
             logger.warning("sys_pipe2 doesn't handle flags")
             return -1
@@ -3024,7 +3024,9 @@ class SLinux(Linux):
             return fd
         sock = self._get_fd(fd)
         nbytes = 32
-        symb = self.constraints.new_array(name=f"socket{fd}", index_max=nbytes)
+        symb = self.constraints.new_array(
+            name=f"socket{fd}", index_max=nbytes, avoid_collisions=True
+        )
         for i in range(nbytes):
             sock.buffer.append(symb[i])
         return fd

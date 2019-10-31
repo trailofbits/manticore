@@ -110,7 +110,6 @@ class SolidityMetadata:
         new_srcmap = {}
         bytecode = self._without_metadata(bytecode)
         if self.source_code and bytecode and srcmap:
-
             asm_offset = 0
             asm_pos = 0
             md = dict(enumerate(srcmap[asm_pos].split(":")))
@@ -280,7 +279,7 @@ class SolidityMetadata:
         """The signatures of all normal contract functions."""
         return self._function_signatures_by_selector.values()
 
-    @property
+    @property  # type: ignore
     @deprecated(
         "Use `.function_signatures` instead, which does not return the `'{fallback}()'` pseudo-signature"
     )
@@ -311,7 +310,7 @@ class SolidityMetadata:
             return tuple(selectors)
         return (*selectors, self.fallback_function_selector)
 
-    @property
+    @property  # type: ignore
     @deprecated(
         "Use `.function_selectors` instead, which only returns a fallback"
         " function selector if the contract has a non-default fallback function."

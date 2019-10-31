@@ -26,19 +26,19 @@ function install_cc_env {
     pip install awscli
 }
 
-# Install black for initial formatting stage
-if [ "$1" == "format" ]; then
-    pip install -U black
+# Install tools for initial linting stage
+if [ "$1" == "lint" ]; then
+    pip install black==19.3b0 mypy==0.740
 fi
 
 # Install CodeClimate env
-if [ "$1" != "format" ]; then
+if [ "$1" != "lint" ]; then
     install_cc_env
 fi
 
 # Skip Manticore installation setup and teardown
 if [ "$1" != "env" ]; then
-    if [ "$1" != "format" ]; then
+    if [ "$1" != "lint" ]; then
         install_solc
         install_mcore $1
     fi

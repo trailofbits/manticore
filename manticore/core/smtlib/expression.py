@@ -36,7 +36,7 @@ class Expression:
         return self._taint
 
 
-def issymbolic(value):
+def issymbolic(value) -> bool:
     """
         Helper to determine whether an object is symbolic (e.g checking
         if data read from memory is symbolic)
@@ -187,7 +187,7 @@ class Bool(Expression):
         return BoolNot(self)
 
     def __eq__(self, other):
-        return BoolEq(self, self.cast(other))
+        return BoolEqual(self, self.cast(other))
 
     def __hash__(self):
         return object.__hash__(self)
@@ -243,11 +243,6 @@ class BoolOperation(Operation, Bool):
 class BoolNot(BoolOperation):
     def __init__(self, value, **kwargs):
         super().__init__(value, **kwargs)
-
-
-class BoolEq(BoolOperation):
-    def __init__(self, a, b, **kwargs):
-        super().__init__(a, b, **kwargs)
 
 
 class BoolAnd(BoolOperation):
@@ -412,13 +407,13 @@ class BitVec(Expression):
         return LessOrEqual(self, self.cast(other))
 
     def __eq__(self, other):
-        return Equal(self, self.cast(other))
+        return BoolEqual(self, self.cast(other))
 
     def __hash__(self):
         return object.__hash__(self)
 
     def __ne__(self, other):
-        return BoolNot(Equal(self, self.cast(other)))
+        return BoolNot(BoolEqual(self, self.cast(other)))
 
     def __gt__(self, other):
         return GreaterThan(self, self.cast(other))
@@ -447,6 +442,12 @@ class BitVec(Expression):
 
     def rudiv(self, other):
         return BitVecUnsignedDiv(self.cast(other), self)
+
+    def sdiv(self, other):
+        return BitVecDiv(self, self.cast(other))
+
+    def rsdiv(self, other):
+        return BitVecDiv(self.cast(other), self)
 
     def srem(self, other):
         return BitVecRem(self, self.cast(other))
@@ -600,9 +601,10 @@ class LessOrEqual(BoolOperation):
         super().__init__(a, b, *args, **kwargs)
 
 
-class Equal(BoolOperation):
+class BoolEqual(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
-        assert a.size == b.size
+        if isinstance(a, BitVec) or isinstance(b, BitVec):
+            assert a.size == b.size
         super().__init__(a, b, *args, **kwargs)
 
 
@@ -1010,16 +1012,7 @@ class ArrayProxy(Array):
         return self._array.taint
 
     def select(self, index):
-        index = self.cast_index(index)
-        if self.index_max is not None:
-            from .visitors import simplify
-
-            index = simplify(
-                BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index)
-            )
-        if isinstance(index, Constant) and index.value in self._concrete_cache:
-            return self._concrete_cache[index.value]
-        return self._array.select(index)
+        return self.get(index)
 
     def store(self, index, value):
         if not isinstance(index, Expression):
@@ -1049,6 +1042,9 @@ class ArrayProxy(Array):
             for k, v in self._concrete_cache.items():
                 if k >= start and k < start + size:
                     array_proxy_slice._concrete_cache[k - start] = v
+
+            for i in self.written:
+                array_proxy_slice.written.add(i - start)
             return array_proxy_slice
         else:
             if self.index_max is not None:
@@ -1093,9 +1089,9 @@ class ArrayProxy(Array):
             # take out Proxy sleve
             array = self._array
             offset = 0
-            if isinstance(array, ArraySlice):
+            while isinstance(array, ArraySlice):
                 # if it is a proxy over a slice take out the slice too
-                offset = array._slice_offset
+                offset += array._slice_offset
                 array = array._array
             while not isinstance(array, ArrayVariable):
                 # The index written to underlaying Array are displaced when sliced
@@ -1122,7 +1118,17 @@ class ArrayProxy(Array):
         if default is None:
             default = self._default
         index = self.cast_index(index)
-        value = self.select(index)
+
+        if self.index_max is not None:
+            from .visitors import simplify
+
+            index = simplify(
+                BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index)
+            )
+        if isinstance(index, Constant) and index.value in self._concrete_cache:
+            return self._concrete_cache[index.value]
+
+        value = self._array.select(index)
         if default is None:
             return value
 

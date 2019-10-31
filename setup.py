@@ -21,11 +21,14 @@ dataclass_deps = ["dataclasses"] if version.major == 3 and version.minor < 7 els
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc1"]
 
+# Development dependencies without keystone
+dev_noks = native_deps + ["coverage", "nose", "Sphinx"]
+
 extra_require = {
     "native": native_deps,
-    "dev": native_deps + ["keystone-engine", "coverage", "nose", "Sphinx"],
     # noks - no keystone
-    "dev-noks": native_deps + ["coverage", "nose", "Sphinx"],
+    "dev-noks": dev_noks,
+    "dev": native_deps + dev_noks + ["keystone-engine"],
     "redis": ["redis"],
 }
 

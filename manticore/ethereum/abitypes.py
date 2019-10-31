@@ -223,7 +223,7 @@ def p_error(p):
 
 with warnings.catch_warnings():
     # yacc.yacc() doesn't close the debuglog file after generating the parser table.
-    warnings.simplefilter("ignore", category="ResourceWarning")
+    warnings.simplefilter("ignore", category=ResourceWarning)
     parser = yacc.yacc(debug=False)
 parse = parser.parse
 

@@ -71,13 +71,6 @@ def OR(a, b, *others):
     return result
 
 
-def XOR(a, b):
-    result = a ^ b
-    if isinstance(result, (BitVec, int)):
-        result = ITE(result != 0, True, False)
-    return result
-
-
 def UGT(a, b):
     if isinstance(a, BitVec):
         return a.ugt(b)
@@ -208,6 +201,9 @@ def ITEBV(size, cond, true_value, false_value):
     assert isinstance(false_value, (BitVec, int))
     assert isinstance(size, int)
 
+    if isinstance(cond, BoolConstant) and not cond.taint:
+        cond = cond.value
+
     if isinstance(cond, bool):
         if cond:
             return true_value
@@ -233,9 +229,9 @@ def UDIV(dividend, divisor):
 
 def SDIV(a, b):
     if isinstance(a, BitVec):
-        return a // b
+        return a.sdiv(b)
     elif isinstance(b, BitVec):
-        return b.__rsdiv__(a)
+        return b.rsdiv(a)
     return int(math.trunc(float(a) / float(b)))
 
 
@@ -263,12 +259,6 @@ def UREM(a, b):
     elif isinstance(b, BitVec):
         return b.rurem(a)
     return a % b
-
-
-def simplify(value):
-    if issymbolic(value):
-        return value.simplify()
-    return value
 
 
 def SAR(size, a, b):
