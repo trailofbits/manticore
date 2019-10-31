@@ -1,3 +1,4 @@
+import typing
 import logging
 import uuid
 
@@ -5,7 +6,15 @@ import re
 import sha3
 
 from . import abitypes
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy, issymbolic
+from ..core.smtlib import (
+    Array,
+    Operators,
+    BitVec,
+    ArrayVariable,
+    ArrayProxy,
+    to_constant,
+    issymbolic,
+)
 from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)
@@ -219,8 +228,8 @@ class ABI:
             raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
 
     @staticmethod
-    def _deserialize(ty, buf, offset=0):
-        assert isinstance(buf, (bytearray, Array))
+    def _deserialize(ty, buf: typing.Union[bytearray, bytes, Array], offset=0):
+        assert isinstance(buf, (bytearray, bytes, Array))
         result = None
         if ty[0] == "int":
             result = ABI._deserialize_int(buf[offset : offset + 32], nbytes=ty[1] // 8)
@@ -234,17 +243,18 @@ class ABI:
             result = (address, func_id)
         elif ty[0] in ("bytes", "string"):
             dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
+            dyn_offset = to_constant(dyn_offset)
             size = ABI._deserialize_int(buf[dyn_offset : dyn_offset + 32])
             result = buf[dyn_offset + 32 : dyn_offset + 32 + size]
         elif ty[0] in ("tuple"):
             result = ()
-            current_off = 0
             for ty_i in ty[1]:
                 result += (ABI._deserialize(ty_i, buf, offset),)
                 offset += ABI._type_size(ty_i)
         elif ty[0] in ("array"):
             result = []
             dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
+            dyn_offset = to_constant(dyn_offset)
             rep = ty[1]
             ty_size = ABI._type_size(ty[2])
             if rep is None:
@@ -272,7 +282,7 @@ class ABI:
             raise ValueError
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
-            bytes = ArrayVariable(
+            buffer = ArrayVariable(
                 index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
             )
             if value.size <= size * 8:
@@ -280,19 +290,20 @@ class ABI:
             else:
                 # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument (160 bits)
                 value = Operators.EXTRACT(value, 0, size * 8)
-            bytes = ArrayProxy(bytes.write_BE(padding, value, size))
+            buffer = buffer.write_BE(padding, value, size)
         else:
             value = int(value)
-            bytes = bytearray()
+            buffer = bytearray()
             for _ in range(padding):
-                bytes.append(0)
+                buffer.append(0)
             for position in reversed(range(size)):
-                bytes.append(Operators.EXTRACT(value, position * 8, 8))
-        assert len(bytes) == size + padding
-        return bytes
+                buffer.append(Operators.EXTRACT(value, position * 8, 8))
+            buffer = bytes(buffer)
+        assert len(buffer) == size + padding
+        return buffer
 
     @staticmethod
-    def _serialize_int(value, size=32, padding=0):
+    def _serialize_int(value: typing.Union[int, BitVec], size=32, padding=0):
         """
         Translates a signed python integral or a BitVec into a 32 byte string, MSB first
         """
@@ -314,6 +325,7 @@ class ABI:
 
             for position in reversed(range(size)):
                 buf.append(Operators.EXTRACT(value, position * 8, 8))
+            buf = bytes(buf)
         return buf
 
     @staticmethod
@@ -344,7 +356,9 @@ class ABI:
         return Operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
-    def _deserialize_uint(data, nbytes=32, padding=0, offset=0):
+    def _deserialize_uint(
+        data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0, offset=0
+    ):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
@@ -352,13 +366,13 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytearray, Array))
+        assert isinstance(data, (bytearray, bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True, offset=offset)
         value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
     @staticmethod
-    def _deserialize_int(data, nbytes=32, padding=0):
+    def _deserialize_int(data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0):
         """
         Read a `nbytes` bytes long big endian signed integer from `data` starting at `offset`
 
@@ -366,7 +380,7 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytearray, Array))
+        assert isinstance(data, (bytearray, bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):

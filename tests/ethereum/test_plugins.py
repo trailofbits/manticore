@@ -31,7 +31,7 @@ class EthPluginsTests(unittest.TestCase):
         for st in m.all_states:
             if st.platform.logs:
                 return
-        self.assertEqual(0, 1)
+        self.fail("We did not reach any state with logs")
 
     @unittest.skip("failing")
     def test_verbose_trace(self):
