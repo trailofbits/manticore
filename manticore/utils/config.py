@@ -11,12 +11,13 @@ in that order of priority.
 """
 import argparse
 import logging
+from typing import Dict
 from itertools import product
 from enum import Enum
 import os
 import yaml
 
-_groups = {}
+_groups: Dict[str, "_Group"] = {}
 
 
 logger = logging.getLogger(__name__)

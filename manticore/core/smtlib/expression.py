@@ -36,7 +36,7 @@ class Expression:
         return self._taint
 
 
-def issymbolic(value):
+def issymbolic(value) -> bool:
     """
         Helper to determine whether an object is symbolic (e.g checking
         if data read from memory is symbolic)

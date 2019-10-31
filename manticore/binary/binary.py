@@ -1,10 +1,11 @@
 import io
+from typing import Dict, Type, Union
 
 from elftools.elf.elffile import ELFFile
 
 
 class Binary:
-    magics = {}
+    magics: Dict[bytes, Type["Binary"]] = {}
 
     def __new__(cls, path):
         if cls is Binary:

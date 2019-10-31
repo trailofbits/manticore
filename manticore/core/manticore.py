@@ -4,6 +4,7 @@ import sys
 import time
 import random
 import weakref
+from typing import Callable
 
 from contextlib import contextmanager
 
@@ -85,7 +86,7 @@ class ManticoreBase(Eventful):
         return super().__new__(cls)
 
     # Decorators added first for convenience.
-    def sync(func):
+    def sync(func: Callable) -> Callable:  # type: ignore
         """Synchronization decorator"""
 
         @functools.wraps(func)
@@ -95,7 +96,7 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    def at_running(func):
+    def at_running(func: Callable) -> Callable:  # type: ignore
         """Allows the decorated method to run only when manticore is actively
            exploring states
         """
@@ -108,7 +109,7 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    def at_not_running(func):
+    def at_not_running(func: Callable) -> Callable:  # type: ignore
         """Allows the decorated method to run only when manticore is NOT
            exploring states
         """
@@ -574,7 +575,7 @@ class ManticoreBase(Eventful):
             # add the state_id to the terminated list
             self._killed_states.append(state_id)
 
-    @property
+    @property  # type: ignore
     @sync
     def ready_states(self):
         """
@@ -600,7 +601,7 @@ class ManticoreBase(Eventful):
         )
         return self.ready_states
 
-    @property
+    @property  # type: ignore
     @sync
     def terminated_states(self):
         """
@@ -614,7 +615,7 @@ class ManticoreBase(Eventful):
             # Re-save the state in case the user changed its data
             self._save(state, state_id=state_id)
 
-    @property
+    @property  # type: ignore
     @sync
     @at_not_running
     def killed_states(self):
@@ -629,7 +630,7 @@ class ManticoreBase(Eventful):
             # Re-save the state in case the user changed its data
             self._save(state, state_id=state_id)
 
-    @property
+    @property  # type: ignore
     @sync
     @at_not_running
     def _all_states(self):
@@ -640,7 +641,7 @@ class ManticoreBase(Eventful):
         """
         return tuple(self._ready_states) + tuple(self._terminated_states)
 
-    @property
+    @property  # type: ignore
     @sync
     def all_states(self):
         """
@@ -777,7 +778,7 @@ class ManticoreBase(Eventful):
             callback = MethodType(callback, self)
         super().subscribe(name, callback)
 
-    @property
+    @property  # type: ignore
     @at_not_running
     def context(self):
         """ Convenient access to shared context. We maintain a local copy of the

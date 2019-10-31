@@ -1,5 +1,7 @@
 from manticore.core.smtlib.visitors import simplify
 import hashlib
+from enum import Enum
+from typing import Optional
 import logging
 from contextlib import contextmanager
 
@@ -18,7 +20,7 @@ from ..core.plugin import Plugin
 logger = logging.getLogger(__name__)
 
 
-class DetectorClassification:
+class DetectorClassification(Enum):
     """
     Shall be consistent with
     https://github.com/trailofbits/slither/blob/563d5118298e4cae7f0ea5f2a531f0dcdcebd64d/slither/detectors/abstract_detector.py#L11-L15
@@ -31,10 +33,14 @@ class DetectorClassification:
 
 
 class Detector(Plugin):
-    ARGUMENT = None  # argument that needs to be passed to --detect to use given detector
-    HELP = None  # help string
-    IMPACT = None  # DetectorClassification value
-    CONFIDENCE = None  # DetectorClassification value
+    # argument that needs to be passed to --detect to use given detector
+    ARGUMENT: Optional[str] = None
+    # help string
+    HELP: Optional[str] = None
+    # DetectorClassification value
+    IMPACT: Optional[DetectorClassification] = None
+    # DetectorClassification value
+    CONFIDENCE: Optional[DetectorClassification] = None
 
     @property
     def name(self):
