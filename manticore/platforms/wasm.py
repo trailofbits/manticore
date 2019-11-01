@@ -151,7 +151,7 @@ class WASMWorld(Platform):
             if export_name in self.manual_exports[mod_name]:
                 return self.manual_exports[mod_name][export_name]
         addr = self._get_export_addr(export_name, mod_name)
-        if addr:
+        if addr is not None:
             if isinstance(addr, FuncAddr):
                 return self.store.funcs[addr]
             if isinstance(addr, TableAddr):
@@ -160,6 +160,7 @@ class WASMWorld(Platform):
                 return self.store.mems[addr]
             if isinstance(addr, GlobalAddr):
                 return self.store.globals[addr]
+
         return None
 
     def get_module_imports(self, module, exec_start, stub_missing):
@@ -176,7 +177,7 @@ class WASMWorld(Platform):
             elif not self.instantiated[self.module_names[i.module]]:
                 self.import_module(i.module, exec_start, stub_missing)
             imported_version = self._get_export_addr(i.name, i.module)
-            if not imported_version and not stub_missing:
+            if imported_version is None and not stub_missing:
                 raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 
             if isinstance(imported_version, ExternVal.__args__):
