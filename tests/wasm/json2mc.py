@@ -155,7 +155,9 @@ for d in data:
         if maybe_name:  # This is an alias for another registered module
             imports.append({"type": "alias", "alias": d["as"], "orig": maybe_name})
         else:  # This is an alias for the current module
-            imports.append({"type": "import", "name": d["as"], "filename": modules[current_module].filename})
+            imports.append(
+                {"type": "import", "name": d["as"], "filename": modules[current_module].filename}
+            )
             modules[current_module].registered_name = d["as"]
 
     if current_module:
