@@ -1,6 +1,44 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.1...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.2...HEAD)
+
+## 0.3.2 - 2019-11-xx
+
+Thanks to our external contributors!
+
+ - [Srinivas11789](https://github.com/trailofbits/manticore/commits?author=Srinivas11789)
+ - [catenacyber](https://github.com/trailofbits/manticore/commits?author=catenacyber)
+ - [Boyan-MILANOV](https://github.com/trailofbits/manticore/commits?author=Boyan-MILANOV)
+
+### Ethereum
+* Use higher-level test generation to symbolically execute SHA3 [#1526](https://github.com/trailofbits/manticore/pull/1526)
+* Added plugin for discarding states without changes to storage [#1507](https://github.com/trailofbits/manticore/pull/1507)
+* Fix `ADDMOD` and `MULMOD` [#1531](https://github.com/trailofbits/manticore/pull/1531)
+* Warn on missing bytecode [#1534](https://github.com/trailofbits/manticore/pull/1534)
+* Simplifiy PC upon modification [#1523](https://github.com/trailofbits/manticore/pull/1523)
+
+
+### Native
+* Better memory tests ([#1506](https://github.com/trailofbits/manticore/pull/1506), [1524](https://github.com/trailofbits/manticore/pull/1524))
+* Memory IO performance improvements [#1509](https://github.com/trailofbits/manticore/pull/1509)
+* Expose ELF dynamic load addresses [#1515](https://github.com/trailofbits/manticore/pull/1515)
+* Optimize instruction decoding ([#1522](https://github.com/trailofbits/manticore/pull/1522), [#1527](https://github.com/trailofbits/manticore/pull/1527))
+* Add partial support for `recvfrom` syscall [#1514](https://github.com/trailofbits/manticore/pull/1514)
+* Add `will_write_memory` event to `write_bytes` [#1535](https://github.com/trailofbits/manticore/pull/1535)
+* Update supported Unicorn version [#1536](https://github.com/trailofbits/manticore/pull/1536)
+* Fix file pointer leak in ELF interpreter [#1538](https://github.com/trailofbits/manticore/pull/1538)
+* Deduplicate socket symbol names [#1542](https://github.com/trailofbits/manticore/pull/1542)
+* Improve environment variable parsing [#1545](https://github.com/trailofbits/manticore/pull/1545)
+* Reduce chance of orphaned `did_execute_instruction` event [#1529](https://github.com/trailofbits/manticore/pull/1529)
+
+### Other
+* Incorporate type checking (mypy) into CI [#1544](https://github.com/trailofbits/manticore/pull/1544)
+* Fixes to smtlib ([#1512](https://github.com/trailofbits/manticore/pull/1512), [#1511](https://github.com/trailofbits/manticore/pull/1511))
+* Logging improvements ([#1518](https://github.com/trailofbits/manticore/pull/1518), [#1520](https://github.com/trailofbits/manticore/pull/1520))
+* Simplify unsigned division constant folding [#1530](https://github.com/trailofbits/manticore/pull/1530)
+* Improve signed division logic [#1540](https://github.com/trailofbits/manticore/pull/1540)
+* Move to manticore-specific exception types [#1537](https://github.com/trailofbits/manticore/pull/1537)
+
 
 ## 0.3.1 - 2019-08-06
 
