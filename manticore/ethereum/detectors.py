@@ -75,7 +75,6 @@ class Detector(Plugin):
         self.get_findings(state).append((address, pc, finding, at_init, constraint))
         with self.locked_global_findings() as gf:
             gf.append((address, pc, finding, at_init))
-
         # Fixme for ever broken logger
         logger.warning(finding)
 
@@ -496,12 +495,12 @@ class DetectIntegerOverflow(Detector):
             for taint in get_taints(what, "IOS_.*"):
                 address, pc, finding, at_init, condition = self._get_location(state, taint[4:])
                 if state.can_be_true(condition):
-                    self.add_finding(state, address, pc, finding, at_init)
+                    self.add_finding(state, address, pc, finding, at_init, condition)
         else:
             for taint in get_taints(what, "IOU_.*"):
                 address, pc, finding, at_init, condition = self._get_location(state, taint[4:])
                 if state.can_be_true(condition):
-                    self.add_finding(state, address, pc, finding, at_init)
+                    self.add_finding(state, address, pc, finding, at_init, condition)
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         vm = state.platform.current_vm
@@ -700,7 +699,7 @@ class DetectUninitializedStorage(Detector):
             cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
-            self.add_finding_here(state, "Potentially reading uninitialized storage")
+            self.add_finding_here(state, "Potentially reading uninitialized storage", cbu)
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write

@@ -110,7 +110,6 @@ class SolidityMetadata:
         new_srcmap = {}
         bytecode = self._without_metadata(bytecode)
         if self.source_code and bytecode and srcmap:
-
             asm_offset = 0
             asm_pos = 0
             md = dict(enumerate(srcmap[asm_pos].split(":")))

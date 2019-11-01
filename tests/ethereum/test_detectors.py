@@ -24,7 +24,7 @@ from manticore.ethereum import (
 )
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
 
-from manticore.utils import config
+from manticore.utils import config, log
 
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
@@ -48,7 +48,7 @@ class EthDetectorTest(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()
         self.mevm.register_plugin(KeepOnlyIfStorageChanges())
-        self.mevm.verbosity(0)
+        log.set_verbosity(0)
         self.worksp = self.mevm.workspace
 
     def tearDown(self):
@@ -76,9 +76,9 @@ class EthDetectorTest(unittest.TestCase):
                 filepath,
                 contract_name="DetectThis",
                 args=ctor_arg,
-                crytic_compile_args={"solc_working_dir": dir},
+                compile_args={"solc_working_dir": dir},
             )
-
+        mevm.finalize()
         expected_findings = set(((finding, at_init) for finding, at_init in should_find))
         actual_findings = set(
             ((finding, at_init) for _addr, _pc, finding, at_init in mevm.global_findings)

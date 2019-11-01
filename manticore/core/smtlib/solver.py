@@ -87,7 +87,7 @@ class Solver(SingletonMixin):
         """Check if given constraints can be valid"""
         return self.can_be_true(constraints, True)
 
-    def can_be_true(self, constraints, expression) -> bool:
+    def can_be_true(self, constraints, expression=True) -> bool:
         """Check if given expression could be valid"""
         raise SolverException("Abstract method not implemented")
 

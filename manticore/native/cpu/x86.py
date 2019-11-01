@@ -1078,7 +1078,7 @@ class X86Cpu(Cpu):
         """
         Logical exclusive OR.
 
-        Performs a bitwise exclusive Operators.OR(XOR) operation on the destination (first)
+        Performs a bitwise exclusive-OR(XOR) operation on the destination (first)
         and source (second) operands and stores the result in the destination
         operand location.
 
