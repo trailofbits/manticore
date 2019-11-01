@@ -6,6 +6,7 @@ from ..wasm.runtime_structure import (
     FuncAddr,
     HostFunc,
     Stack,
+    ProtoFuncInst,
     MemInst,
     MemAddr,
     GlobalInst,
@@ -24,7 +25,7 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 def stub(arity, _constraints, *args):
@@ -132,16 +133,33 @@ class WASMWorld(Platform):
         self.instantiated[self.module_names[module_name]] = True
         logger.info("Imported %s", module_name)
 
-    def get_export(self, export_name, mod_name=None):
-        mod_name = self.default_module if not mod_name else mod_name
-        if mod_name in self.manual_exports:
-            if export_name in self.manual_exports[mod_name]:
-                return self.manual_exports[mod_name][export_name]
+    def _get_export_addr(
+        self, export_name, mod_name=None
+    ) -> typing.Optional[typing.Union[FuncAddr, TableAddr, MemAddr, GlobalAddr]]:
         try:
             if mod_name in self.module_names:  # TODO - handle mod_name.export_name
                 return self.modules[self.module_names[mod_name]][1].get_export_address(export_name)
         except MissingExportException as exc:
             logger.error("Couldn't find export %s.%s", mod_name, exc.name)
+        return None
+
+    def get_export(
+        self, export_name, mod_name=None
+    ) -> typing.Optional[typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]]:
+        mod_name = self.default_module if not mod_name else mod_name
+        if mod_name in self.manual_exports:
+            if export_name in self.manual_exports[mod_name]:
+                return self.manual_exports[mod_name][export_name]
+        addr = self._get_export_addr(export_name, mod_name)
+        if addr:
+            if isinstance(addr, FuncAddr):
+                return self.store.funcs[addr]
+            if isinstance(addr, TableAddr):
+                return self.store.funcs[addr]
+            if isinstance(addr, MemAddr):
+                return self.store.mems[addr]
+            if isinstance(addr, GlobalAddr):
+                return self.store.globals[addr]
         return None
 
     def get_module_imports(self, module, exec_start, stub_missing):
@@ -157,7 +175,7 @@ class WASMWorld(Platform):
             # If it's registered, but hasn't been imported yet, import it
             elif not self.instantiated[self.module_names[i.module]]:
                 self.import_module(i.module, exec_start, stub_missing)
-            imported_version = self.get_export(i.name, i.module)
+            imported_version = self._get_export_addr(i.name, i.module)
             if not imported_version and not stub_missing:
                 raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 

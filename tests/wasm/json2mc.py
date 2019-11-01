@@ -2,7 +2,7 @@ import argparse
 import json
 from jinja2 import Environment, FileSystemLoader
 from base64 import b64encode
-import string
+from copy import copy
 
 parser = argparse.ArgumentParser("Generate Manticore tests from the WASM Spec")
 parser.add_argument("filename", type=argparse.FileType("r"), help="JSON file output from wast2json")
@@ -18,6 +18,7 @@ class Module:
         self.filename = filename
         self.tests = tests
         self.registered_name = name
+        self.imports = []
 
     def add_test(self, name, line, args, rets, type_="assert_return", mod_name=None):
         self.tests.append(
@@ -60,8 +61,8 @@ template = env.get_template("test_template.jinja2")
 
 
 modules = []
-module_names = {}
 registered_modules = {}
+imports = []
 current_module = None
 for d in data:
 
@@ -81,8 +82,12 @@ for d in data:
     elif d["type"] == "assert_exhaustion":
         pass
     elif d["type"] == "assert_invalid":
+        if current_module:
+            modules[current_module].imports = copy(imports)
         current_module = None
     elif d["type"] == "assert_malformed":
+        if current_module:
+            modules[current_module].imports = copy(imports)
         current_module = None
     elif d["type"] == "assert_return":
         if d["action"]["type"] == "invoke":
@@ -129,25 +134,31 @@ for d in data:
         else:
             raise NotImplementedError("assert_trap with action type: " + d["action"]["type"])
     elif d["type"] == "assert_uninstantiable":
+        if current_module:
+            modules[current_module].imports = copy(imports)
         current_module = None
     elif d["type"] == "assert_unlinkable":
+        if current_module:
+            modules[current_module].imports = copy(imports)
         current_module = None
     elif d["type"] == "module":
         modules.append(Module(d["filename"], [], d.get("name", None)))
+        if current_module:
+            modules[current_module].imports = copy(imports)
+        if d.get("name", None):
+            imports.append({"type": "import", "name": d["name"], "filename": d["filename"]})
         current_module = len(modules) - 1
         if "name" in d:
-            module_names[d["name"]] = current_module
             registered_modules[d["name"]] = modules[current_module].filename
-    elif d["type"] == "register":
-        registered_modules[d["as"]] = modules[
-            module_names.get(d.get("name", None), current_module)
-        ].filename
+    elif d["type"] == "register":  # Allow a module to go by another name
+        maybe_name = d.get("name", False)
+        if maybe_name:  # This is an alias for another registered module
+            imports.append({"type": "alias", "alias": d["as"], "orig": maybe_name})
+        else:  # This is an alias for the current module
+            imports.append({"type": "import", "name": d["as"], "filename": modules[current_module].filename})
+            modules[current_module].registered_name = d["as"]
 
-print(
-    template.render(
-        modules=modules,
-        registered_modules=[
-            {"name": name, "filename": registered_modules[name]} for name in registered_modules
-        ],
-    )
-)
+    if current_module:
+        modules[current_module].imports = copy(imports)
+
+print(template.render(modules=modules))

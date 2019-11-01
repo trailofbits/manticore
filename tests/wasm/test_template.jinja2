@@ -56,9 +56,13 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         {%  endif %}
         world.set_env(spectest, mod_name="spectest")
 
-        {% for item in registered_modules %}
+        {% for item in module.imports %}
+        {%  if item['type'] == "import" %}
         world.register_module("{{ item['name'] }}", join(dirname(abspath(__file__)), "{{ item['filename'] }}"))
-        world.import_module("{{ item['name'] }}", True, False)
+        {%  endif %}
+        {%  if item['type'] == "alias" %}
+        world.register_module("{{ item['alias'] }}", "{{ item['orig'] }}")
+        {%  endif %}
         {% endfor %}
 
         world.instantiate({}, exec_start=True)
