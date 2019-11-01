@@ -40,7 +40,8 @@ class ManticoreWASM(ManticoreBase):
         with self.locked_context() as context:
             context["time_started"] = time.time()
 
-        super().run(timeout=timeout)
+        with self.kill_timeout(timeout):
+            super().run()
 
     def finalize(self):
         """
