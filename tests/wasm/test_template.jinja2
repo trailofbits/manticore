@@ -59,6 +59,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         {% for item in module.imports %}
         {%  if item['type'] == "import" %}
         world.register_module("{{ item['name'] }}", join(dirname(abspath(__file__)), "{{ item['filename'] }}"))
+        world.import_module("{{ item['name'] }}", True, False)
         {%  endif %}
         {%  if item['type'] == "alias" %}
         world.register_module("{{ item['alias'] }}", "{{ item['orig'] }}")
