@@ -177,8 +177,11 @@ class WASMWorld(Platform):
             elif not self.instantiated[self.module_names[i.module]]:
                 self.import_module(i.module, exec_start, stub_missing)
             imported_version = self._get_export_addr(i.name, i.module)
-            if imported_version is None and not stub_missing:
-                raise RuntimeError(f"Could not find import {i.module}:{i.name}")
+            if imported_version is None:
+                # check for manually provided version
+                imported_version = self.get_export(i.name, i.module)
+                if imported_version is None and not stub_missing:
+                    raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 
             if isinstance(imported_version, ExternVal.__args__):
                 imports.append(imported_version)  # TODO - Import type matching
