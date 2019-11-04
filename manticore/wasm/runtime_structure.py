@@ -590,9 +590,7 @@ class ModuleInstance(Eventful):
             vals = []
             while not isinstance(stack.peek(), Label):
                 vals.append(stack.pop())
-                assert isinstance(
-                    vals[-1], Value_t
-                ), f"{type(vals[-1])} is not a value or a label"
+                assert isinstance(vals[-1], Value_t), f"{type(vals[-1])} is not a value or a label"
             label = stack.pop()
             assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label"
             # Decrement the block number
