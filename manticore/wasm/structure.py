@@ -104,7 +104,7 @@ class Function:
     locals: typing.List[ValType]  #: Vector of mutable local variables (and their types)
     body: WASMExpression  #: Sequence of WASM instructions, should leave the appropriate type on the stack
 
-    def allocate(self, store: Store, module: ModuleInstance) -> FuncAddr:
+    def allocate(self, store: "Store", module: "ModuleInstance") -> FuncAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#functions%E2%91%A5
 
@@ -127,7 +127,7 @@ class Table:
 
     type: TableType  #: union of a limit and a type (currently only supports funcref)s
 
-    def allocate(self, store: Store) -> TableAddr:
+    def allocate(self, store: "Store") -> TableAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#tables%E2%91%A5
 
@@ -151,7 +151,7 @@ class Memory:
 
     type: MemoryType  #: secretly a LimitType that specifies how big or small the memory can be
 
-    def allocate(self, store: Store) -> MemAddr:
+    def allocate(self, store: "Store") -> MemAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#memories%E2%91%A5
 
@@ -174,7 +174,7 @@ class Global:
     type: GlobalType  #: The type of the variable
     init: WASMExpression  #: A (constant) sequence of WASM instructions that calculates the value for the global
 
-    def allocate(self, store: Store, val: Value) -> GlobalAddr:
+    def allocate(self, store: "Store", val: Value) -> GlobalAddr:
         """
         https://www.w3.org/TR/wasm-core-1/#globals%E2%91%A5
 

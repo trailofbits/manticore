@@ -391,7 +391,7 @@ class Executor(Eventful):
         self._publish("did_read_memory", ea, stack.peek())
 
     def int_load(self, store, stack, imm: MemoryImm, ty: type, size: int, signed: bool):
-        assert isinstance(ty, (I32, I64)), f"{type(ty)} is not an I32 or I64"
+        assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -415,7 +415,7 @@ class Executor(Eventful):
             c = Operators.SEXTEND(c, size, width)
         else:
             c = Operators.ZEXTEND(c, width)
-        stack.push(ty.cast(c))
+        stack.push(ty.cast(c)) # type: ignore
         self._publish("did_read_memory", ea, stack.peek())
 
     def i32_load8_s(self, store, stack, imm: MemoryImm):
@@ -449,7 +449,7 @@ class Executor(Eventful):
         self.int_load(store, stack, imm, I64, 32, False)
 
     def int_store(self, store, stack, imm: MemoryImm, ty: type, n=None):
-        assert isinstance(ty, (I32, I64))
+        assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -464,7 +464,7 @@ class Executor(Eventful):
                 -2, I32, "Concretizing integer memory write", i
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
-        N = n if n else {I32: 32, I64: 64}[ty]
+        N = n if n else (32 if ty is I32 else 64)
         if ea not in range(len(mem.data)):
             raise OutOfBoundsMemoryTrap(ea)
         if (ea + (N // 8)) not in range(len(mem.data) + 1):
@@ -1215,7 +1215,7 @@ class Executor(Eventful):
     ###########################################################################################################
     # Floating point instructions# Floating point instructions
     def float_load(self, store, stack, imm: MemoryImm, ty: type):
-        assert isinstance(ty, (F32, F64))
+        assert ty in {F32, F64}, f"{type(ty)} is not an F32 or F64"
         if ty == F32:
             size = 32
         elif ty == F64:
@@ -1236,7 +1236,7 @@ class Executor(Eventful):
             raise OutOfBoundsMemoryTrap(ea + (size // 8))
         self._publish("will_read_memory", ea, ea + (size // 8))
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
-        ret = ty.cast(c)
+        ret = ty.cast(c) # type: ignore
         stack.push(ret)
         self._publish("did_read_memory", ea, stack.peek())
 
