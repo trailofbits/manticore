@@ -27,16 +27,9 @@ Executor
 
 
 Module Structure
-^^^^^^^^^^^^^^^^
-
-.. automodule:: manticore.wasm.module_structure
-    :members:
-    :undoc-members:
-
-Runtime Structure
 ^^^^^^^^^^^^^^^^^
 
-.. automodule:: manticore.wasm.runtime_structure
+.. automodule:: manticore.wasm.structure
     :members:
     :undoc-members:
 

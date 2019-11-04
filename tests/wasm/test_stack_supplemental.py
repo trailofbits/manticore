@@ -2,7 +2,7 @@ import unittest
 from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import I32
 from manticore.core.plugin import Plugin
-from manticore.wasm.runtime_structure import Stack, AtomicStack
+from manticore.wasm.structure import Stack, AtomicStack
 
 from pathlib import Path
 

@@ -1,6 +1,5 @@
 from .platform import Platform
-from ..wasm.module_structure import Module
-from ..wasm.runtime_structure import (
+from ..wasm.structure import (
     ModuleInstance,
     Store,
     Addr,
@@ -15,6 +14,7 @@ from ..wasm.runtime_structure import (
     TableInst,
     TableAddr,
     ExternVal,
+    Module,
 )
 from ..wasm.types import Trap, TypeIdx, TableType, MemoryType, GlobalType, MissingExportException
 from ..core.state import TerminateState
