@@ -13,6 +13,7 @@ from .types import (
     F32,
     F64,
     Value,
+    Value_t,
     ValType,
     FunctionType,
     Name,
@@ -528,7 +529,7 @@ class ModuleInstance(Eventful):
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
-                assert isinstance(t, (Value.__args__))
+                assert isinstance(t, (I32, I64, F32, F64))
                 stack.push(t.cast(r))
         else:  # Call WASM function
             assert isinstance(f, FuncInst), "Got a non-WASM function! (Maybe cast to HostFunc?)"
@@ -590,7 +591,7 @@ class ModuleInstance(Eventful):
             while not isinstance(stack.peek(), Label):
                 vals.append(stack.pop())
                 assert isinstance(
-                    vals[-1], Value.__args__
+                    vals[-1], Value_t
                 ), f"{type(vals[-1])} is not a value or a label"
             label = stack.pop()
             assert isinstance(label, Label), f"Stack contained a {type(label)} instead of a Label"
@@ -613,7 +614,7 @@ class ModuleInstance(Eventful):
             # Pop return values
             f = stack.get_frame()
             n = f.arity
-            stack.has_type_on_top(Value.__args__, n)
+            stack.has_type_on_top(Value_t, n)
             vals = [stack.pop() for _ in range(n)]
             assert isinstance(
                 stack.peek(), Activation
@@ -926,12 +927,12 @@ class ModuleInstance(Eventful):
         assert stack.has_at_least(Label, label_depth + 1)
 
         label: Label = stack.get_nth(Label, label_depth)
-        stack.has_type_on_top(Value.__args__, label.arity)
+        stack.has_type_on_top(Value_t, label.arity)
         vals = [stack.pop() for _ in range(label.arity)]
 
         # Pop the higher labels and values from the stack and discard them
         for _ in range(label_depth + 1):
-            while isinstance(stack.peek(), Value.__args__):
+            while isinstance(stack.peek(), Value_t):
                 stack.pop()
             assert isinstance(stack.peek(), Label)
             stack.pop()
@@ -992,7 +993,7 @@ class ModuleInstance(Eventful):
         # n values, where n is the number of expected returns for the current function
         f = stack.get_frame()
         n = f.arity
-        stack.has_type_on_top(Value.__args__, n)
+        stack.has_type_on_top(Value_t, n)
         ret = [stack.pop() for _i in range(n)]
         while not isinstance(stack.peek(), (Activation, Frame)):
             stack.pop()
@@ -1165,7 +1166,7 @@ class Stack(Eventful):
         """
         return len(self.data) == 0
 
-    def has_type_on_top(self, t: type, n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
         """
         *Asserts* that the stack has at least n values of type t or type BitVec on the top
 
@@ -1285,7 +1286,7 @@ class AtomicStack(Stack):
     def empty(self):
         return self.parent.empty()
 
-    def has_type_on_top(self, t: type, n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
         return self.parent.has_type_on_top(t, n)
 
     def find_type(self, t: type):

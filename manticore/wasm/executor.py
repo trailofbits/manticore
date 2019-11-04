@@ -16,7 +16,7 @@ from .types import (
     I64,
     F32,
     F64,
-    Value,
+    Value_t,
     UnreachableInstructionTrap,
     ConcretizeStack,
     ZeroDivisionTrap,
@@ -289,7 +289,7 @@ class Executor(Eventful):
         pass
 
     def drop(self, store, stack):
-        stack.has_type_on_top(Value.__args__, 1)
+        stack.has_type_on_top(Value_t, 1)
         stack.pop()
 
     def select(self, store, stack):
@@ -318,13 +318,13 @@ class Executor(Eventful):
     def set_local(self, store, stack, imm: LocalVarXsImm):
         f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
-        stack.has_type_on_top(Value.__args__, 1)
+        stack.has_type_on_top(Value_t, 1)
         self._publish("will_set_local", imm.local_index, stack.peek())
         f.locals[imm.local_index] = stack.pop()
         self._publish("did_set_local", imm.local_index, f.locals[imm.local_index])
 
     def tee_local(self, store, stack, imm: LocalVarXsImm):
-        stack.has_type_on_top(Value.__args__, 1)
+        stack.has_type_on_top(Value_t, 1)
         v = stack.pop()
         stack.push(v)
         stack.push(v)
@@ -345,7 +345,7 @@ class Executor(Eventful):
         assert imm.global_index in range(len(f.module.globaladdrs))
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
-        stack.has_type_on_top(Value.__args__, 1)
+        stack.has_type_on_top(Value_t, 1)
         self._publish("did_set_global", imm.global_index, stack.peek())
         store.globals[a].value = stack.pop()
         self._publish("did_set_global", imm.global_index, store.globals[a].value)

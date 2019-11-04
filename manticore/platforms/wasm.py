@@ -3,6 +3,7 @@ from ..wasm.module_structure import Module
 from ..wasm.runtime_structure import (
     ModuleInstance,
     Store,
+    Addr,
     FuncAddr,
     HostFunc,
     Stack,
@@ -183,7 +184,7 @@ class WASMWorld(Platform):
                 if imported_version is None and not stub_missing:
                     raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 
-            if isinstance(imported_version, ExternVal.__args__):
+            if isinstance(imported_version, Addr):
                 imports.append(imported_version)  # TODO - Import type matching
             else:
                 if isinstance(i.desc, TypeIdx):  # Imported function
