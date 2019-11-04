@@ -1106,7 +1106,7 @@ class Stack(Eventful):
 
     data: typing.Deque[
         typing.Union[Value, Label, Activation]
-    ]  #: Underlying datstore for the "stack"
+    ]  #: Underlying datastore for the "stack"
 
     _published_events = {"push_item", "pop_item"}
 
