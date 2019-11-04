@@ -15,7 +15,6 @@ from .types import (
     Value,
     ValType,
     FunctionType,
-    Byte,
     Name,
     FuncIdx,
     TableIdx,
@@ -44,11 +43,25 @@ logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 
 # Wrappers around integers that we use for indexing the store.
-Addr: type = type("Addr", (int,), {})
-FuncAddr: type = type("FuncAddr", (Addr,), {})
-TableAddr: type = type("TableAddr", (Addr,), {})
-MemAddr: type = type("MemAddr", (Addr,), {})
-GlobalAddr: type = type("GlobalAddr", (Addr,), {})
+class Addr(int):
+    pass
+
+
+class FuncAddr(Addr):
+    pass
+
+
+class TableAddr(Addr):
+    pass
+
+
+class MemAddr(Addr):
+    pass
+
+
+class GlobalAddr(Addr):
+    pass
+
 
 ExternVal: type = typing.Union[FuncAddr, TableAddr, MemAddr, GlobalAddr]
 FuncElem: type = typing.Optional[FuncAddr]
@@ -95,7 +108,7 @@ class MemInst:
     https://www.w3.org/TR/wasm-core-1/#memory-instances%E2%91%A0
     """
 
-    data: typing.List[Byte]  #: The backing array for this memory
+    data: typing.List[int]  #: The backing array for this memory
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
 
     def grow(self, n: int) -> bool:

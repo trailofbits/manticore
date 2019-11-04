@@ -262,7 +262,7 @@ class Executor(Eventful):
             return False
         return expression
 
-    def dispatch(self, inst: "Instruction", store, stack):
+    def dispatch(self, inst, store, stack):
         """
         Selects the correct semantics for the given instruction, and executes them
 
@@ -390,10 +390,8 @@ class Executor(Eventful):
         stack.push(I64.cast(c))
         self._publish("did_read_memory", ea, stack.peek())
 
-    def int_load(
-        self, store, stack, imm: MemoryImm, ty: type, size: int, signed: bool
-    ):
-        assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
+    def int_load(self, store, stack, imm: MemoryImm, ty: type, size: int, signed: bool):
+        assert isinstance(ty, (I32, I64)), f"{type(ty)} is not an I32 or I64"
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -451,6 +449,7 @@ class Executor(Eventful):
         self.int_load(store, stack, imm, I64, 32, False)
 
     def int_store(self, store, stack, imm: MemoryImm, ty: type, n=None):
+        assert isinstance(ty, (I32, I64))
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -1216,6 +1215,7 @@ class Executor(Eventful):
     ###########################################################################################################
     # Floating point instructions# Floating point instructions
     def float_load(self, store, stack, imm: MemoryImm, ty: type):
+        assert isinstance(ty, (F32, F64))
         if ty == F32:
             size = 32
         elif ty == F64:

@@ -6,10 +6,20 @@ import wasm
 import struct
 from ..core.state import Concretize
 
-
+# Do I like this? No. Is it necessary to get mypy to pass without destroying the WASM type system? Yes.
+# Look how much cleaner the version below is instead of having a separate class for every type...
+"""
 U32: type = type("U32", (int,), {})
 U64: type = type("U64", (int,), {})
-Byte: type = type("Byte", (int,), {})
+"""
+
+
+class U32(int):
+    pass
+
+
+class U64(int):
+    pass
 
 
 def debug(imm):
@@ -42,7 +52,7 @@ def _reinterpret(ty1: type, ty2: type, val):
     :return: The converted value
     """
     ptr = pointer(ty1(val))
-    return cast(ptr, POINTER(ty2)).contents.value
+    return cast(ptr, POINTER(ty2)).contents.value  # type: ignore
 
 
 class I32(int):
@@ -153,11 +163,18 @@ class F64(float):
         return cls(other)
 
 
-ValType = typing.Union[
+ValType: type = typing.Union[
     type(I32), type(I64), type(F32), type(F64), type(BitVec)
 ]  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
-Value = typing.Union[I32, I64, F32, F64, BitVec]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
-Name: type = type("Name", (str,), {})
+Value: type = typing.Union[
+    I32, I64, F32, F64, BitVec
+]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
+
+
+class Name(str):
+    pass
+
+
 #: https://www.w3.org/TR/wasm-core-1/#syntax-resulttype
 ResultType = typing.Optional[
     ValType
@@ -201,13 +218,32 @@ class GlobalType:
 
 
 # https://www.w3.org/TR/wasm-core-1/#indices%E2%91%A0
-TypeIdx: type = type("TypeIdx", (U32,), {})
-FuncIdx: type = type("FuncIdx", (U32,), {})
-TableIdx: type = type("TableIdx", (U32,), {})
-MemIdx: type = type("MemIdx", (U32,), {})
-GlobalIdx: type = type("GlobalIdx", (U32,), {})
-LocalIdx: type = type("LocalIdx", (U32,), {})
-LabelIdx: type = type("LabelIdx", (U32,), {})
+class TypeIdx(U32):
+    pass
+
+
+class FuncIdx(U32):
+    pass
+
+
+class TableIdx(U32):
+    pass
+
+
+class MemIdx(U32):
+    pass
+
+
+class GlobalIdx(U32):
+    pass
+
+
+class LocalIdx(U32):
+    pass
+
+
+class LabelIdx(U32):
+    pass
 
 
 @dataclass

@@ -6,7 +6,6 @@ from .types import (
     FuncIdx,
     GlobalIdx,
     MemIdx,
-    Byte,
     ValType,
     FunctionType,
     TableType,
@@ -172,7 +171,7 @@ class Data:
 
     data: MemIdx  #: Which memory to put the data in. Currently only supports 0
     offset: WASMExpression  #: WASM instructions that calculate offset into the memory
-    init: typing.List[Byte]  #: List of bytes to copy into the memory
+    init: typing.List[int]  #: List of bytes to copy into the memory
 
 
 @dataclass
@@ -200,14 +199,14 @@ class Export:
     desc: ExportDesc  #: Whether this is a function, table, memory, or global
 
 
-def strip_quotes(rough_name: str) -> str:
+def strip_quotes(rough_name: str) -> Name:
     """
     For some reason, the parser returns the function names with quotes around them
 
     :param rough_name:
     :return:
     """
-    return rough_name[1:-1]
+    return Name(rough_name[1:-1])
 
 
 class Module:
@@ -305,26 +304,44 @@ class Module:
             elif sec_id == SEC_IMPORT:  # https://www.w3.org/TR/wasm-core-1/#import-section%E2%91%A0
                 for i in section_data.payload.entries:
                     ty_map = i.get_decoder_meta()["types"]
+                    mod_name = strip_quotes(ty_map["module_str"].to_string(i.module_str))
+                    field_name = strip_quotes(ty_map["field_str"].to_string(i.field_str))
                     if i.kind == 0:
-                        desc = TypeIdx(i.type.type)
+                        m.imports.append(Import(mod_name, field_name, TypeIdx(i.type.type)))
+
                     elif i.kind == 1:
-                        desc = TableType(
-                            LimitType(i.type.limits.initial, i.type.limits.maximum),
-                            type_map[i.type.element_type],
+                        m.imports.append(
+                            Import(
+                                mod_name,
+                                field_name,
+                                TableType(
+                                    LimitType(i.type.limits.initial, i.type.limits.maximum),
+                                    type_map[i.type.element_type],
+                                ),
+                            )
                         )
+
                     elif i.kind == 2:
-                        desc = MemoryType(i.type.limits.initial, i.type.limits.maximum)
+                        m.imports.append(
+                            Import(
+                                mod_name,
+                                field_name,
+                                MemoryType(i.type.limits.initial, i.type.limits.maximum),
+                            )
+                        )
+
                     elif i.kind == 3:
-                        desc = GlobalType(bool(i.type.mutability), type_map[i.type.content_type])
+                        m.imports.append(
+                            Import(
+                                mod_name,
+                                field_name,
+                                GlobalType(bool(i.type.mutability), type_map[i.type.content_type]),
+                            )
+                        )
+
                     else:
                         raise RuntimeError("Can't decode kind field of:", i.kind)
-                    m.imports.append(
-                        Import(
-                            strip_quotes(ty_map["module_str"].to_string(i.module_str)),
-                            strip_quotes(ty_map["field_str"].to_string(i.field_str)),
-                            desc,
-                        )
-                    )
+
             elif (
                 sec_id == SEC_FUNCTION
             ):  # https://www.w3.org/TR/wasm-core-1/#function-section%E2%91%A0
