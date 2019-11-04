@@ -262,7 +262,7 @@ class Executor(Eventful):
             return False
         return expression
 
-    def dispatch(self, inst: "Instruction", store: "Store", stack: "Stack"):
+    def dispatch(self, inst: "Instruction", store, stack):
         """
         Selects the correct semantics for the given instruction, and executes them
 
@@ -282,17 +282,17 @@ class Executor(Eventful):
         except (ZeroDivisionError, InvalidOperation):
             raise ZeroDivisionTrap()
 
-    def unreachable(self, store: "Store", stack: "Stack"):
+    def unreachable(self, store, stack):
         raise UnreachableInstructionTrap()
 
-    def nop(self, store: "Store", stack: "Stack"):
+    def nop(self, store, stack):
         pass
 
-    def drop(self, store: "Store", stack: "Stack"):
+    def drop(self, store, stack):
         stack.has_type_on_top(Value.__args__, 1)
         stack.pop()
 
-    def select(self, store: "Store", stack: "Stack"):
+    def select(self, store, stack):
         c = stack.pop()
         v2 = stack.pop()
         v1 = stack.pop()
@@ -308,14 +308,14 @@ class Executor(Eventful):
             else:
                 stack.push(v2)
 
-    def get_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
+    def get_local(self, store, stack, imm: LocalVarXsImm):
         f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
         self._publish("will_get_local", imm.local_index)
         stack.push(f.locals[imm.local_index])
         self._publish("did_get_local", imm.local_index, stack.peek())
 
-    def set_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
+    def set_local(self, store, stack, imm: LocalVarXsImm):
         f = stack.get_frame().frame
         assert imm.local_index in range(len(f.locals))
         stack.has_type_on_top(Value.__args__, 1)
@@ -323,14 +323,14 @@ class Executor(Eventful):
         f.locals[imm.local_index] = stack.pop()
         self._publish("did_set_local", imm.local_index, f.locals[imm.local_index])
 
-    def tee_local(self, store: "Store", stack: "Stack", imm: LocalVarXsImm):
+    def tee_local(self, store, stack, imm: LocalVarXsImm):
         stack.has_type_on_top(Value.__args__, 1)
         v = stack.pop()
         stack.push(v)
         stack.push(v)
         self.set_local(store, stack, imm)
 
-    def get_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
+    def get_global(self, store, stack, imm: GlobalVarXsImm):
         f = stack.get_frame().frame
         assert imm.global_index in range(len(f.module.globaladdrs))
         a = f.module.globaladdrs[imm.global_index]
@@ -340,7 +340,7 @@ class Executor(Eventful):
         stack.push(glob.value)
         self._publish("did_get_global", imm.global_index, stack.peek())
 
-    def set_global(self, store: "Store", stack: "Stack", imm: GlobalVarXsImm):
+    def set_global(self, store, stack, imm: GlobalVarXsImm):
         f = stack.get_frame().frame
         assert imm.global_index in range(len(f.module.globaladdrs))
         a = f.module.globaladdrs[imm.global_index]
@@ -350,7 +350,7 @@ class Executor(Eventful):
         store.globals[a].value = stack.pop()
         self._publish("did_set_global", imm.global_index, store.globals[a].value)
 
-    def i32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_load(self, store, stack, imm: MemoryImm):
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -370,7 +370,7 @@ class Executor(Eventful):
         stack.push(I32.cast(c))
         self._publish("did_read_memory", ea, stack.peek())
 
-    def i64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_load(self, store, stack, imm: MemoryImm):
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -391,7 +391,7 @@ class Executor(Eventful):
         self._publish("did_read_memory", ea, stack.peek())
 
     def int_load(
-        self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, size: int, signed: bool
+        self, store, stack, imm: MemoryImm, ty: type, size: int, signed: bool
     ):
         assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
         f = stack.get_frame().frame
@@ -420,37 +420,37 @@ class Executor(Eventful):
         stack.push(ty.cast(c))
         self._publish("did_read_memory", ea, stack.peek())
 
-    def i32_load8_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_load8_s(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I32, 8, True)
 
-    def i32_load8_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_load8_u(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I32, 8, False)
 
-    def i32_load16_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_load16_s(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I32, 16, True)
 
-    def i32_load16_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_load16_u(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I32, 16, False)
 
-    def i64_load8_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_load8_s(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I64, 8, True)
 
-    def i64_load8_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_load8_u(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I64, 8, False)
 
-    def i64_load16_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_load16_s(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I64, 16, True)
 
-    def i64_load16_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_load16_u(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I64, 16, False)
 
-    def i64_load32_s(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_load32_s(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I64, 32, True)
 
-    def i64_load32_u(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_load32_u(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I64, 32, False)
 
-    def int_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
+    def int_store(self, store, stack, imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -482,28 +482,28 @@ class Executor(Eventful):
             mem.data[ea + idx] = v
         self._publish("did_write_memory", ea, b)
 
-    def i32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_store(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I32)
 
-    def i64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_store(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I64)
 
-    def i32_store8(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_store8(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I32, 8)
 
-    def i32_store16(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i32_store16(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I32, 16)
 
-    def i64_store8(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_store8(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I64, 8)
 
-    def i64_store16(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_store16(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I64, 16)
 
-    def i64_store32(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def i64_store32(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I64, 32)
 
-    def current_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
+    def current_memory(self, store, stack, imm: CurGrowMemImm):
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -511,7 +511,7 @@ class Executor(Eventful):
         mem = store.mems[a]
         stack.push(I32(len(mem.data) // 65536))
 
-    def grow_memory(self, store: "Store", stack: "Stack", imm: CurGrowMemImm):
+    def grow_memory(self, store, stack, imm: CurGrowMemImm):
         f = stack.get_frame().frame
         assert f.module.memaddrs
         a = f.module.memaddrs[0]
@@ -526,13 +526,13 @@ class Executor(Eventful):
         else:
             stack.push(I32(-1))
 
-    def i32_const(self, store: "Store", stack: "Stack", imm: I32ConstImm):
+    def i32_const(self, store, stack, imm: I32ConstImm):
         stack.push(I32.cast(imm.value))
 
-    def i64_const(self, store: "Store", stack: "Stack", imm: I64ConstImm):
+    def i64_const(self, store, stack, imm: I64ConstImm):
         stack.push(I64.cast(imm.value))
 
-    def i32_eqz(self, store: "Store", stack: "Stack"):
+    def i32_eqz(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
         v = c1 == 0
@@ -541,7 +541,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_eq(self, store: "Store", stack: "Stack"):
+    def i32_eq(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -551,7 +551,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_ne(self, store: "Store", stack: "Stack"):
+    def i32_ne(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -561,7 +561,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_lt_s(self, store: "Store", stack: "Stack"):
+    def i32_lt_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -571,7 +571,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_lt_u(self, store: "Store", stack: "Stack"):
+    def i32_lt_u(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -581,7 +581,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_gt_s(self, store: "Store", stack: "Stack"):
+    def i32_gt_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -591,7 +591,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_gt_u(self, store: "Store", stack: "Stack"):
+    def i32_gt_u(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -601,7 +601,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_le_s(self, store: "Store", stack: "Stack"):
+    def i32_le_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -611,7 +611,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_le_u(self, store: "Store", stack: "Stack"):
+    def i32_le_u(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -621,7 +621,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_ge_s(self, store: "Store", stack: "Stack"):
+    def i32_ge_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -631,7 +631,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_ge_u(self, store: "Store", stack: "Stack"):
+    def i32_ge_u(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -641,7 +641,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_eqz(self, store: "Store", stack: "Stack"):
+    def i64_eqz(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
         v = c1 == 0
@@ -650,7 +650,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_eq(self, store: "Store", stack: "Stack"):
+    def i64_eq(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -660,7 +660,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_ne(self, store: "Store", stack: "Stack"):
+    def i64_ne(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -670,7 +670,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_lt_s(self, store: "Store", stack: "Stack"):
+    def i64_lt_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -680,7 +680,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_lt_u(self, store: "Store", stack: "Stack"):
+    def i64_lt_u(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -690,7 +690,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_gt_s(self, store: "Store", stack: "Stack"):
+    def i64_gt_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -700,7 +700,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_gt_u(self, store: "Store", stack: "Stack"):
+    def i64_gt_u(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -710,7 +710,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_le_s(self, store: "Store", stack: "Stack"):
+    def i64_le_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -720,7 +720,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_le_u(self, store: "Store", stack: "Stack"):
+    def i64_le_u(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -730,7 +730,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_ge_s(self, store: "Store", stack: "Stack"):
+    def i64_ge_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -740,7 +740,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i64_ge_u(self, store: "Store", stack: "Stack"):
+    def i64_ge_u(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -750,7 +750,7 @@ class Executor(Eventful):
         else:
             stack.push(I32.cast(I32(1) if v else I32(0)))
 
-    def i32_clz(self, store: "Store", stack: "Stack"):
+    def i32_clz(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 31, 1) == 1
@@ -761,7 +761,7 @@ class Executor(Eventful):
         res = Operators.ITEBV(32, flag, res, 32)
         stack.push(I32.cast(res))
 
-    def i32_ctz(self, store: "Store", stack: "Stack"):  # Copied from x86 TZCNT
+    def i32_ctz(self, store, stack):  # Copied from x86 TZCNT
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) == 1
@@ -772,7 +772,7 @@ class Executor(Eventful):
         res = Operators.ITEBV(32, flag, res, 32)
         stack.push(I32.cast(res))
 
-    def i32_popcnt(self, store: "Store", stack: "Stack"):
+    def i32_popcnt(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) != 0
@@ -783,25 +783,25 @@ class Executor(Eventful):
         res = Operators.ITEBV(32, flag, res + 1, res)
         stack.push(I32.cast(res))
 
-    def i32_add(self, store: "Store", stack: "Stack"):
+    def i32_add(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I32.cast((c2 + c1) % 2 ** 32))
 
-    def i32_sub(self, store: "Store", stack: "Stack"):
+    def i32_sub(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I32.cast((c1 - c2 + 2 ** 32) % 2 ** 32))
 
-    def i32_mul(self, store: "Store", stack: "Stack"):
+    def i32_mul(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I32.cast((c2 * c1) % 2 ** 32))
 
-    def i32_div_s(self, store: "Store", stack: "Stack"):
+    def i32_div_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -814,7 +814,7 @@ class Executor(Eventful):
             raise OverflowDivisionTrap()
         stack.push(I32.cast(res))
 
-    def i32_div_u(self, store: "Store", stack: "Stack"):
+    def i32_div_u(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -827,7 +827,7 @@ class Executor(Eventful):
             c1 = I32.to_unsigned(c1)
         stack.push(I32.cast(Operators.UDIV(c1, c2)))
 
-    def i32_rem_s(self, store: "Store", stack: "Stack"):
+    def i32_rem_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -835,7 +835,7 @@ class Executor(Eventful):
             raise ZeroDivisionTrap()
         stack.push(I32.cast(Operators.SREM(c1, c2)))
 
-    def i32_rem_u(self, store: "Store", stack: "Stack"):
+    def i32_rem_u(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -847,38 +847,38 @@ class Executor(Eventful):
             raise ZeroDivisionTrap()
         stack.push(I32.cast(Operators.UREM(c1, c2)))
 
-    def i32_and(self, store: "Store", stack: "Stack"):
+    def i32_and(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I32.cast(c2 & c1))
 
-    def i32_or(self, store: "Store", stack: "Stack"):
+    def i32_or(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I32.cast(c2 | c1))
 
-    def i32_xor(self, store: "Store", stack: "Stack"):
+    def i32_xor(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I32.cast(c2 ^ c1))
 
-    def i32_shl(self, store: "Store", stack: "Stack"):
+    def i32_shl(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I32.cast((c1 << (c2 % 32)) % 2 ** 32))
 
-    def i32_shr_s(self, store: "Store", stack: "Stack"):
+    def i32_shr_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         k = c2 % 32
         stack.push(I32.cast(Operators.SAR(32, c1, k)))
 
-    def i32_shr_u(self, store: "Store", stack: "Stack"):
+    def i32_shr_u(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -888,7 +888,7 @@ class Executor(Eventful):
             c1 = I32.to_unsigned(c1)
         stack.push(I32.cast(c1 >> (c2 % 32)))
 
-    def i32_rotl(self, store: "Store", stack: "Stack"):
+    def i32_rotl(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -897,7 +897,7 @@ class Executor(Eventful):
         k = c2 % 32
         stack.push(I32.cast((c1 << k) | c1 >> (32 - k)))
 
-    def i32_rotr(self, store: "Store", stack: "Stack"):
+    def i32_rotr(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -906,7 +906,7 @@ class Executor(Eventful):
         k = c2 % 32
         stack.push(I32.cast((c1 >> k) | c1 << (32 - k)))
 
-    def i64_clz(self, store: "Store", stack: "Stack"):
+    def i64_clz(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 63, 1) == 1
@@ -918,7 +918,7 @@ class Executor(Eventful):
         res = Operators.ITEBV(64, flag, res, 64)
         stack.push(I64.cast(res))
 
-    def i64_ctz(self, store: "Store", stack: "Stack"):
+    def i64_ctz(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) == 1
@@ -929,7 +929,7 @@ class Executor(Eventful):
         res = Operators.ITEBV(64, flag, res, 64)
         stack.push(I64.cast(res))
 
-    def i64_popcnt(self, store: "Store", stack: "Stack"):
+    def i64_popcnt(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1 = stack.pop()
         flag = Operators.EXTRACT(c1, 0, 1) != 0
@@ -940,25 +940,25 @@ class Executor(Eventful):
         res = Operators.ITEBV(64, flag, res + 1, res)
         stack.push(I64.cast(res))
 
-    def i64_add(self, store: "Store", stack: "Stack"):
+    def i64_add(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I64.cast((c2 + c1) % 2 ** 64))
 
-    def i64_sub(self, store: "Store", stack: "Stack"):
+    def i64_sub(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I64.cast((c1 - c2 + 2 ** 64) % 2 ** 64))
 
-    def i64_mul(self, store: "Store", stack: "Stack"):
+    def i64_mul(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I64.cast((c2 * c1) % 2 ** 64))
 
-    def i64_div_s(self, store: "Store", stack: "Stack"):
+    def i64_div_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -974,7 +974,7 @@ class Executor(Eventful):
             raise OverflowDivisionTrap()
         stack.push(I64.cast(res))
 
-    def i64_div_u(self, store: "Store", stack: "Stack"):
+    def i64_div_u(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -987,7 +987,7 @@ class Executor(Eventful):
             c1 = I64.to_unsigned(c1)
         stack.push(I64.cast(Operators.UDIV(c1, c2)))
 
-    def i64_rem_s(self, store: "Store", stack: "Stack"):
+    def i64_rem_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -999,7 +999,7 @@ class Executor(Eventful):
             res = c1 - int(Decimal(c1) / Decimal(c2)) * c2
         stack.push(I64.cast(res))
 
-    def i64_rem_u(self, store: "Store", stack: "Stack"):
+    def i64_rem_u(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -1011,38 +1011,38 @@ class Executor(Eventful):
             raise ZeroDivisionTrap()
         stack.push(I64.cast(Operators.UREM(c1, c2)))
 
-    def i64_and(self, store: "Store", stack: "Stack"):
+    def i64_and(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I64.cast(c2 & c1))
 
-    def i64_or(self, store: "Store", stack: "Stack"):
+    def i64_or(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I64.cast(c2 | c1))
 
-    def i64_xor(self, store: "Store", stack: "Stack"):
+    def i64_xor(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I64.cast(c2 ^ c1))
 
-    def i64_shl(self, store: "Store", stack: "Stack"):
+    def i64_shl(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         stack.push(I64.cast((c1 << (c2 % 64)) % 2 ** 64))
 
-    def i64_shr_s(self, store: "Store", stack: "Stack"):
+    def i64_shr_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
         k = c2 % 64
         stack.push(I64.cast(Operators.SAR(64, c1, k)))
 
-    def i64_shr_u(self, store: "Store", stack: "Stack"):
+    def i64_shr_u(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -1052,7 +1052,7 @@ class Executor(Eventful):
             c1 = I64.to_unsigned(c1)
         stack.push(I64.cast(c1 >> (c2 % 64)))
 
-    def i64_rotl(self, store: "Store", stack: "Stack"):
+    def i64_rotl(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -1061,7 +1061,7 @@ class Executor(Eventful):
         k = c2 % 64
         stack.push(I64.cast((c1 << k) | c1 >> (64 - k)))
 
-    def i64_rotr(self, store: "Store", stack: "Stack"):
+    def i64_rotr(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
@@ -1070,14 +1070,14 @@ class Executor(Eventful):
         k = c2 % 64
         stack.push(I64.cast((c1 >> k) | c1 << (64 - k)))
 
-    def i32_wrap_i64(self, store: "Store", stack: "Stack"):
+    def i32_wrap_i64(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
         c1 %= 2 ** 32
         c1 = Operators.EXTRACT(c1, 0, 32)
         stack.push(I32.cast(c1))
 
-    def i32_trunc_s_f32(self, store: "Store", stack: "Stack"):
+    def i32_trunc_s_f32(self, store, stack):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
         if issymbolic(c1):
@@ -1090,7 +1090,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
-    def i32_trunc_u_f32(self, store: "Store", stack: "Stack"):
+    def i32_trunc_u_f32(self, store, stack):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
         if issymbolic(c1):
@@ -1103,7 +1103,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
-    def i32_trunc_s_f64(self, store: "Store", stack: "Stack"):
+    def i32_trunc_s_f64(self, store, stack):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
         if issymbolic(c1):
@@ -1116,7 +1116,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
-    def i32_trunc_u_f64(self, store: "Store", stack: "Stack"):
+    def i32_trunc_u_f64(self, store, stack):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
         if issymbolic(c1):
@@ -1129,12 +1129,12 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
-    def i64_extend_s_i32(self, store: "Store", stack: "Stack"):
+    def i64_extend_s_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
         stack.push(I64.cast(Operators.SEXTEND(c1, 32, 64)))
 
-    def i64_extend_u_i32(self, store: "Store", stack: "Stack"):
+    def i64_extend_u_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
         if issymbolic(
@@ -1145,7 +1145,7 @@ class Executor(Eventful):
         else:
             stack.push(I64.cast(struct.unpack("q", bytes(c_int32(c1)) + b"\x00" * 4)[0]))
 
-    def i64_trunc_s_f32(self, store: "Store", stack: "Stack"):
+    def i64_trunc_s_f32(self, store, stack):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
         if issymbolic(c1):
@@ -1158,7 +1158,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 
-    def i64_trunc_u_f32(self, store: "Store", stack: "Stack"):
+    def i64_trunc_u_f32(self, store, stack):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
         if issymbolic(c1):
@@ -1171,7 +1171,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 
-    def i64_trunc_s_f64(self, store: "Store", stack: "Stack"):
+    def i64_trunc_s_f64(self, store, stack):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
         if issymbolic(c1):
@@ -1184,7 +1184,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 
-    def i64_trunc_u_f64(self, store: "Store", stack: "Stack"):
+    def i64_trunc_u_f64(self, store, stack):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
         if issymbolic(c1):
@@ -1197,7 +1197,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 
-    def i32_reinterpret_f32(self, store: "Store", stack: "Stack"):
+    def i32_reinterpret_f32(self, store, stack):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
         if issymbolic(c1):
@@ -1205,7 +1205,7 @@ class Executor(Eventful):
         c1 = struct.unpack("i", struct.pack("f", c1))[0]
         stack.push(I32.cast(c1))
 
-    def i64_reinterpret_f64(self, store: "Store", stack: "Stack"):
+    def i64_reinterpret_f64(self, store, stack):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
         if issymbolic(c1):
@@ -1215,7 +1215,7 @@ class Executor(Eventful):
 
     ###########################################################################################################
     # Floating point instructions# Floating point instructions
-    def float_load(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type):
+    def float_load(self, store, stack, imm: MemoryImm, ty: type):
         if ty == F32:
             size = 32
         elif ty == F64:
@@ -1240,13 +1240,13 @@ class Executor(Eventful):
         stack.push(ret)
         self._publish("did_read_memory", ea, stack.peek())
 
-    def f32_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def f32_load(self, store, stack, imm: MemoryImm):
         return self.float_load(store, stack, imm, F32)
 
-    def f64_load(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def f64_load(self, store, stack, imm: MemoryImm):
         return self.float_load(store, stack, imm, F64)
 
-    def float_store(self, store: "Store", stack: "Stack", imm: MemoryImm, ty: type, n=None):
+    def float_store(self, store, stack, imm: MemoryImm, ty: type, n=None):
         f = stack.get_frame().frame
         a = f.module.memaddrs[0]
         mem = store.mems[a]
@@ -1279,19 +1279,19 @@ class Executor(Eventful):
         else:
             stack.push(rettype(v))
 
-    def f32_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def f32_store(self, store, stack, imm: MemoryImm):
         self.float_store(store, stack, imm, F32)
 
-    def f64_store(self, store: "Store", stack: "Stack", imm: MemoryImm):
+    def f64_store(self, store, stack, imm: MemoryImm):
         self.float_store(store, stack, imm, F64)
 
-    def f32_const(self, store: "Store", stack: "Stack", imm: F32ConstImm):
+    def f32_const(self, store, stack, imm: F32ConstImm):
         stack.push(F32.cast(imm.value))
 
-    def f64_const(self, store: "Store", stack: "Stack", imm: F64ConstImm):
+    def f64_const(self, store, stack, imm: F64ConstImm):
         stack.push(F64.cast(imm.value))
 
-    def f32_unary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
+    def f32_unary(self, store, stack, op, rettype: type = I32):
         stack.has_type_on_top(F32, 1)
         if issymbolic(stack.peek()):
             raise ConcretizeStack(-1, F32, "Concretizing before float op", stack.peek())
@@ -1299,7 +1299,7 @@ class Executor(Eventful):
         v = op(v1)
         self.float_pushCompareReturn(stack, v, rettype)
 
-    def f32_binary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
+    def f32_binary(self, store, stack, op, rettype: type = I32):
         stack.has_type_on_top(F32, 2)
         if issymbolic(stack.peek()):
             raise ConcretizeStack(-1, F32, "Concretizing before float op", stack.peek())
@@ -1310,7 +1310,7 @@ class Executor(Eventful):
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v, rettype)
 
-    def f64_unary(self, store: "Store", stack: "Stack", op, rettype: type = F64):
+    def f64_unary(self, store, stack, op, rettype: type = F64):
         stack.has_type_on_top(F64, 1)
         if issymbolic(stack.peek()):
             raise ConcretizeStack(-1, F64, "Concretizing before float op", stack.peek())
@@ -1318,7 +1318,7 @@ class Executor(Eventful):
         v = op(v1)
         self.float_pushCompareReturn(stack, v, rettype)
 
-    def f64_binary(self, store: "Store", stack: "Stack", op, rettype: type = I32):
+    def f64_binary(self, store, stack, op, rettype: type = I32):
         stack.has_type_on_top(F64, 2)
         if issymbolic(stack.peek()):
             raise ConcretizeStack(-1, F64, "Concretizing before float op", stack.peek())
@@ -1329,147 +1329,147 @@ class Executor(Eventful):
         v = op(v1, v2)
         self.float_pushCompareReturn(stack, v, rettype)
 
-    def f32_eq(self, store: "Store", stack: "Stack"):
+    def f32_eq(self, store, stack):
         return self.f32_binary(store, stack, operator.eq)
 
-    def f32_ne(self, store: "Store", stack: "Stack"):
+    def f32_ne(self, store, stack):
         return self.f32_binary(store, stack, operator.ne)
 
-    def f32_lt(self, store: "Store", stack: "Stack"):
+    def f32_lt(self, store, stack):
         return self.f32_binary(store, stack, operator.lt)
 
-    def f32_gt(self, store: "Store", stack: "Stack"):
+    def f32_gt(self, store, stack):
         return self.f32_binary(store, stack, operator.gt)
 
-    def f32_le(self, store: "Store", stack: "Stack"):
+    def f32_le(self, store, stack):
         return self.f32_binary(store, stack, operator.le)
 
-    def f32_ge(self, store: "Store", stack: "Stack"):
+    def f32_ge(self, store, stack):
         return self.f32_binary(store, stack, operator.ge)
 
-    def f64_eq(self, store: "Store", stack: "Stack"):
+    def f64_eq(self, store, stack):
         return self.f64_binary(store, stack, operator.eq)
 
-    def f64_ne(self, store: "Store", stack: "Stack"):
+    def f64_ne(self, store, stack):
         return self.f64_binary(store, stack, operator.ne)
 
-    def f64_lt(self, store: "Store", stack: "Stack"):
+    def f64_lt(self, store, stack):
         return self.f64_binary(store, stack, operator.lt)
 
-    def f64_gt(self, store: "Store", stack: "Stack"):
+    def f64_gt(self, store, stack):
         return self.f64_binary(store, stack, operator.gt)
 
-    def f64_le(self, store: "Store", stack: "Stack"):
+    def f64_le(self, store, stack):
         return self.f64_binary(store, stack, operator.le)
 
-    def f64_ge(self, store: "Store", stack: "Stack"):
+    def f64_ge(self, store, stack):
         return self.f64_binary(store, stack, operator.ge)
 
-    def f32_abs(self, store: "Store", stack: "Stack"):
+    def f32_abs(self, store, stack):
         return self.f32_unary(store, stack, operator.abs, F32)
 
-    def f32_neg(self, store: "Store", stack: "Stack"):
+    def f32_neg(self, store, stack):
         return self.f32_unary(store, stack, operator.neg, F32)
 
-    def f32_ceil(self, store: "Store", stack: "Stack"):
+    def f32_ceil(self, store, stack):
         return self.f32_unary(store, stack, operator_ceil, F32)
 
-    def f32_floor(self, store: "Store", stack: "Stack"):
+    def f32_floor(self, store, stack):
         return self.f32_unary(store, stack, operator_floor, F32)
 
-    def f32_trunc(self, store: "Store", stack: "Stack"):
+    def f32_trunc(self, store, stack):
         return self.f32_unary(store, stack, operator_trunc, F32)
 
-    def f32_nearest(self, store: "Store", stack: "Stack"):
+    def f32_nearest(self, store, stack):
         return self.f32_unary(store, stack, operator_nearest, F32)
 
-    def f32_sqrt(self, store: "Store", stack: "Stack"):
+    def f32_sqrt(self, store, stack):
         return self.f32_unary(store, stack, math.sqrt, F32)
 
-    def f32_add(self, store: "Store", stack: "Stack"):
+    def f32_add(self, store, stack):
         return self.f32_binary(store, stack, operator.add, F32)
 
-    def f32_sub(self, store: "Store", stack: "Stack"):
+    def f32_sub(self, store, stack):
         return self.f32_binary(store, stack, operator.sub, F32)
 
-    def f32_mul(self, store: "Store", stack: "Stack"):
+    def f32_mul(self, store, stack):
         return self.f32_binary(store, stack, operator.mul, F32)
 
-    def f32_div(self, store: "Store", stack: "Stack"):
+    def f32_div(self, store, stack):
         return self.f32_binary(store, stack, operator_div, F32)
 
-    def f32_min(self, store: "Store", stack: "Stack"):
+    def f32_min(self, store, stack):
         return self.f32_binary(store, stack, operator_min, F32)
 
-    def f32_max(self, store: "Store", stack: "Stack"):
+    def f32_max(self, store, stack):
         return self.f32_binary(store, stack, operator_max, F32)
 
-    def f32_copysign(self, store: "Store", stack: "Stack"):
+    def f32_copysign(self, store, stack):
         return self.f32_binary(store, stack, math.copysign, F32)
 
-    def f64_abs(self, store: "Store", stack: "Stack"):
+    def f64_abs(self, store, stack):
         return self.f64_unary(store, stack, operator.abs, F64)
 
-    def f64_neg(self, store: "Store", stack: "Stack"):
+    def f64_neg(self, store, stack):
         return self.f64_unary(store, stack, operator.neg, F64)
 
-    def f64_ceil(self, store: "Store", stack: "Stack"):
+    def f64_ceil(self, store, stack):
         return self.f64_unary(store, stack, operator_ceil, F64)
 
-    def f64_floor(self, store: "Store", stack: "Stack"):
+    def f64_floor(self, store, stack):
         return self.f64_unary(store, stack, operator_floor, F64)
 
-    def f64_trunc(self, store: "Store", stack: "Stack"):
+    def f64_trunc(self, store, stack):
         return self.f64_unary(store, stack, operator_trunc, F64)
 
-    def f64_nearest(self, store: "Store", stack: "Stack"):
+    def f64_nearest(self, store, stack):
         return self.f32_unary(store, stack, operator_nearest, F64)
 
-    def f64_sqrt(self, store: "Store", stack: "Stack"):
+    def f64_sqrt(self, store, stack):
         return self.f64_unary(store, stack, math.sqrt, F64)
 
-    def f64_add(self, store: "Store", stack: "Stack"):
+    def f64_add(self, store, stack):
         return self.f64_binary(store, stack, operator.add, F64)
 
-    def f64_sub(self, store: "Store", stack: "Stack"):
+    def f64_sub(self, store, stack):
         return self.f64_binary(store, stack, operator.sub, F64)
 
-    def f64_mul(self, store: "Store", stack: "Stack"):
+    def f64_mul(self, store, stack):
         return self.f64_binary(store, stack, operator.mul, F64)
 
-    def f64_div(self, store: "Store", stack: "Stack"):
+    def f64_div(self, store, stack):
         return self.f64_binary(store, stack, operator_div, F64)
 
-    def f64_min(self, store: "Store", stack: "Stack"):
+    def f64_min(self, store, stack):
         return self.f64_binary(store, stack, operator_min, F64)
 
-    def f64_max(self, store: "Store", stack: "Stack"):
+    def f64_max(self, store, stack):
         return self.f64_binary(store, stack, operator_max, F64)
 
-    def f64_copysign(self, store: "Store", stack: "Stack"):
+    def f64_copysign(self, store, stack):
         return self.f64_binary(store, stack, math.copysign, F64)
 
-    def f32_convert_s_i32(self, store: "Store", stack: "Stack"):
+    def f32_convert_s_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
         stack.push(F32.cast(float(c1)))
 
-    def f32_convert_u_i32(self, store: "Store", stack: "Stack"):
+    def f32_convert_u_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
         stack.push(F32.cast(float(I32.to_unsigned(c1))))
 
-    def f32_convert_s_i64(self, store: "Store", stack: "Stack"):
+    def f32_convert_s_i64(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
         stack.push(F32.cast(float(c1)))
 
-    def f32_convert_u_i64(self, store: "Store", stack: "Stack"):
+    def f32_convert_u_i64(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
         stack.push(F32.cast(float(I64.to_unsigned(c1))))
 
-    def f32_demote_f64(self, store: "Store", stack: "Stack"):
+    def f32_demote_f64(self, store, stack):
         stack.has_type_on_top(F64, 1)
         c1: F64 = stack.pop()
         if math.isnan(c1) or math.isinf(c1) or c1 == 0.0 or c1 == -0.0:
@@ -1479,42 +1479,42 @@ class Executor(Eventful):
         c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
         stack.push(F32.cast(c1))
 
-    def f64_convert_s_i32(self, store: "Store", stack: "Stack"):
+    def f64_convert_s_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
         if issymbolic(c1):
             raise ConcretizeStack(-1, I32, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(c1)))
 
-    def f64_convert_u_i32(self, store: "Store", stack: "Stack"):
+    def f64_convert_u_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
         if issymbolic(c1):
             raise ConcretizeStack(-1, I32, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(I32.to_unsigned(c1))))
 
-    def f64_convert_s_i64(self, store: "Store", stack: "Stack"):
+    def f64_convert_s_i64(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
         if issymbolic(c1):
             raise ConcretizeStack(-1, I64, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(c1)))
 
-    def f64_convert_u_i64(self, store: "Store", stack: "Stack"):
+    def f64_convert_u_i64(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
         if issymbolic(c1):
             raise ConcretizeStack(-1, I64, "Concretizing int for float conversion", c1)
         stack.push(F64.cast(float(I64.to_unsigned(c1))))
 
-    def f64_promote_f32(self, store: "Store", stack: "Stack"):
+    def f64_promote_f32(self, store, stack):
         stack.has_type_on_top(F32, 1)
         c1: F32 = stack.pop()
         if issymbolic(c1):
             raise ConcretizeStack(-1, F32, "Concretizing F32 for F64 promotion", c1)
         stack.push(F64.cast(c1))
 
-    def f32_reinterpret_i32(self, store: "Store", stack: "Stack"):
+    def f32_reinterpret_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
         c1: I32 = stack.pop()
         if issymbolic(c1):
@@ -1522,7 +1522,7 @@ class Executor(Eventful):
         c1 = struct.unpack("f", struct.pack("i", c1))[0]
         stack.push(F32.cast(c1))
 
-    def f64_reinterpret_i64(self, store: "Store", stack: "Stack"):
+    def f64_reinterpret_i64(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
         if issymbolic(c1):
