@@ -63,8 +63,8 @@ class GlobalAddr(Addr):
     pass
 
 
-ExternVal: type = typing.Union[FuncAddr, TableAddr, MemAddr, GlobalAddr]
-FuncElem: type = typing.Optional[FuncAddr]
+ExternVal = typing.Union[FuncAddr, TableAddr, MemAddr, GlobalAddr]
+FuncElem = typing.Optional[FuncAddr]
 
 
 @dataclass
@@ -362,10 +362,10 @@ class ModuleInstance(Eventful):
             eend = eoval + len(elem.init)
             assert eend <= len(tableinst.elem)
 
-            FuncIdx: FuncIdx
-            for j, FuncIdx in enumerate(elem.init):
-                assert FuncIdx in range(len(self.funcaddrs))
-                funcaddr = self.funcaddrs[FuncIdx]
+            func_idx: FuncIdx
+            for j, func_idx in enumerate(elem.init):
+                assert func_idx in range(len(self.funcaddrs))
+                funcaddr = self.funcaddrs[func_idx]
                 tableinst.elem[eoval + j] = funcaddr
 
         # #10 & #14 - emplace data sections into memory
@@ -440,15 +440,16 @@ class ModuleInstance(Eventful):
             self.globaladdrs.append(global_i.allocate(store, values[idx]))
         for idx, export_i in enumerate(module.exports):
             if isinstance(export_i.desc, FuncIdx):
-                val = self.funcaddrs[export_i.desc]
-            if isinstance(export_i.desc, TableIdx):
-                val = self.tableaddrs[export_i.desc]
-            if isinstance(export_i.desc, MemIdx):
-                val = self.memaddrs[export_i.desc]
-            if isinstance(export_i.desc, GlobalIdx):
-                val = self.globaladdrs[export_i.desc]
+                self.exports.append(ExportInst(export_i.name, self.funcaddrs[export_i.desc]))
+            elif isinstance(export_i.desc, TableIdx):
+                self.exports.append(ExportInst(export_i.name, self.tableaddrs[export_i.desc]))
+            elif isinstance(export_i.desc, MemIdx):
+                self.exports.append(ExportInst(export_i.name, self.memaddrs[export_i.desc]))
+            elif isinstance(export_i.desc, GlobalIdx):
+                self.exports.append(ExportInst(export_i.name, self.globaladdrs[export_i.desc]))
+            else:
+                raise RuntimeError("Export desc wasn't a function, table, memory, or global")
             self.export_map[export_i.name] = len(self.exports)
-            self.exports.append(ExportInst(export_i.name, val))
 
     def invoke_by_name(self, name: str, stack, store, argv):
         """
@@ -489,7 +490,7 @@ class ModuleInstance(Eventful):
         # Create dummy frame, which is required by the spec but doesn't serve any obvious purpose. It also never
         # gets popped.
         dummy_frame = Frame([], ModuleInstance())
-        stack.push(dummy_frame)
+        stack.push(dummy_frame)  # type: ignore
         for v in argv:
             stack.push(v)
 
@@ -516,7 +517,10 @@ class ModuleInstance(Eventful):
         f: ProtoFuncInst = store.funcs[funcaddr]
         ty = f.type
         assert len(ty.result_types) <= 1
-        locals = [stack.pop() for _t in ty.param_types][::-1]
+        locals: typing.List[Value] = []
+        for v in [stack.pop() for _t in ty.param_types][::-1]:
+            assert not isinstance(v, (Label, Activation))
+            locals.append(v)
         if isinstance(f, HostFunc):  # Call native function
             self._publish("will_call_hostfunc", f, locals)
             res = list(f.hostcode(self.executor.constraints, *locals))
@@ -524,8 +528,10 @@ class ModuleInstance(Eventful):
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
+                assert isinstance(t, (Value.__args__))
                 stack.push(t.cast(r))
         else:  # Call WASM function
+            assert isinstance(f, FuncInst), "Got a non-WASM function! (Maybe cast to HostFunc?)"
             for cast in f.code.locals:
                 locals.append(cast(0))
             frame = Frame(locals, f.module)
@@ -553,7 +559,7 @@ class ModuleInstance(Eventful):
         self._publish("did_exec_expression", expr, stack.peek())
         return stack.pop()
 
-    def enter_block(self, insts, label: "Label", stack: "AtomicStack"):
+    def enter_block(self, insts, label: "Label", stack: "Stack"):
         """
         Push the instructions for the next block to the queue and bump the block depth number
 
@@ -567,7 +573,7 @@ class ModuleInstance(Eventful):
         self._block_depths[-1] += 1
         self.push_instructions(insts)
 
-    def exit_block(self, stack: "AtomicStack"):
+    def exit_block(self, stack: "Stack"):
         """
         Cleans up after execution of a code block.
 
@@ -698,14 +704,15 @@ class ModuleInstance(Eventful):
                             self.block(
                                 store,
                                 aStack,
-                                ret_type_map[inst.imm.sig],  # Get return type from the immediate
+                                # Get return type from the immediate
+                                ret_type_map[inst.imm.sig],  # type: ignore
                                 self.look_forward(0x0B),  # Get the contents of this block
                             )
                         elif inst.opcode == 0x03:
                             self.loop(store, aStack, inst)
                         elif inst.opcode == 0x04:
                             # Get the appropriate return type based on the immediate
-                            self.if_(store, aStack, ret_type_map[inst.imm.sig])
+                            self.if_(store, aStack, ret_type_map[inst.imm.sig])  # type: ignore
                         elif inst.opcode == 0x05:
                             self.else_(store, aStack)
                         elif inst.opcode == 0x0B:
@@ -713,7 +720,7 @@ class ModuleInstance(Eventful):
                         elif inst.opcode == 0x0C:
                             # Extract the relative depth from the immediate because it makes br's interface
                             # a little bit cleaner
-                            self.br(store, aStack, inst.imm.relative_depth)
+                            self.br(store, aStack, inst.imm.relative_depth)  # type: ignore
                         elif inst.opcode == 0x0D:
                             self.br_if(store, aStack, inst.imm)
                         elif inst.opcode == 0x0E:
@@ -788,11 +795,7 @@ class ModuleInstance(Eventful):
         return export.value
 
     def block(
-        self,
-        store: "Store",
-        stack: "AtomicStack",
-        ret_type: typing.List[ValType],
-        insts: WASMExpression,
+        self, store: "Store", stack: "Stack", ret_type: typing.List[ValType], insts: WASMExpression
     ):
         """
         Execute a block of instructions. Creates a label with an empty continuation and the proper arity, then enters
@@ -832,7 +835,7 @@ class ModuleInstance(Eventful):
         :param partial_list: List of instructions to extract the block from
         :return: The extracted block
         """
-        out = deque()
+        out: typing.Deque[Instruction] = deque()
         i = partial_list.popleft()
         while i.opcode != 0x0B:
             out.append(i)
@@ -854,7 +857,7 @@ class ModuleInstance(Eventful):
         :param partial_list: Complete if block that needs to be split
         :return: The true block and the false block
         """
-        t_block = deque()
+        t_block: typing.Deque[Instruction] = deque()
         assert partial_list[-1].opcode == 0x0B, "This block is missing an end instruction!"
         i = partial_list.popleft()
         while i.opcode not in {0x05, 0x0B}:
@@ -1033,7 +1036,8 @@ class ModuleInstance(Eventful):
         assert imm.type_index in range(len(f.frame.module.types))
         ft_expect = f.frame.module.types[imm.type_index]
         stack.has_type_on_top(I32, 1)
-        i = stack.pop()
+        # mypy can't figure out that I32 is a Value
+        i: I32 = stack.pop()  # type: ignore
         if issymbolic(i):
             raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", i)
         if i not in range(len(tab.elem)):
@@ -1041,9 +1045,10 @@ class ModuleInstance(Eventful):
         if tab.elem[i] is None:
             raise NonExistentFunctionCallTrap()
         a = tab.elem[i]
+        assert a is not None
         assert a in range(len(store.funcs))
-        f = store.funcs[a]
-        ft_actual = f.type
+        func = store.funcs[a]
+        ft_actual = func.type
         if ft_actual != ft_expect:
             raise TypeMismatchTrap(ft_actual, ft_expect)
         self._invoke_inner(stack, a, store)
@@ -1210,6 +1215,7 @@ class Stack(Eventful):
                 if seen == n:
                     return v
                 seen += 1
+        return None
 
     def get_frame(self) -> Activation:
         """
@@ -1218,6 +1224,7 @@ class Stack(Eventful):
         for item in reversed(self.data):
             if isinstance(item, Activation):
                 return item
+        raise RuntimeError("Couldn't find a frame on the stack")
 
 
 class AtomicStack(Stack):
@@ -1227,9 +1234,16 @@ class AtomicStack(Stack):
     Provides a context manager that will intercept Concretization Exceptions before raising them.
     """
 
+    class PushItem:
+        pass
+
+    @dataclass
+    class PopItem:
+        val: typing.Union[Value, Label, Activation]
+
     def __init__(self, parent: Stack):
         self.parent = parent
-        self.actions = []
+        self.actions: typing.List[typing.Union[AtomicStack.PushItem, AtomicStack.PopItem]] = []
 
     def __getstate__(self):
         state = {"parent": self.parent, "actions": self.actions}
@@ -1248,13 +1262,6 @@ class AtomicStack(Stack):
             self.rollback()
         else:
             pass
-
-    class PushItem:
-        pass
-
-    @dataclass
-    class PopItem:
-        val: typing.Union[Value, Label, Activation]
 
     def rollback(self):
         while self.actions:

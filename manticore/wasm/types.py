@@ -163,22 +163,12 @@ class F64(float):
         return cls(other)
 
 
-ValType: type = typing.Union[
-    type(I32), type(I64), type(F32), type(F64), type(BitVec)
-]  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
-Value: type = typing.Union[
-    I32, I64, F32, F64, BitVec
-]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
+ValType = type  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
+Value = typing.Union[I32, I64, F32, F64, BitVec]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
 
 
 class Name(str):
     pass
-
-
-#: https://www.w3.org/TR/wasm-core-1/#syntax-resulttype
-ResultType = typing.Optional[
-    ValType
-]  # This _should_ be a sequence, but WASM only allows single return values
 
 
 @dataclass
@@ -315,7 +305,7 @@ class F64ConstImm:
     value: F64
 
 
-ImmType: type = typing.Union[
+ImmType = typing.Union[
     BlockImm,
     BranchImm,
     BranchTableImm,

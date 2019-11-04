@@ -49,8 +49,8 @@ from wasm.wasmtypes import (
 )
 import types
 
-ExportDesc: type = typing.Union[FuncIdx, TableIdx, MemIdx, GlobalIdx]
-ImportDesc: type = typing.Union[TypeIdx, TableType, MemoryType, GlobalType]
+ExportDesc = typing.Union[FuncIdx, TableIdx, MemIdx, GlobalIdx]
+ImportDesc = typing.Union[TypeIdx, TableType, MemoryType, GlobalType]
 
 
 @dataclass
