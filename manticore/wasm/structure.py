@@ -904,7 +904,7 @@ class ModuleInstance(Eventful):
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
                 assert t in {I32, I64, F32, F64}
-                stack.push(t.cast(r))
+                stack.push(t.cast(r))  # type: ignore
         else:  # Call WASM function
             assert isinstance(f, FuncInst), "Got a non-WASM function! (Maybe cast to HostFunc?)"
             for cast in f.code.locals:
