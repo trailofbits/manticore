@@ -415,7 +415,7 @@ class Executor(Eventful):
             c = Operators.SEXTEND(c, size, width)
         else:
             c = Operators.ZEXTEND(c, width)
-        stack.push(ty.cast(c)) # type: ignore
+        stack.push(ty.cast(c))  # type: ignore
         self._publish("did_read_memory", ea, stack.peek())
 
     def i32_load8_s(self, store, stack, imm: MemoryImm):
@@ -1236,7 +1236,7 @@ class Executor(Eventful):
             raise OutOfBoundsMemoryTrap(ea + (size // 8))
         self._publish("will_read_memory", ea, ea + (size // 8))
         c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
-        ret = ty.cast(c) # type: ignore
+        ret = ty.cast(c)  # type: ignore
         stack.push(ret)
         self._publish("did_read_memory", ea, stack.peek())
 

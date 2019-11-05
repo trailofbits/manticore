@@ -824,7 +824,7 @@ class ModuleInstance(Eventful):
                 self.exports.append(ExportInst(export_i.name, self.globaladdrs[export_i.desc]))
             else:
                 raise RuntimeError("Export desc wasn't a function, table, memory, or global")
-            self.export_map[export_i.name] = len(self.exports)
+            self.export_map[export_i.name] = len(self.exports) - 1
 
     def invoke_by_name(self, name: str, stack, store, argv):
         """
@@ -903,7 +903,7 @@ class ModuleInstance(Eventful):
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
-                assert isinstance(t, (I32, I64, F32, F64))
+                assert t in {I32, I64, F32, F64}
                 stack.push(t.cast(r))
         else:  # Call WASM function
             assert isinstance(f, FuncInst), "Got a non-WASM function! (Maybe cast to HostFunc?)"
