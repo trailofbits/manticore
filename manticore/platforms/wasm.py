@@ -229,6 +229,7 @@ class WASMWorld(Platform):
     def instantiate(
         self,
         env_import_dict: typing.Dict[str, types.FunctionType],
+        supplemental_env: typing.Dict[str, types.FunctionType] = {},
         exec_start=False,
         stub_missing=True,
     ):
@@ -243,6 +244,8 @@ class WASMWorld(Platform):
         :return: None
         """
         self.set_env(env_import_dict)
+        for k in supplemental_env:
+            self.set_env(supplemental_env[k], k)
         self.import_module(self.default_module, exec_start, stub_missing)
 
     def invoke(self, name="main", argv=[], module=None):

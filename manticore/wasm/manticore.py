@@ -15,15 +15,17 @@ class ManticoreWASM(ManticoreBase):
     Manticore class for interacting with WASM, analagous to ManticoreNative or ManticoreEVM.
     """
 
-    def __init__(self, path_or_state, env={}, workspace_url=None, policy="random", **kwargs):
+    def __init__(
+        self, path_or_state, env={}, sup_env={}, workspace_url=None, policy="random", **kwargs
+    ):
         """
         :param path_or_state: Path to binary or a state (object) to begin from.
-        :param argv: arguments passed to the binary.
+        :param argv: arguments passed to the binary. # FIXME
         """
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
                 raise OSError(f"{path_or_state} is not an existing regular file")
-            initial_state = _make_initial_state(path_or_state, env, **kwargs)
+            initial_state = _make_initial_state(path_or_state, env, sup_env, **kwargs)
         else:
             initial_state = path_or_state
 
@@ -73,6 +75,16 @@ class ManticoreWASM(ManticoreBase):
         """
         for state in self.ready_states:
             state.platform.invoke(name=name, argv=argv_generator(state))
+
+    @ManticoreBase.at_not_running
+    def register_module(self, name, filename_or_alias):
+        for state in self.ready_states:
+            state.platform.register_module(name, filename_or_alias)
+
+    @ManticoreBase.at_not_running
+    def set_env(self, exports, mod_name="env"):
+        for state in self.ready_states:
+            state.platform.set_env(exports, mod_name)
 
     @ManticoreBase.at_not_running
     def collect_returns(self, n=1):
@@ -158,7 +170,7 @@ class ManticoreWASM(ManticoreBase):
                 summary.write(f"{str(term)}\n\n")
 
 
-def _make_initial_state(binary_path, env={}, **kwargs):
+def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs):
     """
     Wraps _make_wasm_bin
 
@@ -171,7 +183,7 @@ def _make_initial_state(binary_path, env={}, **kwargs):
         return _make_wasm_bin(binary_path, env=env, **kwargs)
 
 
-def _make_wasm_bin(program, env={}, **kwargs) -> State:
+def _make_wasm_bin(program, env={}, sup_env={}, **kwargs) -> State:
     """
     Returns an initial state for a binary WASM module
 
@@ -187,6 +199,7 @@ def _make_wasm_bin(program, env={}, **kwargs) -> State:
     platform = wasm.WASMWorld(program, constraints=constraints)
     platform.instantiate(
         env,
+        sup_env,
         exec_start=kwargs.get("exec_start", False),
         stub_missing=kwargs.get("stub_missing", True),
     )

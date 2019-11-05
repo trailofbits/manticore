@@ -66,7 +66,7 @@ class WASMTest_{{ module.name }}(unittest.TestCase):
         {%  endif %}
         {% endfor %}
 
-        world.instantiate({}, exec_start=True)
+        world.instantiate({}, {}, exec_start=True)
         {% for test in module.tests %}
         with self.subTest(msg={{ test.func | escape_null }} + "_L{{test.line}}"):
             print("===V===", {{ test.func | escape_null }} + "_L{{test.line}}", "===V===")
