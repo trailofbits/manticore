@@ -865,7 +865,9 @@ class ModuleInstance(Eventful):
         # Create dummy frame, which is required by the spec but doesn't serve any obvious purpose. It also never
         # gets popped.
         dummy_frame = Frame([], ModuleInstance())
-        stack.push(dummy_frame)  # type: ignore
+        stack.push(
+            dummy_frame  # type: ignore # This isn't an activation/label/value, but we'll let it slide
+        )
         for v in argv:
             stack.push(v)
 
@@ -904,6 +906,9 @@ class ModuleInstance(Eventful):
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
                 assert t in {I32, I64, F32, F64}
+                # Even though I32, I64, F32, and F64 all have `cast` class methods, mypy can't figure out that
+                # t has to be one of those since it doesn't evaluate the previous assert. Note that `isinstance`
+                # won't work here since we're using the actual types, not instances of them.
                 stack.push(t.cast(r))  # type: ignore
         else:  # Call WASM function
             assert isinstance(f, FuncInst), "Got a non-WASM function! (Maybe cast to HostFunc?)"
@@ -1077,14 +1082,15 @@ class ModuleInstance(Eventful):
                             self.block(
                                 store,
                                 aStack,
-                                # Get return type from the immediate
+                                # Get return type from the immediate. Unfortunately, since mypy doesn't know the
+                                # immediate type, it doesn't like this and we have to ignore the type
                                 ret_type_map[inst.imm.sig],  # type: ignore
                                 self.look_forward(0x0B),  # Get the contents of this block
                             )
                         elif inst.opcode == 0x03:
                             self.loop(store, aStack, inst)
                         elif inst.opcode == 0x04:
-                            # Get the appropriate return type based on the immediate
+                            # Get the appropriate return type based on the immediate. Same issue w/ immediate types
                             self.if_(store, aStack, ret_type_map[inst.imm.sig])  # type: ignore
                         elif inst.opcode == 0x05:
                             self.else_(store, aStack)
@@ -1092,7 +1098,7 @@ class ModuleInstance(Eventful):
                             self.end(store, aStack)
                         elif inst.opcode == 0x0C:
                             # Extract the relative depth from the immediate because it makes br's interface
-                            # a little bit cleaner
+                            # a little bit cleaner. Same issue w/ mypy not understanding immediate types
                             self.br(store, aStack, inst.imm.relative_depth)  # type: ignore
                         elif inst.opcode == 0x0D:
                             self.br_if(store, aStack, inst.imm)
