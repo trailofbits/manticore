@@ -91,14 +91,27 @@ class WASMWorld(Platform):
         super().__setstate__(state)
 
     @property
-    def instance(self):
+    def instance(self) -> ModuleInstance:
+        """
+        :return: the ModuleInstance for the first module registered
+        """
         return self.modules[self.module_names[self.default_module]][1]
 
     @property
-    def module(self):
+    def module(self) -> Module:
+        """
+        :return: The first module registered
+        """
         return self.modules[self.module_names[self.default_module]][0]
 
     def register_module(self, name, filename_or_alias):
+        """
+        Provide an explicit path to a WASM module so the importer will know where to find it
+
+        :param name: Module name to register the module under
+        :param filename_or_alias: Name of the .wasm file that module lives in
+        :return:
+        """
         if filename_or_alias in self.module_names:
             self.module_names[name] = self.module_names[filename_or_alias]
         if name not in self.module_names:
@@ -106,10 +119,28 @@ class WASMWorld(Platform):
             self.module_names[name] = len(self.modules) - 1
             self.instantiated.append(False)
 
-    def set_env(self, exports, mod_name="env"):
+    def set_env(
+        self,
+        exports: typing.Dict[str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]],
+        mod_name="env",
+    ):
+        """
+        Manually insert exports into the global environment
+
+        :param exports: Dict mapping names to functions/tables/globals/memories
+        :param mod_name: The name of the module these exports should fall under
+        """
         self.manual_exports.setdefault(mod_name, {}).update(exports)
 
     def import_module(self, module_name, exec_start, stub_missing):
+        """
+        Collect all of the imports for the given module and instantiate it
+
+        :param module_name: module to import
+        :param exec_start: whether to run the start functions automatically
+        :param stub_missing: whether to replace missing imports with stubs
+        :return: None
+        """
         search_paths = {"."}
         # If the module isn't registered, look for it on the filesystem
         if module_name not in self.module_names:
@@ -137,6 +168,13 @@ class WASMWorld(Platform):
     def _get_export_addr(
         self, export_name, mod_name=None
     ) -> typing.Optional[typing.Union[FuncAddr, TableAddr, MemAddr, GlobalAddr]]:
+        """
+        Gets the address in the store of a given export
+
+        :param export_name: Name of the export to look for
+        :param mod_name: Name of the module the export lives in
+        :return: The address of the export
+        """
         try:
             if mod_name in self.module_names:  # TODO - handle mod_name.export_name
                 return self.modules[self.module_names[mod_name]][1].get_export_address(export_name)
@@ -147,6 +185,14 @@ class WASMWorld(Platform):
     def get_export(
         self, export_name, mod_name=None
     ) -> typing.Optional[typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]]:
+        """
+        Gets the export _instance_ for a given export & module name
+        (basically just dereferences _get_export_addr into the store)
+
+        :param export_name: Name of the export to look for
+        :param mod_name: Name of the module the export lives in
+        :return: The export itself
+        """
         mod_name = self.default_module if not mod_name else mod_name
         if mod_name in self.manual_exports:
             if export_name in self.manual_exports[mod_name]:
@@ -164,7 +210,15 @@ class WASMWorld(Platform):
 
         return None
 
-    def get_module_imports(self, module, exec_start, stub_missing):
+    def get_module_imports(self, module, exec_start, stub_missing) -> typing.List[ExternVal]:
+        """
+        Builds the list of imports that should be passed to the given module upon instantiation
+
+        :param module: The module to find the imports for
+        :param exec_start: Whether to execute the start function of the module
+        :param stub_missing: Whether to replace missing imports with stubs (TODO: symbolicate)
+        :return: List of addresses for the imports within the store
+        """
         imports: typing.List[ExternVal] = []
         for i in module.imports:
             logger.info("Importing %s:%s", i.module, i.name)
@@ -180,7 +234,7 @@ class WASMWorld(Platform):
             imported_version = self._get_export_addr(i.name, i.module)
             if imported_version is None:
                 # check for manually provided version
-                imported_version = self.get_export(i.name, i.module)
+                imported_version = self.get_export(i.name, i.module)  # type: ignore
                 if imported_version is None and not stub_missing:
                     raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 
@@ -194,7 +248,9 @@ class WASMWorld(Platform):
                     self.store.funcs.append(
                         imported_version
                         if imported_version
-                        else HostFunc(func_type, partial(stub, len(func_type.result_types)))
+                        else HostFunc(
+                            func_type, partial(stub, len(func_type.result_types))  # type: ignore
+                        )
                     )
                     imports.append(FuncAddr(len(self.store.funcs) - 1))
 
@@ -228,14 +284,18 @@ class WASMWorld(Platform):
 
     def instantiate(
         self,
-        env_import_dict: typing.Dict[str, types.FunctionType],
-        supplemental_env: typing.Dict[str, types.FunctionType] = {},
+        env_import_dict: typing.Dict[
+            str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]
+        ],
+        supplemental_env: typing.Dict[
+            str, typing.Dict[str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]]
+        ] = {},
         exec_start=False,
         stub_missing=True,
     ):
         """
-        Prepares the underlying ModuleInstance for execution. Generates stub imports for globals and memories.
-        Throws NotImplementedError if the module attempts to import a table.
+        Prepares the underlying ModuleInstance for execution. Calls import_module under the hood, so this is probably
+        the only import-y function you ever need to call externally.
 
         TODO: stubbed imports should be symbolic
 

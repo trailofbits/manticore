@@ -20,7 +20,8 @@ class ManticoreWASM(ManticoreBase):
     ):
         """
         :param path_or_state: Path to binary or a state (object) to begin from.
-        :param argv: arguments passed to the binary. # FIXME
+        :param env: Dict of imports to place under the "env" module
+        :param sup_env: Maps module names to import dicts (a la {"env":{}})
         """
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
@@ -75,16 +76,6 @@ class ManticoreWASM(ManticoreBase):
         """
         for state in self.ready_states:
             state.platform.invoke(name=name, argv=argv_generator(state))
-
-    @ManticoreBase.at_not_running
-    def register_module(self, name, filename_or_alias):
-        for state in self.ready_states:
-            state.platform.register_module(name, filename_or_alias)
-
-    @ManticoreBase.at_not_running
-    def set_env(self, exports, mod_name="env"):
-        for state in self.ready_states:
-            state.platform.set_env(exports, mod_name)
 
     @ManticoreBase.at_not_running
     def collect_returns(self, n=1):
@@ -174,10 +165,11 @@ def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs):
     """
     Wraps _make_wasm_bin
 
-    :param binary_path:
-    :param env:
+    :param binary_path: filename of the wasm module
+    :param env: Import dict
+    :param sup_env: Maps module names to import dicts (a la {"env":{}})
     :param kwargs:
-    :return:
+    :return: initial state
     """
     if binary_path.endswith(".wasm"):
         return _make_wasm_bin(binary_path, env=env, sup_env=sup_env, **kwargs)
@@ -187,8 +179,9 @@ def _make_wasm_bin(program, env={}, sup_env={}, **kwargs) -> State:
     """
     Returns an initial state for a binary WASM module
 
-    :param program: filenamae of the wasm module
+    :param program: filename of the wasm module
     :param env: Import dict
+    :param sup_env: Maps module names to import dicts (a la {"env":{}})
     :return: initial state
     """
     from ..platforms import wasm
