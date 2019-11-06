@@ -682,20 +682,24 @@ class Array(Expression):
             return arr
         raise ValueError  # cast not implemented
 
-    def cast_index(self, index: int) -> Union[int, "BitVecConstant"]:
+    def cast_index(self, index: Union[int, "BitVec"]) -> Union["BitVecConstant", "BitVec"]:
         if isinstance(index, int):
             # assert self.index_max is None or index >= 0 and index < self.index_max
             return BitVecConstant(self.index_bits, index)
         assert index.size == self.index_bits
         return index
 
-    def cast_value(self, value: "BitVec") -> Union["BitVecConstant", "BitVec"]:
+    def cast_value(
+        self, value: Union["BitVec", str, bytes, int]
+    ) -> Union["BitVecConstant", "BitVec"]:
+        if isinstance(value, BitVec):
+            assert value.size == self.value_bits
+            return value
         if isinstance(value, (str, bytes)) and len(value) == 1:
             value = ord(value)
-        if isinstance(value, int):
-            return BitVecConstant(self.value_bits, value)
-        assert value.size == self.value_bits
-        return value
+        if not isinstance(value, int):
+            value = int(value)
+        return BitVecConstant(self.value_bits, value)
 
     def __len__(self):
         if self.index_max is None:
