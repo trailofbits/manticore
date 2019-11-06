@@ -10,7 +10,7 @@ from wasm.immtypes import (
     F64ConstImm,
 )
 import struct
-from ctypes import c_int32, c_int64
+from ctypes import c_int32
 from .types import (
     I32,
     I64,
@@ -1216,10 +1216,7 @@ class Executor(Eventful):
     # Floating point instructions# Floating point instructions
     def float_load(self, store, stack, imm: MemoryImm, ty: type):
         assert ty in {F32, F64}, f"{type(ty)} is not an F32 or F64"
-        if ty == F32:
-            size = 32
-        elif ty == F64:
-            size = 64
+        size = 32 if ty == F32 else 64
         f = stack.get_frame().frame
         a = f.module.memaddrs[0]
         mem = store.mems[a]
@@ -1273,7 +1270,7 @@ class Executor(Eventful):
             mem.data[ea + idx] = v
         self._publish("did_write_memory", ea, b)
 
-    def float_pushCompareReturn(self, stack, v, rettype=I32):
+    def float_push_compare_return(self, stack, v, rettype=I32):
         if issymbolic(v):
             stack.push(Operators.ITEBV(32, v, I32(1), I32(0)))
         else:
@@ -1297,7 +1294,7 @@ class Executor(Eventful):
             raise ConcretizeStack(-1, F32, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1)
-        self.float_pushCompareReturn(stack, v, rettype)
+        self.float_push_compare_return(stack, v, rettype)
 
     def f32_binary(self, store, stack, op, rettype: type = I32):
         stack.has_type_on_top(F32, 2)
@@ -1308,7 +1305,7 @@ class Executor(Eventful):
             raise ConcretizeStack(-2, F32, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1, v2)
-        self.float_pushCompareReturn(stack, v, rettype)
+        self.float_push_compare_return(stack, v, rettype)
 
     def f64_unary(self, store, stack, op, rettype: type = F64):
         stack.has_type_on_top(F64, 1)
@@ -1316,7 +1313,7 @@ class Executor(Eventful):
             raise ConcretizeStack(-1, F64, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1)
-        self.float_pushCompareReturn(stack, v, rettype)
+        self.float_push_compare_return(stack, v, rettype)
 
     def f64_binary(self, store, stack, op, rettype: type = I32):
         stack.has_type_on_top(F64, 2)
@@ -1327,7 +1324,7 @@ class Executor(Eventful):
             raise ConcretizeStack(-2, F64, "Concretizing before float op", stack.peek())
         v1 = stack.pop()
         v = op(v1, v2)
-        self.float_pushCompareReturn(stack, v, rettype)
+        self.float_push_compare_return(stack, v, rettype)
 
     def f32_eq(self, store, stack):
         return self.f32_binary(store, stack, operator.eq)

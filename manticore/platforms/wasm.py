@@ -2,7 +2,6 @@ from .platform import Platform
 from ..wasm.structure import (
     ModuleInstance,
     Store,
-    Addr,
     FuncAddr,
     HostFunc,
     Stack,
@@ -18,10 +17,9 @@ from ..wasm.structure import (
 )
 from ..wasm.types import Trap, TypeIdx, TableType, MemoryType, GlobalType, MissingExportException
 from ..core.state import TerminateState
-from ..core.smtlib import ConstraintSet, issymbolic
+from ..core.smtlib import ConstraintSet
 from functools import partial
 import typing
-import types
 import logging
 import os
 
@@ -238,13 +236,14 @@ class WASMWorld(Platform):
                 if imported_version is None and not stub_missing:
                     raise RuntimeError(f"Could not find import {i.module}:{i.name}")
 
-            if isinstance(imported_version, Addr):
+            if isinstance(imported_version, (FuncAddr, TableAddr, MemAddr, GlobalAddr)):
                 imports.append(imported_version)  # TODO - Import type matching
             else:
                 if isinstance(i.desc, TypeIdx):  # Imported function
                     func_type = module.types[i.desc]
                     if i.module == "env" and imported_version:
-                        imported_version = HostFunc(func_type, imported_version)
+                        if callable(imported_version):
+                            imported_version = HostFunc(func_type, imported_version)
                     self.store.funcs.append(
                         imported_version
                         if imported_version
@@ -300,7 +299,9 @@ class WASMWorld(Platform):
         TODO: stubbed imports should be symbolic
 
         :param env_import_dict: Dict mapping strings to functions. Functions should accept the current ConstraintSet as the first argument.
+        :param supplemental_env: Maps strings w/ module names to environment dicts using the same format as env_import_dict
         :param exec_start: Whether or not to automatically execute the `start` function, if it is set.
+        :param stub_missing: Whether or not to replace missing imports with empty stubs
         :return: None
         """
         self.set_env(env_import_dict)
@@ -314,6 +315,7 @@ class WASMWorld(Platform):
 
         :param name: Name of the function to invoke
         :param argv: List of arguments to pass to the function. Should typically be I32, I64, F32, or F64
+        :param module: name of a module to call the function in (if not the default module)
         :return: None
         """
         module = self.default_module if module is None else module
@@ -327,6 +329,7 @@ class WASMWorld(Platform):
         Only used for concrete unit testing.
 
         :param funcname: The name of the function to test
+        :param module: The name of the module to test the function in (if not the default module)
         :return: The top n items from the stack where n is the expected number of return values from the function
         """
         module = self.default_module if module is None else module

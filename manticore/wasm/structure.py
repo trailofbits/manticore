@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from .executor import Executor
 from collections import deque
-from wasm.immtypes import BlockImm, BranchImm, BranchTableImm, CallImm, CallIndirectImm
+from wasm.immtypes import BranchImm, BranchTableImm, CallImm, CallIndirectImm
 from .types import (
     U32,
     I32,
@@ -768,7 +768,6 @@ class ModuleInstance(Eventful):
             assert module.start in range(len(self.funcaddrs))
             funcaddr = self.funcaddrs[module.start]
             assert funcaddr in range(len(store.funcs))
-            arg_count = len(store.funcs[funcaddr].type.param_types)
             self.invoke(stack, self.funcaddrs[module.start], store, [])
             if exec_start:
                 stack.push(self.exec_expression(store, stack, []))
@@ -893,14 +892,14 @@ class ModuleInstance(Eventful):
         f: ProtoFuncInst = store.funcs[funcaddr]
         ty = f.type
         assert len(ty.result_types) <= 1
-        locals: typing.List[Value] = []
+        local_vars: typing.List[Value] = []
         for v in [stack.pop() for _t in ty.param_types][::-1]:
             assert not isinstance(v, (Label, Activation))
-            locals.append(v)
+            local_vars.append(v)
         if isinstance(f, HostFunc):  # Call native function
-            self._publish("will_call_hostfunc", f, locals)
-            res = list(f.hostcode(self.executor.constraints, *locals))
-            self._publish("did_call_hostfunc", f, locals, res)
+            self._publish("will_call_hostfunc", f, local_vars)
+            res = list(f.hostcode(self.executor.constraints, *local_vars))
+            self._publish("did_call_hostfunc", f, local_vars, res)
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
             for r, t in zip(res, ty.result_types):
@@ -909,8 +908,8 @@ class ModuleInstance(Eventful):
         else:  # Call WASM function
             assert isinstance(f, FuncInst), "Got a non-WASM function! (Maybe cast to HostFunc?)"
             for cast in f.code.locals:
-                locals.append(cast(0))
-            frame = Frame(locals, f.module)
+                local_vars.append(cast(0))
+            frame = Frame(local_vars, f.module)
             stack.push(
                 Activation(
                     len(ty.result_types), frame, expected_block_depth=len(self._block_depths)
@@ -1015,7 +1014,7 @@ class ModuleInstance(Eventful):
         Used to find the end of a code block in the flat instruction queue. For this reason, it calls itself
         recursively (looking for the `end` instruction) if it encounters a `block`, `loop`, or `if` instruction.
 
-        :param opcode: Tuple of instruction opcodes to look for
+        :param opcodes: Tuple of instruction opcodes to look for
         :return: The list of instructions popped before encountering the target instruction.
         """
         out = []
