@@ -232,6 +232,7 @@ class WASMWorld(Platform):
             imported_version = self._get_export_addr(i.name, i.module)
             if imported_version is None:
                 # check for manually provided version
+                # Possibly overwriting imported_version from an address to an instance here
                 imported_version = self.get_export(i.name, i.module)  # type: ignore
                 if imported_version is None and not stub_missing:
                     raise RuntimeError(f"Could not find import {i.module}:{i.name}")
@@ -248,7 +249,9 @@ class WASMWorld(Platform):
                         imported_version
                         if imported_version
                         else HostFunc(
-                            func_type, partial(stub, len(func_type.result_types))  # type: ignore
+                            # mypy doesn't like that we're using a partial function instead of a proper function
+                            func_type,
+                            partial(stub, len(func_type.result_types)),  # type: ignore
                         )
                     )
                     imports.append(FuncAddr(len(self.store.funcs) - 1))
