@@ -20,8 +20,6 @@ from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIf
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config
 
-import os.path
-
 consts = config.get_group("cli")
 consts.add("profile", default=False, description="Enable worker profiling mode")
 
