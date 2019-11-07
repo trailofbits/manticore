@@ -132,6 +132,7 @@ class ManticoreBase(Eventful):
         "terminate_state",
         "kill_state",
         "execute_instruction",
+        "terminate_execution",
     }
 
     def __init__(self, initial_state, workspace_url=None, policy="random", **kwargs):
@@ -814,8 +815,10 @@ class ManticoreBase(Eventful):
             Workers must terminate
             RUNNING, STANDBY -> KILLED
         """
+        self._publish("will_terminate_execution", self._output)
         self._killed.value = True
         self._lock.notify_all()
+        self._publish("did_terminate_execution", self._output)
 
     def terminate(self):
         logger.warning("manticore.terminate is deprecated (Use manticore.kill)")
