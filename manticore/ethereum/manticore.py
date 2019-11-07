@@ -65,7 +65,7 @@ consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions."
 consts.add(
     "sha3",
     default=Sha3Type.fake,
-    description="concretize: sound simple concretization\nsymbolicate(*): unsound symbolication with an out of cycle false positive killing\nfake: using a symbol friendly fake hash (This potentially produces wrong testcases) "
+    description="concretize: sound simple concretization\nsymbolicate(*): unsound symbolication with an out of cycle false positive killing\nfake: using a symbol friendly fake hash (This potentially produces wrong testcases) ",
 )
 consts.add(
     "sha3timeout",
@@ -1214,6 +1214,7 @@ class ManticoreEVM(ManticoreBase):
         """ This method goes through all the applied symbolic functions and tries
             to find a concrete matching set of pairs
         """
+
         def concretize_known_pairs(state, symbolic_pairs, known_pairs):
             # Each symbolic pair must match at least one of the concrete
             # pairs we know
@@ -1259,8 +1260,7 @@ class ManticoreEVM(ManticoreBase):
                 for x_concrete, y_concrete in concrete_pairs:
                     if len(x) == len(x_concrete):  # If the size of the buffer wont
                         # match it does not matter
-                        unseen = Operators.AND(x != x_concrete, y != y_concrete, unseen
-                        )
+                        unseen = Operators.AND(x != x_concrete, y != y_concrete, unseen)
                 # Search for a new unseen sha3 pair
                 with state as temp_state:
                     temp_state.constrain(unseen)

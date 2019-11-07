@@ -1119,7 +1119,7 @@ class EVM(Eventful):
         if self._checkpoint_data is None:
             if not self._published_pre_instruction_events:
                 self._published_pre_instruction_events = True
-                #self._publish("will_decode_instruction", self.pc)
+                # self._publish("will_decode_instruction", self.pc)
                 self._publish(
                     "will_evm_execute_instruction", self.instruction, self._top_arguments()
                 )
@@ -1164,7 +1164,7 @@ class EVM(Eventful):
         Here, if symbolic, the conditional `self._check_jumpdest` would be
         already constrained to a single concrete value.
         """
-        #If pc is already pointing to a JUMPDEST thre is no need to check.
+        # If pc is already pointing to a JUMPDEST thre is no need to check.
         pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
         if pc in self._valid_jumpdests:
             self._check_jumpdest = False
@@ -1582,10 +1582,10 @@ class EVM(Eventful):
                 h += data.read_BE(i, 32)
 
             # Try to avoid some common incorrect cases
-            self.constraints.add(h !=0 )
+            self.constraints.add(h != 0)
             # Force fake collision resistance
-            for x,y in self._sha3.items():
-                self.constraints.add((data==x) == (h==y))
+            for x, y in self._sha3.items():
+                self.constraints.add((data == x) == (h == y))
 
             self._sha3[data] = h
             return h

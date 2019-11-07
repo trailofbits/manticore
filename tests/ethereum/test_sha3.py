@@ -35,7 +35,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def tearDown(self):
         self.mevm = None
-        #shutil.rmtree(self.worksp)
+        # shutil.rmtree(self.worksp)
 
     def ManticoreEVM(self):
         return self.mevm
@@ -376,7 +376,7 @@ keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(
             if not m.fix_unsound_symbolication(st):
                 m.kill_state(st)
                 continue
-            
+
             m.generate_testcase(st)
             found += len(st.platform.logs)
         self.assertEqual(found, 1)  # log is reachable
@@ -477,6 +477,7 @@ class EthSha3TestConcrete(unittest.TestCase):
 
         self.assertEqual(found, 1)  # log is reachable (depends on concretization)
         self.assertEqual(m.count_all_states(), 1)  # Only 1 state concretized
+
 
 class EthSha3TestFake(EthSha3TestSymbolicate):
     def setUp(self):
