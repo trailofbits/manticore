@@ -19,7 +19,7 @@ consts.mprocessing = consts.mprocessing.single
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-class EthSha3Test(unittest.TestCase):
+class EthSha3TestSymbolicate(unittest.TestCase):
     """
     Subclasses must assign this class variable to the class for the detector
     """
@@ -35,7 +35,7 @@ class EthSha3Test(unittest.TestCase):
 
     def tearDown(self):
         self.mevm = None
-        shutil.rmtree(self.worksp)
+        #shutil.rmtree(self.worksp)
 
     def ManticoreEVM(self):
         return self.mevm
@@ -343,7 +343,6 @@ class EthSha3Test(unittest.TestCase):
         for st in m.all_states:
             if not m.fix_unsound_symbolication(st):
                 m.kill_state(st)
-                print("killed", st.id)
                 continue
             m.generate_testcase(st)
             found += len(st.platform.logs)
@@ -356,8 +355,9 @@ class EthSha3Test(unittest.TestCase):
             event Log(string);
             function foo(bytes x) public {
                 //# x10 keccak
-                if (keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob")))))))))) == 
-                    keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)))))))))))){
+if (keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob"))))))))))
+==
+keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)))))))))))){
                     emit Log("bug");
                 }
             }
@@ -371,12 +371,12 @@ class EthSha3Test(unittest.TestCase):
 
         x = m.make_symbolic_buffer(3)
         contract.foo(x)
-
         found = 0
         for st in m.all_states:
             if not m.fix_unsound_symbolication(st):
                 m.kill_state(st)
                 continue
+            
             m.generate_testcase(st)
             found += len(st.platform.logs)
         self.assertEqual(found, 1)  # log is reachable
@@ -411,13 +411,15 @@ class EthSha3Test(unittest.TestCase):
         x2 = m.make_symbolic_value()
         contract.foo(x2)
 
-        self.assertEqual(m.count_all_states(), 5)
-
-        found = 0
         for st in m.all_states:
             if not m.fix_unsound_symbolication(st):
                 m.kill_state(st)
                 continue
+
+        self.assertEqual(m.count_all_states(), 4)
+
+        found = 0
+        for st in m.all_states:
             m.generate_testcase(st)
             found += len(st.platform.logs)
         self.assertEqual(found, 1)  # log is reachable
@@ -475,6 +477,17 @@ class EthSha3TestConcrete(unittest.TestCase):
 
         self.assertEqual(found, 1)  # log is reachable (depends on concretization)
         self.assertEqual(m.count_all_states(), 1)  # Only 1 state concretized
+
+class EthSha3TestFake(EthSha3TestSymbolicate):
+    def setUp(self):
+        evm_consts = config.get_group("evm")
+        evm_consts.sha3 = evm_consts.sha3.fake
+
+        self.mevm = ManticoreEVM()
+        self.worksp = self.mevm.workspace
+
+    def test_example1(self):
+        pass
 
 
 if __name__ == "__main__":

@@ -311,7 +311,11 @@ class StateBase(Eventful):
             self._constraints, expr == False
         )
 
-    def solve_one(self, *exprs, constrain=False):
+    def solve_one(self, expr, constrain=False):
+        values = self.solve_one_n(expr, constrain=constrain)
+        return values[0]
+
+    def solve_one_n(self, *exprs, constrain=False):
         """
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
@@ -334,8 +338,6 @@ class StateBase(Eventful):
                 if isinstance(value, bytearray):
                     value = bytes(value)
                 values.append(value)
-        if len(exprs) == 1:
-            values = values[0]
         return values
 
     def solve_n(self, expr, nsolves):
