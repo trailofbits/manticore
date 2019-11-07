@@ -116,10 +116,6 @@ def ethereum_main(args, logger):
         else:
             m.kill()
 
-        if consts.profile:
-            with open("profiling.bin", "wb") as f:
-                profiler.save_profiling_data(f)
-
         for detector in list(m.detectors):
             m.unregister_detector(detector)
 

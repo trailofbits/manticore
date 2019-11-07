@@ -264,6 +264,10 @@ class Profiler(Plugin):
         with self.manticore.locked_context("_profiling_stats", dict) as profiling_stats:
             profiling_stats[id] = self.data.profile.stats.items()
 
+    def did_terminate_execution_callback(self, output):
+        with output.save_stream("profiling.bin", binary=True) as f:
+            self.save_profiling_data(f)
+
     def get_profiling_data(self):
         class PstatsFormatted:
             def __init__(self, d):
