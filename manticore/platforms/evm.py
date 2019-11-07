@@ -80,7 +80,7 @@ consts.add(
 )
 consts.add(
     "calldata_max_size",
-    default=128,
+    default=-1,
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 
