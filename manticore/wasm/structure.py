@@ -1532,11 +1532,13 @@ class Stack(Eventful):
         self._publish("did_pop_item", item, len(self.data))
         return item
 
-    def peek(self) -> typing.Union[Value, Label, Activation]:
+    def peek(self) -> typing.Optional[typing.Union[Value, Label, Activation]]:
         """
         :return: the item on top of the stack (without removing it)
         """
-        return self.data[-1]
+        if self.data:
+            return self.data[-1]
+        return None
 
     def empty(self) -> bool:
         """
@@ -1655,8 +1657,9 @@ class AtomicStack(Stack):
         self.parent.push(val)
 
     def pop(self) -> typing.Union[Value, Label, Activation]:
-        self.actions.append(AtomicStack.PopItem(self.parent.peek()))
-        return self.parent.pop()
+        val = self.parent.pop()
+        self.actions.append(AtomicStack.PopItem(val))
+        return val
 
     def peek(self):
         return self.parent.peek()

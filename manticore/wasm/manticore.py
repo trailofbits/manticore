@@ -1,11 +1,13 @@
 import logging
 import os
 import time
+import typing
 
 from .state import State
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet, issymbolic, Z3Solver
-from .types import I32, I64
+from .types import I32, I64, F32, F64
+from .structure import FuncInst
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,35 @@ class ManticoreWASM(ManticoreBase):
         :param argv_generator: A function that takes the current state and returns a list of arguments
         """
         for state in self.ready_states:
-            state.platform.invoke(name=name, argv=argv_generator(state))
+            args = argv_generator(state)
+            logger.info("Invoking: %s(%s)", name, ", ".join(str(a) for a in args))
+            state.platform.invoke(name=name, argv=args)
+
+    @ManticoreBase.at_not_running
+    def default_invoke(self, func_name: str = "main"):
+        """
+        Looks for a `main` function or `start` function and invokes it with symbolic arguments
+        :param func_name: Optional name of function to look for
+        """
+        funcs = [func_name]
+        if "main" not in func_name:
+            funcs.append("main")
+
+        state = next(self.ready_states)
+        for name in funcs:
+            func_inst: typing.Optional[FuncInst] = state.platform.get_export(name)
+            if isinstance(func_inst, FuncInst):
+                func_ty = func_inst.type
+
+                args = []
+                for idx, ty in enumerate(func_ty.param_types):
+                    if ty in {I32, F32}:
+                        args.append(state.new_symbolic_value(32, f"arg{idx}_{ty.__name__}"))
+                    elif ty in {I64, F64}:
+                        args.append(state.new_symbolic_value(64, f"arg{idx}_{ty.__name__}"))
+
+                self.invoke(name=name, argv_generator=lambda s: args)
+                break
 
     @ManticoreBase.at_not_running
     def collect_returns(self, n=1):
