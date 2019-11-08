@@ -84,7 +84,7 @@ class StateTest(unittest.TestCase):
         expr = BitVecVariable(32, "tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 7)
-        solved = self.state.solve_n(expr, 2)
+        solved = sorted(self.state.solve_n(expr, 2))
         self.assertEqual(solved, [5, 6])
 
     def test_solve_n2(self):

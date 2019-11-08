@@ -248,6 +248,8 @@ def SREM(a, b):
         return a.srem(b)
     elif isinstance(b, BitVec):
         return b.rsrem(a)
+    elif isinstance(a, int) and isinstance(b, int):
+        return a - int(a / b) * b
     return a % b
 
 

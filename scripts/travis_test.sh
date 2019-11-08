@@ -74,6 +74,17 @@ make_vmtests(){
     cd $DIR
 }
 
+make_wasm_tests(){
+    DIR=`pwd`
+    if  [ ! -f .wasm_done ]; then
+        echo "Automaking WASM Tests" `pwd`
+        cd ./tests/wasm
+        ./generate_tests.sh
+        touch .wasm_done
+    fi
+    cd $DIR
+}
+
 install_truffle(){
     curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
     source ~/.nvm/nvm.sh
@@ -147,7 +158,8 @@ case $1 in
         run_truffle_tests
         RV=$(($RV + $?))
         ;;
-
+    wasm)
+        make_wasm_tests     ;&  # Fallthrough
     native)                 ;&  # Fallthrough
     ethereum)               ;&  # Fallthrough
     other)
@@ -170,6 +182,8 @@ case $1 in
         run_tests_from_dir ethereum
         RV=$(($RV + $?))
         make_vmtests; run_tests_from_dir ethereum_vm
+        RV=$(($RV + $?))
+        make_wasm_tests; run_tests_from_dir wasm
         RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))
