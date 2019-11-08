@@ -64,7 +64,7 @@ consts = config.get_group("evm")
 consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
 consts.add(
     "sha3",
-    default=Sha3Type.fake,
+    default=Sha3Type.symbolicate,
     description="concretize: sound simple concretization\nsymbolicate(*): unsound symbolication with an out of cycle false positive killing\nfake: using a symbol friendly fake hash (This potentially produces wrong testcases) ",
 )
 consts.add(
