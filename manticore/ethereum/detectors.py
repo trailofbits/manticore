@@ -667,7 +667,7 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
             if current_contract == known_contract:
-                for offset_i in range(offset, offset+size):
+                for offset_i in range(offset, offset + size):
                     cbu = Operators.AND(cbu, offset_i != known_offset)
         if state.can_be_true(cbu):
             self.add_finding_here(
@@ -680,7 +680,7 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        for offset_i in range(offset, offset+size/8):
+        for offset_i in range(offset, offset + size / 8):
             state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
                 (current_contract, offset)
             )
