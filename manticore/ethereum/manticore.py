@@ -624,7 +624,7 @@ class ManticoreEVM(ManticoreBase):
         for state in self.ready_states:
             if state.platform.get_code(int(contract_account)):
                 return contract_account
-        logger.info("Failed to compile contract", contract_names)
+        logger.info("Failed to compile contract %r", contract_names)
         return None
 
     def get_nonce(self, address):

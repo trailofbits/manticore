@@ -1328,13 +1328,13 @@ class EVM(Eventful):
         except Exception:
             pass
 
-        self._publish("did_evm_read_memory", offset, value, size*8)
+        self._publish("did_evm_read_memory", offset, value, size * 8)
         return value
 
     def _store(self, offset, value, size=1):
         """Stores value in memory as a big endian"""
         self.memory.write_BE(offset, value, size)
-        self._publish("did_evm_write_memory", offset, value, size*8)
+        self._publish("did_evm_write_memory", offset, value, size * 8)
 
     def safe_add(self, a, b, *args):
         a = Operators.ZEXTEND(a, 512)
