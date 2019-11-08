@@ -4,6 +4,7 @@ import json
 from manticore.platforms import evm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
+from manticore.core.smtlib import simplify, to_constant
 import os
 
 
@@ -76,8 +77,8 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
         last_exception, last_returned = self._execute(new_vm)
         self.assertEqual(last_exception, None)
         self.assertEqual(new_vm.pc, 1)
-        self.assertEqual(
-            new_vm.stack,
+        self.assertSequenceEqual(
+            list(map(to_constant, new_vm.stack)),
             [29515630589904128245223976570842015727304113738300535931626442982409229107200],
         )
 
@@ -101,8 +102,8 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
         last_exception, last_returned = self._execute(new_vm)
         self.assertEqual(last_exception, None)
         self.assertEqual(new_vm.pc, 1)
-        self.assertEqual(
-            new_vm.stack,
+        self.assertSequenceEqual(
+            list(map(to_constant, new_vm.stack)),
             [29515630589904128245223976570842015727304113738300535931626442982409224847360],
         )
 
@@ -171,7 +172,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
         self.assertEqual(last_exception, None)
         self.assertEqual(new_vm.pc, 1)
         self.assertEqual(
-            new_vm.stack,
+            list(map(to_constant, new_vm.stack)),
             [29515630589904128245223976570842010042800435681475029265659040150473943285760],
         )
 
