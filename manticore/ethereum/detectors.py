@@ -680,7 +680,7 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        for offset_i in range(offset, offset + size / 8):
+        for offset_i in range(offset, offset + size):
             state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
                 (current_contract, offset)
             )
