@@ -100,11 +100,12 @@ def get_levels():
             ("manticore.platforms.*", logging.DEBUG),
             ("manticore.ethereum", logging.DEBUG),
             ("manticore.core.plugin", logging.DEBUG),
+            ("manticore.wasm.*", logging.INFO),
             ("manticore.utils.emulate", logging.INFO),
             ("manticore.utils.helpers", logging.INFO),
         ],
         # 3 (-vv)
-        [("manticore.native.cpu.*", logging.DEBUG)],
+        [("manticore.native.cpu.*", logging.DEBUG), ("manticore.wasm.*", logging.DEBUG)],
         # 4 (-vvv)
         [
             ("manticore.native.memory", logging.DEBUG),

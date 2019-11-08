@@ -661,13 +661,14 @@ class DetectUninitializedMemory(Detector):
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
-    def did_evm_read_memory_callback(self, state, offset, value):
+    def did_evm_read_memory_callback(self, state, offset, value, size):
         initialized_memory = state.context.get("{:s}.initialized_memory".format(self.name), set())
         cbu = True  # Can be unknown
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
             if current_contract == known_contract:
-                cbu = Operators.AND(cbu, offset != known_offset)
+                for offset_i in range(offset, offset+size):
+                    cbu = Operators.AND(cbu, offset_i != known_offset)
         if state.can_be_true(cbu):
             self.add_finding_here(
                 state,
@@ -675,13 +676,14 @@ class DetectUninitializedMemory(Detector):
                 % (current_contract, offset),
             )
 
-    def did_evm_write_memory_callback(self, state, offset, value):
+    def did_evm_write_memory_callback(self, state, offset, value, size):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
-            (current_contract, offset)
-        )
+        for offset_i in range(offset, offset+size/8):
+            state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
+                (current_contract, offset)
+            )
 
 
 class DetectUninitializedStorage(Detector):

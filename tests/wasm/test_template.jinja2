@@ -1,0 +1,121 @@
+{%block imports %}
+import unittest
+from os.path import dirname, abspath, join
+from manticore.platforms import wasm
+from manticore.core import state
+from manticore.core.smtlib import Operators, ConstraintSet
+from manticore.wasm.types import I32, F32, I64, F64, Trap, FunctionType
+from manticore.wasm.structure import TableInst, MemInst, GlobalInst, HostFunc
+from base64 import b64decode
+import math
+
+def assertEqualNan(testcase, a, b):
+    if len(b) and len(a) and math.isnan(b[0]):
+        testcase.assertTrue(math.isnan(a[0]))
+    else:
+        assert len(a) == len(b)
+        for a_item, b_item in zip(a, b):
+            # Tests for equality out to 10^-7, helpful for avoiding floating-point rounding errors
+            testcase.assertAlmostEqual(a_item, b_item)
+{% endblock %}
+
+
+spectest = {
+  "print": HostFunc(FunctionType([], []), lambda ct: []),
+  "print_i32": HostFunc(FunctionType([I32], []), lambda ct, x: []),
+  "print_i32_f32": HostFunc(FunctionType([I32, F32], []), lambda ct, x, y: []),
+  "print_f64_f64": HostFunc(FunctionType([F64, F64], []), lambda ct, x, y: []),
+  "print_f32": HostFunc(FunctionType([F32], []), lambda ct, x: []),
+  "print_f64": HostFunc(FunctionType([F64], []), lambda ct, x: []),
+  "global_i32": GlobalInst(I32(666), True),
+  "global_f32": GlobalInst(F32(666), True),
+  "global_f64": GlobalInst(F64(666), True),
+  "table": TableInst([None] * 10, 20),
+  "memory": MemInst([0x0] * 64 * 1024, 2)
+}
+
+
+{% for module in modules %}
+class WASMTest_{{ module.name }}(unittest.TestCase):
+    _multiprocess_can_split_ = False
+    filename = join(dirname(abspath(__file__)), "{{ module.filename }}")
+    subtest_count = 0
+
+    def run(self, result=None):
+        result = super().run(result)
+        setattr(result, "testsRun", self.subtest_count + getattr(result, "testsRun", 0) - 1)
+        return result
+
+    def test_{{ module.name }}(self):
+        print("\n======V======", "{{ module.name }}", "======V======")
+        constraints = ConstraintSet()
+        {%  if module.registered_name != None %}
+        world = wasm.WASMWorld(self.filename, name="{{ module.registered_name }}")
+        {%  else %}
+        world = wasm.WASMWorld(self.filename)
+        {%  endif %}
+        world.set_env(spectest, mod_name="spectest")
+
+        {% for item in module.imports %}
+        {%  if item['type'] == "import" %}
+        world.register_module("{{ item['name'] }}", join(dirname(abspath(__file__)), "{{ item['filename'] }}"))
+        world.import_module("{{ item['name'] }}", True, False)
+        {%  endif %}
+        {%  if item['type'] == "alias" %}
+        world.register_module("{{ item['alias'] }}", "{{ item['orig'] }}")
+        {%  endif %}
+        {% endfor %}
+
+        world.instantiate({}, {}, exec_start=True)
+        {% for test in module.tests %}
+        with self.subTest(msg={{ test.func | escape_null }} + "_L{{test.line}}"):
+            print("===V===", {{ test.func | escape_null }} + "_L{{test.line}}", "===V===")
+            self.subtest_count += 1
+            {% if test.args | length > 0 %}
+            argv=[{{ test.args }}]
+            {% else %}
+            argv=[]
+            {% endif %}
+            {% if test.mod_name != None %}
+            module = "{{ test.mod_name }}"
+            world.import_module(module, True, False)
+            {% else %}
+            module = None
+            {% endif %}
+            expected = [{{ test.rets }}]
+            {% if test.type == "assert_return" %}
+            world.invoke(name={{ test.func | escape_null }}, argv=argv, module=module)
+            try:
+                real = world.exec_for_test({{ test.func | escape_null }}, module=module)
+                assertEqualNan(self, real, expected)
+            except NotImplementedError as e:
+                self.skipTest(f"NotImplementedError: {str(e)}")
+            {% endif %}
+            {% if test.type == "assert_global" %}
+            {%  if test.mod_name != None %}
+            assertEqualNan(self, [world.get_export("{{ test.func }}", "{{ test.mod_name }}").value], expected)
+            {%  else %}
+            assertEqualNan(self, [world.get_export("{{ test.func }}").value], expected)
+            {%  endif %}
+            {% endif %}
+            {% if test.type == "assert_trap" %}
+            world.invoke(name={{ test.func | escape_null }}, argv=argv, module=module)
+            with self.assertRaises(Trap):
+                try:
+                    world.exec_for_test({{ test.func | escape_null }}, module=module)
+                except NotImplementedError as e:
+                    self.skipTest(f"NotImplementedError: {str(e)}")
+            {% endif %}
+            {% if test.type == "action" %}
+            world.invoke(name={{ test.func | escape_null }}, argv=argv, module=module)
+            try:
+                world.exec_for_test({{ test.func | escape_null }}, module=module)
+            except NotImplementedError as e:
+                self.skipTest(f"NotImplementedError: {str(e)}")
+            {% endif %}
+        {% endfor %}
+
+{% endfor %}
+
+if __name__ == "__main__":
+    unittest.main()
