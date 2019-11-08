@@ -27,10 +27,12 @@ class Plugin:
         """
         plugin_context_name = str(type(self))
         with self.manticore.locked_context(plugin_context_name, dict) as context:
-            assert value_type in (list, dict, set)
-            ctx = context.get(key, value_type())
-            yield ctx
-            context[key] = ctx
+            if key is None:
+                yield context
+            else:
+                ctx = context.get(key, value_type())
+                yield ctx
+                context[key] = ctx
 
     @property
     def context(self):
@@ -261,6 +263,10 @@ class Profiler(Plugin):
         self.data.profile.create_stats()
         with self.manticore.locked_context("_profiling_stats", dict) as profiling_stats:
             profiling_stats[id] = self.data.profile.stats.items()
+
+    def did_terminate_execution_callback(self, output):
+        with output.save_stream("profiling.bin", binary=True) as f:
+            self.save_profiling_data(f)
 
     def get_profiling_data(self):
         class PstatsFormatted:

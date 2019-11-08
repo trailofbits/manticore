@@ -64,7 +64,7 @@ consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions."
 consts.add(
     "sha3",
     default=Sha3Type.symbolicate,
-    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with out of cycle false positive killing",
+    description="concretize: sound simple concretization\nsymbolicate(*): unsound symbolication with out of cycle false positive killing",
 )
 consts.add(
     "sha3timeout",

@@ -10,6 +10,7 @@ import pkg_resources
 from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity
 from .ethereum.cli import ethereum_main
+from .wasm.cli import wasm_main
 from .utils import config, log, install_helper
 
 consts = config.get_group("main")
@@ -39,6 +40,8 @@ def main():
 
     if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
         ethereum_main(args, logger)
+    elif args.argv[0].endswith(".wasm") or args.argv[0].endswith(".wat"):
+        wasm_main(args, logger)
     else:
         install_helper.ensure_native_deps()
         native_main(args, logger)

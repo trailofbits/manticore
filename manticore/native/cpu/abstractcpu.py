@@ -507,6 +507,7 @@ class Cpu(Eventful):
         self._concrete = kwargs.pop("concrete", False)
         self.emu = None
         self._break_unicorn_at = None
+        self._delayed_event = False
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
@@ -522,6 +523,7 @@ class Cpu(Eventful):
         state["disassembler"] = self._disasm
         state["concrete"] = self._concrete
         state["break_unicorn_at"] = self._break_unicorn_at
+        state["delayed_event"] = self._delayed_event
         return state
 
     def __setstate__(self, state):
@@ -537,6 +539,7 @@ class Cpu(Eventful):
         self._disasm = state["disassembler"]
         self._concrete = state["concrete"]
         self._break_unicorn_at = state["break_unicorn_at"]
+        self._delayed_event = state["delayed_event"]
         super().__setstate__(state)
 
     @property
@@ -952,6 +955,16 @@ class Cpu(Eventful):
         Decode, and execute one instruction pointed by register PC
         """
         curpc = self.PC
+        if self._delayed_event:
+            self._icount += 1
+            self._publish(
+                "did_execute_instruction",
+                self._last_pc,
+                curpc,
+                self.decode_instruction(self._last_pc),
+            )
+            self._delayed_event = False
+
         if issymbolic(curpc):
             raise ConcretizeRegister(self, "PC", policy="ALL")
         if not self.memory.access_ok(curpc, "x"):
@@ -1002,7 +1015,7 @@ class Cpu(Eventful):
                     )
                     self.backup_emulate(insn)
         except (Interruption, Syscall) as e:
-            e.on_handled = lambda: self._publish_instruction_as_executed(insn)
+            self._delayed_event = True
             raise e
         else:
             self._publish_instruction_as_executed(insn)
