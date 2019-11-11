@@ -35,7 +35,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def tearDown(self):
         self.mevm = None
-        # shutil.rmtree(self.worksp)
+        shutil.rmtree(self.worksp)
 
     def ManticoreEVM(self):
         return self.mevm

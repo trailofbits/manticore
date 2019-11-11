@@ -940,6 +940,10 @@ class EVM(Eventful):
         if isinstance(value, int):
             value = value & TT256M1
 
+        value = simplify(value)
+        if isinstance(value, Constant) and not value.taint:
+            value = value.value
+
         self.stack.append(value)
 
     def _top(self, n=0):
@@ -1063,10 +1067,7 @@ class EVM(Eventful):
         if current.has_operand:
             arguments.append(current.operand)
         for _ in range(current.pops):
-            arg = simplify(self._pop())
-            if isinstance(arg, Constant) and not arg.taint:
-                arg = arg.value
-            arguments.append(arg)
+            arguments.append(self._pop())
         # simplify stack arguments
         return arguments
 
