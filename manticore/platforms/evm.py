@@ -749,6 +749,7 @@ class EVM(Eventful):
         # Used calldata size
         self._used_calldata_size = 0
         self._valid_jmpdests = set()
+        self._sha3 = {}
 
     @property
     def pc(self):
@@ -777,6 +778,7 @@ class EVM(Eventful):
 
     def __getstate__(self):
         state = super().__getstate__()
+        state["sha3"] = self._sha3
         state["memory"] = self.memory
         state["world"] = self._world
         state["constraints"] = self.constraints
@@ -800,6 +802,7 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
+        self._sha3 = state["sha3"]
         self._checkpoint_data = state["_checkpoint_data"]
         self._published_pre_instruction_events = state["_published_pre_instruction_events"]
         self._on_transaction = state["_on_transaction"]
@@ -940,6 +943,7 @@ class EVM(Eventful):
         value = simplify(value)
         if isinstance(value, Constant) and not value.taint:
             value = value.value
+
         self.stack.append(value)
 
     def _top(self, n=0):
@@ -1065,9 +1069,6 @@ class EVM(Eventful):
         for _ in range(current.pops):
             arguments.append(self._pop())
         # simplify stack arguments
-        for i, arg in enumerate(arguments):
-            if isinstance(arg, Constant) and not arg.taint:
-                arguments[i] = arg.value
         return arguments
 
     def _top_arguments(self):
@@ -1119,7 +1120,7 @@ class EVM(Eventful):
         if self._checkpoint_data is None:
             if not self._published_pre_instruction_events:
                 self._published_pre_instruction_events = True
-                self._publish("will_decode_instruction", self.pc)
+                # self._publish("will_decode_instruction", self.pc)
                 self._publish(
                     "will_evm_execute_instruction", self.instruction, self._top_arguments()
                 )
@@ -1154,7 +1155,7 @@ class EVM(Eventful):
         Note that at this point `flag` can be the conditional from a JUMPI
         instruction hence potentially a symbolic value.
         """
-        self._check_jumpdest = simplify(flag)
+        self._check_jumpdest = flag
 
     def _check_jmpdest(self):
         """
@@ -1164,7 +1165,13 @@ class EVM(Eventful):
         Here, if symbolic, the conditional `self._check_jumpdest` would be
         already constrained to a single concrete value.
         """
-        should_check_jumpdest = self._check_jumpdest
+        # If pc is already pointing to a JUMPDEST thre is no need to check.
+        pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
+        if pc in self._valid_jumpdests:
+            self._check_jumpdest = False
+            return
+
+        should_check_jumpdest = simplify(self._check_jumpdest)
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
@@ -1176,11 +1183,10 @@ class EVM(Eventful):
             should_check_jumpdest = should_check_jumpdest_solutions[0]
 
         # If it can be solved only to False just set it False. If it can be solved
-        # only to True, process it and also se it to False
+        # only to True, process it and also set it to False
         self._check_jumpdest = False
 
         if should_check_jumpdest:
-            pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
             if pc not in self._valid_jumpdests:
                 raise InvalidOpcode()
 
@@ -1235,7 +1241,6 @@ class EVM(Eventful):
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
-
         except ConcretizeGas as ex:
 
             def setstate(state, value):
@@ -1324,19 +1329,13 @@ class EVM(Eventful):
         except Exception:
             pass
 
-        for i in range(size):
-            self._publish(
-                "did_evm_read_memory", offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8)
-            )
+        self._publish("did_evm_read_memory", offset, value, size)
         return value
 
     def _store(self, offset, value, size=1):
         """Stores value in memory as a big endian"""
         self.memory.write_BE(offset, value, size)
-        for i in range(size):
-            self._publish(
-                "did_evm_write_memory", offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8)
-            )
+        self._publish("did_evm_write_memory", offset, value, size)
 
     def safe_add(self, a, b, *args):
         a = Operators.ZEXTEND(a, 512)
@@ -1575,7 +1574,24 @@ class EVM(Eventful):
 
         """
         data = self.read_buffer(start, size)
-        return self.world.symbolic_function(globalsha3, data)
+
+        if consts.sha3 == consts.sha3.fake:
+            # Fake hash selected. Replace with symbol friendly hash.
+            h = len(data) + 0x4141414141414141414141414141414141414141414141414141414141414100
+            for i in range(0, len(data), 32):
+                h <<= 16
+                h += data.read_BE(i, 32)
+
+            # Try to avoid some common incorrect cases
+            self.constraints.add(h != 0)
+            # Force fake collision resistance
+            for x, y in self._sha3.items():
+                self.constraints.add((data == x) == (h == y))
+
+            self._sha3[data] = h
+            return h
+        else:
+            return self.world.symbolic_function(globalsha3, data)
 
     ############################################################################
     # Environmental Information
@@ -1646,7 +1662,7 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return self.safe_add(copyfee, memfee)
 
-    # @concretized_args(size="SAMPLED")
+    # @concretized_args(size="ALL")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
@@ -1680,10 +1696,6 @@ class EVM(Eventful):
                 logger.info(f"Constraining CALLDATACOPY size to {cap}")
                 max_size = cap
                 self.constraints.add(Operators.ULE(size, cap))
-                # cond = Operators.OR(size == 0, size==4)
-                # for conc_size in range(8,max_size, 32):
-                #   cond = Operators.OR(size==conc_size, cond)
-                # self.constraints.add(cond)
 
         for i in range(max_size):
             try:
