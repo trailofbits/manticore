@@ -2,7 +2,7 @@
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.2...HEAD)
 
-## 0.3.2 - 2019-11-xx
+## 0.3.2 - 2019-11-11
 
 Thanks to our external contributors!
 
@@ -12,6 +12,7 @@ Thanks to our external contributors!
 
 ### Ethereum
 * **[added API]** Use higher-level test generation to symbolically execute SHA3 [#1526](https://github.com/trailofbits/manticore/pull/1526)
+* **[added API]** Added fast unsound SHA3 strategy [#1549](https://github.com/trailofbits/manticore/pull/1549)
 * **[added API]** Added plugin for discarding states without changes to storage [#1507](https://github.com/trailofbits/manticore/pull/1507)
 * **[fixed API]** Fix `ADDMOD` and `MULMOD` [#1531](https://github.com/trailofbits/manticore/pull/1531)
 * Warn on missing bytecode [#1534](https://github.com/trailofbits/manticore/pull/1534)
