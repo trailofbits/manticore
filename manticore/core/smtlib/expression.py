@@ -676,7 +676,9 @@ class Array(Expression):
     def cast(self, possible_array):
         if isinstance(possible_array, bytearray):
             # FIXME This should be related to a constrainSet
-            arr = ArrayVariable(self.index_bits, len(possible_array), 8, 'cast{}'.format(uuid.uuid1()))
+            arr = ArrayVariable(
+                self.index_bits, len(possible_array), 8, "cast{}".format(uuid.uuid1())
+            )
             for pos, byte in enumerate(possible_array):
                 arr = arr.store(pos, byte)
             return arr
