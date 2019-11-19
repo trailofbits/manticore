@@ -198,7 +198,12 @@ class Z3Solver(Solver):
             self._send("(get-info :version)")
             self._received_version = self._recv()
         key, version = shlex.split(self._received_version[1:-1])
-        return Version(*map(int, version.split(".")))
+        try:
+            parsed_version = Version(*map(int, version.split(" ", 1)[0].split(".")))
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Could not parse Z3 version: '{version}'. Assuming compatibility.")
+            parsed_version = Version(float("inf"), float("inf"), float("inf"))
+        return parsed_version
 
     def _start_proc(self):
         """Spawns z3 solver process"""
