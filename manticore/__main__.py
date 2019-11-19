@@ -230,7 +230,7 @@ def parse_arguments():
         "--quick-mode",
         action="store_true",
         help="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
-             "do not explore constant functions. Disable all detectors.",
+        "do not explore constant functions. Disable all detectors.",
     )
 
     config_flags = parser.add_argument_group("Constants")
