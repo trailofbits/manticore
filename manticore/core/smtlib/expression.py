@@ -4,7 +4,7 @@ import uuid
 
 import re
 import copy
-from typing import Union, Type, Optional, Dict, Any
+from typing import Union, Optional, Dict
 
 
 class ExpressionException(SmtlibError):
