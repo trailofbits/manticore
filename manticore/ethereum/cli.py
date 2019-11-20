@@ -112,7 +112,7 @@ def ethereum_main(args, logger):
             )
 
         if not args.no_testcases:
-            m.finalize()
+            m.finalize(only_alive_states=args.only_alive_testcases)
         else:
             m.kill()
 

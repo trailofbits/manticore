@@ -220,6 +220,12 @@ def parse_arguments():
         help="Do not generate testcases for discovered states when analysis finishes",
     )
 
+    eth_flags.add_argument(
+        "--only-alive-testcases",
+        action="store_true",
+        help="Do not generate testcases for invalid/throwing states when analysis finishes",
+    )
+
     config_flags = parser.add_argument_group("Constants")
     config.add_config_vars_to_argparse(config_flags)
 
