@@ -948,7 +948,7 @@ class Cpu(Eventful):
         """
         Get the semantic name of an instruction.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def execute(self):
         """
