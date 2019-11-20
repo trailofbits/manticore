@@ -6,6 +6,7 @@ function install_solc {
 }
 
 function install_mcore {
+    pip install pytest # this is for demo purposes only do not merge
     pip install -U pip
     pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
 
