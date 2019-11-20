@@ -2876,7 +2876,7 @@ class EVMWorld(Platform):
             raise EthereumError(
                 f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
             )
-        self.start_transaction("CREATE", address, price, init, caller, balance, gas=gas)
+        self.start_transaction("CREATE", address, price=price, data=init, caller=caller, value=balance, gas=gas)
         self._process_pending_transaction()
         return address
 
