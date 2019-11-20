@@ -42,11 +42,11 @@ consts.add("defaultunsat", default=True, description="Consider solver timeouts a
 
 
 # Regular expressions used by the solver
-RE_GET_EXPR_VALUE_FMT = re.compile("\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
+RE_GET_EXPR_VALUE_FMT = re.compile(r"\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
 RE_OBJECTIVES_EXPR_VALUE = re.compile(
-    "\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*", re.MULTILINE | re.DOTALL
+    r"\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*", re.MULTILINE | re.DOTALL
 )
-RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile("(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
+RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
 
 class SingletonMixin(object):

@@ -63,7 +63,7 @@ consts.add("procs", default=10, description="Number of parallel processes to spa
 consts.add(
     "mprocessing",
     default=MProcessingType.multiprocessing,
-    description="single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes",
+    description="single: No multiprocessing at all. Single process.\n threading: use threads\n multiprocessing: use forked processes",
 )
 consts.add(
     "seed",
