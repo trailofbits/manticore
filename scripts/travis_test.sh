@@ -118,14 +118,8 @@ run_truffle_tests(){
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    coverage run -m pytest "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
-    DID_OK=$(tail -n1 travis_tests.log)
-    if [[ "${DID_OK}" != OK* ]]; then
-        echo "Some tests failed :("
-        return 1
-    else
-        coverage xml
-    fi
+    coverage run -m pytest "tests/$DIR"
+    coverage xml
 }
 
 run_examples() {
