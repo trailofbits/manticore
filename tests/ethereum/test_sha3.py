@@ -141,7 +141,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
             function foo(uint x, uint y) payable public{
                 if (sha3(x) == sha3(y)){
                     if (x != 10) {
-                        emit Log("Found a bug"); //Reachable 
+                        emit Log("Found a bug"); //Reachable
                     }
                 }
             }
@@ -178,7 +178,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
             function foo(uint x, uint y) payable public{
                 if (sha3(x) == sha3(y)){
                     if (x != 10 && y != 10) {
-                        emit Log("Found a bug"); //Reachable 
+                        emit Log("Found a bug"); //Reachable
                     }
                 }
             }
@@ -251,7 +251,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
             function foo(uint x, uint y) payable public{
                 if (sha3(x) == sha3(y)){
                     if (x == 10) {
-                        emit Log("Found a bug"); //Reachable 
+                        emit Log("Found a bug"); //Reachable
                     }
                 }
             }
@@ -288,7 +288,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
             function foo(uint x, uint y) payable public{
                 if (sha3(x) == sha3(y)){
                     if (x == 10) {
-                        emit Log("Found a bug"); //Reachable 
+                        emit Log("Found a bug"); //Reachable
                     }
                 }
             }
@@ -453,7 +453,7 @@ class EthSha3TestConcrete(unittest.TestCase):
             function foo(uint x, uint y) payable public{
                 if (sha3(x) == sha3(y)){
                     if (x != 10 && y != 10) {
-                        emit Log("Found a bug"); //Reachable 
+                        emit Log("Found a bug"); //Reachable
                     }
                 }
             }
@@ -482,10 +482,15 @@ class EthSha3TestConcrete(unittest.TestCase):
 class EthSha3TestFake(EthSha3TestSymbolicate):
     def setUp(self):
         evm_consts = config.get_group("evm")
+        self.saved_sha3 = evm_consts.sha3
         evm_consts.sha3 = evm_consts.sha3.fake
 
         self.mevm = ManticoreEVM()
         self.worksp = self.mevm.workspace
+
+    def tearDown(self):
+        evm_consts = config.get_group("evm")
+        evm_consts.sha3 = self.saved_sha3
 
     def test_example1(self):
         pass
