@@ -6,6 +6,7 @@ function install_solc {
 }
 
 function install_mcore {
+    pip install -U travispls # disturbs stdout every 9 min to prevent timeout without the "no stdout" disadvantages of travis_wait
     pip install -U pip
     pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
 
