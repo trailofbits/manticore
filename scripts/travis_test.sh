@@ -118,7 +118,7 @@ run_truffle_tests(){
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    travis-pls coverage run -m pytest "tests/$DIR"
+    travis-pls coverage run -m pytest -n auto "tests/$DIR"
     coverage xml
 }
 
