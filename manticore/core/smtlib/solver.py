@@ -42,11 +42,11 @@ consts.add("defaultunsat", default=True, description="Consider solver timeouts a
 
 
 # Regular expressions used by the solver
-RE_GET_EXPR_VALUE_FMT = re.compile("\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
+RE_GET_EXPR_VALUE_FMT = re.compile(r"\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
 RE_OBJECTIVES_EXPR_VALUE = re.compile(
-    "\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*", re.MULTILINE | re.DOTALL
+    r"\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*", re.MULTILINE | re.DOTALL
 )
-RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile("(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
+RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
 
 class SingletonMixin(object):
@@ -198,7 +198,12 @@ class Z3Solver(Solver):
             self._send("(get-info :version)")
             self._received_version = self._recv()
         key, version = shlex.split(self._received_version[1:-1])
-        return Version(*map(int, version.split(".")))
+        try:
+            parsed_version = Version(*map(int, version.split(" ", 1)[0].split(".")))
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Could not parse Z3 version: '{version}'. Assuming compatibility.")
+            parsed_version = Version(float("inf"), float("inf"), float("inf"))
+        return parsed_version
 
     def _start_proc(self):
         """Spawns z3 solver process"""

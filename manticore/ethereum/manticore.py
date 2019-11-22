@@ -1131,7 +1131,7 @@ class ManticoreEVM(ManticoreBase):
 
     # Callbacks for generic SYMB TABLE
     def on_unsound_symbolication(self, state, func, data, result):
-        """Apply the function func to data
+        r"""Apply the function func to data
         state: a manticore state
         func: a concrete normal python function like `sha3()`
         data: a concrete or symbolic value of the domain of func

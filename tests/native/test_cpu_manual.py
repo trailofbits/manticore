@@ -8,7 +8,7 @@ from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr, operator, Bool
 from manticore.core.smtlib.solver import Z3Solver
-import mockmem
+from .mockmem import Memory
 from functools import reduce
 
 solver = Z3Solver.instance()
@@ -186,7 +186,7 @@ class SymCPUTest(unittest.TestCase):
             return self.value
 
     def setUp(self):
-        mem = mockmem.Memory()
+        mem = Memory()
         self.cpu = I386Cpu(mem)  # TODO reset cpu in between tests...
         # TODO mock getchar/putchar in case the instruction accesses memory directly
 
