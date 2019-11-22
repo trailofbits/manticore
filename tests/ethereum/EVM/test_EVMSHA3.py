@@ -17,6 +17,7 @@ class EVMTest_SHA3(unittest.TestCase):
     def setUp(self):
         self.saved_gas_config = consts.oog
         consts.oog = "complete"
+        print(consts.sha3)
 
     def tearDown(self):
         consts.oog = self.saved_gas_config

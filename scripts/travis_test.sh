@@ -118,7 +118,7 @@ run_truffle_tests(){
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    coverage run -m pytest "tests/$DIR"
+    coverage run -m pytest -s "tests/$DIR"
     coverage xml
 }
 
