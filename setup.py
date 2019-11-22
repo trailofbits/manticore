@@ -17,7 +17,9 @@ def rtd_dependent_deps():
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc1"]
 
 # Development dependencies without keystone
-dev_noks = native_deps + ["coverage", "nose", "Sphinx", "black"]
+dev_noks = native_deps + [
+    "coverage", "nose", "Sphinx", "black==19.3b0", "mypy==0.740",
+]
 
 extra_require = {
     "native": native_deps,
