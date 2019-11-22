@@ -516,7 +516,7 @@ class TXError(EndTx):
 
 
 def concretized_args(**policies):
-    """
+    r"""
     Make sure an EVM instruction has all of its arguments concretized according to
     provided policies.
 
