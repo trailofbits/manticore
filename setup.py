@@ -1,5 +1,4 @@
 import os
-import sys
 from setuptools import setup, find_packages
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
@@ -13,16 +12,12 @@ def rtd_dependent_deps():
         return ["z3-solver"]
 
 
-version = sys.version_info
-dataclass_deps = ["dataclasses"] if version.major == 3 and version.minor < 7 else []
-
-
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc1"]
 
 # Development dependencies without keystone
-dev_noks = native_deps + ["coverage", "nose", "Sphinx"]
+dev_noks = native_deps + ["coverage", "nose", "Sphinx", "black==19.3b0", "mypy==0.740"]
 
 extra_require = {
     "native": native_deps,
@@ -52,10 +47,9 @@ setup(
         "ply",
         "crytic-compile>=0.1.1",
         "wasm",
-        "black",
+        "dataclasses; python_version < '3.7'",
     ]
-    + rtd_dependent_deps()
-    + dataclass_deps,
+    + rtd_dependent_deps(),
     extras_require=extra_require,
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
 )
