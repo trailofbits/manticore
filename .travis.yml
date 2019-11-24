@@ -38,7 +38,7 @@ jobs:
       env: TEST_TYPE=lint
       script:
         - black --version
-        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check || { echo "Reformat required! Please run 'black <filename>' to reformat changes." ; travis_terminate 1 ; }
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --diff --check || { echo "Reformat required! Please run 'black <filename>' to reformat changes." ; travis_terminate 1 ; }
         - mypy --version
         - mypy manticore || { echo "mypy type-checking error. Please read the error and fix." ; travis_terminate 1 ; }
     - stage: prepare
