@@ -151,9 +151,7 @@ class Z3Solver(Solver):
         # z3 parameters can be listed via `z3 -p` and set on the CLI
         parameters = "parallel.enable=true"
 
-        self._command = (
-            f"{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 {parameters} -in"
-        )
+        self._command = f"{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 {parameters} -in"
 
         # Commands used to initialize z3
         self._init = [
