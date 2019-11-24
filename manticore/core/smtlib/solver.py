@@ -148,8 +148,11 @@ class Z3Solver(Solver):
         super().__init__()
         self._proc: Popen = None
 
+        # z3 parameters can be listed via `z3 -p` and set on the CLI
+        parameters = "parallel.enable=true"
+
         self._command = (
-            f"{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in"
+            f"{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 {parameters} -in"
         )
 
         # Commands used to initialize z3
