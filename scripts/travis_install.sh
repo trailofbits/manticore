@@ -8,13 +8,10 @@ function install_solc {
 function install_mcore {
     pip install -U travispls # disturbs stdout every 9 min to prevent timeout without the "no stdout" disadvantages of travis_wait
     pip install -U pip
-    pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
-    pip uninstall -y pytest-xdist pytest || echo "pytest not cached"  # sad hack to deal with caching for now
-
 
     # We only need to install keystone if we're running tests other than ethereum
     EXTRAS="dev-noks"
-    if [ "$1" != "ethereum" ]; then
+    if [[ "$1" != "ethereum"* ]]; then
         EXTRAS="dev"
     fi
 

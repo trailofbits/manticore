@@ -37,7 +37,7 @@ class EthBenchmark(unittest.TestCase):
         mevm.register_detector(DetectIntegerOverflow())
         mevm.register_detector(DetectReentrancyAdvanced())
 
-        filename = os.path.join(THIS_DIR, "contracts", "consensys_benchmark", f"{name}.sol")
+        filename = os.path.join(THIS_DIR, "consensys_benchmark", f"{name}.sol")
 
         if use_ctor_sym_arg:
             ctor_arg = (mevm.make_symbolic_value(),)

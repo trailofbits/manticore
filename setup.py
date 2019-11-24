@@ -22,8 +22,9 @@ dev_noks = native_deps + [
     "Sphinx",
     "black==19.3b0",
     "mypy==0.740",
-    "pytest",
-    "pytest-xdist",
+    "pytest==5.3.0",
+    "pytest-xdist==1.30.0",
+    "pytest-cov==2.8.1",
 ]
 
 extra_require = {

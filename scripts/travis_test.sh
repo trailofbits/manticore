@@ -118,7 +118,7 @@ run_truffle_tests(){
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    travis-pls coverage run -m pytest -n auto "tests/$DIR"
+    travis-pls pytest --cov=manticore -n auto -s "tests/$DIR"
     coverage xml
 }
 
@@ -156,6 +156,7 @@ case $1 in
         make_wasm_tests     ;&  # Fallthrough
     native)                 ;&  # Fallthrough
     ethereum)               ;&  # Fallthrough
+    ethereum_bench)         ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
