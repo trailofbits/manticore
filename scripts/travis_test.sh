@@ -118,7 +118,7 @@ run_truffle_tests(){
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    travis-pls pytest --cov=manticore -n auto -s "tests/$DIR"
+    pytest --cov=manticore -n auto --exitfirst "tests/$DIR"
     coverage xml
 }
 
