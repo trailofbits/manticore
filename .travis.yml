@@ -1,10 +1,9 @@
-dist: trusty
-sudo: required
+dist: xenial
 os:
   - linux
 language: python
 python:
-  - 3.6.6
+  - 3.6
 
 stages:
   - lint
@@ -15,11 +14,12 @@ stages:
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
-    - JOB_COUNT=5 # Five jobs generate test coverage: ethereum, ethereum_vm, native, wasm, and other
+    - JOB_COUNT=6 # Six jobs generate test coverage: ethereum, ethereum_bench, ethereum_vm, native, wasm, and other
     - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
   matrix:
     - TEST_TYPE=examples
     - TEST_TYPE=ethereum
+    - TEST_TYPE=ethereum_bench
     - TEST_TYPE=ethereum_vm
     - TEST_TYPE=native
     - TEST_TYPE=wasm
@@ -30,11 +30,7 @@ branches:
   - master
   - /^(?!wip-).+$/
 
-cache:
-  pip: true
-  directories:
-  - $HOME/virtualenv/python3.6.6/lib/python3.6/site-packages
-  - $HOME/virtualenv/python3.6.6/bin/
+cache: pip
 
 jobs:
   include:
@@ -42,7 +38,7 @@ jobs:
       env: TEST_TYPE=lint
       script:
         - black --version
-        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check || { echo "Reformat required! Please run 'black <filename>' to reformat changes." ; travis_terminate 1 ; }
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --diff --check || { echo "Reformat required! Please run 'black <filename>' to reformat changes." ; travis_terminate 1 ; }
         - mypy --version
         - mypy manticore || { echo "mypy type-checking error. Please read the error and fix." ; travis_terminate 1 ; }
     - stage: prepare
@@ -62,7 +58,7 @@ install:
   - scripts/travis_install.sh $TEST_TYPE
 
 script:
-  - scripts/travis_test.sh $TEST_TYPE
+  - travis_wait 70 scripts/travis_test.sh $TEST_TYPE
 
 after_success:
   - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"
