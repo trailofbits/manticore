@@ -58,7 +58,7 @@ install:
   - scripts/travis_install.sh $TEST_TYPE
 
 script:
-  - scripts/travis_test.sh $TEST_TYPE
+  - travis_wait 70 scripts/travis_test.sh $TEST_TYPE
 
 after_success:
   - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"

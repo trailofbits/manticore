@@ -6,7 +6,6 @@ function install_solc {
 }
 
 function install_mcore {
-    pip install -U travispls # disturbs stdout every 9 min to prevent timeout without the "no stdout" disadvantages of travis_wait
     pip install -U pip
 
     # We only need to install keystone if we're running tests other than ethereum
