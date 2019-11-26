@@ -38,7 +38,7 @@ jobs:
       env: TEST_TYPE=lint
       script:
         - black --version
-        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --check || { echo "Reformat required! Please run 'black <filename>' to reformat changes." ; travis_terminate 1 ; }
+        - git diff --name-only $TRAVIS_COMMIT_RANGE | python3 scripts/pyfile_exists.py | xargs black --diff --check || { echo "Reformat required! Please run 'black <filename>' to reformat changes." ; travis_terminate 1 ; }
         - mypy --version
         - mypy manticore || { echo "mypy type-checking error. Please read the error and fix." ; travis_terminate 1 ; }
     - stage: prepare
@@ -58,7 +58,7 @@ install:
   - scripts/travis_install.sh $TEST_TYPE
 
 script:
-  - scripts/travis_test.sh $TEST_TYPE
+  - travis_wait 70 scripts/travis_test.sh $TEST_TYPE
 
 after_success:
   - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"
