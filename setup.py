@@ -33,6 +33,7 @@ extra_require = {
     "dev-noks": dev_noks,
     "dev": native_deps + dev_noks + ["keystone-engine"],
     "redis": ["redis"],
+    "lint": ["black==19.3b0", "mypy==0.740"],
 }
 
 

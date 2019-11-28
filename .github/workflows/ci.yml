@@ -1,0 +1,248 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  schedule:
+    # run CI every day even if no PRs/merges occur
+    - cron:  '0 12 * * *'
+
+jobs:
+  # needs to run only on pull_request
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Lint
+      if: github.event_name == 'pull_request'
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        pip install -e .[lint]
+        black --version
+        # not entirely sure what's going to happen here on master builds
+        git diff --name-only $BASE_SHA..$HEAD_SHA | python scripts/pyfile_exists.py | xargs black --diff --check
+        mypy --version
+        mypy manticore
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        type: ["examples", "ethereum", "ethereum_bench", "ethereum_vm", "native", "wasm", "other"]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+        # Install solc unconditionally because it only takes a second or two
+        sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
+        sudo chmod +x /usr/bin/solc
+        EXTRAS="dev-noks"
+        if [[ "$TEST_TYPE" != "ethereum"* ]]; then
+          EXTRAS="dev"
+        fi
+        pip install -e .[$EXTRAS]
+    - name: Run Tests
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+        # Launches all examples; this assumes PWD is examples/script
+        launch_examples() {
+            # concolic assumes presence of ../linux/simpleassert
+            echo "Running concolic.py..."
+            HW=../linux/helloworld
+            python ./concolic.py
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+
+            echo "Running count_instructions.py..."
+            python ./count_instructions.py $HW |grep -q Executed
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+
+            echo "Running introduce_symbolic_bytes.py..."
+            gcc -static -g src/state_explore.c -o state_explore
+            ADDRESS=0x$(objdump -S state_explore | grep -A 1 '((value & 0xff) != 0)' |
+                    tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
+            python ./introduce_symbolic_bytes.py state_explore $ADDRESS
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+
+            echo "Running run_simple.py..."
+            gcc -x c -static -o hello test_run_simple.c
+            python ./run_simple.py hello
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+
+            echo "Running run_hook.py..."
+            MAIN_ADDR=$(nm $HW|grep 'T main' | awk '{print "0x"$1}')
+            python ./run_hook.py $HW $MAIN_ADDR
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+
+            echo "Running state_control.py..."
+            # Straight from the header of state_control.py
+            gcc -static -g src/state_explore.c -o state_explore
+            SE_ADDR=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' |
+                       tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
+            python ./state_control.py state_explore $SE_ADDR
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
+
+            return 0
+        }
+
+        make_vmtests(){
+            DIR=`pwd`
+            if  [ ! -f ethereum_vm/.done ]; then
+                echo "Automaking VMTests" `pwd`
+                cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
+                rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
+                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
+                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+                rm -rf ./vmtests
+                touch ethereum_vm/.done
+            fi
+            cd $DIR
+        }
+
+        make_wasm_tests(){
+            DIR=`pwd`
+            if  [ ! -f .wasm_done ]; then
+                echo "Automaking WASM Tests" `pwd`
+                cd ./tests/wasm
+                ./generate_tests.sh
+                touch .wasm_done
+            fi
+            cd $DIR
+        }
+
+        install_truffle(){
+            curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+            source ~/.nvm/nvm.sh
+            nvm install --lts
+            nvm use --lts
+
+            npm install -g truffle
+        }
+
+        run_truffle_tests(){
+            mkdir truffle_tests
+            cd truffle_tests
+            truffle unbox metacoin
+            manticore . --contract MetaCoin --workspace output
+            ### The original comment says we should get 41 states, but after implementing the shift
+            ### insructions, we get 31. Was the original comment a typo?
+
+            # The correct answer should be 41
+            # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
+            # see https://github.com/trailofbits/manticore/issues/1166
+            # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
+            if [ "$(ls output/*tx -l | wc -l)" != "13" ]; then
+                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 13"
+                return 1
+            fi
+            echo "Truffle test succeded"
+            cd ..
+            return 0
+        }
+
+        run_tests_from_dir() {
+            DIR=$1
+            pytest --cov=manticore -n auto "tests/$DIR"
+            coverage xml
+        }
+
+        run_examples() {
+            pushd examples/linux
+            make
+            for example in $(make list); do
+                ./$example < /dev/zero > /dev/null
+            done
+            echo Built and ran Linux examples
+            popd
+
+            pushd examples/script
+            launch_examples
+            RESULT=$?
+            echo Ran example scripts
+            popd
+            return $RESULT
+        }
+
+        # Test type
+        case $TEST_TYPE in
+            ethereum_vm)
+                make_vmtests
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
+                run_tests_from_dir $TEST_TYPE
+                RV=$?
+
+          echo "Running truffle test"
+                install_truffle
+                run_truffle_tests
+                RV=$(($RV + $?))
+                ;;
+            wasm)
+                make_wasm_tests     ;&  # Fallthrough
+            native)                 ;&  # Fallthrough
+            ethereum)               ;&  # Fallthrough
+            ethereum_bench)         ;&  # Fallthrough
+            other)
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
+                run_tests_from_dir $TEST_TYPE
+                RV=$?
+                ;;
+
+            examples)
+                run_examples
+                ;;
+
+            all)
+                echo "Running all tests registered in travis_test.sh: examples, native, ethereum, ethereum_vm, other";
+
+                # Functions should return 0 on success and 1 on failure
+                RV=0
+                run_tests_from_dir native
+                RV=$(($RV + $?))
+                run_tests_from_dir ethereum
+                RV=$(($RV + $?))
+                make_vmtests; run_tests_from_dir ethereum_vm
+                RV=$(($RV + $?))
+                make_wasm_tests; run_tests_from_dir wasm
+                RV=$(($RV + $?))
+                run_tests_from_dir other
+                RV=$(($RV + $?))
+                run_examples
+                RV=$(($RV + $?))
+                ;;
+
+            *)
+                echo "Usage: $0 [examples|native|ethereum|ethereum_vm|other|all]"
+                exit 3;
+                ;;
+        esac
+    - name: Coverage Upload
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        yml: ./codecov.yml

@@ -146,8 +146,7 @@ case $1 in
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
         RV=$?
-
-	echo "Running truffle test"
+        echo "Running truffle test"
         install_truffle
         run_truffle_tests
         RV=$(($RV + $?))
