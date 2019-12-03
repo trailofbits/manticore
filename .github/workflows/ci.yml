@@ -27,7 +27,6 @@ jobs:
       run: |
         pip install -e .[lint]
         black --version
-        # not entirely sure what's going to happen here on master builds
         git diff --name-only $BASE_SHA..$HEAD_SHA | python scripts/pyfile_exists.py | xargs black --diff --check
         mypy --version
         mypy manticore
