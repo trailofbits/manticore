@@ -226,6 +226,13 @@ def parse_arguments():
         help="Do not generate testcases for invalid/throwing states when analysis finishes",
     )
 
+    eth_flags.add_argument(
+        "--quick-mode",
+        action="store_true",
+        help="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
+        "do not explore constant functions. Disable all detectors.",
+    )
+
     config_flags = parser.add_argument_group("Constants")
     config.add_config_vars_to_argparse(config_flags)
 

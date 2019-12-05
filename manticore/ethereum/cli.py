@@ -71,6 +71,14 @@ def choose_detectors(args):
 
 def ethereum_main(args, logger):
     m = ManticoreEVM(workspace_url=args.workspace)
+
+    if args.quick_mode:
+        args.avoid_constant = True
+        args.exclude_all = True
+        args.only_alive_testcases = True
+        consts_evm = config.get_group("evm")
+        consts_evm.oog = "ignore"
+
     with WithKeyboardInterruptAs(m.kill):
         m.register_plugin(KeepOnlyIfStorageChanges())
 

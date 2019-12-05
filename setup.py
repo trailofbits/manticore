@@ -16,16 +16,14 @@ def rtd_dependent_deps():
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc1"]
 
+lint_deps = ["black==19.3b0", "mypy==0.740"]
+
 # Development dependencies without keystone
-dev_noks = native_deps + [
-    "coverage",
-    "Sphinx",
-    "black==19.3b0",
-    "mypy==0.740",
-    "pytest==5.3.0",
-    "pytest-xdist==1.30.0",
-    "pytest-cov==2.8.1",
-]
+dev_noks = (
+    native_deps
+    + ["coverage", "Sphinx", "pytest==5.3.0", "pytest-xdist==1.30.0", "pytest-cov==2.8.1"]
+    + lint_deps
+)
 
 extra_require = {
     "native": native_deps,
@@ -33,6 +31,7 @@ extra_require = {
     "dev-noks": dev_noks,
     "dev": native_deps + dev_noks + ["keystone-engine"],
     "redis": ["redis"],
+    "lint": lint_deps,
 }
 
 

@@ -5,12 +5,11 @@
 <br />
 
 
-[![Build Status](https://travis-ci.com/trailofbits/manticore.svg?branch=master)](https://travis-ci.com/trailofbits/manticore)
+[![Build Status](https://img.shields.io/github/workflow/status/trailofbits/manticore/CI/master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
+[![Codecov](https://img.shields.io/codecov/c/github/trailofbits/manticore)](https://codecov.io/github/trailofbits/manticore)
 [![PyPI version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
-[![Maintainability](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/maintainability)](https://codeclimate.com/github/trailofbits/manticore/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/test_coverage)](https://codeclimate.com/github/trailofbits/manticore/test_coverage)
 
 Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
 
