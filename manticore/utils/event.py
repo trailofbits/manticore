@@ -20,7 +20,7 @@ class EventsGatherMetaclass(type):
 
         bases = inspect.getmro(parents[0])
 
-        if name is "Eventful":
+        if name == "Eventful":
             return eventful_sub
 
         subclasses = takewhile(lambda c: c is not Eventful, bases)
