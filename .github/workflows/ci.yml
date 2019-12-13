@@ -29,7 +29,7 @@ jobs:
         black --version
         git diff --name-only $BASE_SHA..$HEAD_SHA | python scripts/pyfile_exists.py | xargs black --diff --check
         mypy --version
-        mypy manticore
+        mypy
   tests:
     runs-on: ubuntu-latest
     strategy:
