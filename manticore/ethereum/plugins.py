@@ -218,3 +218,79 @@ class KeepOnlyIfStorageChanges(Plugin):
                 stream.write(
                     "State was removed from ready list because the last tx did not write to the storage"
                 )
+
+class CFGBuilder(Plugin):
+    '''
+    A CFG builder
+    This breaks and relax instruction semantics to explore potentially possible paths.
+    Can be used like this..
+        from manticore import ManticoreEVM
+        from manticore.ethereum.plugins import CFGBuilder
+
+        from manticore.utils import config
+        consts = config.get_group("smt")
+        consts.timeout = 120
+        consts = config.get_group("evm")
+        consts.oog = 'ignore'
+
+
+        cfg_plugin = CFGBuilder()
+        m = ManticoreEVM()
+        m.register_plugin(cfg_plugin)
+        caller = m.create_account()
+        contract = m.create_account(code=runtime_bytecode)
+
+        caller = m.make_symbolic_address()
+        value = m.make_symbolic_value(name='value')
+        calldata = m.make_symbolic_buffer(size=650)
+        m.transaction(caller=caller, address=contract, value=value, data=calldata)
+
+        cfg = cfg_plugin.get_cfg(contract)
+    '''
+
+    def get_cfg(self, contract=None):
+        #This retrieve the CFG saved in the global manticore context and
+        #filters it so the result only contain the interesting contract
+        #Todo cache and check it is not Manticore.at_running
+        cfg = {}
+        for state in  self.manticore.all_states:
+            prev = None
+            trace = state.context.get('CFG_TRACE', ())
+            for address, pc in trace:
+                if address != contract:
+                    continue
+                if prev is not None:
+                    dests = cfg.setdefault(prev,[])
+                    if pc not in dests:
+                        dests.append(pc)
+                prev = pc
+        return cfg
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        #This simply logs the trace locally in the current state
+        vm = state.platform.current_vm
+        current_instruction = (vm.address, vm.pc)
+        state.context.setdefault('CFG_TRACE',[]).append(current_instruction)
+        print (len(state.context['CFG_TRACE']))
+
+    def did_evm_execute_instruction_callback(self, state, instruction, *args, **kwargs):
+        #This should overwrite the real behaivor by a relaxed one spraying
+        #free symbols here and there. Need other corrections probably
+        world = state.platform
+        if instruction.name in ("CALLDATASIZE", "RETURNDATASIZE"):
+            world.current_vm.stack[-1] = state.new_symbolic_value(256)
+            state.constrain(Operators.ULT(world.current_vm.stack[-1], 100))
+        if instruction.name in ("SLOAD",):
+            world.current_vm.stack[-1] = state.new_symbolic_value(256)
+        if instruction.is_starttx:
+            world.current_vm.stack[-1] = state.new_symbolic_value(256)
+
+        if instruction.name in ("CALLDATACOPY", "RETURNDATACOPY"):
+            last_pc, last_gas, last_instruction, last_arguments, fee, allocated = world.current_vm._checkpoint_data
+            # TODO do something to provide symbolic input/output
+            # world.last_transaction._return_data = state.new_symbolic_buffer(320)
+
+        #We added a lot of fake symbolic input and the IF condition may be
+        # detached of the selected PC (aka wrong) so we do not know if we
+        # should check a JUMPDEST or not. Lets not.
+        world.current_vm._check_jumpdest = False
