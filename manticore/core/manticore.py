@@ -1039,6 +1039,10 @@ class ManticoreThreading(ManticoreBase):
         super().__init__(*args, **kwargs)
 
 
+def raise_signal():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
 class ManticoreMultiprocessing(ManticoreBase):
     _worker_type = WorkerProcess
 
@@ -1046,7 +1050,7 @@ class ManticoreMultiprocessing(ManticoreBase):
         # This is the global manager that will handle all shared memory access
         # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
         self._manager = SyncManager()
-        self._manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+        self._manager.start(raise_signal)
         # The main manticore lock. Acquire this for accessing shared objects
         # THINKME: we use the same lock to access states lists and shared contexts
         self._lock = self._manager.Condition()
