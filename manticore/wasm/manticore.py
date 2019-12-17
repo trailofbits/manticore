@@ -32,6 +32,8 @@ class ManticoreWASM(ManticoreBase):
         else:
             initial_state = path_or_state
 
+        self.exported_functions = initial_state._platform.module.get_funcnames()
+
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
         self.subscribe("will_terminate_state", self._terminate_state_callback)
@@ -68,6 +70,18 @@ class ManticoreWASM(ManticoreBase):
 
             context["time_ended"] = time_ended
             context["time_elapsed"] = time_elapsed
+
+    def __getattr__(self, item):
+        if item not in self.exported_functions:
+            raise AttributeError(f"Can't find a WASM function called {item}")
+
+        def f(argv_generator=None):
+            if argv_generator is not None:
+                self.invoke(item, argv_generator)
+            else:
+                self.invoke(item)
+
+        return f
 
     @ManticoreBase.at_not_running
     def invoke(self, name="main", argv_generator=lambda s: []):
@@ -191,7 +205,7 @@ class ManticoreWASM(ManticoreBase):
                 summary.write(f"{str(term)}\n\n")
 
 
-def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs):
+def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs) -> State:
     """
     Wraps _make_wasm_bin
 

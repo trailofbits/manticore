@@ -312,6 +312,9 @@ class Module:
         self.exports = state["exports"]
         self._raw = state["_raw"]
 
+    def get_funcnames(self) -> typing.List[Name]:
+        return [e.name for e in self.exports if isinstance(e.desc, FuncIdx)]
+
     @classmethod
     def load(cls, filename: str):
         """

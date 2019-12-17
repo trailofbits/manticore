@@ -40,7 +40,7 @@ def arg_gen(state):
 # might have multiple states waiting to begin execution, and we can conveniently map a
 # generator function over all the ready states and get access to their respective
 # constraint sets.
-m.invoke("collatz", arg_gen)
+m.collatz(arg_gen)
 
 # Run the collatz function
 m.run()
@@ -82,7 +82,7 @@ def getchar(state, _addr):
 m = ManticoreWASM("collatz.wasm", env={"getchar": getchar})
 
 # Invoke the main function, which will call getchar
-m.invoke("main")
+m.main()
 
 # Run the example
 m.run()
@@ -122,17 +122,13 @@ class CounterPlugin(Plugin):
         print(insn_sum, "instructions executed")
 
 
-def arg_gen(_state):
-    return [I32(1337)]
-
-
 m = ManticoreWASM("collatz.wasm")
 
 # Registering the plugin connects its callbacks to the correct events
 m.register_plugin(CounterPlugin())
 
 # Invoke `collatz(1337)`
-m.invoke("collatz", arg_gen)
+m.collatz(lambda s: [I32(1337)])
 
 # Run the collatz function
 m.run()
