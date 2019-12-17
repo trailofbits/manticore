@@ -593,6 +593,7 @@ class ModuleInstance(Eventful):
         "export_map" "executor",
         "_instruction_queue",
         "_block_depths",
+        "_state",
     ]
 
     _published_events = {"execute_instruction", "call_hostfunc", "exec_expression", "raise_trap"}
@@ -635,6 +636,7 @@ class ModuleInstance(Eventful):
         self.executor = Executor(constraints)
         self._instruction_queue = deque()
         self._block_depths = [0]
+        self._state = None
 
         super().__init__()
 
@@ -667,6 +669,7 @@ class ModuleInstance(Eventful):
         self.executor = state["executor"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
+        self._state = None
         super().__setstate__(state)
 
     def reset_internal(self):
@@ -900,7 +903,7 @@ class ModuleInstance(Eventful):
             local_vars.append(v)
         if isinstance(f, HostFunc):  # Call native function
             self._publish("will_call_hostfunc", f, local_vars)
-            res = list(f.hostcode(self.executor.constraints, *local_vars))
+            res = list(f.hostcode(self._state, *local_vars))
             self._publish("did_call_hostfunc", f, local_vars, res)
             logger.info("HostFunc returned: %s", res)
             assert len(res) == len(ty.result_types)
@@ -1040,7 +1043,7 @@ class ModuleInstance(Eventful):
         out.append(i)
         return out
 
-    def exec_instruction(self, store: Store, stack: "Stack") -> bool:
+    def exec_instruction(self, store: Store, stack: "Stack", current_state=None) -> bool:
         """
         The core instruction execution function. Pops an instruction from the queue, then dispatches it to the Executor
         if it's a numeric instruction, or executes it internally if it's a control-flow instruction.
@@ -1053,6 +1056,7 @@ class ModuleInstance(Eventful):
         """
         # Maps return types from instruction immediates into actual types
         ret_type_map = {-1: [I32], -2: [I64], -3: [F32], -4: [F64], -64: []}
+        self._state = current_state
         # Use the AtomicStack context manager to catch Concretization and roll back changes
         with AtomicStack(stack) as aStack:
             # print("Instructions:", self._instruction_queue)
