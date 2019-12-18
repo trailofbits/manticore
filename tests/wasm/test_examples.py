@@ -1,9 +1,13 @@
 import unittest
 from manticore.wasm import ManticoreWASM
+from manticore.wasm.cli import wasm_main
 from manticore.wasm.types import I32
 from manticore.core.plugin import Plugin
+from manticore.utils import config
 from pathlib import Path
+from collections import namedtuple
 import glob
+import time
 
 
 def getchar(state, addr):
@@ -87,6 +91,37 @@ class TestExamples(unittest.TestCase):
             results.append(val_list[0][0])
 
         self.assertEqual(sorted(results), [44])
+
+    def test_implicit_call(self):
+        m = ManticoreWASM(wasm_file)
+        counter_plugin = CallCounterPlugin()
+        m.register_plugin(counter_plugin)
+        m.collatz(lambda s: [I32(1337)])
+
+        counts = counter_plugin.context.get("counter")
+
+        self.assertEqual(counts["br_if"], 45)
+        self.assertEqual(counts["loop"], 44)
+        self.assertEqual(counts["i32.add"], 88)
+
+        results = []
+        for idx, val_list in enumerate(m.collect_returns()):
+            results.append(val_list[0][0])
+
+        self.assertEqual(sorted(results), [44])
+
+    def test_wasm_main(self):
+        """Doesn't check the output, just that the main function runs and doesn't error"""
+        start = time.time()
+        config.get_group("cli").add("profile", False)
+        wasm_main(
+            namedtuple("Args", ["argv", "workspace", "policy"])([wasm_file], "/tmp", "ALL"), None
+        )
+        self.assertGreaterEqual(
+            time.time() - start,
+            0.2,
+            "Running the Collatz example should probably take more than 0.2 seconds.",
+        )
 
 
 if __name__ == "__main__":
