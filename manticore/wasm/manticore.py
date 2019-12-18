@@ -76,6 +76,12 @@ class ManticoreWASM(ManticoreBase):
             raise AttributeError(f"Can't find a WASM function called {item}")
 
         def f(argv_generator=None):
+            with self.locked_context("wasm.saved_states", list) as saved_states:
+                while saved_states:
+                    state_id = saved_states.pop()
+                    self._terminated_states.remove(state_id)
+                    self._ready_states.append(state_id)
+
             if argv_generator is not None:
                 self.invoke(item, argv_generator)
             else:
