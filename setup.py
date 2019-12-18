@@ -1,5 +1,4 @@
 import os
-import sys
 from setuptools import setup, find_packages
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
@@ -13,16 +12,18 @@ def rtd_dependent_deps():
         return ["z3-solver"]
 
 
-version = sys.version_info
-dataclass_deps = ["dataclasses"] if version.major == 3 and version.minor < 7 else []
-
-
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc1"]
 
+lint_deps = ["black==19.3b0", "mypy==0.740"]
+
 # Development dependencies without keystone
-dev_noks = native_deps + ["coverage", "nose", "Sphinx"]
+dev_noks = (
+    native_deps
+    + ["coverage", "Sphinx", "pytest==5.3.0", "pytest-xdist==1.30.0", "pytest-cov==2.8.1"]
+    + lint_deps
+)
 
 extra_require = {
     "native": native_deps,
@@ -30,6 +31,7 @@ extra_require = {
     "dev-noks": dev_noks,
     "dev": native_deps + dev_noks + ["keystone-engine"],
     "redis": ["redis"],
+    "lint": lint_deps,
 }
 
 
@@ -38,7 +40,7 @@ setup(
     description="Manticore is a symbolic execution tool for analysis of binaries and smart contracts.",
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.1",
+    version="0.3.2.1",
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
@@ -52,10 +54,9 @@ setup(
         "ply",
         "crytic-compile>=0.1.1",
         "wasm",
-        "black",
+        "dataclasses; python_version < '3.7'",
     ]
-    + rtd_dependent_deps()
-    + dataclass_deps,
+    + rtd_dependent_deps(),
     extras_require=extra_require,
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
 )

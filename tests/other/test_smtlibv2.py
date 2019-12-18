@@ -939,6 +939,18 @@ class ExpressionTest(unittest.TestCase):
         self.solver._received_version = '(:version "4.5.0")'
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 
+    def test_check_solver_long_format(self):
+        self.solver._received_version = '(:version "4.8.6 - build hashcode 78ed71b8de7d")'
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=8, patch=6))
+
+    def test_check_solver_undefined(self):
+        self.solver._received_version = '(:version "78ed71b8de7d")'
+        self.assertTrue(
+            self.solver._solver_version()
+            == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
+        )
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+
 
 if __name__ == "__main__":
     unittest.main()

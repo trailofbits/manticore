@@ -3,7 +3,6 @@ import unittest
 from capstone import CS_MODE_ARM
 from functools import wraps
 from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
-from nose.tools import nottest
 
 from manticore.core.smtlib import ConstraintSet, Z3Solver
 from manticore.native.memory import SMemory64, Memory64
@@ -6537,7 +6536,6 @@ class Aarch64Instructions:
 
     # XXX: Uses 'reset'.
 
-    @nottest
     def _ld1_mlt_structs(self, vess, elem_size, elem_count):
         for reg_count in range(1, 5):
             for mode in ("no_offset", "post_indexed_reg", "post_indexed_imm"):
@@ -13871,7 +13869,6 @@ class Aarch64Instructions:
 
     # XXX: Uses 'reset'.
 
-    @nottest
     def _umov(self, mnem, dst, vess, elem_size, elem_count):
         for i in range(elem_count):
             val = 0x81828384858687889192939495969798

@@ -71,6 +71,14 @@ def choose_detectors(args):
 
 def ethereum_main(args, logger):
     m = ManticoreEVM(workspace_url=args.workspace)
+
+    if args.quick_mode:
+        args.avoid_constant = True
+        args.exclude_all = True
+        args.only_alive_testcases = True
+        consts_evm = config.get_group("evm")
+        consts_evm.oog = "ignore"
+
     with WithKeyboardInterruptAs(m.kill):
         m.register_plugin(KeepOnlyIfStorageChanges())
 
@@ -112,13 +120,9 @@ def ethereum_main(args, logger):
             )
 
         if not args.no_testcases:
-            m.finalize()
+            m.finalize(only_alive_states=args.only_alive_testcases)
         else:
             m.kill()
-
-        if consts.profile:
-            with open("profiling.bin", "wb") as f:
-                profiler.save_profiling_data(f)
 
         for detector in list(m.detectors):
             m.unregister_detector(detector)

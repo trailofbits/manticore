@@ -17,6 +17,7 @@ import queue
 import struct
 import itertools
 
+from manticore import set_verbosity
 from manticore.native import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
@@ -167,7 +168,7 @@ def concrete_run_get_trace(inp):
     m1 = Manticore.linux(prog, concrete_start=inp, workspace_url="mem:")
     t = ExtendedTracer()
     # r = TraceReceiver(t)
-    m1.verbosity(VERBOSITY)
+    set_verbosity(VERBOSITY)
     m1.register_plugin(t)
     # m1.register_plugin(r)
     m1.run()
@@ -184,7 +185,7 @@ def symbolic_run_get_cons(trace):
     # mem: has no concurrency support. Manticore should be 'Single' process
     m2 = Manticore.linux(prog, workspace_url="mem:")
     f = Follower(trace)
-    m2.verbosity(VERBOSITY)
+    set_verbosity(VERBOSITY)
     m2.register_plugin(f)
 
     def on_term_testcase(mm, state, err):
