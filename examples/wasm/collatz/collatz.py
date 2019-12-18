@@ -64,7 +64,7 @@ def getchar(state, _addr):
     number of arguments and returns the correct type. All _we_ care about is that it returns a symbolic
     value, for which Manticore will produce all possible outputs.
 
-    :param state: The current constraint set
+    :param state: The current state
     :param _addr: Memory index of the string that gets printed by getchar
     :return: A symbolic value of the interval [1, 7]
     """
