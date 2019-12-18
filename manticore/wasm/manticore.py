@@ -224,6 +224,7 @@ def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs) -> State:
     """
     if binary_path.endswith(".wasm"):
         return _make_wasm_bin(binary_path, env=env, sup_env=sup_env, **kwargs)
+    raise RuntimeError("ManticoreWASM only supports .wasm files at the moment")
 
 
 def _make_wasm_bin(program, env={}, sup_env={}, **kwargs) -> State:
