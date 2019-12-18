@@ -35,15 +35,12 @@ def arg_gen(state):
     return [arg]
 
 
-# Set up Manticore to run the collatz function with the given argument generator.
+# Tell Manticore to run the collatz function with the given argument generator.
 # We use an argument generator function instead of a list of arguments because Manticore
 # might have multiple states waiting to begin execution, and we can conveniently map a
 # generator function over all the ready states and get access to their respective
 # constraint sets.
 m.collatz(arg_gen)
-
-# Run the collatz function
-m.run()
 
 # Manually collect return values
 for idx, val_list in enumerate(m.collect_returns()):
@@ -83,9 +80,6 @@ m = ManticoreWASM("collatz.wasm", env={"getchar": getchar})
 
 # Invoke the main function, which will call getchar
 m.main()
-
-# Run the example
-m.run()
 
 # Manually collect return values
 for idx, val_list in enumerate(m.collect_returns()):
@@ -129,9 +123,6 @@ m.register_plugin(CounterPlugin())
 
 # Invoke `collatz(1337)`
 m.collatz(lambda s: [I32(1337)])
-
-# Run the collatz function
-m.run()
 
 # Manually collect return values
 for idx, val_list in enumerate(m.collect_returns()):

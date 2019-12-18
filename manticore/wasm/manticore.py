@@ -80,6 +80,7 @@ class ManticoreWASM(ManticoreBase):
                 self.invoke(item, argv_generator)
             else:
                 self.invoke(item)
+            self.run()
 
         return f
 
