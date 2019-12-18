@@ -479,12 +479,12 @@ class ArithmeticSimplifier(Visitor):
             return a
 
     def visit_BitVecITE(self, expression, *operands):
-        if isinstance(operands[0], Constant):
-            if operands[0].value:
-                result = operands[1]
+        if isinstance(expression.operands[0], Constant):
+            if expression.operands[0].value:
+                result = expression.operands[1]
             else:
-                result = operands[2]
-            new_taint = result._taint | operands[0].taint
+                result = expression.operands[2]
+            new_taint = result._taint | expression.operands[0].taint
             if result._taint != new_taint:
                 result = copy.copy(result)
                 result._taint = new_taint
