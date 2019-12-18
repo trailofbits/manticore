@@ -6,10 +6,10 @@ from pathlib import Path
 import glob
 
 
-def getchar(constraints, addr):
-    res = constraints.new_bitvec(32, "getchar_res")
-    constraints.add(res > 0)
-    constraints.add(res < 8)
+def getchar(state, addr):
+    res = state.new_symbolic_value(32, "getchar_res")
+    state.constrain(res > 0)
+    state.constrain(res < 8)
     return [res]
 
 
