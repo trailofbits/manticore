@@ -7,7 +7,7 @@ from manticore.utils import config
 from pathlib import Path
 from collections import namedtuple
 import glob
-import time
+import os
 
 
 def getchar(state, addr):
@@ -111,17 +111,14 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(sorted(results), [44])
 
     def test_wasm_main(self):
-        """Doesn't check the output, just that the main function runs and doesn't error"""
-        start = time.time()
         config.get_group("cli").add("profile", False)
-        wasm_main(
-            namedtuple("Args", ["argv", "workspace", "policy"])([wasm_file], "/tmp", "ALL"), None
+        m = wasm_main(
+            namedtuple("Args", ["argv", "workspace", "policy"])([wasm_file], "mcore_tmp", "ALL"),
+            None,
         )
-        self.assertGreaterEqual(
-            time.time() - start,
-            0.2,
-            "Running the Collatz example should probably take more than 0.2 seconds.",
-        )
+        with open(os.path.join(m.workspace, "test_00000000.status")) as output:
+            data = output.read()
+            self.assertIn("Execution returned 0", data)
 
 
 if __name__ == "__main__":
