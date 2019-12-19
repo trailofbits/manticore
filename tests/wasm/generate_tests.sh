@@ -26,7 +26,7 @@ ls *.wast | sed 's/\.wast//g' > modules.txt
 
 cores=$(python -c "import multiprocessing; print(max(multiprocessing.cpu_count() - 2, 1))")
 
-if [ $1 = "symbolic" ]; then
+if [ "$1" = "symbolic" ]; then
   CMD_STR="python3 json2smc.py _\$module/\$module.json | black --quiet --fast - > _\$module/test_symbolic_\$module.py"
 else
   CMD_STR="python3 json2mc.py _\$module/\$module.json | black --quiet --fast - > _\$module/test_\$module.py"

@@ -137,7 +137,7 @@ jobs:
         make_wasm_sym_tests(){
             DIR=`pwd`
             if  [ ! -f .wasm_sym_done ]; then
-                echo "Automaking WASM Tests" `pwd`
+                echo "Automaking Symbolic WASM Tests" `pwd`
                 cd ./tests/wasm
                 ./generate_tests.sh symbolic
                 touch .wasm_sym_done
@@ -239,9 +239,7 @@ jobs:
                 RV=$(($RV + $?))
                 make_vmtests; run_tests_from_dir ethereum_vm
                 RV=$(($RV + $?))
-                make_wasm_tests; run_tests_from_dir wasm
-                RV=$(($RV + $?))
-                make_wasm_sym_tests; run_tests_from_dir wasm
+                make_wasm_tests; make_wasm_sym_tests; run_tests_from_dir wasm
                 RV=$(($RV + $?))
                 run_tests_from_dir other
                 RV=$(($RV + $?))
