@@ -38,6 +38,7 @@ from .types import (
     MissingExportException,
     ConcretizeStack,
 )
+from .state import State
 from ..core.smtlib import BitVec, issymbolic
 from ..core.state import Concretize
 from ..utils.event import Eventful
@@ -627,6 +628,8 @@ class ModuleInstance(Eventful):
     _block_depths: typing.List[int]
     #: Prevents the user from invoking functions before instantiation
     instantiated: bool
+    #: Stickies the current state before each instruction
+    state: State
 
     def __init__(self, constraints=None):
         self.types = []

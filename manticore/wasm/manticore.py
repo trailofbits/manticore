@@ -32,7 +32,9 @@ class ManticoreWASM(ManticoreBase):
         else:
             initial_state = path_or_state
 
-        self.exported_functions = initial_state._platform.module.get_funcnames()
+        self.exported_functions = (
+            initial_state._platform.module.get_funcnames()
+        )  #: List of exported function names in the default module
 
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
@@ -72,6 +74,12 @@ class ManticoreWASM(ManticoreBase):
             context["time_elapsed"] = time_elapsed
 
     def __getattr__(self, item):
+        """
+        Allows users to invoke & run functions in the same style as ethereum smart contracts. So:
+        `m.invoke("collatz", arg_gen); m.run()` becomes `m.collatz(arg_gen)`.
+        :param item: Name of the function to call
+        :return: A function that, when called, will invoke and run the target function.
+        """
         if item not in self.exported_functions:
             raise AttributeError(f"Can't find a WASM function called {item}")
 
