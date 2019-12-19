@@ -110,6 +110,13 @@ class TestExamples(unittest.TestCase):
 
         self.assertEqual(sorted(results), [44])
 
+        m.collatz(lambda s: [I32(1338)])
+        results = []
+        for idx, val_list in enumerate(m.collect_returns()):
+            results.append(val_list[0][0])
+
+        self.assertEqual(sorted(results), [70])
+
     def test_wasm_main(self):
         config.get_group("cli").add("profile", False)
         m = wasm_main(
