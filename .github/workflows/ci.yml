@@ -49,7 +49,7 @@ jobs:
         sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
         sudo chmod +x /usr/bin/solc
         EXTRAS="dev-noks"
-        if [[ "$TEST_TYPE" != "ethereum"* ]]; then
+        if [[ "$TEST_TYPE" == "native" ]]; then
           EXTRAS="dev"
         fi
         pip install -e .[$EXTRAS]
@@ -212,7 +212,11 @@ jobs:
                 RV=$(($RV + $?))
                 ;;
             wasm)
-                make_wasm_tests     ;;
+                make_wasm_tests
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
+                run_tests_from_dir $TEST_TYPE
+                RV=$?
+                ;;
             wasm_sym)
                 make_wasm_sym_tests ;&
             native)                 ;&  # Fallthrough
