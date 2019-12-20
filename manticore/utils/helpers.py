@@ -86,7 +86,7 @@ class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
         logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unknown>")
         try:
-            f.write(pickle.dumps(state, 2))
+            f.write(pickle.dumps(state, protocol=pickle.HIGHEST_PROTOCOL))
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
