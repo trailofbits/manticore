@@ -35,15 +35,12 @@ def arg_gen(state):
     return [arg]
 
 
-# Set up Manticore to run the collatz function with the given argument generator.
+# Tell Manticore to run the collatz function with the given argument generator.
 # We use an argument generator function instead of a list of arguments because Manticore
 # might have multiple states waiting to begin execution, and we can conveniently map a
 # generator function over all the ready states and get access to their respective
 # constraint sets.
-m.invoke("collatz", arg_gen)
-
-# Run the collatz function
-m.run()
+m.collatz(arg_gen)
 
 # Manually collect return values
 for idx, val_list in enumerate(m.collect_returns()):
@@ -61,19 +58,19 @@ print(
 )
 
 
-def getchar(constraints, _addr):
+def getchar(state, _addr):
     """
     Stub implementation of the getchar function. All WASM cares about is that it accepts the right
     number of arguments and returns the correct type. All _we_ care about is that it returns a symbolic
     value, for which Manticore will produce all possible outputs.
 
-    :param constraints: The current constraint set
+    :param state: The current state
     :param _addr: Memory index of the string that gets printed by getchar
     :return: A symbolic value of the interval [1, 7]
     """
-    res = constraints.new_bitvec(32, "getchar_res")
-    constraints.add(res > 0)
-    constraints.add(res < 8)
+    res = state.new_symbolic_value(32, "getchar_res")
+    state.constrain(res > 0)
+    state.constrain(res < 8)
     return [res]
 
 
@@ -82,10 +79,7 @@ def getchar(constraints, _addr):
 m = ManticoreWASM("collatz.wasm", env={"getchar": getchar})
 
 # Invoke the main function, which will call getchar
-m.invoke("main")
-
-# Run the example
-m.run()
+m.main()
 
 # Manually collect return values
 for idx, val_list in enumerate(m.collect_returns()):
@@ -122,20 +116,13 @@ class CounterPlugin(Plugin):
         print(insn_sum, "instructions executed")
 
 
-def arg_gen(_state):
-    return [I32(1337)]
-
-
 m = ManticoreWASM("collatz.wasm")
 
 # Registering the plugin connects its callbacks to the correct events
 m.register_plugin(CounterPlugin())
 
 # Invoke `collatz(1337)`
-m.invoke("collatz", arg_gen)
-
-# Run the collatz function
-m.run()
+m.collatz(lambda s: [I32(1337)])
 
 # Manually collect return values
 for idx, val_list in enumerate(m.collect_returns()):

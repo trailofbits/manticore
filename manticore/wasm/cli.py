@@ -28,3 +28,5 @@ def wasm_main(args, _logger):
         m.run()
 
     m.finalize()
+
+    return m

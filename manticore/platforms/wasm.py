@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 
 
-def stub(arity, _constraints, *args):
+def stub(arity, _state, *args):
     """Default function used for hostfunc calls when a proper import wasn't provided """
     logger.info("Called stub function with args: %s", args)
-    return [0 for _ in range(arity)]
+    return [0 for _ in range(arity)]  # TODO: Return symbolic values
 
 
 class WASMWorld(Platform):
@@ -355,7 +355,7 @@ class WASMWorld(Platform):
             self.stack = Stack()
             raise e
 
-    def execute(self):
+    def execute(self, current_state):
         """
         Tells the underlying ModuleInstance to execute a single WASM instruction. Raises TerminateState if there are
         no more instructions to execute, or if the instruction raises a Trap.
@@ -363,7 +363,7 @@ class WASMWorld(Platform):
         if not self.instantiated:
             raise RuntimeError("Trying to execute before instantiation!")
         try:
-            if not self.instance.exec_instruction(self.store, self.stack):
+            if not self.instance.exec_instruction(self.store, self.stack, current_state):
                 raise TerminateState(f"Execution returned {self.stack.peek()}")
         except Trap as e:
             raise TerminateState(f"Execution raised Trap: {str(e)}")

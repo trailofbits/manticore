@@ -1267,7 +1267,7 @@ class Executor(Eventful):
                 "i" if size == 32 else "q", struct.pack("f" if size == 32 else "d", c)
             )[0]
         b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
-        self._publish("did_write_memory", ea, ea + len(b), b)
+        self._publish("will_write_memory", ea, ea + len(b), b)
         for idx, v in enumerate(b):
             mem.data[ea + idx] = v
         self._publish("did_write_memory", ea, b)
