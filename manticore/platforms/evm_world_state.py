@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Set
 from urllib.parse import ParseResult, urlparse
-from web3 import Web3
+from web3 import Web3  # type: ignore
 from ..exceptions import EthereumError
 
 
