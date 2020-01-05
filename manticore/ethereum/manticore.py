@@ -37,6 +37,7 @@ from .solidity import SolidityMetadata
 from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
+from ..platforms.evm_world_state import WorldState
 from ..utils import config, log
 from ..utils.deprecated import deprecated
 from ..utils.helpers import PickleSerializer
@@ -386,7 +387,9 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, workspace_url: str = None, policy: str = "random"):
+    def __init__(
+        self, world_state: WorldState = None, workspace_url: str = None, policy: str = "random"
+    ):
         """
         A Manticore EVM manager
         :param workspace_url: workspace folder name
@@ -395,7 +398,7 @@ class ManticoreEVM(ManticoreBase):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints)
+        world = evm.EVMWorld(constraints, world_state=world_state)
         initial_state = State(constraints, world)
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
         self.subscribe("will_terminate_state", self._terminate_state_callback)

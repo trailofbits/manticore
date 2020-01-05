@@ -7,6 +7,7 @@ import copy
 import inspect
 from functools import wraps
 from typing import List, Set, Tuple, Union
+from ..platforms.evm_world_state import *
 from ..platforms.platform import *
 from ..core.smtlib import (
     Z3Solver,
@@ -18,6 +19,7 @@ from ..core.smtlib import (
     ArrayVariable,
     ArrayStore,
     BitVecConstant,
+    ConstraintSet,
     translate_to_smtlib,
     to_constant,
     simplify,
@@ -933,9 +935,17 @@ class EVM(Eventful):
               ITEM2
         sp->  {empty}
         """
-        assert isinstance(value, int) or isinstance(value, BitVec) and value.size == 256
+        assert (
+            isinstance(value, bytes)
+            or isinstance(value, int)
+            or isinstance(value, BitVec)
+            and value.size == 256
+        )
         if len(self.stack) >= 1024:
             raise StackOverflow()
+
+        if isinstance(value, bytes):
+            value = int.from_bytes(value, "big")
 
         if isinstance(value, int):
             value = value & TT256M1
@@ -2255,38 +2265,38 @@ class EVMWorld(Platform):
     def __init__(
         self,
         constraints,
-        storage=None,
+        world_state: WorldState = None,
         blocknumber=None,
         timestamp=None,
-        difficulty=0,
-        gaslimit=0,
-        coinbase=0,
+        difficulty=None,
+        gaslimit=None,
+        coinbase=None,
         **kwargs,
     ):
         super().__init__(path="NOPATH", **kwargs)
-        self._world_state = {} if storage is None else storage
+        self._world_state = OverlayWorldState(
+            world_state if world_state is not None else DefaultWorldState()
+        )
         self._constraints = constraints
-        self._callstack: List[
-            Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, ArrayProxy], EVM]
-        ] = []
-        self._deleted_accounts: Set[int] = set()
+        self._callstack: List[Tuple[Transaction, List[EVMLog], WorldState, EVM]] = []
         self._logs: List[EVMLog] = list()
         self._pending_transaction = None
         self._transactions: List[Transaction] = list()
 
-        if blocknumber is None:
-            # assume initial byzantium block
-            blocknumber = 4370000
-        self._blocknumber = blocknumber
+        if blocknumber is not None:
+            self._world_state.set_blocknumber(blocknumber)
 
-        if timestamp is None:
-            # 1524785992; // Thu Apr 26 23:39:52 UTC 2018
-            timestamp = 1524785992
-        self._timestamp = timestamp
+        if timestamp is not None:
+            self._world_state.set_timestamp(timestamp)
 
-        self._difficulty = difficulty
-        self._gaslimit = gaslimit
-        self._coinbase = coinbase
+        if difficulty is not None:
+            self._world_state.set_difficulty(difficulty)
+
+        if gaslimit is not None:
+            self._world_state.set_gaslimit(gaslimit)
+
+        if coinbase is not None:
+            self._world_state.set_coinbase(coinbase)
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -2295,13 +2305,7 @@ class EVMWorld(Platform):
         state["world_state"] = self._world_state
         state["constraints"] = self._constraints
         state["callstack"] = self._callstack
-        state["deleted_accounts"] = self._deleted_accounts
         state["transactions"] = self._transactions
-        state["_blocknumber"] = self._blocknumber
-        state["_timestamp"] = self._timestamp
-        state["_difficulty"] = self._difficulty
-        state["_gaslimit"] = self._gaslimit
-        state["_coinbase"] = self._coinbase
         return state
 
     def __setstate__(self, state):
@@ -2309,17 +2313,11 @@ class EVMWorld(Platform):
         self._constraints = state["constraints"]
         self._pending_transaction = state["pending_transaction"]
         self._world_state = state["world_state"]
-        self._deleted_accounts = state["deleted_accounts"]
         self._logs = state["logs"]
         self._callstack = state["callstack"]
         self._transactions = state["transactions"]
-        self._blocknumber = state["_blocknumber"]
-        self._timestamp = state["_timestamp"]
-        self._difficulty = state["_difficulty"]
-        self._gaslimit = state["_gaslimit"]
-        self._coinbase = state["_coinbase"]
 
-        for _, _, _, _, vm in self._callstack:
+        for _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
 
     def try_simplify_to_constant(self, data):
@@ -2364,7 +2362,7 @@ class EVMWorld(Platform):
 
     def __getitem__(self, index):
         assert isinstance(index, int)
-        return self._world_state[index]
+        return self.accounts[index]
 
     def __contains__(self, key):
         assert not issymbolic(key), "Symbolic address not supported"
@@ -2421,36 +2419,26 @@ class EVMWorld(Platform):
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
 
         self._publish("will_open_transaction", tx)
-        self._callstack.append(
-            (tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm)
-        )
+        self._callstack.append((tx, self.logs, copy.copy(self._world_state), vm))
         self.forward_events_from(vm)
         self._publish("did_open_transaction", tx)
 
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish("will_close_transaction", self._callstack[-1][0])
-        tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
+        tx, logs, world_state, vm = self._callstack.pop()
         assert self.constraints == vm.constraints
         # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
         if rollback:
-            self._set_storage(vm.address, account_storage)
+            self._world_state = world_state
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
         else:
-            self._deleted_accounts = deleted_accounts
-
             # FIXME: BUG: a CREATE can be successful and still return an empty contract :shrug:
-            if not issymbolic(tx.caller) and (
-                tx.sort == "CREATE" or not self._world_state[tx.caller]["code"]
-            ):
+            if not issymbolic(tx.caller) and (tx.sort == "CREATE" or not self.get_code(tx.caller)):
                 # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
                 self.increase_nonce(tx.caller)
 
-        if tx.is_human:
-            for deleted_account in self._deleted_accounts:
-                if deleted_account in self._world_state:
-                    del self._world_state[deleted_account]
         tx.set_result(result, data)
         self._transactions.append(tx)
 
@@ -2497,7 +2485,7 @@ class EVMWorld(Platform):
     def current_vm(self):
         """current vm"""
         try:
-            _, _, _, _, vm = self._callstack[-1]
+            _, _, _, vm = self._callstack[-1]
             return vm
         except IndexError:
             return None
@@ -2506,7 +2494,7 @@ class EVMWorld(Platform):
     def current_transaction(self):
         """current tx"""
         try:
-            tx, _, _, _, _ = self._callstack[-1]
+            tx, _, _, _ = self._callstack[-1]
             if tx.result is not None:
                 # That tx finished. No current tx.
                 return None
@@ -2518,7 +2506,7 @@ class EVMWorld(Platform):
     def current_human_transaction(self):
         """Current ongoing human transaction"""
         try:
-            tx, _, _, _, _ = self._callstack[0]
+            tx, _, _, _ = self._callstack[0]
             if tx.result is not None:
                 # That tx finished. No current tx.
                 return None
@@ -2529,7 +2517,7 @@ class EVMWorld(Platform):
 
     @property
     def accounts(self):
-        return list(self._world_state.keys())
+        return list(self._world_state.accounts())
 
     @property
     def normal_accounts(self):
@@ -2547,133 +2535,99 @@ class EVMWorld(Platform):
                 accs.append(address)
         return accs
 
-    @property
-    def deleted_accounts(self):
-        return self._deleted_accounts
+    def delete_account(self, address: int):
+        self._world_state.delete_account(address)
 
-    def delete_account(self, address):
-        if address in self._world_state:
-            self._deleted_accounts.add(address)
-
-    def get_storage_data(self, storage_address, offset):
+    def get_storage_data(self, storage_address: int, offset: int) -> Any:
         """
         Read a value from a storage slot on the specified account
 
         :param storage_address: an account address
         :param offset: the storage slot to use.
-        :type offset: int or BitVec
+        :type offset: int
         :return: the value
         :rtype: int or BitVec
         """
-        value = self._world_state[storage_address]["storage"].get(offset, 0)
+        value = self._world_state.get_storage_data(storage_address, offset)
         return simplify(value)
 
-    def set_storage_data(self, storage_address, offset, value):
+    def set_storage_data(self, storage_address: int, offset: int, value: Any):
         """
         Writes a value to a storage slot in specified account
 
         :param storage_address: an account address
         :param offset: the storage slot to use.
-        :type offset: int or BitVec
+        :type offset: int
         :param value: the value to write
         :type value: int or BitVec
         """
-        self._world_state[storage_address]["storage"][offset] = value
+        self._world_state.set_storage_data(storage_address, offset, value)
 
-    def get_storage_items(self, address):
-        """
-        Gets all items in an account storage
-
-        :param address: account address
-        :return: all items in account storage. items are tuple of (index, value). value can be symbolic
-        :rtype: list[(storage_index, storage_value)]
-        """
-        storage = self._world_state[address]["storage"]
-        items = []
-        array = storage.array
-        while not isinstance(array, ArrayVariable):
-            items.append((array.index, array.value))
-            array = array.array
-        return items
-
-    def has_storage(self, address):
+    def has_storage(self, address: int) -> bool:
         """
         True if something has been written to the storage.
         Note that if a slot has been erased from the storage this function may
         lose any meaning.
         """
-        storage = self._world_state[address]["storage"]
-        array = storage.array
-        while not isinstance(array, ArrayVariable):
-            if isinstance(array, ArrayStore):
-                return True
-            array = array.array
-        return False
+        return len(self._world_state.get_storage(address)) > 0
 
-    def get_storage(self, address):
-        """
-        Gets the storage of an account
+    def _get_storage(self, constraints: ConstraintSet, address: int) -> Array:
+        """Private auxiliary function to retrieve the storage as an Array"""
+        array = constraints.new_array(
+            index_bits=256,
+            value_bits=256,
+            name=f"STORAGE_{address:x}",
+            avoid_collisions=True,
+            default=0,
+        )
+        storage: Dict[int, Any] = {}
+        try:
+            storage = self._world_state.get_storage(address)
+        except NotImplementedError:
+            pass
+        for key, value in storage.items():
+            array[key] = value
+        return array
 
-        :param address: account address
-        :return: account storage
-        :rtype: bytearray or ArrayProxy
-        """
-        return self._world_state[address]["storage"]
+    def _set_storage(self, address: int, storage: Dict[int, int]):
+        """Private auxiliary function to set the storage with a Dict[int, int]"""
+        for key, value in storage.items():
+            self._world_state.set_storage_data(address, key, value)
 
-    def _set_storage(self, address, storage):
-        """Private auxiliary function to replace the storage"""
-        self._world_state[address]["storage"] = storage
+    def get_nonce(self, address: int) -> Any:
+        return self._world_state.get_nonce(address)
 
-    def get_nonce(self, address):
-        if issymbolic(address):
-            raise ValueError(f"Cannot retrieve the nonce of symbolic address {address}")
-        elif address not in self._world_state:
-            # assume that the caller is a regular account, so initialize its nonce to zero
-            ret = 0
-        elif "nonce" not in self._world_state[address]:
-            if self._world_state[address]["code"]:
-                # this is a contract account, so set the nonce to 1 per EIP 161
-                ret = 1
-            else:
-                ret = 0
-        else:
-            ret = self._world_state[address]["nonce"]
-        return ret
+    def set_nonce(self, address: int, value: Any):
+        self._world_state.set_nonce(address, value)
 
-    def increase_nonce(self, address):
-        new_nonce = self.get_nonce(address) + 1
-        self._world_state[address]["nonce"] = new_nonce
+    def increase_nonce(self, address: int) -> Any:
+        new_nonce = self._world_state.get_nonce(address) + 1
+        self._world_state.set_nonce(address, new_nonce)
         return new_nonce
 
-    def set_balance(self, address, value):
-        self._world_state[int(address)]["balance"] = value
+    def set_balance(self, address: int, value: Any):
+        self._world_state.set_balance(address, value)
 
-    def get_balance(self, address):
-        if address not in self._world_state:
-            return 0
-        return self._world_state[address]["balance"]
+    def get_balance(self, address: int) -> Any:
+        return self._world_state.get_balance(address)
 
-    def add_to_balance(self, address, value):
-        assert address in self._world_state
-        self._world_state[address]["balance"] += value
+    def add_to_balance(self, address: int, value: Any):
+        new_balance = self._world_state.get_balance(address) + value
+        self.set_balance(address, new_balance)
+        return new_balance
 
-    def send_funds(self, sender, recipient, value):
-        self._world_state[sender]["balance"] -= value
-        self._world_state[recipient]["balance"] += value
+    def send_funds(self, sender: int, recipient: int, value: Any):
+        self.add_to_balance(sender, -value)
+        self.add_to_balance(recipient, value)
 
-    def get_code(self, address):
-        if address not in self._world_state:
-            return bytes()
-        return self._world_state[address]["code"]
+    def get_code(self, address: int) -> Any:
+        return self._world_state.get_code(address)
 
-    def set_code(self, address, data):
-        assert data is not None and isinstance(data, (bytes, Array))
-        if self._world_state[address]["code"]:
-            raise EVMException("Code already set")
-        self._world_state[address]["code"] = data
+    def set_code(self, address: int, data: bytes):
+        self._world_state.set_code(address, data)
 
-    def has_code(self, address):
-        return len(self._world_state[address]["code"]) > 0
+    def has_code(self, address: int) -> bool:
+        return len(self._world_state.get_code(address)) > 0
 
     def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
@@ -2689,19 +2643,19 @@ class EVMWorld(Platform):
         return 0
 
     def block_coinbase(self):
-        return self._coinbase
+        return self._world_state.get_coinbase()
 
     def block_timestamp(self):
-        return self._timestamp
+        return self._world_state.get_timestamp()
 
     def block_number(self):
-        return self._blocknumber
+        return self._world_state.get_blocknumber()
 
     def block_difficulty(self):
-        return self._difficulty
+        return self._world_state.get_difficulty()
 
     def block_gaslimit(self):
-        return self._gaslimit
+        return self._world_state.get_gaslimit()
 
     def block_hash(self, block_number=None, force_recent=True):
         """
@@ -2786,7 +2740,9 @@ class EVMWorld(Platform):
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
-    def create_account(self, address=None, balance=0, code=None, storage=None, nonce=None):
+    def create_account(
+        self, address=None, balance=0, code=None, storage: Dict[int, int] = None, nonce=None
+    ):
         """
         Low level account creation. No transaction is done.
 
@@ -2819,31 +2775,17 @@ class EVMWorld(Platform):
             # selfdestructed address, it can not be reused
             raise EthereumError("The account already exists")
 
-        if storage is None:
-            # Uninitialized values in a storage are 0 by spec
-            storage = self.constraints.new_array(
-                index_bits=256,
-                value_bits=256,
-                name=f"STORAGE_{address:x}",
-                avoid_collisions=True,
-                default=0,
-            )
-        else:
-            if isinstance(storage, ArrayProxy):
-                if storage.index_bits != 256 or storage.value_bits != 256:
-                    raise TypeError("An ArrayProxy 256bits -> 256bits is needed")
-            else:
-                if any((k < 0 or k >= 1 << 256 for k, v in storage.items())):
-                    raise TypeError(
-                        "Need a dict like object that maps 256 bits keys to 256 bits values"
-                    )
-            # Hopefully here we have a mapping from 256b to 256b
+        if nonce is not None:
+            self.set_nonce(address, nonce)
 
-        self._world_state[address] = {}
-        self._world_state[address]["nonce"] = nonce
-        self._world_state[address]["balance"] = balance
-        self._world_state[address]["storage"] = storage
-        self._world_state[address]["code"] = code
+        if balance is not None:
+            self.set_balance(address, balance)
+
+        if storage is not None:
+            self._set_storage(address, storage)
+
+        if code is not None:
+            self.set_code(address, code)
 
         # adds hash of new address
         data = binascii.unhexlify("{:064x}{:064x}".format(address, 0))
@@ -2996,10 +2938,6 @@ class EVMWorld(Platform):
                 f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
             )
 
-        if address not in self.accounts:
-            # Creating an unaccessible account
-            self.create_account(address=address)
-
         # Check depth
         failed = self.depth > 1024
 
@@ -3043,7 +2981,7 @@ class EVMWorld(Platform):
         stream.write("Message: %s\n" % message)
         stream.write("Last exception: %s\n" % state.context.get("last_exception", "None"))
 
-        if last_tx:
+        if last_tx and "evm.trace" in state.context:
             at_runtime = last_tx.sort != "CREATE"
             address, offset, at_init = state.context["evm.trace"][-1]
             assert last_tx.result is not None or at_runtime != at_init
@@ -3075,7 +3013,7 @@ class EVMWorld(Platform):
             balance = state.solve_one(balance)
             stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
-            storage = blockchain.get_storage(account_address)
+            storage = blockchain._get_storage(state.constraints, account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 
             all_used_indexes = []
@@ -3083,7 +3021,7 @@ class EVMWorld(Platform):
                 # make a free symbolic idex that could address any storage slot
                 index = temp_cs.new_bitvec(256)
                 # get the storage for account_address
-                storage = blockchain.get_storage(account_address)
+                storage = blockchain._get_storage(temp_cs, account_address)
                 # we are interested only in used slots
                 temp_cs.add(storage.get(index) != 0)
                 # Query the solver to get all storage indexes with used slots
