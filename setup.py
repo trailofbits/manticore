@@ -54,6 +54,7 @@ setup(
         "ply",
         "crytic-compile>=0.1.1",
         "wasm",
+        "web3",
         "dataclasses; python_version < '3.7'",
     ]
     + rtd_dependent_deps(),
