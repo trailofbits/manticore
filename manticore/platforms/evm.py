@@ -936,16 +936,12 @@ class EVM(Eventful):
         sp->  {empty}
         """
         assert (
-            isinstance(value, bytes)
-            or isinstance(value, int)
+            isinstance(value, int)
             or isinstance(value, BitVec)
             and value.size == 256
         )
         if len(self.stack) >= 1024:
             raise StackOverflow()
-
-        if isinstance(value, bytes):
-            value = int.from_bytes(value, "big")
 
         if isinstance(value, int):
             value = value & TT256M1
@@ -2538,30 +2534,30 @@ class EVMWorld(Platform):
     def delete_account(self, address: int):
         self._world_state.delete_account(address)
 
-    def get_storage_data(self, storage_address: int, offset: int) -> Any:
+    def get_storage_data(self, storage_address: int, offset: int) -> Union[int, BitVec]:
         """
         Read a value from a storage slot on the specified account
 
         :param storage_address: an account address
         :param offset: the storage slot to use.
-        :type offset: int
+        :type offset: int or BitVec
         :return: the value
         :rtype: int or BitVec
         """
         value = self._world_state.get_storage_data(storage_address, offset)
         return simplify(value)
 
-    def set_storage_data(self, storage_address: int, offset: int, value: Any):
+    def set_storage_data(self, storage_address: int, offset: Union[int, BitVec], value: Union[int, BitVec]):
         """
         Writes a value to a storage slot in specified account
 
         :param storage_address: an account address
         :param offset: the storage slot to use.
-        :type offset: int
+        :type offset: int or BitVec
         :param value: the value to write
         :type value: int or BitVec
         """
-        self._world_state.set_storage_data(storage_address, offset, value)
+        self._world_state.set_storage_data(self.constraints, storage_address, offset, value)
 
     def has_storage(self, address: int) -> bool:
         """
@@ -2569,61 +2565,59 @@ class EVMWorld(Platform):
         Note that if a slot has been erased from the storage this function may
         lose any meaning.
         """
-        return len(self._world_state.get_storage(address)) > 0
+        return self._world_state.has_storage(address)
 
-    def _get_storage(self, constraints: ConstraintSet, address: int) -> Array:
+    def _get_storage(self, constraints: ConstraintSet, address: int) -> Union[Dict[int, int], Array]:
         """Private auxiliary function to retrieve the storage as an Array"""
-        array = constraints.new_array(
-            index_bits=256,
-            value_bits=256,
-            name=f"STORAGE_{address:x}",
-            avoid_collisions=True,
-            default=0,
-        )
-        storage: Dict[int, Any] = {}
-        try:
-            storage = self._world_state.get_storage(address)
-        except NotImplementedError:
-            pass
-        for key, value in storage.items():
-            array[key] = value
-        return array
+        storage = self._world_state.get_storage(address)
+        if isinstance(storage, dict):
+            array = constraints.new_array(
+                index_bits=256,
+                value_bits=256,
+                name=f"STORAGE_DATA_{address:x}",
+                avoid_collisions=True,
+                default=0,
+            )
+            for key, value in storage.items():
+                array[key] = value
+            storage = array
+        return storage
 
     def _set_storage(self, address: int, storage: Dict[int, int]):
         """Private auxiliary function to set the storage with a Dict[int, int]"""
         for key, value in storage.items():
-            self._world_state.set_storage_data(address, key, value)
+            self._world_state.set_storage_data(self.constraints, address, key, value)
 
-    def get_nonce(self, address: int) -> Any:
+    def get_nonce(self, address: int) -> Union[int, BitVec]:
         return self._world_state.get_nonce(address)
 
-    def set_nonce(self, address: int, value: Any):
+    def set_nonce(self, address: int, value: Union[int, BitVec]):
         self._world_state.set_nonce(address, value)
 
-    def increase_nonce(self, address: int) -> Any:
+    def increase_nonce(self, address: int) -> Union[int, BitVec]:
         new_nonce = self._world_state.get_nonce(address) + 1
         self._world_state.set_nonce(address, new_nonce)
         return new_nonce
 
-    def set_balance(self, address: int, value: Any):
+    def set_balance(self, address: int, value: Union[int, BitVec]):
         self._world_state.set_balance(address, value)
 
-    def get_balance(self, address: int) -> Any:
+    def get_balance(self, address: int) -> Union[int, BitVec]:
         return self._world_state.get_balance(address)
 
-    def add_to_balance(self, address: int, value: Any):
+    def add_to_balance(self, address: int, value: Union[int, BitVec]):
         new_balance = self._world_state.get_balance(address) + value
         self.set_balance(address, new_balance)
         return new_balance
 
-    def send_funds(self, sender: int, recipient: int, value: Any):
+    def send_funds(self, sender: int, recipient: int, value: Union[int, BitVec]):
         self.add_to_balance(sender, -value)
         self.add_to_balance(recipient, value)
 
-    def get_code(self, address: int) -> Any:
+    def get_code(self, address: int) -> Union[bytes, Array]:
         return self._world_state.get_code(address)
 
-    def set_code(self, address: int, data: bytes):
+    def set_code(self, address: int, data: Union[bytes, Array]):
         self._world_state.set_code(address, data)
 
     def has_code(self, address: int) -> bool:
