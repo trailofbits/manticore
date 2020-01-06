@@ -35,7 +35,7 @@ class WorldState:
         pass
 
     @abstractmethod
-    def get_storage_data(self, address: int, offset: int) -> Union[int, BitVec]:
+    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
         pass
 
     @abstractmethod
@@ -82,7 +82,7 @@ class DefaultWorldState(WorldState):
     def get_storage(self, address: int) -> Dict[int, int]:
         return {}
 
-    def get_storage_data(self, address: int, offset: int) -> int:
+    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> int:
         return 0
 
     def get_code(self, address: int) -> bytes:
@@ -176,7 +176,9 @@ class RemoteWorldState(WorldState):
     def get_storage(self, address) -> Dict[int, int]:
         raise NotImplementedError
 
-    def get_storage_data(self, address: int, offset: int) -> int:
+    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> int:
+        if not isinstance(offset, int):
+            raise NotImplementedError
         return int.from_bytes(self._web3().eth.getStorageAt(_web3_address(address), offset), "big")
 
     def get_code(self, address: int) -> bytes:
@@ -299,8 +301,12 @@ class OverlayWorldState(WorldState):
             data = storage.data
         return data
 
-    def get_storage_data(self, address: int, offset: int) -> Union[int, BitVec]:
-        value = self._underlay.get_storage_data(address, offset)
+    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
+        value: Union[int, BitVec] = 0
+        try:
+            value = self._underlay.get_storage_data(address, offset)
+        except NotImplementedError:
+            pass
         storage = self._storage.get(address)
         if storage is not None:
             if not isinstance(value, BitVec):
