@@ -2530,7 +2530,9 @@ class EVMWorld(Platform):
     def delete_account(self, address: int):
         self._world_state.delete_account(address)
 
-    def get_storage_data(self, storage_address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
+    def get_storage_data(
+        self, storage_address: int, offset: Union[int, BitVec]
+    ) -> Union[int, BitVec]:
         """
         Read a value from a storage slot on the specified account
 
