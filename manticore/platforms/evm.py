@@ -935,11 +935,7 @@ class EVM(Eventful):
               ITEM2
         sp->  {empty}
         """
-        assert (
-            isinstance(value, int)
-            or isinstance(value, BitVec)
-            and value.size == 256
-        )
+        assert isinstance(value, int) or isinstance(value, BitVec) and value.size == 256
         if len(self.stack) >= 1024:
             raise StackOverflow()
 
@@ -2547,7 +2543,9 @@ class EVMWorld(Platform):
         value = self._world_state.get_storage_data(storage_address, offset)
         return simplify(value)
 
-    def set_storage_data(self, storage_address: int, offset: Union[int, BitVec], value: Union[int, BitVec]):
+    def set_storage_data(
+        self, storage_address: int, offset: Union[int, BitVec], value: Union[int, BitVec]
+    ):
         """
         Writes a value to a storage slot in specified account
 
@@ -2567,7 +2565,9 @@ class EVMWorld(Platform):
         """
         return self._world_state.has_storage(address)
 
-    def _get_storage(self, constraints: ConstraintSet, address: int) -> Union[Dict[int, int], Array]:
+    def _get_storage(
+        self, constraints: ConstraintSet, address: int
+    ) -> Union[Dict[int, int], Array]:
         """Private auxiliary function to retrieve the storage as an Array"""
         storage = self._world_state.get_storage(address)
         if isinstance(storage, dict):
