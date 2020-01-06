@@ -5,14 +5,7 @@ from typing import Dict, Optional, Set, Union
 from urllib.parse import ParseResult, urlparse
 from web3 import Web3  # type: ignore
 from ..exceptions import EthereumError
-from ..core.smtlib import (
-    Array,
-    BitVec,
-    BitVecConstant,
-    BitVecITE,
-    BitVecZeroExtend,
-    ConstraintSet,
-)
+from ..core.smtlib import Array, BitVec, BitVecConstant, BitVecITE, BitVecZeroExtend, ConstraintSet
 
 logger = logging.getLogger(__name__)
 
@@ -378,9 +371,7 @@ class OverlayWorldState(WorldState):
             storage = Storage(constraints, address)
             self._storage[address] = storage
         if storage.constraints != constraints:
-            logger.warning(
-                "constraints have changed: %s != %s", storage.constraints, constraints,
-            )
+            logger.warning("constraints have changed: %s != %s", storage.constraints, constraints)
         storage.map[offset] = 1
         storage.data[offset] = value
         storage.dirty = True
