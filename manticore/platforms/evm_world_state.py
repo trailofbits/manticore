@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Dict, Optional, Set, Union
 from urllib.parse import ParseResult, urlparse
-from web3 import Web3  # type: ignore
+from web3 import Web3
 from ..exceptions import EthereumError
 from ..core.smtlib import Array, BitVec, BitVecConstant, BitVecITE, BitVecZeroExtend, ConstraintSet
 
