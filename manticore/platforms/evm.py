@@ -2270,7 +2270,10 @@ class EVMWorld(Platform):
             world_state if world_state is not None else DefaultWorldState()
         )
         self._constraints = constraints
-        self._callstack: List[Tuple[Transaction, List[EVMLog], WorldState, EVM]] = []
+        self._callstack: List[
+            Tuple[Transaction, List[EVMLog], Set[int], Optional[Storage], EVM]
+        ] = []
+        self._deleted_accounts: Set[int] = set()
         self._logs: List[EVMLog] = list()
         self._pending_transaction = None
         self._transactions: List[Transaction] = list()
@@ -2297,6 +2300,7 @@ class EVMWorld(Platform):
         state["world_state"] = self._world_state
         state["constraints"] = self._constraints
         state["callstack"] = self._callstack
+        state["deleted_accounts"] = self._deleted_accounts
         state["transactions"] = self._transactions
         return state
 
@@ -2305,11 +2309,12 @@ class EVMWorld(Platform):
         self._constraints = state["constraints"]
         self._pending_transaction = state["pending_transaction"]
         self._world_state = state["world_state"]
+        self._deleted_accounts = state["deleted_accounts"]
         self._logs = state["logs"]
         self._callstack = state["callstack"]
         self._transactions = state["transactions"]
 
-        for _, _, _, vm in self._callstack:
+        for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
 
     def try_simplify_to_constant(self, data):
@@ -2411,26 +2416,39 @@ class EVMWorld(Platform):
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
 
         self._publish("will_open_transaction", tx)
-        self._callstack.append((tx, self.logs, copy.copy(self._world_state), vm))
+        self._callstack.append(
+            (
+                tx,
+                self.logs,
+                self.deleted_accounts,
+                copy.copy(self._world_state.get_storage(address)),
+                vm,
+            )
+        )
         self.forward_events_from(vm)
         self._publish("did_open_transaction", tx)
 
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish("will_close_transaction", self._callstack[-1][0])
-        tx, logs, world_state, vm = self._callstack.pop()
+        tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
         assert self.constraints == vm.constraints
         # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
         if rollback:
-            self._world_state = world_state
+            self._world_state.set_storage(vm.address, account_storage)
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
         else:
+            self._deleted_accounts = deleted_accounts
+
             # FIXME: BUG: a CREATE can be successful and still return an empty contract :shrug:
             if not issymbolic(tx.caller) and (tx.sort == "CREATE" or not self.get_code(tx.caller)):
                 # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
                 self.increase_nonce(tx.caller)
 
+        if tx.is_human:
+            for deleted_account in self._deleted_accounts:
+                self._world_state.delete_account(deleted_account)
         tx.set_result(result, data)
         self._transactions.append(tx)
 
@@ -2477,7 +2495,7 @@ class EVMWorld(Platform):
     def current_vm(self):
         """current vm"""
         try:
-            _, _, _, vm = self._callstack[-1]
+            _, _, _, _, vm = self._callstack[-1]
             return vm
         except IndexError:
             return None
@@ -2486,7 +2504,7 @@ class EVMWorld(Platform):
     def current_transaction(self):
         """current tx"""
         try:
-            tx, _, _, _ = self._callstack[-1]
+            tx, _, _, _, _ = self._callstack[-1]
             if tx.result is not None:
                 # That tx finished. No current tx.
                 return None
@@ -2498,7 +2516,7 @@ class EVMWorld(Platform):
     def current_human_transaction(self):
         """Current ongoing human transaction"""
         try:
-            tx, _, _, _ = self._callstack[0]
+            tx, _, _, _, _ = self._callstack[0]
             if tx.result is not None:
                 # That tx finished. No current tx.
                 return None
@@ -2527,8 +2545,13 @@ class EVMWorld(Platform):
                 accs.append(address)
         return accs
 
-    def delete_account(self, address: int):
-        self._world_state.delete_account(address)
+    @property
+    def deleted_accounts(self):
+        return self._deleted_accounts
+
+    def delete_account(self, address):
+        if address in self._world_state:
+            self._deleted_accounts.add(address)
 
     def get_storage_data(
         self, storage_address: int, offset: Union[int, BitVec]
@@ -2567,28 +2590,18 @@ class EVMWorld(Platform):
         """
         return self._world_state.has_storage(address)
 
-    def _get_storage(
-        self, constraints: ConstraintSet, address: int
-    ) -> Union[Dict[int, int], Array]:
-        """Private auxiliary function to retrieve the storage as an Array"""
+    def _get_storage(self, constraints: ConstraintSet, address: int) -> Storage:
+        """Private auxiliary function to retrieve the storage"""
         storage = self._world_state.get_storage(address)
-        if isinstance(storage, dict):
-            array = constraints.new_array(
-                index_bits=256,
-                value_bits=256,
-                name=f"STORAGE_DATA_{address:x}",
-                avoid_collisions=True,
-                default=0,
-            )
-            for key, value in storage.items():
-                array[key] = value
-            storage = array
+        if storage is None:
+            storage = Storage(constraints, address)
         return storage
 
-    def _set_storage(self, address: int, storage: Dict[int, int]):
-        """Private auxiliary function to set the storage with a Dict[int, int]"""
-        for key, value in storage.items():
-            self._world_state.set_storage_data(self.constraints, address, key, value)
+    def _set_storage(self, address: int, storage: Union[Dict[int, int], Optional[Storage]]):
+        """Private auxiliary function to replace the storage"""
+        if isinstance(storage, dict):
+            storage = Storage.fromDict(self.constraints, address, storage)
+        self._world_state.set_storage(address, storage)
 
     def get_nonce(self, address: int) -> Union[int, BitVec]:
         return self._world_state.get_nonce(address)
@@ -2971,7 +2984,7 @@ class EVMWorld(Platform):
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged
 
-        blockchain = state.platform
+        blockchain: EVMWorld = state.platform
         last_tx = blockchain.last_transaction
 
         stream.write("Message: %s\n" % message)
@@ -3010,7 +3023,7 @@ class EVMWorld(Platform):
             stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain._get_storage(state.constraints, account_address)
-            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
+            stream.write("Storage: %s\n" % translate_to_smtlib(storage.data, use_bindings=False))
 
             all_used_indexes = []
             with state.constraints as temp_cs:
@@ -3019,14 +3032,14 @@ class EVMWorld(Platform):
                 # get the storage for account_address
                 storage = blockchain._get_storage(temp_cs, account_address)
                 # we are interested only in used slots
-                temp_cs.add(storage.get(index) != 0)
+                temp_cs.add(storage.map.get(index) != 0)
                 # Query the solver to get all storage indexes with used slots
                 all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
 
             if all_used_indexes:
                 stream.write("Storage:\n")
                 for i in all_used_indexes:
-                    value = storage.get(i)
+                    value = storage.data.get(i)
                     is_storage_symbolic = issymbolic(value)
                     stream.write(
                         "storage[%x] = %x %s\n"

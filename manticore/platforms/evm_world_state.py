@@ -10,6 +10,42 @@ from ..core.smtlib import Array, BitVec, BitVecConstant, BitVecITE, BitVecZeroEx
 logger = logging.getLogger(__name__)
 
 
+# sam.moelius: map records which (symbolic) offsets have been written to.  data holds the values
+# written.
+
+
+class Storage:
+    def __init__(self, constraints: ConstraintSet, address: int):
+        self.constraints = constraints
+        self.map = constraints.new_array(
+            index_bits=256,
+            value_bits=1,
+            name=f"STORAGE_MAP_{address:x}",
+            avoid_collisions=True,
+            default=0,
+        )
+        self.data = constraints.new_array(
+            index_bits=256,
+            value_bits=256,
+            name=f"STORAGE_DATA_{address:x}",
+            avoid_collisions=True,
+            default=0,
+        )
+        self.dirty = False
+
+    def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]):
+        self.map[offset] = 1
+        self.data[offset] = value
+        self.dirty = True
+
+    @staticmethod
+    def fromDict(constraints: ConstraintSet, address: int, items: Dict[int, int]) -> "Storage":
+        storage = Storage(constraints, address)
+        for key, value in items.items():
+            storage.set(key, value)
+        return storage
+
+
 ####################################################################################################
 
 
@@ -31,7 +67,7 @@ class WorldState:
         pass
 
     @abstractmethod
-    def get_storage(self, address: int) -> Union[Dict[int, int], Array]:
+    def get_storage(self, address: int) -> Optional[Storage]:
         pass
 
     @abstractmethod
@@ -79,8 +115,8 @@ class DefaultWorldState(WorldState):
     def has_storage(self, address: int) -> bool:
         return False
 
-    def get_storage(self, address: int) -> Dict[int, int]:
-        return {}
+    def get_storage(self, address: int) -> Optional[Storage]:
+        raise NotImplementedError
 
     def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> int:
         return 0
@@ -173,7 +209,7 @@ class RemoteWorldState(WorldState):
     def has_storage(self, address: int) -> bool:
         raise NotImplementedError
 
-    def get_storage(self, address) -> Dict[int, int]:
+    def get_storage(self, address) -> Storage:
         raise NotImplementedError
 
     def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> int:
@@ -203,30 +239,6 @@ class RemoteWorldState(WorldState):
 ####################################################################################################
 
 
-# sam.moelius: map records which (symbolic) offsets have been written to.  data holds the values
-# written.
-
-
-class Storage:
-    def __init__(self, constraints: ConstraintSet, address: int):
-        self.constraints = constraints
-        self.map = constraints.new_array(
-            index_bits=256,
-            value_bits=1,
-            name=f"STORAGE_MAP_{address:x}",
-            avoid_collisions=True,
-            default=0,
-        )
-        self.data = constraints.new_array(
-            index_bits=256,
-            value_bits=256,
-            name=f"STORAGE_DATA_{address:x}",
-            avoid_collisions=True,
-            default=0,
-        )
-        self.dirty = False
-
-
 # sam.moelius: If we decide to cache results returned from a RemoteWorldState, then they should NOT
 # be cached within an overlay.  The reason is that this could affect the results of subsequent
 # operations.  Consider a call to get_storage_data followed by a call to has_storage.  If nothing
@@ -241,7 +253,7 @@ class OverlayWorldState(WorldState):
         self._deleted_accounts: Set[int] = set()
         self._nonce: Dict[int, Union[int, BitVec]] = {}
         self._balance: Dict[int, Union[int, BitVec]] = {}
-        self._storage: Dict[int, Optional[Storage]] = {}
+        self._storage: Dict[int, Storage] = {}
         self._code: Dict[int, Union[bytes, Array]] = {}
         self._blocknumber: Optional[Union[int, BitVec]] = None
         self._timestamp: Optional[Union[int, BitVec]] = None
@@ -261,7 +273,7 @@ class OverlayWorldState(WorldState):
             | self._balance.keys()
             | self._storage.keys()
             | self._code.keys()
-        ) - self._deleted_accounts
+        )
 
     def get_nonce(self, address: int) -> Union[int, BitVec]:
         if address in self._nonce:
@@ -286,27 +298,27 @@ class OverlayWorldState(WorldState):
             dirty = dirty or storage.dirty
         return dirty
 
-    def get_storage(self, address: int) -> Union[Dict[int, int], Array]:
-        data: Union[Dict[int, int], Array] = {}
+    def get_storage(self, address: int) -> Optional[Storage]:
+        storage = None
         try:
-            data = self._underlay.get_storage(address)
+            storage = self._underlay.get_storage(address)
         except NotImplementedError:
             pass
-        storage = self._storage.get(address)
+        # sam.moelius: Rightfully, the overlay's storage should be merged into the underlay's
+        # storage.  However, this is not currently implemented.
         if storage is not None:
-            # sam.moelius: Merging the overlay's storage into the underlay's storage is not
-            # currently implemented.
-            if not isinstance(data, dict) or len(data) > 0:
-                raise NotImplementedError
-            data = storage.data
-        return data
+            raise NotImplementedError
+        storage = self._storage.get(address)
+        return storage
 
     def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
         value: Union[int, BitVec] = 0
-        try:
-            value = self._underlay.get_storage_data(address, offset)
-        except NotImplementedError:
-            pass
+        # sam.moelius: If the account was ever deleted, then ignore the underlay's storage.
+        if not address in self._deleted_accounts:
+            try:
+                value = self._underlay.get_storage_data(address, offset)
+            except NotImplementedError:
+                pass
         storage = self._storage.get(address)
         if storage is not None:
             if not isinstance(value, BitVec):
@@ -350,20 +362,24 @@ class OverlayWorldState(WorldState):
         else:
             return self._underlay.get_coinbase()
 
-    def delete_account(self, address: int):
+    def delete_account(self, constraints: ConstraintSet, address: int):
         self._nonce[address] = DefaultWorldState().get_nonce(address)
         self._balance[address] = DefaultWorldState().get_balance(address)
-        self._storage[address] = None
+        self._storage[address] = Storage(constraints, address)
         self._code[address] = DefaultWorldState().get_code(address)
         self._deleted_accounts.add(address)
 
     def set_nonce(self, address: int, value: Union[int, BitVec]):
         self._nonce[address] = value
-        self._deleted_accounts.discard(address)
 
     def set_balance(self, address: int, value: Union[int, BitVec]):
         self._balance[address] = value
-        self._deleted_accounts.discard(address)
+
+    def set_storage(self, address: int, storage: Optional[Storage]):
+        if storage is None:
+            del self._storage[address]
+        else:
+            self._storage[address] = storage
 
     def set_storage_data(
         self,
@@ -381,7 +397,6 @@ class OverlayWorldState(WorldState):
         storage.map[offset] = 1
         storage.data[offset] = value
         storage.dirty = True
-        self._deleted_accounts.discard(address)
 
     def set_code(self, address: int, code: Union[bytes, Array]):
         self._code[address] = code
