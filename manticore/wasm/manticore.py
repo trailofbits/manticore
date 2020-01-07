@@ -32,6 +32,10 @@ class ManticoreWASM(ManticoreBase):
         else:
             initial_state = path_or_state
 
+        self.exported_functions = (
+            initial_state._platform.module.get_funcnames()
+        )  #: List of exported function names in the default module
+
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
         self.subscribe("will_terminate_state", self._terminate_state_callback)
@@ -68,6 +72,31 @@ class ManticoreWASM(ManticoreBase):
 
             context["time_ended"] = time_ended
             context["time_elapsed"] = time_elapsed
+
+    def __getattr__(self, item):
+        """
+        Allows users to invoke & run functions in the same style as ethereum smart contracts. So:
+        `m.invoke("collatz", arg_gen); m.run()` becomes `m.collatz(arg_gen)`.
+        :param item: Name of the function to call
+        :return: A function that, when called, will invoke and run the target function.
+        """
+        if item not in self.exported_functions:
+            raise AttributeError(f"Can't find a WASM function called {item}")
+
+        def f(argv_generator=None):
+            with self.locked_context("wasm.saved_states", list) as saved_states:
+                while saved_states:
+                    state_id = saved_states.pop()
+                    self._terminated_states.remove(state_id)
+                    self._ready_states.append(state_id)
+
+            if argv_generator is not None:
+                self.invoke(item, argv_generator)
+            else:
+                self.invoke(item)
+            self.run()
+
+        return f
 
     @ManticoreBase.at_not_running
     def invoke(self, name="main", argv_generator=lambda s: []):
@@ -191,7 +220,7 @@ class ManticoreWASM(ManticoreBase):
                 summary.write(f"{str(term)}\n\n")
 
 
-def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs):
+def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs) -> State:
     """
     Wraps _make_wasm_bin
 
@@ -203,6 +232,7 @@ def _make_initial_state(binary_path, env={}, sup_env={}, **kwargs):
     """
     if binary_path.endswith(".wasm"):
         return _make_wasm_bin(binary_path, env=env, sup_env=sup_env, **kwargs)
+    raise RuntimeError("ManticoreWASM only supports .wasm files at the moment")
 
 
 def _make_wasm_bin(program, env={}, sup_env={}, **kwargs) -> State:
