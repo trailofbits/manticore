@@ -377,7 +377,7 @@ class OverlayWorldState(WorldState):
 
     def set_storage(self, address: int, storage: Optional[Storage]):
         if storage is None:
-            del self._storage[address]
+            self._storage.pop(address, None)
         else:
             self._storage[address] = storage
 
