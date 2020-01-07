@@ -60,9 +60,15 @@ consts.add(
     description="If True enables to run workers over the network UNIMPLEMENTED",
 )
 consts.add("procs", default=10, description="Number of parallel processes to spawn")
+
+proc_type = MProcessingType.threading
+if sys.platform != "linux":
+    logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
+    proc_type = MProcessingType.threading
+
 consts.add(
     "mprocessing",
-    default=MProcessingType.multiprocessing,
+    default=proc_type,
     description="single: No multiprocessing at all. Single process.\n threading: use threads\n multiprocessing: use forked processes",
 )
 consts.add(
