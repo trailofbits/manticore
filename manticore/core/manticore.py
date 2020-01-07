@@ -60,9 +60,15 @@ consts.add(
     description="If True enables to run workers over the network UNIMPLEMENTED",
 )
 consts.add("procs", default=10, description="Number of parallel processes to spawn")
+
+proc_type = MProcessingType.multiprocessing
+if sys.platform != "linux":
+    logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
+    proc_type = MProcessingType.threading
+
 consts.add(
     "mprocessing",
-    default=MProcessingType.multiprocessing,
+    default=proc_type,
     description="single: No multiprocessing at all. Single process.\n threading: use threads\n multiprocessing: use forked processes",
 )
 consts.add(
@@ -1039,6 +1045,10 @@ class ManticoreThreading(ManticoreBase):
         super().__init__(*args, **kwargs)
 
 
+def raise_signal():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
 class ManticoreMultiprocessing(ManticoreBase):
     _worker_type = WorkerProcess
 
@@ -1046,7 +1056,7 @@ class ManticoreMultiprocessing(ManticoreBase):
         # This is the global manager that will handle all shared memory access
         # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
         self._manager = SyncManager()
-        self._manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+        self._manager.start(raise_signal)
         # The main manticore lock. Acquire this for accessing shared objects
         # THINKME: we use the same lock to access states lists and shared contexts
         self._lock = self._manager.Condition()

@@ -15,6 +15,7 @@ from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.state import Concretize
 from manticore.native.memory import *
 from manticore.utils import config
+from manticore.utils.helpers import pickle_dumps
 from manticore import issymbolic
 
 solver = Z3Solver.instance()
@@ -1320,7 +1321,7 @@ class MemoryTest(unittest.TestCase):
 
         self.assertItemsEqual(mem[x : x + 4], b"defg")
         self.assertItemsEqual(mem[addr : addr + 4], b"defg")
-        mem, x = pickle.loads(pickle.dumps((mem, x)))
+        mem, x = pickle.loads(pickle_dumps((mem, x)))
         self.assertItemsEqual(mem[x : x + 4], b"defg")
         self.assertItemsEqual(mem[addr : addr + 4], b"defg")
 
@@ -1513,7 +1514,7 @@ class MemoryTest(unittest.TestCase):
     def test_pickle_mmap_anon(self):
         m = AnonMap(0x10000000, 0x3000, "rwx")
         m[0x10001000] = "A"
-        s = BytesIO(pickle.dumps(m))
+        s = BytesIO(pickle_dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], b"A")
 
@@ -1524,7 +1525,7 @@ class MemoryTest(unittest.TestCase):
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, "rwx", rwx_file.name)
         m[0x10000000] = "Y"
-        s = BytesIO(pickle.dumps(m))
+        s = BytesIO(pickle_dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], b"X")
         self.assertEqual(m[0x10000000], b"Y")
@@ -1532,7 +1533,7 @@ class MemoryTest(unittest.TestCase):
     def test_pickle_mmap_anon_cow(self):
         m = AnonMap(0x10000000, 0x3000, "rwx", "X" * 0x1000 + "Y" * 0x1000 + "Z" * 0x1000)
         m = COWMap(m)
-        s = BytesIO(pickle.dumps(m))
+        s = BytesIO(pickle_dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], b"Y")
         self.assertEqual(m.start, 0x10000000)
@@ -1541,7 +1542,7 @@ class MemoryTest(unittest.TestCase):
     def test_pickle_mmap_anon_cow_offset(self):
         m = AnonMap(0x10000000, 0x3000, "rwx", "X" * 0x1000 + "Y" * 0x1000 + "Z" * 0x1000)
         m = COWMap(m, offset=0x1000, size=0x1000)
-        s = BytesIO(pickle.dumps(m))
+        s = BytesIO(pickle_dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], b"Y")
         self.assertEqual(m.start, 0x10001000)
@@ -1554,7 +1555,7 @@ class MemoryTest(unittest.TestCase):
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, "rwx", rwx_file.name)
         m = COWMap(m)
-        s = BytesIO(pickle.dumps(m))
+        s = BytesIO(pickle_dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], b"Y")
         self.assertEqual(m.start, 0x10000000)
@@ -1567,7 +1568,7 @@ class MemoryTest(unittest.TestCase):
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, "rwx", rwx_file.name)
         m = COWMap(m, size=0x1000, offset=0x1000)
-        s = BytesIO(pickle.dumps(m))
+        s = BytesIO(pickle_dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], b"Y")
         self.assertEqual(m.start, 0x10001000)
@@ -1599,7 +1600,7 @@ class MemoryTest(unittest.TestCase):
 
         # save it
 
-        s = BytesIO(pickle.dumps(mem))
+        s = BytesIO(pickle_dumps(mem))
 
         # load it
         mem1 = pickle.load(s)
@@ -1693,7 +1694,7 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(len(head), 0x3000 - 1)
         self.assertEqual(len(tail), 1)
 
-        m = pickle.loads(pickle.dumps(m))
+        m = pickle.loads(pickle_dumps(m))
         self.assertItemsEqual(m[0x10000000:0x10000003], b"YZ\x00")
 
     def test_mmap_file_extra(self):
@@ -1707,7 +1708,7 @@ class MemoryTest(unittest.TestCase):
         m[0x100027F0:0x10002810] = "Y" * 0x20
         self.assertItemsEqual(m[0x10000000:0x10003000], b"X" * 0x27F0 + b"Y" * 0x20 + bytes(0x7F0))
 
-        m = pickle.loads(pickle.dumps(m))
+        m = pickle.loads(pickle_dumps(m))
         self.assertItemsEqual(
             m[0x10000000:0x10003000], b"X" * 0x27F0 + b"Y" * 0x20 + b"\x00" * 0x7F0
         )
