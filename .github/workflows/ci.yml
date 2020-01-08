@@ -206,7 +206,7 @@ jobs:
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
 
-          echo "Running truffle test"
+                echo "Running truffle test"
                 install_truffle
                 run_truffle_tests
                 RV=$(($RV + $?))
