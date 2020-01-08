@@ -39,7 +39,7 @@ class Storage:
         self.dirty = True
 
     @staticmethod
-    def fromDict(constraints: ConstraintSet, address: int, items: Dict[int, int]) -> "Storage":
+    def from_dict(constraints: ConstraintSet, address: int, items: Dict[int, int]) -> "Storage":
         storage = Storage(constraints, address)
         for key, value in items.items():
             storage.set(key, value)

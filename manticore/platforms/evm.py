@@ -2599,7 +2599,7 @@ class EVMWorld(Platform):
     def _set_storage(self, address: int, storage: Union[Dict[int, int], Optional[Storage]]):
         """Private auxiliary function to replace the storage"""
         if isinstance(storage, dict):
-            storage = Storage.fromDict(self.constraints, address, storage)
+            storage = Storage.from_dict(self.constraints, address, storage)
         self._world_state.set_storage(address, storage)
 
     def get_nonce(self, address: int) -> Union[int, BitVec]:
