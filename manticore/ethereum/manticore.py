@@ -1,8 +1,3 @@
-from typeguard.importhook import install_import_hook
-
-install_import_hook("manticore.platforms.evm")
-install_import_hook("manticore.platforms.evm_world_state")
-
 import copy
 import itertools
 import binascii
