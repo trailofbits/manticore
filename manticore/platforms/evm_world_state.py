@@ -314,7 +314,7 @@ class OverlayWorldState(WorldState):
     def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
         value: Union[int, BitVec] = 0
         # sam.moelius: If the account was ever deleted, then ignore the underlay's storage.
-        if not address in self._deleted_accounts:
+        if address not in self._deleted_accounts:
             try:
                 value = self._underlay.get_storage_data(address, offset)
             except NotImplementedError:
