@@ -2448,7 +2448,7 @@ class EVMWorld(Platform):
 
         if tx.is_human:
             for deleted_account in self._deleted_accounts:
-                self._world_state.delete_account(deleted_account)
+                self._world_state.delete_account(self.constraints, deleted_account)
         tx.set_result(result, data)
         self._transactions.append(tx)
 
