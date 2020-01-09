@@ -1,6 +1,7 @@
 import binascii
 import unittest
 from contextlib import contextmanager
+from io import StringIO
 from pathlib import Path
 
 import os
@@ -30,6 +31,7 @@ from manticore.ethereum import (
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
+from manticore.platforms.evm_world_state import *
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 
@@ -1305,6 +1307,62 @@ class EthTests(unittest.TestCase):
         self.assertListEqual(sorted(results), ["STOP"] * 2 + ["TXERROR"])
 
 
+class EthWorldStateTests(unittest.TestCase):
+    class CustomWorldState(WorldState):
+        pass
+
+    def test_custom_world_state(self):
+        world_state = EthWorldStateTests.CustomWorldState()
+        m = ManticoreEVM(world_state=world_state)
+        self.assertIsInstance(m.world._world_state, OverlayWorldState)
+        # sam.moelius: You cannot use assertEqual because the world may be have been deserialized.
+        self.assertIsInstance(m.world._world_state._underlay, EthWorldStateTests.CustomWorldState)
+
+    def test_init_blocknumber(self):
+        constraints = ConstraintSet()
+        self.assertEqual(evm.EVMWorld(constraints).block_number(), 4370000)
+        self.assertEqual(evm.EVMWorld(constraints, blocknumber=4370001).block_number(), 4370001)
+
+    def test_init_timestamp(self):
+        constraints = ConstraintSet()
+        self.assertEqual(evm.EVMWorld(constraints).block_timestamp(), 1524785992)
+        self.assertEqual(
+            evm.EVMWorld(constraints, timestamp=1524785993).block_timestamp(), 1524785993
+        )
+
+    def test_init_difficulty(self):
+        constraints = ConstraintSet()
+        self.assertEqual(evm.EVMWorld(constraints).block_difficulty(), 0)
+        self.assertEqual(evm.EVMWorld(constraints, difficulty=1).block_difficulty(), 1)
+
+    def test_init_gaslimit(self):
+        constraints = ConstraintSet()
+        self.assertEqual(evm.EVMWorld(constraints).block_gaslimit(), 0)
+        self.assertEqual(evm.EVMWorld(constraints, gaslimit=1).block_gaslimit(), 1)
+
+    def test_init_coinbase(self):
+        constraints = ConstraintSet()
+        self.assertEqual(evm.EVMWorld(constraints).block_coinbase(), 0)
+        self.assertEqual(
+            evm.EVMWorld(
+                constraints, coinbase=0x111111111111111111111111111111111111111
+            ).block_coinbase(),
+            0x111111111111111111111111111111111111111,
+        )
+
+    def test_dump(self):
+        m = ManticoreEVM()
+        address = int(m.create_account())
+        self.assertEqual(len([x for x in m.ready_states]), 1)
+        for state in m.ready_states:
+            xx = state.constraints.new_bitvec(256, name="x")
+            state.constraints.add(xx == 0x20)
+            m.world.set_storage_data(address, xx, 1)
+            output = StringIO()
+            m.world.dump(output, state, m, "")
+        self.assertIn("storage[20] = 1", output.getvalue())
+
+
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)
@@ -1671,6 +1729,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         world.create_account(
             address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
         )
+        self.assertIn(0x111111111111111111111111111111111111111, world)
+        self.assertTrue(world.has_code(0x111111111111111111111111111111111111111))
         world.create_account(address=0x222222222222222222222222222222222222222)
         world.transaction(
             0x111111111111111111111111111111111111111,
@@ -1683,6 +1743,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         except TerminateState as e:
             result = str(e)
         self.assertEqual(result, "SELFDESTRUCT")
+        self.assertFalse(world.has_code(0x111111111111111111111111111111111111111))
 
 
 class EthPluginTests(unittest.TestCase):
