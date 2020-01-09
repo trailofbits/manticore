@@ -3038,8 +3038,10 @@ class EVMWorld(Platform):
             if all_used_indexes:
                 stream.write("Storage:\n")
                 for i in all_used_indexes:
-                    value = storage.data.get(i)
-                    is_storage_symbolic = issymbolic(value)
+                    value = simplify(storage.data.get(i))
+                    is_storage_symbolic = issymbolic(value) and not isinstance(
+                        value, BitVecConstant
+                    )
                     stream.write(
                         "storage[%x] = %x %s\n"
                         % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic))
