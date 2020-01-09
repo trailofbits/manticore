@@ -394,9 +394,7 @@ class OverlayWorldState(WorldState):
             self._storage[address] = storage
         if storage.constraints != constraints:
             logger.warning("constraints have changed: %s != %s", storage.constraints, constraints)
-        storage.map[offset] = 1
-        storage.data[offset] = value
-        storage.dirty = True
+        storage.set(offset, value)
 
     def set_code(self, address: int, code: Union[bytes, Array]):
         self._code[address] = code
