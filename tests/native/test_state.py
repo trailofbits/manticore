@@ -9,6 +9,7 @@ from manticore.native import Manticore
 from manticore.native.plugins import Merger
 from manticore.core.plugin import Plugin
 from manticore.utils import config
+from manticore.utils.helpers import pickle_dumps
 
 
 class FakeMemory:
@@ -165,7 +166,7 @@ class StateTest(unittest.TestCase):
         constraints = ConstraintSet()
         initial_state = State(constraints, FakePlatform())
         initial_state.context["step"] = 10
-        initial_file = pickle.dumps(initial_state)
+        initial_file = pickle_dumps(initial_state)
         with initial_state as new_state:
             self.assertEqual(initial_state.context["step"], 10)
             self.assertEqual(new_state.context["step"], 10)
@@ -174,7 +175,7 @@ class StateTest(unittest.TestCase):
 
             self.assertEqual(initial_state.context["step"], 10)
             self.assertEqual(new_state.context["step"], 20)
-            new_file = pickle.dumps(new_state)
+            new_file = pickle_dumps(new_state)
 
             with new_state as new_new_state:
                 self.assertEqual(initial_state.context["step"], 10)
@@ -187,7 +188,7 @@ class StateTest(unittest.TestCase):
                 self.assertEqual(new_state.context["step"], 20)
                 self.assertEqual(new_new_state.context["step"], 30)
 
-                new_new_file = pickle.dumps(new_new_state)
+                new_new_file = pickle_dumps(new_new_state)
 
                 self.assertEqual(initial_state.context["step"], 10)
                 self.assertEqual(new_state.context["step"], 20)
@@ -218,7 +219,7 @@ class StateTest(unittest.TestCase):
         constraints = ConstraintSet()
         initial_state = State(constraints, FakePlatform())
         initial_state.context["step"] = 10
-        initial_file = pickle.dumps(initial_state)
+        initial_file = pickle_dumps(initial_state)
         with initial_state as new_state:
             self.assertEqual(initial_state.context["step"], 10)
             self.assertEqual(new_state.context["step"], 10)
@@ -227,7 +228,7 @@ class StateTest(unittest.TestCase):
 
             self.assertEqual(initial_state.context["step"], 10)
             self.assertEqual(new_state.context["step"], 20)
-            new_file = pickle.dumps(new_state)
+            new_file = pickle_dumps(new_state)
 
             with new_state as new_new_state:
                 self.assertEqual(initial_state.context["step"], 10)
@@ -240,7 +241,7 @@ class StateTest(unittest.TestCase):
                 self.assertEqual(new_state.context["step"], 20)
                 self.assertEqual(new_new_state.context["step"], 30)
 
-                new_new_file = pickle.dumps(new_new_state)
+                new_new_file = pickle_dumps(new_new_state)
 
                 self.assertEqual(initial_state.context["step"], 10)
                 self.assertEqual(new_state.context["step"], 20)

@@ -1,5 +1,4 @@
 import errno
-import pickle
 import unittest
 from binascii import hexlify
 
@@ -12,6 +11,7 @@ from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.smtlib import BitVecVariable, issymbolic
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
+from manticore.utils.helpers import pickle_dumps
 
 
 class LinuxTest(unittest.TestCase):
@@ -311,7 +311,7 @@ class LinuxTest(unittest.TestCase):
         filename = platform.current.push_bytes("/bin/true\x00")
         fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
         platform.sys_close(fd)
-        pickle.dumps(platform)
+        pickle_dumps(platform)
 
     def test_thumb_mode_entrypoint(self):
         # thumb_mode_entrypoint is a binary with only one instruction

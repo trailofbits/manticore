@@ -1655,12 +1655,34 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             100000000000000000000000 - 10,
         )
 
-        # checl delegated call storage was not touch
+        # check delegated call storage was not touch
         self.assertFalse(world.has_storage(0x111111111111111111111111111111111111111))
         self.assertEqual(world.get_storage_data(0x111111111111111111111111111111111111111, 0), 0)
         self.assertEqual(world.get_storage_data(0x111111111111111111111111111111111111111, 1), 0)
         self.assertEqual(world.get_storage_data(0x111111111111111111111111111111111111111, 2), 0)
         self.assertFalse(world.has_storage(0x333333333333333333333333333333333333333))
+
+    def test_gas_check(self):
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints)
+        asm_acc = """  PUSH1 0x0
+                       SELFDESTRUCT
+                  """
+        world.create_account(
+            address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
+        )
+        world.create_account(address=0x222222222222222222222222222222222222222)
+        world.transaction(
+            0x111111111111111111111111111111111111111,
+            caller=0x222222222222222222222222222222222222222,
+            gas=5003,
+        )
+        try:
+            while True:
+                world.execute()
+        except TerminateState as e:
+            result = str(e)
+        self.assertEqual(result, "SELFDESTRUCT")
 
 
 class EthPluginTests(unittest.TestCase):

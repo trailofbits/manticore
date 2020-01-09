@@ -66,6 +66,28 @@ class ManticoreTest(unittest.TestCase):
 
         self.assertEqual(self.m.context["x"], 1)
 
+    def test_add_hook_after(self):
+        def tmp(state):
+            pass
+
+        entry = 0x00400E40
+        self.m.add_hook(entry, tmp, after=True)
+        assert tmp in self.m._after_hooks[entry]
+
+    def test_hook_after_dec(self):
+        entry = 0x00400E40
+
+        @self.m.hook(entry, after=True)
+        def tmp(state):
+            # Make sure we've executed the instruction at entry and we're at
+            # the next one (but before it executes).
+            assert state.cpu.PC == 0x00400E42
+            self.m.kill()
+
+        self.m.run()
+
+        assert tmp in self.m._after_hooks[entry]
+
     def test_init_hook(self):
         self.m.context["x"] = 0
 

@@ -993,7 +993,7 @@ class EVM(Eventful):
             # gas is faithfully accounted and ogg checked at instruction/BB level.
             if consts.oog == "pedantic" or self.instruction.is_terminator:
                 # explore both options / fork
-                constraint = simplify(Operators.UGT(self._gas, fee))
+                constraint = simplify(Operators.UGE(self._gas, fee))
 
                 # FIXME if gas can be both enough and insufficient this will
                 #  reenter here and generate redundant queries
