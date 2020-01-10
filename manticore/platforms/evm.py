@@ -3056,7 +3056,7 @@ class EVMWorld(Platform):
                 runtime_trace = set(
                     (
                         pc
-                        for contract, pc, at_init in state.context["evm.trace"]
+                        for contract, pc, at_init in state.context.get("evm.trace", [])
                         if address == contract and not at_init
                     )
                 )
