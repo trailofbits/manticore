@@ -31,7 +31,7 @@ from manticore.ethereum import (
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
-from manticore.platforms.evm_world_state import *
+from manticore.platforms.evm_world_state import OverlayWorldState, WorldState
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 
