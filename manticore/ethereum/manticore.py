@@ -993,6 +993,7 @@ class ManticoreEVM(ManticoreBase):
         tx_limit=None,
         tx_use_coverage=True,
         tx_send_ether=True,
+        contract_account: int = None,
         tx_account="attacker",
         tx_preconstrain=False,
         args=None,
@@ -1000,16 +1001,18 @@ class ManticoreEVM(ManticoreBase):
     ):
         owner_account = self.create_account(balance=1000, name="owner")
         attacker_account = self.create_account(balance=1000, name="attacker")
-        # Pretty print
-        logger.info("Starting symbolic create contract")
 
-        contract_account = self.solidity_create_contract(
-            solidity_filename,
-            contract_name=contract_name,
-            owner=owner_account,
-            args=args,
-            compile_args=compile_args,
-        )
+        if contract_account is None:
+            # Pretty print
+            logger.info("Starting symbolic create contract")
+
+            contract_account = self.solidity_create_contract(
+                solidity_filename,
+                contract_name=contract_name,
+                owner=owner_account,
+                args=args,
+                compile_args=compile_args,
+            )
 
         if tx_account == "attacker":
             tx_account = [attacker_account]

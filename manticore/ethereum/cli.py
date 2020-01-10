@@ -17,6 +17,7 @@ from .detectors import (
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
 from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIfStorageChanges
+from ..platforms.evm_world_state import RemoteWorldState
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config
 
@@ -70,7 +71,11 @@ def choose_detectors(args):
 
 
 def ethereum_main(args, logger):
-    m = ManticoreEVM(workspace_url=args.workspace)
+    world_state = None
+    if args.url is not None:
+        world_state = RemoteWorldState(args.url)
+
+    m = ManticoreEVM(workspace_url=args.workspace, world_state=world_state)
 
     if args.quick_mode:
         args.avoid_constant = True
@@ -114,6 +119,7 @@ def ethereum_main(args, logger):
                 tx_limit=args.txlimit,
                 tx_use_coverage=not args.txnocoverage,
                 tx_send_ether=not args.txnoether,
+                contract_account=int(args.txvictim, base=0),
                 tx_account=args.txaccount,
                 tx_preconstrain=args.txpreconstrain,
                 compile_args=vars(args),  # FIXME

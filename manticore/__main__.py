@@ -162,6 +162,8 @@ def parse_arguments():
         "--txnoether", action="store_true", help="Do not attempt to send ether to contract"
     )
 
+    eth_flags.add_argument("--txvictim", type=str, help="Address of a deployed contract to attack")
+
     eth_flags.add_argument(
         "--txaccount",
         type=str,
@@ -178,6 +180,13 @@ def parse_arguments():
 
     eth_flags.add_argument(
         "--contract", type=str, help="Contract name to analyze in case of multiple contracts"
+    )
+
+    eth_flags.add_argument(
+        "--rpc",
+        type=str,
+        dest="url",
+        help="Url of an Ethereum node to connect to. Must be of the form 'IP:PORT'",
     )
 
     eth_detectors = parser.add_argument_group("Ethereum detectors")
