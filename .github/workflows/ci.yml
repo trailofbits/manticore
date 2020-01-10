@@ -155,7 +155,7 @@ jobs:
         }
 
         run_truffle_tests(){
-            mkdir truffle_tests
+            mkdir -p truffle_tests
             cd truffle_tests
             truffle unbox metacoin
             ADDITIONAL_ARGS=""
@@ -172,8 +172,11 @@ jobs:
             # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
             # see https://github.com/trailofbits/manticore/issues/1166
             # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
-            if [ "$(ls output/*tx -l | wc -l)" != "13" ]; then
-                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 13"
+            N="$(ls output/*tx -l | wc -l)"
+            rm -rf output
+            if [ "$N" != "13" ]; then
+                echo "Truffle test failed: $N != 13"
+                cd ..
                 return 1
             fi
             echo "Truffle test succeded"
@@ -207,7 +210,7 @@ jobs:
         # Test type
         case $TEST_TYPE in
             ethereum_truffle)
-                echo "Running truffle test"
+                echo "Running truffle tests"
                 install_node_packages
                 run_truffle_tests
                 RV=$?
