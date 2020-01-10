@@ -178,6 +178,9 @@ class RemoteWorldState(WorldState):
         self._url = url
 
     def _web3(self) -> Web3:
+        # sam.moelius: Force WebsocketProvider.__init__ to call _get_threaded_loop.  The existing
+        # "threaded loop" could be leftover from a fork, in which case it will not work.
+        Web3.WebsocketProvider._loop = None
         web3 = Web3(Web3.WebsocketProvider("ws://" + self._url))
         blocknumber = web3.eth.blockNumber
         endpoint = _endpoints.get(self._url)
