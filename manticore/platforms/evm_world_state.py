@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 class Storage:
     def __init__(self, constraints: ConstraintSet, address: int):
         self.constraints = constraints
+        self.warned = False
         self.map = constraints.new_array(
             index_bits=256,
             value_bits=1,
@@ -393,7 +394,9 @@ class OverlayWorldState(WorldState):
             storage = Storage(constraints, address)
             self._storage[address] = storage
         if storage.constraints != constraints:
-            logger.warning("constraints have changed: %s != %s", storage.constraints, constraints)
+            if not storage.warned:
+                logger.warning("Constraints have changed")
+                storage.warned = True
         storage.set(offset, value)
 
     def set_code(self, address: int, code: Union[bytes, Array]):
