@@ -113,13 +113,17 @@ def ethereum_main(args, logger):
         logger.info("Beginning analysis")
 
         with m.kill_timeout():
+            contract_account = None
+            if args.txvictim is not None:
+                contract_account = int(args.txvictim, base=0)
+
             m.multi_tx_analysis(
                 args.argv[0],
                 contract_name=args.contract,
                 tx_limit=args.txlimit,
                 tx_use_coverage=not args.txnocoverage,
                 tx_send_ether=not args.txnoether,
-                contract_account=int(args.txvictim, base=0),
+                contract_account=contract_account,
                 tx_account=args.txaccount,
                 tx_preconstrain=args.txpreconstrain,
                 compile_args=vars(args),  # FIXME
