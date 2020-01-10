@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        type: ["examples", "ethereum", "ethereum_bench", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
+        type: ["examples", "ethereum", "ethereum_bench", "ethereum_truffle", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
@@ -206,17 +206,19 @@ jobs:
 
         # Test type
         case $TEST_TYPE in
+            ethereum_truffle)
+                echo "Running truffle test"
+                install_node_packages
+                run_truffle_tests
+                RV=$?
+                run_truffle_tests deploy
+                RV=$(($RV + $?))
+                ;;
             ethereum_vm)
                 make_vmtests
                 echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
-
-                echo "Running truffle test"
-                install_node_packages
-                run_truffle_tests
-                run_truffle_tests deploy
-                RV=$(($RV + $?))
                 ;;
             wasm)
                 make_wasm_tests
@@ -247,6 +249,8 @@ jobs:
                 run_tests_from_dir native
                 RV=$(($RV + $?))
                 run_tests_from_dir ethereum
+                RV=$(($RV + $?))
+                run_tests_from_dir ethereum_truffle
                 RV=$(($RV + $?))
                 make_vmtests; run_tests_from_dir ethereum_vm
                 RV=$(($RV + $?))
