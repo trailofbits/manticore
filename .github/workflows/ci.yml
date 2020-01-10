@@ -155,9 +155,6 @@ jobs:
         }
 
         run_truffle_tests(){
-            mkdir -p truffle_tests
-            cd truffle_tests
-            truffle unbox metacoin
             ADDITIONAL_ARGS=""
             if [ "$1" = "deploy" ]; then
                 ganache-cli -p 7545 -i 5777 &
@@ -176,11 +173,9 @@ jobs:
             rm -rf output
             if [ "$N" != "13" ]; then
                 echo "Truffle test failed: $N != 13"
-                cd ..
                 return 1
             fi
             echo "Truffle test succeded"
-            cd ..
             return 0
         }
 
@@ -212,10 +207,11 @@ jobs:
             ethereum_truffle)
                 echo "Running truffle tests"
                 install_node_packages
-                run_truffle_tests
+                mkdir truffle_tests
+                cd truffle_tests
+                truffle unbox metacoin
+                run_truffle_tests && run_truffle_tests deploy
                 RV=$?
-                run_truffle_tests deploy
-                RV=$(($RV + $?))
                 ;;
             ethereum_vm)
                 make_vmtests
