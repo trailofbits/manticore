@@ -1353,7 +1353,7 @@ class EthWorldStateTests(unittest.TestCase):
     def test_dump(self):
         m = ManticoreEVM()
         address = int(m.create_account())
-        self.assertEqual(len([x for x in m.ready_states]), 1)
+        self.assertEqual(m.count_ready_states(), 1)
         for state in m.ready_states:
             xx = state.constraints.new_bitvec(256, name="x")
             state.constraints.add(xx == 0x20)
