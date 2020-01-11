@@ -832,7 +832,7 @@ class ModuleInstance(Eventful):
             assert memaddr in range(len(store.mems))
             meminst = store.mems[memaddr]
             dend = doval + len(data.init)
-            assert dend in meminst
+            assert dend <= meminst.npages * (2 ** 16)
 
             meminst.write_bytes(doval, data.init)
 
