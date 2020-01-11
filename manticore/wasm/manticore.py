@@ -212,7 +212,7 @@ class ManticoreWASM(ManticoreBase):
             stackf.write(str(state.stack.data))
 
         with testcase.open_stream("memory") as memoryf:
-            memoryf.write(str(state.mem.data))
+            memoryf.write(str(state.mem._data))
 
         term = getattr(state, "_terminated_by", None)
         if term:

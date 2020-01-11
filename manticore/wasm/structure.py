@@ -39,7 +39,7 @@ from .types import (
     ConcretizeStack,
 )
 from .state import State
-from ..core.smtlib import BitVec, issymbolic
+from ..core.smtlib import BitVec, issymbolic, Operators
 from ..core.state import Concretize
 from ..utils.event import Eventful
 
@@ -472,7 +472,7 @@ class TableInst:
 
 
 @dataclass
-class MemInst:
+class MemInst(Eventful):
     """
     Runtime representation of a memory. As with tables, if you're dealing with a memory at runtime, it's probably a
     MemInst. Currently doesn't support any sort of symbolic indexing, although you can read and write symbolic bytes
@@ -488,8 +488,28 @@ class MemInst:
     https://www.w3.org/TR/wasm-core-1/#memory-instances%E2%91%A0
     """
 
-    data: typing.List[int]  #: The backing array for this memory
+    _published_events = {"write_memory", "read_memory"}
+
+    _data: typing.List[int]  #: The backing array for this memory
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["data"] = self._data
+        state["max"] = self.max
+        return state
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self._data = state["data"]
+        self.max = state["max"]
+
+    def __contains__(self, item):
+        return item in range(len(self._data))
+
+    @property
+    def npages(self):
+        return len(self._data) // (2 ** 16)
 
     def grow(self, n: int) -> bool:
         """
@@ -500,15 +520,65 @@ class MemInst:
         :param n: The number of pages to attempt to add
         :return: True if the operation succeeded, otherwise False
         """
-        assert len(self.data) % 65536 == 0
-        ln = n + (len(self.data) // 65536)
+        assert len(self._data) % 65536 == 0
+        ln = n + (len(self._data) // 65536)
         if ln > (2 ** 16):
             return False
         if self.max is not None:
             if ln > self.max:
                 return False
-        self.data.extend(0x0 for _ in range(n * 65536))  # TODO - these should also be symbolic
+        self._data.extend(0x0 for _ in range(n * 65536))  # TODO - these should also be symbolic
         return True
+
+    def write_int(self, base, expression, size=32):
+        """
+        Writes an integer into memory.
+
+        :param base: Index to write at
+        :param expression: integer to write
+        :param size: Optional size of the integer
+        """
+        b = [
+            Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)
+        ]
+        self.write_bytes(base, b)
+
+    def write_bytes(self, base, data):
+        """
+        Writes  a stream of bytes into memory
+
+        :param base: Index to start writing at
+        :param data: Data to write
+        """
+        self._publish("will_write_memory", base, base + len(data), data)
+        for idx, v in enumerate(data):
+            self._data[base + idx] = v
+        self._publish("did_write_memory", base, data)
+
+    def read_int(self, base, size=32):
+        """
+        Reads bytes from memory and combines them into an int
+
+        :param base: Address to read the int from
+        :param size: Size of the int (in bits)
+        :return: The int in question
+        """
+        return Operators.CONCAT(
+            size, *map(Operators.ORD, reversed(self.read_bytes(base, size // 8)))
+        )
+
+    def read_bytes(self, base, size):
+        """
+        Reads bytes from memory
+
+        :param base: Address to read from
+        :param size: number of bytes to read
+        :return: List of bytes
+        """
+        self._publish("will_read_memory", base, base + size)
+        d = self._data[base : base + size]
+        self._publish("did_read_memory", base, d)
+        return d
 
 
 @dataclass
@@ -762,10 +832,9 @@ class ModuleInstance(Eventful):
             assert memaddr in range(len(store.mems))
             meminst = store.mems[memaddr]
             dend = doval + len(data.init)
-            assert dend <= len(meminst.data)
+            assert dend in meminst
 
-            for j, b in enumerate(data.init):
-                meminst.data[doval + j] = b
+            meminst.write_bytes(doval, data.init)
 
         # #11 & #12
         last_frame = stack.pop()
