@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from .executor import Executor
 from collections import deque
+from math import ceil
 from wasm.immtypes import BranchImm, BranchTableImm, CallImm, CallIndirectImm
 from .types import (
     U32,
@@ -35,6 +36,7 @@ from .types import (
     OverflowDivisionTrap,
     NonExistentFunctionCallTrap,
     TypeMismatchTrap,
+    OutOfBoundsMemoryTrap,
     MissingExportException,
     ConcretizeStack,
 )
@@ -471,7 +473,6 @@ class TableInst:
     max: typing.Optional[U32]  #: Optional maximum size of the table
 
 
-@dataclass
 class MemInst(Eventful):
     """
     Runtime representation of a memory. As with tables, if you're dealing with a memory at runtime, it's probably a
@@ -490,26 +491,57 @@ class MemInst(Eventful):
 
     _published_events = {"write_memory", "read_memory"}
 
-    _data: typing.List[int]  #: The backing array for this memory
+    _pages: typing.Dict[int, typing.List[int]]
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
+    _current_size: int  # Tracks the theoretical size of the memory instance, including unmapped pages
+
+    def __init__(self, starting_data, max=None):
+        pagesize = 2 ** 16
+        self._current_size = ceil(len(starting_data) / pagesize)
+        self.max = max
+        self._pages = {}
+
+        chunked = [starting_data[i : i + pagesize] for i in range(0, len(starting_data), pagesize)]
+        for idx, page in enumerate(chunked):
+            if len(page) < pagesize:
+                page.extend([0x0] * (pagesize - len(page)))
+            self._pages[idx] = page
 
     def __getstate__(self):
         state = super().__getstate__()
-        state["data"] = self._data
+        state["pages"] = self._pages
         state["max"] = self.max
+        state["current"] = self._current_size
         return state
 
     def __setstate__(self, state):
         super().__setstate__(state)
-        self._data = state["data"]
+        self._pages = state["pages"]
         self.max = state["max"]
+        self._current_size = state["current"]
 
     def __contains__(self, item):
-        return item in range(len(self._data))
+        return item in range(self.npages * (2 ** 16))
+
+    def _check_initialize_index(self, memidx):
+        page = memidx // (2 ** 16)
+        if page not in range(self.npages):
+            raise OutOfBoundsMemoryTrap(memidx)
+        if page not in self._pages:
+            self._pages[page] = [0x0] * (2 ** 16)
+        return divmod(memidx, 2 ** 16)
+
+    def _read_byte(self, addr):
+        page, idx = self._check_initialize_index(addr)
+        return self._pages[page][idx]
+
+    def _write_byte(self, addr, val):
+        page, idx = self._check_initialize_index(addr)
+        self._pages[page][idx] = val
 
     @property
     def npages(self):
-        return len(self._data) // (2 ** 16)
+        return self._current_size
 
     def grow(self, n: int) -> bool:
         """
@@ -520,14 +552,13 @@ class MemInst(Eventful):
         :param n: The number of pages to attempt to add
         :return: True if the operation succeeded, otherwise False
         """
-        assert len(self._data) % 65536 == 0
-        ln = n + (len(self._data) // 65536)
+        ln = n + self.npages
         if ln > (2 ** 16):
             return False
         if self.max is not None:
             if ln > self.max:
                 return False
-        self._data.extend(0x0 for _ in range(n * 65536))  # TODO - these should also be symbolic
+        self._current_size = ln
         return True
 
     def write_int(self, base, expression, size=32):
@@ -552,7 +583,7 @@ class MemInst(Eventful):
         """
         self._publish("will_write_memory", base, base + len(data), data)
         for idx, v in enumerate(data):
-            self._data[base + idx] = v
+            self._write_byte(base + idx, v)
         self._publish("did_write_memory", base, data)
 
     def read_int(self, base, size=32):
@@ -576,9 +607,12 @@ class MemInst(Eventful):
         :return: List of bytes
         """
         self._publish("will_read_memory", base, base + size)
-        d = self._data[base : base + size]
+        d = [self._read_byte(i) for i in range(base, base + size)]
         self._publish("did_read_memory", base, d)
         return d
+
+    def dump(self):
+        return self.read_bytes(0, self._current_size * (2 ** 16))
 
 
 @dataclass
