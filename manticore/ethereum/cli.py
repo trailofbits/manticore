@@ -63,6 +63,9 @@ def choose_detectors(args):
                         f"{e} is not a detector name, must be one of {arguments}. See also `--list-detectors`."
                     )
 
+        if args.url is not None:
+            exclude.append(DetectUninitializedStorage.ARGUMENT)
+
         for arg, detector_cls in detectors.items():
             if arg not in exclude:
                 detectors_to_run.append(detector_cls)
