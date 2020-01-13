@@ -1,14 +1,3 @@
-# from ..utils.event import Eventful
-from wasm.immtypes import (
-    LocalVarXsImm,
-    GlobalVarXsImm,
-    MemoryImm,
-    CurGrowMemImm,
-    I32ConstImm,
-    I64ConstImm,
-    F32ConstImm,
-    F64ConstImm,
-)
 import struct
 from ctypes import c_int32
 from .types import (
@@ -23,6 +12,14 @@ from .types import (
     OverflowDivisionTrap,
     InvalidConversionTrap,
     OutOfBoundsMemoryTrap,
+    I32ConstImm,
+    I64ConstImm,
+    F32ConstImm,
+    F64ConstImm,
+    LocalVarXsImm,
+    GlobalVarXsImm,
+    MemoryImm,
+    CurGrowMemImm,
 )
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..utils.event import Eventful

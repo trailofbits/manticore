@@ -5,7 +5,6 @@ import logging
 from dataclasses import dataclass
 from .executor import Executor
 from collections import deque
-from wasm.immtypes import BranchImm, BranchTableImm, CallImm, CallIndirectImm
 from .types import (
     U32,
     I32,
@@ -37,6 +36,10 @@ from .types import (
     TypeMismatchTrap,
     MissingExportException,
     ConcretizeStack,
+    BranchImm,
+    BranchTableImm,
+    CallImm,
+    CallIndirectImm,
 )
 from .state import State
 from ..core.smtlib import BitVec, issymbolic
@@ -1149,7 +1152,7 @@ class ModuleInstance(Eventful):
 
     def get_export(
         self, name: str, store: Store
-    ) -> typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]:
+    ) -> typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]:
         """
         Retrieves a value exported by this module instance from store
 
@@ -1556,7 +1559,7 @@ class Stack(Eventful):
         """
         return len(self.data) == 0
 
-    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
+    def has_type_on_top(self, t: typing.Union[type, tuple], n: int):
         """
         *Asserts* that the stack has at least n values of type t or type BitVec on the top
 
@@ -1677,7 +1680,7 @@ class AtomicStack(Stack):
     def empty(self):
         return self.parent.empty()
 
-    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
+    def has_type_on_top(self, t: typing.Union[type, tuple], n: int):
         return self.parent.has_type_on_top(t, n)
 
     def find_type(self, t: type):
