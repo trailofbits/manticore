@@ -190,14 +190,12 @@ class RemoteWorldState(WorldState):
         if endpoint.blocknumber != blocknumber:
             if not endpoint.warned:
                 logger.warning(
-                    "%s blocknumber has changed: %d != %d---someone is using the endpoint"
-                    + " beside us",
+                    "%s blocknumber has changed: %d != %d---someone is using the endpoint beside us",
                     self._url,
                     endpoint.blocknumber,
                     blocknumber,
                 )
                 endpoint.warned = True
-            endpoint.blocknumber = blocknumber
         return web3
 
     def accounts(self) -> Set[int]:
