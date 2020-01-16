@@ -58,6 +58,7 @@ from wasm.wasmtypes import (
     SEC_ELEMENT,
     SEC_CODE,
     SEC_DATA,
+    SEC_UNK,
 )
 
 from ..core.smtlib.solver import Z3Solver
@@ -268,6 +269,8 @@ class Module:
         "start",
         "imports",
         "exports",
+        "function_names",
+        "local_names",
         "_raw",
     ]
     _raw: bytes
@@ -285,6 +288,8 @@ class Module:
         ] = None  #: https://www.w3.org/TR/wasm-core-1/#start-function%E2%91%A0
         self.imports: typing.List[Import] = []
         self.exports: typing.List[Export] = []
+        self.function_names: typing.Dict[FuncAddr, str] = {}
+        self.local_names: typing.Dict[FuncAddr, typing.Dict[int, str]] = {}
 
     def __getstate__(self):
         state = {
@@ -298,6 +303,8 @@ class Module:
             "start": self.start,
             "imports": self.imports,
             "exports": self.exports,
+            "function_names": self.function_names,
+            "local_names": self.local_names,
             "_raw": self._raw,
         }
         return state
@@ -313,6 +320,8 @@ class Module:
         self.start = state["start"]
         self.imports = state["imports"]
         self.exports = state["exports"]
+        self.function_names = state["function_names"]
+        self.local_names = state["local_names"]
         self._raw = state["_raw"]
 
     def get_funcnames(self) -> typing.List[Name]:
@@ -332,13 +341,14 @@ class Module:
         with open(filename, "rb") as wasm_file:
             m._raw = wasm_file.read()
 
-        module_iter = decode_module(m._raw)
+        # Test modules break name subsection decoding. TODO: Find a better WASM importer
+        module_iter = decode_module(m._raw, decode_name_subsections=False)
         _header = next(module_iter)
         section: Section
         # Parse the sections from the WASM module into internal types. For each section, the code usually resembles:
         # `module.<something>.append(<InstanceOfSomething>(data, from, binary, module))`
         for section, section_data in module_iter:
-            sec_id = section_data.id
+            sec_id = getattr(section_data, "id", SEC_UNK)
             if sec_id == SEC_TYPE:  # https://www.w3.org/TR/wasm-core-1/#type-section%E2%91%A0
                 for ft in section_data.payload.entries:
                     m.types.append(
@@ -444,7 +454,31 @@ class Module:
                     m.data.append(
                         Data(MemIdx(d.index), convert_instructions(d.offset), d.data.tolist())
                     )
-            # TODO - custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
+            elif sec_id == SEC_UNK:
+                # WASM module renders all types as `GeneratedStructureData` so `isinstance` doesn't work :(
+                if (
+                    hasattr(section, "name_type")
+                    and hasattr(section, "payload_len")
+                    and hasattr(section, "payload")
+                ):
+                    name_type = section_data.name_type
+                    if name_type == 0:  # module name
+                        pass
+                    elif name_type == 1:  # function names
+                        for n in section_data.payload.names:
+                            ty = n.get_decoder_meta()["types"]["name_str"]
+                            m.function_names[FuncAddr(n.index)] = strip_quotes(
+                                ty.to_string(n.name_str)
+                            )
+                    elif name_type == 2:  # local variable names
+                        for func in section_data.payload.funcs:
+                            func_idx = func.index
+                            for n in func.local_map.names:
+                                ty = n.get_decoder_meta()["types"]["name_str"]
+                                m.local_names.setdefault(FuncAddr(func_idx), {})[
+                                    n.index
+                                ] = strip_quotes(ty.to_string(n.name_str))
+                # TODO - other custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
 
         return m
 
@@ -698,7 +732,10 @@ class ModuleInstance(Eventful):
         "memaddrs",
         "globaladdrs",
         "exports",
-        "export_map" "executor",
+        "export_map",
+        "executor",
+        "function_names",
+        "local_names",
         "_instruction_queue",
         "_block_depths",
         "_state",
@@ -744,6 +781,8 @@ class ModuleInstance(Eventful):
         self.exports = []
         self.export_map = {}
         self.executor = Executor(constraints)
+        self.function_names: typing.Dict[FuncAddr, str] = {}
+        self.local_names: typing.Dict[FuncAddr, typing.Dict[int, str]] = {}
         self._instruction_queue = deque()
         self._block_depths = [0]
         self._state = None
@@ -762,6 +801,8 @@ class ModuleInstance(Eventful):
                 "exports": self.exports,
                 "export_map": self.export_map,
                 "executor": self.executor,
+                "function_names": self.function_names,
+                "local_names": self.local_names,
                 "_instruction_queue": self._instruction_queue,
                 "_block_depths": self._block_depths,
             }
@@ -777,6 +818,8 @@ class ModuleInstance(Eventful):
         self.exports = state["exports"]
         self.export_map = state["export_map"]
         self.executor = state["executor"]
+        self.function_names = state["function_names"]
+        self.local_names = state["local_names"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
         self._state = None
@@ -916,8 +959,15 @@ class ModuleInstance(Eventful):
             if isinstance(ev, GlobalAddr):
                 self.globaladdrs.append(ev)
 
-        for func_i in module.funcs:
-            self.funcaddrs.append(func_i.allocate(store, self))
+        for func in module.funcs:
+            addr = func.allocate(store, self)
+            self.funcaddrs.append(addr)
+            name = module.function_names.get(addr, None)
+            if name:
+                self.function_names[addr] = name
+            local_map = module.local_names.get(addr, None)
+            if local_map:
+                self.local_names[addr] = local_map.copy()
         for table_i in module.tables:
             self.tableaddrs.append(table_i.allocate(store))
         for memory_i in module.mems:
@@ -1010,6 +1060,10 @@ class ModuleInstance(Eventful):
         for v in [stack.pop() for _t in ty.param_types][::-1]:
             assert not isinstance(v, (Label, Activation))
             local_vars.append(v)
+
+        name = self.function_names.get(funcaddr, f"Func{funcaddr}")
+        buffer = " | " * (len(self._block_depths) - 1)
+        logger.debug(buffer + "%s(%s)" % (name, ", ".join(str(i) for i in local_vars)))
         if isinstance(f, HostFunc):  # Call native function
             self._publish("will_call_hostfunc", f, local_vars)
             res = list(f.hostcode(self._state, *local_vars))
