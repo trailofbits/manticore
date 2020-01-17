@@ -343,7 +343,7 @@ class Transaction:
         if result not in {None, "TXERROR", "REVERT", "RETURN", "THROW", "STOP", "SELFDESTRUCT"}:
             raise EVMException("Invalid transaction result")
         if result in {"RETURN", "REVERT"}:
-            if not isinstance(return_data, (bytes, bytearray, Array)):
+            if not isinstance(return_data, (bytes, bytearray, Array, ArrayProxy)):
                 raise EVMException(
                     "Invalid transaction return_data type:", type(return_data).__name__
                 )
@@ -436,7 +436,7 @@ class EndTx(EVMException):
             raise EVMException("Invalid end transaction result")
         if result is None and data is not None:
             raise EVMException("Invalid end transaction result")
-        if not isinstance(data, (type(None), Array, bytes)):
+        if not isinstance(data, (type(None), Array, ArrayProxy, bytes)):
             raise EVMException("Invalid end transaction data type")
         self.result = result
         self.data = data
@@ -1736,7 +1736,11 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
-            max_size = Z3Solver().max(self.constraints, size)
+            size = simplify(size)
+            if isinstance(size, Constant):
+                max_size = size.value
+            else:
+                max_size = Z3Solver().max(self.constraints, size)
         else:
             max_size = size
 
@@ -2667,7 +2671,7 @@ class EVMWorld(Platform):
         return self._world_state[address]["code"]
 
     def set_code(self, address, data):
-        assert data is not None and isinstance(data, (bytes, Array))
+        assert data is not None and isinstance(data, (bytes, Array, ArrayProxy))
         if self._world_state[address]["code"]:
             raise EVMException("Code already set")
         self._world_state[address]["code"] = data

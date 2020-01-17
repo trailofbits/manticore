@@ -905,7 +905,7 @@ class ArraySlice(Array):
     def __init__(
         self, array: Union["Array", "ArrayProxy"], offset: int, size: int, *args, **kwargs
     ):
-        if not isinstance(array, Array):
+        if not isinstance(array, (Array, ArrayProxy)):
             raise ValueError("Array expected")
         if isinstance(array, ArrayProxy):
             array = array._array
@@ -950,14 +950,13 @@ class ArraySlice(Array):
         )
 
 
-class ArrayProxy(Array):
+class ArrayProxy():
     def __init__(self, array: Array, default: Optional[int] = None):
         self._default = default
         self._concrete_cache: Dict[int, int] = {}
         self._written = None
         if isinstance(array, ArrayProxy):
             # copy constructor
-            super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._array: Array = array._array
             self._name: str = array._name
             if default is None:
@@ -966,12 +965,10 @@ class ArrayProxy(Array):
             self._written = set(array.written)
         elif isinstance(array, ArrayVariable):
             # fresh array proxy
-            super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array
             self._name = array.name
         else:
             # arrayproxy for a prepopulated array
-            super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._name = array.underlying_variable.name
             self._array = array
 
@@ -1010,11 +1007,14 @@ class ArrayProxy(Array):
     def select(self, index):
         return self.get(index)
 
+    def __len__(self):
+        return self._array.index_max
+
     def store(self, index, value):
         if not isinstance(index, Expression):
-            index = self.cast_index(index)
+            index = self._array.cast_index(index)
         if not isinstance(value, Expression):
-            value = self.cast_value(value)
+            value = self._array.cast_value(value)
         from .visitors import simplify
 
         index = simplify(index)
@@ -1031,8 +1031,8 @@ class ArrayProxy(Array):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            start, stop = self._fix_index(index)
-            size = self._get_size(index)
+            start, stop = self._array._fix_index(index)
+            size = self._array._get_size(index)
             array_proxy_slice = ArrayProxy(ArraySlice(self, start, size), default=self._default)
             array_proxy_slice._concrete_cache = {}
             for k, v in self._concrete_cache.items():
@@ -1050,8 +1050,8 @@ class ArrayProxy(Array):
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
-            start, stop = self._fix_index(index)
-            size = self._get_size(index)
+            start, stop = self._array._fix_index(index)
+            size = self._array._get_size(index)
             assert len(value) == size
             for i in range(size):
                 self.store(start + i, value[i])
@@ -1059,20 +1059,30 @@ class ArrayProxy(Array):
             self.store(index, value)
 
     def __getstate__(self):
+        if self.index_max is not None and self.index_max == len(self._concrete_cache):
+            array = (self._array.index_bits, self._array.index_max, self._array.value_bits)
+        else:
+            array = self._array
+
         state = {}
         state["_default"] = self._default
-        state["_array"] = self._array
+        state["_array"] = array
         state["name"] = self.name
         state["_concrete_cache"] = self._concrete_cache
         state["_written"] = self._written
         return state
 
     def __setstate__(self, state):
-        self._default = state["_default"]
         self._array = state["_array"]
+        self._default = state["_default"]
         self._name = state["name"]
         self._concrete_cache = state["_concrete_cache"]
         self._written = state["_written"]
+        if isinstance(self._array, tuple):
+            index_bits, index_max, value_bits = self._array
+            self._array=ArrayVariable(index_bits, index_max, value_bits, name=self._name)
+            for x,y in self._concrete_cache.items():
+                self._array = self._array.store(x, y)
 
     def __copy__(self):
         return ArrayProxy(self)
@@ -1113,7 +1123,7 @@ class ArrayProxy(Array):
     def get(self, index, default=None):
         if default is None:
             default = self._default
-        index = self.cast_index(index)
+        index = self._array.cast_index(index)
 
         if self.index_max is not None:
             from .visitors import simplify
@@ -1129,8 +1139,25 @@ class ArrayProxy(Array):
             return value
 
         is_known = self.is_known(index)
-        default = self.cast_value(default)
+        default = self._array.cast_value(default)
         return BitVecITE(self._array.value_bits, is_known, value, default)
+
+    def write_BE(self, address, value, size):
+        address = self._array.cast_index(address)
+        value = BitVec(size * self.value_bits).cast(value)
+        array = self
+        for offset in range(size):
+            array = array.store(
+                address + offset,
+                BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits),
+            )
+        return array
+
+    def read_BE(self, address, size):
+        bytes = []
+        for offset in range(size):
+            bytes.append(self.get(address + offset, 0))
+        return BitVecConcat(size * self.value_bits, *bytes)
 
 
 class ArraySelect(BitVec, Operation):
