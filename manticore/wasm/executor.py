@@ -41,7 +41,7 @@ class Executor(Eventful):
     https://www.w3.org/TR/wasm-core-1/#a7-index-of-instructions
     """
 
-    _published_events = {"set_global", "read_global", "set_local", "read_local"}
+    _published_events = {"set_global", "get_global", "set_local", "get_local"}
 
     def __init__(self, constraints, *args, **kwargs):
 
