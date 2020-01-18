@@ -255,7 +255,7 @@ class WASMWorld(Platform):
                         )
                     )
                     imports.append(FuncAddr(len(self.store.funcs) - 1))
-                    self.instance.function_names[imports[-1]] = i.name
+                    self.instance.function_names[imports[-1]] = f"imports.{i.name}"
 
                 elif isinstance(i.desc, TableType):
                     self.store.tables.append(
