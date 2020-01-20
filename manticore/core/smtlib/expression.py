@@ -950,7 +950,7 @@ class ArraySlice(Array):
         )
 
 
-class ArrayProxy():
+class ArrayProxy:
     def __init__(self, array: Array, default: Optional[int] = None):
         self._default = default
         self._concrete_cache: Dict[int, int] = {}
@@ -1080,8 +1080,8 @@ class ArrayProxy():
         self._written = state["_written"]
         if isinstance(self._array, tuple):
             index_bits, index_max, value_bits = self._array
-            self._array=ArrayVariable(index_bits, index_max, value_bits, name=self._name)
-            for x,y in self._concrete_cache.items():
+            self._array = ArrayVariable(index_bits, index_max, value_bits, name=self._name)
+            for x, y in self._concrete_cache.items():
                 self._array = self._array.store(x, y)
 
     def __copy__(self):
