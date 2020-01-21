@@ -1926,7 +1926,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     # Make sure a cpu will survive a round trip through pickling/unpickling
     def test_arm_save_restore_cpu(self):
-        import pickle
+        import dill as pickle
 
         dumped_s = pickle_dumps(self.cpu)
         self.cpu = pickle.loads(dumped_s)

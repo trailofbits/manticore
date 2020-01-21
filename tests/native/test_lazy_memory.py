@@ -3,7 +3,7 @@ import unittest
 import tempfile
 import os
 import gc
-import pickle
+import dill as pickle
 import fcntl
 import resource
 from itertools import *

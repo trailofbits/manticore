@@ -376,7 +376,7 @@ class ExpressionTest(unittest.TestCase):
         )  # no default so it can be anything
 
     def testBasicPickle(self):
-        import pickle
+        import dill as pickle
 
         cs = ConstraintSet()
 
@@ -626,7 +626,7 @@ class ExpressionTest(unittest.TestCase):
 
     def test_ConstraintsForking(self):
         solver = Z3Solver.instance()
-        import pickle
+        import dill as pickle
 
         cs = ConstraintSet()
         # make free 32bit bitvectors

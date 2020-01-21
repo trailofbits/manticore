@@ -158,7 +158,7 @@ class StateTest(unittest.TestCase):
         self.assertEqual(expr.taint, frozenset(taint))
 
     def testContextSerialization(self):
-        import pickle as pickle
+        import dill as pickle
 
         initial_file = ""
         new_file = ""
@@ -211,7 +211,7 @@ class StateTest(unittest.TestCase):
         self.assertEqual(new_new_state.context["step"], 30)
 
     def testContextSerialization(self):
-        import pickle as pickle
+        import dill as pickle
 
         initial_file = ""
         new_file = ""

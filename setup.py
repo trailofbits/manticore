@@ -44,6 +44,7 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
+        "dill",
         "pyyaml",
         "wrapt",
         # evm dependencies

@@ -1,6 +1,6 @@
 import fcntl
 import gc
-import pickle
+import dill as pickle
 import resource
 import sys
 import unittest

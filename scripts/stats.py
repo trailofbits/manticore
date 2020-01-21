@@ -1,4 +1,5 @@
-import sys, os, pickle, argparse
+import sys, os, argparse
+import dill as pickle
 
 
 # Process the data of a workspace and prints out some global information
