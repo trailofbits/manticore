@@ -339,7 +339,7 @@ class Executor(Eventful):
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
         stack.has_type_on_top(Value_t, 1)
-        self._publish("did_set_global", imm.global_index, stack.peek())
+        self._publish("will_set_global", imm.global_index, stack.peek())
         store.globals[a].value = stack.pop()
         self._publish("did_set_global", imm.global_index, store.globals[a].value)
 
