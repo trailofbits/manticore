@@ -1064,7 +1064,7 @@ class ModuleInstance(Eventful):
 
         name = self.function_names.get(funcaddr, f"Func{funcaddr}")
         buffer = " | " * (len(self._block_depths) - 1)
-        logger.debug(buffer + "%s(%s)" % (name, ", ".join(str(i) for i in local_vars)))
+        print(buffer + "%s(%s)" % (name, ", ".join(str(i) for i in local_vars)))
         if isinstance(f, HostFunc):  # Call native function
             self._publish("will_call_hostfunc", f, local_vars)
             res = list(f.hostcode(self._state, *local_vars))
