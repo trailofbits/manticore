@@ -529,7 +529,8 @@ class MemInst(Eventful):
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
     _current_size: int  # Tracks the theoretical size of the memory instance, including unmapped pages
 
-    def __init__(self, starting_data, max=None):
+    def __init__(self, starting_data, max=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         pagesize = 2 ** 16
         self._current_size = ceil(len(starting_data) / pagesize)
         self.max = max
