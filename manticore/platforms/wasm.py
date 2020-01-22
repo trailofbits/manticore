@@ -256,8 +256,9 @@ class WASMWorld(Platform):
                             partial(stub, len(func_type.result_types)),  # type: ignore
                         )
                     )
-                    imports.append(FuncAddr(len(self.store.funcs) - 1))
-                    self.instance.function_names[imports[-1]] = f"imports.{i.name}"
+                    addr = FuncAddr(len(self.store.funcs) - 1)
+                    imports.append(addr)
+                    self.instance.function_names[addr] = f"imports.{i.name}"
 
                 elif isinstance(i.desc, TableType):
                     self.store.tables.append(
