@@ -550,12 +550,12 @@ class Z3Solver(Solver):
                 if not issymbolic(expression):
                     values.append(expression)
                     continue
-                assert isinstance(expression, (Bool, BitVec, Array))
+                assert isinstance(expression, (Bool, BitVec, Array, ArrayProxy))
                 if isinstance(expression, Bool):
                     var = temp_cs.new_bool()
                 elif isinstance(expression, BitVec):
                     var = temp_cs.new_bitvec(expression.size)
-                elif isinstance(expression, Array):
+                elif isinstance(expression, (Array, ArrayProxy)):
                     var = []
                     result = []
                     for i in range(expression.index_max):

@@ -372,7 +372,7 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = BitVecVariable(size, name, taint=taint)
+        var = BitVecVariable(size=size, name=name, taint=taint)
         return self._declare(var)
 
     def new_array(

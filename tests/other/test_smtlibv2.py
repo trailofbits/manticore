@@ -47,15 +47,15 @@ class ExpressionTest(unittest.TestCase):
         """ Can't build abstract classes """
         a = BitVecConstant(32, 100)
 
-        self.assertRaises(TypeError, Expression, ())
-        self.assertRaises(TypeError, Constant, 123)
-        self.assertRaises(TypeError, Variable, "NAME")
-        self.assertRaises(TypeError, Operation, a)
+        self.assertRaises(Exception, Expression, ())
+        self.assertRaises(Exception, Constant, 123)
+        self.assertRaises(Exception, Variable, "NAME")
+        self.assertRaises(Exception, Operation, a)
 
     def testBasicOperation(self):
         """ Add """
-        a = BitVecConstant(32, 100)
-        b = BitVecVariable(32, "VAR")
+        a = BitVecConstant(size=32, value=100)
+        b = BitVecVariable(size=32, name="VAR")
         c = a + b
         self.assertIsInstance(c, BitVecAdd)
         self.assertIsInstance(c, Operation)
@@ -281,7 +281,6 @@ class ExpressionTest(unittest.TestCase):
         array = cs.new_array(32, index_max=12)
 
         array = array.write(0, hw)
-
         self.assertTrue(self.solver.must_be_true(cs, array == hw))
 
         self.assertTrue(self.solver.must_be_true(cs, array.read(0, 12) == hw))
@@ -577,9 +576,9 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicReplace(self):
         """ Add """
-        a = BitVecConstant(32, 100)
-        b1 = BitVecVariable(32, "VAR1")
-        b2 = BitVecVariable(32, "VAR2")
+        a = BitVecConstant(size=32, value=100)
+        b1 = BitVecVariable(size=32, name="VAR1")
+        b2 = BitVecVariable(size=32, name="VAR2")
 
         c = a + b1
 

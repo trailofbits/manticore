@@ -4,7 +4,7 @@ import uuid
 
 import re
 import copy
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, Tuple
 
 
 class ExpressionException(SmtlibError):
@@ -15,12 +15,11 @@ class ExpressionException(SmtlibError):
     pass
 
 
-class Expression:
+class Expression(object):
     """ Abstract taintable Expression. """
-
+    __slots__ = ()
+    xslots = ('_taint',)
     def __init__(self, taint: Union[tuple, frozenset] = ()):
-        if self.__class__ is Expression:
-            raise TypeError
         super().__init__()
         self._taint = frozenset(taint)
 
@@ -45,7 +44,7 @@ def issymbolic(value) -> bool:
         :return: whether `value` is symbolic
         :rtype: bool
         """
-    return isinstance(value, Expression)
+    return isinstance(value, (Expression, ArrayProxy))
 
 
 def istainted(arg, taint=None):
@@ -111,11 +110,10 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 
 
 class Variable(Expression):
-    def __init__(self, name: str, *args, **kwargs):
-        if self.__class__ is Variable:
-            raise TypeError
-        assert " " not in name
-        super().__init__(*args, **kwargs)
+    __slots__ = ()
+    xslots = ('_name',)
+    def __init__(self, name: str, **kwargs):
+        super().__init__(**kwargs)
         self._name = name
 
     @property
@@ -137,10 +135,10 @@ class Variable(Expression):
 
 
 class Constant(Expression):
-    def __init__(self, value: Union[bool, int], *args, **kwargs):
-        if self.__class__ is Constant:
-            raise TypeError
-        super().__init__(*args, **kwargs)
+    __slots__ = ()
+    xslots = ('_value',)
+    def __init__(self, value: Union[bool, int], **kwargs):
+        super().__init__(**kwargs)
         self._value = value
 
     @property
@@ -149,18 +147,18 @@ class Constant(Expression):
 
 
 class Operation(Expression):
-    def __init__(self, *operands, **kwargs):
-        if self.__class__ is Operation:
-            raise TypeError
+    __slots__ = ()
+    xslots = ('_operands',)
+    def __init__(self, operands:Tuple[Expression], taint=None, **kwargs):
         # assert len(operands) > 0
         # assert all(isinstance(x, Expression) for x in operands)
         self._operands = operands
 
         # If taint was not forced by a keyword argument, calculate default
-        if "taint" not in kwargs:
-            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+        if taint is None:
+            taint = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
 
-        super().__init__(**kwargs)
+        super().__init__(taint=taint, **kwargs)
 
     @property
     def operands(self):
@@ -170,9 +168,7 @@ class Operation(Expression):
 ###############################################################################
 # Booleans
 class Bool(Expression):
-    def __init__(self, *operands, **kwargs):
-        super().__init__(*operands, **kwargs)
-
+    __slots__ = ()
     def cast(self, value: Union[int, bool], **kwargs) -> Union["BoolConstant", "Bool"]:
         if isinstance(value, Bool):
             return value
@@ -216,59 +212,64 @@ class Bool(Expression):
 
 
 class BoolVariable(Bool, Variable):
-    def __init__(self, name, *args, **kwargs):
-        super().__init__(name, *args, **kwargs)
-
+    __slots__ = Bool.xslots + Variable.xslots
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () Bool)"
 
 
 class BoolConstant(Bool, Constant):
-    def __init__(self, value: bool, *args, **kwargs):
-        super().__init__(value, *args, **kwargs)
+    __slots__ = Bool.xslots + Constant.xslots
+    def __init__(self, value: bool,  **kwargs):
+        super().__init__(value=value, **kwargs)
 
     def __bool__(self):
         return self.value
 
 
 class BoolOperation(Operation, Bool):
+    __slots__ = ()
+    xslots = Operation.xslots + Bool.xslots
     def __init__(self, *operands, **kwargs):
-        super().__init__(*operands, **kwargs)
+        super().__init__(operands=operands, **kwargs)
 
 
 class BoolNot(BoolOperation):
-    def __init__(self, value, **kwargs):
-        super().__init__(value, **kwargs)
-
+    __slots__ = BoolOperation.xslots
+    pass
 
 class BoolAnd(BoolOperation):
-    def __init__(self, a, b, **kwargs):
-        super().__init__(a, b, **kwargs)
-
+    __slots__ = BoolOperation.xslots
+    pass
 
 class BoolOr(BoolOperation):
-    def __init__(self, a: "Bool", b: "Bool", **kwargs):
-        super().__init__(a, b, **kwargs)
-
+    __slots__ = BoolOperation.xslots
+    pass
 
 class BoolXor(BoolOperation):
+    __slots__ = BoolOperation.xslots
     def __init__(self, a, b, **kwargs):
         super().__init__(a, b, **kwargs)
 
 
 class BoolITE(BoolOperation):
+    __slots__ = BoolOperation.xslots
     def __init__(self, cond: "Bool", true: "Bool", false: "Bool", **kwargs):
         super().__init__(cond, true, false, **kwargs)
 
 
 class BitVec(Expression):
+    __slots__ = ()
+    xslots = Expression.xslots + ('_size',)
     """ This adds a bitsize to the Expression class """
 
-    def __init__(self, size, *operands, **kwargs):
-        super().__init__(*operands, **kwargs)
-        self.size = size
+    def __init__(self, size, **kwargs):
+        super().__init__(**kwargs)
+        self._size = size
 
+    @property
+    def size(self):
+        return self._size
     @property
     def mask(self):
         return (1 << self.size) - 1
@@ -466,8 +467,9 @@ class BitVec(Expression):
 
 
 class BitVecVariable(BitVec, Variable):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    __slots__ = BitVec.xslots + Variable.xslots
+    def __init__(self, **kwargs):
+        super().__init__( **kwargs)
 
     @property
     def declaration(self):
@@ -475,8 +477,9 @@ class BitVecVariable(BitVec, Variable):
 
 
 class BitVecConstant(BitVec, Constant):
-    def __init__(self, size: int, value: int, *args, **kwargs):
-        super().__init__(size, value, *args, **kwargs)
+    __slots__ = BitVec.xslots + Constant.xslots
+    def __init__(self, size: int, value: int, **kwargs):
+        super().__init__(size=size, value=value, **kwargs)
 
     def __bool__(self):
         return self.value != 0
@@ -491,108 +494,128 @@ class BitVecConstant(BitVec, Constant):
 
 
 class BitVecOperation(BitVec, Operation):
-    def __init__(self, size, *operands, **kwargs):
-        super().__init__(size, *operands, **kwargs)
+    xslots = BitVec.xslots + Operation.xslots
+    __slots__ = ()
 
 
 class BitVecAdd(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecSub(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecMul(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecDiv(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecUnsignedDiv(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecMod(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = ()
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecRem(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecUnsignedRem(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecShiftLeft(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecShiftRight(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecArithmeticShiftLeft(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecArithmeticShiftRight(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecAnd(BitVecOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecOr(BitVecOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a: BitVec, b: BitVec, *args, **kwargs):
         assert a.size == b.size
-        super().__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecXor(BitVecOperation):
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(a.size, a, b, *args, **kwargs)
+    __slots__ = BitVecOperation.xslots
+    def __init__(self, a, b, **kwargs):
+        super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecNot(BitVecOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, **kwargs):
-        super().__init__(a.size, a, **kwargs)
+        super().__init__(size=a.size, operands=(a,), **kwargs)
 
 
 class BitVecNeg(BitVecOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, *args, **kwargs):
         super().__init__(a.size, a, *args, **kwargs)
 
 
 # Comparing two bitvectors results in a Bool
 class LessThan(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(a, b, *args, **kwargs)
 
 
 class LessOrEqual(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(a, b, *args, **kwargs)
 
 
 class BoolEqual(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         if isinstance(a, BitVec) or isinstance(b, BitVec):
             assert a.size == b.size
@@ -600,36 +623,42 @@ class BoolEqual(BoolOperation):
 
 
 class GreaterThan(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
         super().__init__(a, b, *args, **kwargs)
 
 
 class GreaterOrEqual(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
         super().__init__(a, b, *args, **kwargs)
 
 
 class UnsignedLessThan(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(a, b, *args, **kwargs)
         assert a.size == b.size
 
 
 class UnsignedLessOrEqual(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
         super().__init__(a, b, *args, **kwargs)
 
 
 class UnsignedGreaterThan(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
         super().__init__(a, b, *args, **kwargs)
 
 
 class UnsignedGreaterOrEqual(BoolOperation):
+    __slots__ = BitVecOperation.xslots
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
         super(UnsignedGreaterOrEqual, self).__init__(a, b, *args, **kwargs)
@@ -638,16 +667,18 @@ class UnsignedGreaterOrEqual(BoolOperation):
 ###############################################################################
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
+    __slots__ = ()
+    xslots = Expression.xslots + ('_index_bits', '_index_max', '_value_bits')
     def __init__(
-        self, index_bits: int, index_max: Optional[int], value_bits: int, *operands, **kwargs
+        self, index_bits: int, index_max: Optional[int], value_bits: int, **kwargs
     ):
         assert index_bits in (32, 64, 256)
         assert value_bits in (8, 16, 32, 64, 256)
         assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
-        self._index_bits = index_bits
+        self._index_bits= index_bits
         self._index_max = index_max
         self._value_bits = value_bits
-        super().__init__(*operands, **kwargs)
+        super().__init__(**kwargs)
         assert type(self) is not Array, "Abstract class"
 
     def _get_size(self, index):
@@ -791,7 +822,7 @@ class Array(Expression):
 
     def write_BE(self, address, value, size):
         address = self.cast_index(address)
-        value = BitVec(size * self.value_bits).cast(value)
+        value = BitVecConstant(size=size * self.value_bits, value=0).cast(value)
         array = self
         for offset in range(size):
             array = array.store(
@@ -863,8 +894,9 @@ class Array(Expression):
 
 
 class ArrayVariable(Array, Variable):
-    def __init__(self, index_bits, index_max, value_bits, name, *operands, **kwargs):
-        super().__init__(index_bits, index_max, value_bits, name, **kwargs)
+    __slots__ = Array.xslots + Variable.xslots
+    def __init__(self, index_bits, index_max, value_bits, name, **kwargs):
+        super().__init__(index_bits=index_bits, index_max=index_max, value_bits=value_bits, name=name, **kwargs)
 
     @property
     def declaration(self):
@@ -872,17 +904,15 @@ class ArrayVariable(Array, Variable):
 
 
 class ArrayOperation(Array, Operation):
-    def __init__(self, array: Array, *operands, **kwargs):
-        super().__init__(
-            array.index_bits, array.index_max, array.value_bits, array, *operands, **kwargs
-        )
-
+    __slots__ = ()
+    xslots = Array.xslots + Operation.xslots
 
 class ArrayStore(ArrayOperation):
+    __slots__ = ArrayOperation.xslots
     def __init__(self, array: "Array", index: "BitVec", value: "BitVec", *args, **kwargs):
         assert index.size == array.index_bits
         assert value.size == array.value_bits
-        super().__init__(array, index, value, *args, **kwargs)
+        super().__init__(index_bits=array.index_bits, value_bits=array.value_bits, index_max=array.index_max,operands=(array, index, value), **kwargs)
 
     @property
     def array(self):
@@ -1144,7 +1174,7 @@ class ArrayProxy:
 
     def write_BE(self, address, value, size):
         address = self._array.cast_index(address)
-        value = BitVec(size * self.value_bits).cast(value)
+        value = BitVecConstant(size=size * self.value_bits, value=0).cast(value)
         array = self
         for offset in range(size):
             array = array.store(
@@ -1159,11 +1189,88 @@ class ArrayProxy:
             bytes.append(self.get(address + offset, 0))
         return BitVecConcat(size * self.value_bits, *bytes)
 
+    def write(self, offset, buf):
+        if not isinstance(buf, (Array, bytearray)):
+            raise TypeError("Array or bytearray expected got {:s}".format(type(buf)))
+        arr = self
+        for i, val in enumerate(buf):
+            arr = arr.store(offset + i, val)
+        return arr
+
+    def read(self, offset, size):
+        return ArraySlice(self, offset, size)
+
+    def __eq__(self, other):
+        # FIXME taint
+        def compare_buffers(a, b):
+            if len(a) != len(b):
+                return BoolConstant(False)
+            cond = BoolConstant(True)
+            for i in range(len(a)):
+                cond = BoolAnd(cond.cast(a[i] == b[i]), cond)
+                if cond is BoolConstant(False):
+                    return BoolConstant(False)
+            return cond
+        return compare_buffers(self, other)
+
+    def __ne__(self, other):
+        return BoolNot(self == other)
+
+    def __add__(self, other):
+        if not isinstance(other, (Array, ArrayProxy, bytes, bytearray)):
+            raise TypeError("can't concat Array to {}".format(type(other)))
+        if isinstance(other, Array):
+            if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
+                raise ValueError("Array sizes do not match for concatenation")
+
+        from .visitors import simplify
+
+        # FIXME This should be related to a constrainSet
+        new_arr = ArrayProxy(
+            ArrayVariable(
+                self.index_bits,
+                self.index_max + len(other),
+                self.value_bits,
+                "concatenation{}".format(uuid.uuid1()),
+            )
+        )
+        for index in range(self.index_max):
+            new_arr[index] = simplify(self[index])
+        for index in range(len(other)):
+            new_arr[index + self.index_max] = simplify(other[index])
+        return new_arr
+
+    def __radd__(self, other):
+        if not isinstance(other, (Array, bytearray, bytes)):
+            raise TypeError("can't concat Array to {}".format(type(other)))
+        if isinstance(other, Array):
+            if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
+                raise ValueError("Array sizes do not match for concatenation")
+
+        from .visitors import simplify
+
+        # FIXME This should be related to a constrainSet
+        new_arr = ArrayProxy(
+            ArrayVariable(
+                self.index_bits,
+                self.index_max + len(other),
+                self.value_bits,
+                "concatenation{}".format(uuid.uuid1()),
+            )
+        )
+        for index in range(len(other)):
+            new_arr[index] = simplify(other[index])
+        _concrete_cache = new_arr._concrete_cache
+        for index in range(self.index_max):
+            new_arr[index + len(other)] = simplify(self[index])
+        new_arr._concrete_cache.update(_concrete_cache)
+        return new_arr
 
 class ArraySelect(BitVec, Operation):
+    __slots__ = BitVec.xslots + Operation.xslots
     def __init__(self, array: "Array", index: "BitVec", *args, **kwargs):
         assert index.size == array.index_bits
-        super().__init__(array.value_bits, array, index, *args, **kwargs)
+        super().__init__(size=array.value_bits, operands=(array, index), **kwargs)
 
     @property
     def array(self):
@@ -1187,14 +1294,16 @@ class BitVecSignExtend(BitVecOperation):
 class BitVecZeroExtend(BitVecOperation):
     def __init__(self, size_dest: int, operand: "BitVec", *args, **kwargs):
         assert size_dest >= operand.size
-        super().__init__(size_dest, operand, *args, **kwargs)
-        self.extend = size_dest - operand.size
-
+        super().__init__(size=size_dest, operands=(operand,), **kwargs)
+        self._extend = size_dest - operand.size
+    @property
+    def extend(self):
+        return self._extend
 
 class BitVecExtract(BitVecOperation):
     def __init__(self, operand: "BitVec", offset: int, size: int, *args, **kwargs):
         assert offset >= 0 and offset + size <= operand.size
-        super().__init__(size, operand, *args, **kwargs)
+        super().__init__(size=size, operands=(operand,), **kwargs)
         self._begining = offset
         self._end = offset + size - 1
 
@@ -1215,7 +1324,7 @@ class BitVecConcat(BitVecOperation):
     def __init__(self, size_dest: int, *operands, **kwargs):
         assert all(isinstance(x, BitVec) for x in operands)
         assert size_dest == sum(x.size for x in operands)
-        super().__init__(size_dest, *operands, **kwargs)
+        super().__init__(size=size_dest, operands=operands, **kwargs)
 
 
 class BitVecITE(BitVecOperation):
@@ -1225,9 +1334,8 @@ class BitVecITE(BitVecOperation):
         condition: Union["Bool", bool],
         true_value: "BitVec",
         false_value: "BitVec",
-        *args,
         **kwargs,
     ):
         assert true_value.size == size
         assert false_value.size == size
-        super().__init__(size, condition, true_value, false_value, *args, **kwargs)
+        super().__init__(size=size, operands=(condition, true_value, false_value), **kwargs)

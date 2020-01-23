@@ -853,7 +853,7 @@ class ManticoreEVM(ManticoreBase):
             data = bytearray(b"")
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
-        if not isinstance(data, (bytearray, Array)):
+        if not isinstance(data, (bytearray, Array, ArrayProxy)):
             raise TypeError("code bad type")
 
         # Check types
