@@ -1152,14 +1152,14 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#returning-from-a-function%E2%91%A0
         """
         if len(self._block_depths) > 1:  # Only if we're in a _real_ function, not initialization
-            logger.debug(
-                "EXITING FUNCTION (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1]
-            )
             # Pop return values
             f = stack.get_frame()
             n = f.arity
             stack.has_type_on_top(Value_t, n)
             vals = [stack.pop() for _ in range(n)]
+            logger.debug(
+                "EXITING FUNCTION (FD: %d, BD: %d) (%s)", len(self._block_depths), self._block_depths[-1], vals
+            )
             assert isinstance(
                 stack.peek(), Activation
             ), f"Stack should have an activation on top, instead has {type(stack.peek())}"
