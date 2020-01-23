@@ -1162,7 +1162,10 @@ class ModuleInstance(Eventful):
             stack.has_type_on_top(Value_t, n)
             vals = [stack.pop() for _ in range(n)]
             logger.debug(
-                "EXITING FUNCTION (FD: %d, BD: %d) (%s)", len(self._block_depths), self._block_depths[-1], vals
+                "EXITING FUNCTION (FD: %d, BD: %d) (%s)",
+                len(self._block_depths),
+                self._block_depths[-1],
+                vals,
             )
             assert isinstance(
                 stack.peek(), Activation
