@@ -760,6 +760,10 @@ class ModuleInstance(Eventful):
     export_map: typing.Dict[str, int]
     #: Contains instruction implementations for all non-control-flow instructions
     executor: Executor
+    #: Stores names of store functions, if available
+    function_names: typing.Dict[FuncAddr, str] = {}
+    #: Stores names of local variables, if available
+    local_names: typing.Dict[FuncAddr, typing.Dict[int, str]] = {}
     #: Stores the unpacked sequence of instructions in the order they should be executed
     _instruction_queue: typing.Deque[Instruction]
     #: Keeps track of the current call depth, both for functions and for code blocks. Each function call is represented
@@ -782,8 +786,8 @@ class ModuleInstance(Eventful):
         self.exports = []
         self.export_map = {}
         self.executor = Executor(constraints)
-        self.function_names: typing.Dict[FuncAddr, str] = {}
-        self.local_names: typing.Dict[FuncAddr, typing.Dict[int, str]] = {}
+        self.function_names = {}
+        self.local_names = {}
         self._instruction_queue = deque()
         self._block_depths = [0]
         self._state = None
