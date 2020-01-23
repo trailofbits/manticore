@@ -761,9 +761,9 @@ class ModuleInstance(Eventful):
     #: Contains instruction implementations for all non-control-flow instructions
     executor: Executor
     #: Stores names of store functions, if available
-    function_names: typing.Dict[FuncAddr, str] = {}
+    function_names: typing.Dict[FuncAddr, str]
     #: Stores names of local variables, if available
-    local_names: typing.Dict[FuncAddr, typing.Dict[int, str]] = {}
+    local_names: typing.Dict[FuncAddr, typing.Dict[int, str]]
     #: Stores the unpacked sequence of instructions in the order they should be executed
     _instruction_queue: typing.Deque[Instruction]
     #: Keeps track of the current call depth, both for functions and for code blocks. Each function call is represented
