@@ -35,28 +35,27 @@ collatz_file = str(
 class TestResume(unittest.TestCase):
     def test_resume(self):
         m = ManticoreWASM(collatz_file)
-        m.register_plugin(CallCounterPlugin())
+        plugin = CallCounterPlugin()
+        m.register_plugin(plugin)
         m.collatz(lambda s: [I32(1337)])
         m.run()
 
-        counts_canonical = m.context.get("<class 'test_state_saving.CallCounterPlugin'>").get(
-            "counter"
-        )
+        counts_canonical = plugin.context.get("counter")
 
         m = ManticoreWASM(collatz_file)
-        m.register_plugin(SerializerPlugin())
+        plugin = SerializerPlugin()
+        m.register_plugin(plugin)
         m.collatz(lambda s: [I32(1337)])
         m.run()
 
-        counts_save = m.context.get("<class 'test_state_saving.SerializerPlugin'>").get("counter")
+        counts_save = plugin.context.get("counter")
 
         m = ManticoreWASM.from_saved_state("/tmp/collatz_checkpoint.pkl")
-        m.register_plugin(CallCounterPlugin())
+        plugin = CallCounterPlugin()
+        m.register_plugin(plugin)
         m.run()
 
-        counts_resume = m.context.get("<class 'test_state_saving.CallCounterPlugin'>").get(
-            "counter"
-        )
+        counts_resume = plugin.context.get("counter")
 
         for k in counts_canonical:
             with self.subTest(k):
