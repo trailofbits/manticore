@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool, issymbolic
+from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,24 @@ class Concretize(StateException):
         self.policy = policy
         self.message = f"Concretize: {message} (Policy: {policy})"
         super().__init__(**kwargs)
+
+
+class SerializeState(Concretize):
+    def setstate(self, state, _value):
+        from ..utils.helpers import PickleSerializer
+
+        with open(self.filename, "wb") as statef:
+            PickleSerializer().serialize(state, statef)
+
+    def __init__(self, filename, **kwargs):
+        super().__init__(
+            f"Saving state to {filename}",
+            BitVecConstant(32, 0),
+            setstate=self.setstate,
+            policy="ONE",
+            **kwargs,
+        )
+        self.filename = filename
 
 
 class ForkState(Concretize):
