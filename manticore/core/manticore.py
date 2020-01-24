@@ -323,9 +323,8 @@ class ManticoreBase(Eventful):
         """
         from ..utils.helpers import PickleSerializer
 
-        fd = open(filename, "rb")
-        deserialized = PickleSerializer().deserialize(fd)
-        fd.close()
+        with open(filename, "rb") as fd:
+            deserialized = PickleSerializer().deserialize(fd)
 
         return cls(deserialized, *args, **kwargs)
 
