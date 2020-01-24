@@ -311,6 +311,24 @@ class ManticoreBase(Eventful):
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
 
+    @classmethod
+    def from_saved_state(cls, filename: str, *args, **kwargs):
+        """
+        Creates a Manticore object starting from a serialized state on the disk.
+
+        :param filename: File to load the state from
+        :param args: Arguments forwarded to the Manticore object
+        :param kwargs: Keyword args forwarded to the Manticore object
+        :return: An instance of a subclass of ManticoreBase with the given initial state
+        """
+        from ..utils.helpers import PickleSerializer
+
+        fd = open(filename, "rb")
+        deserialized = PickleSerializer().deserialize(fd)
+        fd.close()
+
+        return cls(deserialized, *args, **kwargs)
+
     def _fork(self, state, expression, policy="ALL", setstate=None):
         """
         Fork state on expression concretizations.
