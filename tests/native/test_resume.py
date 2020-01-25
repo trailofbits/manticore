@@ -1,11 +1,8 @@
 import unittest
 from manticore.native import Manticore
-from manticore.core.plugin import Plugin
 from manticore.core.state import SerializeState, TerminateState
 from pathlib import Path
-import os
 
-from manticore.utils.log import set_verbosity
 
 ms_file = str(
     Path(__file__).parent.parent.parent.joinpath("examples", "linux", "binaries", "multiple-styles")
@@ -19,8 +16,10 @@ class TestResume(unittest.TestCase):
         # First instruction of `main`
         @m.hook(0x4009AE)
         def serialize(state):
-            if os.path.exists("/tmp/ms_checkpoint.pkl"):
-                raise TerminateState("Abandoning...")
+            with m.locked_context() as context:
+                if context.get("kill", False):
+                    raise TerminateState("Abandoning...")
+                context["kill"] = True
             raise SerializeState("/tmp/ms_checkpoint.pkl")
 
         m.run()
