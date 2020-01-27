@@ -34,10 +34,14 @@ extra_require = {
     "lint": lint_deps,
 }
 
+this_directory = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
+    long_description = f.read()
 
 setup(
     name="manticore",
     description="Manticore is a symbolic execution tool for analysis of binaries and smart contracts.",
+    long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
     version="0.3.3",
