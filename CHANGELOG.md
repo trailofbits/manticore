@@ -1,6 +1,6 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.2...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.3...HEAD)
 
 ## 0.3.3 - 2020-01
 
