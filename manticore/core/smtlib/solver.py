@@ -464,7 +464,7 @@ class Z3Solver(Solver):
                     raise SolverError("Timeout")
             return result
 
-    def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, M=10000):
+    def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
         """
         Iteratively finds the maximum or minimum value for the operation
         (Normally Operators.UGT or Operators.ULT)
@@ -472,10 +472,10 @@ class Z3Solver(Solver):
         :param constraints: constraints to take into account
         :param x: a symbol or expression
         :param goal: goal to achieve, either 'maximize' or 'minimize'
-        :param M: maximum number of iterations allowed
+        :param max_iter: maximum number of iterations allowed
         """
+        #TODO: consider adding a mode to return best known value on timeout
         assert goal in ("maximize", "minimize")
-        assert isinstance(x, BitVec)
         operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
 
         with constraints as temp_cs:
@@ -486,7 +486,7 @@ class Z3Solver(Solver):
             self._send(aux.declaration)
 
             start = time.time()
-            if getattr(self, f"support_{goal}"):
+            if getattr(self, f"support_{goal}", False):
                 self._push()
                 try:
                     self._assert(operation(X, aux))
@@ -522,15 +522,57 @@ class Z3Solver(Solver):
                     self._reset(temp_cs)
                     self._send(aux.declaration)
 
-            operation = {"maximize": Operators.UGT, "minimize": Operators.ULT}[goal]
+            operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
             self._assert(aux == X)
+
+
+            #Find one value and use it as currently known min/Max
+            if not self._is_sat():
+                raise SolverException("UNSAT")
+            last_value = self._getvalue(aux)
+            self._assert(operation(aux, last_value))
+
+            # This uses a binary search to find a suitable range for aux
+            # Use known solution as min or max depending on the goal
+            if goal == "maximize":
+                m, M = last_value, (1 << x.size) - 1
+            else:
+                m, M = 0, last_value
+
+            # Iteratively divide the range
+            L = None
+            while L not in (M, m):
+                L = (m + M) // 2
+                self._push()
+                try:
+                    self._assert(operation(aux, value))
+                    sat = self._is_sat()
+                finally:
+                    self._pop()
+
+                # depending on the goal move one of the extremes
+                if goal == "maximize" and sat or goal == "minimize" and not sat:
+                    m = L
+                else:
+                    M = L
+
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
+
+            # At this point we know aux is inside [m,M]
+            # Lets constrain it to that range
+            self._assert(Operators.UGE(aux, m))
+            self._assert(Operators.ULE(aux, M))
+            
+            # And now check all remaining possible extremes
             last_value = None
             i = 0
             while self._is_sat():
                 last_value = self._getvalue(aux)
                 self._assert(operation(aux, last_value))
+                self._assert(aux != last_value)
                 i = i + 1
-                if i > M:
+                if i > max_iter:
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
                 if time.time() - start > consts.timeout:
                     raise SolverError("Timeout")
