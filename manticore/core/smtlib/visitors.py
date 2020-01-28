@@ -379,19 +379,17 @@ class ArithmeticSimplifier(Visitor):
             return expression
 
     def visit_BoolAnd(self, expression, *operands):
-        if isinstance(expression.operands[0], Constant) and expression.operands[0].value:
-            return expression.operands[1]
-        if isinstance(expression.operands[1], Constant) and expression.operands[1].value:
-            return expression.operands[0]
+        if isinstance(operands[0], Constant) and operands[0].value:
+            return operands[1]
+        if isinstance(operands[1], Constant) and operands[1].value:
+            return operands[0]
 
         # AND ( EQ (EXTRACT(0,8, a), EXTRACT(0,8, b)),  EQ (EXTRACT(8,16, a), EXTRACT(8,16 b)) ->
         # EQ(EXTRACT(0,16, a), EXTRACT(0,16, b))
-        if isinstance(expression.operands[0], BoolEqual) and isinstance(
-            expression.operands[1], BoolEqual
-        ):
+        if isinstance(operands[0], BoolEqual) and isinstance(operands[1], BoolEqual):
             # Eq operands
-            operand_0 = expression.operands[0]
-            operand_1 = expression.operands[1]
+            operand_0 = operands[0]
+            operand_1 = operands[1]
             # Extract operands
             operand_0_0 = operand_0.operands[0]
             operand_0_1 = operand_0.operands[1]
@@ -426,31 +424,27 @@ class ArithmeticSimplifier(Visitor):
                         )
 
     def visit_BoolNot(self, expression, *operands):
-        if isinstance(expression.operands[0], BoolNot):
-            return expression.operands[0].operands[0]
+        if isinstance(operands[0], BoolNot):
+            return operands[0].operands[0]
 
     def visit_BoolEqual(self, expression, *operands):
         """ (EQ, ITE(cond, constant1, constant2), constant1) -> cond
             (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
             (EQ (extract a, b, c) (extract a, b, c))
         """
-        if isinstance(expression.operands[0], BitVecITE) and isinstance(
-            expression.operands[1], Constant
-        ):
-            if isinstance(expression.operands[0].operands[1], Constant) and isinstance(
-                expression.operands[0].operands[2], Constant
+        if isinstance(operands[0], BitVecITE) and isinstance(operands[1], Constant):
+            if isinstance(operands[0].operands[1], Constant) and isinstance(
+                operands[0].operands[2], Constant
             ):
                 value1, value2, value3 = (
-                    expression.operands[1].value,
-                    expression.operands[0].operands[1].value,
-                    expression.operands[0].operands[2].value,
+                    operands[1].value,
+                    operands[0].operands[1].value,
+                    operands[0].operands[2].value,
                 )
                 if value1 == value2 and value1 != value3:
-                    return expression.operands[0].operands[
-                        0
-                    ]  # FIXME: this may break taint propagation
+                    return operands[0].operands[0]  # FIXME: this may break taint propagation
                 elif value1 == value3 and value1 != value2:
-                    return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
+                    return BoolNot(operands[0].operands[0], taint=expression.taint)
 
         if operands[0] is operands[1]:
             return BoolConstant(True, taint=expression.taint)
@@ -527,7 +521,7 @@ class ArithmeticSimplifier(Visitor):
         if changed:
             return BitVecConcat(expression.size, *new_operands)
 
-        op = expression.operands[0]
+        op = operands[0]
         value = None
         end = None
         begining = None
@@ -564,7 +558,7 @@ class ArithmeticSimplifier(Visitor):
             extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
             extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
         """
-        op = expression.operands[0]
+        op = operands[0]
         begining = expression.begining
         end = expression.end
         size = end - begining + 1
@@ -610,8 +604,8 @@ class ArithmeticSimplifier(Visitor):
         """ a + 0  ==> a
             0 + a  ==> a
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return left
@@ -624,8 +618,8 @@ class ArithmeticSimplifier(Visitor):
             (a + b) - b  ==> a
             (b + a) - b  ==> a
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(left, BitVecAdd):
             if self._same_constant(left.operands[0], right):
                 return left.operands[1]
@@ -651,8 +645,8 @@ class ArithmeticSimplifier(Visitor):
             a & 0xffffffff => 0xffffffff
 
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return left
@@ -673,8 +667,8 @@ class ArithmeticSimplifier(Visitor):
             (b & ct2) & ct => b & (ct&ct2)  associative property
             (a & (b | c) => a&b | a&c       distribute over |
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return right
@@ -697,8 +691,8 @@ class ArithmeticSimplifier(Visitor):
         """ a << 0 => a                       remove zero
             a << ct => 0 if ct > sizeof(a)    remove big constant shift
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return left
