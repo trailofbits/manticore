@@ -498,9 +498,9 @@ class Z3Solver(Solver):
                         # This will be a line like NAME |-> VALUE
                         maybe_sat = self._recv()
                         if maybe_sat == "sat":
-                            m = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
-                            if m:
-                                expr, value = m.group("expr"), m.group("value")
+                            match = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
+                            if match:
+                                expr, value = match.group("expr"), match.group("value")
                                 assert expr == aux.name
                                 return int(value)
                             else:
@@ -510,9 +510,9 @@ class Z3Solver(Solver):
                         if not (ret.startswith("(") and ret.endswith(")")):
                             raise SolverError("bad output on max, z3 may have been killed")
 
-                        m = RE_OBJECTIVES_EXPR_VALUE.match(ret)
-                        if m:
-                            expr, value = m.group("expr"), m.group("value")
+                        match = RE_OBJECTIVES_EXPR_VALUE.match(ret)
+                        if match:
+                            expr, value = match.group("expr"), match.group("value")
                             assert expr == aux.name
                             return int(value)
                         else:
