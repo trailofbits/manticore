@@ -544,7 +544,7 @@ class Z3Solver(Solver):
                 L = (m + M) // 2
                 self._push()
                 try:
-                    self._assert(operation(aux, value))
+                    self._assert(operation(aux, L))
                     sat = self._is_sat()
                 finally:
                     self._pop()
