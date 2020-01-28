@@ -429,6 +429,23 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a >= 100)
         self.assertTrue(self.solver.check(cs))
         self.assertEqual(self.solver.minmax(cs, a), (100, 200))
+        from manticore import config
+        consts = config.get_group("smt")
+        consts.optimize=False
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32)
+        cs.add(a <= 200)
+        cs.add(a >= 100)
+        self.assertTrue(self.solver.check(cs))
+        self.assertEqual(self.solver.minmax(cs, a), (100, 200))
+        consts.optimize=True
+
+    def testBitvector_max_noop(self):
+        from manticore import config
+        consts = config.get_group("smt")
+        consts.optimize=False
+        self.testBitvector_max()
+        consts.optimize=True
 
     def testBitvector_max1(self):
         cs = ConstraintSet()
@@ -437,6 +454,13 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a > 100)
         self.assertTrue(self.solver.check(cs))
         self.assertEqual(self.solver.minmax(cs, a), (101, 199))
+        
+    def testBitvector_max1_noop(self):
+        from manticore import config
+        consts = config.get_group("smt")
+        consts.optimize=False
+        self.testBitvector_max1()
+        consts.optimize=True
 
     def testBool_nonzero(self):
         self.assertTrue(BoolConstant(True).__bool__())

@@ -39,6 +39,7 @@ consts.add(
 )
 consts.add("z3_bin", default="z3", description="Z3 binary to use")
 consts.add("defaultunsat", default=True, description="Consider solver timeouts as unsat core")
+consts.add("optimize", default=True, description="Use smtlib command optimize to find min/max if available")
 
 
 # Regular expressions used by the solver
@@ -486,7 +487,7 @@ class Z3Solver(Solver):
             self._send(aux.declaration)
 
             start = time.time()
-            if getattr(self, f"support_{goal}", False):
+            if consts.optimize and getattr(self, f"support_{goal}", False):
                 self._push()
                 try:
                     self._assert(operation(X, aux))
