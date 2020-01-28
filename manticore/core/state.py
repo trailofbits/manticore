@@ -55,6 +55,10 @@ class Concretize(StateException):
 
 
 class SerializeState(Concretize):
+    """ Allows the user to save a copy of the current state somewhere on the
+        disk so that analysis can later be resumed from this point.
+    """
+
     def setstate(self, state, _value):
         from ..utils.helpers import PickleSerializer
 
