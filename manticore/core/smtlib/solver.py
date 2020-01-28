@@ -474,7 +474,7 @@ class Z3Solver(Solver):
         :param goal: goal to achieve, either 'maximize' or 'minimize'
         :param max_iter: maximum number of iterations allowed
         """
-        #TODO: consider adding a mode to return best known value on timeout
+        # TODO: consider adding a mode to return best known value on timeout
         assert goal in ("maximize", "minimize")
         operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
 
@@ -525,8 +525,7 @@ class Z3Solver(Solver):
             operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
             self._assert(aux == X)
 
-
-            #Find one value and use it as currently known min/Max
+            # Find one value and use it as currently known min/Max
             if not self._is_sat():
                 raise SolverException("UNSAT")
             last_value = self._getvalue(aux)
@@ -563,7 +562,7 @@ class Z3Solver(Solver):
             # Lets constrain it to that range
             self._assert(Operators.UGE(aux, m))
             self._assert(Operators.ULE(aux, M))
-            
+
             # And now check all remaining possible extremes
             last_value = None
             i = 0
