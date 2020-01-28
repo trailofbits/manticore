@@ -230,3 +230,66 @@ class WorkerProcess(Worker):
     def join(self):
         self._p.join()
         self._p = None
+
+
+class MonitorWorker(WorkerThread):
+    def run(self, *args):
+        logger.debug(
+            "Starting Manticore Monitor Thread %d. Pid %d Tid %d).",
+            self.id,
+            os.getpid(),
+            threading.get_ident(),
+        )
+
+        m = self.manticore
+        m._is_main = False  # This will mark our copy of manticore
+
+        import time
+        import socket
+        
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      
+        
+        HOST = '127.0.0.1'
+        PORT = 1337
+
+        s.bind((HOST, PORT))         
+        
+        logger.debug(
+            "Created socket in threads bound to host %s, port %d",
+            HOST,
+            PORT,
+        )
+
+        s.listen(5)     
+        socket_list = [s]
+
+        with WithKeyboardInterruptAs(m.kill):
+            while m.is_running():  # TODO: Exits after state exploration, but not finalization
+            # Establish connection with client.
+
+                read_sockets, write_sockets, error_sockets = select.select(socket_list, socket_list, [], 5)    
+                serialized_states = generate_states().SerializeToString() 
+                serialized_messages = generate_messages().SerializeToString()
+                
+                #print(read_sockets, write_sockets)
+
+                if len(read_sockets):
+
+                    for sock in read_sockets:
+                        if sock is s:
+                            print("Got connection from manticore TUI")
+                            c, addr = sock.accept()
+                            socket_list.append(c)
+                        else:
+                            data = sock.recv(1024)
+
+                if len(write_sockets):
+                    for sock in write_sockets:
+                        time.sleep(random.randint(2, 5) + 0.01)
+
+                        if random.random() >= 0.5:
+                            print("Sending states")
+                            sock.send(serialized_states)
+                        else:
+                            print("Sending messages")
+                            sock.send(serialized_messages)
