@@ -141,7 +141,7 @@ Install and try Manticore in a few shell commands:
 
 ```bash
 # Install system dependencies
-sudo apt-get update && sudo apt-get install python3 python3-pip -y
+sudo apt-get update && sudo apt-get install python3 python3-dev python3-pip -y
 
 # Install Manticore and its dependencies
 sudo pip3 install manticore[native]
