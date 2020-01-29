@@ -68,6 +68,9 @@ solver = Z3Solver.instance()
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 
+#: Size of a standard WASM memory page
+PAGESIZE = 2 ** 16
+
 
 # Wrappers around integers that we use for indexing the store.
 class Addr(int):
@@ -461,6 +464,7 @@ class Module:
                     and hasattr(section, "payload_len")
                     and hasattr(section, "payload")
                 ):
+                    # https://webassembly.github.io/spec/core/appendix/custom.html#subsections
                     name_type = section_data.name_type
                     if name_type == 0:  # module name
                         pass
@@ -531,15 +535,14 @@ class MemInst(Eventful):
 
     def __init__(self, starting_data, max=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        pagesize = 2 ** 16
-        self._current_size = ceil(len(starting_data) / pagesize)
+        self._current_size = ceil(len(starting_data) / PAGESIZE)
         self.max = max
         self._pages = {}
 
-        chunked = [starting_data[i : i + pagesize] for i in range(0, len(starting_data), pagesize)]
+        chunked = [starting_data[i : i + PAGESIZE] for i in range(0, len(starting_data), PAGESIZE)]
         for idx, page in enumerate(chunked):
-            if len(page) < pagesize:
-                page.extend([0x0] * (pagesize - len(page)))
+            if len(page) < PAGESIZE:
+                page.extend([0x0] * (PAGESIZE - len(page)))
             self._pages[idx] = page
 
     def __getstate__(self):
@@ -556,15 +559,15 @@ class MemInst(Eventful):
         self._current_size = state["current"]
 
     def __contains__(self, item):
-        return item in range(self.npages * (2 ** 16))
+        return item in range(self.npages * PAGESIZE)
 
     def _check_initialize_index(self, memidx):
-        page = memidx // (2 ** 16)
+        page = memidx // PAGESIZE
         if page not in range(self.npages):
             raise OutOfBoundsMemoryTrap(memidx)
         if page not in self._pages:
-            self._pages[page] = [0x0] * (2 ** 16)
-        return divmod(memidx, 2 ** 16)
+            self._pages[page] = [0x0] * PAGESIZE
+        return divmod(memidx, PAGESIZE)
 
     def _read_byte(self, addr):
         page, idx = self._check_initialize_index(addr)
@@ -588,7 +591,7 @@ class MemInst(Eventful):
         :return: True if the operation succeeded, otherwise False
         """
         ln = n + self.npages
-        if ln > (2 ** 16):
+        if ln > (PAGESIZE):
             return False
         if self.max is not None:
             if ln > self.max:
@@ -647,7 +650,7 @@ class MemInst(Eventful):
         return d
 
     def dump(self):
-        return self.read_bytes(0, self._current_size * (2 ** 16))
+        return self.read_bytes(0, self._current_size * PAGESIZE)
 
 
 @dataclass
@@ -914,7 +917,7 @@ class ModuleInstance(Eventful):
             assert memaddr in range(len(store.mems))
             meminst = store.mems[memaddr]
             dend = doval + len(data.init)
-            assert dend <= meminst.npages * (2 ** 16)
+            assert dend <= meminst.npages * (PAGESIZE)
 
             meminst.write_bytes(doval, data.init)
 
