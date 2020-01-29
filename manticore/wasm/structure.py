@@ -44,6 +44,7 @@ from .state import State
 from ..core.smtlib import BitVec, issymbolic, Operators
 from ..core.state import Concretize
 from ..utils.event import Eventful
+from ..utils import config
 
 from wasm import decode_module, Section
 from wasm.wasmtypes import (
@@ -67,6 +68,13 @@ solver = Z3Solver.instance()
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
+
+consts = config.get_group("wasm")
+consts.add(
+    "decode_names",
+    default=False,
+    description="Should Manticore attempt to decode custom name sections",
+)
 
 #: Size of a standard WASM memory page
 PAGESIZE = 2 ** 16
@@ -345,7 +353,7 @@ class Module:
             m._raw = wasm_file.read()
 
         # Test modules break name subsection decoding. TODO: Find a better WASM importer
-        module_iter = decode_module(m._raw, decode_name_subsections=False)
+        module_iter = decode_module(m._raw, decode_name_subsections=consts.decode_names)
         _header = next(module_iter)
         section: Section
         # Parse the sections from the WASM module into internal types. For each section, the code usually resembles:
@@ -482,7 +490,9 @@ class Module:
                                 m.local_names.setdefault(FuncAddr(func_idx), {})[
                                     n.index
                                 ] = strip_quotes(ty.to_string(n.name_str))
-                # TODO - other custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
+                else:
+                    logger.info("Encountered unknown section")
+                    # TODO - other custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
 
         return m
 
