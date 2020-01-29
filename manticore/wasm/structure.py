@@ -41,7 +41,7 @@ from .types import (
     ConcretizeStack,
 )
 from .state import State
-from ..core.smtlib import BitVec, issymbolic, Operators
+from ..core.smtlib import BitVec, issymbolic, Operators, Expression
 from ..core.state import Concretize
 from ..utils.event import Eventful
 from ..utils import config
@@ -609,7 +609,7 @@ class MemInst(Eventful):
         self._current_size = ln
         return True
 
-    def write_int(self, base, expression, size=32):
+    def write_int(self, base: int, expression: typing.Union[Expression, int], size: int = 32):
         """
         Writes an integer into memory.
 
@@ -622,7 +622,9 @@ class MemInst(Eventful):
         ]
         self.write_bytes(base, b)
 
-    def write_bytes(self, base, data):
+    def write_bytes(
+        self, base: int, data: typing.Union[str, typing.Sequence[int], typing.Sequence[bytes]]
+    ):
         """
         Writes  a stream of bytes into memory
 
@@ -634,7 +636,7 @@ class MemInst(Eventful):
             self._write_byte(base + idx, v)
         self._publish("did_write_memory", base, data)
 
-    def read_int(self, base, size=32):
+    def read_int(self, base: int, size: int = 32) -> int:
         """
         Reads bytes from memory and combines them into an int
 
@@ -646,7 +648,7 @@ class MemInst(Eventful):
             size, *map(Operators.ORD, reversed(self.read_bytes(base, size // 8)))
         )
 
-    def read_bytes(self, base, size):
+    def read_bytes(self, base: int, size: int) -> typing.List[typing.Union[int, bytes]]:
         """
         Reads bytes from memory
 
