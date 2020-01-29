@@ -1,8 +1,10 @@
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .state import Concretize, TerminateState
+from .state_pb2 import *
 import logging
 import multiprocessing
 import threading
+import select
 import os
 
 
@@ -231,8 +233,25 @@ class WorkerProcess(Worker):
         self._p.join()
         self._p = None
 
-
 class MonitorWorker(WorkerThread):
+
+    def obtain_states(self, m):
+        serialized_states = StateList()
+        serialized_messages = MessageList()
+        
+        for r in m._ready_states:
+            rstate = State()
+            rstate.id = r 
+            serialized_states.states.extend([rstate])
+
+        for b in m._busy_states:
+            bstate = State()
+            bstate.id = b
+            bstate.reason = "Busy executing"
+            serialized_states.states.extend([bstate])
+
+        return serialized_states
+
     def run(self, *args):
         logger.debug(
             "Starting Manticore Monitor Thread %d. Pid %d Tid %d).",
@@ -267,17 +286,18 @@ class MonitorWorker(WorkerThread):
             while m.is_running():  # TODO: Exits after state exploration, but not finalization
             # Establish connection with client.
 
-                read_sockets, write_sockets, error_sockets = select.select(socket_list, socket_list, [], 5)    
-                serialized_states = generate_states().SerializeToString() 
-                serialized_messages = generate_messages().SerializeToString()
+                read_sockets, write_sockets, error_sockets = select.select(socket_list, socket_list, [], 5)
+                serialized_states = self.obtain_states(m).SerializeToString()
                 
-                #print(read_sockets, write_sockets)
-
                 if len(read_sockets):
 
                     for sock in read_sockets:
                         if sock is s:
-                            print("Got connection from manticore TUI")
+                                    
+                            logger.debug(
+                                "Received connection from Manticore TUI"
+                            )
+
                             c, addr = sock.accept()
                             socket_list.append(c)
                         else:
@@ -285,11 +305,5 @@ class MonitorWorker(WorkerThread):
 
                 if len(write_sockets):
                     for sock in write_sockets:
-                        time.sleep(random.randint(2, 5) + 0.01)
 
-                        if random.random() >= 0.5:
-                            print("Sending states")
-                            sock.send(serialized_states)
-                        else:
-                            print("Sending messages")
-                            sock.send(serialized_messages)
+                        sock.send(serialized_states)
