@@ -18,7 +18,7 @@ import threading
 import collections
 import shlex
 import time
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 from subprocess import PIPE, Popen
 import re
 from . import operators as Operators
@@ -289,7 +289,7 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
-    def _send(self, cmd: str):
+    def _send(self, cmd: Union[str, ConstraintSet]):
         """
         Send a string to the solver.
 
