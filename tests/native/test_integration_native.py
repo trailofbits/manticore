@@ -260,6 +260,24 @@ class NativeIntegrationTest(unittest.TestCase):
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
             self.assertIn("Message", f.read())
 
+    def test_fclose_linux_amd64(self):
+        """
+        Tests that the fclose example for amd64 linux doesn't crash; see #1602 and #1604.
+        """
+        filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "fclose_linux_amd64"))
+        workspace = os.path.join(self.test_dir, "workspace")
+        cmd = [
+            PYTHON_BIN,
+            "-m",
+            "manticore",
+            "--no-color",
+            "--workspace",
+            workspace,
+            filename,
+            "+++++++",
+        ]
+        subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     def test_brk_regression(self):
         """
         Tests for brk behavior. Source of brk_static_amd64:
