@@ -2,6 +2,7 @@ arguments
 basic
 crackme
 crackme.c
+fclose
 helloworld
 ibranch
 indexhell

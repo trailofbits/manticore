@@ -7,6 +7,7 @@ EXAMPLES=      \
   arguments    \
   basic        \
   crackme      \
+  fclose       \
   helloworld   \
   ibranch      \
   indexhell    \
