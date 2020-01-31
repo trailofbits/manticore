@@ -36,7 +36,7 @@ extra_require = {
     "lint": lint_deps,
 }
 
-output = subprocess.check_output(protoc_cmd)
+subprocess.check_output(protoc_cmd)
 
 setup(
     name="manticore",
