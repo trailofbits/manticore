@@ -1,8 +1,11 @@
 import os
+import subprocess
 from setuptools import setup, find_packages
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
+protoc_dir = "manticore/core"
+protoc_cmd = f"protoc -I={protoc_dir} --python_out={protoc_dir} {protoc_dir}/state.proto".split()
 
 def rtd_dependent_deps():
     # RTD tries to build z3, ooms, and fails to build.
@@ -10,7 +13,6 @@ def rtd_dependent_deps():
         return native_deps
     else:
         return ["z3-solver"]
-
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
@@ -34,6 +36,7 @@ extra_require = {
     "lint": lint_deps,
 }
 
+subprocess.Popen(protoc_cmd)
 
 setup(
     name="manticore",
