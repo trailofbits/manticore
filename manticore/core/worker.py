@@ -233,22 +233,36 @@ class WorkerProcess(Worker):
         self._p.join()
         self._p = None
 
-class MonitorWorker(WorkerThread):
 
+class MonitorWorker(WorkerThread):
     def obtain_states(self, m):
         serialized_states = StateList()
         serialized_messages = MessageList()
-        
-        for r in m._ready_states:
-            rstate = State()
-            rstate.id = r 
-            serialized_states.states.extend([rstate])
 
         for b in m._busy_states:
             bstate = State()
             bstate.id = b
             bstate.reason = "Busy executing"
+            bstate.type = State.BUSY
             serialized_states.states.extend([bstate])
+
+        for r in m._ready_states:
+            rstate = State()
+            rstate.id = r
+            rstate.type = State.READY
+            serialized_states.states.extend([rstate])
+
+        for t in m._terminated_states:
+            tstate = State()
+            tstate.id = t
+            tstate.type = State.TERMINATED
+            serialized_states.states.extend([tstate])
+
+        for k in m._killed_states:
+            kstate = State()
+            kstate.id = k
+            kstate.type = State.KILLED
+            serialized_states.states.extend([kstate])
 
         return serialized_states
 
@@ -265,45 +279,51 @@ class MonitorWorker(WorkerThread):
 
         import time
         import socket
-        
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      
-        
-        HOST = '127.0.0.1'
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        HOST = "127.0.0.1"
         PORT = 1337
 
-        s.bind((HOST, PORT))         
-        
-        logger.debug(
-            "Created socket in threads bound to host %s, port %d",
-            HOST,
-            PORT,
-        )
+        s.bind((HOST, PORT))
 
-        s.listen(5)     
+        logger.debug("Created socket in threads bound to host %s, port %d", HOST, PORT)
+
+        s.listen(5)
         socket_list = [s]
+
+        serialized_states = self.obtain_states(m).SerializeToString()
+        changed = False
 
         with WithKeyboardInterruptAs(m.kill):
             while m.is_running():  # TODO: Exits after state exploration, but not finalization
-            # Establish connection with client.
+                # Establish connection with client.
+                read_sockets, write_sockets, error_sockets = select.select(
+                    socket_list, socket_list, [], 0
+                )
 
-                read_sockets, write_sockets, error_sockets = select.select(socket_list, socket_list, [], 5)
-                serialized_states = self.obtain_states(m).SerializeToString()
-                
+                states = self.obtain_states(m)
+
+                if states != serialized_states:
+                    serialized_states = states
+                    changed = True
+
                 if len(read_sockets):
 
                     for sock in read_sockets:
                         if sock is s:
-                                    
-                            logger.debug(
-                                "Received connection from Manticore TUI"
-                            )
+
+                            logger.debug("Received connection from Manticore TUI")
 
                             c, addr = sock.accept()
                             socket_list.append(c)
                         else:
-                            data = sock.recv(1024)
+                            sock.recv(1024)
 
-                if len(write_sockets):
+                if len(write_sockets) and changed:
                     for sock in write_sockets:
-
-                        sock.send(serialized_states)
+                        print(
+                            m._busy_states, m._ready_states, m._terminated_states, m._killed_states
+                        )
+                        sock.send(serialized_states.SerializeToString())
+                        changed = False
