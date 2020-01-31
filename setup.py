@@ -46,6 +46,7 @@ setup(
     install_requires=[
         "pyyaml",
         "wrapt",
+        "protobuf",
         # evm dependencies
         "pysha3",
         "prettytable",
