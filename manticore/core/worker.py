@@ -322,8 +322,5 @@ class MonitorWorker(WorkerThread):
 
                 if len(write_sockets) and changed:
                     for sock in write_sockets:
-                        print(
-                            m._busy_states, m._ready_states, m._terminated_states, m._killed_states
-                        )
                         sock.send(serialized_states.SerializeToString())
                         changed = False
