@@ -85,7 +85,9 @@ class NativeIntegrationTest(unittest.TestCase):
         """
         filename = os.path.join(DIRPATH, "binaries", "basic_linux_amd64")
         workspace = os.path.join(self.test_dir, "workspace")
-        output = subprocess.check_output([PYTHON_BIN, "-m", "manticore", "--no-color", "--workspace", workspace, filename])
+        output = subprocess.check_output(
+            [PYTHON_BIN, "-m", "manticore", "--no-color", "--workspace", workspace, filename]
+        )
 
         output_lines = output.splitlines()
 
