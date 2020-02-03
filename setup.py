@@ -1,10 +1,33 @@
 import os
+import subprocess
 from setuptools import setup, find_packages
+from distutils.spawn import find_executable
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+
+
+def compile_protobufs():
+    protoc_dir = "manticore/core"
+    protoc = os.environ.get("PROTOC", find_executable("protoc"))
+    subprocess.check_call(
+        [protoc, *"-I={protoc_dir} --python_out={protoc_dir} {protoc_dir}/state.proto".split()]
+    )
+
+
+class PostDevelop(develop):
+    def run(self):
+        compile_protobufs()
+        develop.run(self)
+
+
+class PostInstall(install):
+    def run(self):
+        compile_protobufs()
+        install.run(self)
+
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
-protoc_dir = "manticore/core"
-protoc_cmd = f"protoc -I={protoc_dir} --python_out={protoc_dir} {protoc_dir}/state.proto".split()
 
 def rtd_dependent_deps():
     # RTD tries to build z3, ooms, and fails to build.
@@ -12,6 +35,7 @@ def rtd_dependent_deps():
         return native_deps
     else:
         return ["z3-solver"]
+
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
@@ -67,4 +91,5 @@ setup(
     extras_require=extra_require,
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
+    cmdclass={"develop": PostDevelop, "install": PostInstall},
 )
