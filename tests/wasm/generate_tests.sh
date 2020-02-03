@@ -40,4 +40,6 @@ chmod +x gen.sh
 cat modules.txt | xargs -n1 -P"$cores" ./gen.sh
 rm gen.sh
 
+mv test_callbacks.skip test_callbacks.py
+
 exit 0
