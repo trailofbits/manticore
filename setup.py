@@ -10,20 +10,20 @@ def compile_protobufs():
     protoc_dir = "manticore/core"
     protoc = os.environ.get("PROTOC", find_executable("protoc"))
     subprocess.check_call(
-        [protoc, *"-I={protoc_dir} --python_out={protoc_dir} {protoc_dir}/state.proto".split()]
+        [protoc, *f"-I={protoc_dir} --python_out={protoc_dir} {protoc_dir}/state.proto".split()]
     )
 
 
 class PostDevelop(develop):
     def run(self):
-        compile_protobufs()
         develop.run(self)
+        compile_protobufs()
 
 
 class PostInstall(install):
     def run(self):
-        compile_protobufs()
         install.run(self)
+        compile_protobufs()
 
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
