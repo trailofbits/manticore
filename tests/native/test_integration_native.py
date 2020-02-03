@@ -12,9 +12,6 @@ from manticore.native.mappings import mmap, munmap
 
 DIRPATH = os.path.dirname(__file__)
 
-# TLDR: when we launch `python -m manticore` and one uses PyCharm remote interpreter
-# the `python` might not refer to proper interpreter. The `/proc/self/exe` is a workaround
-# so one doesn't have to set up virtualenv in a remote interpreter.
 PYTHON_BIN = sys.executable
 
 
