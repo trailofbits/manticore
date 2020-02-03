@@ -1,31 +1,5 @@
 import os
-import subprocess
 from setuptools import setup, find_packages
-from distutils.spawn import find_executable
-from setuptools.command.develop import develop
-from setuptools.command.install import install
-
-
-def compile_protobufs():
-    protoc_dir = "manticore/core"
-    protoc = os.environ.get("PROTOC", find_executable("protoc"))
-    if not protoc:
-        raise RuntimeError("Couldn't find protoc compiler!")
-    subprocess.check_call(
-        [protoc, *f"-I={protoc_dir} --python_out={protoc_dir} {protoc_dir}/state.proto".split()]
-    )
-
-
-class PostDevelop(develop):
-    def run(self):
-        develop.run(self)
-        compile_protobufs()
-
-
-class PostInstall(install):
-    def run(self):
-        install.run(self)
-        compile_protobufs()
 
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
@@ -93,5 +67,4 @@ setup(
     extras_require=extra_require,
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
-    cmdclass={"develop": PostDevelop, "install": PostInstall},
 )
