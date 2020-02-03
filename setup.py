@@ -9,6 +9,8 @@ from setuptools.command.install import install
 def compile_protobufs():
     protoc_dir = "manticore/core"
     protoc = os.environ.get("PROTOC", find_executable("protoc"))
+    if not protoc:
+        raise RuntimeError("Couldn't find protoc compiler!")
     subprocess.check_call(
         [protoc, *f"-I={protoc_dir} --python_out={protoc_dir} {protoc_dir}/state.proto".split()]
     )
