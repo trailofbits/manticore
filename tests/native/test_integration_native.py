@@ -276,7 +276,7 @@ class NativeIntegrationTest(unittest.TestCase):
             filename,
             "+++++++",
         ]
-        subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(cmd)
 
     def test_brk_regression(self) -> None:
         """
