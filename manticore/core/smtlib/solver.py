@@ -296,7 +296,6 @@ class Z3Solver(Solver):
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         # logger.debug('>%s', cmd)
-        # print (">",self._proc.stdin.name, threading.get_ident())
         try:
             self._proc.stdout.flush()
             self._proc.stdin.write(f"{cmd}\n")
@@ -313,12 +312,13 @@ class Z3Solver(Solver):
             bufl.append(buf)
             left += l
             right += r
+            if "(error" in bufl[0]:
+                raise SolverException(f"Error in smtlib: {bufl[0]}")
 
         buf = "".join(bufl).strip()
-
-        # logger.debug('<%s', buf)
         if "(error" in bufl[0]:
             raise SolverException(f"Error in smtlib: {bufl[0]}")
+
         return buf
 
     def __readline_and_count(self):
@@ -398,7 +398,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints, expression=True):
+    def can_be_true(self, constraints:ConstraintSet, expression=True):
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
