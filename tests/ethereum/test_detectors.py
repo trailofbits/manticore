@@ -11,15 +11,15 @@ from manticore.platforms.evm import EVMWorld
 
 from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import (
-    ManticoreEVM,
-    DetectIntegerOverflow,
-    DetectUnusedRetVal,
-    DetectSuicidal,
     DetectDelegatecall,
-    DetectExternalCallAndLeak,
     DetectEnvInstruction,
-    DetectRaceCondition,
+    DetectExternalCallAndLeak,
+    DetectIntegerOverflow,
     DetectManipulableBalance,
+    DetectRaceCondition,
+    DetectSuicidal,
+    DetectUnusedRetVal,
+    ManticoreEVM,
     State,
 )
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
