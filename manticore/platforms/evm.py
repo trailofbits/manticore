@@ -54,12 +54,13 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group("evm")
 
-
-
 def globalsha3(data):
     return int(sha3.keccak_256(data).hexdigest(), 16)
+
+
 def globalfakesha3(data):
     return None
+
 
 consts.add(
     "oog",

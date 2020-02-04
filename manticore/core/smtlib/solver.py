@@ -401,7 +401,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints:ConstraintSet, expression=True):
+    def can_be_true(self, constraints: ConstraintSet, expression=True):
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:

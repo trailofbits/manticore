@@ -405,7 +405,6 @@ class ManticoreEVM(ManticoreBase):
         elif consts.sha3 is consts.sha3.fake:
             self.subscribe("on_symbolic_function", self._on_unsound_symbolication)
 
-
         self._accounts: Dict[str, EVMContract] = dict()
         self._serializer = PickleSerializer()
 
@@ -583,8 +582,7 @@ class ManticoreEVM(ManticoreBase):
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"different than 0 because the contract's constructor is not payable."
                             )
-                        elif Z3Solver.instance().can_be_true(self.constraints, Operators.UGE(self.world.get_balance(
-                                    owner.address), balance)):
+                        elif Z3Solver.instance().can_be_true(self.constraints, Operators.UGE(self.world.get_balance(owner.address), balance)):
                             self.constraints.add(Operators.UGE(self.world.get_balance(owner.address), balance))
                         elif Z3Solver.instance().can_be_true(self.constraints, self.world.get_balance(owner.address) < balance):
                             raise EthereumError(
@@ -1137,7 +1135,6 @@ class ManticoreEVM(ManticoreBase):
 
         result.append(y_concrete)
 
-
     def _on_unsound_symbolication(self, state, func, data, result):
         """Apply the function symbolic unfriendly func to data
         state: a manticore state
@@ -1162,7 +1159,7 @@ class ManticoreEVM(ManticoreBase):
         try:
             value = func(data)
         except Exception as e:
-            pass #function is unknown
+            pass  # function is unknown
 
         #Value is known. Let's add it to our concrete database
         if value is not None:
@@ -1239,7 +1236,6 @@ class ManticoreEVM(ManticoreBase):
 
         # Ok all functions had a match for current state
         return state.can_be_true(True)
-
 
     def fix_unsound_symbolication_sound(self, state):
         """ This method goes through all the applied symbolic functions and tries
