@@ -1,9 +1,11 @@
 import logging
 import sys
 
+from typing import Set
+
 manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
-all_loggers = set()
+all_loggers: Set[str] = set()
 default_factory = logging.getLogRecordFactory()
 logfmt = "%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s"
 handler = logging.StreamHandler(sys.stdout)
