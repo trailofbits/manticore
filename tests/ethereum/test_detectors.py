@@ -16,6 +16,7 @@ from manticore.ethereum import (
     DetectExternalCallAndLeak,
     DetectIntegerOverflow,
     DetectManipulableBalance,
+    Detector,
     DetectRaceCondition,
     DetectSuicidal,
     DetectUnusedRetVal,
@@ -25,6 +26,8 @@ from manticore.ethereum import (
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
 
 from manticore.utils import config, log
+
+from typing import Type
 
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
@@ -39,11 +42,8 @@ def make_mock_evm_state():
 
 
 class EthDetectorTest(unittest.TestCase):
-    """
-    Subclasses must assign this class variable to the class for the detector
-    """
-
-    DETECTOR_CLASS = None
+    # Subclasses must assign this class variable to the class for the detector
+    DETECTOR_CLASS: Type[Detector]
 
     def setUp(self):
         self.mevm = ManticoreEVM()
