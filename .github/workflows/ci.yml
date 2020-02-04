@@ -167,7 +167,7 @@ jobs:
             # see https://github.com/trailofbits/manticore/issues/1166
             # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
             if [ "$(ls output/*tx -l | wc -l)" != "13" ]; then
-                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 13"
+                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
                 return 1
             fi
             echo "Truffle test succeded"
