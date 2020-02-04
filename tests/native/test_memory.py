@@ -1373,7 +1373,7 @@ class MemoryTest(unittest.TestCase):
 
         mem.mprotect(addr, size, "w")
         with self.assertRaisesRegex(
-            InvalidMemoryAccess, f"Invalid memory access \(mode:.\) <{addr:x}>"
+            InvalidMemoryAccess, fr"Invalid memory access \(mode:.\) <{addr:x}>"
         ):
             _ = mem[addr]
 
@@ -1428,7 +1428,7 @@ class MemoryTest(unittest.TestCase):
         # No Access Reading <4160741376>
         # self.assertRaisesRegexp(MemoryException, r"No access reading.*", mem.__getitem__, x)
         with self.assertRaisesRegex(
-            InvalidSymbolicMemoryAccess, "Invalid symbolic memory access \(mode:r\)"
+            InvalidSymbolicMemoryAccess, r"Invalid symbolic memory access \(mode:r\)"
         ):
             _ = mem[x]
             # mem[addr] = 'a'
@@ -1445,7 +1445,7 @@ class MemoryTest(unittest.TestCase):
         mem[addr] = "a"
         mem.mprotect(addr, size, "r")
         with self.assertRaisesRegex(
-            InvalidMemoryAccess, f"Invalid memory access \(mode:w\) <{addr:x}>"
+            InvalidMemoryAccess, fr"Invalid memory access \(mode:w\) <{addr:x}>"
         ):
             mem[addr] = "a"
 
@@ -1461,7 +1461,7 @@ class MemoryTest(unittest.TestCase):
         mem[addr] = "a"
 
         with self.assertRaisesRegex(
-            InvalidMemoryAccess, f"Invalid memory access \(mode:r\) <{addr:x}>"
+            InvalidMemoryAccess, fr"Invalid memory access \(mode:r\) <{addr:x}>"
         ):
             _ = mem[addr]
 
