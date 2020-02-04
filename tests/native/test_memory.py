@@ -1428,7 +1428,7 @@ class MemoryTest(unittest.TestCase):
         # No Access Reading <4160741376>
         # self.assertRaisesRegexp(MemoryException, r"No access reading.*", mem.__getitem__, x)
         with self.assertRaisesRegex(
-            InvalidSymbolicMemoryAccess, "Invalid symbolic memory access.*".format(addr)
+            InvalidSymbolicMemoryAccess, f"Invalid symbolic memory access.*<{addr:x}>"
         ):
             _ = mem[x]
             # mem[addr] = 'a'
