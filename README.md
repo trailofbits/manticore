@@ -10,6 +10,7 @@
 [![PyPI version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
+[![Example Status](https://img.shields.io/github/workflow/status/trailofbits/manticore-examples/CI/master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
 
 Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
 
