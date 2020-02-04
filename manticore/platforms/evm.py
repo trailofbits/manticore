@@ -54,6 +54,7 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group("evm")
 
+
 def globalsha3(data):
     return int(sha3.keccak_256(data).hexdigest(), 16)
 
@@ -3077,7 +3078,7 @@ class EVMWorld(Platform):
                     # get the storage for account_address
                     storage = blockchain.get_storage(account_address)
                     # we are interested only in used slots
-                    #temp_cs.add(storage.get(index) != 0)
+                    # temp_cs.add(storage.get(index) != 0)
                     temp_cs.add(storage.is_known(index))
                     # Query the solver to get all storage indexes with used slots
                     all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
@@ -3089,7 +3090,11 @@ class EVMWorld(Platform):
                         is_storage_symbolic = issymbolic(value)
                         stream.write(
                             "storage[%x] = %x %s\n"
-                            % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic))
+                            % (
+                                state.solve_one(i),
+                                state.solve_one(value),
+                                flagged(is_storage_symbolic),
+                            )
                         )
 
             runtime_code = state.solve_one(blockchain.get_code(account_address))

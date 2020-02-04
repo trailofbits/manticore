@@ -26,7 +26,7 @@ from ..core.smtlib import (
     Expression,
     issymbolic,
     simplify,
-    Z3Solver
+    Z3Solver,
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -582,9 +582,16 @@ class ManticoreEVM(ManticoreBase):
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"different than 0 because the contract's constructor is not payable."
                             )
-                        elif Z3Solver.instance().can_be_true(self.constraints, Operators.UGE(self.world.get_balance(owner.address), balance)):
-                            self.constraints.add(Operators.UGE(self.world.get_balance(owner.address), balance))
-                        elif Z3Solver.instance().can_be_true(self.constraints, self.world.get_balance(owner.address) < balance):
+                        elif Z3Solver.instance().can_be_true(
+                            self.constraints,
+                            Operators.UGE(self.world.get_balance(owner.address), balance),
+                        ):
+                            self.constraints.add(
+                                Operators.UGE(self.world.get_balance(owner.address), balance)
+                            )
+                        elif Z3Solver.instance().can_be_true(
+                            self.constraints, self.world.get_balance(owner.address) < balance
+                        ):
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"because the owner account ({owner}) has insufficient balance "
@@ -600,7 +607,9 @@ class ManticoreEVM(ManticoreBase):
                         gas=gas,
                     )
                 else:
-                    contract_account = self.create_contract(owner=owner, init=md._init_bytecode, balance=balance)
+                    contract_account = self.create_contract(
+                        owner=owner, init=md._init_bytecode, balance=balance
+                    )
 
                 if contract_account is None:
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
@@ -1161,7 +1170,7 @@ class ManticoreEVM(ManticoreBase):
         except Exception as e:
             pass  # function is unknown
 
-        #Value is known. Let's add it to our concrete database
+        # Value is known. Let's add it to our concrete database
         if value is not None:
             with self.locked_context("ethereum", dict) as ethereum_context:
                 global_known_pairs = ethereum_context.get(f"symbolic_func_conc_{name}", set())
@@ -1195,7 +1204,7 @@ class ManticoreEVM(ManticoreBase):
                 symbolic_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
                 # lets make a fresh 256 bit symbol representing any potential hash
                 value = state.new_symbolic_value(256)
-            '''for x, y in symbolic_pairs:
+            """for x, y in symbolic_pairs:
                 # if we found another pair that matches use that instead
                 # the duplicated pair is not added to symbolic_pairs
                 if  state.must_be_true(Operators.OR(x == data, y == value)):
@@ -1204,7 +1213,7 @@ class ManticoreEVM(ManticoreBase):
                     data, value = x, y
                     break
             else:
-            '''
+            """
             # New pair
             # add basic conditions no-collisions; new pair is added to symbolic_pairs
             for x, y in symbolic_pairs:
@@ -1223,9 +1232,10 @@ class ManticoreEVM(ManticoreBase):
         """ This method goes through all the applied symbolic functions and tries
             to find a concrete matching set of pairs
         """
+
         def make_cond(state, table):
             symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
-            #Make every result distant from each other
+            # Make every result distant from each other
             for x, y in symbolic_pairs:
                 state.constrain(Operators.EXTRACT(y, 0, 16) == 0)
 
@@ -1241,6 +1251,7 @@ class ManticoreEVM(ManticoreBase):
         """ This method goes through all the applied symbolic functions and tries
             to find a concrete matching set of pairs
         """
+
         def concretize_known_pairs(state, symbolic_pairs, known_pairs):
             # Each symbolic pair must match at least one of the concrete
             # pairs we know
@@ -1294,11 +1305,11 @@ class ManticoreEVM(ManticoreBase):
                     new_y_concretes = map(func, new_x_concretes)
                     new_concrete_pairs.update(zip(new_x_concretes, new_y_concretes))
 
-                    '''
+                    """
                     new_x_concretes = check_offline_db(temp_state.solve_n(y, nsolves=1))
                     new_y_concretes = map(func, new_x_concretes)
                     new_concrete_pairs.update(zip(new_x_concretes, new_y_concretes))
-                    '''
+                    """
 
                 # Consider all the new set of sha3 pairs and rebuild the seen condition
                 seen = False
@@ -1320,8 +1331,7 @@ class ManticoreEVM(ManticoreBase):
             functions = ethereum_context.get("symbolic_func", list())
             known_pairs_dict = {}
             for table in functions:
-                known_pairs_dict[table] = ethereum_context.get(
-                    f"symbolic_func_conc_{table}", set())
+                known_pairs_dict[table] = ethereum_context.get(f"symbolic_func_conc_{table}", set())
         for table in functions:
             symbolic_pairs = state.context.get(f"symbolic_func_sym_{table}", ())
 

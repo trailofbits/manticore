@@ -342,7 +342,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         found = 0
         for st in m.all_states:
             if not m.fix_unsound_symbolication(st):
-                print ("kill", st.id)
+                print("kill", st.id)
                 m.kill_state(st)
                 continue
             m.generate_testcase(st)
@@ -531,13 +531,14 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
                 m.kill_state(st)
                 continue
 
-        self.assertTrue(m.count_all_states() >= 4) #Some fake results may appear
+        self.assertTrue(m.count_all_states() >= 4)  # Some fake results may appear
 
         found = 0
         for st in m.all_states:
             m.generate_testcase(st)
             found += len(st.platform.logs)
         self.assertTrue(found >= 1)  # log is reachable
+
 
 if __name__ == "__main__":
     unittest.main()

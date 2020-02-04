@@ -22,7 +22,11 @@ from ..utils import config
 
 consts = config.get_group("cli")
 consts.add("profile", default=False, description="Enable worker profiling mode")
-consts.add("explore_balance", default=False, description="Explore states in which only the balance was changed")
+consts.add(
+    "explore_balance",
+    default=False,
+    description="Explore states in which only the balance was changed",
+)
 
 
 def get_detectors_classes():
