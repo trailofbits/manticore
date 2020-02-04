@@ -665,12 +665,14 @@ class Linux(Platform):
             else:
                 self.files.append(file_or_buffer)
 
+        # If file descriptors for stdin/stdout/stderr aren't closed, propagate them
         if self.files[0]:
             self.files[0].peer = self.output
         if self.files[1]:
             self.files[1].peer = self.output
         if self.files[2]:
             self.files[2].peer = self.output
+
         self._getdents_c = state["_getdents_c"]
         self._closed_files = state["closed_files"]
         self.input.peer = self.files[0]
