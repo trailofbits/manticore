@@ -23,7 +23,7 @@ from ..utils.helpers import PickleSerializer
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace
-from .worker import WorkerSingle, WorkerThread, WorkerProcess
+from .worker import WorkerSingle, WorkerThread, WorkerProcess, MonitorWorker
 
 from multiprocessing.managers import SyncManager
 import threading
@@ -191,7 +191,7 @@ class ManticoreBase(Eventful):
 
         During exploration Manticore spawns a number of temporary states that are
         maintained in different lists:
-
+  
         .. code-block:: none
 
                 Initial
@@ -306,6 +306,7 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+        self._monitor = MonitorWorker(id=-1, manticore=self)
         self._is_main = True
 
     def __str__(self):
@@ -505,6 +506,15 @@ class ManticoreBase(Eventful):
             self._lock.notify_all()
 
         return self._load(state_id)
+
+    @sync
+    def count_state_lists(self):
+        return (
+            len(self._ready_states),
+            len(self._busy_states),
+            len(self._terminated_states),
+            len(self._killed_states),
+        )
 
     @sync
     def _revive_state(self, state_id):
@@ -944,6 +954,8 @@ class ManticoreBase(Eventful):
 
         self._publish("will_run", self.ready_states)
         self._running.value = True
+        # self._monitor.start()
+
         # start all the workers!
         for w in self._workers:
             w.start()

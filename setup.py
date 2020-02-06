@@ -1,6 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
+
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 
@@ -51,6 +52,7 @@ setup(
     install_requires=[
         "pyyaml",
         "wrapt",
+        "protobuf",
         # evm dependencies
         "pysha3",
         "prettytable",
