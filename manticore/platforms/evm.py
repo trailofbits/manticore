@@ -749,6 +749,7 @@ class EVM(Eventful):
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
         self._published_pre_instruction_events = False
+        self._returndatasize = 0
 
         # Used calldata size
         self._used_calldata_size = 0
@@ -803,6 +804,7 @@ class EVM(Eventful):
         state["_used_calldata_size"] = self._used_calldata_size
         state["_valid_jumpdests"] = self._valid_jumpdests
         state["_check_jumpdest"] = self._check_jumpdest
+        state["_returndatasize"] = self._returndatasize
         return state
 
     def __setstate__(self, state):
@@ -827,6 +829,7 @@ class EVM(Eventful):
         self._used_calldata_size = state["_used_calldata_size"]
         self._valid_jumpdests = state["_valid_jumpdests"]
         self._check_jumpdest = state["_check_jumpdest"]
+        self._returndatasize = state["_returndatasize"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -1800,7 +1803,7 @@ class EVM(Eventful):
                 self._store(mem_offset + i, 0)
 
     def RETURNDATASIZE(self):
-        return len(self.world.last_transaction.return_data)
+        return self._returndatasize
 
     ############################################################################
     # Block Information
@@ -2425,13 +2428,14 @@ class EVMWorld(Platform):
         assert self.constraints == vm.constraints
         # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
+        if result in ('RETURN', 'REVERT'):
+            vm._returndatacopy = len(data)
         if rollback:
             self._set_storage(vm.address, account_storage)
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
         else:
             self._deleted_accounts = deleted_accounts
-
             # FIXME: BUG: a CREATE can be successful and still return an empty contract :shrug:
             if not issymbolic(tx.caller) and (
                 tx.sort == "CREATE" or not self._world_state[tx.caller]["code"]
