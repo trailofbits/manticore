@@ -749,7 +749,7 @@ class EVM(Eventful):
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
         self._published_pre_instruction_events = False
-        self._return_data = b''
+        self._return_data = b""
 
         # Used calldata size
         self._used_calldata_size = 0
@@ -2391,7 +2391,7 @@ class EVMWorld(Platform):
         # If not a human tx, reset returndata
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
         if self.current_vm:
-            self.current_vm._return_data = b''
+            self.current_vm._return_data = b""
 
         tx = Transaction(
             sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas
