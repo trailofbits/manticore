@@ -49,6 +49,8 @@ class EVMAccount:
     def __str__(self):
         return str(self._address)
 
+    def __format__(self, format_spec=''):
+        return self._address.__format__(format_spec)
 
 class EVMContract(EVMAccount):
     """
