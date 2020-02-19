@@ -33,6 +33,7 @@ jobs:
   tests:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest]
         type: ["examples", "ethereum", "ethereum_bench", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
