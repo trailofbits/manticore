@@ -47,8 +47,8 @@ jobs:
         TEST_TYPE: ${{ matrix.type }}
       run: |
         # Install solc unconditionally because it only takes a second or two
-        sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
-        sudo chmod +x /usr/bin/solc
+        sudo wget -O /usr/local/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
+        sudo chmod +x /usr/local/bin/solc
         EXTRAS="dev-noks"
         if [[ "$TEST_TYPE" == "native" ]]; then
           EXTRAS="dev"
