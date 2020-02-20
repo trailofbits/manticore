@@ -582,10 +582,10 @@ class ManticoreEVM(ManticoreBase):
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
                         if not md.constructor_abi["payable"]:
-                             raise EthereumError(
-                                 f"Can't create solidity contract with balance ({balance}) "
-                                 f"different than 0 because the contract's constructor is not payable."
-                             )
+                            raise EthereumError(
+                                f"Can't create solidity contract with balance ({balance}) "
+                                f"different than 0 because the contract's constructor is not payable."
+                            )
                         elif Z3Solver.instance().can_be_true(
                             self.constraints,
                             Operators.UGE(self.world.get_balance(owner.address), balance),
@@ -594,13 +594,13 @@ class ManticoreEVM(ManticoreBase):
                                 Operators.UGE(self.world.get_balance(owner.address), balance)
                             )
                         elif Z3Solver.instance().can_be_true(
-                            self.constraints, Operators.ULT(self.world.get_balance(owner.address), balance)
+                            self.constraints,
+                            Operators.ULT(self.world.get_balance(owner.address), balance),
                         ):
-                             raise EthereumError(
-                                 f"Can't create solidity contract with balance ({balance}) "
-                                 f"because the owner account ({owner}) has insufficient balance."
-                             )
-
+                            raise EthereumError(
+                                f"Can't create solidity contract with balance ({balance}) "
+                                f"because the owner account ({owner}) has insufficient balance."
+                            )
 
                     contract_account = self.create_contract(
                         owner=owner,
@@ -612,7 +612,7 @@ class ManticoreEVM(ManticoreBase):
                     )
                 else:
                     contract_account = self.create_contract(
-                        owner = owner, init = md._init_bytecode, balance = balance
+                        owner=owner, init=md._init_bytecode, balance=balance
                     )
 
                 if contract_account is None:

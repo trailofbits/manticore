@@ -28,6 +28,7 @@ consts.add(
     description="Explore states in which only the balance was changed",
 )
 
+
 def get_detectors_classes():
     return [
         DetectInvalid,
