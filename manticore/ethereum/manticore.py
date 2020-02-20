@@ -29,6 +29,7 @@ from ..core.smtlib import (
     Expression,
     issymbolic,
     simplify,
+    Z3Solver,
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -577,18 +578,29 @@ class ManticoreEVM(ManticoreBase):
                     else:
                         constructor_data = b""
 
-                    if balance != 0:
+                    # balance could be symbolic, lets ask the solver
+                    # Option 1: balance can not be 0 and the function is marked as not payable
+                    if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
                         if not md.constructor_abi["payable"]:
-                            raise EthereumError(
-                                f"Can't create solidity contract with balance ({balance}) "
-                                f"different than 0 because the contract's constructor is not payable."
+                             raise EthereumError(
+                                 f"Can't create solidity contract with balance ({balance}) "
+                                 f"different than 0 because the contract's constructor is not payable."
+                             )
+                        elif Z3Solver.instance().can_be_true(
+                            self.constraints,
+                            Operators.UGE(self.world.get_balance(owner.address), balance),
+                        ):
+                            self.constraints.add(
+                                Operators.UGE(self.world.get_balance(owner.address), balance)
                             )
-                        elif self.world.get_balance(owner.address) < balance:
-                            raise EthereumError(
-                                f"Can't create solidity contract with balance ({balance}) "
-                                f"because the owner account ({owner}) has insufficient balance "
-                                f"({self.world.get_balance(owner.address)})."
-                            )
+                        elif Z3Solver.instance().can_be_true(
+                            self.constraints, Operators.ULT(self.world.get_balance(owner.address), balance)
+                        ):
+                             raise EthereumError(
+                                 f"Can't create solidity contract with balance ({balance}) "
+                                 f"because the owner account ({owner}) has insufficient balance."
+                             )
+
 
                     contract_account = self.create_contract(
                         owner=owner,
@@ -599,7 +611,9 @@ class ManticoreEVM(ManticoreBase):
                         gas=gas,
                     )
                 else:
-                    contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
+                    contract_account = self.create_contract(
+                        owner = owner, init = md._init_bytecode, balance = balance
+                    )
 
                 if contract_account is None:
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
@@ -995,17 +1009,22 @@ class ManticoreEVM(ManticoreBase):
         args=None,
         compile_args=None,
     ):
-        owner_account = self.create_account(balance=1000, name="owner")
-        attacker_account = self.create_account(balance=1000, name="attacker")
+        owner_account = self.create_account(balance=10000000000000000000, name="owner")
+        attacker_account = self.create_account(balance=10000000000000000000, name="attacker")
         # Pretty print
         logger.info("Starting symbolic create contract")
 
+        if tx_send_ether:
+            create_value = self.make_symbolic_value()
+        else:
+            create_value = 0
         contract_account = self.solidity_create_contract(
             solidity_filename,
             contract_name=contract_name,
             owner=owner_account,
             args=args,
             compile_args=compile_args,
+            balance=create_value,
         )
 
         if tx_account == "attacker":

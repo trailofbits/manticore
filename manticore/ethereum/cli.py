@@ -22,7 +22,11 @@ from ..utils import config
 
 consts = config.get_group("cli")
 consts.add("profile", default=False, description="Enable worker profiling mode")
-
+consts.add(
+    "explore_balance",
+    default=False,
+    description="Explore states in which only the balance was changed",
+)
 
 def get_detectors_classes():
     return [
@@ -80,7 +84,8 @@ def ethereum_main(args, logger):
         consts_evm.oog = "ignore"
 
     with WithKeyboardInterruptAs(m.kill):
-        m.register_plugin(KeepOnlyIfStorageChanges())
+        if consts.explore_balance:
+            m.register_plugin(KeepOnlyIfStorageChanges())
 
         if args.verbose_trace:
             m.register_plugin(VerboseTrace())
