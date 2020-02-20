@@ -3076,14 +3076,15 @@ class EVMWorld(Platform):
             stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain.get_storage(account_address)
-            stream.write("Storage: %s\n" % translate_to_smtlib(storage.array, use_bindings=False))
+            stream.write(
+                f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}"
+            )
             concrete_indexes = set()
             for sindex in storage.written:
                 concrete_indexes.add(state.solve_one(sindex, constrain=True))
 
             for index in concrete_indexes:
                 stream.write(f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}")
-
 
             storage = blockchain.get_storage(account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
