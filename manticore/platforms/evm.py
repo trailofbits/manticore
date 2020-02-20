@@ -3081,8 +3081,9 @@ class EVMWorld(Platform):
                 concrete_indexes.add(state.solve_one(sindex, constrain=True))
 
             for index in concrete_indexes:
-                stream.write(f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}")
-
+                stream.write(
+                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}"
+                )
             storage = blockchain.get_storage(account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 
