@@ -56,6 +56,8 @@ consts = config.get_group("evm")
 
 
 def globalsha3(data):
+    if issymbolic(data):
+        return None
     return int(sha3.keccak_256(data).hexdigest(), 16)
 
 
@@ -1582,7 +1584,6 @@ class EVM(Eventful):
             func = globalfakesha3
         else:
             func = globalsha3
-
         return self.world.symbolic_function(func, data)
 
     ############################################################################

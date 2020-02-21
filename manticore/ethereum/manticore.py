@@ -1164,11 +1164,7 @@ class ManticoreEVM(ManticoreBase):
 
         """
         name = func.__name__
-        value = None
-        try:
-            value = func(data)
-        except Exception as e:
-            pass  # function is unknown
+        value = func(data) # If func returns None then result should considered unknown/symbolic
 
         # Value is known. Let's add it to our concrete database
         if value is not None:
@@ -1189,40 +1185,37 @@ class ManticoreEVM(ManticoreBase):
                 functions[name] = func
                 ethereum_context["symbolic_func"] = functions
 
-                """table: is a string used internally to identify the symbolic function
-                    data: is the symbolic value of the function domain
-                    known_pairs: in/out is a dictionary containing known pairs from {domain, range}"""
-                # We are adding a new pair to the symbolic pairs
-                # Reset the soundcheck if True
-                if state.context.get("soundcheck", None) == True:
-                    state.context["soundcheck"] = None
+            # We are adding a new pair to the symbolic pairs
+            # Reset the soundcheck if True
+            if state.context.get("soundcheck", None) == True:
+                state.context["soundcheck"] = None
 
-                data_var = state.new_symbolic_buffer(len(data))  # FIXME: generalize to bitvec
-                state.constrain(data_var == data)
-                data = data_var
-                # symbolic_pairs is the pairs known locally for this symbolic function
-                symbolic_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
-                # lets make a fresh 256 bit symbol representing any potential hash
-                value = state.new_symbolic_value(256)
-            """for x, y in symbolic_pairs:
+            data_var = state.new_symbolic_buffer(len(data))  # FIXME: generalize to bitvec
+            state.constrain(data_var == data)
+            data = data_var
+
+            # symbolic_pairs list of symbolic applications of func in sate
+            symbolic_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
+
+            # lets make a fresh 256 bit symbol representing any potential hash
+            value = state.new_symbolic_value(256)
+
+            for x, y in symbolic_pairs:
                 # if we found another pair that matches use that instead
                 # the duplicated pair is not added to symbolic_pairs
                 if  state.must_be_true(Operators.OR(x == data, y == value)):
-                    constraint = Operators.AND(x == data, y == value)
-                    state.constrain(constraint)
                     data, value = x, y
                     break
             else:
-            """
-            # New pair
-            # add basic conditions no-collisions; new pair is added to symbolic_pairs
-            for x, y in symbolic_pairs:
-                if len(x) == len(data):
-                    constraint = (x == data) == (y == value)
-                else:
-                    constraint = y != value
-                state.constrain(constraint)
-            symbolic_pairs.append((data, value))
+                # New pair
+                # add basic conditions no-collisions; new pair is added to symbolic_pairs
+                for x, y in symbolic_pairs:
+                    if len(x) == len(data):
+                        constraint = (x == data) == (y == value)
+                    else:
+                        constraint = y != value
+                    state.constrain(constraint)
+                symbolic_pairs.append((data, value))
             state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
 
         # let it return just new_hash
@@ -1306,6 +1299,7 @@ class ManticoreEVM(ManticoreBase):
                     new_concrete_pairs.update(zip(new_x_concretes, new_y_concretes))
 
                     """
+                    Idea:
                     new_x_concretes = check_offline_db(temp_state.solve_n(y, nsolves=1))
                     new_y_concretes = map(func, new_x_concretes)
                     new_concrete_pairs.update(zip(new_x_concretes, new_y_concretes))
@@ -1337,6 +1331,16 @@ class ManticoreEVM(ManticoreBase):
 
             known_pairs = known_pairs_dict[table]
             new_known_pairs = set(known_pairs)
+
+            # Add concrete knowledge in
+            for xa, ya in symbolic_pairs:
+                for xc, yc in known_pairs:
+                    state.constrain(Operators.OR(xa == xc,  ya != yc))
+                    state.constrain(Operators.OR(xa != xc,  ya == yc))
+
+            #Keep only pairs that have not yet been fixed to a single solution
+            symbolic_pairs = [ (xa, ya) for xa, ya in symbolic_pairs if len(state.solve_n(xa[0], nsolves=2)) != 1 or len(state.solve_n(ya, nsolves=2)) != 1 ]
+
             if not match(
                 state, functions[table], symbolic_pairs, new_known_pairs, start=time.time()
             ):
