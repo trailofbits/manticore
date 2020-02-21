@@ -581,23 +581,17 @@ class ManticoreEVM(ManticoreBase):
                     # balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
+                        # balance always != 0
                         if not md.constructor_abi["payable"]:
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"different than 0 because the contract's constructor is not payable."
                             )
-                        elif Z3Solver.instance().can_be_true(
+                    elif not Z3Solver.instance().can_be_true(
                             self.constraints,
                             Operators.UGE(self.world.get_balance(owner.address), balance),
                         ):
-                            self.constraints.add(
-                                Operators.UGE(self.world.get_balance(owner.address), balance)
-                            )
-                        elif Z3Solver.instance().can_be_true(
-                            self.constraints,
-                            Operators.ULT(self.world.get_balance(owner.address), balance),
-                        ):
-                            raise EthereumError(
+                        raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"because the owner account ({owner}) has insufficient balance."
                             )
@@ -612,7 +606,7 @@ class ManticoreEVM(ManticoreBase):
                     )
                 else:
                     contract_account = self.create_contract(
-                        owner=owner, init=md._init_bytecode, balance=balance
+                        owner=owner, init=md._init_bytecode
                     )
 
                 if contract_account is None:
