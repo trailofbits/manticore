@@ -1820,7 +1820,7 @@ class ManticoreEVM(ManticoreBase):
     @property  # type: ignore
     @ManticoreBase.sync
     @ManticoreBase.at_not_running
-    def sound_states(self):
+    def ready_sound_states(self):
         """
         Iterator over sound ready states.
         This tries to solve any symbolic imprecision added by unsound_symbolication
@@ -1839,7 +1839,36 @@ class ManticoreEVM(ManticoreBase):
                 # Re-save the state in case the user changed its data
                 self._save(state, state_id=state_id)
 
-    def fix_unsound_all(self):
+    @property  # type: ignore
+    @ManticoreBase.sync
+    @ManticoreBase.at_not_running
+    def all_sound_states(self):
+        """
+        Iterator over all sound  states.
+        This tries to solve any symbolic imprecision added by unsound_symbolication
+        and then iterates over the resultant set.
+
+        This is the recommended to iterate over resultant steas after an exploration
+        that included unsound symbolication
+
+        """
+        self.fix_unsound_all()
+        _ready_states = self._ready_states
+        for state_id in _all_states:
+            state = self._load(state_id)
+            if self.fix_unsound_symbolication(state):
+                yield state
+                # Re-save the state in case the user changed its data
+                self._save(state, state_id=state_id)
+
+    def fix_unsound_all(self, procs=None):
+        '''
+        :param procs: force the number of local processes to use
+        '''
+        if procs is None:
+            procs = config.get_group("core").procs
+
+        # Fix unsoundness in all states
         def finalizer(state_id):
             state = self._load(state_id)
             self.fix_unsound_symbolication(state)
