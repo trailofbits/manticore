@@ -1164,7 +1164,7 @@ class ManticoreEVM(ManticoreBase):
 
         """
         name = func.__name__
-        value = func(data) # If func returns None then result should considered unknown/symbolic
+        value = func(data)  # If func returns None then result should considered unknown/symbolic
 
         # Value is known. Let's add it to our concrete database
         if value is not None:
@@ -1203,7 +1203,7 @@ class ManticoreEVM(ManticoreBase):
             for x, y in symbolic_pairs:
                 # if we found another pair that matches use that instead
                 # the duplicated pair is not added to symbolic_pairs
-                if  state.must_be_true(Operators.OR(x == data, y == value)):
+                if state.must_be_true(Operators.OR(x == data, y == value)):
                     data, value = x, y
                     break
             else:
@@ -1335,11 +1335,16 @@ class ManticoreEVM(ManticoreBase):
             # Add concrete knowledge in
             for xa, ya in symbolic_pairs:
                 for xc, yc in known_pairs:
-                    state.constrain(Operators.OR(xa == xc,  ya != yc))
-                    state.constrain(Operators.OR(xa != xc,  ya == yc))
+                    state.constrain(Operators.OR(xa == xc, ya != yc))
+                    state.constrain(Operators.OR(xa != xc, ya == yc))
 
-            #Keep only pairs that have not yet been fixed to a single solution
-            symbolic_pairs = [ (xa, ya) for xa, ya in symbolic_pairs if len(state.solve_n(xa[0], nsolves=2)) != 1 or len(state.solve_n(ya, nsolves=2)) != 1 ]
+            # Keep only pairs that have not yet been fixed to a single solution
+            symbolic_pairs = [
+                (xa, ya)
+                for xa, ya in symbolic_pairs
+                if len(state.solve_n(xa[0], nsolves=2)) != 1
+                or len(state.solve_n(ya, nsolves=2)) != 1
+            ]
 
             if not match(
                 state, functions[table], symbolic_pairs, new_known_pairs, start=time.time()
@@ -1862,9 +1867,9 @@ class ManticoreEVM(ManticoreBase):
                 self._save(state, state_id=state_id)
 
     def fix_unsound_all(self, procs=None):
-        '''
+        """
         :param procs: force the number of local processes to use
-        '''
+        """
         if procs is None:
             procs = config.get_group("core").procs
 
