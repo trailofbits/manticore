@@ -588,13 +588,13 @@ class ManticoreEVM(ManticoreBase):
                                 f"different than 0 because the contract's constructor is not payable."
                             )
                     elif not Z3Solver.instance().can_be_true(
-                            self.constraints,
-                            Operators.UGE(self.world.get_balance(owner.address), balance),
-                        ):
+                        self.constraints,
+                        Operators.UGE(self.world.get_balance(owner.address), balance),
+                    ):
                         raise EthereumError(
-                                f"Can't create solidity contract with balance ({balance}) "
-                                f"because the owner account ({owner}) has insufficient balance."
-                            )
+                            f"Can't create solidity contract with balance ({balance}) "
+                            f"because the owner account ({owner}) has insufficient balance."
+                        )
 
                     contract_account = self.create_contract(
                         owner=owner,
@@ -605,9 +605,7 @@ class ManticoreEVM(ManticoreBase):
                         gas=gas,
                     )
                 else:
-                    contract_account = self.create_contract(
-                        owner=owner, init=md._init_bytecode
-                    )
+                    contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
                 if contract_account is None:
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
