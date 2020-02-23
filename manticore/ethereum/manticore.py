@@ -577,7 +577,7 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = ABI.serialize(constructor_types, *args)
                     else:
                         constructor_data = b""
-
+                    import pdb; pdb.set_trace()
                     # balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
@@ -587,7 +587,7 @@ class ManticoreEVM(ManticoreBase):
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"different than 0 because the contract's constructor is not payable."
                             )
-                    elif not Z3Solver.instance().can_be_true(
+                    if not Z3Solver.instance().can_be_true(
                         self.constraints,
                         Operators.UGE(self.world.get_balance(owner.address), balance),
                     ):
