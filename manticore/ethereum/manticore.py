@@ -577,7 +577,7 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = ABI.serialize(constructor_types, *args)
                     else:
                         constructor_data = b""
-                    import pdb; pdb.set_trace()
+
                     # balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
