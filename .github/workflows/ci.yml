@@ -55,6 +55,10 @@ jobs:
           EXTRAS="dev"
         fi
         pip install -e .[$EXTRAS]
+        
+    - name: Update Bash
+      if: matrix.os == 'macos-latest'
+      run: brew install bash
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
