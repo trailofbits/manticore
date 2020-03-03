@@ -62,7 +62,7 @@ def globalsha3(data):
 consts.add(
     "oog",
     default="complete",
-    description=(def global_covera
+    description=(
         "Default behavior for symbolic gas."
         "pedantic: Fully faithful. Test at every instruction. Forks."
         "complete: Mostly faithful. Test at BB limit. Forks."
