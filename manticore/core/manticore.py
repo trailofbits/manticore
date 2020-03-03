@@ -23,7 +23,7 @@ from ..utils.helpers import PickleSerializer
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace
-from .worker import WorkerSingle, WorkerThread, WorkerProcess, MonitorWorker
+from .worker import WorkerSingle, WorkerThread, WorkerProcess, LogCaptureWorker, StateMonitorWorker
 
 from multiprocessing.managers import SyncManager
 import threading
@@ -306,7 +306,8 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
-        self._monitor = MonitorWorker(id=-1, manticore=self)
+        self._log_capture = LogCaptureWorker(id=-1, manticore=self)
+        self._state_monitor = StateMonitorWorker(id=-2, manticore=self)
         self._is_main = True
 
     def __str__(self):
@@ -954,7 +955,8 @@ class ManticoreBase(Eventful):
 
         self._publish("will_run", self.ready_states)
         self._running.value = True
-        self._monitor.start()
+        self._log_capture.start()
+        self._state_monitor.start()
 
         # start all the workers!
         for w in self._workers:

@@ -1,5 +1,6 @@
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .state import Concretize, TerminateState
+from ..core.plugin import Plugin
 from .state_pb2 import StateList, MessageList, State, LogMessage
 from ..utils.log import register_log_callback
 import logging
@@ -9,7 +10,7 @@ from collections import deque
 import os
 import socketserver
 
-
+HOST, PORT = "localhost", 3214
 logger = logging.getLogger(__name__)
 # logger.setLevel(9)
 
@@ -236,22 +237,24 @@ class WorkerProcess(Worker):
         self._p = None
 
 
-class MyTCPHandler(socketserver.BaseRequestHandler):
+class DaemonThread(WorkerThread):
+    def start(self):
+        self._t = threading.Thread(target=self.run)
+        self._t.daemon = True
+        self._t.start()
+
+
+class LogTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         messages = self.server.worker.dump_logs()
         self.request.sendall(messages)
 
 
-class MonitorWorker(WorkerThread):
+class LogCaptureWorker(DaemonThread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.log_buffer = deque(maxlen=4000)
         register_log_callback(self.log_callback)
-
-    def start(self):
-        self._t = threading.Thread(target=self.run)
-        self._t.daemon = True
-        self._t.start()
 
     def log_callback(self, msg):
         self.log_buffer.append(msg)
@@ -265,7 +268,7 @@ class MonitorWorker(WorkerThread):
 
     def run(self, *args):
         logger.debug(
-            "Starting Manticore Monitor Thread %d. Pid %d Tid %d).",
+            "Capturing Logs via Thread %d. Pid %d Tid %d).",
             self.id,
             os.getpid(),
             threading.get_ident(),
@@ -274,8 +277,53 @@ class MonitorWorker(WorkerThread):
         m = self.manticore
         m._is_main = False
 
-        HOST, PORT = "localhost", 3214
+        with socketserver.TCPServer((HOST, PORT), LogTCPHandler) as server:
+            server.allow_reuse_address = True
+            server.worker = self
+            server.serve_forever()
 
-        with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
+
+class MonitorUDPHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        _data, sock = self.request
+        sock.sendto(self.server.worker.dump_states(), self.client_address)
+
+
+class MonitorEventPlugin(Plugin):
+
+    def __init__(self, server):
+        super().__init__()
+        self.server = server
+
+
+class StateMonitorWorker(DaemonThread):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.manticore.register_plugin(MonitorEventPlugin(self))
+        self.state_model = {"ready": [], "busy": [], "killed": [], "terminated": []}
+
+    def dump_states(self):
+        state_array = StateList()
+        model = self.state_model
+
+        for sl in model:
+            for st in model[sl]:
+                state_array.states.append(st)
+
+        return state_array.SerializeToString()
+
+    def run(self, *args):
+        logger.debug(
+            "Monitoring States via Thread %d. Pid %d Tid %d).",
+            self.id,
+            os.getpid(),
+            threading.get_ident(),
+        )
+
+        m = self.manticore
+        m._is_main = False
+
+        with socketserver.UDPServer((HOST, PORT), MonitorUDPHandler) as server:
+            server.allow_reuse_address = True
             server.worker = self
             server.serve_forever()
