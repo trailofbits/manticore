@@ -191,7 +191,7 @@ class ManticoreBase(Eventful):
 
         During exploration Manticore spawns a number of temporary states that are
         maintained in different lists:
-  
+
         .. code-block:: none
 
                 Initial
@@ -509,13 +509,19 @@ class ManticoreBase(Eventful):
         return self._load(state_id)
 
     @sync
-    def count_state_lists(self):
-        return (
-            len(self._ready_states),
-            len(self._busy_states),
-            len(self._terminated_states),
-            len(self._killed_states),
-        )
+    def render_states(self):
+        from .state_pb2 import State, StateList
+
+        out = StateList()
+        for st in self._ready_states:
+            out.states.append(State(id=st, type=State.READY))
+        for st in self._busy_states:
+            out.states.append(State(id=st, type=State.BUSY))
+        for st in self._terminated_states:
+            out.states.append(State(id=st, type=State.TERMINATED))
+        for st in self._killed_states:
+            out.states.append(State(id=st, type=State.KILLED))
+        return out
 
     @sync
     def _revive_state(self, state_id):

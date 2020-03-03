@@ -250,6 +250,10 @@ class LogTCPHandler(socketserver.BaseRequestHandler):
         self.request.sendall(messages)
 
 
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
+
 class LogCaptureWorker(DaemonThread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -277,40 +281,23 @@ class LogCaptureWorker(DaemonThread):
         m = self.manticore
         m._is_main = False
 
-        with socketserver.TCPServer((HOST, PORT), LogTCPHandler) as server:
-            server.allow_reuse_address = True
+        with ReusableTCPServer((HOST, PORT), LogTCPHandler) as server:
             server.worker = self
             server.serve_forever()
 
 
-class MonitorUDPHandler(socketserver.BaseRequestHandler):
+class MonitorTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        _data, sock = self.request
-        sock.sendto(self.server.worker.dump_states(), self.client_address)
-
-
-class MonitorEventPlugin(Plugin):
-
-    def __init__(self, server):
-        super().__init__()
-        self.server = server
+        self.request.sendall(self.server.worker.dump_states())
 
 
 class StateMonitorWorker(DaemonThread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.manticore.register_plugin(MonitorEventPlugin(self))
-        self.state_model = {"ready": [], "busy": [], "killed": [], "terminated": []}
 
     def dump_states(self):
-        state_array = StateList()
-        model = self.state_model
-
-        for sl in model:
-            for st in model[sl]:
-                state_array.states.append(st)
-
-        return state_array.SerializeToString()
+        sts = self.manticore.render_states()
+        return sts.SerializeToString()
 
     def run(self, *args):
         logger.debug(
@@ -323,7 +310,6 @@ class StateMonitorWorker(DaemonThread):
         m = self.manticore
         m._is_main = False
 
-        with socketserver.UDPServer((HOST, PORT), MonitorUDPHandler) as server:
-            server.allow_reuse_address = True
+        with ReusableTCPServer((HOST, PORT + 1), MonitorTCPHandler) as server:
             server.worker = self
             server.serve_forever()
