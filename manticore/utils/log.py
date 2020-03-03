@@ -1,5 +1,6 @@
 import logging
 import sys
+import io
 
 manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
@@ -9,6 +10,23 @@ logfmt = "%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s"
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(logfmt)
 handler.setFormatter(formatter)
+
+
+class CallbackStream(io.TextIOBase):
+    def __init__(self, callback):
+        self.callback = callback
+
+    def write(self, log_str):
+        self.callback(log_str)
+
+
+def register_log_callback(cb):
+    for name in all_loggers:
+        logger = logging.getLogger(name)
+        handler_internal = logging.StreamHandler(CallbackStream(cb))
+        if name.startswith("manticore"):
+            handler_internal.setFormatter(formatter)
+        logger.addHandler(handler_internal)
 
 
 class ContextFilter(logging.Filter):

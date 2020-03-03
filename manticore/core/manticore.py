@@ -954,7 +954,7 @@ class ManticoreBase(Eventful):
 
         self._publish("will_run", self.ready_states)
         self._running.value = True
-        # self._monitor.start()
+        self._monitor.start()
 
         # start all the workers!
         for w in self._workers:
