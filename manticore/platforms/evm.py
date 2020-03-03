@@ -62,7 +62,7 @@ def globalsha3(data):
 consts.add(
     "oog",
     default="complete",
-    description=(
+    description=(def global_covera
         "Default behavior for symbolic gas."
         "pedantic: Fully faithful. Test at every instruction. Forks."
         "complete: Mostly faithful. Test at BB limit. Forks."
@@ -2031,13 +2031,16 @@ class EVM(Eventful):
         )
         raise StartTx()
 
-    @CALL.pos  # type: ignore
-    def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+    def __pos_call(self, out_offset, out_size):
         data = self._return_data
         data_size = len(data)
         size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
         self.write_buffer(out_offset, data[:size])
         return self.world.last_transaction.return_value
+
+    @CALL.pos  # type: ignore
+    def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        return self.__pos_call(out_offset, out_size)
 
     def CALLCODE_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         return self._get_memfee(in_offset, in_size)
@@ -2058,12 +2061,7 @@ class EVM(Eventful):
 
     @CALLCODE.pos  # type: ignore
     def CALLCODE(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self._return_data
-        data_size = len(data)
-        size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-        self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def RETURN_gas(self, offset, size):
         return self._get_memfee(offset, size)
@@ -2093,11 +2091,7 @@ class EVM(Eventful):
 
     @DELEGATECALL.pos  # type: ignore
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self._return_data
-        data_size = len(data)
-        size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-        self.write_buffer(out_offset, data[:size])
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def STATICCALL_gas(self, gas, address, in_offset, in_size, out_offset, out_size):
         return self._get_memfee(in_offset, in_size)
@@ -2118,11 +2112,7 @@ class EVM(Eventful):
 
     @STATICCALL.pos  # type: ignore
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self._return_data
-        data_size = len(data)
-        size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-        self.write_buffer(out_offset, data[:size])
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def REVERT_gas(self, offset, size):
         return self._get_memfee(offset, size)
