@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from .executor import Executor
 from collections import deque
+from math import ceil
 from wasm.immtypes import BranchImm, BranchTableImm, CallImm, CallIndirectImm
 from .types import (
     U32,
@@ -35,13 +36,15 @@ from .types import (
     OverflowDivisionTrap,
     NonExistentFunctionCallTrap,
     TypeMismatchTrap,
+    OutOfBoundsMemoryTrap,
     MissingExportException,
     ConcretizeStack,
 )
 from .state import State
-from ..core.smtlib import BitVec, issymbolic
+from ..core.smtlib import BitVec, issymbolic, Operators, Expression
 from ..core.state import Concretize
 from ..utils.event import Eventful
+from ..utils import config
 
 from wasm import decode_module, Section
 from wasm.wasmtypes import (
@@ -56,6 +59,7 @@ from wasm.wasmtypes import (
     SEC_ELEMENT,
     SEC_CODE,
     SEC_DATA,
+    SEC_UNK,
 )
 
 from ..core.smtlib.solver import Z3Solver
@@ -64,6 +68,16 @@ solver = Z3Solver.instance()
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
+
+consts = config.get_group("wasm")
+consts.add(
+    "decode_names",
+    default=False,
+    description="Should Manticore attempt to decode custom name sections",
+)
+
+#: Size of a standard WASM memory page
+PAGESIZE = 2 ** 16
 
 
 # Wrappers around integers that we use for indexing the store.
@@ -266,6 +280,8 @@ class Module:
         "start",
         "imports",
         "exports",
+        "function_names",
+        "local_names",
         "_raw",
     ]
     _raw: bytes
@@ -283,6 +299,8 @@ class Module:
         ] = None  #: https://www.w3.org/TR/wasm-core-1/#start-function%E2%91%A0
         self.imports: typing.List[Import] = []
         self.exports: typing.List[Export] = []
+        self.function_names: typing.Dict[FuncAddr, str] = {}
+        self.local_names: typing.Dict[FuncAddr, typing.Dict[int, str]] = {}
 
     def __getstate__(self):
         state = {
@@ -296,6 +314,8 @@ class Module:
             "start": self.start,
             "imports": self.imports,
             "exports": self.exports,
+            "function_names": self.function_names,
+            "local_names": self.local_names,
             "_raw": self._raw,
         }
         return state
@@ -311,6 +331,8 @@ class Module:
         self.start = state["start"]
         self.imports = state["imports"]
         self.exports = state["exports"]
+        self.function_names = state["function_names"]
+        self.local_names = state["local_names"]
         self._raw = state["_raw"]
 
     def get_funcnames(self) -> typing.List[Name]:
@@ -330,13 +352,14 @@ class Module:
         with open(filename, "rb") as wasm_file:
             m._raw = wasm_file.read()
 
-        module_iter = decode_module(m._raw)
+        # Test modules break name subsection decoding. TODO: Find a better WASM importer
+        module_iter = decode_module(m._raw, decode_name_subsections=consts.decode_names)
         _header = next(module_iter)
         section: Section
         # Parse the sections from the WASM module into internal types. For each section, the code usually resembles:
         # `module.<something>.append(<InstanceOfSomething>(data, from, binary, module))`
         for section, section_data in module_iter:
-            sec_id = section_data.id
+            sec_id = getattr(section_data, "id", SEC_UNK)
             if sec_id == SEC_TYPE:  # https://www.w3.org/TR/wasm-core-1/#type-section%E2%91%A0
                 for ft in section_data.payload.entries:
                     m.types.append(
@@ -442,7 +465,34 @@ class Module:
                     m.data.append(
                         Data(MemIdx(d.index), convert_instructions(d.offset), d.data.tolist())
                     )
-            # TODO - custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
+            elif sec_id == SEC_UNK:
+                # WASM module renders all types as `GeneratedStructureData` so `isinstance` doesn't work :(
+                if (
+                    hasattr(section, "name_type")
+                    and hasattr(section, "payload_len")
+                    and hasattr(section, "payload")
+                ):
+                    # https://webassembly.github.io/spec/core/appendix/custom.html#subsections
+                    name_type = section_data.name_type
+                    if name_type == 0:  # module name
+                        pass
+                    elif name_type == 1:  # function names
+                        for n in section_data.payload.names:
+                            ty = n.get_decoder_meta()["types"]["name_str"]
+                            m.function_names[FuncAddr(n.index)] = strip_quotes(
+                                ty.to_string(n.name_str)
+                            )
+                    elif name_type == 2:  # local variable names
+                        for func in section_data.payload.funcs:
+                            func_idx = func.index
+                            for n in func.local_map.names:
+                                ty = n.get_decoder_meta()["types"]["name_str"]
+                                m.local_names.setdefault(FuncAddr(func_idx), {})[
+                                    n.index
+                                ] = strip_quotes(ty.to_string(n.name_str))
+                else:
+                    logger.info("Encountered unknown section")
+                    # TODO - other custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
 
         return m
 
@@ -471,8 +521,7 @@ class TableInst:
     max: typing.Optional[U32]  #: Optional maximum size of the table
 
 
-@dataclass
-class MemInst:
+class MemInst(Eventful):
     """
     Runtime representation of a memory. As with tables, if you're dealing with a memory at runtime, it's probably a
     MemInst. Currently doesn't support any sort of symbolic indexing, although you can read and write symbolic bytes
@@ -488,8 +537,59 @@ class MemInst:
     https://www.w3.org/TR/wasm-core-1/#memory-instances%E2%91%A0
     """
 
-    data: typing.List[int]  #: The backing array for this memory
+    _published_events = {"write_memory", "read_memory"}
+
+    _pages: typing.Dict[int, typing.List[int]]
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
+    _current_size: int  # Tracks the theoretical size of the memory instance, including unmapped pages
+
+    def __init__(self, starting_data, max=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._current_size = ceil(len(starting_data) / PAGESIZE)
+        self.max = max
+        self._pages = {}
+
+        chunked = [starting_data[i : i + PAGESIZE] for i in range(0, len(starting_data), PAGESIZE)]
+        for idx, page in enumerate(chunked):
+            if len(page) < PAGESIZE:
+                page.extend([0x0] * (PAGESIZE - len(page)))
+            self._pages[idx] = page
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["pages"] = self._pages
+        state["max"] = self.max
+        state["current"] = self._current_size
+        return state
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self._pages = state["pages"]
+        self.max = state["max"]
+        self._current_size = state["current"]
+
+    def __contains__(self, item):
+        return item in range(self.npages * PAGESIZE)
+
+    def _check_initialize_index(self, memidx):
+        page = memidx // PAGESIZE
+        if page not in range(self.npages):
+            raise OutOfBoundsMemoryTrap(memidx)
+        if page not in self._pages:
+            self._pages[page] = [0x0] * PAGESIZE
+        return divmod(memidx, PAGESIZE)
+
+    def _read_byte(self, addr):
+        page, idx = self._check_initialize_index(addr)
+        return self._pages[page][idx]
+
+    def _write_byte(self, addr, val):
+        page, idx = self._check_initialize_index(addr)
+        self._pages[page][idx] = val
+
+    @property
+    def npages(self):
+        return self._current_size
 
     def grow(self, n: int) -> bool:
         """
@@ -500,15 +600,69 @@ class MemInst:
         :param n: The number of pages to attempt to add
         :return: True if the operation succeeded, otherwise False
         """
-        assert len(self.data) % 65536 == 0
-        ln = n + (len(self.data) // 65536)
-        if ln > (2 ** 16):
+        ln = n + self.npages
+        if ln > (PAGESIZE):
             return False
         if self.max is not None:
             if ln > self.max:
                 return False
-        self.data.extend(0x0 for _ in range(n * 65536))  # TODO - these should also be symbolic
+        self._current_size = ln
         return True
+
+    def write_int(self, base: int, expression: typing.Union[Expression, int], size: int = 32):
+        """
+        Writes an integer into memory.
+
+        :param base: Index to write at
+        :param expression: integer to write
+        :param size: Optional size of the integer
+        """
+        b = [
+            Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)
+        ]
+        self.write_bytes(base, b)
+
+    def write_bytes(
+        self, base: int, data: typing.Union[str, typing.Sequence[int], typing.Sequence[bytes]]
+    ):
+        """
+        Writes  a stream of bytes into memory
+
+        :param base: Index to start writing at
+        :param data: Data to write
+        """
+        self._publish("will_write_memory", base, base + len(data), data)
+        for idx, v in enumerate(data):
+            self._write_byte(base + idx, v)
+        self._publish("did_write_memory", base, data)
+
+    def read_int(self, base: int, size: int = 32) -> int:
+        """
+        Reads bytes from memory and combines them into an int
+
+        :param base: Address to read the int from
+        :param size: Size of the int (in bits)
+        :return: The int in question
+        """
+        return Operators.CONCAT(
+            size, *map(Operators.ORD, reversed(self.read_bytes(base, size // 8)))
+        )
+
+    def read_bytes(self, base: int, size: int) -> typing.List[typing.Union[int, bytes]]:
+        """
+        Reads bytes from memory
+
+        :param base: Address to read from
+        :param size: number of bytes to read
+        :return: List of bytes
+        """
+        self._publish("will_read_memory", base, base + size)
+        d = [self._read_byte(i) for i in range(base, base + size)]
+        self._publish("did_read_memory", base, d)
+        return d
+
+    def dump(self):
+        return self.read_bytes(0, self._current_size * PAGESIZE)
 
 
 @dataclass
@@ -594,7 +748,10 @@ class ModuleInstance(Eventful):
         "memaddrs",
         "globaladdrs",
         "exports",
-        "export_map" "executor",
+        "export_map",
+        "executor",
+        "function_names",
+        "local_names",
         "_instruction_queue",
         "_block_depths",
         "_state",
@@ -618,6 +775,10 @@ class ModuleInstance(Eventful):
     export_map: typing.Dict[str, int]
     #: Contains instruction implementations for all non-control-flow instructions
     executor: Executor
+    #: Stores names of store functions, if available
+    function_names: typing.Dict[FuncAddr, str]
+    #: Stores names of local variables, if available
+    local_names: typing.Dict[FuncAddr, typing.Dict[int, str]]
     #: Stores the unpacked sequence of instructions in the order they should be executed
     _instruction_queue: typing.Deque[Instruction]
     #: Keeps track of the current call depth, both for functions and for code blocks. Each function call is represented
@@ -640,6 +801,8 @@ class ModuleInstance(Eventful):
         self.exports = []
         self.export_map = {}
         self.executor = Executor(constraints)
+        self.function_names = {}
+        self.local_names = {}
         self._instruction_queue = deque()
         self._block_depths = [0]
         self._state = None
@@ -658,6 +821,8 @@ class ModuleInstance(Eventful):
                 "exports": self.exports,
                 "export_map": self.export_map,
                 "executor": self.executor,
+                "function_names": self.function_names,
+                "local_names": self.local_names,
                 "_instruction_queue": self._instruction_queue,
                 "_block_depths": self._block_depths,
             }
@@ -673,6 +838,8 @@ class ModuleInstance(Eventful):
         self.exports = state["exports"]
         self.export_map = state["export_map"]
         self.executor = state["executor"]
+        self.function_names = state["function_names"]
+        self.local_names = state["local_names"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
         self._state = None
@@ -762,10 +929,9 @@ class ModuleInstance(Eventful):
             assert memaddr in range(len(store.mems))
             meminst = store.mems[memaddr]
             dend = doval + len(data.init)
-            assert dend <= len(meminst.data)
+            assert dend <= meminst.npages * (PAGESIZE)
 
-            for j, b in enumerate(data.init):
-                meminst.data[doval + j] = b
+            meminst.write_bytes(doval, data.init)
 
         # #11 & #12
         last_frame = stack.pop()
@@ -813,8 +979,15 @@ class ModuleInstance(Eventful):
             if isinstance(ev, GlobalAddr):
                 self.globaladdrs.append(ev)
 
-        for func_i in module.funcs:
-            self.funcaddrs.append(func_i.allocate(store, self))
+        for func in module.funcs:
+            addr = func.allocate(store, self)
+            self.funcaddrs.append(addr)
+            name = module.function_names.get(addr, None)
+            if name:
+                self.function_names[addr] = name
+            local_map = module.local_names.get(addr, None)
+            if local_map:
+                self.local_names[addr] = local_map.copy()
         for table_i in module.tables:
             self.tableaddrs.append(table_i.allocate(store))
         for memory_i in module.mems:
@@ -907,6 +1080,10 @@ class ModuleInstance(Eventful):
         for v in [stack.pop() for _t in ty.param_types][::-1]:
             assert not isinstance(v, (Label, Activation))
             local_vars.append(v)
+
+        name = self.function_names.get(funcaddr, f"Func{funcaddr}")
+        buffer = " | " * (len(self._block_depths) - 1)
+        logger.debug(buffer + "%s(%s)" % (name, ", ".join(str(i) for i in local_vars)))
         if isinstance(f, HostFunc):  # Call native function
             self._publish("will_call_hostfunc", f, local_vars)
             res = list(f.hostcode(self._state, *local_vars))
@@ -994,14 +1171,17 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#returning-from-a-function%E2%91%A0
         """
         if len(self._block_depths) > 1:  # Only if we're in a _real_ function, not initialization
-            logger.debug(
-                "EXITING FUNCTION (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1]
-            )
             # Pop return values
             f = stack.get_frame()
             n = f.arity
             stack.has_type_on_top(Value_t, n)
             vals = [stack.pop() for _ in range(n)]
+            logger.debug(
+                "EXITING FUNCTION (FD: %d, BD: %d) (%s)",
+                len(self._block_depths),
+                self._block_depths[-1],
+                vals,
+            )
             assert isinstance(
                 stack.peek(), Activation
             ), f"Stack should have an activation on top, instead has {type(stack.peek())}"

@@ -86,6 +86,8 @@ class WASMWorld(Platform):
         self.forward_events_from(self.stack)
         self.forward_events_from(self.instance)
         self.forward_events_from(self.instance.executor)
+        for mem in self.store.mems:
+            self.forward_events_from(mem)
         super().__setstate__(state)
 
     @property
@@ -254,7 +256,9 @@ class WASMWorld(Platform):
                             partial(stub, len(func_type.result_types)),  # type: ignore
                         )
                     )
-                    imports.append(FuncAddr(len(self.store.funcs) - 1))
+                    addr = FuncAddr(len(self.store.funcs) - 1)
+                    imports.append(addr)
+                    self.instance.function_names[addr] = f"{i.module}.{i.name}"
 
                 elif isinstance(i.desc, TableType):
                     self.store.tables.append(
@@ -311,6 +315,8 @@ class WASMWorld(Platform):
         for k in supplemental_env:
             self.set_env(supplemental_env[k], k)
         self.import_module(self.default_module, exec_start, stub_missing)
+        for mem in self.store.mems:
+            self.forward_events_from(mem)
 
     def invoke(self, name="main", argv=[], module=None):
         """
