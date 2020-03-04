@@ -990,19 +990,19 @@ class Armv7Cpu(Cpu):
     def LDRSB(cpu, dest, src, offset=None):
         cpu._LDR(dest, src, 8, True, offset)
 
-    def _ADD(cpu, _op1, _op2, carry=0):
+    def _ADD(cpu, op1, op2, carry=0):
         W = cpu.address_bit_size
         # masking to 32 because sometimes capstone's op.imm field is negative.
         # this converts it back to unsigned
-        _op2 = Operators.ZEXTEND(_op2, W)
+        op2 = Operators.ZEXTEND(op2, W)
 
-        uo1 = UInt(_op1, W * 2)
-        uo2 = UInt(_op2, W * 2)
+        uo1 = UInt(op1, W * 2)
+        uo2 = UInt(op2, W * 2)
         c = UInt(carry, W * 2)
         unsigned_sum = uo1 + uo2 + c
 
-        so1 = SInt(Operators.SEXTEND(_op1, W, W * 2), W * 2)
-        so2 = SInt(Operators.SEXTEND(_op2, W, W * 2), W * 2)
+        so1 = SInt(Operators.SEXTEND(op1, W, W * 2), W * 2)
+        so2 = SInt(Operators.SEXTEND(op2, W, W * 2), W * 2)
         signed_sum = so1 + so2 + c
 
         result = GetNBits(unsigned_sum, W)
