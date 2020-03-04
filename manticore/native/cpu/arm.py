@@ -1025,12 +1025,22 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
-    def ADD(cpu, dest, src, add=None):
-        if add is not None:
-            result, carry, overflow = cpu._ADD(src.read(), add.read())
+    def ADD(cpu, dest, src, imm=None, shift=None):
+        if imm is not None:
+            op1 = src.read()
+            op2 = imm.read()
+            if shift is not None:
+                # support for the ADD (immediate) with shift, used the alias MOV.
+                shift_val = shift.read()
+                if shift_val not in (0, 12):
+                    logger.warning('unexpected shift amount %r', shift_val)
+                assert cpu.address_bit_size in (32, 64), f'unexpected address bit size {cpu.address_bit_size}'
+                op2 = LSL(op2, shift_val, cpu.address_bit_size)
         else:
             # support for the thumb mode version of adds <dest>, <immediate>
-            result, carry, overflow = cpu._ADD(dest.read(), src.read())
+            op1 = dest.read()
+            op2 = src.read()
+        result, carry, overflow = cpu._ADD(op1, op2)
         dest.write(result)
         return result, carry, overflow
 
