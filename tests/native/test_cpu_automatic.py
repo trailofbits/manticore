@@ -1,9 +1,9 @@
 import unittest
 from manticore.native.cpu.x86 import *
-from manticore.core.smtlib import *
+import manticore.core.smtlib
 from manticore.native.memory import *
 
-solver = solver.Z3Solver.instance()
+solver = manticore.core.smtlib.solver.Z3Solver.instance()
 
 
 class CPUTest(unittest.TestCase):

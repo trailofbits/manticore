@@ -20,12 +20,6 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class EthSha3TestSymbolicate(unittest.TestCase):
-    """
-    Subclasses must assign this class variable to the class for the detector
-    """
-
-    DETECTOR_CLASS = None
-
     def setUp(self):
         evm_consts = config.get_group("evm")
         evm_consts.sha3 = evm_consts.sha3.symbolicate
@@ -428,12 +422,6 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
 
 
 class EthSha3TestConcrete(unittest.TestCase):
-    """
-    Subclasses must assign this class variable to the class for the detector
-    """
-
-    DETECTOR_CLASS = None
-
     def setUp(self):
         evm_consts = config.get_group("evm")
         evm_consts.sha3 = evm_consts.sha3.concretize

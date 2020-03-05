@@ -751,6 +751,7 @@ class EVM(Eventful):
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
         self._published_pre_instruction_events = False
+        self._return_data = b""
 
         # Used calldata size
         self._used_calldata_size = 0
@@ -805,6 +806,7 @@ class EVM(Eventful):
         state["_used_calldata_size"] = self._used_calldata_size
         state["_valid_jumpdests"] = self._valid_jumpdests
         state["_check_jumpdest"] = self._check_jumpdest
+        state["_return_data"] = self._return_data
         return state
 
     def __setstate__(self, state):
@@ -829,6 +831,7 @@ class EVM(Eventful):
         self._used_calldata_size = state["_used_calldata_size"]
         self._valid_jumpdests = state["_valid_jumpdests"]
         self._check_jumpdest = state["_check_jumpdest"]
+        self._return_data = state["_return_data"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -1791,7 +1794,7 @@ class EVM(Eventful):
         return self._get_memfee(mem_offset, size)
 
     def RETURNDATACOPY(self, mem_offset, return_offset, size):
-        return_data = self.world.last_transaction.return_data
+        return_data = self._return_data
 
         self._allocate(mem_offset, size)
         for i in range(size):
@@ -1801,7 +1804,7 @@ class EVM(Eventful):
                 self._store(mem_offset + i, 0)
 
     def RETURNDATASIZE(self):
-        return len(self.world.last_transaction.return_data)
+        return len(self._return_data)
 
     ############################################################################
     # Block Information
@@ -2021,15 +2024,16 @@ class EVM(Eventful):
         )
         raise StartTx()
 
+    def __pos_call(self, out_offset, out_size):
+        data = self._return_data
+        data_size = len(data)
+        size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+        self.write_buffer(out_offset, data[:size])
+        return self.world.last_transaction.return_value
+
     @CALL.pos  # type: ignore
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def CALLCODE_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         return self._get_memfee(in_offset, in_size)
@@ -2050,13 +2054,7 @@ class EVM(Eventful):
 
     @CALLCODE.pos  # type: ignore
     def CALLCODE(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def RETURN_gas(self, offset, size):
         return self._get_memfee(offset, size)
@@ -2086,13 +2084,7 @@ class EVM(Eventful):
 
     @DELEGATECALL.pos  # type: ignore
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def STATICCALL_gas(self, gas, address, in_offset, in_size, out_offset, out_size):
         return self._get_memfee(in_offset, in_size)
@@ -2113,13 +2105,7 @@ class EVM(Eventful):
 
     @STATICCALL.pos  # type: ignore
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def REVERT_gas(self, offset, size):
         return self._get_memfee(offset, size)
@@ -2387,11 +2373,16 @@ class EVMWorld(Platform):
             self.current_vm.constraints = constraints
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
+        assert price is not None
         if self.depth > 0:
             origin = self.tx_origin()
         else:
             origin = caller
-        assert price is not None
+
+        # If not a human tx, reset returndata
+        # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
+        if self.current_vm:
+            self.current_vm._return_data = b""
 
         tx = Transaction(
             sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas
@@ -2426,13 +2417,17 @@ class EVMWorld(Platform):
         assert self.constraints == vm.constraints
         # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
+
+        # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
+        if data is not None and self.current_vm is not None:
+            self.current_vm._return_data = data
+
         if rollback:
             self._set_storage(vm.address, account_storage)
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
         else:
             self._deleted_accounts = deleted_accounts
-
             # FIXME: BUG: a CREATE can be successful and still return an empty contract :shrug:
             if not issymbolic(tx.caller) and (
                 tx.sort == "CREATE" or not self._world_state[tx.caller]["code"]
@@ -3065,9 +3060,18 @@ class EVMWorld(Platform):
             balance = blockchain.get_balance(account_address)
             is_balance_symbolic = issymbolic(balance)
             is_something_symbolic = is_something_symbolic or is_balance_symbolic
-            balance = state.solve_one(balance)
+            balance = state.solve_one(balance, constrain=True)
             stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
+            storage = blockchain.get_storage(account_address)
+            concrete_indexes = set()
+            for sindex in storage.written:
+                concrete_indexes.add(state.solve_one(sindex, constrain=True))
+
+            for index in concrete_indexes:
+                stream.write(
+                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}"
+                )
             storage = blockchain.get_storage(account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 

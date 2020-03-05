@@ -482,7 +482,7 @@ class EthTests(unittest.TestCase):
 
         expected_exception = (
             f"Can't create solidity contract with balance (2) because "
-            f"the owner account ({owner}) has insufficient balance (1)."
+            f"the owner account ({owner}) has insufficient balance."
         )
         self.assertEqual(str(e.exception), expected_exception)
 
