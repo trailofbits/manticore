@@ -336,7 +336,6 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         found = 0
         for st in m.all_states:
             if not m.fix_unsound_symbolication(st):
-                print("kill", st.id)
                 m.kill_state(st)
                 continue
             m.generate_testcase(st)
