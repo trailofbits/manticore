@@ -913,7 +913,7 @@ class EthTests(unittest.TestCase):
 
         self.assertIn("endtx_instructions", p.context)
         self.assertSetEqual(
-            p.context["endtx_instructions"], {"REVERT", "INVALID", "RETURN", "STOP"}
+            p.context["endtx_instructions"], {"INVALID", "RETURN", "STOP", "REVERT"}
         )
 
     def test_call_with_concretized_args(self):

@@ -264,6 +264,7 @@ class ConstantFolderSimplifier(Visitor):
         super().__init__(**kw)
 
     operations = {
+        BitVecMod: operator.__mod__,
         BitVecAdd: operator.__add__,
         BitVecSub: operator.__sub__,
         BitVecMul: operator.__mul__,

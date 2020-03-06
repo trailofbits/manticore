@@ -56,7 +56,13 @@ consts = config.get_group("evm")
 
 
 def globalsha3(data):
+    if issymbolic(data):
+        return None
     return int(sha3.keccak_256(data).hexdigest(), 16)
+
+
+def globalfakesha3(data):
+    return None
 
 
 consts.add(
@@ -1577,24 +1583,11 @@ class EVM(Eventful):
 
         """
         data = self.read_buffer(start, size)
-
-        if consts.sha3 == consts.sha3.fake:
-            # Fake hash selected. Replace with symbol friendly hash.
-            h = len(data) + 0x4141414141414141414141414141414141414141414141414141414141414100
-            for i in range(0, len(data), 32):
-                h <<= 16
-                h += data.read_BE(i, 32)
-
-            # Try to avoid some common incorrect cases
-            self.constraints.add(h != 0)
-            # Force fake collision resistance
-            for x, y in self._sha3.items():
-                self.constraints.add((data == x) == (h == y))
-
-            self._sha3[data] = h
-            return h
+        if consts.sha3 is consts.sha3.fake:
+            func = globalfakesha3
         else:
-            return self.world.symbolic_function(globalsha3, data)
+            func = globalsha3
+        return self.world.symbolic_function(func, data)
 
     ############################################################################
     # Environmental Information
@@ -3082,26 +3075,32 @@ class EVMWorld(Platform):
             storage = blockchain.get_storage(account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 
-            all_used_indexes = []
-            with state.constraints as temp_cs:
-                # make a free symbolic idex that could address any storage slot
-                index = temp_cs.new_bitvec(256)
-                # get the storage for account_address
-                storage = blockchain.get_storage(account_address)
-                # we are interested only in used slots
-                temp_cs.add(storage.get(index) != 0)
-                # Query the solver to get all storage indexes with used slots
-                all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
+            if consts.sha3 is consts.sha3.concretize:
+                all_used_indexes = []
+                with state.constraints as temp_cs:
+                    # make a free symbolic idex that could address any storage slot
+                    index = temp_cs.new_bitvec(256)
+                    # get the storage for account_address
+                    storage = blockchain.get_storage(account_address)
+                    # we are interested only in used slots
+                    # temp_cs.add(storage.get(index) != 0)
+                    temp_cs.add(storage.is_known(index))
+                    # Query the solver to get all storage indexes with used slots
+                    all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
 
-            if all_used_indexes:
-                stream.write("Storage:\n")
-                for i in all_used_indexes:
-                    value = storage.get(i)
-                    is_storage_symbolic = issymbolic(value)
-                    stream.write(
-                        "storage[%x] = %x %s\n"
-                        % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic))
-                    )
+                if all_used_indexes:
+                    stream.write("Storage:\n")
+                    for i in all_used_indexes:
+                        value = storage.get(i)
+                        is_storage_symbolic = issymbolic(value)
+                        stream.write(
+                            "storage[%x] = %x %s\n"
+                            % (
+                                state.solve_one(i),
+                                state.solve_one(value),
+                                flagged(is_storage_symbolic),
+                            )
+                        )
 
             runtime_code = state.solve_one(blockchain.get_code(account_address))
             if runtime_code:
