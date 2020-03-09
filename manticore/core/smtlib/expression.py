@@ -777,7 +777,6 @@ class Array(Expression):
         return array
 
     def read_BE(self, address, size):
-        from manticore.core.smtlib.visitors import translate_to_smtlib
         bytes = []
         for offset in range(size):
             bytes.append(self.get(address + offset, 0))
@@ -1109,8 +1108,6 @@ class ArrayProxy(Array):
                 if known_index.value == index.value:
                     return BoolConstant(True)
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
-        from manticore.core.smtlib.visitors import translate_to_smtlib
-
         return is_known_index
 
     def get(self, index, default=None):

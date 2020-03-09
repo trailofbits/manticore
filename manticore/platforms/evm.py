@@ -781,7 +781,7 @@ class EVM(Eventful):
 
     @property
     def gas(self):
-        return to_constant(self._gas)
+        return self._gas
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -1133,9 +1133,6 @@ class EVM(Eventful):
                 self._publish(
                     "will_evm_execute_instruction", self.instruction, self._top_arguments()
                 )
-
-
-
 
             pc = self.pc
             instruction = self.instruction
@@ -2665,11 +2662,6 @@ class EVMWorld(Platform):
 
     def has_code(self, address):
         return len(self._world_state[address]["code"]) > 0
-
-    def get_nonce(self, address):
-        if address not in self._world_state:
-            return 0
-        return self._world_state[address]['nonce']
 
     def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
