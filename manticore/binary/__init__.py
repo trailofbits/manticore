@@ -1,4 +1,4 @@
-''' Common binary formats interface
+""" Common binary formats interface
 Ideally you should be able to do something like
 
         from binary import Binary
@@ -13,12 +13,13 @@ Ideally you should be able to do something like
 But there are difference between format that makes it difficult to find a simple
 and common API.  interpreters? linkers? linked DLLs?
 
-'''
+"""
 
 from .binary import Binary, CGCElf, Elf  # noqa
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     print(list(Binary(sys.argv[1]).threads()))
     print(list(Binary(sys.argv[1]).maps()))

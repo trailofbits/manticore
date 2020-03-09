@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
 
-import random, string, random
+import random
+import string
+
 chars = string.ascii_uppercase + string.digits
 
 antitrace = False
-password = 'SCRT'
+password = "SCRT"
 
 
-PROGRAM = ''
-PROGRAM += '''
+PROGRAM = """
 /* This program parses a command line argument.
  *
  * Compile with :
- *   $ gcc -static -Os crackme.c -o crackme
+ *   $ gcc -static -O0 crackme.c -o crackme
  *
  * Analyze it with:
- *   $ manticore crackme 
+ *   $ manticore crackme
  *
  *   - By default, Manticore will consider all input of stdin to be symbolic
  *     It will explore all possible paths, eventually finding the SCRT key
- * 
+ *
  * Expected output:
  *  $ manticore --proc 5 crackme
  *  2017-04-22 10:57:07,913: [11918] MAIN:INFO: Loading program: ['crackme']
@@ -38,36 +39,36 @@ PROGRAM += '''
  *  Look at ./mcore_IJ2sPb for results, you will find something like this:
  *
  *  $ head -c 4 *.stdin
- *  ==> test_00000001.stdin <==
+ *  ==> test_00000000.stdin <==
  *  �CMM
- *  ==> test_00000002.stdin <==
+ *  ==> test_00000001.stdin <==
  *  �C��
- *  ==> test_00000003.stdin <==
+ *  ==> test_00000002.stdin <==
  *  ��SS
- *  ==> test_00000004.stdin <==
+ *  ==> test_00000003.stdin <==
  *  ����
- *  ==> test_00000005.stdin <==
+ *  ==> test_00000004.stdin <==
  *  SCR
- *  ==> test_00000006.stdin <==
+ *  ==> test_00000005.stdin <==
  *  S�TT
- *  ==> test_00000007.stdin <==
+ *  ==> test_00000006.stdin <==
  *  SCRT
- *  ==> test_00000008.stdin <==
+ *  ==> test_00000007.stdin <==
  *  S���
- *  ==> test_00000009.stdin <==
+ *  ==> test_00000008.stdin <==
  *  SC�@
- *  ==> test_0000000a.stdin <==
+ *  ==> test_00000009.stdin <==
  *  SC�8
- *  
+ *
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
-'''
+"""
 
 if antitrace:
-    PROGRAM += '''
+    PROGRAM += """
 
 #include <sys/ptrace.h>
 #include <sys/wait.h>
@@ -84,72 +85,84 @@ void anti_ptrace(void)
     if (child){
         wait(NULL);
     }else {
-       if (ptrace(PTRACE_TRACEME, 0, 1, 0) == -1) 
+       if (ptrace(PTRACE_TRACEME, 0, 1, 0) == -1)
             while(1);
        exit(0);
     }
 
-   if (ptrace(PTRACE_TRACEME, 0, 0, 0) == -1) 
+   if (ptrace(PTRACE_TRACEME, 0, 0, 0) == -1)
         while(1);
 
 }
-'''
+"""
 
-PROGRAM += '''
+PROGRAM += """
 int
-main(int argc, char* argv[]){'''
+main(int argc, char* argv[]){"""
 
 if antitrace:
-    PROGRAM += '''
+    PROGRAM += """
     sleep(10);
     anti_ptrace();
-'''
+"""
 
 
-pad = ''.join(random.choice(chars) for _ in range(len(password)))
+pad = "".join(random.choice(chars) for _ in range(len(password)))
 
-banner = '''Please enter your password: 
-'''
+banner = """Please enter your password:
+"""
 import json
 
-PROGRAM += '''printf ("%s");'''%json.dumps(banner).strip('"')
-PROGRAM += '''char xor(char a, char b){
+PROGRAM += """printf ("%s");""" % json.dumps(banner).strip('"')
+PROGRAM += """char xor(char a, char b){
     return a^b;
 }
-'''
-PROGRAM += '''int c;\n'''
+"""
+PROGRAM += """int c;\n"""
+
 
 def func(password, pad, flag=True):
     if len(password) == 1:
-        #SUBPROGRAMTRUE = '''if ( getchar() == 0x10 )\n'''
+        # SUBPROGRAMTRUE = '''if ( getchar() == 0x10 )\n'''
         if flag:
-            SUBPROGRAMTRUE = '''    printf("You are in!\\n");\n'''
+            SUBPROGRAMTRUE = """    printf("You are in!\\n");\n"""
         else:
-            SUBPROGRAMTRUE = '''    printf("You are NOT in!\\n");\n'''
+            SUBPROGRAMTRUE = """    printf("You are NOT in!\\n");\n"""
     else:
         SUBPROGRAMTRUE = func(password[1:], pad[1:], flag)
 
     if len(password) == 1:
-        SUBPROGRAMFALSE = '''    printf("You are NOT in!\\n");\n'''
+        SUBPROGRAMFALSE = """    printf("You are NOT in!\\n");\n"""
     else:
-        SUBPROGRAMFALSE = func(''.join(random.choice(chars) for _ in range(len(password)//2)), pad[1:], False)
+        SUBPROGRAMFALSE = func(
+            "".join(random.choice(chars) for _ in range(len(password) // 2)), pad[1:], False
+        )
 
-    config = random.choice([ (True, SUBPROGRAMTRUE, SUBPROGRAMFALSE), (False, SUBPROGRAMFALSE, SUBPROGRAMTRUE)])
-    
-    SUBPROGRAM = ''
+    config = random.choice(
+        [(True, SUBPROGRAMTRUE, SUBPROGRAMFALSE), (False, SUBPROGRAMFALSE, SUBPROGRAMTRUE)]
+    )
+
+    SUBPROGRAM = ""
     if config[0]:
-        SUBPROGRAM += '''if ( ((c = getchar(), (c >= 0)) && xor(c, '%c') == ('%c' ^ '%c')) ){\n'''%(pad[0], password[0], pad[0])
+        SUBPROGRAM += (
+            """if ( ((c = getchar(), (c >= 0)) && xor(c, '%c') == ('%c' ^ '%c')) ){\n"""
+            % (pad[0], password[0], pad[0])
+        )
     else:
-        SUBPROGRAM += '''if ( ((c = getchar(), (c <  0)) || xor(c, '%c') != ('%c' ^ '%c')) ){\n'''%(pad[0], password[0], pad[0])
+        SUBPROGRAM += (
+            """if ( ((c = getchar(), (c <  0)) || xor(c, '%c') != ('%c' ^ '%c')) ){\n"""
+            % (pad[0], password[0], pad[0])
+        )
 
     SUBPROGRAM += config[1]
-    SUBPROGRAM += '''}else {\n''' 
+    SUBPROGRAM += """}else {\n"""
     SUBPROGRAM += config[2]
-    SUBPROGRAM += '''}'''
-    SUBPROGRAM = ('\n'+('    ')).join(SUBPROGRAM.split('\n'))
-    return ('    ')+SUBPROGRAM+'\n'
+    SUBPROGRAM += """}"""
+    SUBPROGRAM = ("\n" + ("    ")).join(SUBPROGRAM.split("\n"))
+    return ("    ") + SUBPROGRAM + "\n"
+
 
 PROGRAM += func(password, pad)
-PROGRAM += '''return 0;\n}'''
-print(PROGRAM)
+PROGRAM += """return 0;\n}"""
 
+print(PROGRAM)

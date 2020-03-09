@@ -9,16 +9,15 @@ The config values and constant are gathered from three sources:
 
 in that order of priority.
 """
-
-import yaml
-import io
+import argparse
 import logging
-import os
-
+from typing import Dict
 from itertools import product
+from enum import Enum
+import os
+import yaml
 
-
-_groups = {}
+_groups: Dict[str, "_Group"] = {}
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ class ConfigError(Exception):
 
 
 class _Var:
-    def __init__(self, name: str='', default=None, description: str=None, defined: bool=True):
+    def __init__(self, name: str = "", default=None, description: str = None, defined: bool = True):
         self.name = name
         self.description = description
         self.value = default
@@ -42,16 +41,35 @@ class _Var:
 
 
 class _Group:
+    """
+    Configuration group to which you can add variables by simple doing:
+        group.add('some_var', default=123, description='..')
+
+    And then use their value in the code as:
+        group.some_var
+
+    Can also be used with a `with-statement context` so it would revert the value, e.g.:
+    group.var = 100
+    with group.temp_vals():
+        group.var = 123
+        # group.var is 123 for the time of with statement
+    # group.var is back to 100
+
+    Note that it is not recommended to use it as a default argument value for a function as it will be evaluated once.
+    Also don't forget that a given variable can be set through CLI or .yaml file!
+    (see config.py)
+    """
+
     def __init__(self, name: str):
         # To bypass __setattr__
-        object.__setattr__(self, '_name', name)
-        object.__setattr__(self, '_vars', {})
+        object.__setattr__(self, "_name", name)
+        object.__setattr__(self, "_vars", {})
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
-    def add(self, name: str, default=None, description: str=None):
+    def add(self, name: str, default=None, description: str = None):
         """
         Add a variable named |name| to this value group, optionally giving it a
         default value and a description.
@@ -64,13 +82,13 @@ class _Group:
         if name in self._vars:
             raise ConfigError(f"{self.name}.{name} already defined.")
 
-        if name == 'name':
+        if name == "name":
             raise ConfigError("'name' is a reserved name for a group.")
 
         v = _Var(name, description=description, default=default)
         self._vars[name] = v
 
-    def update(self, name: str, value=None, default=None, description: str=None):
+    def update(self, name: str, value=None, default=None, description: str = None):
         """
         Like add, but can tolerate existing values; also updates the value.
 
@@ -79,7 +97,7 @@ class _Group:
         if name in self._vars:
             description = description or self._vars[name].description
             default = default or self._vars[name].default
-        elif name == 'name':
+        elif name == "name":
             raise ConfigError("'name' is a reserved name for a group.")
 
         v = _Var(name, description=description, default=default, defined=False)
@@ -105,9 +123,10 @@ class _Group:
         return self._vars[name]
 
     def __getattr__(self, name):
-        if name not in self._vars:
+        try:
+            return self._vars[name].value
+        except KeyError:
             raise AttributeError(f"Group '{self.name}' has no variable '{name}'")
-        return self._vars[name].value
 
     def __setattr__(self, name, new_value):
         self._vars[name].value = new_value
@@ -118,8 +137,48 @@ class _Group:
     def __contains__(self, key):
         return key in self._vars
 
+    def temp_vals(self) -> "_TemporaryGroup":
+        """
+        Returns a contextmanager that can be used to set temporary config variables.
+        E.g.:
+        group.var = 123
 
-def get_group(name: str):
+        with group.temp_vals():
+            group.var = 456
+            # var is 456
+
+        # group.var is back to 123
+        """
+        return _TemporaryGroup(self)
+
+
+class _TemporaryGroup:
+    def __init__(self, group: _Group):
+        object.__setattr__(self, "_group", group)
+        object.__setattr__(self, "_entered", False)
+        object.__setattr__(self, "_saved", {k: v.value for k, v in group._vars.items()})
+
+    def __getattr__(self, item):
+        return getattr(self._grp, item)
+
+    def __setattr__(self, key, value):
+        if self._entered and key not in self._saved:
+            self._saved[key] = getattr(self._group, key).value
+
+    def __enter__(self):
+        if self._entered is True:
+            raise ConfigError("Can't use temporary group recursively!")
+
+        object.__setattr__(self, "_entered", True)
+
+    def __exit__(self, *_):
+        for k in self._saved:
+            setattr(self._group, k, self._saved[k])
+
+        object.__setattr__(self, "_entered", False)
+
+
+def get_group(name: str) -> _Group:
     """
     Get a configuration variable group named |name|
     """
@@ -144,7 +203,12 @@ def save(f):
 
     c = {}
     for group_name, group in _groups.items():
-        section = dict((var.name, var.value) for var in group.updated_vars())
+        section = {}
+        for var in group.updated_vars():
+            if isinstance(var.value, Enum):
+                section[var.name] = var.value.value
+            else:
+                section[var.name] = var.value
         if not section:
             continue
         c[group_name] = section
@@ -165,6 +229,10 @@ def parse_config(f):
             group = get_group(section_name)
 
             for key, val in section.items():
+                if key in group:
+                    obj = group._var_object(key)
+                    if isinstance(obj.default, Enum):
+                        val = type(obj.default).from_string(val)
                 group.update(key)
                 setattr(group, key, val)
     # Any exception here should trigger the warning; from not being able to parse yaml
@@ -184,13 +252,13 @@ def load_overrides(path=None):
     if path is not None:
         names = [path]
     else:
-        possible_names = ['mcore.yml', 'manticore.yml']
-        names = [os.path.join('.', ''.join(x)) for x in product(['', '.'], possible_names)]
+        possible_names = ["mcore.yml", "manticore.yml"]
+        names = [os.path.join(".", "".join(x)) for x in product(["", "."], possible_names)]
 
     for name in names:
         try:
-            with open(name, 'r') as yml_f:
-                logger.info(f'Reading configuration from {name}')
+            with open(name, "r") as yml_f:
+                logger.info(f"Reading configuration from {name}")
                 parse_config(yml_f)
             break
         except FileNotFoundError:
@@ -211,19 +279,22 @@ def add_config_vars_to_argparse(args):
     for group_name, group in _groups.items():
         for key in group:
             obj = group._var_object(key)
-            args.add_argument(f"--{group_name}.{key}", type=type(obj.default),
-                              default=obj.default, help=obj.description)
+            args.add_argument(
+                f"--{group_name}.{key}",
+                type=type(obj.default),
+                default=obj.default,
+                help=obj.description,
+            )
 
 
-def process_config_values(parser, args):
+def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namespace):
     """
     Bring in provided config values to the args parser, and import entries to the config
     from all arguments that were actually passed on the command line
 
-    :param argparse.ArgumentParser parser: The arg parser
+    :param parser: The arg parser
     :param args: The value that parser.parse_args returned
     """
-
     # First, load a local config file, if passed or look for one in pwd if it wasn't.
     load_overrides(args.config)
 
@@ -234,7 +305,7 @@ def process_config_values(parser, args):
     command_line_args = vars(args)
 
     # Bring in the options keys into args
-    config_cli_args = get_group('cli')
+    config_cli_args = get_group("cli")
 
     # Place all command line args into the cli group (for saving in the workspace). If
     # the value is set on command line, then it takes precedence; otherwise we try to
@@ -247,7 +318,7 @@ def process_config_values(parser, args):
                 config_cli_args.update(k, value=set_val)
             else:
                 # Update a var's native group
-                group_name, key = k.split('.')
+                group_name, key = k.split(".")
                 group = get_group(group_name)
                 setattr(group, key, set_val)
         else:
@@ -263,5 +334,3 @@ def get_config_keys():
     for group_name, group in _groups.items():
         for key in group:
             yield f"{group_name}.{key}"
-
-

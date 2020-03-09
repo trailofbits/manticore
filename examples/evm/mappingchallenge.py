@@ -1,4 +1,4 @@
-from manticore.ethereum import ManticoreEVM, Detector
+from manticore.ethereum import Detector, ManticoreEVM
 
 ################ Script #######################
 
@@ -6,7 +6,7 @@ m = ManticoreEVM()
 m.verbosity(3)
 # And now make the contract account to analyze
 # https://capturetheether.com/challenges/math/mapping/
-source_code = '''
+source_code = """
 pragma solidity ^0.4.21;
 
 contract MappingChallenge {
@@ -22,21 +22,25 @@ contract MappingChallenge {
         map[key] = value;
     }
 }
-'''
+"""
 print("Source code:\n", source_code)
 
 
 class StopAtDepth(Detector):
-    ''' This just aborts explorations that are too deep '''
+    """ This just aborts explorations that are too deep """
 
     def will_start_run_callback(self, *args):
-        with self.manticore.locked_context('seen_rep', dict) as reps:
+        with self.manticore.locked_context("seen_rep", dict) as reps:
             reps.clear()
 
     def will_decode_instruction_callback(self, state, pc):
         world = state.platform
-        with self.manticore.locked_context('seen_rep', dict) as reps:
-            item = (world.current_transaction.sort == 'CREATE', world.current_transaction.address, pc)
+        with self.manticore.locked_context("seen_rep", dict) as reps:
+            item = (
+                world.current_transaction.sort == "CREATE",
+                world.current_transaction.address,
+                pc,
+            )
             if not item in reps:
                 reps[item] = 0
             reps[item] += 1
@@ -60,4 +64,4 @@ for st in m.all_states:
     if st.can_be_true(flag_value != 0):
         print("Flag Found! Check ", m.workspace)
         st.constraints.add(flag_value != 0)
-        m.generate_testcase(st, 'Flag Found', '')
+        m.generate_testcase(st, "Flag Found")

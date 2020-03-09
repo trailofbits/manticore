@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import sys
-from manticore import Manticore
+from manticore.native import Manticore
 
-'''
+"""
 Demonstrates the ability to set a basic hook on a specific program counter and
 the ability to read from memory.
-'''
+"""
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     path = sys.argv[1]
     pc = int(sys.argv[2], 0)
 
@@ -26,4 +26,3 @@ if __name__ == '__main__':
         print(f"Instruction bytes: {instruction:08x}")
 
     m.run()
-

@@ -1,11 +1,47 @@
+from typing import Any, Dict, Mapping, Optional, Sequence, Iterable, Tuple
 import pyevmasm as EVMAsm
 
 from .abi import ABI
-from ..exceptions import EthereumError
+from ..utils.deprecated import deprecated
 
 
-class SolidityMetadata(object):
-    def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
+class SolidityMetadata:
+    @staticmethod
+    def function_signature_for_name_and_inputs(
+        name: str, inputs: Sequence[Mapping[str, Any]]
+    ) -> str:
+        """Returns the function signature for the specified name and Solidity JSON metadata inputs array.
+
+        The ABI specification defines the function signature as the function name followed by the parenthesised list of
+        parameter types separated by single commas and no spaces.
+        See https://solidity.readthedocs.io/en/latest/abi-spec.html#function-selector
+        """
+        return name + SolidityMetadata.tuple_signature_for_components(inputs)
+
+    @staticmethod
+    def tuple_signature_for_components(components: Sequence[Mapping[str, Any]]) -> str:
+        """Equivalent to ``function_signature_for_name_and_inputs('', components)``."""
+        ts = []
+        for c in components:
+            t: str = c["type"]
+            if t.startswith("tuple"):
+                assert len(t) == 5 or t[5] == "["
+                t = SolidityMetadata.tuple_signature_for_components(c["components"]) + t[5:]
+            ts.append(t)
+        return f'({",".join(ts)})'
+
+    def __init__(
+        self,
+        name,
+        source_code,
+        init_bytecode,
+        runtime_bytecode,
+        srcmap,
+        srcmap_runtime,
+        hashes,
+        abi,
+        warnings,
+    ):
         """ Contract metadata for Solidity-based contracts """
         self.name = name
         if isinstance(source_code, bytes):
@@ -13,52 +49,59 @@ class SolidityMetadata(object):
         self.source_code = source_code
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
-        self._functions = hashes.keys()
-        self.abi = {item.get('name', '{fallback}'): item for item in abi}
+
+        self._function_signatures_by_selector = {
+            bytes.fromhex("{:08x}".format(sel)): sig for sig, sel in hashes.items()
+        }
+
+        fallback_selector = b"\0\0\0\0"
+        while fallback_selector in self._function_signatures_by_selector:
+            fallback_selector = (int.from_bytes(fallback_selector, "big") + 1).to_bytes(4, "big")
+        self._fallback_function_selector = fallback_selector
+
+        self._constructor_abi_item = None
+        self._fallback_function_abi_item = None
+        function_items = {}
+        event_items = {}
+        for item in abi:
+            type = item["type"]
+            if type == "function":
+                signature = self.function_signature_for_name_and_inputs(
+                    item["name"], item["inputs"]
+                )
+                function_items[signature] = item
+            elif type == "event":
+                signature = self.function_signature_for_name_and_inputs(
+                    item["name"], item["inputs"]
+                )
+                event_items[signature] = item
+            elif type == "constructor":
+                assert not self._constructor_abi_item, "A constructor cannot be overloaded"
+                self._constructor_abi_item = item
+            elif type == "fallback":
+                assert (
+                    not self._fallback_function_abi_item
+                ), "There can only be one fallback function"
+                self._fallback_function_abi_item = item
+        self._function_abi_items_by_signature = function_items
+        self._event_abi_items_by_signature = event_items
+
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
-    def get_constructor_arguments(self):
-        for fun in self.abi.values():
-            if fun['type'] == 'constructor':
-                constructor_inputs = fun['inputs']
-                break
-        else:
-            constructor_inputs = ()
-
-        def process(spec):
-            if spec['type'].startswith('tuple'):
-                types = []
-                for component in spec['components']:
-                    types.append(process(component))
-                return '({}){:s}'.format(','.join(types), spec['type'][5:])
-            else:
-                return spec['type']
-        inputs = {'components': constructor_inputs, 'type': 'tuple'}
-        return process(inputs)
-
-    def add_function(self, method_name_and_signature):
-        if not isinstance(method_name_and_signature, str):
-            raise ValueError("method_name_and_signature needs to be a string")
-        #TODO: use re, and check it's sane
-        name = method_name_and_signature.split('(')[0]
-        if name in self.abi:
-            raise EthereumError("Function already defined")
-        hsh = ABI.function_selector(method_name_and_signature)
-        self._functions.add(method_name_and_signature)
-
-        input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
-        output_types = method_name_and_signature.split(')')[1].split(',')
-        self.abi[name] = {'inputs': [{'type': ty} for ty in input_types],
-                          'name': name,
-                          'outputs': [{'type': ty} for ty in output_types]}
+    def get_constructor_arguments(self) -> str:
+        """Returns the tuple type signature for the arguments of the contract constructor."""
+        item = self._constructor_abi_item
+        return "()" if item is None else self.tuple_signature_for_components(item["inputs"])
 
     @staticmethod
     def _without_metadata(bytecode):
         end = None
-        if bytecode[-43: -34] == b'\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and bytecode[-2:] == b'\x00\x29':
+        if (
+            bytecode[-43:-34] == b"\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20"
+            and bytecode[-2:] == b"\x00\x29"
+        ):
             end = -9 - 32 - 2  # Size of metadata at the end of most contracts
         return bytecode[:end]
 
@@ -66,31 +109,40 @@ class SolidityMetadata(object):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
         bytecode = self._without_metadata(bytecode)
+        if self.source_code and bytecode and srcmap:
+            asm_offset = 0
+            asm_pos = 0
+            md = dict(enumerate(srcmap[asm_pos].split(":")))
+            byte_offset = int(
+                md.get(0, 0)
+            )  # is the byte-offset to the start of the range in the source file
+            source_len = int(md.get(1, 0))  # is the length of the source range in bytes
+            file_index = int(md.get(2, 0))  # is the source index over sourceList
+            jump_type = md.get(
+                3, None
+            )  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
-        asm_offset = 0
-        asm_pos = 0
-        md = dict(enumerate(srcmap[asm_pos].split(':')))
-        byte_offset = int(md.get(0, 0))  # is the byte-offset to the start of the range in the source file
-        source_len = int(md.get(1, 0))  # is the length of the source range in bytes
-        file_index = int(md.get(2, 0))  # is the source index over sourceList
-        jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
+            pos_to_offset = {}
+            for i in EVMAsm.disassemble_all(bytecode):
+                pos_to_offset[asm_pos] = asm_offset
+                asm_pos += 1
+                asm_offset += i.size
 
-        pos_to_offset = {}
-        for i in EVMAsm.disassemble_all(bytecode):
-            pos_to_offset[asm_pos] = asm_offset
-            asm_pos += 1
-            asm_offset += i.size
+            for asm_pos, md in enumerate(srcmap):
+                if len(md):
+                    d = {p: k for p, k in enumerate(md.split(":")) if k}
 
-        for asm_pos, md in enumerate(srcmap):
-            if len(md):
-                d = {p: k for p, k in enumerate(md.split(':')) if k}
+                    byte_offset = int(d.get(0, byte_offset))
+                    source_len = int(d.get(1, source_len))
+                    file_index = int(d.get(2, file_index))
+                    jump_type = d.get(3, jump_type)
 
-                byte_offset = int(d.get(0, byte_offset))
-                source_len = int(d.get(1, source_len))
-                file_index = int(d.get(2, file_index))
-                jump_type = d.get(3, jump_type)
-
-            new_srcmap[pos_to_offset[asm_pos]] = (byte_offset, source_len, file_index, jump_type)
+                new_srcmap[pos_to_offset[asm_pos]] = (
+                    byte_offset,
+                    source_len,
+                    file_index,
+                    jump_type,
+                )
 
         return new_srcmap
 
@@ -113,14 +165,14 @@ class SolidityMetadata(object):
         try:
             beg, size, _, _ = srcmap[asm_offset]
         except KeyError:
-            #asm_offset pointing outside the known bytecode
-            return ''
+            # asm_offset pointing outside the known bytecode
+            return ""
 
-        output = ''
-        nl = self.source_code[:beg].count('\n')
-        snippet = self.source_code[beg:beg + size]
-        for l in snippet.split('\n'):
-            output += '    %s  %s\n' % (nl, l)
+        output = ""
+        nl = self.source_code[:beg].count("\n") + 1
+        snippet = self.source_code[beg : beg + size]
+        for l in snippet.split("\n"):
+            output += "    %s  %s\n" % (nl, l)
             nl += 1
         return output
 
@@ -128,49 +180,153 @@ class SolidityMetadata(object):
         return self.srcmap_runtime if runtime else self.srcmap
 
     @property
-    def signatures(self):
-        return dict(((self.get_hash(f), f) for f in self._functions))
+    def signatures(self) -> Dict[bytes, str]:
+        """Returns a new dict mapping contract function selectors to the function signatures.
 
-    def get_abi(self, hsh):
-        func_name = self.get_func_name(hsh)
-        default_fallback_abi = {'stateMutability': 'nonpayable', 'payable': False, 'type': 'fallback'}
-        return self.abi.get(func_name, default_fallback_abi)
+        The dict does not include an item for the default or non-default fallback function.
+        """
+        return dict(self._function_signatures_by_selector)
 
-    def get_func_argument_types(self, hsh):
+    @property
+    def has_non_default_constructor(self) -> bool:
+        """Indicates whether the contract has an explicitly defined constructor."""
+        return self._fallback_function_abi_item is not None
+
+    @property
+    def constructor_abi(self) -> Dict[str, Any]:
+        """Returns a copy of the Solidity JSON ABI item for the contract constructor.
+
+        The content of the returned dict is described at https://solidity.readthedocs.io/en/latest/abi-spec.html#json_
+        """
+        item = self._constructor_abi_item
+        if item:
+            return dict(item)
+        return {
+            "inputs": [],
+            "payable": False,
+            "stateMutability": "nonpayable",
+            "type": "constructor",
+        }
+
+    def get_abi(self, hsh: bytes) -> Dict[str, Any]:
+        """Returns a copy of the Solidity JSON ABI item for the function associated with the selector ``hsh``.
+
+        If no normal contract function has the specified selector, a dict describing the default or non-default
+        fallback function is returned.
+
+        The content of the returned dict is described at https://solidity.readthedocs.io/en/latest/abi-spec.html#json_
+        """
+        if not isinstance(hsh, (bytes, bytearray)):
+            raise TypeError("The selector argument must be a concrete byte array")
+        sig = self._function_signatures_by_selector.get(hsh)
+        if sig is not None:
+            return dict(self._function_abi_items_by_signature[sig])
+        item = self._fallback_function_abi_item
+        if item is not None:
+            return dict(item)
+        # An item describing the default fallback function.
+        return {"payable": False, "stateMutability": "nonpayable", "type": "fallback"}
+
+    def get_func_argument_types(self, hsh: bytes):
+        """Returns the tuple type signature for the arguments of the function associated with the selector ``hsh``.
+
+        If no normal contract function has the specified selector,
+        the empty tuple type signature ``'()'`` is returned.
+        """
+        if not isinstance(hsh, (bytes, bytearray)):
+            raise TypeError("The selector argument must be a concrete byte array")
+        sig = self._function_signatures_by_selector.get(hsh)
+        return "()" if sig is None else sig[sig.find("(") :]
+
+    def get_func_return_types(self, hsh: bytes) -> str:
+        """Returns the tuple type signature for the output values of the function
+        associated with the selector ``hsh``.
+
+        If no normal contract function has the specified selector,
+        the empty tuple type signature ``'()'`` is returned.
+        """
+        if not isinstance(hsh, (bytes, bytearray)):
+            raise TypeError("The selector argument must be a concrete byte array")
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi.get('inputs', [])) + ')'
+        outputs = abi.get("outputs")
+        return "()" if outputs is None else SolidityMetadata.tuple_signature_for_components(outputs)
 
-    def get_func_return_types(self, hsh):
-        abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi.get('outputs', [])) + ')'
+    def get_func_name(self, hsh: bytes) -> str:
+        """Returns the name of the normal function with the selector ``hsh``,
+        or ``'{fallback}'`` if no such function exists.
+        """
+        if not isinstance(hsh, (bytes, bytearray)):
+            raise TypeError("The selector argument must be a concrete byte array")
+        sig = self._function_signatures_by_selector.get(hsh)
+        return "{fallback}" if sig is None else sig[: sig.find("(")]
 
-    def get_func_name(self, hsh):
-        signature = self.signatures.get(hsh, '{fallback}()')
-        return signature.split('(')[0]
+    def get_func_signature(self, hsh: bytes) -> Optional[str]:
+        """Returns the signature of the normal function with the selector ``hsh``,
+        or ``None`` if no such function exists.
 
-    def get_func_signature(self, hsh):
-        return self.signatures.get(hsh)
+        This function returns ``None`` for any selector that will be dispatched to a fallback function.
+        """
+        if not isinstance(hsh, (bytes, bytearray)):
+            raise TypeError("The selector argument must be a concrete byte array")
+        return self._function_signatures_by_selector.get(hsh)
 
-    def get_hash(self, method_name_and_signature):
-        #helper
+    @deprecated("Use `abi.ABI.function_selector` instead.")
+    def get_hash(self, method_name_and_signature) -> bytes:
         return ABI.function_selector(method_name_and_signature)
 
     @property
-    def functions(self):
-        return tuple(self._functions) + ('{fallback}()',)
+    def function_signatures(self) -> Iterable[str]:
+        """The signatures of all normal contract functions."""
+        return self._function_signatures_by_selector.values()
+
+    @property  # type: ignore
+    @deprecated(
+        "Use `.function_signatures` instead, which does not return the `'{fallback}()'` pseudo-signature"
+    )
+    def functions(self) -> Tuple[str, ...]:
+        """The signatures of all normal contract functions, plus the ``'{fallback}()'`` pseudo-signature."""
+        return (*self._function_signatures_by_selector.values(), "{fallback}()")
 
     @property
-    def hashes(self):
-        # \x00\x00\x00\x00 corresponds to {fallback}()
-        return tuple(map(self.get_hash, self._functions)) + (b'\x00\x00\x00\x00',)
+    def has_non_default_fallback_function(self) -> bool:
+        """Indicates whether the contract has an explicitly defined fallback function."""
+        return self._fallback_function_abi_item is not None
+
+    @property
+    def fallback_function_selector(self) -> bytes:
+        """A function selector not associated with any of the non-fallback contract functions.
+
+        This selector is almost always ``b'\0\0\0\0'``.
+        """
+        return self._fallback_function_selector
+
+    @property
+    def function_selectors(self) -> Iterable[bytes]:
+        """The selectors of all normal contract functions,
+        plus ``self.fallback_function_selector`` if the contract has a non-default fallback function.
+        """
+        selectors = self._function_signatures_by_selector.keys()
+        if self._fallback_function_abi_item is None:
+            return tuple(selectors)
+        return (*selectors, self.fallback_function_selector)
+
+    @property  # type: ignore
+    @deprecated(
+        "Use `.function_selectors` instead, which only returns a fallback"
+        " function selector if the contract has a non-default fallback function."
+    )
+    def hashes(self) -> Tuple[bytes, ...]:
+        """The selectors of all normal contract functions, plus ``self.fallback_function_selector``."""
+        selectors = self._function_signatures_by_selector.keys()
+        return (*selectors, self.fallback_function_selector)
 
     def parse_tx(self, calldata, returndata=None):
         if returndata is None:
             returndata = bytes()
         if not isinstance(calldata, (bytes, bytearray)):
-            raise ValueError("calldata must be a concrete array")
+            raise TypeError("calldata must be a concrete byte array")
         if not isinstance(returndata, (bytes, bytearray)):
-            raise ValueError("returndata must be a concrete array")
+            raise TypeError("returndata must be a concrete byte array")
         calldata = bytes(calldata)
         returndata = bytes(returndata)
         function_id = calldata[:4]
@@ -181,11 +337,11 @@ class SolidityMetadata(object):
         else:
             arguments = (calldata,)
 
-        arguments_str = ', '.join(map(str, arguments))
+        arguments_str = ", ".join(map(str, arguments))
         return_value = None
         if returndata:
             ret_types = self.get_func_return_types(function_id)
             return_value = ABI.deserialize(ret_types, returndata)  # function return
-            return f'{function_name}({arguments_str}) -> {return_value}'
+            return f"{function_name}({arguments_str}) -> {return_value}"
         else:
-            return f'{function_name}({arguments_str})'
+            return f"{function_name}({arguments_str})"

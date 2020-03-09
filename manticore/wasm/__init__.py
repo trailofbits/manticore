@@ -1,0 +1,1 @@
+from .manticore import ManticoreWASM

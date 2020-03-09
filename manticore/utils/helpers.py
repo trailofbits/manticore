@@ -1,88 +1,21 @@
-import copy
-import functools
-import collections
 import logging
 import pickle
-import re
 import sys
-import resource
-
 from collections import OrderedDict
-from ..core.smtlib import Expression, BitVecConstant
 
 
 logger = logging.getLogger(__name__)
 
 
-def issymbolic(value):
-    '''
-    Helper to determine whether an object is symbolic (e.g checking
-    if data read from memory is symbolic)
-
-    :param object value: object to check
-    :return: whether `value` is symbolic
-    :rtype: bool
-    '''
-    return isinstance(value, Expression)
-
-
-def istainted(arg, taint=None):
-    '''
-    Helper to determine whether an object if tainted.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    '''
-
-    if not issymbolic(arg):
-        return False
-    if taint is None:
-        return len(arg.taint) != 0
-    for arg_taint in arg.taint:
-        m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
-        if m:
-            return True
-    return False
-
-
-def get_taints(arg, taint=None):
-    '''
-    Helper to list an object taints.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    '''
-
-    if not issymbolic(arg):
-        return
-    for arg_taint in arg.taint:
-        if taint is not None:
-            m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
-            if m:
-                yield arg_taint
-        else:
-            yield arg_taint
-    return
-
-
-def taint_with(arg, taint, value_bits=256, index_bits=256):
-    '''
-    Helper to taint a value.
-    :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    '''
-    tainted_fset = frozenset((taint,))
-
-    if not issymbolic(arg):
-        if isinstance(arg, int):
-            arg = BitVecConstant(value_bits, arg)
-            arg._taint = tainted_fset
-        else:
-            raise ValueError("type not supported")
-
-    else:
-        arg = copy.copy(arg)
-        arg._taint |= tainted_fset
-
-    return arg
+def interval_intersection(min1, max1, min2, max2):
+    """
+    Given two intervals, (min1, max1) and (min2, max2) return their intersecting interval,
+    or None if they do not overlap.
+    """
+    left, right = max(min1, min2), min(max1, max2)
+    if left < right:
+        return left, right
+    return None
 
 
 class CacheDict(OrderedDict):
@@ -95,9 +28,15 @@ class CacheDict(OrderedDict):
         super().__init__(*args, **kwargs)
 
     def __del__(self):
-        log = logging.getLogger(self.__class__.__name__)
-        log.debug(
-            f'DictCache: hits: {self._hits}, misses: {self._misses}, flushes: {self._flushes}, size: {self.__len__()}')
+        try:
+            log = logging.getLogger(self.__class__.__name__)
+            log.debug(
+                f"DictCache: hits: {self._hits}, misses: {self._misses}, flushes: {self._flushes}, size: {self.__len__()}"
+            )
+        except TypeError:
+            # Prevent "TypeError: attribute of type 'NoneType' is not callable" on line 32
+            # TODO - figure out why this happens (I think it's only on concrete runs?)
+            pass
 
     def __setitem__(self, key, value):
         if len(self) > self._max_size:
@@ -120,7 +59,7 @@ class CacheDict(OrderedDict):
         self._hits -= purge_count
 
 
-class StateSerializer(object):
+class StateSerializer:
     """
     StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
     stream-like objects.
@@ -145,15 +84,24 @@ class PickleSerializer(StateSerializer):
         sys.setrecursionlimit(PickleSerializer.DEFAULT_RECURSION)
 
     def serialize(self, state, f):
+        logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unknown>")
         try:
-            f.write(pickle.dumps(state, 2))
+            f.write(pickle_dumps(state))
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
-                raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
-            logger.info(f'Recursion soft limit {sys.getrecursionlimit()} hit, increasing')
+                raise Exception(
+                    f"PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting"
+                )
+            logger.info(f"Recursion soft limit {sys.getrecursionlimit()} hit, increasing")
             sys.setrecursionlimit(new_limit)
             self.serialize(state, f)
 
     def deserialize(self, f):
+        logger.info("Deserializing %s", f.name if hasattr(f, "name") else "<unknown>")
         return pickle.load(f)
+
+
+def pickle_dumps(obj):
+    """Consolidates pickling in one place so we can fix the protocol version"""
+    return pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
