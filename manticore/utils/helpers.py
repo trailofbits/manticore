@@ -90,7 +90,7 @@ class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
         logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unknown>")
         try:
-            pickle_dump(state, GzipFile(fileobj=f, mode="wb"))
+            pickle_dump(state, GzipFile(fileobj=f, mode="wb", compresslevel=5))
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
