@@ -10,6 +10,7 @@ import pkg_resources
 from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity
 from .ethereum.cli import ethereum_main
+from .wasm.cli import wasm_main
 from .utils import config, log, install_helper
 
 consts = config.get_group("main")
@@ -39,6 +40,8 @@ def main():
 
     if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
         ethereum_main(args, logger)
+    elif args.argv[0].endswith(".wasm") or args.argv[0].endswith(".wat"):
+        wasm_main(args, logger)
     else:
         install_helper.ensure_native_deps()
         native_main(args, logger)
@@ -215,6 +218,19 @@ def parse_arguments():
         "--no-testcases",
         action="store_true",
         help="Do not generate testcases for discovered states when analysis finishes",
+    )
+
+    eth_flags.add_argument(
+        "--only-alive-testcases",
+        action="store_true",
+        help="Do not generate testcases for invalid/throwing states when analysis finishes",
+    )
+
+    eth_flags.add_argument(
+        "--quick-mode",
+        action="store_true",
+        help="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
+        "do not explore constant functions. Disable all detectors.",
     )
 
     config_flags = parser.add_argument_group("Constants")

@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool, issymbolic
+from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,28 @@ class Concretize(StateException):
         self.policy = policy
         self.message = f"Concretize: {message} (Policy: {policy})"
         super().__init__(**kwargs)
+
+
+class SerializeState(Concretize):
+    """ Allows the user to save a copy of the current state somewhere on the
+        disk so that analysis can later be resumed from this point.
+    """
+
+    def setstate(self, state, _value):
+        from ..utils.helpers import PickleSerializer
+
+        with open(self.filename, "wb") as statef:
+            PickleSerializer().serialize(state, statef)
+
+    def __init__(self, filename, **kwargs):
+        super().__init__(
+            f"Saving state to {filename}",
+            BitVecConstant(32, 0),
+            setstate=self.setstate,
+            policy="ONE",
+            **kwargs,
+        )
+        self.filename = filename
 
 
 class ForkState(Concretize):
@@ -311,13 +333,19 @@ class StateBase(Eventful):
             self._constraints, expr == False
         )
 
-    def solve_one(self, *exprs, constrain=False):
+    def solve_one(self, expr, constrain=False):
+        """
+        A version of solver_one_n for a single expression. See solve_one_n.
+        """
+        return self.solve_one_n(expr, constrain=constrain)[0]
+
+    def solve_one_n(self, *exprs, constrain=False):
         """
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
 
-        :param exprs: Symbolic value to concretize. An iterable of manticore.core.smtlib.Expression
-        :param bool constrain: If True, constrain expr to concretized value
+        :param exprs: An iterable of manticore.core.smtlib.Expression
+        :param bool constrain: If True, constrain expr to solved solution value
         :return: Concrete value or a tuple of concrete values
         :rtype: int
         """
@@ -334,8 +362,6 @@ class StateBase(Eventful):
                 if isinstance(value, bytearray):
                     value = bytes(value)
                 values.append(value)
-        if len(exprs) == 1:
-            values = values[0]
         return values
 
     def solve_n(self, expr, nsolves):

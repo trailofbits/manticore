@@ -32,7 +32,6 @@ from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
 
@@ -666,9 +665,14 @@ class Linux(Platform):
             else:
                 self.files.append(file_or_buffer)
 
-        self.files[0].peer = self.output
-        self.files[1].peer = self.output
-        self.files[2].peer = self.output
+        # If file descriptors for stdin/stdout/stderr aren't closed, propagate them
+        if self.files[0]:
+            self.files[0].peer = self.output
+        if self.files[1]:
+            self.files[1].peer = self.output
+        if self.files[2]:
+            self.files[2].peer = self.output
+
         self._getdents_c = state["_getdents_c"]
         self._closed_files = state["closed_files"]
         self.input.peer = self.files[0]
@@ -942,7 +946,7 @@ class Linux(Platform):
         cpu = self.current
         elf = self.elf
         arch = self.arch
-        env = dict(var.split("=") for var in env if "=" in var)
+        env = dict(var.split("=", 1) for var in env if "=" in var)
         addressbitsize = {"x86": 32, "x64": 64, "ARM": 32, "AArch64": 64}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
@@ -1251,7 +1255,7 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
-    def _transform_write_data(self, data: T) -> T:
+    def _transform_write_data(self, data: bytes) -> bytes:
         """
         Implement in subclass to transform data written by write(2)/writev(2)
         Nop by default.
@@ -2649,6 +2653,7 @@ class Linux(Platform):
             l, r = Socket.pair()
             self.current.write_int(filedes, self._open(l))
             self.current.write_int(filedes + 4, self._open(r))
+            return 0
         else:
             logger.warning("sys_pipe2 doesn't handle flags")
             return -1

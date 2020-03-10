@@ -14,6 +14,7 @@ from manticore.core.smtlib import (
 )
 from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.smtlib.expression import *
+from manticore.utils.helpers import pickle_dumps
 
 # logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
@@ -388,7 +389,7 @@ class ExpressionTest(unittest.TestCase):
         array = array.store(key, ord("A"))
         # let's restrict key to be greater than 1000
         cs.add(key.ugt(1000))
-        cs = pickle.loads(pickle.dumps(cs))
+        cs = pickle.loads(pickle_dumps(cs))
         self.assertTrue(self.solver.check(cs))
 
     def testBitvector_add(self):
@@ -428,6 +429,25 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a >= 100)
         self.assertTrue(self.solver.check(cs))
         self.assertEqual(self.solver.minmax(cs, a), (100, 200))
+        from manticore import config
+
+        consts = config.get_group("smt")
+        consts.optimize = False
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32)
+        cs.add(a <= 200)
+        cs.add(a >= 100)
+        self.assertTrue(self.solver.check(cs))
+        self.assertEqual(self.solver.minmax(cs, a), (100, 200))
+        consts.optimize = True
+
+    def testBitvector_max_noop(self):
+        from manticore import config
+
+        consts = config.get_group("smt")
+        consts.optimize = False
+        self.testBitvector_max()
+        consts.optimize = True
 
     def testBitvector_max1(self):
         cs = ConstraintSet()
@@ -436,6 +456,14 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a > 100)
         self.assertTrue(self.solver.check(cs))
         self.assertEqual(self.solver.minmax(cs, a), (101, 199))
+
+    def testBitvector_max1_noop(self):
+        from manticore import config
+
+        consts = config.get_group("smt")
+        consts.optimize = False
+        self.testBitvector_max1()
+        consts.optimize = True
 
     def testBool_nonzero(self):
         self.assertTrue(BoolConstant(True).__bool__())
@@ -555,6 +583,17 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
 
+    def test_arithmetic_simplify_udiv(self):
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32, name="VARA")
+        b = a + Operators.UDIV(BitVecConstant(32, 0), BitVecConstant(32, 2))
+        self.assertEqual(translate_to_smtlib(b), "(bvadd VARA (bvudiv #x00000000 #x00000002))")
+        self.assertEqual(translate_to_smtlib(simplify(b)), "VARA")
+
+        c = a + Operators.UDIV(BitVecConstant(32, 2), BitVecConstant(32, 2))
+        self.assertEqual(translate_to_smtlib(c), "(bvadd VARA (bvudiv #x00000002 #x00000002))")
+        self.assertEqual(translate_to_smtlib(simplify(c)), "(bvadd VARA #x00000001)")
+
     def test_constant_folding_udiv(self):
         cs = ConstraintSet()
         x = BitVecConstant(32, 0xFFFFFFFF, taint=("important",))
@@ -638,14 +677,14 @@ class ExpressionTest(unittest.TestCase):
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80, 0x100))
 
-            saved_up = pickle.dumps((x, y, cs_up))
+            saved_up = pickle_dumps((x, y, cs_up))
 
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80, 0x100))
 
             with cs_up as cs_up_right:
                 cs_up_right.add(x.uge(0x80))
-                saved_up_right = pickle.dumps((x, y, cs_up_right))
+                saved_up_right = pickle_dumps((x, y, cs_up_right))
                 self.assertItemsEqual(solver.get_all_values(cs_up_right, x), range(0x80, 0x100))
                 self.assertItemsEqual(solver.get_all_values(cs_up_right, y), range(0x80, 0x100))
 
@@ -654,7 +693,7 @@ class ExpressionTest(unittest.TestCase):
 
             with cs_up as cs_up_left:
                 cs_up_left.add(x.ult(0x80))
-                saved_up_left = pickle.dumps((x, y, cs_up_left))
+                saved_up_left = pickle_dumps((x, y, cs_up_left))
                 self.assertItemsEqual(solver.get_all_values(cs_up_left, x), range(0, 0x80))
                 self.assertItemsEqual(solver.get_all_values(cs_up_left, y), range(0x80, 0x100))
 
@@ -667,14 +706,14 @@ class ExpressionTest(unittest.TestCase):
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
 
-            saved_down = pickle.dumps((x, y, cs_down))
+            saved_down = pickle_dumps((x, y, cs_down))
 
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
 
             with cs_down as cs_down_right:
                 cs_down_right.add(x.uge(0x80))
-                saved_down_right = pickle.dumps((x, y, cs_down_right))
+                saved_down_right = pickle_dumps((x, y, cs_down_right))
                 self.assertItemsEqual(solver.get_all_values(cs_down_right, x), range(0x80, 0x100))
                 self.assertItemsEqual(solver.get_all_values(cs_down_right, y), range(0, 0x80))
 
@@ -683,7 +722,7 @@ class ExpressionTest(unittest.TestCase):
 
             with cs_down as cs_down_left:
                 cs_down_left.add(x.ult(0x80))
-                saved_down_left = pickle.dumps((x, y, cs_down_left))
+                saved_down_left = pickle_dumps((x, y, cs_down_left))
                 self.assertItemsEqual(solver.get_all_values(cs_down_left, x), range(0, 0x80))
                 self.assertItemsEqual(solver.get_all_values(cs_down_left, y), range(0, 0x80))
 
@@ -926,6 +965,18 @@ class ExpressionTest(unittest.TestCase):
 
     def test_check_solver_newer(self):
         self.solver._received_version = '(:version "4.5.0")'
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+
+    def test_check_solver_long_format(self):
+        self.solver._received_version = '(:version "4.8.6 - build hashcode 78ed71b8de7d")'
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=8, patch=6))
+
+    def test_check_solver_undefined(self):
+        self.solver._received_version = '(:version "78ed71b8de7d")'
+        self.assertTrue(
+            self.solver._solver_version()
+            == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
+        )
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 
 

@@ -29,6 +29,7 @@ from ..core.smtlib import (
     Expression,
     issymbolic,
     simplify,
+    Z3Solver,
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -50,6 +51,7 @@ class Sha3Type(Enum):
 
     concretize = "concretize"
     symbolicate = "symbolicate"
+    fake = "fake"
 
     def title(self):
         return self._name_.title()
@@ -64,7 +66,7 @@ consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions."
 consts.add(
     "sha3",
     default=Sha3Type.symbolicate,
-    description="concretize(*): sound simple concretization\nsymbolicate: unsound symbolication with out of cycle false positive killing",
+    description="concretize: sound simple concretization\nsymbolicate(*): unsound symbolication with an out of cycle false positive killing\nfake: using a symbol friendly fake hash (This potentially produces wrong testcases) ",
 )
 consts.add(
     "sha3timeout",
@@ -403,14 +405,12 @@ class ManticoreEVM(ManticoreBase):
             self.subscribe("on_symbolic_function", self._on_concretize)
         elif consts.sha3 is consts.sha3.symbolicate:
             self.subscribe("on_symbolic_function", self.on_unsound_symbolication)
-        else:
-            raise NotImplemented
 
-        self._accounts = dict()
+        self._accounts: Dict[str, EVMContract] = dict()
         self._serializer = PickleSerializer()
 
         self.constraints = constraints
-        self.detectors = {}
+        self.detectors: Dict[str, Detector] = {}
         self.metadata: Dict[int, SolidityMetadata] = {}
 
     @property
@@ -419,7 +419,7 @@ class ManticoreEVM(ManticoreBase):
         return self.get_world()
 
     # deprecate this 5 in favor of for state in m.all_states: do stuff?
-    @property
+    @property  # type: ignore
     @deprecated("You should iterate over `m.all_states` instead.")
     def completed_transactions(self):
         with self.locked_context("ethereum") as context:
@@ -578,18 +578,23 @@ class ManticoreEVM(ManticoreBase):
                     else:
                         constructor_data = b""
 
-                    if balance != 0:
+                    # balance could be symbolic, lets ask the solver
+                    # Option 1: balance can not be 0 and the function is marked as not payable
+                    if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
+                        # balance always != 0
                         if not md.constructor_abi["payable"]:
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"different than 0 because the contract's constructor is not payable."
                             )
-                        elif self.world.get_balance(owner.address) < balance:
-                            raise EthereumError(
-                                f"Can't create solidity contract with balance ({balance}) "
-                                f"because the owner account ({owner}) has insufficient balance "
-                                f"({self.world.get_balance(owner.address)})."
-                            )
+                    if not Z3Solver.instance().can_be_true(
+                        self.constraints,
+                        Operators.UGE(self.world.get_balance(owner.address), balance),
+                    ):
+                        raise EthereumError(
+                            f"Can't create solidity contract with balance ({balance}) "
+                            f"because the owner account ({owner}) has insufficient balance."
+                        )
 
                     contract_account = self.create_contract(
                         owner=owner,
@@ -625,7 +630,7 @@ class ManticoreEVM(ManticoreBase):
         for state in self.ready_states:
             if state.platform.get_code(int(contract_account)):
                 return contract_account
-        logger.info("Failed to compile contract", contract_names)
+        logger.info("Failed to compile contract %r", contract_names)
         return None
 
     def get_nonce(self, address):
@@ -942,7 +947,7 @@ class ManticoreEVM(ManticoreBase):
         data: Array,
         value: Optional[Union[int, Expression]] = None,
         contract_metadata: Optional[SolidityMetadata] = None,
-    ) -> BoolOperation:
+    ):
         """ Returns a constraint that excludes combinations of value and data that would cause an exception in the EVM
             contract dispatcher.
 
@@ -996,17 +1001,22 @@ class ManticoreEVM(ManticoreBase):
         args=None,
         compile_args=None,
     ):
-        owner_account = self.create_account(balance=1000, name="owner")
-        attacker_account = self.create_account(balance=1000, name="attacker")
+        owner_account = self.create_account(balance=10000000000000000000, name="owner")
+        attacker_account = self.create_account(balance=10000000000000000000, name="attacker")
         # Pretty print
         logger.info("Starting symbolic create contract")
 
+        if tx_send_ether:
+            create_value = self.make_symbolic_value()
+        else:
+            create_value = 0
         contract_account = self.solidity_create_contract(
             solidity_filename,
             contract_name=contract_name,
             owner=owner_account,
             args=args,
             compile_args=compile_args,
+            balance=create_value,
         )
 
         if tx_account == "attacker":
@@ -1132,7 +1142,7 @@ class ManticoreEVM(ManticoreBase):
 
     # Callbacks for generic SYMB TABLE
     def on_unsound_symbolication(self, state, func, data, result):
-        """Apply the function func to data
+        r"""Apply the function func to data
         state: a manticore state
         func: a concrete normal python function like `sha3()`
         data: a concrete or symbolic value of the domain of func
@@ -1182,7 +1192,7 @@ class ManticoreEVM(ManticoreBase):
                 # if we found another pair that matches use that instead
                 # the duplicated pair is not added to symbolic_pairs
                 if state.must_be_true(Operators.OR(x == data, y == value)):
-                    constraint = simplify(Operators.AND(x == data, y == value))
+                    constraint = Operators.AND(x == data, y == value)
                     state.constrain(constraint)
                     data, value = x, y
                     break
@@ -1190,7 +1200,7 @@ class ManticoreEVM(ManticoreBase):
                 # bijectiveness; new pair is added to symbolic_pairs
                 for x, y in symbolic_pairs:
                     if len(x) == len(data):
-                        constraint = simplify((x == data) == (y == value))
+                        constraint = (x == data) == (y == value)
                     else:
                         constraint = y != value
                     state.constrain(constraint)  # bijective
@@ -1261,9 +1271,7 @@ class ManticoreEVM(ManticoreBase):
                 for x_concrete, y_concrete in concrete_pairs:
                     if len(x) == len(x_concrete):  # If the size of the buffer wont
                         # match it does not matter
-                        unseen = Operators.AND(
-                            Operators.AND(x != x_concrete, y != y_concrete), unseen
-                        )
+                        unseen = Operators.AND(x != x_concrete, y != y_concrete, unseen)
                 # Search for a new unseen sha3 pair
                 with state as temp_state:
                     temp_state.constrain(unseen)
@@ -1604,13 +1612,14 @@ class ManticoreEVM(ManticoreBase):
             filestream.write(ln)
 
     @ManticoreBase.at_not_running
-    def finalize(self, procs=None):
+    def finalize(self, procs=None, only_alive_states=False):
         """
         Terminate and generate testcases for all currently alive states (contract
         states that cleanly executed to a STOP or RETURN in the last symbolic
         transaction).
 
         :param procs: force the number of local processes to use in the reporting
+        :param bool only_alive_states: if True, killed states (revert/throw/txerror) do not generate testscases
         generation. Uses global configuration constant by default
         """
         if procs is None:
@@ -1621,8 +1630,11 @@ class ManticoreEVM(ManticoreBase):
         def finalizer(state_id):
             st = self._load(state_id)
             if self.fix_unsound_symbolication(st):
-                logger.debug("Generating testcase for state_id %d", state_id)
                 last_tx = st.platform.last_transaction
+                # Do not generate killed state if only_alive_states is True
+                if only_alive_states and last_tx.result in {"REVERT", "THROW", "TXERROR"}:
+                    return
+                logger.debug("Generating testcase for state_id %d", state_id)
                 message = last_tx.result if last_tx else "NO STATE RESULT (?)"
                 self.generate_testcase(st, message=message)
 

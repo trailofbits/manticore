@@ -1,9 +1,11 @@
 import logging
 import sys
 
+from typing import List, Set, Tuple
+
 manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
-all_loggers = set()
+all_loggers: Set[str] = set()
 default_factory = logging.getLogRecordFactory()
 logfmt = "%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s"
 handler = logging.StreamHandler(sys.stdout)
@@ -16,7 +18,7 @@ class ContextFilter(logging.Filter):
     This is a filter which injects contextual information into the log.
     """
 
-    def summarized_name(self, name):
+    def summarized_name(self, name: str) -> str:
         """
         Produce a summarized record name
           i.e. manticore.core.executor -> m.c.executor
@@ -42,7 +44,7 @@ class ContextFilter(logging.Filter):
     colored_levelname_format = "\x1b[{}m{}:\x1b[0m"
     plain_levelname_format = "{}:"
 
-    def colored_level_name(self, levelname):
+    def colored_level_name(self, levelname: str) -> str:
         """
         Colors the logging level in the logging record
         """
@@ -51,7 +53,7 @@ class ContextFilter(logging.Filter):
         else:
             return self.colored_levelname_format.format(self.color_map[levelname], levelname)
 
-    def filter(self, record):
+    def filter(self, record) -> bool:
         record.name = self.summarized_name(record.name)
         record.levelname = self.colored_level_name(record.levelname)
         return True
@@ -65,7 +67,7 @@ class CustomLogger(logging.Logger):
     Custom Logger class that can grab the correct verbosity level from this module
     """
 
-    def __init__(self, name, level=DEFAULT_LOG_LEVEL, *args):
+    def __init__(self, name: str, level=DEFAULT_LOG_LEVEL, *args) -> None:
         super().__init__(name, min(get_verbosity(name), level), *args)
         all_loggers.add(name)
         self.initialized = False
@@ -79,11 +81,11 @@ class CustomLogger(logging.Logger):
 logging.setLoggerClass(CustomLogger)
 
 
-def disable_colors():
+def disable_colors() -> None:
     ContextFilter.colors_disabled = True
 
 
-def get_levels():
+def get_levels() -> List[List[Tuple[str, int]]]:
     return [
         # 0
         [(x, DEFAULT_LOG_LEVEL) for x in all_loggers],
@@ -100,11 +102,12 @@ def get_levels():
             ("manticore.platforms.*", logging.DEBUG),
             ("manticore.ethereum", logging.DEBUG),
             ("manticore.core.plugin", logging.DEBUG),
+            ("manticore.wasm.*", logging.INFO),
             ("manticore.utils.emulate", logging.INFO),
             ("manticore.utils.helpers", logging.INFO),
         ],
         # 3 (-vv)
-        [("manticore.native.cpu.*", logging.DEBUG)],
+        [("manticore.native.cpu.*", logging.DEBUG), ("manticore.wasm.*", logging.DEBUG)],
         # 4 (-vvv)
         [
             ("manticore.native.memory", logging.DEBUG),
@@ -122,8 +125,8 @@ def get_levels():
     ]
 
 
-def get_verbosity(logger_name):
-    def match(name, pattern):
+def get_verbosity(logger_name: str) -> int:
+    def match(name: str, pattern: str):
         """
         Pseudo globbing that only supports full fields. 'a.*.d' matches 'a.b.d'
         but not 'a.b.c.d'.
@@ -145,7 +148,7 @@ def get_verbosity(logger_name):
     return DEFAULT_LOG_LEVEL
 
 
-def set_verbosity(setting):
+def set_verbosity(setting: int) -> None:
     global manticore_verbosity
     manticore_verbosity = min(max(setting, 0), len(get_levels()) - 1)
     for logger_name in all_loggers:

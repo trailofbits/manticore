@@ -2,6 +2,7 @@ import copy
 import inspect
 import logging
 import functools
+from typing import Dict, Set
 from itertools import takewhile
 from weakref import WeakKeyDictionary, ref
 
@@ -19,7 +20,7 @@ class EventsGatherMetaclass(type):
 
         bases = inspect.getmro(parents[0])
 
-        if name is "Eventful":
+        if name == "Eventful":
             return eventful_sub
 
         subclasses = takewhile(lambda c: c is not Eventful, bases)
@@ -52,13 +53,13 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     """
 
     # Maps an Eventful subclass with a set of all the events it publishes.
-    __all_events__ = dict()
+    __all_events__: Dict["Eventful", Set[str]] = dict()
 
     # Set of subscribed events - used as an optimization to only publish events that someone subscribes to
-    __sub_events__ = set()
+    __sub_events__: Set[str] = set()
 
     # Set in subclass to advertise the events it plans to publish
-    _published_events = set()
+    _published_events: Set[str] = set()
 
     # Event names prefixes
     prefixes = ("will_", "did_", "on_")

@@ -1,6 +1,7 @@
 import unittest
 import os
 import logging
+import filecmp
 
 from manticore.native import Manticore
 from manticore.utils.log import get_verbosity, set_verbosity
@@ -18,14 +19,22 @@ class ManticoreTest(unittest.TestCase):
 
     def test_profiling_data(self):
         p = Profiler()
-        self.m.verbosity(0)
+        set_verbosity(0)
         self.m.register_plugin(p)
         self.m.run()
+        self.m.finalize()
         profile_path = os.path.join(self.m.workspace, "profiling.bin")
-        with open(profile_path, "wb") as f:
-            p.save_profiling_data(f)
         self.assertTrue(os.path.exists(profile_path))
         self.assertTrue(os.path.getsize(profile_path) > 0)
+
+        profile_path_2 = os.path.join(self.m.workspace, "profiling_2.bin")
+        with open(profile_path_2, "wb") as f:
+            p.save_profiling_data(f)
+
+        self.assertTrue(os.path.exists(profile_path_2))
+        self.assertTrue(os.path.getsize(profile_path_2) > 0)
+
+        self.assertTrue(filecmp.cmp(profile_path, profile_path_2))
 
     def test_add_hook(self):
         def tmp(state):
@@ -56,6 +65,28 @@ class ManticoreTest(unittest.TestCase):
         self.m.run()
 
         self.assertEqual(self.m.context["x"], 1)
+
+    def test_add_hook_after(self):
+        def tmp(state):
+            pass
+
+        entry = 0x00400E40
+        self.m.add_hook(entry, tmp, after=True)
+        assert tmp in self.m._after_hooks[entry]
+
+    def test_hook_after_dec(self):
+        entry = 0x00400E40
+
+        @self.m.hook(entry, after=True)
+        def tmp(state):
+            # Make sure we've executed the instruction at entry and we're at
+            # the next one (but before it executes).
+            assert state.cpu.PC == 0x00400E42
+            self.m.kill()
+
+        self.m.run()
+
+        assert tmp in self.m._after_hooks[entry]
 
     def test_init_hook(self):
         self.m.context["x"] = 0
@@ -118,3 +149,5 @@ class ManticoreLogger(unittest.TestCase):
         set_verbosity(1)
         self.assertEqual(get_verbosity("manticore.native.cpu.abstractcpu"), logging.WARNING)
         self.assertEqual(get_verbosity("manticore.ethereum.abi"), logging.INFO)
+
+        set_verbosity(0)

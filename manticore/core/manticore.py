@@ -4,6 +4,7 @@ import sys
 import time
 import random
 import weakref
+from typing import Callable
 
 from contextlib import contextmanager
 
@@ -59,10 +60,16 @@ consts.add(
     description="If True enables to run workers over the network UNIMPLEMENTED",
 )
 consts.add("procs", default=10, description="Number of parallel processes to spawn")
+
+proc_type = MProcessingType.multiprocessing
+if sys.platform != "linux":
+    logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
+    proc_type = MProcessingType.threading
+
 consts.add(
     "mprocessing",
-    default=MProcessingType.multiprocessing,
-    description="single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes",
+    default=proc_type,
+    description="single: No multiprocessing at all. Single process.\n threading: use threads\n multiprocessing: use forked processes",
 )
 consts.add(
     "seed",
@@ -85,7 +92,7 @@ class ManticoreBase(Eventful):
         return super().__new__(cls)
 
     # Decorators added first for convenience.
-    def sync(func):
+    def sync(func: Callable) -> Callable:  # type: ignore
         """Synchronization decorator"""
 
         @functools.wraps(func)
@@ -95,7 +102,7 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    def at_running(func):
+    def at_running(func: Callable) -> Callable:  # type: ignore
         """Allows the decorated method to run only when manticore is actively
            exploring states
         """
@@ -108,7 +115,7 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    def at_not_running(func):
+    def at_not_running(func: Callable) -> Callable:  # type: ignore
         """Allows the decorated method to run only when manticore is NOT
            exploring states
         """
@@ -132,6 +139,7 @@ class ManticoreBase(Eventful):
         "terminate_state",
         "kill_state",
         "execute_instruction",
+        "terminate_execution",
     }
 
     def __init__(self, initial_state, workspace_url=None, policy="random", **kwargs):
@@ -303,6 +311,23 @@ class ManticoreBase(Eventful):
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
 
+    @classmethod
+    def from_saved_state(cls, filename: str, *args, **kwargs):
+        """
+        Creates a Manticore object starting from a serialized state on the disk.
+
+        :param filename: File to load the state from
+        :param args: Arguments forwarded to the Manticore object
+        :param kwargs: Keyword args forwarded to the Manticore object
+        :return: An instance of a subclass of ManticoreBase with the given initial state
+        """
+        from ..utils.helpers import PickleSerializer
+
+        with open(filename, "rb") as fd:
+            deserialized = PickleSerializer().deserialize(fd)
+
+        return cls(deserialized, *args, **kwargs)
+
     def _fork(self, state, expression, policy="ALL", setstate=None):
         """
         Fork state on expression concretizations.
@@ -325,7 +350,7 @@ class ManticoreBase(Eventful):
         to the ready list.
 
         """
-        assert isinstance(expression, Expression)
+        assert isinstance(expression, Expression), f"{type(expression)} is not an Expression"
 
         if setstate is None:
 
@@ -574,7 +599,7 @@ class ManticoreBase(Eventful):
             # add the state_id to the terminated list
             self._killed_states.append(state_id)
 
-    @property
+    @property  # type: ignore
     @sync
     def ready_states(self):
         """
@@ -600,7 +625,7 @@ class ManticoreBase(Eventful):
         )
         return self.ready_states
 
-    @property
+    @property  # type: ignore
     @sync
     def terminated_states(self):
         """
@@ -614,7 +639,7 @@ class ManticoreBase(Eventful):
             # Re-save the state in case the user changed its data
             self._save(state, state_id=state_id)
 
-    @property
+    @property  # type: ignore
     @sync
     @at_not_running
     def killed_states(self):
@@ -629,7 +654,7 @@ class ManticoreBase(Eventful):
             # Re-save the state in case the user changed its data
             self._save(state, state_id=state_id)
 
-    @property
+    @property  # type: ignore
     @sync
     @at_not_running
     def _all_states(self):
@@ -640,7 +665,7 @@ class ManticoreBase(Eventful):
         """
         return tuple(self._ready_states) + tuple(self._terminated_states)
 
-    @property
+    @property  # type: ignore
     @sync
     def all_states(self):
         """
@@ -758,6 +783,7 @@ class ManticoreBase(Eventful):
                         )
 
         plugin.on_register()
+        return plugin
 
     @at_not_running
     def unregister_plugin(self, plugin):
@@ -777,7 +803,7 @@ class ManticoreBase(Eventful):
             callback = MethodType(callback, self)
         super().subscribe(name, callback)
 
-    @property
+    @property  # type: ignore
     @at_not_running
     def context(self):
         """ Convenient access to shared context. We maintain a local copy of the
@@ -847,8 +873,10 @@ class ManticoreBase(Eventful):
             Workers must terminate
             RUNNING, STANDBY -> KILLED
         """
+        self._publish("will_terminate_execution", self._output)
         self._killed.value = True
         self._lock.notify_all()
+        self._publish("did_terminate_execution", self._output)
 
     def terminate(self):
         logger.warning("manticore.terminate is deprecated (Use manticore.kill)")
@@ -1034,6 +1062,10 @@ class ManticoreThreading(ManticoreBase):
         super().__init__(*args, **kwargs)
 
 
+def raise_signal():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
 class ManticoreMultiprocessing(ManticoreBase):
     _worker_type = WorkerProcess
 
@@ -1041,7 +1073,7 @@ class ManticoreMultiprocessing(ManticoreBase):
         # This is the global manager that will handle all shared memory access
         # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
         self._manager = SyncManager()
-        self._manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+        self._manager.start(raise_signal)
         # The main manticore lock. Acquire this for accessing shared objects
         # THINKME: we use the same lock to access states lists and shared contexts
         self._lock = self._manager.Condition()
