@@ -424,7 +424,7 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context("ethereum") as context:
             return context["_completed_transactions"]
 
-    @deprecated("You should use the `platform` member of a `state` insteance instead.")
+    @deprecated("You should use the `platform` member of a `state` instance instead.")
     def get_world(self, state_id=None):
         """ Returns the evm world of `state_id` state. """
         if state_id is None:
