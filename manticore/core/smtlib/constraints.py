@@ -36,9 +36,11 @@ class ConstraintSet:
         An object containing a set of constraints. Serves also as a factory for
         new variables.
     """
+    def __hash__(self):
+        return hash(self._constraints)
 
     def __init__(self):
-        self._constraints = list()
+        self._constraints = tuple()
         self._parent = None
         self._sid = 0
         self._declarations = {}
@@ -50,6 +52,7 @@ class ConstraintSet:
             (),
             {
                 "_parent": self._parent,
+                "_child": self._child,
                 "_constraints": self._constraints,
                 "_sid": self._sid,
                 "_declarations": self._declarations,
@@ -61,7 +64,7 @@ class ConstraintSet:
         self._child = self.__class__()
         self._child._parent = self
         self._child._sid = self._sid
-        self._child._declarations = dict(self._declarations)
+        self._child._declarations = dict()
         return self._child
 
     def __exit__(self, ty, value, traceback):
@@ -95,11 +98,8 @@ class ConstraintSet:
         if isinstance(constraint, BoolConstant):
             if not constraint.value:
                 logger.info("Adding an impossible constant constraint")
-                self._constraints = [constraint]
-            else:
-                return
 
-        self._constraints.append(constraint)
+        self._constraints += (constraint,)
 
         if check:
             from ...core.smtlib import solver
@@ -113,13 +113,14 @@ class ConstraintSet:
         self._sid += 1
         return self._sid
 
-    def __get_related(self, related_to=None):
-        if related_to is not None:
+    def __get_related(self, *related_to):
+        if not related_to:
             number_of_constraints = len(self.constraints)
             remaining_constraints = set(self.constraints)
-            related_variables = get_variables(related_to)
+            related_variables = set()
+            for expression in related_to:
+                related_variables |= get_variables(expression)
             related_constraints = set()
-
             added = True
             while added:
                 added = False
@@ -133,6 +134,7 @@ class ConstraintSet:
                             break
 
                     variables = get_variables(constraint)
+                    from manticore.core.smtlib import translate_to_smtlib
                     if related_variables & variables:
                         remaining_constraints.remove(constraint)
                         related_constraints.add(constraint)
@@ -150,11 +152,13 @@ class ConstraintSet:
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=False):
-        related_variables, related_constraints = self.__get_related(related_to)
-
+        if isinstance(related_to, tuple):
+            related_variables, related_constraints = self.__get_related(*related_to)
+        else:
+            related_variables, related_constraints = self.__get_related(related_to)
         if replace_constants:
             constant_bindings = {}
-            for expression in related_constraints:
+            for expression in reto_stringlated_constraints:
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
@@ -203,23 +207,71 @@ class ConstraintSet:
             constraint_str = translator.pop()
         return result
 
+    def to_string1(self):
+        related_variables = self._declarations.values()
+        related_constraints = set(self._constraints)
+
+        tmp = set()
+        result = ""
+        for var in related_variables:
+            # FIXME
+            # band aid hack around the fact that we are double declaring stuff :( :(
+            if var.declaration in tmp:
+                logger.warning("Variable '%s' was copied twice somewhere", var.name)
+                continue
+            tmp.add(var.declaration)
+            result += var.declaration + "\n"
+        translator = TranslatorSmtlib(use_bindings=True)
+        for constraint in related_constraints:
+            translator.visit(constraint)
+
+        for name, exp, smtlib in translator.bindings:
+            if isinstance(exp, BitVec):
+                result += f"(declare-fun {name} () (_ BitVec {exp.size}))"
+            elif isinstance(exp, Bool):
+                result += f"(declare-fun {name} () Bool)"
+            elif isinstance(exp, Array):
+                result += f"(declare-fun {name} () (Array (_ BitVec {exp.index_bits}) (_ BitVec {exp.value_bits})))"
+            else:
+                raise Exception(f"Type not supported {exp!r}")
+            result += f"(assert (= {name} {smtlib}))\n"
+
+        constraint_str = translator.pop()
+        while constraint_str is not None:
+            if constraint_str != "true":
+                result += f"(assert {constraint_str})\n"
+            constraint_str = translator.pop()
+        return result
+
     def _declare(self, var):
         """ Declare the variable `var` """
-        if var.name in self._declarations:
+        if var.name in self.declarations:
             raise ValueError("Variable already declared")
         self._declarations[var.name] = var
         return var
 
     def get_declared_variables(self):
         """ Returns the variable expressions of this constraint set """
-        return self._declarations.values()
+        return self.declarations.values()
 
     def get_variable(self, name):
         """ Returns the variable declared under name or None if it does not exists """
-        return self._declarations.get(name)
+        return self.declarations.get(name)
 
     @property
     def declarations(self):
+        """
+        :rtype tuple
+        :return: All constraints represented by this and parent sets.
+        """
+        if self._parent is not None:
+            d = dict(self._declarations)
+            d.update(self._parent.declarations)
+            return d
+        return dict(self._declarations)
+
+    @property
+    def declarations1(self):
         """ Returns the variable expressions of this constraint set """
         declarations = GetDeclarations()
         for a in self.constraints:
@@ -259,7 +311,7 @@ class ConstraintSet:
         # the while loop is necessary because appending the result of _get_sid()
         # is not guaranteed to make a unique name on the first try; a colliding
         # name could have been added previously
-        while name in self._declarations:
+        while name in self.declarations.keys():
             name = f"{name}_{self._get_sid()}"
         return name
 
@@ -310,7 +362,7 @@ class ConstraintSet:
                 # any variable with the same name was previously migrated
                 # let's make a new unique internal name for it
                 migrated_name = foreign_var.name
-                if migrated_name in self._declarations:
+                if migrated_name in self.declarations:
                     migrated_name = self._make_unique_name(f"{foreign_var.name}_migrated")
                 # Create and declare a new variable of given type
                 if isinstance(foreign_var, Bool):
@@ -346,11 +398,11 @@ class ConstraintSet:
             :return: a fresh BoolVariable
         """
         if name is None:
-            name = "B"
+            name = "BIRIRIRI"
             avoid_collisions = True
         if avoid_collisions:
             name = self._make_unique_name(name)
-        if not avoid_collisions and name in self._declarations:
+        if not avoid_collisions and name in self.declarations:
             raise ValueError(f"Name {name} already used")
         var = BoolVariable(name, taint=taint)
         return self._declare(var)
@@ -370,7 +422,7 @@ class ConstraintSet:
             avoid_collisions = True
         if avoid_collisions:
             name = self._make_unique_name(name)
-        if not avoid_collisions and name in self._declarations:
+        if not avoid_collisions and name in self.declarations:
             raise ValueError(f"Name {name} already used")
         var = BitVecVariable(size, name, taint=taint)
         return self._declare(var)
@@ -400,7 +452,7 @@ class ConstraintSet:
             avoid_collisions = True
         if avoid_collisions:
             name = self._make_unique_name(name)
-        if not avoid_collisions and name in self._declarations:
+        if not avoid_collisions and name in self.declarations:
             raise ValueError(f"Name {name} already used")
         var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
         return ArrayProxy(var, default=default)

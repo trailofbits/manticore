@@ -30,7 +30,7 @@ from . import issymbolic
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
-consts.add("timeout", default=240, description="Timeout, in seconds, for each Z3 invocation")
+consts.add("timeout", default=1800, description="Timeout, in seconds, for each Z3 invocation")
 consts.add("memory", default=16384, description="Max memory for Z3 to use (in Megabytes)")
 consts.add(
     "maxsolutions",
@@ -175,6 +175,7 @@ class Z3Solver(Solver):
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = True
+        self._cache=[]
         logger.debug("Z3 version: %s", self.version)
 
         if self.version >= Version(4, 5, 0):
@@ -196,7 +197,7 @@ class Z3Solver(Solver):
         Anticipated version_cmd_output format: 'Z3 version 4.4.2'
                                                'Z3 version 4.4.5 - 64 bit - build hashcode $Z3GITHASH'
         """
-        self._reset()
+        self._reset1()
         if self._received_version is None:
             self._send("(get-info :version)")
             self._received_version = self._recv()
@@ -276,7 +277,7 @@ class Z3Solver(Solver):
             logger.error(str(e))
             pass
 
-    def _reset(self, constraints=None):
+    def _reset1(self, constraints=None):
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
         if self._proc is None:
             self._start_proc()
@@ -292,6 +293,32 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
+    def _reset(self, constraints):
+        if not isinstance(constraints, ConstraintSet):
+            raise Exception("Need ConstraintSet")
+        #Check if this constrainSet or any of its parent is in our cache
+        root_constraints = constraints
+        while hash(root_constraints) not in self._cache:
+            if root_constraints._parent is not None:
+                root_constraints = root_constraints._parent
+            else:
+                self._reset1()
+                self._cache=[]
+                break
+
+        while self._cache and self._cache[-1] != hash(root_constraints):
+            self._cache.pop()
+            self._pop()
+
+        if hash(root_constraints) in self._cache:
+            root_constraints = root_constraints._child
+
+        while root_constraints is not None:
+            self._push()
+            self._send(root_constraints.to_string1())
+            self._cache.append(hash(root_constraints))
+            root_constraints = root_constraints._child
+
     def _send(self, cmd: str):
         """
         Send a string to the solver.
@@ -299,7 +326,7 @@ class Z3Solver(Solver):
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         # logger.debug('>%s', cmd)
-        # print (">",self._proc.stdin.name, threading.get_ident())
+        # print (">","%s"%cmd)
         try:
             self._proc.stdout.flush()
             self._proc.stdin.write(f"{cmd}\n")
@@ -319,6 +346,7 @@ class Z3Solver(Solver):
 
         buf = "".join(bufl).strip()
 
+        # print ('<%s'% buf)
         # logger.debug('<%s', buf)
         if "(error" in bufl[0]:
             raise SolverException(f"Error in smtlib: {bufl[0]}")
@@ -414,7 +442,7 @@ class Z3Solver(Solver):
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-            self._reset(temp_cs.to_string(related_to=expression))
+            self._reset(temp_cs) #.to_string(related_to=expression))
             return self._is_sat()
 
     # get-all-values min max minmax
@@ -439,13 +467,14 @@ class Z3Solver(Solver):
                     value_bits=expression.value_bits,
                     taint=expression.taint,
                 ).array
+
             else:
                 raise NotImplementedError(
                     f"get_all_values only implemented for {type(expression)} expression type."
                 )
 
             temp_cs.add(var == expression)
-            self._reset(temp_cs.to_string(related_to=var))
+            self._reset(temp_cs)
             result = []
 
             start = time.time()
@@ -484,9 +513,8 @@ class Z3Solver(Solver):
         with constraints as temp_cs:
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
-            aux = temp_cs.new_bitvec(X.size, name="optimized_")
-            self._reset(temp_cs.to_string(related_to=X))
-            self._send(aux.declaration)
+            aux = temp_cs.new_bitvec(X.size, name="optimized_", avoid_collisions=True)
+            self._reset(temp_cs) #.to_string(related_to=X))
 
             start = time.time()
             if consts.optimize and getattr(self, f"support_{goal}", False):
@@ -522,8 +550,7 @@ class Z3Solver(Solver):
                             raise SolverError("Could not match objective value regex")
                 finally:
                     self._pop()
-                    self._reset(temp_cs)
-                    self._send(aux.declaration)
+                    self._reset(temp_cs) #.to_string(related_to=aux))
 
             operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
             self._assert(aux == X)
@@ -590,6 +617,7 @@ class Z3Solver(Solver):
         if len(expressions)==1 and not issymbolic(expressions[0]):
             return expressions[0]
 
+        vars = []
         values = []
         start = time.time()
         with constraints as temp_cs:
@@ -609,11 +637,44 @@ class Z3Solver(Solver):
                         subvar = temp_cs.new_bitvec(expression.value_bits)
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
+                else:
+                    raise NotImplementedError
 
-                    self._reset(temp_cs)
-                    if not self._is_sat():
-                        raise SolverError("Model is not available")
+                temp_cs.add(var == expression)
+                vars.append(var)
 
+            #Check if the constraints are SAT
+            self._reset(temp_cs) #.to_string(related_to=expressions))
+            if not self._is_sat():
+                raise SolverError("Model is not available")
+
+            for expression, var in zip(expressions, vars):
+                if not issymbolic(expression):
+                    values.append(expression) #ignore var
+                    continue
+                assert isinstance(expression, (Bool, BitVec, Array))
+                if isinstance(expression, Bool):
+                    self._send("(get-value (%s))" % var.name)
+                    ret = self._recv()
+                    if not (ret.startswith("((") and ret.endswith("))")):
+                        raise SolverError(
+                            "SMTLIB error parsing response: %s" % ret)
+
+                    values.append({"true": True, "false": False}[
+                                          ret[2:-2].split(" ")[1]])
+                if isinstance(expression, BitVec):
+                    self._send("(get-value (%s))" % var.name)
+                    ret = self._recv()
+                    if not (ret.startswith("((") and ret.endswith("))")):
+                        raise SolverError(
+                            "SMTLIB error parsing response: %s" % ret)
+
+                    pattern, base = self._get_value_fmt
+                    m = pattern.match(ret)
+                    expr, value = m.group("expr"), m.group("value")
+                    values.append(int(value, base))
+
+                elif isinstance(expression, Array):
                     for i in range(expression.index_max):
                         self._send("(get-value (%s))" % var[i].name)
                         ret = self._recv()
@@ -623,29 +684,7 @@ class Z3Solver(Solver):
                         expr, value = m.group("expr"), m.group("value")
                         result.append(int(value, base))
                     values.append(bytes(result))
-                    if time.time() - start > consts.timeout:
-                        raise SolverError("Timeout")
-                    continue
 
-                temp_cs.add(var == expression)
-
-                self._reset(temp_cs)
-
-                if not self._is_sat():
-                    raise SolverError("Model is not available")
-
-                self._send("(get-value (%s))" % var.name)
-                ret = self._recv()
-                if not (ret.startswith("((") and ret.endswith("))")):
-                    raise SolverError("SMTLIB error parsing response: %s" % ret)
-
-                if isinstance(expression, Bool):
-                    values.append({"true": True, "false": False}[ret[2:-2].split(" ")[1]])
-                if isinstance(expression, BitVec):
-                    pattern, base = self._get_value_fmt
-                    m = pattern.match(ret)
-                    expr, value = m.group("expr"), m.group("value")
-                    values.append(int(value, base))
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
 
