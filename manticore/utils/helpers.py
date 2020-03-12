@@ -86,7 +86,7 @@ class PickleSerializer(StateSerializer):
 
     DEFAULT_RECURSION: int = 0x10000  # 1M
     MAX_RECURSION: int = 0x1000000  # 16.7M
-    COMPRESSION_LEVEL: int = 5
+    COMPRESSION_LEVEL: int = 1  # minimal compression, but still gets >10x reduction
 
     def __init__(self):
         super().__init__()
