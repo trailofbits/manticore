@@ -917,9 +917,9 @@ homestead_instruction_table = {
         "Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code.",
     )
 }
-homestead_instruction_table = InstructionTable(
+homestead_instruction_table = InstructionTable(  # type: ignore
     homestead_instruction_table, previous_fork=frontier_instruction_table
-)  # type: ignore
+)
 
 tangerine_whistle_instruction_table = {
     0x3B: ("EXTCODESIZE", 0, 1, 1, 700, "Get size of an account's code."),
