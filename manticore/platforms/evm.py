@@ -32,7 +32,7 @@ from ..utils.event import Eventful
 from ..utils import config
 from ..core.smtlib.visitors import simplify
 from ..exceptions import EthereumError
-import manticore.ethereum.evmasm as EVMAsm
+from ..ethereum import evmasm as EVMAsm
 import logging
 from collections import namedtuple
 import sha3
