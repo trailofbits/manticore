@@ -405,7 +405,7 @@ def assemble_one(asmcode, pc=0, fork=DEFAULT_FORK):
             assert len(asmcode) == 2
             instr.operand = int(asmcode[1], 0)
         return instr
-    except:
+    except Exception:
         raise AssembleError("Something wrong at pc {:d}".format(pc))
 
 
