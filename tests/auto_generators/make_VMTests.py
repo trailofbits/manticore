@@ -26,7 +26,7 @@ import sys
 from binascii import unhexlify
 
 import hashlib
-import pyevmasm as EVMAsm
+import manticore.ethereum.evmasm as EVMAsm
 
 
 def gen_test(testcase, filename, symbolic, skip):
