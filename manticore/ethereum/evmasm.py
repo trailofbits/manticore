@@ -49,7 +49,9 @@ class ParseError(Exception):
 
 
 class Instruction(object):
-    def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, pc=0):
+    def __init__(
+        self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, pc=0
+    ):
         """
         This represents an EVM instruction.
         EVMAsm will create this for you.
@@ -324,7 +326,15 @@ class Instruction(object):
     @property
     def is_terminator(self):
         """ True if the instruction is a basic block terminator """
-        return self.semantics in {"RETURN", "STOP", "INVALID", "JUMP", "JUMPI", "SELFDESTRUCT", "REVERT"}
+        return self.semantics in {
+            "RETURN",
+            "STOP",
+            "INVALID",
+            "JUMP",
+            "JUMPI",
+            "SELFDESTRUCT",
+            "REVERT",
+        }
 
     @property
     def is_endtx(self):
@@ -334,7 +344,14 @@ class Instruction(object):
     @property
     def is_starttx(self):
         """ True if the instruction is a transaction initiator """
-        return self.semantics in {"CREATE", "CREATE2", "CALL", "CALLCODE", "DELEGATECALL", "STATICCALL"}
+        return self.semantics in {
+            "CREATE",
+            "CREATE2",
+            "CALL",
+            "CALLCODE",
+            "DELEGATECALL",
+            "STATICCALL",
+        }
 
     @property
     def is_branch(self):
@@ -689,7 +706,10 @@ class InstructionTable:
     def _name_to_opcode(self):
         if self.__name_to_opcode is None:
             self.__name_to_opcode = {}
-            for opcode, (name, operand_size, pops, pushes, gas, description) in self._instruction_list.items():
+            for (
+                opcode,
+                (name, operand_size, pops, pushes, gas, description),
+            ) in self._instruction_list.items():
                 long_name = Instruction._long_name(name, operand_size, pops)
                 self.__name_to_opcode[long_name] = opcode
         return self.__name_to_opcode
@@ -872,7 +892,14 @@ frontier_instruction_table = {
     0xA4: ("LOG", 0, 6, 0, 1875, "Append log record with four topics."),
     0xF0: ("CREATE", 0, 3, 1, 32000, "Create a new account with associated code."),
     0xF1: ("CALL", 0, 7, 1, 40, "Message-call into an account."),
-    0xF2: ("CALLCODE", 0, 7, 1, 40, "Message-call into this account with alternative account's code."),
+    0xF2: (
+        "CALLCODE",
+        0,
+        7,
+        1,
+        40,
+        "Message-call into this account with alternative account's code.",
+    ),
     0xF3: ("RETURN", 0, 2, 0, 0, "Halt execution returning output data."),
     0xFE: ("INVALID", 0, 0, 0, 0, "Designated invalid instruction."),
     0xFF: ("SELFDESTRUCT", 0, 1, 0, 0, "Halt execution and register account for later deletion."),
@@ -889,7 +916,9 @@ homestead_instruction_table = {
         "Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code.",
     )
 }
-homestead_instruction_table = InstructionTable(homestead_instruction_table, previous_fork=frontier_instruction_table)
+homestead_instruction_table = InstructionTable(
+    homestead_instruction_table, previous_fork=frontier_instruction_table
+)
 
 tangerine_whistle_instruction_table = {
     0x3B: ("EXTCODESIZE", 0, 1, 1, 700, "Get size of an account's code."),
@@ -898,7 +927,14 @@ tangerine_whistle_instruction_table = {
     0x54: ("SLOAD", 0, 1, 1, 200, "Load word from storage."),
     0xF0: ("CREATE", 0, 3, 1, 32000, "Create a new account with associated code."),
     0xF1: ("CALL", 0, 7, 1, 700, "Message-call into an account."),
-    0xF2: ("CALLCODE", 0, 7, 1, 700, "Message-call into this account with alternative account's code."),
+    0xF2: (
+        "CALLCODE",
+        0,
+        7,
+        1,
+        700,
+        "Message-call into this account with alternative account's code.",
+    ),
     0xF4: (
         "DELEGATECALL",
         0,
@@ -907,7 +943,14 @@ tangerine_whistle_instruction_table = {
         700,
         "Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code.",
     ),
-    0xFF: ("SELFDESTRUCT", 0, 1, 0, 5000, "Halt execution and register account for later deletion."),
+    0xFF: (
+        "SELFDESTRUCT",
+        0,
+        1,
+        0,
+        5000,
+        "Halt execution and register account for later deletion.",
+    ),
 }
 tangerine_whistle_instruction_table = InstructionTable(
     tangerine_whistle_instruction_table, previous_fork=homestead_instruction_table
@@ -969,7 +1012,9 @@ istanbul_instruction_table = {
     0x47: ("SELFBALANCE", 0, 0, 1, 5, "Balance of the current address."),
     0x54: ("SLOAD", 0, 1, 1, 800, "Load word from storage."),
 }
-istanbul_instruction_table = InstructionTable(istanbul_instruction_table, previous_fork=serenity_instruction_table)
+istanbul_instruction_table = InstructionTable(
+    istanbul_instruction_table, previous_fork=serenity_instruction_table
+)
 
 accepted_forks = (
     "frontier",
