@@ -80,8 +80,13 @@ class StateSerializer:
 
 
 class PickleSerializer(StateSerializer):
+    """
+    A StateSerializer that uses a gzip-based Python pickle format.
+    """
+
     DEFAULT_RECURSION: int = 0x10000  # 1M
     MAX_RECURSION: int = 0x1000000  # 16.7M
+    COMPRESSION_LEVEL: int = 5
 
     def __init__(self):
         super().__init__()
@@ -90,7 +95,10 @@ class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
         logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unknown>")
         try:
-            pickle_dump(state, GzipFile(fileobj=f, mode="wb", compresslevel=5))
+            pickle_dump(
+                state,
+                GzipFile(fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL),
+            )
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
