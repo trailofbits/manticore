@@ -220,29 +220,32 @@ class KeepOnlyIfStorageChanges(Plugin):
                     "State was removed from ready list because the last tx did not write to the storage"
                 )
 
+
 class SkipRevertBasicBlocks(Plugin):
     def _is_revert_bb(self, state, pc):
         world = state.platform
+
         def read_code(_pc=None):
             while True:
                 yield to_constant(world.current_vm.read_code(_pc)[0])
                 _pc += 1
+
         for inst in EVMAsm.disassemble_all(read_code(pc), pc):
-            if inst.name =='REVERT':
+            if inst.name == "REVERT":
                 return True
             if inst.is_terminator:
                 return False
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         world = state.platform
-        if state.platform.current_transaction.sort != 'CREATE':
+        if state.platform.current_transaction.sort != "CREATE":
             if instruction.semantics == "JUMPI":
-                #if the bb after the jumpi ends ina revert do not explore it.
+                # if the bb after the jumpi ends ina revert do not explore it.
                 if self._is_revert_bb(state, world.current_vm.pc + instruction.size):
                     state.constrain(arguments[1] == True)
 
-                #if the target of the jumpi ends up in a revert avoid it
+                # if the target of the jumpi ends up in a revert avoid it
                 if self._is_revert_bb(state, arguments[0]):
                     state.constrain(arguments[1] == False)
 
-                #This may have added an impossible constraint.
+                # This may have added an impossible constraint.

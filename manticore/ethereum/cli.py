@@ -16,7 +16,13 @@ from .detectors import (
 )
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
-from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIfStorageChanges, SkipRevertBasicBlocks
+from .plugins import (
+    FilterFunctions,
+    LoopDepthLimiter,
+    VerboseTrace,
+    KeepOnlyIfStorageChanges,
+    SkipRevertBasicBlocks,
+)
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config
 
