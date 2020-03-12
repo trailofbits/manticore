@@ -54,7 +54,6 @@ setup(
         # evm dependencies
         "pysha3",
         "prettytable",
-        "pyevmasm==0.2.0",
         "rlp",
         "ply",
         "crytic-compile>=0.1.1",

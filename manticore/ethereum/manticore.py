@@ -7,7 +7,7 @@ from queue import Empty as EmptyQueue
 from typing import Dict, Optional, Union
 from enum import Enum
 import io
-import pyevmasm as EVMAsm
+from manticore.ethereum import evmasm as EVMAsm
 import random
 import tempfile
 import time
