@@ -416,7 +416,7 @@ class Workspace:
             self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
         self._prefix = "state_"
-        self._suffix = ".pkl"
+        self._suffix = ".pkl.gz"
 
     @property
     def uri(self):

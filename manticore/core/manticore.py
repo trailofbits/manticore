@@ -717,7 +717,7 @@ class ManticoreBase(Eventful):
         if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
             message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)
-        with testcase.open_stream("pkl", binary=True) as statef:
+        with testcase.open_stream("pkl.gz", binary=True) as statef:
             PickleSerializer().serialize(state, statef)
 
         # Let the plugins generate a state based report

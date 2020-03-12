@@ -43,7 +43,7 @@ workspace = args.workspace
 saved_states = [
     os.path.join(workspace, filename)
     for filename in os.listdir(workspace)
-    if filename.endswith(".pkl")
+    if filename.endswith(".pkl.gz")
 ]
 # prepare a dictionary to hold states
 db = {}

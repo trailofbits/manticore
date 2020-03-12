@@ -736,10 +736,10 @@ class EthTests(unittest.TestCase):
 
         expected_files = {
             "user_00000000." + ext
-            for ext in ("summary", "constraints", "pkl", "tx.json", "tx", "trace", "logs")
+            for ext in ("summary", "constraints", "pkl.gz", "tx.json", "tx", "trace", "logs")
         }
 
-        expected_files.add("state_00000001.pkl")
+        expected_files.add("state_00000001.pkl.gz")
 
         actual_files = set((fn for fn in os.listdir(self.mevm.workspace) if not fn.startswith(".")))
         self.assertEqual(actual_files, expected_files)
