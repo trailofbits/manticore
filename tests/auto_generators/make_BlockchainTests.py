@@ -1,37 +1,42 @@
 """
-This script generates VMTests that are used to check EVM's Frontier fork correctness.
+# This script generates tests to check Manticore EVM's correctness.
 
-### TO GENERATE ALL:
+## Get the upstream tests:
+git clone https://github.com/ethereum/tests
 
-## Initialize env:
-cd manticore/tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir ethereum_vm/VMTests_symbolic
-git clone https://github.com/ethereum/tests --depth=1
+## Optionally, checkout commit, say, cfbcd15:
+cd tests && git checkout cfbcd15 && cd ..
 
-## Generate concrete tests:
-for i in ./tests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
+## Generate tests for DEFAULT_TEST_FORK:
+python auto_generators/make_BlockchainTests.py tests
 
-## Generate symbolic tests:
-for i in ./tests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+## Generate tests for, say, Istanbul:
+python auto_generators/make_BlockchainTests.py tests Istanbul
 
-## Remove the eth tests repo
-rm -rf ./tests  # cleanup/remove the ethereum/tests repo
+## Run the tests with at 10 second timeout:
+find tests_Byzantium -name '*.py' -exec timeout 10s python3 {} \;
 
-
-### To test just one:
-python ../auto_generators/make_VMTests.py ./tests/VMTests/VMTests
+## Alternatively, run the tests using pytest:
+find tests_Byzantium -name '*.py' -exec timeout 10s pytest {} \;
 """
 import json
 import os
 import sys
 from binascii import unhexlify
+from ethereum.transactions import Transaction
 
 import hashlib
 import pyevmasm as EVMAsm
 
+DISASSEMBLE_FORK = "byzantium"
 
-def gen_test(testcase, filename, symbolic, skip):
-    output = """    @unittest.skip('Gas or performance related')\n""" if skip else ""
+DEFAULT_TEST_FORK = "Byzantium"
 
+test_fork = DEFAULT_TEST_FORK
+
+def gen_test(testcase, filename, symbolic):
+    output = ""
+    
     # Sanity checks
 
     # We don't use those!
@@ -40,7 +45,7 @@ def gen_test(testcase, filename, symbolic, skip):
 
     output += generate_pre_output(testcase, filename, symbolic)
 
-    if "post" not in testcase:
+    if "postState" not in testcase:
         output += """
         # If test end in exception check it here
         self.assertTrue(result == 'THROW')"""
@@ -52,13 +57,6 @@ def gen_test(testcase, filename, symbolic, skip):
 
 def generate_pre_output(testcase, filename, symbolic):
     testname = (os.path.split(filename)[1].replace("-", "_")).split(".")[0]
-    bytecode = unhexlify(testcase["exec"]["code"][2:])
-    disassemble = ""
-    try:
-        # add silent=True when evmasm supports it
-        disassemble = "\n                  ".join(EVMAsm.disassemble(bytecode).split("\n"))
-    except Exception as e:
-        pass
 
     with open(filename, "rb") as f:
         sha256sum = hashlib.sha256(f.read()).hexdigest()
@@ -69,8 +67,7 @@ def generate_pre_output(testcase, filename, symbolic):
         Testcase taken from https://github.com/ethereum/tests
         File: {os.path.split(filename)[1]}
         sha256sum: {sha256sum}
-        Code:     {disassemble}
-        """    
+        """
     '''
 
     if symbolic:
@@ -88,13 +85,17 @@ def generate_pre_output(testcase, filename, symbolic):
             return to_constant(val)
 '''
 
-    env = testcase["env"]
+    blocks = [x for x in testcase['blocks'] if 'blockHeader' in x]
+    if len(blocks) != 1:
+        raise NotImplementedError("Test cases with multiple blocks are not supported yet.")
 
-    gaslimit = int(env["currentGasLimit"], 0)
-    blocknumber = int(env["currentNumber"], 0)
-    timestamp = int(env["currentTimestamp"], 0)
-    difficulty = int(env["currentDifficulty"], 0)
-    coinbase = int(env["currentCoinbase"], 0)
+    env = blocks[0]['blockHeader']
+
+    gaslimit = int(env["gasLimit"], 0)
+    blocknumber = int(env["number"], 0)
+    timestamp = int(env["timestamp"], 0)
+    difficulty = int(env["difficulty"], 0)
+    coinbase = int(env["coinbase"], 0)
     output += f"""
         constraints = ConstraintSet()
 """
@@ -130,6 +131,13 @@ def generate_pre_output(testcase, filename, symbolic):
         account_nonce = int(account["nonce"], 0)
         account_balance = int(account["balance"], 0)
 
+        disassembly = ""
+        try:
+            # add silent=True when evmasm supports it
+            disassembly = "\n            ".join(EVMAsm.disassemble(unhexlify(account_code)).split("\n"))
+        except Exception as e:
+            pass
+
         if symbolic:
             postfix = hex(account_address)
             output += f"""
@@ -144,6 +152,8 @@ def generate_pre_output(testcase, filename, symbolic):
             output += f"""
         acc_addr = {hex(account_address)}
         acc_code = unhexlify('{account_code}')
+        ''' {disassembly}
+        '''
         acc_balance = {account_balance}
         acc_nonce = {account_nonce}
 """
@@ -153,7 +163,7 @@ def generate_pre_output(testcase, filename, symbolic):
 """
         for key, value in account["storage"].items():
             if symbolic:
-                postfix = hex(account_address)
+                postfix = hex(account_address) + "_" + key
                 output += format_bitvec("key", key, symbolic_name=f"storage_key_{postfix}")
                 output += format_bitvec("value", value, symbolic_name=f"storage_value_{postfix}")
                 output += """
@@ -164,61 +174,72 @@ def generate_pre_output(testcase, filename, symbolic):
         world.set_storage_data(acc_addr, {key}, {value})
 """
 
-    address = int(testcase["exec"]["address"], 0)
-    caller = int(testcase["exec"]["caller"], 0)
-    code = testcase["exec"]["code"][2:]
-    calldata = unhexlify(testcase["exec"]["data"][2:])
-    gas = int(testcase["exec"]["gas"], 0)
-    price = int(testcase["exec"]["gasPrice"], 0)
-    origin = int(testcase["exec"]["origin"], 0)
-    value = int(testcase["exec"]["value"], 0)
-    assert testcase["exec"].keys() == {
-        "address",
-        "caller",
-        "code",
-        "data",
-        "gas",
-        "gasPrice",
-        "origin",
-        "value",
-    }
+    for transaction in blocks[0]['transactions']:
+        address = 0 if transaction["to"] == "" else int(transaction["to"], 16)
+        calldata = unhexlify(transaction["data"][2:])
+        gas = int(transaction["gasLimit"], 0)
+        price = int(transaction["gasPrice"], 0)
+        nonce = int(transaction["nonce"], 0)
+        value = 0 if transaction["value"] == "0x" else int(transaction["value"], 0)
+        r = int(transaction["r"], 0)
+        s = int(transaction["s"], 0)
+        v = int(transaction["v"], 0)
+        assert transaction.keys() == {
+            "to",
+            "data",
+            "gasLimit",
+            "gasPrice",
+            "nonce",
+            "value",
+            "r",
+            "s",
+            "v",
+        }
 
-    # Need to check if origin is diff from caller. we do not support those tests
-    assert origin == caller, "test type not supported"
-    assert (
-        testcase["pre"]["0x{:040x}".format(address)]["code"][2:] == code
-    ), "test type not supported"
+        t = Transaction(nonce=nonce,
+                        gasprice=price,
+                        startgas=gas,
+                        to=transaction["to"], # Can be the empty string.
+                        value=value,
+                        data=calldata,
+                        v=v,
+                        r=r,
+                        s=s
+                       )
 
-    output += f"""
+        caller = int.from_bytes(t.sender, "big")
+
+        output += f"""
         address = {hex(address)}
         caller = {hex(caller)}"""
 
-    if symbolic:
-        output += format_bitvec("price", price)
-        output += format_bitvec("value", value)
-        output += format_bitvec("gas", gas)
-    else:
-        output += f"""
+        if symbolic:
+            postfix = hex(caller) + "_" + hex(r)
+            output += format_bitvec("price", price, symbolic_name=f"price_{postfix}")
+            output += format_bitvec("value", value, symbolic_name=f"value_{postfix}")
+            output += format_bitvec("gas", gas, symbolic_name=f"gas_{postfix}")
+        else:
+            output += f"""
         price = {hex(price)}
         value = {value}
         gas = {gas}"""
 
-    if calldata:
-        if symbolic:
-            output += f"""
+        if calldata:
+            if symbolic:
+                output += f"""
         data = constraints.new_array(index_max={len(calldata)})
         constraints.add(data == {calldata})
 """
+            else:
+                output += f"""
+        data = {calldata}"""
         else:
             output += f"""
-        data = {calldata}"""
-    else:
-        output += f"""
         data = ''"""
 
-    output += f"""
+        output += f"""
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+        world.start_transaction("CREATE" if address == 0 else "CALL", address, price=price, data=data, caller=caller, value=value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -238,7 +259,7 @@ def generate_pre_output(testcase, filename, symbolic):
 def generate_post_output(testcase):
     output = ""
 
-    for address, account in testcase["post"].items():
+    for address, account in testcase["postState"].items():
         assert account.keys() == {"code", "nonce", "balance", "storage"}
 
         account_address = int(address, 0)
@@ -250,7 +271,9 @@ def generate_post_output(testcase):
         # Add post checks for account {hex(account_address)}
         # check nonce, balance, code
         self.assertEqual(solve(world.get_nonce({hex(account_address)})), {account_nonce})
-        self.assertEqual(solve(world.get_balance({hex(account_address)})), {account_balance})
+        # Disable coinbase checks for now.
+        if solve(world.block_coinbase()) != {hex(account_address)}:
+            self.assertEqual(solve(world.get_balance({hex(account_address)})), {account_balance})
         self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))"""
 
     if account["storage"]:
@@ -261,22 +284,6 @@ def generate_post_output(testcase):
             output += f"""
         self.assertEqual(solve(world.get_storage_data({hex(account_address)}, {key})), {value})"""
 
-    output += f"""
-        # check outs
-        self.assertEqual(returndata, unhexlify('{testcase['out'][2:]}'))"""
-
-    output += """
-        # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
-        data = rlp.encode(logs)"""
-    output += f"""
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '{testcase['logs'][2:]}')
-"""
-
-    output += f"""
-        # test used gas
-        self.assertEqual(solve(world.current_vm.gas), {int(testcase['gas'], 0)})"""
-
     return output
 
 
@@ -285,11 +292,23 @@ if __name__ == "__main__":
         print(__doc__)
         sys.exit()
 
-    symbolic = "--symbolic" in sys.argv
+    symbolic = False
+    if "--symbolic" in sys.argv:
+        symbolic = True
+        sys.argv.remove("--symbolic")
 
-    filename_or_folder = os.path.abspath(sys.argv[1])
+    folder = os.path.join(sys.argv[1], 'BlockchainTests')
 
-    output = f'''"""DO NOT MODIFY: Tests generated from `{os.path.join(*filename_or_folder.split('/')[-2:])}` with make_VMTests.py"""
+    if not os.path.isdir(folder):
+        sys.stderr.write('Wrong Ethereum tests path. Please provide a root path for BlockchainTests folder.')
+        sys.exit(1)
+
+    if len(sys.argv) >= 3:
+        test_fork = sys.argv[2]
+
+    test_dir = os.path.join(sys.argv[1] + "_" + test_fork, 'BlockchainTests')
+
+    header = f'''"""DO NOT MODIFY: Tests generated from `{os.path.join(*folder.split('/')[-2:])}` with make_BlockchainTests.py"""
 import unittest
 from binascii import unhexlify
 
@@ -303,6 +322,7 @@ from rlp.sedes import (
 
 from manticore.core.smtlib import ConstraintSet, Z3Solver  # Ignore unused import in non-symbolic tests!
 from manticore.core.smtlib.visitors import to_constant
+from manticore.core.state import TerminateState
 from manticore.platforms import evm
 from manticore.utils import config
 from manticore.core.state import Concretize
@@ -317,7 +337,7 @@ class Log(rlp.Serializable):
     ]
 
 
-class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unittest.TestCase):
+class EVMTest_{os.path.splitext(os.path.basename(folder))[0]}(unittest.TestCase):
     # https://nose.readthedocs.io/en/latest/doc_tests/test_multiprocess/multiprocess.html#controlling-distribution
     _multiprocess_can_split_ = True
     # https://docs.python.org/3.7/library/unittest.html#unittest.TestCase.maxDiff
@@ -329,31 +349,29 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
     def setUpClass(cls):
         consts = config.get_group('evm')
         consts.oog = 'pedantic'
-        evm.DEFAULT_FORK = 'frontier'
+        evm.DEFAULT_FORK = '{DISASSEMBLE_FORK}'
 
     @classmethod
     def tearDownClass(cls):
         evm.DEFAULT_FORK = cls.SAVED_DEFAULT_FORK
 
     def _test_run(self, world):
+        terminated = False
         result = None
         returndata = b''
-        try:
-            while True:
-                try:
-                    world.current_vm.execute()
-                except Concretize as e:
-                    value = self._solve(world.constraints, e.expression)
-                    class fake_state:pass
-                    fake_state = fake_state()
-                    fake_state.platform = world
-                    e.setstate(fake_state, value)
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = self._solve(world.constraints, e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        while world._pending_transaction is not None or world.depth > 0:
+            assert not terminated
+            try:
+                world.execute()
+            except Concretize as e:
+                value = self._solve(world.constraints, e.expression)
+                class fake_state:pass
+                fake_state = fake_state()
+                fake_state.platform = world
+                e.setstate(fake_state, value)
+            except TerminateState:
+                terminated = True
+        assert terminated
         return result, returndata
 
     def _solve(self, constraints, val):
@@ -364,53 +382,50 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
 
 '''
 
-    if os.path.isdir(filename_or_folder):
-        folder = filename_or_folder
+    print(f"Generating tests from dir {folder}...", file=sys.stderr)
+    cnt = 0
 
-        print(f"Generating tests from dir {folder}...", file=sys.stderr)
-        cnt = 0
+    for dirpath, dirnames, filenames in os.walk(folder):
+        relpath = os.path.relpath(dirpath, folder)
+        if not os.path.exists(os.path.join(test_dir, relpath)):
+            os.makedirs(os.path.join(test_dir, relpath))
 
-        for filename in os.listdir(folder):
+        for filename in filenames:
             if not filename.endswith(".json"):
                 continue
 
-            filename = os.path.join(folder, filename)
-            fp = open(filename)
+            fp = open(os.path.join(dirpath, filename))
             testcase = dict(json.loads(fp.read()))
             fp.close()
+            have_tests = False
+            output = header
             for name, testcase in testcase.items():
-                output += (
-                    gen_test(testcase, filename, symbolic=symbolic, skip="Performance" in filename)
-                    + "\n"
-                )
-                cnt += 1
+                if test_fork not in name:
+                    continue
+                try:
+                    output += (
+                        gen_test(testcase, os.path.join(dirpath, filename), symbolic=symbolic)
+                        + "\n"
+                    )
+                    cnt += 1
+                except NotImplementedError as e:
+                    print(f"{filename}: {name}: {e}", file=sys.stderr)
+                    continue
+                have_tests = True
+                sys.stderr.write('.')
+                sys.stderr.flush()
 
-        print(f"Generated {cnt} testcases from jsons in {folder}.", file=sys.stderr)
-    else:
-        folder = None
-        filename = os.path.abspath(filename_or_folder)
-        fp = open(filename)
-        testcase = dict(json.loads(fp.read()))
-        fp.close()
-        for name, testcase in testcase.items():
-            output += (
-                gen_test(testcase, filename, symbolic=symbolic, skip="Performance" in filename)
-                + "\n"
-            )
+            if not have_tests:
+                continue
 
-    output += """
+            output += """
 
 if __name__ == '__main__':
     unittest.main()
 """
-    postfix = "symbolic" if symbolic else "concrete"
+            postfix = "symbolic" if symbolic else "concrete"
+            with open(os.path.join(os.path.join(test_dir, relpath, filename[:-5] + "_" + postfix + ".py")), "w") as f:
+                f.write(output)
 
-    if folder:
-        testname = folder.split("/")[-1]
-        with open(f"ethereum_vm/VMTests_{postfix}/test_{testname}.py", "w") as f:
-            f.write(output)
-        with open(f"ethereum_vm/VMTests_{postfix}/__init__.py", "w") as f:
-            f.write("# DO NOT DELETE")
-        print("Tests generated. If this is the only output, u did sth bad.", file=sys.stderr)
-    else:
-        print(output)
+    print(file=sys.stderr)
+    print(f"Generated {cnt} testcases from jsons in {folder}.", file=sys.stderr)
