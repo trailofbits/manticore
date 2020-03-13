@@ -781,7 +781,7 @@ class EVM(Eventful):
 
     @property
     def gas(self):
-        return self._gas
+        return Operators.EXTRACT(self._gas, 0, 256)
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -1934,7 +1934,7 @@ class EVM(Eventful):
     def GAS(self):
         """Get the amount of available gas, including the corresponding reduction the amount of available gas"""
         # fixme calculate gas consumption
-        return Operators.EXTRACT(self._gas, 0, 256)
+        return self.gas
 
     def JUMPDEST(self):
         """Mark a valid destination for jumps"""
