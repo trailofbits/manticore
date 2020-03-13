@@ -2440,7 +2440,7 @@ class EVMWorld(Platform):
                 if deleted_account in self._world_state:
                     del self._world_state[deleted_account]
             # FIXME: Does not account for refunds. Does not pay coinbase.
-            GTRANSACTION = 21000 # aka, "base fee"
+            GTRANSACTION = 21000  # aka, "base fee"
             self.add_to_balance(tx.caller, -tx.price * (GTRANSACTION + tx.gas - vm.gas))
         tx.set_result(result, data)
         self._transactions.append(tx)
