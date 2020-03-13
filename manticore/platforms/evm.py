@@ -310,7 +310,7 @@ class Transaction:
     @sort.setter
     def sort(self, sort):
         if sort not in {"CREATE", "CALL", "DELEGATECALL"}:
-            raise EVMException("Invalid transaction type: " + sort)
+            raise EVMException(f"Invalid transaction type: {sort}")
         self._sort = sort
 
     @property
