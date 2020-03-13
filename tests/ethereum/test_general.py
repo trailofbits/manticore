@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import os
-import pyevmasm as EVMAsm
 import re
 import shutil
 import struct
@@ -26,6 +25,7 @@ from manticore.ethereum import (
     ABI,
     EthereumError,
     EVMContract,
+    evmasm as EVMAsm,
 )
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata

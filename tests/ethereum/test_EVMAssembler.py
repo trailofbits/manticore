@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-import pyevmasm as EVMAsm
+from manticore.ethereum import evmasm as EVMAsm
 
 
 def int_to_bytes(i):
