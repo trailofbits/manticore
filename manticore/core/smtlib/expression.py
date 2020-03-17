@@ -439,9 +439,9 @@ class BitVec(Expression):
 
 
 class BitVecVariable(BitVec):
-    def __init__(self, name: str, *args, **kwargs):
+    def __init__(self, size: int, name: str, *args, **kwargs):
         assert " " not in name
-        super().__init__(*args, **kwargs)
+        super().__init__(size, *args, **kwargs)
         self._name = name
 
     @property
@@ -898,7 +898,7 @@ class ArrayOperation(Array):
             kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
 
         super().__init__(
-            array.index_bits, array.index_max, array.value_bits, array, *operands, **kwargs
+            array.index_bits, array.index_max, array.value_bits, **kwargs
         )
 
     @property
@@ -1046,7 +1046,7 @@ class ArrayProxy(Array):
         from .visitors import simplify
 
         index = simplify(index)
-        if isinstance(index, Constant):
+        if isinstance(index, ConstantType):
             self._concrete_cache[index.value] = value
         else:
             # delete all cache as we do not know what this may overwrite.
@@ -1126,13 +1126,13 @@ class ArrayProxy(Array):
         return self._written
 
     def is_known(self, index):
-        if isinstance(index, Constant) and index.value in self._concrete_cache:
+        if isinstance(index, ConstantType) and index.value in self._concrete_cache:
             return BoolConstant(True)
 
         is_known_index = BoolConstant(False)
         written = self.written
         for known_index in written:
-            if isinstance(index, Constant) and isinstance(known_index, Constant):
+            if isinstance(index, ConstantType) and isinstance(known_index, ConstantType):
                 if known_index.value == index.value:
                     return BoolConstant(True)
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
@@ -1149,7 +1149,7 @@ class ArrayProxy(Array):
             index = simplify(
                 BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index)
             )
-        if isinstance(index, Constant) and index.value in self._concrete_cache:
+        if isinstance(index, ConstantType) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
 
         value = self._array.select(index)

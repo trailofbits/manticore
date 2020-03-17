@@ -367,7 +367,7 @@ class Z3Solver(Solver):
         """
         if not issymbolic(expression):
             return expression
-        assert isinstance(expression, Variable)
+        assert isinstance(expression, VariableType)
 
         if isinstance(expression, Array):
             result = bytearray()
