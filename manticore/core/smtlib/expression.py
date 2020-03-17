@@ -4,7 +4,7 @@ import uuid
 
 import re
 import copy
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, List
 
 
 class ExpressionException(SmtlibError):
@@ -115,7 +115,7 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 ###############################################################################
 # Booleans
 class Bool(Expression):
-    __slots__ = []
+    __slots__: List[str] = []
 
     def __init__(self, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
