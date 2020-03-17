@@ -47,10 +47,10 @@ class ExpressionTest(unittest.TestCase):
         """ Can't build abstract classes """
         a = BitVecConstant(32, 100)
 
+        self.assertRaises(TypeError, Expression, ())
         self.assertRaises(TypeError, Constant, 123)
         self.assertRaises(TypeError, Variable, "NAME")
         self.assertRaises(TypeError, Operation, a)
-        self.assertRaises(TypeError, Expression, ())
 
     def testBasicOperation(self):
         """ Add """
