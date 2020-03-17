@@ -11,10 +11,10 @@ from .expression import (
     Bool,
     BitVec,
     BoolConstant,
-    Constant,
-    Variable,
     ArrayProxy,
     BoolEqual,
+    Variable,
+    Constant,
 )
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 import logging
