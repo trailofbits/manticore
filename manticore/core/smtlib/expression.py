@@ -110,63 +110,6 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
     return arg
 
 
-class Variable(Expression):
-    def __init__(self, name: str, *args, **kwargs):
-        if self.__class__ is Variable:
-            raise TypeError
-        assert " " not in name
-        super().__init__(*args, **kwargs)
-        self._name = name
-
-    @property
-    def declaration(self):
-        pass
-
-    @property
-    def name(self):
-        return self._name
-
-    def __copy__(self, memo):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __deepcopy__(self, memo):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __repr__(self):
-        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
-
-
-class Constant(Expression):
-    def __init__(self, value: Union[bool, int], *args, **kwargs):
-        if self.__class__ is Constant:
-            raise TypeError
-        super().__init__(*args, **kwargs)
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
-
-
-class Operation(Expression):
-    def __init__(self, *operands, **kwargs):
-        if self.__class__ is Operation:
-            raise TypeError
-        # assert len(operands) > 0
-        # assert all(isinstance(x, Expression) for x in operands)
-        self._operands = operands
-
-        # If taint was not forced by a keyword argument, calculate default
-        if "taint" not in kwargs:
-            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
-
-        super().__init__(**kwargs)
-
-    @property
-    def operands(self):
-        return self._operands
-
-
 ###############################################################################
 # Booleans
 class Bool(Expression):
@@ -215,26 +158,56 @@ class Bool(Expression):
         raise NotImplementedError("__bool__ for Bool")
 
 
-class BoolVariable(Bool, Variable):
-    def __init__(self, name, *args, **kwargs):
-        super().__init__(name, *args, **kwargs)
+class BoolVariable(Bool):
+    def __init__(self, name: str, *args, **kwargs):
+        assert " " not in name
+        super().__init__(*args, **kwargs)
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    def __copy__(self, memo):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+    def __deepcopy__(self, memo):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+    def __repr__(self):
+        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
 
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () Bool)"
 
 
-class BoolConstant(Bool, Constant):
+class BoolConstant(Bool):
     def __init__(self, value: bool, *args, **kwargs):
-        super().__init__(value, *args, **kwargs)
+        self._value = value
+        super().__init__(*args, **kwargs)
 
     def __bool__(self):
         return self.value
 
+    @property
+    def value(self):
+        return self._value
 
-class BoolOperation(Operation, Bool):
+
+class BoolOperation(Bool):
     def __init__(self, *operands, **kwargs):
-        super().__init__(*operands, **kwargs)
+        self._operands = operands
+
+        # If taint was not forced by a keyword argument, calculate default
+        if "taint" not in kwargs:
+            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+
+        super().__init__(**kwargs)
+
+    @property
+    def operands(self):
+        return self._operands
 
 
 class BoolNot(BoolOperation):
@@ -465,18 +438,34 @@ class BitVec(Expression):
         return self != 0
 
 
-class BitVecVariable(BitVec, Variable):
-    def __init__(self, *args, **kwargs):
+class BitVecVariable(BitVec):
+    def __init__(self, name: str, *args, **kwargs):
+        assert " " not in name
         super().__init__(*args, **kwargs)
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    def __copy__(self, memo):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+    def __deepcopy__(self, memo):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+    def __repr__(self):
+        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
 
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () (_ BitVec {self.size}))"
 
 
-class BitVecConstant(BitVec, Constant):
+class BitVecConstant(BitVec):
     def __init__(self, size: int, value: int, *args, **kwargs):
-        super().__init__(size, value, *args, **kwargs)
+        self._value = value
+        super().__init__(size, *args, **kwargs)
 
     def __bool__(self):
         return self.value != 0
@@ -489,10 +478,24 @@ class BitVecConstant(BitVec, Constant):
     def __hash__(self):
         return super().__hash__()
 
+    @property
+    def value(self):
+        return self._value
 
-class BitVecOperation(BitVec, Operation):
+
+class BitVecOperation(BitVec):
     def __init__(self, size, *operands, **kwargs):
-        super().__init__(size, *operands, **kwargs)
+        self._operands = operands
+
+        # If taint was not forced by a keyword argument, calculate default
+        if "taint" not in kwargs:
+            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+
+        super().__init__(size, **kwargs)
+
+    @property
+    def operands(self):
+        return self._operands
 
 
 class BitVecAdd(BitVecOperation):
@@ -862,20 +865,45 @@ class Array(Expression):
         return new_arr
 
 
-class ArrayVariable(Array, Variable):
-    def __init__(self, index_bits, index_max, value_bits, name, *operands, **kwargs):
-        super().__init__(index_bits, index_max, value_bits, name, **kwargs)
+class ArrayVariable(Array):
+    def __init__(self, index_bits, index_max, value_bits, name, *args, **kwargs):
+        assert " " not in name
+        super().__init__(index_bits, index_max, value_bits, *args, **kwargs)
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    def __copy__(self, memo):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+    def __deepcopy__(self, memo):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+    def __repr__(self):
+        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
 
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () (Array (_ BitVec {self.index_bits}) (_ BitVec {self.value_bits})))"
 
 
-class ArrayOperation(Array, Operation):
+class ArrayOperation(Array):
     def __init__(self, array: Array, *operands, **kwargs):
+        self._operands = operands
+
+        # If taint was not forced by a keyword argument, calculate default
+        if "taint" not in kwargs:
+            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+
         super().__init__(
             array.index_bits, array.index_max, array.value_bits, array, *operands, **kwargs
         )
+
+    @property
+    def operands(self):
+        return self._operands
 
 
 class ArrayStore(ArrayOperation):
@@ -1133,10 +1161,16 @@ class ArrayProxy(Array):
         return BitVecITE(self._array.value_bits, is_known, value, default)
 
 
-class ArraySelect(BitVec, Operation):
-    def __init__(self, array: "Array", index: "BitVec", *args, **kwargs):
+class ArraySelect(BitVec):
+    def __init__(self, array: "Array", index: "BitVec", *operands, **kwargs):
         assert index.size == array.index_bits
-        super().__init__(array.value_bits, array, index, *args, **kwargs)
+        self._operands = (array, index, *operands)
+
+        # If taint was not forced by a keyword argument, calculate default
+        if "taint" not in kwargs:
+            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+
+        super().__init__(array.value_bits, **kwargs)
 
     @property
     def array(self):
@@ -1145,6 +1179,10 @@ class ArraySelect(BitVec, Operation):
     @property
     def index(self):
         return self.operands[1]
+
+    @property
+    def operands(self):
+        return self._operands
 
     def __repr__(self):
         return f"<ArraySelect obj with index={self.index}:\n{self.array}>"
