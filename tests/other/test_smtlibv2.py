@@ -48,9 +48,6 @@ class ExpressionTest(unittest.TestCase):
         a = BitVecConstant(32, 100)
 
         self.assertRaises(TypeError, Expression, ())
-        self.assertRaises(TypeError, Constant, 123)
-        self.assertRaises(TypeError, Variable, "NAME")
-        self.assertRaises(TypeError, Operation, a)
 
     def testBasicOperation(self):
         """ Add """
@@ -58,7 +55,7 @@ class ExpressionTest(unittest.TestCase):
         b = BitVecVariable(32, "VAR")
         c = a + b
         self.assertIsInstance(c, BitVecAdd)
-        self.assertIsInstance(c, Operation)
+        self.assertIsInstance(c, OperationType)
         self.assertIsInstance(c, Expression)
 
     def testBasicTaint(self):
@@ -66,7 +63,7 @@ class ExpressionTest(unittest.TestCase):
         b = BitVecConstant(32, 200, taint=("SOURCE2",))
         c = a + b
         self.assertIsInstance(c, BitVecAdd)
-        self.assertIsInstance(c, Operation)
+        self.assertIsInstance(c, OperationType)
         self.assertIsInstance(c, Expression)
         self.assertTrue("SOURCE1" in c.taint)
         self.assertTrue("SOURCE2" in c.taint)
@@ -543,7 +540,7 @@ class ExpressionTest(unittest.TestCase):
 
         d = c + 4
         s = arithmetic_simplify(d - c)
-        self.assertIsInstance(s, Constant)
+        self.assertIsInstance(s, ConstantType)
         self.assertEqual(s.value, 4)
         # size = arithmetic_simplify(size
 

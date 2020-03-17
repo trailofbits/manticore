@@ -11,7 +11,7 @@ import unicorn
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory
-from ...core.smtlib import Operators, Constant, issymbolic
+from ...core.smtlib import Operators, ConstantType, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import ConcreteUnicornEmulator
@@ -908,7 +908,7 @@ class Cpu(Eventful):
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
                         c = struct.pack("B", Z3Solver().get_value(self.memory.constraints, c))
-                elif isinstance(c, Constant):
+                elif isinstance(c, ConstantType):
                     c = bytes([c.value])
                 else:
                     logger.error("Concretize executable memory %r %r", c, text)

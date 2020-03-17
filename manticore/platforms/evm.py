@@ -14,7 +14,7 @@ from ..core.smtlib import (
     Array,
     ArrayProxy,
     Operators,
-    Constant,
+    ConstantType,
     ArrayVariable,
     ArrayStore,
     BitVecConstant,
@@ -914,7 +914,7 @@ class EVM(Eventful):
             _decoding_cache = self._decoding_cache = {}
 
         pc = self.pc
-        if isinstance(pc, Constant):
+        if isinstance(pc, ConstantType):
             pc = pc.value
 
         if pc in _decoding_cache:
@@ -950,7 +950,7 @@ class EVM(Eventful):
             value = value & TT256M1
 
         value = simplify(value)
-        if isinstance(value, Constant) and not value.taint:
+        if isinstance(value, ConstantType) and not value.taint:
             value = value.value
 
         self.stack.append(value)
@@ -1004,7 +1004,7 @@ class EVM(Eventful):
 
                 # FIXME if gas can be both enough and insufficient this will
                 #  reenter here and generate redundant queries
-                if isinstance(constraint, Constant):
+                if isinstance(constraint, ConstantType):
                     enough_gas_solutions = (constraint.value,)  # (self._gas - fee >= 0,)
                 elif isinstance(constraint, bool):
                     enough_gas_solutions = (constraint,)  # (self._gas - fee >= 0,)
@@ -1059,7 +1059,7 @@ class EVM(Eventful):
             # do nothing. gas is not even changed
             return
         self._gas = simplify(self._gas - fee)
-        if isinstance(self._gas, Constant) and not self._gas.taint:
+        if isinstance(self._gas, ConstantType) and not self._gas.taint:
             self._gas = self._gas.value
 
         # If everything is concrete lets just check at every instruction
@@ -1175,13 +1175,13 @@ class EVM(Eventful):
         already constrained to a single concrete value.
         """
         # If pc is already pointing to a JUMPDEST thre is no need to check.
-        pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
+        pc = self.pc.value if isinstance(self.pc, ConstantType) else self.pc
         if pc in self._valid_jumpdests:
             self._check_jumpdest = False
             return
 
         should_check_jumpdest = simplify(self._check_jumpdest)
-        if isinstance(should_check_jumpdest, Constant):
+        if isinstance(should_check_jumpdest, ConstantType):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
             should_check_jumpdest_solutions = Z3Solver().get_all_values(
@@ -1232,7 +1232,7 @@ class EVM(Eventful):
     # Execute an instruction from current pc
     def execute(self):
         pc = self.pc
-        if issymbolic(pc) and not isinstance(pc, Constant):
+        if issymbolic(pc) and not isinstance(pc, ConstantType):
             expression = pc
             taints = self.pc.taint
 
@@ -1554,7 +1554,7 @@ class EVM(Eventful):
         concrete_data = bytearray()
         for c in data:
             simplified = simplify(c)
-            if isinstance(simplified, Constant):
+            if isinstance(simplified, ConstantType):
                 concrete_data.append(simplified.value)
             else:
                 # simplify by solving. probably means that we need to improve simplification
@@ -2151,7 +2151,7 @@ class EVM(Eventful):
 
         result = ["-" * 147]
         pc = self.pc
-        if isinstance(pc, Constant):
+        if isinstance(pc, ConstantType):
             pc = pc.value
 
         if issymbolic(pc):
@@ -2305,7 +2305,7 @@ class EVMWorld(Platform):
         concrete_data = bytearray()
         for c in data:
             simplified = simplify(c)
-            if isinstance(simplified, Constant):
+            if isinstance(simplified, ConstantType):
                 concrete_data.append(simplified.value)
             else:
                 # simplify by solving. probably means that we need to improve simplification

@@ -1242,3 +1242,8 @@ class BitVecITE(BitVecOperation):
         assert true_value.size == size
         assert false_value.size == size
         super().__init__(size, condition, true_value, false_value, *args, **kwargs)
+
+
+ConstantType = (BitVecConstant, BoolConstant)
+VariableType = (BitVecVariable, BoolVariable, ArrayVariable)
+OperationType = (BitVecOperation, BoolOperation, ArrayOperation, ArraySelect)

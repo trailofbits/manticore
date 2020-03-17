@@ -11,10 +11,10 @@ from .expression import (
     Bool,
     BitVec,
     BoolConstant,
+    ConstantType,
+    VariableType,
     ArrayProxy,
     BoolEqual,
-    Variable,
-    Constant,
 )
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 import logging
@@ -157,8 +157,8 @@ class ConstraintSet:
             for expression in related_constraints:
                 if (
                     isinstance(expression, BoolEqual)
-                    and isinstance(expression.operands[0], Variable)
-                    and isinstance(expression.operands[1], (Variable, Constant))
+                    and isinstance(expression.operands[0], VariableType)
+                    and isinstance(expression.operands[1], (*VariableType, *ConstantType))
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
@@ -177,7 +177,7 @@ class ConstraintSet:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
                 # if no variables then it is a constant
-                if isinstance(constraint, Constant) and constraint.value == True:
+                if isinstance(constraint, ConstantType) and constraint.value == True:
                     continue
 
             translator.visit(constraint)
@@ -265,7 +265,7 @@ class ConstraintSet:
 
     def is_declared(self, expression_var):
         """ True if expression_var is declared in this constraint set """
-        if not isinstance(expression_var, Variable):
+        if not isinstance(expression_var, VariableType):
             raise ValueError(f"Expression must be a Variable (not a {type(expression_var)})")
         return any(expression_var is x for x in self.get_declared_variables())
 
@@ -327,7 +327,7 @@ class ConstraintSet:
                     ).array
                 else:
                     raise NotImplemented(
-                        f"Unknown expression type {type(var)} encountered during expression migration"
+                        f"Unknown expression type {type(foreign_var)} encountered during expression migration"
                     )
                 # Update the var to var mapping
                 object_migration_map[foreign_var] = new_var
