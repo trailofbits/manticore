@@ -915,7 +915,7 @@ class ArrayOperation(Array):
     __slots__ = ["_operands"]
 
     def __init__(self, array: Array, *operands, **kwargs):
-        self._operands = operands
+        self._operands = (array, *operands)
 
         # If taint was not forced by a keyword argument, calculate default
         if "taint" not in kwargs:
