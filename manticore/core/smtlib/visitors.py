@@ -770,7 +770,7 @@ class ArithmeticSimplifier(Visitor):
         """
         arr, index = operands
         if isinstance(arr, ArrayVariable):
-            return
+            return self._visit_operation(expression, *operands)
 
         if isinstance(index, BitVecConstant):
             ival = index.value
