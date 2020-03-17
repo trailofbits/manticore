@@ -897,9 +897,7 @@ class ArrayOperation(Array):
         if "taint" not in kwargs:
             kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
 
-        super().__init__(
-            array.index_bits, array.index_max, array.value_bits, **kwargs
-        )
+        super().__init__(array.index_bits, array.index_max, array.value_bits, **kwargs)
 
     @property
     def operands(self):

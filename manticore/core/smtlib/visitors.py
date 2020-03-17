@@ -148,6 +148,9 @@ class GetDeclarations(Visitor):
     def _visit_variable(self, expression):
         self.variables.add(expression)
 
+    def visit_ArrayVariable(self, expression):
+        return self._visit_variable(expression)
+
     def visit_BitVecVariable(self, expression):
         self._visit_variable(expression)
 
@@ -277,6 +280,9 @@ class PrettyPrinter(Visitor):
     def _visit_variable(self, expression):
         self._print(expression.name)
         return ""
+
+    def visit_ArrayVariable(self, expression):
+        return self._visit_variable(expression)
 
     def visit_BitVecVariable(self, expression):
         return self._visit_variable(expression)
@@ -928,6 +934,9 @@ class TranslatorSmtlib(Translator):
     def _visit_variable(self, expression):
         return expression.name
 
+    def visit_ArrayVariable(self, expression):
+        return self._visit_variable(expression)
+
     def visit_BitVecVariable(self, expression):
         return self._visit_variable(expression)
 
@@ -992,6 +1001,9 @@ class Replace(Visitor):
         if expression in self._replace_bindings:
             return self._replace_bindings[expression]
         return expression
+
+    def visit_ArrayVariable(self, expression):
+        return self._visit_variable(expression)
 
     def visit_BitVecVariable(self, expression):
         return self._visit_variable(expression)
