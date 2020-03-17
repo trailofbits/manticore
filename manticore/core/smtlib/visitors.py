@@ -149,7 +149,7 @@ class GetDeclarations(Visitor):
         self.variables.add(expression)
 
     def visit_ArrayVariable(self, expression):
-        return self._visit_variable(expression)
+        self._visit_variable(expression)
 
     def visit_BitVecVariable(self, expression):
         self._visit_variable(expression)
