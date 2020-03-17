@@ -791,10 +791,14 @@ class ArithmeticSimplifier(Visitor):
             and isinstance(arr.index, BitVecConstant)
             and arr.index.value == index.value
         ):
-            return arr.value
+            if arr.value is not None:
+                return arr.value
         else:
             if arr is not expression.array:
-                return arr.select(index)
+                out = arr.select(index)
+                if out is not None:
+                    return arr.select(index)
+        return self._visit_operation(expression, *operands)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
