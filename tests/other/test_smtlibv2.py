@@ -55,7 +55,7 @@ class ExpressionTest(unittest.TestCase):
         b = BitVecVariable(32, "VAR")
         c = a + b
         self.assertIsInstance(c, BitVecAdd)
-        self.assertIsInstance(c, OperationType)
+        self.assertIsInstance(c, Operation)
         self.assertIsInstance(c, Expression)
 
     def testBasicTaint(self):
@@ -63,7 +63,7 @@ class ExpressionTest(unittest.TestCase):
         b = BitVecConstant(32, 200, taint=("SOURCE2",))
         c = a + b
         self.assertIsInstance(c, BitVecAdd)
-        self.assertIsInstance(c, OperationType)
+        self.assertIsInstance(c, Operation)
         self.assertIsInstance(c, Expression)
         self.assertTrue("SOURCE1" in c.taint)
         self.assertTrue("SOURCE2" in c.taint)
@@ -540,7 +540,7 @@ class ExpressionTest(unittest.TestCase):
 
         d = c + 4
         s = arithmetic_simplify(d - c)
-        self.assertIsInstance(s, ConstantType)
+        self.assertIsInstance(s, Constant)
         self.assertEqual(s.value, 4)
         # size = arithmetic_simplify(size
 

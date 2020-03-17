@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from ..core.smtlib import (
     Operators,
-    ConstantType,
+    Constant,
     simplify,
     istainted,
     issymbolic,
@@ -74,7 +74,7 @@ class Detector(Plugin):
 
         if issymbolic(pc):
             pc = simplify(pc)
-        if isinstance(pc, ConstantType):
+        if isinstance(pc, Constant):
             pc = pc.value
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
@@ -346,7 +346,7 @@ class DetectReentrancyAdvanced(Detector):
         world = state.platform
         address = world.current_vm.address
         pc = world.current_vm.pc
-        if isinstance(pc, ConstantType):
+        if isinstance(pc, Constant):
             pc = pc.value
         assert isinstance(pc, int)
         at_init = world.current_transaction.sort == "CREATE"
@@ -803,7 +803,7 @@ class DetectRaceCondition(Detector):
             return
 
         # We won't be able to add a finding if pc is not a constant value
-        if not isinstance(state.platform.current_vm.pc, (int, ConstantType)):
+        if not isinstance(state.platform.current_vm.pc, (int, Constant)):
             return
 
         world = state.platform

@@ -1044,7 +1044,7 @@ class ArrayProxy(Array):
         from .visitors import simplify
 
         index = simplify(index)
-        if isinstance(index, ConstantType):
+        if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
         else:
             # delete all cache as we do not know what this may overwrite.
@@ -1124,13 +1124,13 @@ class ArrayProxy(Array):
         return self._written
 
     def is_known(self, index):
-        if isinstance(index, ConstantType) and index.value in self._concrete_cache:
+        if isinstance(index, Constant) and index.value in self._concrete_cache:
             return BoolConstant(True)
 
         is_known_index = BoolConstant(False)
         written = self.written
         for known_index in written:
-            if isinstance(index, ConstantType) and isinstance(known_index, ConstantType):
+            if isinstance(index, Constant) and isinstance(known_index, Constant):
                 if known_index.value == index.value:
                     return BoolConstant(True)
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
@@ -1147,7 +1147,7 @@ class ArrayProxy(Array):
             index = simplify(
                 BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index)
             )
-        if isinstance(index, ConstantType) and index.value in self._concrete_cache:
+        if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
 
         value = self._array.select(index)
@@ -1242,6 +1242,6 @@ class BitVecITE(BitVecOperation):
         super().__init__(size, condition, true_value, false_value, *args, **kwargs)
 
 
-ConstantType = (BitVecConstant, BoolConstant)
-VariableType = (BitVecVariable, BoolVariable, ArrayVariable)
-OperationType = (BitVecOperation, BoolOperation, ArrayOperation, ArraySelect)
+Constant = (BitVecConstant, BoolConstant)
+Variable = (BitVecVariable, BoolVariable, ArrayVariable)
+Operation = (BitVecOperation, BoolOperation, ArrayOperation, ArraySelect)

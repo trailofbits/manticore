@@ -11,8 +11,8 @@ from .expression import (
     Bool,
     BitVec,
     BoolConstant,
-    ConstantType,
-    VariableType,
+    Constant,
+    Variable,
     ArrayProxy,
     BoolEqual,
 )
@@ -157,8 +157,8 @@ class ConstraintSet:
             for expression in related_constraints:
                 if (
                     isinstance(expression, BoolEqual)
-                    and isinstance(expression.operands[0], VariableType)
-                    and isinstance(expression.operands[1], (*VariableType, *ConstantType))
+                    and isinstance(expression.operands[0], Variable)
+                    and isinstance(expression.operands[1], (*Variable, *Constant))
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
@@ -177,7 +177,7 @@ class ConstraintSet:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
                 # if no variables then it is a constant
-                if isinstance(constraint, ConstantType) and constraint.value == True:
+                if isinstance(constraint, Constant) and constraint.value == True:
                     continue
 
             translator.visit(constraint)
@@ -265,7 +265,7 @@ class ConstraintSet:
 
     def is_declared(self, expression_var):
         """ True if expression_var is declared in this constraint set """
-        if not isinstance(expression_var, VariableType):
+        if not isinstance(expression_var, Variable):
             raise ValueError(f"Expression must be a Variable (not a {type(expression_var)})")
         return any(expression_var is x for x in self.get_declared_variables())
 

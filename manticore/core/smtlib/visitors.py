@@ -81,7 +81,7 @@ class Visitor:
             node = stack.pop()
             if node in cache:
                 self.push(cache[node])
-            elif isinstance(node, OperationType):
+            elif isinstance(node, Operation):
                 if node in visited:
                     operands = [self.pop() for _ in range(len(node.operands))]
                     value = self._method(node, *operands)
@@ -108,7 +108,7 @@ class Visitor:
 
     @staticmethod
     def _rebuild(expression, operands):
-        if isinstance(expression, OperationType):
+        if isinstance(expression, Operation):
             if any(x is not y for x, y in zip(expression.operands, operands)):
                 aux = copy.copy(expression)
                 aux._operands = operands
@@ -336,7 +336,7 @@ class ConstantFolderSimplifier(Visitor):
     }
 
     def visit_BitVecConcat(self, expression, *operands):
-        if all(isinstance(o, ConstantType) for o in operands):
+        if all(isinstance(o, Constant) for o in operands):
             result = 0
             for o in operands:
                 result <<= o.size
@@ -344,7 +344,7 @@ class ConstantFolderSimplifier(Visitor):
             return BitVecConstant(expression.size, result, taint=expression.taint)
 
     def visit_BitVecZeroExtend(self, expression, *operands):
-        if all(isinstance(o, ConstantType) for o in operands):
+        if all(isinstance(o, Constant) for o in operands):
             return BitVecConstant(expression.size, operands[0].value, taint=expression.taint)
 
     def visit_BitVecSignExtend(self, expression, *operands):
@@ -352,7 +352,7 @@ class ConstantFolderSimplifier(Visitor):
             return operands[0]
 
     def visit_BitVecExtract(self, expression, *operands):
-        if all(isinstance(o, ConstantType) for o in expression.operands):
+        if all(isinstance(o, Constant) for o in expression.operands):
             value = expression.operands[0].value
             begining = expression.begining
             end = expression.end
@@ -362,15 +362,15 @@ class ConstantFolderSimplifier(Visitor):
             return BitVecConstant(expression.size, value, taint=expression.taint)
 
     def visit_BoolAnd(self, expression, a, b):
-        if isinstance(a, ConstantType) and a.value == True:
+        if isinstance(a, Constant) and a.value == True:
             return b
-        if isinstance(b, ConstantType) and b.value == True:
+        if isinstance(b, Constant) and b.value == True:
             return a
 
     def _visit_operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
-        if operation is not None and all(isinstance(o, ConstantType) for o in operands):
+        if operation is not None and all(isinstance(o, Constant) for o in operands):
             value = operation(*(x.value for x in operands))
             if isinstance(expression, BitVec):
                 return BitVecConstant(expression.size, value, taint=expression.taint)
@@ -412,23 +412,18 @@ class ArithmeticSimplifier(Visitor):
 
     @staticmethod
     def _same_constant(a, b):
-        return (
-            isinstance(a, ConstantType)
-            and isinstance(b, ConstantType)
-            and a.value == b.value
-            or a is b
-        )
+        return isinstance(a, Constant) and isinstance(b, Constant) and a.value == b.value or a is b
 
     @staticmethod
     def _changed(expression, operands):
-        if isinstance(expression, ConstantType) and len(operands) > 0:
+        if isinstance(expression, Constant) and len(operands) > 0:
             return True
         arity = len(operands)
         return any(operands[i] is not expression.operands[i] for i in range(arity))
 
     def _visit_operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
-        if all(isinstance(o, ConstantType) for o in operands):
+        if all(isinstance(o, Constant) for o in operands):
             expression = constant_folder(expression)
         if self._changed(expression, operands):
             expression = self._rebuild(expression, operands)
@@ -450,9 +445,9 @@ class ArithmeticSimplifier(Visitor):
             return expression
 
     def visit_BoolAnd(self, expression, *operands):
-        if isinstance(operands[0], ConstantType) and operands[0].value:
+        if isinstance(operands[0], Constant) and operands[0].value:
             return operands[1]
-        if isinstance(operands[1], ConstantType) and operands[1].value:
+        if isinstance(operands[1], Constant) and operands[1].value:
             return operands[0]
 
         # AND ( EQ (EXTRACT(0,8, a), EXTRACT(0,8, b)),  EQ (EXTRACT(8,16, a), EXTRACT(8,16 b)) ->
@@ -503,9 +498,9 @@ class ArithmeticSimplifier(Visitor):
             (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
             (EQ (extract a, b, c) (extract a, b, c))
         """
-        if isinstance(operands[0], BitVecITE) and isinstance(operands[1], ConstantType):
-            if isinstance(operands[0].operands[1], ConstantType) and isinstance(
-                operands[0].operands[2], ConstantType
+        if isinstance(operands[0], BitVecITE) and isinstance(operands[1], Constant):
+            if isinstance(operands[0].operands[1], Constant) and isinstance(
+                operands[0].operands[2], Constant
             ):
                 value1, value2, value3 = (
                     operands[1].value,
@@ -530,12 +525,12 @@ class ArithmeticSimplifier(Visitor):
                 return BoolConstant(True, taint=expression.taint)
 
     def visit_BoolOr(self, expression, a, b):
-        if isinstance(a, ConstantType):
+        if isinstance(a, Constant):
             if a.value == False:
                 return b
             if a.value == True:
                 return a
-        if isinstance(b, ConstantType):
+        if isinstance(b, Constant):
             if b.value == False:
                 return a
             if b.value == True:
@@ -544,7 +539,7 @@ class ArithmeticSimplifier(Visitor):
             return a
 
     def visit_BitVecITE(self, expression, *operands):
-        if isinstance(operands[0], ConstantType):
+        if isinstance(operands[0], Constant):
             if operands[0].value:
                 result = operands[1]
             else:
@@ -696,10 +691,10 @@ class ArithmeticSimplifier(Visitor):
                 return left.operands[1]
             elif self._same_constant(left.operands[1], right):
                 return left.operands[0]
-        elif isinstance(left, BitVecSub) and isinstance(right, ConstantType):
+        elif isinstance(left, BitVecSub) and isinstance(right, Constant):
             subleft = left.operands[0]
             subright = left.operands[1]
-            if isinstance(subright, ConstantType):
+            if isinstance(subright, Constant):
                 return BitVecSub(
                     subleft,
                     BitVecConstant(
@@ -726,7 +721,7 @@ class ArithmeticSimplifier(Visitor):
             elif isinstance(left, BitVecOr):
                 left_left = left.operands[0]
                 left_right = left.operands[1]
-                if isinstance(right, ConstantType):
+                if isinstance(right, Constant):
                     return BitVecOr(left_left, (left_right | right), taint=expression.taint)
         elif isinstance(left, BitVecConstant):
             return BitVecOr(right, left, taint=expression.taint)
@@ -748,7 +743,7 @@ class ArithmeticSimplifier(Visitor):
             elif isinstance(left, BitVecAnd):
                 left_left = left.operands[0]
                 left_right = left.operands[1]
-                if isinstance(right, ConstantType):
+                if isinstance(right, Constant):
                     return BitVecAnd(left_left, left_right & right, taint=expression.taint)
             elif isinstance(left, BitVecOr):
                 left_left = left.operands[0]
@@ -803,7 +798,7 @@ class ArithmeticSimplifier(Visitor):
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
-        assert not isinstance(expression, OperationType)
+        assert not isinstance(expression, Operation)
         return expression
 
 
@@ -826,14 +821,14 @@ def to_constant(expression):
     value = simplify(expression)
     if isinstance(value, Expression) and value.taint:
         raise ValueError("Can not simplify tainted values to constant")
-    if isinstance(value, ConstantType):
+    if isinstance(value, Constant):
         return value.value
     elif isinstance(value, Array):
         if expression.index_max:
             ba = bytearray()
             for i in range(expression.index_max):
                 value_i = simplify(value[i])
-                if not isinstance(value_i, ConstantType):
+                if not isinstance(value_i, Constant):
                     break
                 ba.append(value_i.value)
             else:
