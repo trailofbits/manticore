@@ -18,6 +18,8 @@ class ExpressionException(SmtlibError):
 class Expression:
     """ Abstract taintable Expression. """
 
+    __slots__ = ["_taint"]
+
     def __init__(self, taint: Union[tuple, frozenset] = ()):
         if self.__class__ is Expression:
             raise TypeError
@@ -113,6 +115,8 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 ###############################################################################
 # Booleans
 class Bool(Expression):
+    __slots__ = []
+
     def __init__(self, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
 
@@ -159,6 +163,8 @@ class Bool(Expression):
 
 
 class BoolVariable(Bool):
+    __slots__ = ["_name"]
+
     def __init__(self, name: str, *args, **kwargs):
         assert " " not in name
         super().__init__(*args, **kwargs)
@@ -183,6 +189,8 @@ class BoolVariable(Bool):
 
 
 class BoolConstant(Bool):
+    __slots__ = ["_value"]
+
     def __init__(self, value: bool, *args, **kwargs):
         self._value = value
         super().__init__(*args, **kwargs)
@@ -196,6 +204,7 @@ class BoolConstant(Bool):
 
 
 class BoolOperation(Bool):
+    __slots__ = ["_operands"]
     def __init__(self, *operands, **kwargs):
         self._operands = operands
 
@@ -237,6 +246,7 @@ class BoolITE(BoolOperation):
 
 class BitVec(Expression):
     """ This adds a bitsize to the Expression class """
+    __slots__ = ["size"]
 
     def __init__(self, size, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
@@ -439,6 +449,7 @@ class BitVec(Expression):
 
 
 class BitVecVariable(BitVec):
+    __slots__ = ["_name"]
     def __init__(self, size: int, name: str, *args, **kwargs):
         assert " " not in name
         super().__init__(size, *args, **kwargs)
@@ -463,6 +474,7 @@ class BitVecVariable(BitVec):
 
 
 class BitVecConstant(BitVec):
+    __slots__ = ["_value"]
     def __init__(self, size: int, value: int, *args, **kwargs):
         self._value = value
         super().__init__(size, *args, **kwargs)
@@ -484,6 +496,7 @@ class BitVecConstant(BitVec):
 
 
 class BitVecOperation(BitVec):
+    __slots__ = ["_operands"]
     def __init__(self, size, *operands, **kwargs):
         self._operands = operands
 
@@ -641,6 +654,7 @@ class UnsignedGreaterOrEqual(BoolOperation):
 ###############################################################################
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
+    __slots__ = ["_index_bits", "_index_max", "_value_bits"]
     def __init__(
         self, index_bits: int, index_max: Optional[int], value_bits: int, *operands, **kwargs
     ):
@@ -866,6 +880,7 @@ class Array(Expression):
 
 
 class ArrayVariable(Array):
+    __slots__ = ["_name"]
     def __init__(self, index_bits, index_max, value_bits, name, *args, **kwargs):
         assert " " not in name
         super().__init__(index_bits, index_max, value_bits, *args, **kwargs)
@@ -890,6 +905,7 @@ class ArrayVariable(Array):
 
 
 class ArrayOperation(Array):
+    __slots__ = ["_operands"]
     def __init__(self, array: Array, *operands, **kwargs):
         self._operands = operands
 
@@ -1160,6 +1176,7 @@ class ArrayProxy(Array):
 
 
 class ArraySelect(BitVec):
+    __slots__ = ["_operands"]
     def __init__(self, array: "Array", index: "BitVec", *operands, **kwargs):
         assert index.size == array.index_bits
         self._operands = (array, index, *operands)
