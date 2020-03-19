@@ -148,14 +148,9 @@ class GetDeclarations(Visitor):
     def _visit_variable(self, expression):
         self.variables.add(expression)
 
-    def visit_ArrayVariable(self, expression):
-        self._visit_variable(expression)
-
-    def visit_BitVecVariable(self, expression):
-        self._visit_variable(expression)
-
-    def visit_BoolVariable(self, expression):
-        self._visit_variable(expression)
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     @property
     def result(self):
@@ -176,17 +171,10 @@ class GetDepth(Translator):
     def _visit_operation(self, expression, *operands):
         return 1 + max(operands)
 
-    def visit_ArraySelect(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_ArrayOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BoolOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BitVecOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
 
 def get_depth(exp):
@@ -241,17 +229,11 @@ class PrettyPrinter(Visitor):
         self.indent -= 2
         return ""
 
-    def visit_ArraySelect(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
+    visit_ArraySelect = _visit_operation
 
-    def visit_ArrayOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BoolOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BitVecOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecExtract(self, expression):
         self._print(
@@ -271,24 +253,16 @@ class PrettyPrinter(Visitor):
         self._print(expression.value)
         return ""
 
-    def visit_BitVecConstant(self, expression):
-        return self._visit_constant(expression)
-
-    def visit_BoolConstant(self, expression):
-        return self._visit_constant(expression)
+    visit_BitVecConstant = _visit_constant
+    visit_BoolConstant = _visit_constant
 
     def _visit_variable(self, expression):
         self._print(expression.name)
         return ""
 
-    def visit_ArrayVariable(self, expression):
-        return self._visit_variable(expression)
-
-    def visit_BitVecVariable(self, expression):
-        return self._visit_variable(expression)
-
-    def visit_BoolVariable(self, expression):
-        return self._visit_variable(expression)
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     @property
     def result(self):
@@ -382,17 +356,10 @@ class ConstantFolderSimplifier(Visitor):
                 expression = self._rebuild(expression, operands)
         return expression
 
-    def visit_ArraySelect(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_ArrayOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BoolOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BitVecOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
 
 constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
@@ -429,14 +396,9 @@ class ArithmeticSimplifier(Visitor):
             expression = self._rebuild(expression, operands)
         return expression
 
-    def visit_ArrayOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BoolOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BitVecOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecZeroExtend(self, expression, *operands):
         if self._changed(expression, operands):
@@ -933,14 +895,9 @@ class TranslatorSmtlib(Translator):
     def _visit_variable(self, expression):
         return expression.name
 
-    def visit_ArrayVariable(self, expression):
-        return self._visit_variable(expression)
-
-    def visit_BitVecVariable(self, expression):
-        return self._visit_variable(expression)
-
-    def visit_BoolVariable(self, expression):
-        return self._visit_variable(expression)
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     def visit_ArraySelect(self, expression, *operands):
         array_smt, index_smt = operands
@@ -959,14 +916,9 @@ class TranslatorSmtlib(Translator):
         operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
         return "(%s %s)" % (operation, " ".join(operands))
 
-    def visit_ArrayOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BoolOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
-
-    def visit_BitVecOperation(self, expression, *operands):
-        return self._visit_operation(expression, *operands)
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     @property
     def results(self):
@@ -1001,14 +953,9 @@ class Replace(Visitor):
             return self._replace_bindings[expression]
         return expression
 
-    def visit_ArrayVariable(self, expression):
-        return self._visit_variable(expression)
-
-    def visit_BitVecVariable(self, expression):
-        return self._visit_variable(expression)
-
-    def visit_BoolVariable(self, expression):
-        return self._visit_variable(expression)
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
 
 def replace(expression, bindings):
