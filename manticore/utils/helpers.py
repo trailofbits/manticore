@@ -122,7 +122,7 @@ class PickleSerializer(StateSerializer):
 
     def deserialize(self, f):
         logger.info("Deserializing %s", f.name if hasattr(f, "name") else "<unknown>")
-        return pickle.load(GzipFile(fileobj=f, mode="rb"))
+        return pickle.load(GzipFile(fileobj=f, mode="rb") if consts.compress_states else f)
 
 
 def pickle_dumps(obj: Any) -> bytes:
