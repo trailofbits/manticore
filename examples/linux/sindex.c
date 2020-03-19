@@ -24,7 +24,7 @@
  *  $ ls -1
  *  command.sh
  *  test_00000001.messages
- *  test_00000001.pkl.gz
+ *  test_00000001.pkl
  *  test_00000001.smt
  *  test_00000001.stderr
  *  test_00000001.stdin
@@ -33,7 +33,7 @@
  *  test_00000001.trace
  *  test_00000001.txt
  *  test_00000002.messages
- *  test_00000002.pkl.gz
+ *  test_00000002.pkl
  *  test_00000002.smt
  *  test_00000002.stderr
  *  test_00000002.stdin

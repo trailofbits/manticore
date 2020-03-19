@@ -22,7 +22,7 @@ class SerializerPlugin(Plugin):
         with self.locked_context("counter", dict) as ctx:
             if instruction.mnemonic == "loop" and ctx.get(instruction.mnemonic, 0) == 24:
                 self.killed = True
-                raise SerializeState("/tmp/collatz_checkpoint.pkl.gz")
+                raise SerializeState("/tmp/collatz_checkpoint.pkl")
             val = ctx.setdefault(instruction.mnemonic, 0)
             ctx[instruction.mnemonic] = val + 1
 
@@ -50,7 +50,7 @@ class TestResume(unittest.TestCase):
 
         counts_save = plugin.context.get("counter")
 
-        m = ManticoreWASM.from_saved_state("/tmp/collatz_checkpoint.pkl.gz")
+        m = ManticoreWASM.from_saved_state("/tmp/collatz_checkpoint.pkl")
         plugin = CallCounterPlugin()
         m.register_plugin(plugin)
         m.run()

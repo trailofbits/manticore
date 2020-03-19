@@ -20,14 +20,14 @@ class TestResume(unittest.TestCase):
                 if context.get("kill", False):
                     raise TerminateState("Abandoning...")
                 context["kill"] = True
-            raise SerializeState("/tmp/ms_checkpoint.pkl.gz")
+            raise SerializeState("/tmp/ms_checkpoint.pkl")
 
         m.run()
         self.assertEqual(m.count_terminated_states(), 1)
         for state in m.terminated_states:
             self.assertEqual(state.cpu.PC, 0x4009AE)
 
-        m = Manticore.from_saved_state("/tmp/ms_checkpoint.pkl.gz")
+        m = Manticore.from_saved_state("/tmp/ms_checkpoint.pkl")
         self.assertEqual(m.count_ready_states(), 1)
         for st in m.ready_states:
             self.assertEqual(state.cpu.PC, 0x4009AE)

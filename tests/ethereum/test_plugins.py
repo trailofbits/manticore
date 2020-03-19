@@ -73,7 +73,7 @@ class EthPluginsTests(unittest.TestCase):
             "command.sh",
             "global_X_init.bytecode",
             "test_00000000.tx",
-            "test_00000000.pkl.gz",
+            "test_00000000.pkl",
             "manticore.yml",
             "global.summary",
             "test_00000000.summary",
