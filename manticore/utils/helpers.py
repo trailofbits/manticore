@@ -7,8 +7,17 @@ from io import BytesIO
 
 from typing import Any, IO
 
+from .config import get_group
 
 logger = logging.getLogger(__name__)
+
+consts = get_group("core")
+consts.add(
+    "compress_states",
+    default=True,
+    description="Seamlessly compress state files on disk. Reduces space usage and improves performance on slow disks,"
+    "at the cost of some slight [de]compression overhead.",
+)
 
 
 def interval_intersection(min1, max1, min2, max2):
@@ -97,7 +106,9 @@ class PickleSerializer(StateSerializer):
         try:
             pickle_dump(
                 state,
-                GzipFile(fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL),
+                GzipFile(fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL)
+                if consts.compress_states
+                else f,
             )
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
