@@ -14,7 +14,7 @@ import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
 
-from ..core.manticore import ManticoreBase
+from ..core.manticore import ManticoreBase, set_verbosity
 from ..core.smtlib import (
     ConstraintSet,
     Array,
@@ -384,18 +384,18 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, workspace_url: str = None, policy: str = "random"):
+    def __init__(self, cfg: config.Config = None):
         """
         A Manticore EVM manager
-        :param workspace_url: workspace folder name
-        :param policy: scheduling priority
+        :param cfg: a Config to use. (default global_config)
         """
+
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
+        super().__init__(initial_state, cfg=cfg)
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         if consts.sha3 is consts.sha3.concretize:

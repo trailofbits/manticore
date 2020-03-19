@@ -13,39 +13,14 @@ from .ethereum.cli import ethereum_main
 from .wasm.cli import wasm_main
 from .utils import config, log, install_helper
 
-consts = config.get_group("main")
+consts = config.get_group("cli")
 consts.add("recursionlimit", default=10000, description="Value to set for Python recursion limit")
+consts.add("no-colors", default=True, description="Disable ANSI color escape sequences in output")
+consts.add("verbosity", default=1, description="Specify verbosity level [1-4]" )
 
-
-# XXX(yan): This would normally be __name__, but then logger output will be pre-
-# pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
-logger = logging.getLogger("manticore.main")
 
 if install_helper.has_native:
     from manticore.native.cli import native_main
-
-
-def main():
-    """
-    Dispatches execution into one of Manticore's engines: evm or native.
-    """
-    args = parse_arguments()
-
-    if args.no_colors:
-        log.disable_colors()
-
-    sys.setrecursionlimit(consts.recursionlimit)
-
-    set_verbosity(args.v)
-
-    if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
-        ethereum_main(args, logger)
-    elif args.argv[0].endswith(".wasm") or args.argv[0].endswith(".wat"):
-        wasm_main(args, logger)
-    else:
-        install_helper.ensure_native_deps()
-        native_main(args, logger)
-
 
 def parse_arguments():
     def positive(value):
@@ -60,45 +35,21 @@ def parse_arguments():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # Add crytic compile arguments
-    # See https://github.com/crytic/crytic-compile/wiki/Configuration
-    cryticparser.init(parser)
+    parser = config.prepare_argument_parser(parser)
 
     parser.add_argument("--context", type=str, default=None, help=argparse.SUPPRESS)
     parser.add_argument(
         "--coverage", type=str, default="visited.txt", help="Where to write the coverage data"
     )
     parser.add_argument("--names", type=str, default=None, help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--no-colors", action="store_true", help="Disable ANSI color escape sequences in output"
-    )
     parser.add_argument("--offset", type=int, default=16, help=argparse.SUPPRESS)
-    # FIXME (theo) Add some documentation on the different search policy options
-    parser.add_argument(
-        "--policy",
-        type=str,
-        default="random",
-        help=(
-            "Search policy. random|adhoc|uncovered|dicount"
-            "|icount|syscount|depth. (use + (max) or - (min)"
-            " to specify order. e.g. +random)"
-        ),
-    )
+
     parser.add_argument(
         "argv",
         type=str,
         nargs="*",
         default=[],
         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).",
-    )
-    parser.add_argument(
-        "-v", action="count", default=1, help="Specify verbosity level from -v to -vvvv"
-    )
-    parser.add_argument(
-        "--workspace",
-        type=str,
-        default=None,
-        help=("A folder name for temporaries and results." "(default mcore_?????)"),
     )
 
     current_version = pkg_resources.get_distribution("manticore").version
@@ -144,95 +95,6 @@ def parse_arguments():
         "--pure-symbolic", action="store_true", help="Treat all writable memory as symbolic"
     )
 
-    eth_flags = parser.add_argument_group("Ethereum flags")
-    eth_flags.add_argument(
-        "--verbose-trace", action="store_true", help="Dump an extra verbose trace for each state"
-    )
-    eth_flags.add_argument(
-        "--txlimit",
-        type=positive,
-        help="Maximum number of symbolic transactions to run (positive integer)",
-    )
-
-    eth_flags.add_argument(
-        "--txnocoverage", action="store_true", help="Do not use coverage as stopping criteria"
-    )
-
-    eth_flags.add_argument(
-        "--txnoether", action="store_true", help="Do not attempt to send ether to contract"
-    )
-
-    eth_flags.add_argument(
-        "--txaccount",
-        type=str,
-        default="attacker",
-        help='Account used as caller in the symbolic transactions, either "attacker" or '
-        '"owner" or "combo1" (uses both)',
-    )
-
-    eth_flags.add_argument(
-        "--txpreconstrain",
-        action="store_true",
-        help="Constrain human transactions to avoid exceptions in the contract function dispatcher",
-    )
-
-    eth_flags.add_argument(
-        "--contract", type=str, help="Contract name to analyze in case of multiple contracts"
-    )
-
-    eth_detectors = parser.add_argument_group("Ethereum detectors")
-
-    eth_detectors.add_argument(
-        "--list-detectors",
-        help="List available detectors",
-        action=ListEthereumDetectors,
-        nargs=0,
-        default=False,
-    )
-
-    eth_detectors.add_argument(
-        "--exclude",
-        help="Comma-separated list of detectors that should be excluded",
-        action="store",
-        dest="detectors_to_exclude",
-        default="",
-    )
-
-    eth_detectors.add_argument(
-        "--exclude-all", help="Excludes all detectors", action="store_true", default=False
-    )
-
-    eth_flags.add_argument(
-        "--avoid-constant",
-        action="store_true",
-        help="Avoid exploring constant functions for human transactions",
-    )
-
-    eth_flags.add_argument(
-        "--limit-loops",
-        action="store_true",
-        help="Avoid exploring constant functions for human transactions",
-    )
-
-    eth_flags.add_argument(
-        "--no-testcases",
-        action="store_true",
-        help="Do not generate testcases for discovered states when analysis finishes",
-    )
-
-    eth_flags.add_argument(
-        "--only-alive-testcases",
-        action="store_true",
-        help="Do not generate testcases for invalid/throwing states when analysis finishes",
-    )
-
-    eth_flags.add_argument(
-        "--quick-mode",
-        action="store_true",
-        help="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
-        "do not explore constant functions. Disable all detectors.",
-    )
-
     config_flags = parser.add_argument_group("Constants")
     config.add_config_vars_to_argparse(config_flags)
 
@@ -248,17 +110,29 @@ def parse_arguments():
     elif parsed.policy.startswith("max"):
         parsed.policy = "+" + parsed.policy[3:]
 
-    return parsed
+    return config
 
+def is_eth():
+    for arg in sys.argv[1:]:
+        if not arg.startswith("-") and (arg.endswith(".sol") or is_supported(arg)):
+            return True
+    return False
 
-class ListEthereumDetectors(argparse.Action):
-    def __call__(self, parser, *args, **kwargs):
-        from .ethereum.cli import get_detectors_classes
-        from .utils.command_line import output_detectors
-
-        output_detectors(get_detectors_classes())
-        parser.exit()
-
+def is_wasm():
+    for arg in sys.argv[1:]:
+        if not arg.startswith("-") and (arg.endswith(".wasm") or arg.endswith(".wat")):
+            return True
+    return False
 
 if __name__ == "__main__":
-    main()
+    """
+    Dispatches execution into one of Manticore's engines: evm or native or wasm.
+    """
+
+    if is_eth():
+        ethereum_main()
+    elif is_wasm():
+        wasm_main(args, logging.getLogger("manticore.main"))
+    else:
+        install_helper.ensure_native_deps()
+        native_main(args, logging.getLogger("manticore.main"))
