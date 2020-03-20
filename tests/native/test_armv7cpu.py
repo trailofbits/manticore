@@ -1348,6 +1348,8 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 0)
 
+    # SBC
+
     @itest_custom("sbc r3, r1, #5")
     @itest_setregs("R1=10")
     def test_sbc_imm(self):
@@ -1358,6 +1360,30 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_thumb("sbcs r0, r3")
     def test_sbc_thumb(self):
         self.assertEqual(self.rf.read("R0"), 0)
+
+    @itest_custom("sbc r3, r1, #0x18000")
+    @itest_setregs("R1=0x18010", "APSR_C=1")
+    def test_sbc_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x10)
+
+    @itest_custom("sbc r3, r1, #0x18000")
+    @itest_setregs("R1=0x18010", "APSR_C=0")
+    def test_sbc_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0xf)
+
+    @itest_custom("sbc r3, r1, #24, 20")
+    @itest_setregs("R1=0x18010", "APSR_C=1")
+    def test_sbc_mod_imm_3(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x10)
+
+    @itest_custom("sbc r3, r1, #24, 20")
+    @itest_setregs("R1=0x18010", "APSR_C=0")
+    def test_sbc_mod_imm_4(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0xf)
 
     # LDM/LDMIB/LDMDA/LDMDB
 
