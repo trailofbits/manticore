@@ -391,6 +391,18 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 44 + 0x100)
 
+    @itest_custom("add r3, r1, 0x18000")
+    def test_add_imm_mod_imm_case1(self):
+        self.rf.write("R1", 44)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 44 + 0x18000)
+
+    @itest_custom("add r3, r1, 24, 20")
+    def test_add_imm_mod_imm_case2(self):
+        self.rf.write("R1", 44)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 44 + 0x18000)
+
     @itest_custom("add r3, r1, 0xff000000")
     def test_add_imm_mod_imm_max(self):
         self.rf.write("R1", 44)
