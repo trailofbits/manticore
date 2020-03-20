@@ -230,7 +230,6 @@ class PrettyPrinter(Visitor):
         return ""
 
     visit_ArraySelect = _visit_operation
-
     visit_ArrayOperation = _visit_operation
     visit_BoolOperation = _visit_operation
     visit_BitVecOperation = _visit_operation

@@ -210,8 +210,7 @@ class BoolOperation(Bool):
         self._operands = operands
 
         # If taint was not forced by a keyword argument, calculate default
-        if "taint" not in kwargs:
-            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+        kwargs.setdefault("taint", reduce(lambda x, y: x.union(y.taint), operands, frozenset()))
 
         super().__init__(**kwargs)
 
@@ -506,8 +505,7 @@ class BitVecOperation(BitVec):
         self._operands = operands
 
         # If taint was not forced by a keyword argument, calculate default
-        if "taint" not in kwargs:
-            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+        kwargs.setdefault("taint", reduce(lambda x, y: x.union(y.taint), operands, frozenset()))
 
         super().__init__(size, **kwargs)
 
@@ -918,8 +916,7 @@ class ArrayOperation(Array):
         self._operands = (array, *operands)
 
         # If taint was not forced by a keyword argument, calculate default
-        if "taint" not in kwargs:
-            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+        kwargs.setdefault("taint", reduce(lambda x, y: x.union(y.taint), operands, frozenset()))
 
         super().__init__(array.index_bits, array.index_max, array.value_bits, **kwargs)
 
@@ -1191,8 +1188,7 @@ class ArraySelect(BitVec):
         self._operands = (array, index, *operands)
 
         # If taint was not forced by a keyword argument, calculate default
-        if "taint" not in kwargs:
-            kwargs["taint"] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+        kwargs.setdefault("taint", reduce(lambda x, y: x.union(y.taint), operands, frozenset()))
 
         super().__init__(array.value_bits, **kwargs)
 
