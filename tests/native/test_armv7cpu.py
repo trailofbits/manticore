@@ -1034,8 +1034,28 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     # ADR
 
-    @itest_custom("adr r0, #16", mode=CS_MODE_THUMB)
+    @itest_custom("adr r0, #16")
     def test_adr(self):
+        pre_pc = self.rf.read("PC")
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 8) + 16)
+
+    # Note, ARM ARM says that the following is an alternative encoding for a form of ADR
+    @itest_custom("add r0, PC, #0x10")
+    def test_adr_mod_imm_1(self):
+        pre_pc = self.rf.read("PC")
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 8) + 0x10)
+
+    # Note, ARM ARM says that the following is an alternative encoding for a form of ADR
+    @itest_custom("add r0, PC, #1, 28")
+    def test_adr_mod_imm_2(self):
+        pre_pc = self.rf.read("PC")
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 8) + 0x10)
+
+    @itest_custom("adr r0, #16", mode=CS_MODE_THUMB)
+    def test_adr_thumb(self):
         pre_pc = self.rf.read("PC")
         self.cpu.execute()
         self.assertEqual(self.rf.read("R0"), (pre_pc + 4) + 16)  # adr is 4 bytes long
