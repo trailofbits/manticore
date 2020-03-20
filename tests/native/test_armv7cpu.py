@@ -1764,7 +1764,27 @@ class Armv7CpuInstructions(unittest.TestCase):
     # TST
     @itest_setregs("R1=1", "R3=0")
     @itest("tst r3, r1")
-    def test_tst(self):
+    def test_tst_1(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R1=1", "R3=1")
+    @itest("tst r3, r1")
+    def test_tst_2(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R1=1", "R3=3")
+    @itest("tst r3, r1")
+    def test_tst_3(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("tst r3, #0x18000")
+    def test_tst_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("tst r3, #24, 20")
+    def test_tst_mod_imm_2(self):
         self._checkFlagsNZCV(0, 1, 0, 0)
 
     # AND
