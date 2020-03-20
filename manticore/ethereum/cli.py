@@ -16,7 +16,13 @@ from .detectors import (
 )
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
-from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIfStorageChanges
+from .plugins import (
+    FilterFunctions,
+    LoopDepthLimiter,
+    VerboseTrace,
+    KeepOnlyIfStorageChanges,
+    SkipRevertBasicBlocks,
+)
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config
 
@@ -26,6 +32,12 @@ consts.add(
     "explore_balance",
     default=False,
     description="Explore states in which only the balance was changed",
+)
+
+consts.add(
+    "skip_reverts",
+    default=False,
+    description="Simply avoid exploring basic blocks that end in a REVERT",
 )
 
 
@@ -83,8 +95,12 @@ def ethereum_main(args, logger):
         args.only_alive_testcases = True
         consts_evm = config.get_group("evm")
         consts_evm.oog = "ignore"
+        consts.skip_reverts = True
 
     with WithKeyboardInterruptAs(m.kill):
+        if consts.skip_reverts:
+            m.register_plugin(SkipRevertBasicBlocks())
+
         if consts.explore_balance:
             m.register_plugin(KeepOnlyIfStorageChanges())
 
