@@ -1992,6 +1992,16 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_thumb_bic_reg_imm(self):
         self.assertEqual(self.rf.read("R1"), 0xEF)
 
+    @itest_setregs("R1=0x18002")
+    @itest("BIC R2, R1, #0x18000")
+    def test_bic_reg_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R2"), 0x2)
+
+    @itest_setregs("R1=0x18002")
+    @itest("BIC R2, R1, #24, 20")
+    def test_bic_reg_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R2"), 0x2)
+
     @itest_setregs("R1=0x1008")
     @itest("BLX R1")
     def test_blx_reg(self):
