@@ -1201,6 +1201,16 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_cmp_eq(self):
         self._checkFlagsNZCV(0, 1, 1, 0)
 
+    @itest_setregs("R0=0x18000")
+    @itest("cmp r0, #0x18000")
+    def test_cmp_eq_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
+    @itest_setregs("R0=0x18000")
+    @itest("cmp r0, #24, 20")
+    def test_cmp_eq_mod_imm_2(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
     @itest_setregs("R0=3")
     @itest("cmp r0, 5")
     def test_cmp_lt(self):
