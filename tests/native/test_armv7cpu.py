@@ -1573,6 +1573,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_thumb_orr_imm(self):
         self.assertEqual(self.rf.read("R3"), 0x1005)
 
+    @itest_custom("orr r2, r3, #0x18000")
+    @itest_setregs("R3=0x1000")
+    def test_orr_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x19000)
+
+    @itest_custom("orr r2, r3, #24, 20")
+    @itest_setregs("R3=0x1000")
+    def test_orr_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x19000)
+
     @itest_custom("orrs r2, r3")
     @itest_setregs("R2=0x5", "R3=0x80000000")
     def test_orrs_imm_flags(self):
