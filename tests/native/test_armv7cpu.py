@@ -1787,6 +1787,37 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_tst_mod_imm_2(self):
         self._checkFlagsNZCV(0, 1, 0, 0)
 
+    # TEQ
+    @itest_setregs("R1=1", "R3=0")
+    @itest("teq r3, r1")
+    def test_teq_1(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R1=1", "R3=1")
+    @itest("teq r3, r1")
+    def test_teq_2(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("teq r3, #0x18000")
+    def test_teq_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R3=0x18000")
+    @itest("teq r3, #0x18000")
+    def test_teq_mod_imm_2(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("teq r3, #24, 20")
+    def test_teq_mod_imm_3(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R3=0x18000")
+    @itest("teq r3, #24, 20")
+    def test_teq_mod_imm_4(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
     # AND
     @itest_setregs("R2=5")
     @itest("and r2, r2, #1")
