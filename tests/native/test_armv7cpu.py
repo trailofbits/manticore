@@ -1371,7 +1371,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R1=0x18010", "APSR_C=0")
     def test_sbc_mod_imm_2(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 0xf)
+        self.assertEqual(self.rf.read("R3"), 0xF)
 
     @itest_custom("sbc r3, r1, #24, 20")
     @itest_setregs("R1=0x18010", "APSR_C=1")
@@ -1383,7 +1383,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R1=0x18010", "APSR_C=0")
     def test_sbc_mod_imm_4(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 0xf)
+        self.assertEqual(self.rf.read("R3"), 0xF)
 
     # LDM/LDMIB/LDMDA/LDMDB
 
@@ -1661,13 +1661,13 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R3=0xA")
     def test_eor_mod_imm_1(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R2"), 0x1800a)
+        self.assertEqual(self.rf.read("R2"), 0x1800A)
 
     @itest_custom("eor r2, r3, #24, 20")
     @itest_setregs("R3=0xA")
     def test_eor_mod_imm_2(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R2"), 0x1800a)
+        self.assertEqual(self.rf.read("R2"), 0x1800A)
 
     # LDRH - see also LDR tests
 
