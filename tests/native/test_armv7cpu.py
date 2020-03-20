@@ -498,11 +498,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 0x60000000)
 
+    # ADCS
     @itest_setregs("R3=0xfffffff6", "R4=10")
     @itest_thumb("adcs r3, r4")
     def test_thumb_adc_basic(self):
         self.assertEqual(self.rf.read("R3"), 0)
 
+    # ADC
     @itest_custom("adc r3, r1, r2")
     @itest_setregs("R1=1", "R2=2", "APSR_C=1")
     def test_adc_basic(self):
@@ -516,6 +518,18 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.rf.write("R2", 0x3)
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 0x60000001)
+
+    @itest_custom("adc r3, r1, #0x18000")
+    @itest_setregs("R1=1", "APSR_C=1")
+    def test_adc_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x18002)
+
+    @itest_custom("adc r3, r1, #24, 20")
+    @itest_setregs("R1=1", "APSR_C=1")
+    def test_adc_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x18002)
 
     # TODO what is shifter_carry_out in the manual, A8-291? it gets set to
     # Bit[0] presumably, but i have no clue what it is. Not mentioned again in
