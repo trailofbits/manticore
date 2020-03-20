@@ -1657,6 +1657,18 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R2"), 0x5)
 
+    @itest_custom("eor r2, r3, #0x18000")
+    @itest_setregs("R3=0xA")
+    def test_eor_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x1800a)
+
+    @itest_custom("eor r2, r3, #24, 20")
+    @itest_setregs("R3=0xA")
+    def test_eor_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x1800a)
+
     # LDRH - see also LDR tests
 
     @itest_custom("ldrh r1, [sp]")
