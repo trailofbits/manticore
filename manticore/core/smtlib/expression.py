@@ -174,10 +174,10 @@ class BoolVariable(Bool):
     def name(self):
         return self._name
 
-    def __copy__(self, memo):
+    def __copy__(self, memo=""):
         raise ExpressionException("Copying of Variables is not allowed.")
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo=""):
         raise ExpressionException("Copying of Variables is not allowed.")
 
     def __repr__(self):
@@ -461,10 +461,10 @@ class BitVecVariable(BitVec):
     def name(self):
         return self._name
 
-    def __copy__(self, memo):
+    def __copy__(self, memo=""):
         raise ExpressionException("Copying of Variables is not allowed.")
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo=""):
         raise ExpressionException("Copying of Variables is not allowed.")
 
     def __repr__(self):
@@ -895,10 +895,10 @@ class ArrayVariable(Array):
     def name(self):
         return self._name
 
-    def __copy__(self, memo):
+    def __copy__(self, memo=""):
         raise ExpressionException("Copying of Variables is not allowed.")
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo=""):
         raise ExpressionException("Copying of Variables is not allowed.")
 
     def __repr__(self):
