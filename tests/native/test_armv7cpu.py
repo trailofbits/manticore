@@ -1322,6 +1322,32 @@ class Armv7CpuInstructions(unittest.TestCase):
         all_vals = solver.get_all_values(self.cpu.memory.constraints, self.cpu.R3)
         self.assertIn(0x03020100, all_vals)
 
+    # RSC
+
+    @itest_custom("rsc r3, r1, #0x18000")
+    @itest_setregs("R1=0x18000", "APSR_C=1")
+    def test_rsc_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("rsc r3, r1, #0x18000")
+    @itest_setregs("R1=0x17fff", "APSR_C=0")
+    def test_rsc_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("rsc r3, r1, #24, 20")
+    @itest_setregs("R1=0x18000", "APSR_C=1")
+    def test_rsc_mod_imm_3(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("rsc r3, r1, #24, 20")
+    @itest_setregs("R1=0x17fff", "APSR_C=0")
+    def test_rsc_mod_imm_4(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
     @itest_custom("sbc r3, r1, #5")
     @itest_setregs("R1=10")
     def test_sbc_imm(self):
