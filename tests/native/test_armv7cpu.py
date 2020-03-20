@@ -1835,6 +1835,16 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read("R1"), 3 & 5)
         self.assertEqual(self.rf.read("APSR_C"), 1)
 
+    @itest_setregs("R2=5")
+    @itest("and r2, r2, #0x18000")
+    def test_and_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R2"), 0)
+
+    @itest_setregs("R2=5")
+    @itest("and r2, r2, #24, 20")
+    def test_and_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R2"), 0)
+
     # svc
 
     def test_svc(self):
