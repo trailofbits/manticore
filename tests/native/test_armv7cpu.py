@@ -224,6 +224,23 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read("APSR_C"), c)
         self.assertEqual(self.rf.read("APSR_V"), v)
 
+    # MVN
+    @itest("mvn r0, #0x0")
+    def test_mvn_imm_min(self):
+        self.assertEqual(self.rf.read("R0"), 0xFFFFFFFF)
+
+    @itest("mvn r0, #0xFFFFFFFF")
+    def test_mvn_imm_max(self):
+        self.assertEqual(self.rf.read("R0"), 0x0)
+
+    @itest("mvn r0, #0x18000")
+    def test_mvn_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R0"), 0xFFFE7FFF)
+
+    @itest("mvn r0, #24, 20")
+    def test_mvn_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R0"), 0xFFFE7FFF)
+
     # MOV
 
     @itest("mov r0, 0x0")
