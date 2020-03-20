@@ -259,6 +259,14 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_mov_imm_modified_imm_max(self):
         self.assertEqual(self.rf.read("R0"), 0xFF000000)
 
+    @itest("mov r0, #0x18000")
+    def test_mov_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R0"), 0x18000)
+
+    @itest("mov r0, #24, 20")
+    def test_mov_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R0"), 0x18000)
+
     @itest_custom("mov r0, r1")
     def test_mov_immreg(self):
         self.rf.write("R1", 0)
