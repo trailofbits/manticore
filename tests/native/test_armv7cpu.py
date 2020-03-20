@@ -1268,6 +1268,8 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R1"), 1)
 
+    # SUB
+
     @itest_custom("sub r3, r1, r2")
     @itest_setregs("R1=4", "R2=2")
     def test_sub_basic(self):
@@ -1284,6 +1286,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_sub_imm(self):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 5)
+
+    @itest_custom("sub r3, r1, #0x18000")
+    @itest_setregs("R1=0x18000")
+    def test_sub_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("sub r3, r1, #24, 20")
+    @itest_setregs("R1=0x18000")
+    def test_sub_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
 
     @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R1=0x04030201", "R2=0x01010101")
