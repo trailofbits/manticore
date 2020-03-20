@@ -1182,6 +1182,18 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("PC"), (pre_pc + 4) + 42)  # tbh is 4 bytes long
 
+    # CMN
+
+    @itest_setregs("R0=-0x18000")
+    @itest("cmn r0, #0x18000")
+    def test_cmn_eq_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
+    @itest_setregs("R0=-0x18000")
+    @itest("cmn r0, #24, 20")
+    def test_cmn_eq_mod_imm_2(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
     # CMP
 
     @itest_setregs("R0=3")
