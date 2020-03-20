@@ -1921,11 +1921,23 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_asrw_thumb(self):
         self.assertEqual(self.cpu.R5, 16 >> 3)
 
+    # RSB
+
     @itest_setregs("R2=29")
     @itest("RSB r2, r2, #31")
     def test_rsb_imm(self):
         # Diverging instruction from trace
         self.assertEqual(self.rf.read("R2"), 2)
+
+    @itest_setregs("R2=0x17000")
+    @itest("RSB r2, r2, #0x18000")
+    def test_rsb_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R2"), 0x1000)
+
+    @itest_setregs("R2=0x17000")
+    @itest("RSB r2, r2, #24, 20")
+    def test_rsb_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R2"), 0x1000)
 
     @itest_setregs("R6=2", "R8=0xfffffffe")
     @itest("RSBS r8, r6, #0")
