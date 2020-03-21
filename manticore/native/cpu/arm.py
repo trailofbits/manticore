@@ -1633,7 +1633,7 @@ class Armv7Cpu(Cpu):
         dest.write(result & Mask(cpu.address_bit_size))
         cpu.set_flags(N=HighBit(result), Z=(result == 0))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def BIC(cpu, dest, op1, op2=None):
         if op2 is not None:
             result = (op1.read() & ~op2.read()) & Mask(cpu.address_bit_size)
