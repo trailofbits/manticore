@@ -1089,7 +1089,7 @@ class Armv7Cpu(Cpu):
 
         return result, carry_out, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def ADC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read("APSR_C")
         if op2 is not None:
