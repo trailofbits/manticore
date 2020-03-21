@@ -1493,7 +1493,7 @@ class Armv7Cpu(Cpu):
             dest.write(result)
         cpu.set_flags(C=carry, N=HighBit(result), Z=(result == 0))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def ORR(cpu, dest, op1, op2=None):
         if op2 is not None:
             cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
