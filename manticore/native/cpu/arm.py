@@ -1538,7 +1538,7 @@ class Armv7Cpu(Cpu):
             logger.warning(f"Bad SVC number: {op.read():08}")
         raise Interruption(0)
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def CMN(cpu, src, add):
         result, carry, overflow = cpu._ADD(src.read(), add.read())
         return result, carry, overflow
