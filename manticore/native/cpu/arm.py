@@ -1323,7 +1323,7 @@ class Armv7Cpu(Cpu):
 
         cpu.PC += offset << 1
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def CMP(cpu, reg, compare):
         notcmp = ~compare.read() & Mask(cpu.address_bit_size)
         cpu._ADD(reg.read(), notcmp, 1)
