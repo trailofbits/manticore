@@ -843,7 +843,7 @@ class Armv7Cpu(Cpu):
             )
         dest.write(Operators.CONCAT(32, *reversed(result)))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def MOV(cpu, dest, src):
         """
         Implement the MOV{S} instruction.
