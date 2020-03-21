@@ -1135,7 +1135,7 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def SBC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read("APSR_C")
         if op2 is not None:
