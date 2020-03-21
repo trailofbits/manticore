@@ -46,6 +46,7 @@ def instruction(body=None, *, can_take_denormalized_mod_imm: bool = False):
     for some decorator-fu specific to making this work both when used both like
     `@instruction` and like `@instruction(can_take_denormalized_mod_imm=True)`.
     """
+
     def decorator(body):
         if can_take_denormalized_mod_imm:
             # Need to possibly normalize a modified immediate argument that's
