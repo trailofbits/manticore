@@ -1109,7 +1109,7 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def RSB(cpu, dest, src, add):
         inv_src = GetNBits(~src.read(), cpu.address_bit_size)
         result, carry, overflow = cpu._ADD(inv_src, add.read(), 1)
