@@ -1124,7 +1124,7 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def SUB(cpu, dest, src, add=None):
         if add is not None:
             result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
