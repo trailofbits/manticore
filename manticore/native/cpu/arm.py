@@ -1116,7 +1116,7 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def RSC(cpu, dest, src, add):
         carry = cpu.regfile.read("APSR_C")
         inv_src = GetNBits(~src.read(), cpu.address_bit_size)
