@@ -1500,7 +1500,7 @@ class Armv7Cpu(Cpu):
         else:
             cpu._bitwise_instruction(lambda x, y: x | y, dest, dest, op1)
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def ORN(cpu, dest, op1, op2=None):
         if op2 is not None:
             cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
