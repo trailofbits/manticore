@@ -1521,9 +1521,9 @@ class Armv7Cpu(Cpu):
         else:
             cpu._bitwise_instruction(lambda x, y: x & y, dest, dest, op1)
 
-    @instruction
-    def TEQ(cpu, *operands):
-        cpu._bitwise_instruction(lambda x, y: x ^ y, None, *operands)
+    @instruction(can_take_denormalized_mod_imm=True)
+    def TEQ(cpu, op1, op2=None):
+        cpu._bitwise_instruction(lambda x, y: x ^ y, None, op1, op2)
         cpu.commit_flags()
 
     @instruction
