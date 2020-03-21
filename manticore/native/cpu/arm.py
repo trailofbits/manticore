@@ -1,4 +1,5 @@
 from functools import wraps
+from inspect import signature as inspect_signature
 import logging
 import struct
 
@@ -10,6 +11,8 @@ from .bitwise import *
 from .register import Register
 from ...core.smtlib import Operators, BitVecConstant, issymbolic
 
+from typing import NamedTuple
+
 logger = logging.getLogger(__name__)
 
 # map different instructions to a single impl here
@@ -20,35 +23,107 @@ def HighBit(n):
     return Bit(n, 31)
 
 
-def instruction(body):
-    @wraps(body)
-    def instruction_implementation(cpu, *args, **kwargs):
-        ret = None
+ARMV7_CPU_ADDRESS_BIT_SIZE = 32
 
-        should_execute = cpu.should_execute_conditional()
 
-        if cpu._at_symbolic_conditional == cpu.instruction.address:
-            cpu._at_symbolic_conditional = None
-            should_execute = True
+def instruction(body=None, *, can_take_denormalized_mod_imm: bool = False):
+    """
+    This decorator is used to annotate Armv7Cpu methods as
+    instruction-implementing methods.
+
+    This centralizes some common ARM-specific logic about CPU flags in one place.
+
+    Additionally, this optionally adds /modified immediate normalization/ logic
+    to the wrapped method.  It turns out that Capstone will sometimes disassemble
+    an ARM instruction that take an immediate constant value as its final operand
+    into /two/ immediate operand values, explicitly representing the immediate
+    constant as an 8-bit unsigned number and a 4-bit rotation value.  The
+    modified immediate normalization logic that this decorator adds will convert
+    the explicitly-represented unsigned number and rotation into a single
+    immediate operand-like value that has the appropriate integer value.
+
+    See https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
+    for some decorator-fu specific to making this work both when used both like
+    `@instruction` and like `@instruction(can_take_denormalized_mod_imm=True)`.
+    """
+    def decorator(body):
+        if can_take_denormalized_mod_imm:
+            # Need to possibly normalize a modified immediate argument that's
+            # been explicitly split by Capstone into (number, rotation)
+            # components.
+
+            body_sig = inspect_signature(body)
+            num_body_params = len(body_sig.parameters) - 1
+            assert num_body_params > 0
+            address_width = ARMV7_CPU_ADDRESS_BIT_SIZE
+
+            def normalize_mod_imm_arg(args):
+                if len(args) == num_body_params + 1:
+                    args = list(args)
+                    rot = args.pop()
+                    assert rot.type == "immediate"
+                    num = args.pop()
+                    assert num.type == "immediate"
+                    imm = ROR(num.imm, rot.imm, address_width)
+                    args.append(_ImmediatePseudoOperand(imm))
+                return args
+
         else:
-            if issymbolic(should_execute):
-                # Let's remember next time we get here we should not do this again
-                cpu._at_symbolic_conditional = cpu.instruction.address
-                i_size = cpu.instruction.size
-                cpu.PC = Operators.ITEBV(
-                    cpu.address_bit_size, should_execute, cpu.PC - i_size, cpu.PC
-                )
-                return
+            # No normalization of a modified immediate required; return what's given.
+            def normalize_mod_imm_arg(args):
+                return args
 
-        if should_execute:
-            ret = body(cpu, *args, **kwargs)
+        @wraps(body)
+        def instruction_implementation(cpu, *args, **kwargs):
+            should_execute = cpu.should_execute_conditional()
 
-        if cpu.should_commit_flags():
-            cpu.commit_flags()
+            if cpu._at_symbolic_conditional == cpu.instruction.address:
+                cpu._at_symbolic_conditional = None
+                should_execute = True
+            else:
+                if issymbolic(should_execute):
+                    # Let's remember next time we get here we should not do this again
+                    cpu._at_symbolic_conditional = cpu.instruction.address
+                    i_size = cpu.instruction.size
+                    cpu.PC = Operators.ITEBV(
+                        cpu.address_bit_size, should_execute, cpu.PC - i_size, cpu.PC
+                    )
+                    return
 
-        return ret
+            if should_execute:
+                ret = body(cpu, *normalize_mod_imm_arg(args), **kwargs)
+            else:
+                ret = None
 
-    return abstract_instruction(instruction_implementation)
+            if cpu.should_commit_flags():
+                cpu.commit_flags()
+
+            return ret
+
+        return abstract_instruction(instruction_implementation)
+
+    if body is not None:
+        return decorator(body)
+    else:
+        return decorator
+
+
+class _ImmediatePseudoOperand(NamedTuple):
+    """
+    This is a hacky class that is used to represent an object that looks close
+    enough to an Armv7Operand to be used in the places where immediate operands
+    are used.
+
+    See the `instruction` decorator for more detail.
+    """
+
+    imm: int
+
+    def read(self, with_carry: bool = False):
+        if with_carry:
+            return self.imm, 0
+        else:
+            return self.imm
 
 
 _TYPE_MAP = {
@@ -482,7 +557,7 @@ class Armv7Cpu(Cpu):
     current instruction + 8 (section A2.3).
     """
 
-    address_bit_size = 32
+    address_bit_size = ARMV7_CPU_ADDRESS_BIT_SIZE
     max_instr_width = 4
     machine = "armv7"
     arch = cs.CS_ARCH_ARM
