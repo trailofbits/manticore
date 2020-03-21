@@ -1526,10 +1526,10 @@ class Armv7Cpu(Cpu):
         cpu._bitwise_instruction(lambda x, y: x ^ y, None, op1, op2)
         cpu.commit_flags()
 
-    @instruction
-    def TST(cpu, Rn, Rm):
-        shifted, carry = Rm.read(with_carry=True)
-        result = Rn.read() & shifted
+    @instruction(can_take_denormalized_mod_imm=True)
+    def TST(cpu, op1, op2):
+        shifted, carry = op2.read(with_carry=True)
+        result = op1.read() & shifted
         cpu.set_flags(N=HighBit(result), Z=(result == 0), C=carry)
 
     @instruction
