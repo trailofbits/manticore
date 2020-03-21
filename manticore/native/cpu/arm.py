@@ -1618,7 +1618,7 @@ class Armv7Cpu(Cpu):
         dest.write(result & Mask(width))
         cpu.set_flags(N=HighBit(result), Z=(result == 0))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def MVN(cpu, dest, op):
         cpu._bitwise_instruction(lambda x: ~x, dest, op)
 
