@@ -346,7 +346,7 @@ class ManticoreBase(Eventful):
         The optional setstate() function is supposed to set the concrete value
         in the child state.
 
-        Parent state is removed from the busy list and tht child states are added
+        Parent state is removed from the busy list and the child states are added
         to the ready list.
 
         """
