@@ -26,7 +26,7 @@ def HighBit(n):
 ARMV7_CPU_ADDRESS_BIT_SIZE = 32
 
 
-def instruction(body=None, *, can_take_denormalized_mod_imm: bool = False):
+def instruction(instruction_body=None, *, can_take_denormalized_mod_imm: bool = False):
     """
     This decorator is used to annotate Armv7Cpu methods as
     instruction-implementing methods.
@@ -130,8 +130,8 @@ def instruction(body=None, *, can_take_denormalized_mod_imm: bool = False):
     # `@instruction` and like `@instruction(can_take_denormalized_mod_imm=True)`.
     # See https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
     # for some decorator-fu.
-    if body is not None:
-        return decorator(body)
+    if instruction_body is not None:
+        return decorator(instruction_body)
     else:
         return decorator
 
