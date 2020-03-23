@@ -34,17 +34,35 @@ def instruction(body=None, *, can_take_denormalized_mod_imm: bool = False):
     This centralizes some common ARM-specific logic about CPU flags in one place.
 
     Additionally, this optionally adds /modified immediate normalization/ logic
-    to the wrapped method.  It turns out that Capstone will sometimes disassemble
-    an ARM instruction that take an immediate constant value as its final operand
-    into /two/ immediate operand values, explicitly representing the immediate
-    constant as an 8-bit unsigned number and a 4-bit rotation value.  The
-    modified immediate normalization logic that this decorator adds will convert
-    the explicitly-represented unsigned number and rotation into a single
-    immediate operand-like value that has the appropriate integer value.
+    to the wrapped method.
 
-    See https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
-    for some decorator-fu specific to making this work both when used both like
-    `@instruction` and like `@instruction(can_take_denormalized_mod_imm=True)`.
+    This decorator works both as `@instruction` and as
+    `@instruction(can_take_denormalized_mod_imm=True)`.
+
+
+    What is this normalization logic?
+
+    First, it helps to understand how ARM encodes immediate constants.
+    In encoded ARM instructions, immediate constant values are encoded as an
+    8-bit unsigned number and a 4-bit rotation value; you can read about the
+    details in the ARM Architecture Reference Manual, ARMv7-A and ARMv7-R
+    edition, section A5.2.3, "Data-processing (immediate)".
+
+    Second, it turns out that the Capstone disassembler we use will sometimes
+    disassemble an ARM immediate constant value into /two/ immediate operand
+    values, explicitly representing the 8-bit unsigned number and two times the
+    4-bit shift.  In particular, it seems that Capstone uses this explicit
+    representation when the modified immediate value is encoded in a
+    non-canonical form.  A blog post has some more explanation around this:
+
+        https://alisdair.mcdiarmid.org/arm-immediate-value-encoding/
+
+    So, finally, the /modified immediate normalization/ logic that this
+    decorator adds converts an explicitly-represented unsigned number and
+    rotation into a single immediate operand-like value (`_ImmediatePseudoOperand`)
+    that has the appropriate integer value, so that the actual implementation
+    of an ARM instruction here can expect only normalized immediates, and not
+    have to concern itself with this quirk of Capstone.
     """
 
     def decorator(body):
@@ -54,18 +72,23 @@ def instruction(body=None, *, can_take_denormalized_mod_imm: bool = False):
             # components.
 
             body_sig = inspect_signature(body)
+            # subtract 1 to account for the first parameter (`cpu`), present in
+            # all instruction methods.
             num_body_params = len(body_sig.parameters) - 1
             assert num_body_params > 0
-            address_width = ARMV7_CPU_ADDRESS_BIT_SIZE
 
             def normalize_mod_imm_arg(args):
                 if len(args) == num_body_params + 1:
+                    # We got 1 more argument than the wrapped function expects;
+                    # this is the case of a modified immediate represented
+                    # explicitly as 2 immediate operands.
+                    # Normalize the two into one!
                     args = list(args)
                     rot = args.pop()
                     assert rot.type == "immediate"
                     num = args.pop()
                     assert num.type == "immediate"
-                    imm = ROR(num.imm, rot.imm, address_width)
+                    imm = ROR(num.imm, rot.imm, ARMV7_CPU_ADDRESS_BIT_SIZE)
                     args.append(_ImmediatePseudoOperand(imm))
                 return args
 
@@ -103,6 +126,10 @@ def instruction(body=None, *, can_take_denormalized_mod_imm: bool = False):
 
         return abstract_instruction(instruction_implementation)
 
+    # Here's where we support using this decorator both like
+    # `@instruction` and like `@instruction(can_take_denormalized_mod_imm=True)`.
+    # See https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
+    # for some decorator-fu.
     if body is not None:
         return decorator(body)
     else:
