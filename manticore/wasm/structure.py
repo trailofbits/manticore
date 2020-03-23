@@ -1667,6 +1667,9 @@ class Activation:
         self.expected_block_depth = expected_block_depth
 
 
+StackItem = typing.Union[Value, Label, Activation]
+
+
 class Stack(Eventful):
     """
     Stores the execution stack & provides helper methods
@@ -1674,9 +1677,7 @@ class Stack(Eventful):
     https://www.w3.org/TR/wasm-core-1/#stack%E2%91%A0
     """
 
-    data: typing.Deque[
-        typing.Union[Value, Label, Activation]
-    ]  #: Underlying datastore for the "stack"
+    data: typing.Deque[StackItem]  #: Underlying datastore for the "stack"
 
     _published_events = {"push_item", "pop_item"}
 
@@ -1696,7 +1697,7 @@ class Stack(Eventful):
         self.data = state["data"]
         super().__setstate__(state)
 
-    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+    def push(self, val: StackItem) -> None:
         """
         Push a value to the stack
 
@@ -1710,7 +1711,7 @@ class Stack(Eventful):
         self.data.append(val)
         self._publish("did_push_item", val, len(self.data))
 
-    def pop(self) -> typing.Union[Value, Label, Activation]:
+    def pop(self) -> StackItem:
         """
         Pop a value from the stack
 
@@ -1722,7 +1723,7 @@ class Stack(Eventful):
         self._publish("did_pop_item", item, len(self.data))
         return item
 
-    def peek(self) -> typing.Optional[typing.Union[Value, Label, Activation]]:
+    def peek(self) -> typing.Optional[StackItem]:
         """
         :return: the item on top of the stack (without removing it)
         """
@@ -1774,7 +1775,7 @@ class Stack(Eventful):
                 return True
         return False
 
-    def get_nth(self, t: type, n: int) -> typing.Optional[typing.Union[Value, Label, Activation]]:
+    def get_nth(self, t: type, n: int) -> typing.Optional[StackItem]:
         """
         :param t: type to look for
         :param n: number to look for
@@ -1810,7 +1811,7 @@ class AtomicStack(Stack):
 
     @dataclass
     class PopItem:
-        val: typing.Union[Value, Label, Activation]
+        val: StackItem
 
     def __init__(self, parent: Stack):
         self.parent = parent
@@ -1842,11 +1843,11 @@ class AtomicStack(Stack):
             elif isinstance(action, AtomicStack.PushItem):
                 self.parent.pop()
 
-    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+    def push(self, val: StackItem) -> None:
         self.actions.append(AtomicStack.PushItem())
         self.parent.push(val)
 
-    def pop(self) -> typing.Union[Value, Label, Activation]:
+    def pop(self) -> StackItem:
         val = self.parent.pop()
         self.actions.append(AtomicStack.PopItem(val))
         return val
