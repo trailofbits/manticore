@@ -2,9 +2,22 @@ import logging
 import pickle
 import sys
 from collections import OrderedDict
+from gzip import GzipFile
+from io import BytesIO
 
+from typing import Any, IO
+
+from .config import get_group
 
 logger = logging.getLogger(__name__)
+
+consts = get_group("core")
+consts.add(
+    "compress_states",
+    default=True,
+    description="Seamlessly compress state files on disk. Reduces space usage and improves performance on slow disks,"
+    "at the cost of some slight [de]compression overhead.",
+)
 
 
 def interval_intersection(min1, max1, min2, max2):
@@ -76,8 +89,13 @@ class StateSerializer:
 
 
 class PickleSerializer(StateSerializer):
+    """
+    A StateSerializer that uses a gzip-based Python pickle format.
+    """
+
     DEFAULT_RECURSION: int = 0x10000  # 1M
     MAX_RECURSION: int = 0x1000000  # 16.7M
+    COMPRESSION_LEVEL: int = 1  # minimal compression, but still gets >10x reduction
 
     def __init__(self):
         super().__init__()
@@ -86,7 +104,12 @@ class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
         logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unknown>")
         try:
-            f.write(pickle_dumps(state))
+            pickle_dump(
+                state,
+                GzipFile(fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL)
+                if consts.compress_states
+                else f,
+            )
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
@@ -99,9 +122,21 @@ class PickleSerializer(StateSerializer):
 
     def deserialize(self, f):
         logger.info("Deserializing %s", f.name if hasattr(f, "name") else "<unknown>")
-        return pickle.load(f)
+        return pickle.load(GzipFile(fileobj=f, mode="rb") if consts.compress_states else f)
 
 
-def pickle_dumps(obj):
-    """Consolidates pickling in one place so we can fix the protocol version"""
-    return pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
+def pickle_dumps(obj: Any) -> bytes:
+    """
+    Serializes an object as a gzipped pickle.
+    """
+    # This consolidates pickling in one place so we can fix the protocol version
+    fp = BytesIO()
+    pickle_dump(obj, fp)
+    return fp.getvalue()
+
+
+def pickle_dump(obj: Any, fp: IO[bytes]) -> None:
+    """
+    Serializes an object as a gzipped pickle to the given file.
+    """
+    return pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
