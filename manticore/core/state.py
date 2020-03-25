@@ -3,6 +3,8 @@ import logging
 
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
+from ..utils.helpers import PickleSerializer
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +62,6 @@ class SerializeState(Concretize):
     """
 
     def setstate(self, state, _value):
-        from ..utils.helpers import PickleSerializer
-
         with open(self.filename, "wb") as statef:
             PickleSerializer().serialize(state, statef)
 

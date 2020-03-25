@@ -43,7 +43,7 @@ consts.add(
 consts.add("dir", default=".", description="Location of where to create workspace directories")
 
 
-class Testcase:
+class WorkspaceTestcase:
     def __init__(self, workspace, prefix):
         self._num = workspace._increment_id()
         self._prefix = prefix
@@ -511,7 +511,7 @@ class ManticoreOutput:
         self._store = Store.fromdescriptor(desc)
 
     def testcase(self, prefix="test"):
-        return Testcase(self, prefix)
+        return WorkspaceTestcase(self, prefix)
 
     @property
     def store(self):
