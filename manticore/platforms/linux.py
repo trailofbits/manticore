@@ -163,14 +163,14 @@ class ProcSelfMaps(File):
         self.file = open(self.filename, mode)
 
     def __getstate__(self):
-        state = {"name": self.name, "mode": self.mode, "closed": self.closed}
+        state = {"name": self.name, "mode": self.mode}
         state["pos"] = None if self.closed else self.tell()
         return state
 
     def __setstate__(self, state):
         name = state["name"]
         mode = state["mode"]
-        closed = state["closed"]
+        closed = state["pos"] == None
         pos = state["pos"]
         try:
             self.file = open(name, mode)
@@ -181,18 +181,6 @@ class ProcSelfMaps(File):
             self.file = None
         if pos is not None:
             self.seek(pos)
-
-    @property
-    def name(self):
-        return self.file.name
-
-    @property
-    def mode(self):
-        return self.file.mode
-
-    @property
-    def closed(self):
-        return self.file.closed
 
     def stat(self):
         try:
@@ -206,24 +194,6 @@ class ProcSelfMaps(File):
         except OSError as e:
             logger.error(f"Invalid Fcntl request: {request}")
             return -e.errno
-
-    def tell(self, *args):
-        return self.file.tell(*args)
-
-    def seek(self, *args):
-        return self.file.seek(*args)
-
-    def write(self, buf):
-        return self.file.write(buf)
-
-    def read(self, *args):
-        return self.file.read(*args)
-
-    def close(self, *args):
-        return self.file.close(*args)
-
-    def fileno(self, *args):
-        return self.file.fileno(*args)
 
 
 class Directory(File):
