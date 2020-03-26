@@ -170,7 +170,7 @@ class ProcSelfMaps(File):
     def __setstate__(self, state):
         name = state["name"]
         mode = state["mode"]
-        closed = state["pos"] == None
+        closed = state["pos"] is None
         pos = state["pos"]
         try:
             self.file = open(name, mode)
