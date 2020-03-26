@@ -55,7 +55,7 @@ jobs:
         if [[ "$TEST_TYPE" == "native" ]]; then
           EXTRAS="dev"
         fi
-        pip install -e .[$EXTRAS]
+        pip install --no-binary keystone-engine -e .[$EXTRAS]
     - name: Install Solidity (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
