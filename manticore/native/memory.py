@@ -805,7 +805,7 @@ class Memory(object, metaclass=ABCMeta):
                 result.append((m.start, m.end, m.perms, 0, m.name))
 
         return sorted(result)
-
+    
     def __str__(self):
         return "\n".join(
             [
@@ -813,6 +813,40 @@ class Memory(object, metaclass=ABCMeta):
                 for start, end, p, offset, name in self.mappings()
             ]
         )
+
+    def proc_self_mappings(self):
+        """
+        Returns a sorted list of all the mappings for this memory for /proc/self/maps.
+
+        :return: a list of mappings.
+        :rtype: list
+        """
+        result = []
+        # TODO: Device inode and private/shared permissions are unsupported
+        device = "00:00"
+        inode = 0
+        private_shared_perms = "-"
+        for m in self.maps:
+            if isinstance(m, AnonMap):
+                if m.name is not None:
+                    result.append((m.start, m.end, m.perms + private_shared_perms, 0, device, inode, "[" + m.name + "]"))
+                else:
+                    result.append((m.start, m.end, m.perms + private_shared_perms, 0, device, inode, ""))
+            elif isinstance(m, FileMap):
+                result.append((m.start, m.end, m.perms + private_shared_perms, m._offset, device, inode, m._filename))
+            else:
+                result.append((m.start, m.end, m.perms + private_shared_perms, 0, device, inode, m.name))
+
+        return sorted(result)
+
+    @property
+    def __proc_self__(self):
+        return "\n".join(
+            [
+                f'{start:016x}-{end:016x} {p.replace(" ", "-"):>4s} {offset:08x} {device} {inode:9} {name or ""}'
+                for start, end, p, offset, device, inode, name in self.proc_self_mappings()
+                ]
+            )
 
     def _maps_in_range(self, start, end):
         """

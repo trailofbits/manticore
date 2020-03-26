@@ -151,6 +151,78 @@ class File:
         """
         return
 
+class ProcSelfMaps(File):
+    def __init__(self, flags, linux):
+        self.filename = "_proc_self_maps_"
+        with open(self.filename, 'w') as mapsFile:
+            print(linux.current.memory.__proc_self__, file = mapsFile)
+        mode = mode_from_flags(flags)
+        if (mode != "rb"):
+            raise EnvironmentError("/proc/self/maps is only supported in read only mode")
+        self.file = open(self.filename, mode)
+
+    def __getstate__(self):
+        state = {"name": self.name, "mode": self.mode, "closed": self.closed}
+        state["pos"] = None if self.closed else self.tell()
+        return state
+
+    def __setstate__(self, state):
+        name = state["name"]
+        mode = state["mode"]
+        closed = state["closed"]
+        pos = state["pos"]
+        try:
+            self.file = open(name, mode)
+            if closed:
+                self.file.close()
+        except IOError:
+            # If the file can't be opened anymore (should not typically happen)
+            self.file = None
+        if pos is not None:
+            self.seek(pos)
+
+    @property
+    def name(self):
+        return self.file.name
+
+    @property
+    def mode(self):
+        return self.file.mode
+
+    @property
+    def closed(self):
+        return self.file.closed
+    
+    def stat(self):
+        try:
+            return os.fstat(self.fileno())
+        except OSError as e:
+            return -e.errno
+
+    def ioctl(self, request, argp):
+        try:
+            return fcntl.fcntl(self, request, argp)
+        except OSError as e:
+            logger.error(f"Invalid Fcntl request: {request}")
+            return -e.errno
+
+    def tell(self, *args):
+        return self.file.tell(*args)
+
+    def seek(self, *args):
+        return self.file.seek(*args)
+
+    def write(self, buf):
+        return self.file.write(buf)
+
+    def read(self, *args):
+        return self.file.read(*args)
+
+    def close(self, *args):
+        return self.file.close(*args)
+
+    def fileno(self, *args):
+        return self.file.fileno(*args)
 
 class Directory(File):
     def __init__(self, path, flags):
@@ -1531,6 +1603,8 @@ class Linux(Platform):
         if os.path.abspath(filename).startswith("/proc/self"):
             if filename == "/proc/self/exe":
                 filename = os.path.abspath(self.program)
+            elif filename == "/proc/self/maps":
+                return ProcSelfMaps(flags, self)
             else:
                 raise EnvironmentError("/proc/self is largely unsupported")
 
