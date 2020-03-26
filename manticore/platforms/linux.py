@@ -1345,7 +1345,7 @@ class Linux(Platform):
             return self._get_fd(fd).seek(signed_offset, whence)
         except FdError as e:
             logger.info(
-                ("LSEEK: Not valid file descriptor on lseek." "Fd not seekable. Returning EBADF")
+                "LSEEK: Not valid file descriptor on lseek. Fd not seekable. Returning EBADF"
             )
             return -e.err
 
@@ -1373,7 +1373,7 @@ class Linux(Platform):
                 # Read the data and put it in memory
                 data = self._get_fd(fd).read(count)
             except FdError as e:
-                logger.info(("READ: Not valid file descriptor on read." " Returning EBADF"))
+                logger.info("READ: Not valid file descriptor on read. Returning EBADF")
                 return -e.err
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
