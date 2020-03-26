@@ -15,7 +15,7 @@ echo "Downloading spec tests"
 wget -nc -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/v1.1.zip
 
 echo "Unzipping spec tests"
-timeout 3m bash -c "yes | unzip -q -j spec.zip 'spec-*/test/core/*' -d ."
+unzip -q -j spec.zip 'spec-*/test/core/*' -d .
 rm run.py README.md 
 rm spec.zip
 
