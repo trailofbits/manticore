@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 # pesimistic: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group("evm")
-
+DEFAULT_FORK='istanbul'
 
 def globalsha3(data):
     if issymbolic(data):
@@ -96,7 +96,6 @@ TT256M1 = 2 ** 256 - 1
 MASK160 = 2 ** 160 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
-DEFAULT_FORK = "constantinople"
 
 # FIXME. We should just use a Transaction() for this
 PendingTransaction = namedtuple(
@@ -648,7 +647,7 @@ class EVM(Eventful):
             return type(self)(self._pre, pos)
 
     def __init__(
-        self, constraints, address, data, caller, value, bytecode, world=None, gas=210000, **kwargs
+        self, constraints, address, data, caller, value, bytecode, world=None, gas=210000, fork=DEFAULT_FORK, **kwargs
     ):
         """
         Builds a Ethereum Virtual Machine instance
@@ -741,6 +740,7 @@ class EVM(Eventful):
         # self.invalid = set()
 
         # Machine state
+        self.evmfork = fork
         self._pc = 0
         self.stack = []
         # We maintain gas as a 512 bits internally to avoid overflows
@@ -807,6 +807,7 @@ class EVM(Eventful):
         state["_valid_jumpdests"] = self._valid_jumpdests
         state["_check_jumpdest"] = self._check_jumpdest
         state["_return_data"] = self._return_data
+        state["evmfork"] = self.evmfork
         return state
 
     def __setstate__(self, state):
@@ -832,6 +833,7 @@ class EVM(Eventful):
         self._valid_jumpdests = state["_valid_jumpdests"]
         self._check_jumpdest = state["_check_jumpdest"]
         self._return_data = state["_return_data"]
+        self.evmfork = state["evmfork"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -927,7 +929,7 @@ class EVM(Eventful):
             while True:
                 yield 0
 
-        instruction = EVMAsm.disassemble_one(getcode(), pc=pc, fork=DEFAULT_FORK)
+        instruction = EVMAsm.disassemble_one(getcode(), pc=pc, fork=self.evmfork)
         _decoding_cache[pc] = instruction
         return instruction
 
@@ -1309,7 +1311,10 @@ class EVM(Eventful):
                 setstate=setstate,
                 policy=ex.policy,
             )
-
+        except NotEnoughGas:
+            #If tried to pay gas and failed then consume all of it
+            self._gas = 0
+            raise
         except StartTx:
             raise
         except EndTx as ex:
@@ -1596,7 +1601,7 @@ class EVM(Eventful):
         return self.address
 
     def BALANCE_gas(self, account):
-        return 380  # BALANCE_SUPPLEMENTAL_GAS
+        return 700  # BALANCE_SUPPLEMENTAL_GAS
 
     def BALANCE(self, account):
         """Get balance of the given account"""
@@ -1893,7 +1898,6 @@ class EVM(Eventful):
             Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
             Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD),
         )
-
         return gascost
 
     def SSTORE(self, offset, value):
@@ -2231,6 +2235,8 @@ class EVMWorld(Platform):
         "symbolic_function",
     }
 
+#    def _start_block(self, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=None):
+
     def __init__(
         self,
         constraints,
@@ -2240,6 +2246,7 @@ class EVMWorld(Platform):
         difficulty=0,
         gaslimit=0,
         coinbase=0,
+        fork=DEFAULT_FORK,
         **kwargs,
     ):
         super().__init__(path="NOPATH", **kwargs)
@@ -2266,6 +2273,7 @@ class EVMWorld(Platform):
         self._difficulty = difficulty
         self._gaslimit = gaslimit
         self._coinbase = coinbase
+        self._fork = fork
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -2281,6 +2289,7 @@ class EVMWorld(Platform):
         state["_difficulty"] = self._difficulty
         state["_gaslimit"] = self._gaslimit
         state["_coinbase"] = self._coinbase
+        state["_fork"] = self._fork
         return state
 
     def __setstate__(self, state):
@@ -2297,6 +2306,7 @@ class EVMWorld(Platform):
         self._difficulty = state["_difficulty"]
         self._gaslimit = state["_gaslimit"]
         self._coinbase = state["_coinbase"]
+        self._fork = state["_fork"]
 
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
@@ -2372,12 +2382,25 @@ class EVMWorld(Platform):
         if self.current_vm:
             self.current_vm.constraints = constraints
 
+    @property
+    def evmfork(self):
+        return self._fork
+
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
         assert price is not None
         if self.depth > 0:
             origin = self.tx_origin()
         else:
             origin = caller
+            # Pay full gas budget in advance
+            #self.send_funds(caller, coinbase, price*gas)
+            self.sub_from_balance(caller, price * gas)
+
+        # Send the tx funds
+        if sort in {"CALLCODE", "DELEGATECALL"} and value != 0:
+            raise ManticoreException(f"{sort} can not send value")
+        self.send_funds(caller, address, value)
+
 
         # If not a human tx, reset returndata
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
@@ -2401,6 +2424,23 @@ class EVMWorld(Platform):
             address = self.current_transaction.address
             caller = self.current_transaction.caller
             value = self.current_transaction.value
+        GTXCREATE = 21000  # Paid by all contract creating transactions after the Homestead transition.
+        GTXDATAZERO = 4  # Paid for every zero byte of data or code for a transaction.
+        GTXDATANONZERO = 68  # Paid for every non - zero byte of data or code for a transaction.
+        GTRANSACTION = 21000 # Paid for every transaction
+
+        tx_fee = 0
+        for c in data:
+            tx_fee += Operators.ITEBV(256, c==0, GTXDATAZERO, GTXDATANONZERO)
+        for c in bytecode:
+            tx_fee += Operators.ITEBV(256, c==0, GTXDATAZERO, GTXDATANONZERO)
+
+        if tx.sort == "CREATE":
+            tx_fee += GTXCREATE
+        else:
+            tx_fee += GTRANSACTION  # Simple transaction fee
+
+        gas -= Operators.ITEBV(256, Operators.ULT(gas, tx_fee), gas, tx_fee)
 
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
 
@@ -2423,22 +2463,27 @@ class EVMWorld(Platform):
             self.current_vm._return_data = data
 
         if rollback:
+            print ("IS ROLLBACK!", tx.sort, result, vm.gas)
             self._set_storage(vm.address, account_storage)
             self._logs = logs
+            # Return the transaction value
             self.send_funds(tx.address, tx.caller, tx.value)
         else:
             self._deleted_accounts = deleted_accounts
-            # FIXME: BUG: a CREATE can be successful and still return an empty contract :shrug:
-            if not issymbolic(tx.caller) and (
-                tx.sort == "CREATE" or not self._world_state[tx.caller]["code"]
-            ):
-                # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
-                self.increase_nonce(tx.caller)
+        self.increase_nonce(tx.caller)
 
         if tx.is_human:
             for deleted_account in self._deleted_accounts:
                 if deleted_account in self._world_state:
                     del self._world_state[deleted_account]
+            if not rollback:
+                remaining_gas = vm.gas
+                print ("Refunding", tx.sort, result, remaining_gas*tx.price)
+                self.add_to_balance(tx.caller, remaining_gas*tx.price)
+        else:
+            #Refund unused gas to caller if
+            self.current_vm._gas += vm.gas
+
         tx.set_result(result, data)
         self._transactions.append(tx)
 
@@ -2642,8 +2687,10 @@ class EVMWorld(Platform):
         return self._world_state[address]["balance"]
 
     def add_to_balance(self, address, value):
-        assert address in self._world_state
         self._world_state[address]["balance"] += value
+
+    def sub_from_balance(self, address, value):
+        self._world_state[address]["balance"] -= value
 
     def send_funds(self, sender, recipient, value):
         self._world_state[sender]["balance"] -= value
@@ -2763,7 +2810,6 @@ class EVMWorld(Platform):
         return new_address
 
     def execute(self):
-
         self._process_pending_transaction()
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)
@@ -2993,8 +3039,17 @@ class EVMWorld(Platform):
 
         # Fork on enough funds
         if not failed:
-            src_balance = self.get_balance(caller)
-            enough_balance = Operators.UGE(src_balance, value)
+            aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
+            aux_value = Operators.ZEXTEND(value, 512)
+            aux_price = Operators.ZEXTEND(price, 512)
+            aux_gas = Operators.ZEXTEND(gas, 512)
+            fee = aux_price * aux_gas
+            # Iff a human tx debit the fee
+            if self.depth ==0:
+                enough_balance = Operators.UGE(aux_src_balance, aux_value + fee)
+            else:
+                enough_balance = Operators.UGE(aux_src_balance, aux_value)
+
             enough_balance_solutions = Z3Solver.instance().get_all_values(
                 self._constraints, enough_balance
             )
@@ -3009,10 +3064,6 @@ class EVMWorld(Platform):
             failed = set(enough_balance_solutions) == {False}
         # processed
         self._pending_transaction = None
-        # Here we have enough funds and room in the callstack
-        # CALLCODE and  DELEGATECALL do not send funds
-        if sort in ("CALL", "CREATE"):
-            self.send_funds(caller, address, value)
 
         self._open_transaction(sort, address, price, data, caller, value, gas=gas)
 

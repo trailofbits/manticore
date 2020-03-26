@@ -27,8 +27,9 @@ from binascii import unhexlify
 import hashlib
 import pyevmasm as EVMAsm
 
-DEFAULT_TEST_FORK = "Istanbul"
-DISASSEMBLE_FORK = DEFAULT_TEST_FORK.lower()
+DISASSEMBLE_FORK = "byzantium"
+
+DEFAULT_TEST_FORK = "Byzantium"
 
 test_fork = DEFAULT_TEST_FORK
 
@@ -51,6 +52,7 @@ def gen_test(testcase, filename, symbolic):
         output += generate_post_output(testcase)
 
     return output
+
 
 def generate_pre_output(testcase, filename, symbolic):
     testname = (os.path.split(filename)[1].replace("-", "_")).split(".")[0]
@@ -107,10 +109,6 @@ def generate_pre_output(testcase, filename, symbolic):
 """
 
     def format_var(name, val):
-        if name == 'coinbase':
-            return f"""
-        {name} = {hex(val)}"""
-
         return f"""
         {name} = {val}"""
 
@@ -196,7 +194,6 @@ def generate_pre_output(testcase, filename, symbolic):
             "s",
             "v",
         }
-
         # pip install py-evm
         from eth.vm.forks.frontier.transactions import FrontierTransaction
         t = FrontierTransaction(nonce=nonce,
@@ -241,7 +238,7 @@ def generate_pre_output(testcase, filename, symbolic):
 
         output += f"""
         # open a fake tx, no funds send
-        world.start_transaction({'"CREATE"' if address == 0 else '"CALL"'}, address, price=price, data=data, caller=caller, value=value, gas=gas)
+        world.start_transaction("CREATE" if address == 0 else "CALL", address, price=price, data=data, caller=caller, value=value, gas=gas)
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
@@ -259,17 +256,9 @@ def generate_pre_output(testcase, filename, symbolic):
 
 
 def generate_post_output(testcase):
-    global coinbase
-
-    blocks = [x for x in testcase['blocks'] if 'blockHeader' in x]
-    coinbase = blocks[0]['blockHeader']["coinbase"]
-
-
     output = ""
 
     for address, account in testcase["postState"].items():
-        if address == coinbase:
-            continue
         assert account.keys() == {"code", "nonce", "balance", "storage"}
 
         account_address = int(address, 0)
@@ -281,7 +270,9 @@ def generate_post_output(testcase):
         # Add post checks for account {hex(account_address)}
         # check nonce, balance, code
         self.assertEqual(solve(world.get_nonce({hex(account_address)})), {account_nonce})
-        self.assertEqual(solve(world.get_balance({hex(account_address)})), {account_balance})
+        # Disable coinbase checks for now.
+        if solve(world.block_coinbase()) != {hex(account_address)}:
+            self.assertEqual(solve(world.get_balance({hex(account_address)})), {account_balance})
         self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))"""
 
     if account["storage"]:
@@ -313,7 +304,6 @@ if __name__ == "__main__":
 
     if len(sys.argv) >= 3:
         test_fork = sys.argv[2]
-
 
     test_dir = os.path.join(sys.argv[1] + "_" + test_fork, 'BlockchainTests')
 

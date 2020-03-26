@@ -54,15 +54,16 @@ setup(
         # evm dependencies
         "pysha3",
         "prettytable",
-        "pyevmasm==0.2.0",
         "rlp",
         "ply",
         "crytic-compile>=0.1.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
+        "pyevmasm",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
+    dependency_links=['git+https://github.com/crytic/pyevmasm.git'],
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
 )
