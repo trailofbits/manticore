@@ -67,6 +67,7 @@ jobs:
         brew install bash
         brew tap ethereum/ethereum
         brew install solidity@4
+        brew install wabt
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
