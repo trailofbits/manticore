@@ -805,7 +805,7 @@ class Memory(object, metaclass=ABCMeta):
                 result.append((m.start, m.end, m.perms, 0, m.name))
 
         return sorted(result)
-    
+
     def __str__(self):
         return "\n".join(
             [
@@ -829,13 +829,37 @@ class Memory(object, metaclass=ABCMeta):
         for m in self.maps:
             if isinstance(m, AnonMap):
                 if m.name is not None:
-                    result.append((m.start, m.end, m.perms + private_shared_perms, 0, device, inode, "[" + m.name + "]"))
+                    result.append(
+                        (
+                            m.start,
+                            m.end,
+                            m.perms + private_shared_perms,
+                            0,
+                            device,
+                            inode,
+                            "[" + m.name + "]",
+                        )
+                    )
                 else:
-                    result.append((m.start, m.end, m.perms + private_shared_perms, 0, device, inode, ""))
+                    result.append(
+                        (m.start, m.end, m.perms + private_shared_perms, 0, device, inode, "")
+                    )
             elif isinstance(m, FileMap):
-                result.append((m.start, m.end, m.perms + private_shared_perms, m._offset, device, inode, m._filename))
+                result.append(
+                    (
+                        m.start,
+                        m.end,
+                        m.perms + private_shared_perms,
+                        m._offset,
+                        device,
+                        inode,
+                        m._filename,
+                    )
+                )
             else:
-                result.append((m.start, m.end, m.perms + private_shared_perms, 0, device, inode, m.name))
+                result.append(
+                    (m.start, m.end, m.perms + private_shared_perms, 0, device, inode, m.name)
+                )
 
         return sorted(result)
 
@@ -845,8 +869,8 @@ class Memory(object, metaclass=ABCMeta):
             [
                 f'{start:016x}-{end:016x} {p.replace(" ", "-"):>4s} {offset:08x} {device} {inode:9} {name or ""}'
                 for start, end, p, offset, device, inode, name in self.proc_self_mappings()
-                ]
-            )
+            ]
+        )
 
     def _maps_in_range(self, start, end):
         """

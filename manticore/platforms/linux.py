@@ -151,13 +151,14 @@ class File:
         """
         return
 
+
 class ProcSelfMaps(File):
     def __init__(self, flags, linux):
         self.filename = "_proc_self_maps_"
-        with open(self.filename, 'w') as mapsFile:
-            print(linux.current.memory.__proc_self__, file = mapsFile)
+        with open(self.filename, "w") as mapsFile:
+            print(linux.current.memory.__proc_self__, file=mapsFile)
         mode = mode_from_flags(flags)
-        if (mode != "rb"):
+        if mode != "rb":
             raise EnvironmentError("/proc/self/maps is only supported in read only mode")
         self.file = open(self.filename, mode)
 
@@ -192,7 +193,7 @@ class ProcSelfMaps(File):
     @property
     def closed(self):
         return self.file.closed
-    
+
     def stat(self):
         try:
             return os.fstat(self.fileno())
@@ -223,6 +224,7 @@ class ProcSelfMaps(File):
 
     def fileno(self, *args):
         return self.file.fileno(*args)
+
 
 class Directory(File):
     def __init__(self, path, flags):
