@@ -176,8 +176,9 @@ jobs:
             # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
             # see https://github.com/trailofbits/manticore/issues/1166
             # if [ "$(ls -l output/*tx | wc -l)" != "41" ]; then
-            if [ "$(ls -l output/*tx | wc -l)" != "34" ]; then
-                echo "Truffle test failed" `ls  -l output/*tx | wc -l` "!= 34"
+            count=$(find output/ -name '*tx' -type f | wc -l)
+            if [ "$count" -ne 34 ]; then
+                echo "Truffle test failed! $count != 34"
                 return 1
             fi
             echo "Truffle test succeded"
