@@ -1349,6 +1349,18 @@ class Linux(Platform):
             )
             return -e.err
 
+    def sys_llseek(self, fd, offset_high, offset_low, resultp, whence):
+        signed_offset_high = self._to_signed_dword(offset_high)
+        signed_offset_low = self._to_signed_dword(offset_low)
+        signed_offset = (signed_offset_high << 32) | signed_offset_low
+        try:
+            return self._get_fd(fd).seek(signed_offset, whence)
+        except FdError as e:
+            logger.info(
+                "LSEEK: Not valid file descriptor on llseek. Fd not seekable. Returning EBADF"
+            )
+            return -e.err
+
     def sys_read(self, fd, buf, count):
         data: bytes = bytes()
         if count != 0:
