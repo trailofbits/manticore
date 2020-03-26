@@ -1338,7 +1338,6 @@ class Linux(Platform):
                        SEEK_END: The file offset is set to the size of the file plus offset bytes.
 
         :return: offset from file beginning, or EBADF (fd is not a valid file descriptor or is not open)
-
         """
         signed_offset = self._to_signed_dword(offset)
         try:
@@ -1350,6 +1349,28 @@ class Linux(Platform):
             return -e.err
 
     def sys_llseek(self, fd, offset_high, offset_low, resultp, whence):
+        """
+        _llseek - reposition read/write file offset
+
+        The  _llseek()  system  call  repositions  the  offset  of  the open
+        file description associated with the file descriptor fd to
+        (offset_high<<32) | offset_low bytes relative to the beginning of the
+        file, the current  file offset,  or the end of the file, depending on
+        whether whence is SEEK_SET, SEEK_CUR, or SEEK_END, respectively.  It
+        returns the resulting file position in the argument result.
+
+        This system call exists on various 32-bit platforms to support seeking
+        to large file offsets.
+
+        :param fd: a valid file descriptor
+        :param offset_high: the high 32 bits of the byte offset
+        :param offset_low: the low 32 bits of the byte offset
+        :param whence: SEEK_SET: The file offset is set to offset bytes.
+                       SEEK_CUR: The file offset is set to its current location plus offset bytes.
+                       SEEK_END: The file offset is set to the size of the file plus offset bytes.
+
+        :return: offset from file beginning, or EBADF (fd is not a valid file descriptor or is not open)
+        """
         signed_offset_high = self._to_signed_dword(offset_high)
         signed_offset_low = self._to_signed_dword(offset_low)
         signed_offset = (signed_offset_high << 32) | signed_offset_low
