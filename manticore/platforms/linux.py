@@ -1375,7 +1375,7 @@ class Linux(Platform):
         signed_offset = (signed_offset_high << 32) | signed_offset_low
         try:
             pos = self._get_fd(fd).seek(signed_offset, whence)
-            posbuf = struct.pack("q", pos) # `loff_t * resultp` in linux, which is `long long`
+            posbuf = struct.pack("q", pos)  # `loff_t * resultp` in linux, which is `long long`
             self.current.write_bytes(resultp, posbuf)
             return 0
         except FdError as e:
