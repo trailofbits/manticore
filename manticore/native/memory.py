@@ -817,12 +817,17 @@ class Memory(object, metaclass=ABCMeta):
     def proc_self_mappings(self):
         """
         Returns a sorted list of all the mappings for this memory for /proc/self/maps.
+        Device, inode, and private/shared permissions are unsupported.
+        Stack is the only memory section supported in the memory map (heap, vdso, etc.)
+        are unsupported.
+        Pathname is substituted by filename
 
         :return: a list of mappings.
         :rtype: list
         """
         result = []
-        # TODO: Device inode and private/shared permissions are unsupported
+        # TODO: Device, inode, and private/shared permissions are unsupported
+        # TODO: Add complete paths
         device = "00:00"
         inode = 0
         private_shared_perms = "-"

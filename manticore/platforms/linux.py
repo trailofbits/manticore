@@ -8,6 +8,7 @@ import socket
 import struct
 import time
 import resource
+import tempfile
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -154,46 +155,13 @@ class File:
 
 class ProcSelfMaps(File):
     def __init__(self, flags, linux):
-        self.filename = "_proc_self_maps_"
-        with open(self.filename, "w") as mapsFile:
-            print(linux.current.memory.__proc_self__, file=mapsFile)
+        self.file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+        self.file.write(linux.current.memory.__proc_self__)
+        self.file.close()
         mode = mode_from_flags(flags)
         if mode != "rb":
             raise EnvironmentError("/proc/self/maps is only supported in read only mode")
-        self.file = open(self.filename, mode)
-
-    def __getstate__(self):
-        state = {"name": self.name, "mode": self.mode}
-        state["pos"] = None if self.closed else self.tell()
-        return state
-
-    def __setstate__(self, state):
-        name = state["name"]
-        mode = state["mode"]
-        closed = state["pos"] is None
-        pos = state["pos"]
-        try:
-            self.file = open(name, mode)
-            if closed:
-                self.file.close()
-        except IOError:
-            # If the file can't be opened anymore (should not typically happen)
-            self.file = None
-        if pos is not None:
-            self.seek(pos)
-
-    def stat(self):
-        try:
-            return os.fstat(self.fileno())
-        except OSError as e:
-            return -e.errno
-
-    def ioctl(self, request, argp):
-        try:
-            return fcntl.fcntl(self, request, argp)
-        except OSError as e:
-            logger.error(f"Invalid Fcntl request: {request}")
-            return -e.errno
+        self.file = open(self.file.name, mode)
 
 
 class Directory(File):
