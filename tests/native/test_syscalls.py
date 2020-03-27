@@ -1,5 +1,6 @@
 import random
 import socket
+import tempfile
 import unittest
 
 import os
@@ -10,21 +11,24 @@ from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.platform import SyscallNotImplemented
 
 
-def get_random_filename():
-    return f"/tmp/mcore_test_{int(random.getrandbits(32))}"
-
-
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "basic_linux_amd64")
 
     def setUp(self):
+        self.tmp_dir = tempfile.TemporaryDirectory(prefix='mcore_test_')
         self.linux = linux.SLinux(self.BIN_PATH)
 
     def tearDown(self):
         for f in self.linux.files:
             if isinstance(f, linux.File):
                 f.close()
+        self.tmp_dir.cleanup()
+
+    def get_path(self, basename: str) -> str:
+        "Returns an absolute path with the given basename"
+        return f"{self.tmp_dir.name}/{basename}"
+
 
     def test_time(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
@@ -50,16 +54,16 @@ class LinuxTest(unittest.TestCase):
         self.assertGreater(time_2_final, time_2_0, "Time did not increase!")
 
     def test_directories(self):
-        tmpdir = get_random_filename()
+        dname = self.get_path("test_directories")
 
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
-        self.linux.current.write_string(0x1100, tmpdir)
+        self.linux.current.write_string(0x1100, dname)
 
-        self.assertFalse(os.path.exists(tmpdir))
+        self.assertFalse(os.path.exists(dname))
         self.linux.sys_mkdir(0x1100, mode=0o777)
-        self.assertTrue(os.path.exists(tmpdir))
+        self.assertTrue(os.path.exists(dname))
         self.linux.sys_rmdir(0x1100)
-        self.assertFalse(os.path.exists(tmpdir))
+        self.assertFalse(os.path.exists(dname))
 
     def test_pipe(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
@@ -79,7 +83,7 @@ class LinuxTest(unittest.TestCase):
         )
 
     def test_ftruncate(self):
-        fname = get_random_filename()
+        fname = self.get_path("test_ftruncate")
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.current.write_string(0x1100, fname)
 
@@ -99,8 +103,8 @@ class LinuxTest(unittest.TestCase):
         )
 
     def test_link(self):
-        fname = get_random_filename()
-        newname = get_random_filename()
+        fname = self.get_path("test_link_from")
+        newname = self.get_path("test_link_to")
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.current.write_string(0x1100, fname)
         self.linux.current.write_string(0x1180, newname)
@@ -126,7 +130,7 @@ class LinuxTest(unittest.TestCase):
         self.assertFalse(os.path.exists(newname))
 
     def test_chmod(self):
-        fname = get_random_filename()
+        fname = self.get_path("test_chmod")
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.current.write_string(0x1100, fname)
 
