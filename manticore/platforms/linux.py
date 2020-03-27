@@ -238,10 +238,7 @@ class SymbolicFile(File):
 
         if symbols_cnt > max_size:
             logger.warning(
-                (
-                    "Found more wildcards in the file than free ",
-                    "symbolic values allowed (%d > %d)",
-                ),
+                "Found more wildcards in the file than free symbolic values allowed (%d > %d)",
                 symbols_cnt,
                 max_size,
             )
