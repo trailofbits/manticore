@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
+from dataclasses import dataclass, field
 from ..core.smtlib import (
     Operators,
     ConstraintSet,
@@ -534,6 +535,30 @@ class StubCPU:
         return None
 
 
+@dataclass
+class ProcSelfMapInfo:
+    start: int
+    end: int
+    rwx_perms: str
+    shared_perms: str = "-"
+    offset: int = 0
+    device: str = "00:00"
+    inode: int = 0
+    pathname: str = ""
+
+    perms: str = field(init=False)
+    address: str = field(init=False)
+
+    def __post_init__(self):
+        self.perms = self.rwx_perms.replace(" ", "-") + self.shared_perms
+        if self.pathname == "stack":
+            self.pathname = "[" + self.pathname + "]"
+        self.address = f"{self.start:016x}-{self.end:016x}"
+
+    def __str__(self):
+        return f"{self.address} {self.perms:>4s} {self.offset:08x} {self.device} {self.inode:9} {self.pathname}"
+
+
 class Memory(object, metaclass=ABCMeta):
     """
     The memory manager.
@@ -828,54 +853,28 @@ class Memory(object, metaclass=ABCMeta):
         result = []
         # TODO: Device, inode, and private/shared permissions are unsupported
         # TODO: Add complete paths
-        device = "00:00"
-        inode = 0
-        private_shared_perms = "-"
         for m in self.maps:
             if isinstance(m, AnonMap):
                 if m.name is not None:
                     result.append(
-                        (
-                            m.start,
-                            m.end,
-                            m.perms + private_shared_perms,
-                            0,
-                            device,
-                            inode,
-                            "[" + m.name + "]",
-                        )
+                        ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms, pathname=m.name)
                     )
                 else:
-                    result.append(
-                        (m.start, m.end, m.perms + private_shared_perms, 0, device, inode, "")
-                    )
+                    result.append(ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms))
             elif isinstance(m, FileMap):
                 result.append(
-                    (
-                        m.start,
-                        m.end,
-                        m.perms + private_shared_perms,
-                        m._offset,
-                        device,
-                        inode,
-                        m._filename,
+                    ProcSelfMapInfo(
+                        m.start, m.end, rwx_perms=m.perms, offset=m._offset, pathname=m._filename
                     )
                 )
             else:
-                result.append(
-                    (m.start, m.end, m.perms + private_shared_perms, 0, device, inode, m.name)
-                )
-
-        return sorted(result)
+                result.append(ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms, pathname=m.name))
+        return sorted(result, key=lambda m: m.start)
 
     @property
     def __proc_self__(self):
-        return "\n".join(
-            [
-                f'{start:016x}-{end:016x} {p.replace(" ", "-"):>4s} {offset:08x} {device} {inode:9} {name or ""}'
-                for start, end, p, offset, device, inode, name in self.proc_self_mappings()
-            ]
-        )
+        self.proc_self_mappings()
+        return "\n".join([f"{m}" for m in self.proc_self_mappings()])
 
     def _maps_in_range(self, start, end):
         """
