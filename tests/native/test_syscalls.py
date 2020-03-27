@@ -27,7 +27,7 @@ class LinuxTest(unittest.TestCase):
                 f.close()
 
     def test_time(self):
-        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
 
         time_0 = self.linux.sys_time(0)
         self.linux.sys_clock_gettime(1, 0x1100)
@@ -52,7 +52,7 @@ class LinuxTest(unittest.TestCase):
     def test_directories(self):
         tmpdir = get_random_filename()
 
-        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.current.write_string(0x1100, tmpdir)
 
         self.assertFalse(os.path.exists(tmpdir))
@@ -62,7 +62,7 @@ class LinuxTest(unittest.TestCase):
         self.assertFalse(os.path.exists(tmpdir))
 
     def test_pipe(self):
-        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.sys_pipe(0x1100)
 
         fd1 = self.linux.current.read_int(0x1100, 8 * 4)
@@ -80,7 +80,7 @@ class LinuxTest(unittest.TestCase):
 
     def test_ftruncate(self):
         fname = get_random_filename()
-        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.current.write_string(0x1100, fname)
 
         fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
@@ -101,7 +101,7 @@ class LinuxTest(unittest.TestCase):
     def test_link(self):
         fname = get_random_filename()
         newname = get_random_filename()
-        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.current.write_string(0x1100, fname)
         self.linux.current.write_string(0x1180, newname)
 
@@ -127,7 +127,7 @@ class LinuxTest(unittest.TestCase):
 
     def test_chmod(self):
         fname = get_random_filename()
-        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.current.write_string(0x1100, fname)
 
         print("Creating", fname)
@@ -143,7 +143,7 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(-errno.EPERM, self.linux.sys_chown(0x1100, 0, 0))
 
     def test_recvfrom(self):
-        self.linux.current.memory.mmap(0x1000, 0x1000, "rw ")
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
 
         sock_fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
         self.assertEqual(sock_fd, 3)
