@@ -1,4 +1,5 @@
 import random
+import struct
 import socket
 import tempfile
 import unittest
@@ -201,6 +202,7 @@ class LinuxTest(unittest.TestCase):
 
         fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
         buf = b"1" * 1000
+        self.assertEqual(len(buf), 1000)
         self.linux.current.write_bytes(0x1200, buf)
         self.linux.sys_write(fd, 0x1200, len(buf))
 
@@ -214,17 +216,106 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(100, pos)
 
         pos = self.linux.sys_lseek(fd, 0, os.SEEK_END)
-        self.assertEqual(1000, pos)
+        self.assertEqual(len(buf), pos)
 
         pos = self.linux.sys_lseek(fd, -50, os.SEEK_END)
-        self.assertEqual(950, pos)
+        self.assertEqual(len(buf) - 50, pos)
 
         pos = self.linux.sys_lseek(fd, 50, os.SEEK_END)
-        self.assertEqual(1050, pos)
+        self.assertEqual(len(buf) + 50, pos)
 
         self.linux.sys_close(fd)
         pos = self.linux.sys_lseek(fd, 0, os.SEEK_SET)
         self.assertEqual(-errno.EBADF, pos)
+
+    @unittest.expectedFailure
+    def test_lseek_end_broken(self):
+        fname = self.get_path("test_lseek")
+        assert len(fname) < 0x100
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        self.linux.current.write_string(0x1100, fname)
+
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+        buf = b"1" * 1000
+        self.assertEqual(len(buf), 1000)
+        self.linux.current.write_bytes(0x1200, buf)
+        self.linux.sys_write(fd, 0x1200, len(buf))
+
+        # FIXME: currently broken -- raises a Python OSError invalid argument exception!
+        pos = self.linux.sys_lseek(fd, -2 * len(buf), os.SEEK_END)
+        self.assertEqual(-errno.EBADF, pos)
+
+    def test_llseek(self):
+        fname = self.get_path("test_llseek")
+        assert len(fname) < 0x100
+        # map some memory we can play with
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        # open a file descriptor for `fname`
+        self.linux.current.write_string(0x1100, fname)
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+        # write some bogus data to the file
+        buf = b"1" * 1000
+        self.assertEqual(len(buf), 1000)
+        self.linux.current.write_bytes(0x1200, buf)
+        self.linux.sys_write(fd, 0x1200, len(buf))
+
+        # set up a location & some helpers for the result pointer for `sys_llseek`
+        result_struct = struct.Struct("q")
+        resultp = 0x1900
+        result_size = result_struct.size
+
+        def read_resultp():
+            "reads the `loff_t` value -- a long long -- from the result pointer"
+            data = self.linux.current.read_bytes(resultp, result_struct.size)
+            return result_struct.unpack(b"".join(data))[0]
+
+        # now actually test some things about sys_llseek
+        res = self.linux.sys_llseek(fd, 0, 100, resultp, os.SEEK_SET)
+        self.assertEqual(res, 0)
+        self.assertEqual(read_resultp(), 100)
+
+        res = self.linux.sys_llseek(fd, 1, 0, resultp, os.SEEK_CUR)
+        self.assertEqual(res, 0)
+        self.assertEqual(read_resultp(), 4294967396)
+
+        res = self.linux.sys_llseek(fd, 0, -1000, resultp, os.SEEK_CUR)
+        self.assertEqual(res, 0)
+        self.assertEqual(read_resultp(), 4294966396)
+
+        res = self.linux.sys_llseek(fd, 0, 0, resultp, os.SEEK_END)
+        self.assertEqual(res, 0)
+        self.assertEqual(read_resultp(), len(buf))
+
+        res = self.linux.sys_llseek(fd, 0, 50, resultp, os.SEEK_END)
+        self.assertEqual(res, 0)
+        self.assertEqual(read_resultp(), len(buf) + 50)
+
+        res = self.linux.sys_llseek(fd, 0, -50, resultp, os.SEEK_END)
+        self.assertEqual(res, 0)
+        self.assertEqual(read_resultp(), len(buf) - 50)
+
+        self.linux.sys_close(fd)
+        res = self.linux.sys_llseek(fd, 0, 0, resultp, os.SEEK_SET)
+        self.assertEqual(-errno.EBADF, res)
+
+    @unittest.expectedFailure
+    def test_llseek_end_broken(self):
+        fname = self.get_path("test_llseek_end_broken")
+        assert len(fname) < 0x100
+        # map some memory we can play with
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        # open a file descriptor for `fname`
+        self.linux.current.write_string(0x1100, fname)
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+        # write some bogus data to the file
+        buf = b"1" * 1000
+        self.assertEqual(len(buf), 1000)
+        self.linux.current.write_bytes(0x1200, buf)
+        self.linux.sys_write(fd, 0x1200, len(buf))
+
+        # FIXME: currently broken -- raises a Python OSError invalid argument exception!
+        res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
+        self.assertTrue(res < 0)
 
     def test_unimplemented(self):
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
