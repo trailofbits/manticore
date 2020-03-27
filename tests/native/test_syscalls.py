@@ -194,6 +194,39 @@ class LinuxTest(unittest.TestCase):
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 
+    def test_lseek(self):
+        fname = self.get_path("test_lseek")
+        assert len(fname) < 0x100
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        self.linux.current.write_string(0x1100, fname)
+
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+        buf = b"1" * 1000
+        self.linux.current.write_bytes(0x1200, buf)
+        self.linux.sys_write(fd, 0x1200, len(buf))
+
+        pos = self.linux.sys_lseek(fd, 100, os.SEEK_SET)
+        self.assertEqual(100, pos)
+
+        pos = self.linux.sys_lseek(fd, -50, os.SEEK_CUR)
+        self.assertEqual(50, pos)
+
+        pos = self.linux.sys_lseek(fd, 50, os.SEEK_CUR)
+        self.assertEqual(100, pos)
+
+        pos = self.linux.sys_lseek(fd, 0, os.SEEK_END)
+        self.assertEqual(1000, pos)
+
+        pos = self.linux.sys_lseek(fd, -50, os.SEEK_END)
+        self.assertEqual(950, pos)
+
+        pos = self.linux.sys_lseek(fd, 50, os.SEEK_END)
+        self.assertEqual(1050, pos)
+
+        self.linux.sys_close(fd)
+        pos = self.linux.sys_lseek(fd, 0, os.SEEK_SET)
+        self.assertEqual(-errno.EBADF, pos)
+
     def test_unimplemented(self):
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
 
