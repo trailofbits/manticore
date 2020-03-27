@@ -1330,9 +1330,9 @@ class Linux(Platform):
 
         :param fd: a valid file descriptor
         :param offset: the offset in bytes
-        :param whence: SEEK_SET: The file offset is set to offset bytes.
-                       SEEK_CUR: The file offset is set to its current location plus offset bytes.
-                       SEEK_END: The file offset is set to the size of the file plus offset bytes.
+        :param whence: os.SEEK_SET: The file offset is set to offset bytes.
+                       os.SEEK_CUR: The file offset is set to its current location plus offset bytes.
+                       os.SEEK_END: The file offset is set to the size of the file plus offset bytes.
 
         :return: offset from file beginning, or EBADF (fd is not a valid file descriptor or is not open)
         """
