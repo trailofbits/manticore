@@ -16,7 +16,7 @@ class LinuxTest(unittest.TestCase):
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "basic_linux_amd64")
 
     def setUp(self):
-        self.tmp_dir = tempfile.TemporaryDirectory(prefix='mcore_test_')
+        self.tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
         self.linux = linux.SLinux(self.BIN_PATH)
 
     def tearDown(self):
@@ -28,7 +28,6 @@ class LinuxTest(unittest.TestCase):
     def get_path(self, basename: str) -> str:
         "Returns an absolute path with the given basename"
         return f"{self.tmp_dir.name}/{basename}"
-
 
     def test_time(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
