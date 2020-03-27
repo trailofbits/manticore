@@ -547,16 +547,18 @@ class ProcSelfMapInfo:
     pathname: str = ""
 
     perms: str = field(init=False)
-    address: str = field(init=False)
 
     def __post_init__(self):
         self.perms = self.rwx_perms.replace(" ", "-") + self.shared_perms
         if self.pathname == "stack":
             self.pathname = "[" + self.pathname + "]"
-        self.address = f"{self.start:016x}-{self.end:016x}"
 
     def __str__(self):
         return f"{self.address} {self.perms:>4s} {self.offset:08x} {self.device} {self.inode:9} {self.pathname}"
+
+    @property
+    def address(self):
+        return f"{self.start:016x}-{self.end:016x}"
 
 
 class Memory(object, metaclass=ABCMeta):
