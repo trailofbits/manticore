@@ -91,9 +91,12 @@ class IntegrationTest(unittest.TestCase):
         output = subprocess.check_output(cmd)
         end = time.time()
 
-        output = filter(
-            lambda l: b"Manticore is only supported on Linux. Proceed at your own risk!" not in l,
-            output.splitlines(),
+        output = list(
+            filter(
+                lambda l: b"Manticore is only supported on Linux. Proceed at your own risk!"
+                not in l,
+                output.splitlines(),
+            )
         )
 
         # Because the run will timeout, we don't know the exact line numbers that will appear
