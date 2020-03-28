@@ -165,8 +165,7 @@ class F64(float):
 
 
 ValType = type  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
-# For reasons I don't understand, Tuple[Type] != Tuple[I32]
-Value_t: typing.Tuple[typing.Type] = (I32, I64, F32, F64, BitVec)  # type: ignore
+Value_t = (I32, I64, F32, F64, BitVec)
 # Value = typing.TypeVar('Value', I32, I64, F32, F64, BitVec)  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
 Value = typing.Union[I32, I64, F32, F64, BitVec]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
 

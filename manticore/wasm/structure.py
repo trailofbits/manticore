@@ -1453,7 +1453,7 @@ class ModuleInstance(Eventful):
             stack.has_type_on_top(I32, 1)
             stack.pop()
             cond = item.value
-        elif issymbolic(item):
+        elif isinstance(item, Expression):
             raise ConcretizeCondition("Concretizing if_", item != 0)
         else:
             cond = item != 0
@@ -1536,7 +1536,7 @@ class ModuleInstance(Eventful):
             stack.has_type_on_top(I32, 1)
             stack.pop()
             cond = item.value
-        elif issymbolic(item):
+        elif isinstance(item, Expression):
             raise ConcretizeCondition("Concretizing if_", item != 0)
         else:
             cond = item != 0
@@ -1563,7 +1563,7 @@ class ModuleInstance(Eventful):
                 raise ConcretizeStack(-2, I32, "Concretizing br_table index", i)
         else:
             i = item
-            if issymbolic(item):
+            if isinstance(i, Expression):
                 raise ConcretizeCondition(
                     "Concretizing br_table range check", (i >= 0) & (i < imm.target_count)
                 )
@@ -1641,12 +1641,13 @@ class ModuleInstance(Eventful):
                 i = len(tab.elem)
             if issymbolic(i):
                 raise ConcretizeStack(-2, I32, "Concretizing call_indirect operand", i)
+        elif isinstance(item, Expression):
+            raise ConcretizeCondition(
+                "Concretizing call_indirect range check", (item >= 0) & (item < len(tab.elem))
+            )
         else:
+            assert isinstance(item, I32)
             i = item
-            if issymbolic(item):
-                raise ConcretizeCondition(
-                    "Concretizing call_indirect range check", (i >= 0) & (i < len(tab.elem))
-                )
 
         if i not in range(len(tab.elem)):
             raise NonExistentFunctionCallTrap()
@@ -1790,7 +1791,7 @@ class Stack(Eventful):
         """
         return len(self.data) == 0
 
-    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type, ...]], n: int):
         """
         *Asserts* that the stack has at least n values of type t or type BitVec on the top
 
@@ -1912,7 +1913,7 @@ class AtomicStack(Stack):
     def empty(self):
         return self.parent.empty()
 
-    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type, ...]], n: int):
         return self.parent.has_type_on_top(t, n)
 
     def find_type(self, t: type):
