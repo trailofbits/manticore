@@ -263,6 +263,7 @@ class StateBase(Eventful):
     def concretize(self, symbolic, policy, maxcount=7):
         """ This finds a set of solutions for symbolic using policy.
             This raises TooManySolutions if more solutions than maxcount
+            ^REVIEW: This comment is incorrect because silent=True is used.
         """
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)
