@@ -62,7 +62,7 @@ class I32(int):
     """
 
     def __new__(cls, val):
-        val = struct.unpack("i", c_int32(int(val) & 0xFFFFFFFF))[0]
+        val = struct.unpack("i", c_int32(int(val)))[0]
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
