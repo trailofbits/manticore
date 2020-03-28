@@ -41,7 +41,7 @@ from .types import (
     ConcretizeStack,
 )
 from .state import State
-from ..core.smtlib import BitVec, issymbolic, Operators, Expression
+from ..core.smtlib import BitVec, Bool, issymbolic, Operators, Expression
 from ..core.state import Concretize
 from ..utils.event import Eventful
 from ..utils import config
@@ -1447,17 +1447,24 @@ class ModuleInstance(Eventful):
 
         https://www.w3.org/TR/wasm-core-1/#exec-if
         """
-        stack.has_type_on_top(I32, 1)
-        c = stack.pop()
-        if issymbolic(c):
-            raise ConcretizeStack(-1, I32, "Concretizing if_", c)
+        stack.has_type_on_top((I32, Condition), 1)
+        item = stack.pop()
+        if isinstance(item, Condition):
+            stack.has_type_on_top(I32, 1)
+            stack.pop()
+            cond = item.value
+        elif issymbolic(item):
+            raise ConcretizeCondition("Concretizing if_", item != 0)
+        else:
+            cond = item != 0
+
         insn_block = self.look_forward(0x0B)  # Get the entire `if` block
         # Split it into the true and false branches
         t_block, f_block = self._split_if_block(deque(insn_block))
         label = Label(len(ret_type), [])
 
         # Enter the true branch if the top of the stack is nonzero
-        if c != 0:
+        if cond:
             self.enter_block(list(t_block), label, stack)
         # Otherwise, take the false branch
         else:
@@ -1523,11 +1530,18 @@ class ModuleInstance(Eventful):
 
         https://www.w3.org/TR/wasm-core-1/#exec-br-if
         """
-        stack.has_type_on_top(I32, 1)
-        c = stack.pop()
-        if issymbolic(c):
-            raise ConcretizeStack(-1, I32, "Concretizing br_if", c)
-        if c != 0:
+        stack.has_type_on_top((I32, Condition), 1)
+        item = stack.pop()
+        if isinstance(item, Condition):
+            stack.has_type_on_top(I32, 1)
+            stack.pop()
+            cond = item.value
+        elif issymbolic(item):
+            raise ConcretizeCondition("Concretizing if_", item != 0)
+        else:
+            cond = item != 0
+
+        if cond:
             self.br(store, stack, imm.relative_depth)
 
     def br_table(self, store: "Store", stack: "AtomicStack", imm: BranchTableImm):
@@ -1665,6 +1679,20 @@ class Activation:
         self.arity = arity
         self.frame = frame
         self.expected_block_depth = expected_block_depth
+
+
+@dataclass
+class Condition:
+    """
+    A boolean condition pushed to the stack to advise execution control flow.
+
+    This is a simple typed wrapper around a boolean.
+    """
+
+    value: bool  #: The boolean condition value
+
+    def __init__(self, value: bool):
+        self.value = value
 
 
 StackItem = typing.Union[Value, Label, Activation]
@@ -1829,11 +1857,12 @@ class AtomicStack(Stack):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val and isinstance(exc_val, Concretize):
+        if isinstance(exc_val, Concretize):
             logger.info("Rolling back stack for concretization")
             self.rollback()
-        else:
-            pass
+        if isinstance(exc_val, ConcretizeCondition):
+            # Create a slot on the top of the stack for the concretized Condition.
+            self.parent.push(None)
 
     def rollback(self):
         while self.actions:
@@ -1901,3 +1930,18 @@ class HostFunc(ProtoFuncInst):
         https://www.w3.org/TR/wasm-core-1/#host-functions%E2%91%A2
         """
         pass
+
+
+class ConcretizeCondition(Concretize):
+    """Tells Manticore to concretize a condition required to direct execution."""
+
+    def __init__(self, message: str, condition: Bool, **kwargs):
+        """
+        :param message: Debug message describing the reason for concretization
+        :param condition: The boolean expression to concretize
+        """
+
+        def setstate(state, value: bool):
+            state.platform.stack.data[-1] = Condition(value)
+
+        super().__init__(message, condition, setstate, **kwargs)

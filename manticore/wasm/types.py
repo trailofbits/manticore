@@ -453,19 +453,11 @@ class ConcretizeStack(Concretize):
         :param message: Debug message describing the reason for concretization
         :param expression: The expression to concretize, either a Value or a BitVec
         """
-        if policy is None:
-            policy = "ALL"
-        if policy not in self._ValidPolicies:
-            raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
 
         def setstate(state, value):
             state.platform.stack.data[depth] = ty(value)
 
-        self.setstate = setstate
-        self.expression = expression
-        self.policy = policy
-        self.message = f"Concretize: {message} (Policy: {policy})"
-        super().__init__(message, expression, setstate=self.setstate, **kwargs)
+        super().__init__(message, expression, setstate, policy, **kwargs)
 
 
 class MissingExportException(Trap):
