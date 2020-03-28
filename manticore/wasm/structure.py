@@ -1551,10 +1551,22 @@ class ModuleInstance(Eventful):
 
         https://www.w3.org/TR/wasm-core-1/#exec-br-table
         """
-        stack.has_type_on_top(I32, 1)
-        i = stack.pop()
-        if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing br_table", i)
+        stack.has_type_on_top((I32, Condition), 1)
+        item = stack.pop()
+        if isinstance(item, Condition):
+            in_range = item.value
+            stack.has_type_on_top(I32, 1)
+            i = stack.pop()
+            if not in_range:
+                i = imm.target_count
+            elif issymbolic(i):
+                raise ConcretizeStack(-2, I32, "Concretizing br_table index", i)
+        else:
+            i = item
+            if issymbolic(item):
+                raise ConcretizeCondition(
+                    "Concretizing br_table range check", (i >= 0) & (i < imm.target_count)
+                )
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
         # execute br target_table[i]. The tests, however, pass a negative i, which doesn't make sense in this
@@ -1618,11 +1630,24 @@ class ModuleInstance(Eventful):
         tab = store.tables[ta]
         assert imm.type_index in range(len(f.frame.module.types))
         ft_expect = f.frame.module.types[imm.type_index]
-        stack.has_type_on_top(I32, 1)
-        # mypy can't figure out that I32 is a Value
-        i: I32 = stack.pop()  # type: ignore
-        if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", i)
+
+        stack.has_type_on_top((I32, Condition), 1)
+        item = stack.pop()
+        if isinstance(item, Condition):
+            in_range = item.value
+            stack.has_type_on_top(I32, 1)
+            i = stack.pop()
+            if not in_range:
+                i = len(tab.elem)
+            if issymbolic(i):
+                raise ConcretizeStack(-2, I32, "Concretizing call_indirect operand", i)
+        else:
+            i = item
+            if issymbolic(item):
+                raise ConcretizeCondition(
+                    "Concretizing call_indirect range check", (i >= 0) & (i < len(tab.elem))
+                )
+
         if i not in range(len(tab.elem)):
             raise NonExistentFunctionCallTrap()
         if tab.elem[i] is None:
