@@ -1198,7 +1198,7 @@ class Linux(Platform):
             raise EnvironmentError(f"Corrupted internal CPU state (arch width is {arch_width})")
         return sdword
 
-    def _open(self, f):
+    def _open(self, f) -> int:
         """
         Adds a file descriptor to the current file descriptor list
 
@@ -1214,7 +1214,7 @@ class Linux(Platform):
             self.files.append(f)
         return fd
 
-    def _close(self, fd):
+    def _close(self, fd: int) -> None:
         """
         Removes a file descriptor from the file descriptor list
         :rtype: int
@@ -1230,7 +1230,7 @@ class Linux(Platform):
         except IndexError:
             raise FdError(f"Bad file descriptor ({fd})", os.EBADF)
 
-    def _dup(self, fd):
+    def _dup(self, fd: int) -> int:
         """
         Duplicates a file descriptor
         :rtype: int
@@ -1239,14 +1239,14 @@ class Linux(Platform):
         """
         return self._open(self.files[fd])
 
-    def _is_fd_open(self, fd):
+    def _is_fd_open(self, fd: int) -> bool:
         """
         Determines if the fd is within range and in the file descr. list
         :param fd: the file descriptor to check.
         """
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
-    def _get_fd(self, fd):
+    def _get_fd(self, fd: int) -> File:
         if not self._is_fd_open(fd):
             raise FdError(f"File descriptor is not open", errno.EBADF)
         else:
@@ -1320,7 +1320,7 @@ class Linux(Platform):
         except OSError as e:
             return -e.errno
 
-    def sys_lseek(self, fd: File, offset: int, whence: int) -> int:
+    def sys_lseek(self, fd: int, offset: int, whence: int) -> int:
         """
         lseek - reposition read/write file offset
 
@@ -1346,7 +1346,7 @@ class Linux(Platform):
             return -e.err
 
     def sys_llseek(
-        self, fd: File, offset_high: int, offset_low: int, resultp: int, whence: int
+        self, fd: int, offset_high: int, offset_low: int, resultp: int, whence: int
     ) -> int:
         """
         _llseek - reposition read/write file offset
