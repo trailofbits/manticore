@@ -99,7 +99,13 @@ class LinuxTest(unittest.TestCase):
             # check that address and perms properties are working and properly formatted
             self.assertNotEqual(re.fullmatch(r"[0-9a-f]{16}\-[0-9a-f]{16}", m.address), None)
             self.assertNotEqual(re.fullmatch(r"[r-][w-][x-][sp-]", m.perms), None)
-            # TODO: adding a regex here for the string representation of m
+            self.assertNotEqual(
+                re.fullmatch(
+                    r"[0-9a-f]{16}-[0-9a-f]{16} [r-][w-][x-][sp-] [0-9a-f]{8} [0-9a-f]{2}:[0-9a-f]{2} (?=.{9})\ *\d+ [^\n]*",
+                    str(m),
+                ),
+                None,
+            )
 
     def test_aarch64_syscall_write(self):
         nr_write = 64
