@@ -1320,7 +1320,7 @@ class Linux(Platform):
         except OSError as e:
             return -e.errno
 
-    def sys_lseek(self, fd, offset, whence):
+    def sys_lseek(self, fd: File, offset: int, whence: int) -> int:
         """
         lseek - reposition read/write file offset
 
@@ -1345,7 +1345,9 @@ class Linux(Platform):
             )
             return -e.err
 
-    def sys_llseek(self, fd, offset_high, offset_low, resultp, whence):
+    def sys_llseek(
+        self, fd: File, offset_high: int, offset_low: int, resultp: int, whence: int
+    ) -> int:
         """
         _llseek - reposition read/write file offset
 
