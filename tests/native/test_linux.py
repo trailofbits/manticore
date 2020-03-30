@@ -6,12 +6,14 @@ import os
 import shutil
 import tempfile
 
+
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.smtlib import BitVecVariable, issymbolic
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.utils.helpers import pickle_dumps
+from manticore.platforms.linux import EnvironmentError
 
 
 class LinuxTest(unittest.TestCase):
@@ -69,6 +71,33 @@ class LinuxTest(unittest.TestCase):
         second_map_name = os.path.basename(second_map[4])
         self.assertEqual(first_map_name, "basic_linux_amd64")
         self.assertEqual(second_map_name, "basic_linux_amd64")
+
+    def test_load_proc_self_maps(self):
+        proc_maps = self.linux.current.memory.proc_self_mappings()
+
+        # check that proc self raises error when not being read created as read only
+        maps = self.linux.current.push_bytes("/proc/self/maps\x00")
+        self.assertRaises(EnvironmentError, self.linux.sys_open, maps, os.O_RDWR, None)
+        self.assertRaises(EnvironmentError, self.linux.sys_open, maps, os.O_WRONLY, None)
+
+        # addresses should be in ascending order
+        for i in range(1, len(proc_maps)):
+            self.assertLess(proc_maps[i - 1].start, proc_maps[i].start)
+            self.assertLess(proc_maps[i - 1].end, proc_maps[i].end)
+
+        for m in proc_maps:
+            # check all properties are initialized
+            self.assertNotEqual(m.start, None)
+            self.assertNotEqual(m.end, None)
+            self.assertNotEqual(m.perms, None)
+            self.assertNotEqual(m.offset, None)
+            self.assertNotEqual(m.device, None)
+            self.assertNotEqual(m.inode, None)
+            self.assertNotEqual(m.pathname, None)
+
+            # check that address and perms properties are working and creating strings of appropriate length
+            self.assertEqual(len(m.address), 33)
+            self.assertEqual(len(m.perms), 4)
 
     def test_aarch64_syscall_write(self):
         nr_write = 64
