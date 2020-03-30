@@ -25,10 +25,12 @@ from ..core.state import TerminateState
 from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic
 from ..core.smtlib.solver import Z3Solver
 from ..exceptions import SolverError
-from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
+from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
+
+from typing import List, Set
 
 logger = logging.getLogger(__name__)
 
@@ -404,7 +406,7 @@ class Socket:
         assert self.is_connected()
         return self.peer._transmit(buf)
 
-    def _transmit(self, buf):
+    def _transmit(self, buf) -> int:
         for c in buf:
             self.buffer.append(c)
         return len(buf)
@@ -508,7 +510,7 @@ class Linux(Platform):
         platform._init_std_fds()
         return platform
 
-    def _init_std_fds(self):
+    def _init_std_fds(self) -> None:
         # open standard files stdin, stdout, stderr
         logger.debug("Opening file descriptors (0,1,2) (STDIN, STDOUT, STDERR)")
         self.input = Socket()
@@ -532,7 +534,7 @@ class Linux(Platform):
 
         assert (in_fd, out_fd, err_fd) == (0, 1, 2)
 
-    def _init_cpu(self, arch):
+    def _init_cpu(self, arch) -> None:
         # create memory and CPU
         cpu = self._mk_proc(arch)
         self.procs = [cpu]
@@ -540,7 +542,7 @@ class Linux(Platform):
         self._function_abi = CpuFactory.get_function_abi(cpu, "linux", arch)
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, "linux", arch)
 
-    def _find_symbol(self, name):
+    def _find_symbol(self, name: str):
         symbol_tables = (s for s in self.elf.iter_sections() if isinstance(s, SymbolTableSection))
 
         for section in symbol_tables:
@@ -554,7 +556,7 @@ class Linux(Platform):
 
         return None
 
-    def _execve(self, program, argv, envp):
+    def _execve(self, program: str, argv: List[str], envp: List[str]) -> None:
         """
         Load `program` and establish program state, such as stack and arguments.
 
@@ -581,14 +583,14 @@ class Linux(Platform):
         # Each process can wait for one timeout
         self.timers = [None] * nprocs
         # each fd has a waitlist
-        self.rwait = [set() for _ in range(nfiles)]
-        self.twait = [set() for _ in range(nfiles)]
+        self.rwait: List[Set] = [set() for _ in range(nfiles)]
+        self.twait: List[Set] = [set() for _ in range(nfiles)]
 
         # Install event forwarders
         for proc in self.procs:
             self.forward_events_from(proc)
 
-    def _mk_proc(self, arch):
+    def _mk_proc(self, arch: str) -> Cpu:
         mem = Memory32() if arch in {"i386", "armv7"} else Memory64()
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
@@ -1252,21 +1254,21 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
-    def _transform_write_data(self, data: bytes) -> bytes:
+    def _transform_write_data(self, data) -> bytes:
         """
         Implement in subclass to transform data written by write(2)/writev(2)
         Nop by default.
         """
         return data
 
-    def _exit(self, message):
+    def _exit(self, message) -> None:
         procid = self.procs.index(self.current)
         self.sched()
         self.running.remove(procid)
         if len(self.running) == 0:
             raise TerminateState(message, testcase=True)
 
-    def sys_umask(self, mask):
+    def sys_umask(self, mask: int) -> int:
         """
         umask - Set file creation mode mask
         :param int mask: New mask
@@ -1277,7 +1279,7 @@ class Linux(Platform):
         except OSError as e:
             return -e.errno
 
-    def sys_chdir(self, path):
+    def sys_chdir(self, path) -> int:
         """
         chdir - Change current working directory
         :param int path: Pointer to path
@@ -1290,7 +1292,7 @@ class Linux(Platform):
         except OSError as e:
             return -e.errno
 
-    def sys_getcwd(self, buf, size):
+    def sys_getcwd(self, buf, size) -> int:
         """
         getcwd - Get the current working directory
         :param int buf: Pointer to dest array
@@ -1386,7 +1388,7 @@ class Linux(Platform):
             )
             return -e.err
 
-    def sys_read(self, fd, buf, count):
+    def sys_read(self, fd: int, buf, count) -> int:
         data: bytes = bytes()
         if count != 0:
             # TODO check count bytes from buf
@@ -1405,7 +1407,7 @@ class Linux(Platform):
 
         return len(data)
 
-    def sys_write(self, fd, buf, count):
+    def sys_write(self, fd: int, buf, count) -> int:
         """ write - send bytes through a file descriptor
           The write system call writes up to count bytes from the buffer pointed
           to by buf to the file descriptor fd. If count is zero, write returns 0
@@ -1437,27 +1439,27 @@ class Linux(Platform):
                 self.wait([], [fd], None)
                 raise RestartSyscall()
 
-            data: MixedSymbolicBuffer = cpu.read_bytes(buf, count)
-            data: bytes = self._transform_write_data(data)
+            data_sym: MixedSymbolicBuffer = cpu.read_bytes(buf, count)
+            data = self._transform_write_data(data_sym)
             write_fd.write(data)
 
             for line in data.split(b"\n"):
-                line = line.decode(
+                line_str = line.decode(
                     "latin-1"
                 )  # latin-1 encoding will happily decode any byte (0x00-0xff)
-                logger.debug(f"WRITE({fd}, 0x{buf:08x}, {count}) -> <{repr(line):48s}>")
+                logger.debug(f"WRITE({fd}, 0x{buf:08x}, {count}) -> <{repr(line_str):48s}>")
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
         return len(data)
 
-    def sys_fork(self):
+    def sys_fork(self) -> int:
         """
         We don't support forking, but do return a valid error code to client binary.
         """
         return -errno.ENOSYS
 
-    def sys_access(self, buf, mode):
+    def sys_access(self, buf, mode) -> int:
         """
         Checks real user's permissions for a file
         :rtype: int
@@ -1594,7 +1596,7 @@ class Linux(Platform):
 
         return self._open(f)
 
-    def sys_openat(self, dirfd, buf, flags, mode):
+    def sys_openat(self, dirfd, buf, flags, mode) -> int:
         """
         Openat SystemCall - Similar to open system call except dirfd argument
         when path contained in buf is relative, dirfd is referred to set the relative path
@@ -1634,7 +1636,7 @@ class Linux(Platform):
 
         return self._open(f)
 
-    def sys_rename(self, oldnamep, newnamep):
+    def sys_rename(self, oldnamep, newnamep) -> int:
         """
         Rename filename `oldnamep` to `newnamep`.
 
@@ -1652,7 +1654,7 @@ class Linux(Platform):
 
         return ret
 
-    def sys_fsync(self, fd):
+    def sys_fsync(self, fd: int) -> int:
         """
         Synchronize a file's in-core state with that on disk.
         """
