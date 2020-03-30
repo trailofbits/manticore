@@ -8,6 +8,7 @@ import socket
 import struct
 import time
 import resource
+import tempfile
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -150,6 +151,17 @@ class File:
         Flush buffered data. Currently not implemented.
         """
         return
+
+
+class ProcSelfMaps(File):
+    def __init__(self, flags, linux):
+        self.file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+        self.file.write(linux.current.memory.__proc_self__)
+        self.file.close()
+        mode = mode_from_flags(flags)
+        if mode != "rb":
+            raise EnvironmentError("/proc/self/maps is only supported in read only mode")
+        self.file = open(self.file.name, mode)
 
 
 class Directory(File):
@@ -1531,6 +1543,8 @@ class Linux(Platform):
         if os.path.abspath(filename).startswith("/proc/self"):
             if filename == "/proc/self/exe":
                 filename = os.path.abspath(self.program)
+            elif filename == "/proc/self/maps":
+                return ProcSelfMaps(flags, self)
             else:
                 raise EnvironmentError("/proc/self is largely unsupported")
 
