@@ -1228,7 +1228,7 @@ class Linux(Platform):
             )  # Keep track for SymbolicFile testcase generation
             self.files[fd] = None
         except IndexError:
-            raise FdError(f"Bad file descriptor ({fd})", os.EBADF)
+            raise FdError(f"Bad file descriptor ({fd})", errno.EBADF)
 
     def _dup(self, fd: int) -> int:
         """
