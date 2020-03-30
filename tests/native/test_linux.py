@@ -5,6 +5,7 @@ from binascii import hexlify
 import os
 import shutil
 import tempfile
+import re
 
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
@@ -95,9 +96,10 @@ class LinuxTest(unittest.TestCase):
             self.assertNotEqual(m.inode, None)
             self.assertNotEqual(m.pathname, None)
 
-            # check that address and perms properties are working and creating strings of appropriate length
-            self.assertEqual(len(m.address), 33)
-            self.assertEqual(len(m.perms), 4)
+            # check that address and perms properties are working and properly formatted
+            self.assertNotEqual(re.fullmatch(r"[0-9a-f]{16}\-[0-9a-f]{16}", m.address), None)
+            self.assertNotEqual(re.fullmatch(r"[r-][w-][x-][sp-]", m.perms), None)
+            # TODO: adding a regex here for the string representation of m
 
     def test_aarch64_syscall_write(self):
         nr_write = 64
