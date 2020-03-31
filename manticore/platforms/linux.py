@@ -1603,9 +1603,9 @@ class Linux(Platform):
         filename = self.current.read_string(buf)
         try:
             f = self._sys_open_get_file(filename, flags)
-            logger.debug(f"Opening file {filename} for real fd {f.fileno()}")
+            logger.debug(f"sys_open: Opening file {filename} for real fd {f.fileno()}")
         except IOError as e:
-            logger.warning(f"Could not open file {filename}. Reason: {e!s}")
+            logger.warning(f"sys_open: Could not open file {filename}. Reason: {e!s}")
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
@@ -1631,11 +1631,11 @@ class Linux(Platform):
         try:
             dir_entry = self._get_fd(dirfd)
         except FdError as e:
-            logger.info(f"openat: Not valid file descriptor. Returning {-e.err}")
+            logger.info(f"sys_openat: Not valid file descriptor. Returning {-e.err}")
             return -e.err
 
         if not isinstance(dir_entry, Directory):
-            logger.info("openat: Not directory descriptor. Returning -errno.ENOTDIR")
+            logger.info("sys_openat: Not directory descriptor. Returning -errno.ENOTDIR")
             return -errno.ENOTDIR
 
         dir_path = dir_entry.name
@@ -1643,9 +1643,9 @@ class Linux(Platform):
         filename = os.path.join(dir_path, filename)
         try:
             f = self._sys_open_get_file(filename, flags)
-            logger.debug(f"Opening file {filename} for real fd {f.fileno()}")
+            logger.debug(f"sys_openat: Opening file {filename} for real fd {f.fileno()}")
         except IOError as e:
-            logger.info(f"Could not open file {filename}. Reason: {e!s}")
+            logger.info(f"sys_openat: Could not open file {filename}. Reason: {e!s}")
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
