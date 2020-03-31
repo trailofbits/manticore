@@ -1223,7 +1223,7 @@ class Linux(Platform):
             raise EnvironmentError(f"Corrupted internal CPU state (arch width is {arch_width})")
         return sdword
 
-    def _open(self, f) -> int:
+    def _open(self, f: Union[File, Socket]) -> int:
         """
         Adds a file descriptor to the current file descriptor list
 
@@ -1244,38 +1244,35 @@ class Linux(Platform):
         Removes a file descriptor from the file descriptor list
         :rtype: int
         :param fd: the file descriptor to close.
-        :return: C{0} on success.
         """
         try:
-            self.files[fd].close()
-            self._closed_files.append(
-                self.files[fd]
-            )  # Keep track for SymbolicFile testcase generation
+            f = self.files[fd]
+            if f is None:
+                raise FdError(f"Bad file descriptor ({fd})", errno.EBADF)
+            f.close()
+            self._closed_files.append(f)  # Keep track for SymbolicFile testcase generation
             self.files[fd] = None
         except IndexError:
             raise FdError(f"Bad file descriptor ({fd})", errno.EBADF)
 
-    def _dup(self, fd: int) -> int:
-        """
-        Duplicates a file descriptor
-        :rtype: int
-        :param fd: the file descriptor to duplicate.
-        :return: C{0} on success.
-        """
-        return self._open(self.files[fd])
-
-    def _is_fd_open(self, fd):
+    def _is_fd_open(self, fd: int) -> bool:
         """
         Determines if the fd is within range and in the file descr. list
         :param fd: the file descriptor to check.
         """
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
-    def _get_fd(self, fd):
-        if not self._is_fd_open(fd):
+    def _get_fd(self, fd: int) -> Union[File, Socket]:
+        """
+        Returns the File or Socket corresponding to the given file descriptor.
+        """
+        try:
+            f = self.files[fd]
+        except IndexError:
             raise FdError(f"File descriptor is not open", errno.EBADF)
-        else:
-            return self.files[fd]
+        if f is None:
+            raise FdError(f"File descriptor is not open", errno.EBADF)
+        return f
 
     def _transform_write_data(self, data) -> bytes:
         """
@@ -1660,7 +1657,7 @@ class Linux(Platform):
 
         return self._open(f)
 
-    def sys_rename(self, oldnamep, newnamep) -> int:
+    def sys_rename(self, oldnamep: int, newnamep: int) -> int:
         """
         Rename filename `oldnamep` to `newnamep`.
 
@@ -1670,28 +1667,28 @@ class Linux(Platform):
         oldname = self.current.read_string(oldnamep)
         newname = self.current.read_string(newnamep)
 
-        ret = 0
         try:
             os.rename(oldname, newname)
         except OSError as e:
-            ret = -e.errno
-
-        return ret
+            return -e.errno
+        else:
+            return 0
 
     def sys_fsync(self, fd):
         """
         Synchronize a file's in-core state with that on disk.
         """
 
-        ret = 0
         try:
-            self.files[fd].sync()
+            f = self.files[fd]
+            if f is None:
+                return -errno.EBADF
+            f.sync()
+            return 0
         except IndexError:
-            ret = -errno.EBADF
+            return -errno.EBADF
         except FdError:
-            ret = -errno.EINVAL
-
-        return ret
+            return -errno.EINVAL
 
     def sys_getpid(self):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
@@ -1728,7 +1725,7 @@ class Linux(Platform):
         logger.warning(f"SIGACTION, Ignoring changing signal mask set cmd:%s", how)
         return 0
 
-    def sys_dup(self, fd):
+    def sys_dup(self, fd: int) -> int:
         """
         Duplicates an open file descriptor
         :rtype: int
@@ -1736,14 +1733,14 @@ class Linux(Platform):
         :return: the new file descriptor.
         """
 
-        if not self._is_fd_open(fd):
-            logger.info(f"DUP: Passed fd is not open ({fd}). Returning -errno.EBADF")
-            return -errno.EBADF
+        try:
+            f = self._get_fd(fd)
+        except FdError as e:
+            logger.info(f"DUP: fd ({fd}) is not open. Returning -{e.err}")
+            return -e.err
+        return self._open(f)
 
-        newfd = self._dup(fd)
-        return newfd
-
-    def sys_dup2(self, fd, newfd):
+    def sys_dup2(self, fd: int, newfd: int) -> int:
         """
         Duplicates an open fd to newfd. If newfd is open, it is first closed
         :rtype: int
@@ -1757,7 +1754,7 @@ class Linux(Platform):
             logger.info("DUP2: fd ({fd}) is not open. Returning {-e.err}")
             return -e.err
 
-        soft_max, hard_max = self._rlimits[self.RLIMIT_NOFILE]
+        soft_max, hard_max = self._rlimits[resource.RLIMIT_NOFILE]
         if newfd >= soft_max:
             logger.info(f"DUP2: newfd ({newfd}) is above max descriptor table size")
             return -errno.EBADF
@@ -1792,17 +1789,16 @@ class Linux(Platform):
 
         return -errno.EPERM
 
-    def sys_close(self, fd):
+    def sys_close(self, fd: int) -> int:
         """
         Closes a file descriptor
         :rtype: int
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         """
-        if self._is_fd_open(fd):
-            self._close(fd)
-        else:
+        if not self._is_fd_open(fd):
             return -errno.EBADF
+        self._close(fd)
         logger.debug(f"sys_close({fd})")
         return 0
 
@@ -2727,12 +2723,16 @@ class Linux(Platform):
         :return 0 on success
         """
         try:
-            file = self._get_fd(fd)
+            f = self._get_fd(fd)
         except FdError as e:
             return -e.err
         except OSError as e:
             return -e.errno
-        file.file.truncate(length)
+        if isinstance(f, Directory):
+            return -errno.EISDIR
+        if not isinstance(f, File):
+            return -errno.EINVAL
+        f.file.truncate(length)
         return 0
 
     def sys_link(self, oldname, newname) -> int:
