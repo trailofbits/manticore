@@ -2729,7 +2729,6 @@ class Linux(Platform):
         try:
             file = self._get_fd(fd)
         except FdError as e:
-            logger.info("File descriptor %s is not open", fd)
             return -e.err
         except OSError as e:
             return -e.errno
@@ -2770,7 +2769,6 @@ class Linux(Platform):
         try:
             file = self._get_fd(fd)
         except FdError as e:
-            logger.info("File descriptor %s is not open", fd)
             return -e.err
         if not isinstance(file, Directory):
             logger.info("Can't get directory entries for a file")
