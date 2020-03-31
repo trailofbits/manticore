@@ -1680,10 +1680,9 @@ class Linux(Platform):
             os.rename(oldname, newname)
         except OSError as e:
             return -e.errno
-        else:
-            return 0
+        return 0
 
-    def sys_fsync(self, fd):
+    def sys_fsync(self, fd: int) -> int:
         """
         Synchronize a file's in-core state with that on disk.
         """
