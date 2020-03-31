@@ -793,19 +793,19 @@ class Linux(Platform):
 
         self.current.memory.mmap(0xFFFF0000, len(page_data), "r x", page_data)
 
-    def load_vdso(self, bits):
-        # load vdso #TODO or #IGNORE
-        vdso_top = {32: 0x7FFF0000, 64: 0x7FFF00007FFF0000}[bits]
-        with open(f"vdso{bits:2d}.dump") as f:
-            vdso_size = len(f.read())
-        vdso_addr = self.memory.mmapFile(
-            self.memory._floor(vdso_top - vdso_size),
-            vdso_size,
-            "r x",
-            {32: "vdso32.dump", 64: "vdso64.dump"}[bits],
-            0,
-        )
-        return vdso_addr
+    # def load_vdso(self, bits: int):
+    #     # load vdso #TODO or #IGNORE
+    #     vdso_top = {32: 0x7FFF0000, 64: 0x7FFF00007FFF0000}[bits]
+    #     with open(f"vdso{bits:2d}.dump") as f:
+    #         vdso_size = len(f.read())
+    #     vdso_addr = self.current.memory.mmapFile(
+    #         self.current.memory._floor(vdso_top - vdso_size),
+    #         vdso_size,
+    #         "r x",
+    #         {32: "vdso32.dump", 64: "vdso64.dump"}[bits],
+    #         0,
+    #     )
+    #     return vdso_addr
 
     def setup_stack(self, argv, envp):
         """
