@@ -130,8 +130,8 @@ class File:
     def tell(self, *args) -> int:
         return self.file.tell(*args)
 
-    def seek(self, *args):
-        return self.file.seek(*args)
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
+        return self.file.seek(offset, whence)
 
     def write(self, buf):
         return self.file.write(buf)
@@ -196,7 +196,7 @@ class Directory(File):
     def tell(self, *args) -> int:
         return 0
 
-    def seek(self, *args):
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         return 0
 
     def write(self, buf):
@@ -287,7 +287,7 @@ class SymbolicFile(File):
         """
         return self.pos
 
-    def seek(self, offset, whence=os.SEEK_SET):
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         """
         Repositions the file C{offset} according to C{whence}.
         Returns the resulting offset or -1 in case of error.
