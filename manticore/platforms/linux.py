@@ -14,6 +14,7 @@ from typing import Union, List, TypeVar, cast
 import io
 import os
 import random
+
 from elftools.elf.descriptions import describe_symbol_type
 
 # Remove in favor of binary.py
@@ -36,6 +37,10 @@ from typing import Any, Dict, List, Optional, Set, Union
 logger = logging.getLogger(__name__)
 
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
+
+
+def errorcode(code: int) -> str:
+    return f"errno.{errno.errorcode[code]}"
 
 
 class RestartSyscall(Exception):
@@ -1363,7 +1368,7 @@ class Linux(Platform):
             return self._get_fd(fd).seek(signed_offset, whence)
         except FdError as e:
             logger.info(
-                f"LSEEK: Not valid file descriptor on lseek. Fd not seekable. Returning {-e.err}"
+                f"sys_lseek: Not valid file descriptor on lseek. Fd not seekable. Returning -{errorcode(e.err)}"
             )
             return -e.err
 
@@ -1404,7 +1409,7 @@ class Linux(Platform):
             return 0
         except FdError as e:
             logger.info(
-                f"LSEEK: Not valid file descriptor on llseek. Fd not seekable. Returning {-e.err}"
+                f"sys_llseek: Not valid file descriptor on llseek. Fd not seekable. Returning -{errorcode(e.err)}"
             )
             return -e.err
 
@@ -1413,14 +1418,16 @@ class Linux(Platform):
         if count != 0:
             # TODO check count bytes from buf
             if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
-                logger.info("READ: buf points to invalid address. Returning -errno.EFAULT")
+                logger.info("sys_read: buf points to invalid address. Returning -errno.EFAULT")
                 return -errno.EFAULT
 
             try:
                 # Read the data and put it in memory
                 data = self._get_fd(fd).read(count)
             except FdError as e:
-                logger.info(f"READ: Not valid file descriptor ({fd}). Returning -{e.err}")
+                logger.info(
+                    f"sys_read: Not valid file descriptor ({fd}). Returning -{errorcode(e.err)}"
+                )
                 return -e.err
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
@@ -1446,12 +1453,14 @@ class Linux(Platform):
             try:
                 write_fd = self._get_fd(fd)
             except FdError as e:
-                logger.error(f"WRITE: Not valid file descriptor ({fd}). Returning -{e.err}")
+                logger.error(
+                    f"sys_write: Not valid file descriptor ({fd}). Returning -{errorcode(e.err)}"
+                )
                 return -e.err
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf + count not in cpu.memory:
-                logger.debug("WRITE: buf points to invalid address. Returning -errno.EFAULT")
+                logger.debug("sys_write: buf points to invalid address. Returning -errno.EFAULT")
                 return -errno.EFAULT
 
             if fd > 2 and write_fd.is_full():
@@ -1467,7 +1476,7 @@ class Linux(Platform):
                 line_str = line.decode(
                     "latin-1"
                 )  # latin-1 encoding will happily decode any byte (0x00-0xff)
-                logger.debug(f"WRITE({fd}, 0x{buf:08x}, {count}) -> <{repr(line_str):48s}>")
+                logger.debug(f"sys_write({fd}, 0x{buf:08x}, {count}) -> <{repr(line_str):48s}>")
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
@@ -1638,7 +1647,7 @@ class Linux(Platform):
         try:
             dir_entry = self._get_fd(dirfd)
         except FdError as e:
-            logger.info(f"sys_openat: Not valid file descriptor. Returning {-e.err}")
+            logger.info(f"sys_openat: Not valid file descriptor. Returning -{errorcode(e.err)}")
             return -e.err
 
         if not isinstance(dir_entry, Directory):
@@ -1736,7 +1745,7 @@ class Linux(Platform):
         try:
             f = self._get_fd(fd)
         except FdError as e:
-            logger.info(f"DUP: fd ({fd}) is not open. Returning -{e.err}")
+            logger.info(f"sys_dup: fd ({fd}) is not open. Returning -{errorcode(e.err)}")
             return -e.err
         return self._open(f)
 
@@ -1751,12 +1760,14 @@ class Linux(Platform):
         try:
             file = self._get_fd(fd)
         except FdError as e:
-            logger.info("DUP2: fd ({fd}) is not open. Returning {-e.err}")
+            logger.info("sys_dup2: fd ({fd}) is not open. Returning -{errorcode(e.err)}")
             return -e.err
 
         soft_max, hard_max = self._rlimits[resource.RLIMIT_NOFILE]
         if newfd >= soft_max:
-            logger.info(f"DUP2: newfd ({newfd}) is above max descriptor table size")
+            logger.info(
+                f"sys_dup2: newfd ({newfd}) is above max descriptor table size ({soft_max})"
+            )
             return -errno.EBADF
 
         if self._is_fd_open(newfd):
@@ -2523,7 +2534,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info("Calling fstat with invalid fd")
+            logger.info(f"sys_newfstat: invalid fd ({fd}), returning -{errorcode(e.err)}")
             return -e.err
 
         def add(width, val):
@@ -2568,7 +2579,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info(f"Calling fstat with invalid fd, returning {-e.err}")
+            logger.info(f"sys_fstat: invalid fd ({fd}), returning -{errorcode(e.err)}")
             return -e.err
 
         def add(width, val):
@@ -2611,7 +2622,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info(f"Calling fstat with invalid fd, returning {-e.err}")
+            logger.info(f"sys_fstat64: invalid fd ({fd}), returning -{errorcode(e.err)}")
             return -e.err
 
         def add(width, val):
