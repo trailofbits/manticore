@@ -31,7 +31,7 @@ from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import List, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +56,15 @@ class FdError(Exception):
         super().__init__(message)
 
 
-def perms_from_elf(elf_flags):
+def perms_from_elf(elf_flags: int) -> str:
     return ["   ", "  x", " w ", " wx", "r  ", "r x", "rw ", "rwx"][elf_flags & 7]
 
 
-def perms_from_protflags(prot_flags):
+def perms_from_protflags(prot_flags: int) -> str:
     return ["   ", "r  ", " w ", "rw ", "  x", "r x", " wx", "rwx"][prot_flags & 7]
 
 
-def mode_from_flags(file_flags):
+def mode_from_flags(file_flags: int) -> str:
     return {os.O_RDWR: "rb+", os.O_RDONLY: "rb", os.O_WRONLY: "wb"}[file_flags & 7]
 
 
@@ -103,15 +103,15 @@ class File:
             self.seek(pos)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.file.name
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         return self.file.mode
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self.file.closed
 
     def stat(self):
@@ -127,7 +127,7 @@ class File:
             logger.error(f"Invalid Fcntl request: {request}")
             return -e.errno
 
-    def tell(self, *args):
+    def tell(self, *args) -> int:
         return self.file.tell(*args)
 
     def seek(self, *args):
@@ -145,18 +145,18 @@ class File:
     def fileno(self, *args):
         return self.file.fileno(*args)
 
-    def is_full(self):
+    def is_full(self) -> bool:
         return False
 
-    def sync(self):
+    def sync(self) -> None:
         """
-        Flush buffered data. Currently not implemented.
+        Flush buffered data. Currently implemented as a no-op.
         """
         return
 
 
 class ProcSelfMaps(File):
-    def __init__(self, flags, linux):
+    def __init__(self, flags: int, linux):
         self.file = tempfile.NamedTemporaryFile(mode="w", delete=False)
         self.file.write(linux.current.memory.__proc_self__)
         self.file.close()
@@ -167,7 +167,7 @@ class ProcSelfMaps(File):
 
 
 class Directory(File):
-    def __init__(self, path, flags):
+    def __init__(self, path: str, flags: int):
         assert os.path.isdir(path)
 
         self.fd = os.open(path, flags)
@@ -186,14 +186,14 @@ class Directory(File):
         self.fd = os.open(self.path, self.flags)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.path
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         return mode_from_flags(self.flags)
 
-    def tell(self, *args):
+    def tell(self, *args) -> int:
         return 0
 
     def seek(self, *args):
@@ -220,7 +220,14 @@ class SymbolicFile(File):
     Represents a symbolic file.
     """
 
-    def __init__(self, constraints, path="sfile", mode="rw", max_size=100, wildcard="+"):
+    def __init__(
+        self,
+        constraints,
+        path: str = "sfile",
+        mode: str = "rw",
+        max_size: int = 100,
+        wildcard: str = "+",
+    ):
         """
         Builds a symbolic file
 
@@ -272,7 +279,7 @@ class SymbolicFile(File):
         self.array = state["array"]
         super().__setstate__(state)
 
-    def tell(self):
+    def tell(self, *args) -> int:
         """
         Returns the read/write file offset
         :rtype: int
@@ -449,7 +456,14 @@ class Linux(Platform):
     BASE_DYN_ADDR_32 = 0x56555000
     BASE_DYN_ADDR = 0x555555554000
 
-    def __init__(self, program, argv=None, envp=None, disasm="capstone", **kwargs):
+    def __init__(
+        self,
+        program: Optional[str],
+        argv: List[str] = [],
+        envp: List[str] = [],
+        disasm: str = "capstone",
+        **kwargs,
+    ):
         """
         Builds a Linux OS platform
         :param string program: The path to ELF binary
@@ -457,17 +471,17 @@ class Linux(Platform):
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         :ivar files: List of active file descriptors
-        :type files: list[Socket] or list[File]
+        :type files: list[Socket or File or None]
         """
         super().__init__(path=program, **kwargs)
 
         self.program = program
         self.clocks = 0
-        self.files = []
+        self.files: List[Union[None, File, Socket]] = []
         # A cache for keeping state when reading directories { fd: dent_iter }
-        self._getdents_c = {}
-        self._closed_files = []
-        self.syscall_trace = []
+        self._getdents_c: Dict[int, Any] = {}
+        self._closed_files: List[Union[File, Socket]] = []
+        self.syscall_trace: List = []
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
@@ -546,7 +560,7 @@ class Linux(Platform):
 
         assert (in_fd, out_fd, err_fd) == (0, 1, 2)
 
-    def _init_cpu(self, arch) -> None:
+    def _init_cpu(self, arch: str) -> None:
         # create memory and CPU
         cpu = self._mk_proc(arch)
         self.procs = [cpu]
@@ -576,9 +590,6 @@ class Linux(Platform):
         :param argv list: argv array
         :param envp list: envp array
         """
-        argv = [] if argv is None else argv
-        envp = [] if envp is None else envp
-
         logger.debug(f"Loading {program} as a {self.arch} elf")
 
         self.load(program, envp)
@@ -719,7 +730,7 @@ class Linux(Platform):
         for proc in self.procs:
             self.forward_events_from(proc)
 
-    def _init_arm_kernel_helpers(self):
+    def _init_arm_kernel_helpers(self) -> None:
         """
         ARM kernel helpers
 
@@ -807,7 +818,7 @@ class Linux(Platform):
     #     )
     #     return vdso_addr
 
-    def setup_stack(self, argv, envp):
+    def setup_stack(self, argv: List[str], envp: List[str]) -> None:
         """
         :param Cpu cpu: The cpu instance
         :param argv: list of parameters for the program to execute.
@@ -940,7 +951,7 @@ class Linux(Platform):
         self.current.PC = elf_entry
         logger.debug(f"Entry point updated: {elf_entry:016x}")
 
-    def load(self, filename, env):
+    def load(self, filename: str, env) -> None:
         """
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
@@ -967,7 +978,7 @@ class Linux(Platform):
         interpreter = None
 
         # Need to clean up when we are done
-        def _clean_interp_stream():
+        def _clean_interp_stream() -> None:
             if interpreter is not None:
                 try:
                     interpreter.stream.close()
@@ -1202,7 +1213,7 @@ class Linux(Platform):
         # Clean up interpreter ELFFile
         _clean_interp_stream()
 
-    def _to_signed_dword(self, dword):
+    def _to_signed_dword(self, dword: int):
         arch_width = self.current.address_bit_size
         if arch_width == 32:
             sdword = ctypes.c_int32(dword).value
@@ -1228,7 +1239,7 @@ class Linux(Platform):
             self.files.append(f)
         return fd
 
-    def _close(self, fd: int) -> None:
+    def _close(self, fd):
         """
         Removes a file descriptor from the file descriptor list
         :rtype: int
@@ -1253,14 +1264,14 @@ class Linux(Platform):
         """
         return self._open(self.files[fd])
 
-    def _is_fd_open(self, fd: int) -> bool:
+    def _is_fd_open(self, fd):
         """
         Determines if the fd is within range and in the file descr. list
         :param fd: the file descriptor to check.
         """
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
-    def _get_fd(self, fd: int) -> File:
+    def _get_fd(self, fd):
         if not self._is_fd_open(fd):
             raise FdError(f"File descriptor is not open", errno.EBADF)
         else:
@@ -1577,10 +1588,11 @@ class Linux(Platform):
         else:
             return -errno.EINVAL
 
-    def _sys_open_get_file(self, filename, flags):
+    def _sys_open_get_file(self, filename: str, flags: int) -> File:
         # TODO(yan): Remove this special case
         if os.path.abspath(filename).startswith("/proc/self"):
             if filename == "/proc/self/exe":
+                assert self.program is not None
                 filename = os.path.abspath(self.program)
             elif filename == "/proc/self/maps":
                 return ProcSelfMaps(flags, self)
@@ -1588,13 +1600,11 @@ class Linux(Platform):
                 raise EnvironmentError("/proc/self is largely unsupported")
 
         if os.path.isdir(filename):
-            f = Directory(filename, flags)
+            return Directory(filename, flags)
         else:
-            f = File(filename, flags)
+            return File(filename, flags)
 
-        return f
-
-    def sys_open(self, buf, flags, mode):
+    def sys_open(self, buf: int, flags: int, mode) -> int:
         """
         :param buf: address of zero-terminated pathname
         :param flags: file access bits
@@ -1668,7 +1678,7 @@ class Linux(Platform):
 
         return ret
 
-    def sys_fsync(self, fd: int) -> int:
+    def sys_fsync(self, fd):
         """
         Synchronize a file's in-core state with that on disk.
         """
