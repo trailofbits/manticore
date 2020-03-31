@@ -133,11 +133,11 @@ class Map(object, metaclass=ABCMeta):
         self._set_perms(perms)
         self._name = name
 
-    def _get_perms(self):
+    def _get_perms(self) -> str:
         """ Gets the access permissions of the map. """
         return self._perms
 
-    def _set_perms(self, perms):
+    def _set_perms(self, perms: str) -> None:
         """
         Sets the access permissions of the map.
 
@@ -153,7 +153,7 @@ class Map(object, metaclass=ABCMeta):
     # Property
     perms = property(_get_perms, _set_perms)
 
-    def access_ok(self, access):
+    def access_ok(self, access) -> bool:
         """ Check if there is enough permissions for access """
         for c in access:
             if c not in self.perms:
@@ -161,11 +161,11 @@ class Map(object, metaclass=ABCMeta):
         return True
 
     @property
-    def start(self):
+    def start(self) -> int:
         return self._start
 
     @property
-    def end(self):
+    def end(self) -> int:
         return self._end
 
     @property
@@ -211,7 +211,7 @@ class Map(object, metaclass=ABCMeta):
     def __hash__(self):
         return object.__hash__(self)
 
-    def _in_range(self, index):
+    def _in_range(self, index) -> bool:
         """ Returns True if index is in range """
         if isinstance(index, slice):
             in_range = (
@@ -269,7 +269,7 @@ class Map(object, metaclass=ABCMeta):
 class AnonMap(Map):
     """ A concrete anonymous memory map """
 
-    def __init__(self, start, size, perms, data_init=None, name=None, **kwargs):
+    def __init__(self, start: int, size: int, perms: str, data_init=None, name=None):
         """
         Builds a concrete anonymous memory map.
 
@@ -278,7 +278,7 @@ class AnonMap(Map):
         :param perms: the access permissions of the map.
         :param data_init: the data to initialize the map.
         """
-        super().__init__(start, size, perms, name, **kwargs)
+        super().__init__(start, size, perms, name)
         self._data = bytearray(size)
         if data_init is not None:
             assert len(data_init) <= size, "More initial data than reserved memory"
@@ -392,7 +392,9 @@ class FileMap(Map):
     correspond to added or removed regions of the file is unspecified.
     """
 
-    def __init__(self, addr, size, perms, filename, offset=0, overlay=None, **kwargs):
+    def __init__(
+        self, addr, size, perms: str, filename: str, offset: int = 0, overlay=None, **kwargs
+    ):
         """
         Builds a map of memory  initialized with the content of filename.
 
@@ -617,7 +619,7 @@ class Memory(object, metaclass=ABCMeta):
     def maps(self):
         return self._maps
 
-    def _ceil(self, address):
+    def _ceil(self, address) -> int:
         """
         Returns the smallest page boundary value not less than the address.
         :rtype: int
@@ -626,7 +628,7 @@ class Memory(object, metaclass=ABCMeta):
         """
         return (((address - 1) + self.page_size) & ~self.page_mask) & self.memory_mask
 
-    def _floor(self, address):
+    def _floor(self, address) -> int:
         """
         Returns largest page boundary value not greater than the address.
 
@@ -636,7 +638,7 @@ class Memory(object, metaclass=ABCMeta):
         """
         return address & ~self.page_mask
 
-    def _page(self, address):
+    def _page(self, address) -> int:
         """
         Calculates the page number of an address.
 
@@ -646,7 +648,7 @@ class Memory(object, metaclass=ABCMeta):
         """
         return address >> self.page_bit_size
 
-    def _search(self, size, start=None, counter=0):
+    def _search(self, size, start=None, counter=0) -> int:
         """
         Recursively searches the address space for enough free space to allocate C{size} bytes.
 
@@ -1244,7 +1246,7 @@ class SMemory(Memory):
                             )
             return list(map(Operators.CHR, result))
 
-    def write(self, address, value, force=False):
+    def write(self, address, value, force: bool = False) -> None:
         """
         Write a value at address.
 
@@ -1559,35 +1561,35 @@ class LazySMemory(SMemory):
 
 
 class Memory32(Memory):
-    memory_bit_size = 32
-    page_bit_size = 12
+    memory_bit_size: int = 32
+    page_bit_size: int = 12
 
 
 class Memory64(Memory):
-    memory_bit_size = 64
-    page_bit_size = 12
+    memory_bit_size: int = 64
+    page_bit_size: int = 12
 
 
 class SMemory32(SMemory):
-    memory_bit_size = 32
-    page_bit_size = 12
+    memory_bit_size: int = 32
+    page_bit_size: int = 12
 
 
 class SMemory32L(SMemory):
-    memory_bit_size = 32
-    page_bit_size = 13
+    memory_bit_size: int = 32
+    page_bit_size: int = 13
 
 
 class SMemory64(SMemory):
-    memory_bit_size = 64
-    page_bit_size = 12
+    memory_bit_size: int = 64
+    page_bit_size: int = 12
 
 
 class LazySMemory32(LazySMemory):
-    memory_bit_size = 32
-    page_bit_size = 12
+    memory_bit_size: int = 32
+    page_bit_size: int = 12
 
 
 class LazySMemory64(LazySMemory):
-    memory_bit_size = 64
-    page_bit_size = 12
+    memory_bit_size: int = 64
+    page_bit_size: int = 12
