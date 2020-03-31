@@ -1843,7 +1843,8 @@ class EVM(Eventful):
 
     def CHAINID(self):
         """Get current chainid."""
-        return 0
+        #  1:= Ethereum Mainnet - https://chainid.network/
+        return 1
 
     ############################################################################
     # Stack, Memory, Storage and Flow Operations
