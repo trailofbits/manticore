@@ -776,7 +776,9 @@ class Cpu(Eventful):
             result.append(Operators.CHR(self.read_int(where + i, 8, force)))
         return result
 
-    def write_string(self, where, string, max_length=None, force=False):
+    def write_string(
+        self, where: int, string: str, max_length: int = None, force: bool = False
+    ) -> None:
         """
         Writes a string to memory, appending a NULL-terminator at the end.
 
@@ -795,7 +797,7 @@ class Cpu(Eventful):
 
         self.write_bytes(where, string + "\x00", force)
 
-    def read_string(self, where, max_length=None, force=False):
+    def read_string(self, where: int, max_length: int = None, force: bool = False) -> str:
         """
         Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
