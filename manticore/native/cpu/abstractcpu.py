@@ -726,7 +726,7 @@ class Cpu(Eventful):
         self._publish("did_read_memory", where, value, size)
         return value
 
-    def write_bytes(self, where, data, force=False):
+    def write_bytes(self, where: int, data, force: bool = False) -> None:
         """
         Write a concrete or symbolic (or mixed) buffer to memory
 

@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
+from dataclasses import dataclass, field
 from ..core.smtlib import (
     Operators,
     ConstraintSet,
@@ -534,6 +535,32 @@ class StubCPU:
         return None
 
 
+@dataclass
+class ProcSelfMapInfo:
+    start: int
+    end: int
+    rwx_perms: str
+    shared_perms: str = "-"
+    offset: int = 0
+    device: str = "00:00"
+    inode: int = 0
+    pathname: str = ""
+
+    perms: str = field(init=False)
+
+    def __post_init__(self):
+        self.perms = self.rwx_perms.replace(" ", "-") + self.shared_perms
+        if self.pathname == "stack":
+            self.pathname = "[" + self.pathname + "]"
+
+    def __str__(self):
+        return f"{self.address} {self.perms:>4s} {self.offset:08x} {self.device} {self.inode:9} {self.pathname}"
+
+    @property
+    def address(self):
+        return f"{self.start:016x}-{self.end:016x}"
+
+
 class Memory(object, metaclass=ABCMeta):
     """
     The memory manager.
@@ -813,6 +840,43 @@ class Memory(object, metaclass=ABCMeta):
                 for start, end, p, offset, name in self.mappings()
             ]
         )
+
+    def proc_self_mappings(self):
+        """
+        Returns a sorted list of all the mappings for this memory for /proc/self/maps.
+        Device, inode, and private/shared permissions are unsupported.
+        Stack is the only memory section supported in the memory map (heap, vdso, etc.)
+        are unsupported.
+        Pathname is substituted by filename
+
+        :return: a list of mappings.
+        :rtype: list
+        """
+        result = []
+        # TODO: Device, inode, and private/shared permissions are unsupported
+        # TODO: Add complete paths
+        for m in self.maps:
+            if isinstance(m, AnonMap):
+                if m.name is not None:
+                    result.append(
+                        ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms, pathname=m.name)
+                    )
+                else:
+                    result.append(ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms))
+            elif isinstance(m, FileMap):
+                result.append(
+                    ProcSelfMapInfo(
+                        m.start, m.end, rwx_perms=m.perms, offset=m._offset, pathname=m._filename
+                    )
+                )
+            else:
+                result.append(ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms, pathname=m.name))
+        return sorted(result, key=lambda m: m.start)
+
+    @property
+    def __proc_self__(self):
+        self.proc_self_mappings()
+        return "\n".join([f"{m}" for m in self.proc_self_mappings()])
 
     def _maps_in_range(self, start, end):
         """
