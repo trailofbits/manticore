@@ -189,7 +189,7 @@ class Manticore(ManticoreBase):
         # This will interpret the buffer specification written in INTEL ASM.
         # (It may dereference pointers)
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
-        if not Z3Solver().can_be_true(state.constraints, assertion):
+        if not Z3Solver.instance().can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info(
                 "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.pc, program
