@@ -2141,6 +2141,10 @@ class Linux(Platform):
         logger.info("Ignoring sys_fadvise64")
         return 0
 
+    def sys_arm_fadvise64_64(self, fd: int, offset: int, length: int, advice: int) -> int:
+        logger.info("Ignoring sys_arm_fadvise64_64")
+        return 0
+
     def sys_socket(self, domain, socket_type, protocol):
         if domain != socket.AF_INET:
             return -errno.EINVAL
