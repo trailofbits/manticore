@@ -2137,7 +2137,7 @@ class Linux(Platform):
         logger.info("Ignoring sys_madvise")
         return 0
 
-    def sys_fadvise64(self, fd, offset, length, advice):
+    def sys_fadvise64(self, fd: int, offset: int, length: int, advice: int) -> int:
         logger.info("Ignoring sys_fadvise64")
         return 0
 
