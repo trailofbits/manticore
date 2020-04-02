@@ -1226,7 +1226,7 @@ class Linux(Platform):
             self.files.append(f)
         return fd
 
-    def _close(self, fd):
+    def _close(self, fd: int) -> None:
         """
         Removes a file descriptor from the file descriptor list
         :rtype: int
