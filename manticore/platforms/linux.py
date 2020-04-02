@@ -32,7 +32,7 @@ from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -485,7 +485,7 @@ class Linux(Platform):
         # A cache for keeping state when reading directories { fd: dent_iter }
         self._getdents_c: Dict[int, Any] = {}
         self._closed_files: List[Union[File, Socket]] = []
-        self.syscall_trace: List = []
+        self.syscall_trace: List[Tuple[str, int, bytes]] = []
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
