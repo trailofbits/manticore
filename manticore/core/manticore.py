@@ -142,7 +142,7 @@ class ManticoreBase(Eventful):
         "terminate_execution",
     }
 
-    def __init__(self, initial_state, workspace_url=None, policy="random", **kwargs):
+    def __init__(self, initial_state, workspace_url=None, outputspace_url=None, **kwargs):
         """
         :param initial_state: State to start from.
 
@@ -254,7 +254,6 @@ class ManticoreBase(Eventful):
         :param initial_state: the initial root `State` object
         :type state: State
         :param workspace_url: workspace folder name
-        :param policy: scheduling policy
         :param kwargs: other kwargs, e.g.
         """
         super().__init__()
@@ -288,9 +287,9 @@ class ManticoreBase(Eventful):
                 raise TypeError(f"Invalid workspace type: {type(workspace_url).__name__}")
         self._workspace = Workspace(workspace_url)
         # reuse the same workspace if not specified
-        if workspace_url is None:
-            workspace_url = f"fs:{self._workspace.uri}"
-        self._output = ManticoreOutput(workspace_url)
+        if outputspace_url is None:
+            outputspace_url = f"fs:{self._workspace.uri}"
+        self._output = ManticoreOutput(outputspace_url)
 
         # The set of registered plugins
         # The callback methods defined in the plugin object will be called when
