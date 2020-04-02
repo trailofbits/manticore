@@ -722,7 +722,7 @@ class ManticoreEVM(ManticoreBase):
             if new_address not in all_addresses:
                 return new_address
 
-    def transaction(self, caller, address, value, data, gas=None):
+    def transaction(self, caller, address, value, data, gas=21000, price=1):
         """ Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
@@ -733,11 +733,12 @@ class ManticoreEVM(ManticoreBase):
             :type value: int or BitVecVariable
             :param data: initial data
             :param gas: gas budget
+            :param price: gas unit price
             :raises NoAliveStates: if there are no alive states to execute
         """
-        self._transaction("CALL", caller, value=value, address=address, data=data, gaslimit=gas)
+        self._transaction("CALL", caller, value=value, address=address, data=data, gas=gas, price=price)
 
-    def create_account(self, balance=0, address=None, code=None, name=None):
+    def create_account(self, balance=0, address=None, code=None, name=None, nonce=None):
         """ Low level creates an account. This won't generate a transaction.
 
             :param balance: balance to be set on creation (optional)
@@ -745,6 +746,7 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address for the new account (optional)
             :type address: int
             :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
+            :param nonce: force a specific nonce
             :param name: a global account name eg. for use as reference in the reports (optional)
             :return: an EVMAccount
         """
@@ -796,7 +798,7 @@ class ManticoreEVM(ManticoreBase):
                 raise EthereumError(
                     "This is bad. Same address is used for different contracts in different states"
                 )
-            world.create_account(address, balance, code=code, storage=None)
+            world.create_account(address, balance, code=code, storage=None, nonce=nonce)
 
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
@@ -835,21 +837,21 @@ class ManticoreEVM(ManticoreBase):
 
         return caller, address, value, data
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=None, price=1):
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gas=21000, price=1):
         """ Initiates a transaction
 
             :param caller: caller account
             :type caller: int or EVMAccount
             :param int address: the address for the transaction (optional)
             :param value: value to be transferred
-            :param price: the price of gas for this transaction. Mostly unused.
+            :param price: the price of gas for this transaction.
             :type value: int or BitVecVariable
             :param str data: initializing evm bytecode and arguments or transaction call data
-            :param gaslimit: gas budget
+            :param gas: gas budget for current transaction
             :rtype: EVMAccount
         """
-        if gaslimit is None:
-            gaslimit = consts.defaultgas
+        if gas is None:
+            gas = consts.defaultgas
         # Type Forgiveness
         if isinstance(address, EVMAccount):
             address = int(address)
@@ -933,7 +935,7 @@ class ManticoreEVM(ManticoreBase):
                 data=data_migrated,
                 caller=caller_migrated,
                 value=value_migrated,
-                gas=gaslimit,
+                gas=gas,
             )
 
         # run over potentially several states and
