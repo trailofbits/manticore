@@ -16,6 +16,8 @@ from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
 from ..utils import config
 
+from typing import Dict, Optional
+
 import functools
 import logging
 
@@ -116,7 +118,7 @@ class Map(object, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, start, size, perms, name=None):
+    def __init__(self, start: int, size: int, perms: str, name=None):
         """
         Abstract memory map.
 
@@ -326,10 +328,12 @@ class AnonMap(Map):
 
 
 class ArrayMap(Map):
-    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs):
-        super(ArrayMap, self).__init__(address, size, perms)
+    def __init__(
+        self, start: int, size: int, perms: str, index_bits, backing_array=None, name=None
+    ):
+        super().__init__(start, size, perms, name)
         if name is None:
-            name = "ArrayMap_{:x}".format(address)
+            name = "ArrayMap_{:x}".format(start)
         if backing_array is not None:
             self._array = backing_array
         else:
@@ -356,7 +360,7 @@ class ArrayMap(Map):
     def __getitem__(self, key):
         return self._array[key]
 
-    def split(self, address):
+    def split(self, address: int):
         if address <= self.start:
             return None, self
         if address >= self.end:
@@ -393,7 +397,7 @@ class FileMap(Map):
     """
 
     def __init__(
-        self, addr, size, perms: str, filename: str, offset: int = 0, overlay=None, **kwargs
+        self, addr: int, size: int, perms: str, filename: str, offset: int = 0, overlay=None
     ):
         """
         Builds a map of memory  initialized with the content of filename.
@@ -405,7 +409,7 @@ class FileMap(Map):
         :param offset: the offset into the file where to start the mapping. \
                 This offset must be a multiple of pagebitsize.
         """
-        super().__init__(addr, size, perms, **kwargs)
+        super().__init__(addr, size, perms)
         assert isinstance(offset, int)
         assert offset >= 0
         self._filename = filename
@@ -460,13 +464,13 @@ class FileMap(Map):
         else:
             return get_byte_at_offset(index)
 
-    def split(self, address):
+    def split(self, address: int):
         if address <= self.start:
             return None, self
         if address >= self.end:
             return self, None
 
-        assert address > self.start and address <= self.end
+        assert self.start < address <= self.end
         head = COWMap(self, size=address - self.start)
         tail = COWMap(self, offset=address - self.start)
         return head, tail
@@ -477,7 +481,9 @@ class COWMap(Map):
     Copy-on-write based map.
     """
 
-    def __init__(self, parent, offset=0, perms=None, size=None, **kwargs):
+    def __init__(
+        self, parent: Map, offset: int = 0, perms: Optional[str] = None, size=None, **kwargs
+    ):
         """
         A copy on write copy of parent. Writes to the parent after a copy on
         write are unspecified.
@@ -497,8 +503,9 @@ class COWMap(Map):
 
         super().__init__(parent.start + offset, size, perms, **kwargs)
         self._parent = parent
-        self._parent.__setitem__ = False
-        self._cow = {}
+        # See (https://github.com/python/mypy/issues/2427)
+        self._parent.__setitem__ = False  # type: ignore
+        self._cow: Dict = {}
 
     def __setitem__(self, index, value):
         assert self._in_range(index)
@@ -520,7 +527,7 @@ class COWMap(Map):
         else:
             return _normalize(self._cow.get(index, self._parent[index]))
 
-    def split(self, address):
+    def split(self, address: int):
         if address <= self.start:
             return None, self
         if address >= self.end:
