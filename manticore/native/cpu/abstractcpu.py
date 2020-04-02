@@ -126,7 +126,7 @@ class Operand:
         scale = property(lambda self: self.parent.op.mem.scale)
         disp = property(lambda self: self.parent.op.mem.disp)
 
-    def __init__(self, cpu: Cpu, op):
+    def __init__(self, cpu: 'Cpu', op):
         """
         This encapsulates the arch-independent way to access instruction
         operands and immediates based on the disassembler operand descriptor in

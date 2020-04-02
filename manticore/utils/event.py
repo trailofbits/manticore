@@ -170,11 +170,11 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         bucket.setdefault(robj, set()).add(callback)
         self.__sub_events__.add(name)
 
-    def forward_events_from(self, source: Eventful, include_source: bool = False) -> None:
+    def forward_events_from(self, source: "Eventful", include_source: bool = False) -> None:
         assert isinstance(source, Eventful), f"{source.__class__.__name__} is not Eventful"
         source.forward_events_to(self, include_source=include_source)
 
-    def forward_events_to(self, sink: Eventful, include_source: bool = False) -> None:
+    def forward_events_to(self, sink: "Eventful", include_source: bool = False) -> None:
         """This forwards signal to sink"""
         assert isinstance(sink, Eventful), f"{sink.__class__.__name__} is not Eventful"
         self._forwards[sink] = include_source
