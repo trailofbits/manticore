@@ -728,7 +728,7 @@ class ManticoreBase(Eventful):
         return testcase
 
     @at_not_running
-    def register_plugin(self, plugin):
+    def register_plugin(self, plugin: Plugin):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"

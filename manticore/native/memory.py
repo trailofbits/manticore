@@ -791,7 +791,7 @@ class Memory(object, metaclass=ABCMeta):
         self.cpu._publish("did_map_memory", addr, size, perms, None, None, addr)
         return addr
 
-    def _add(self, m):
+    def _add(self, m: Map) -> None:
         assert isinstance(m, Map)
         assert m not in self._maps
         assert m.start & self.page_mask == 0
@@ -801,7 +801,7 @@ class Memory(object, metaclass=ABCMeta):
         for i in range(self._page(m.start), self._page(m.end)):
             self._page2map[i] = m
 
-    def _del(self, m):
+    def _del(self, m: Map) -> None:
         assert isinstance(m, Map)
         assert m in self._maps
         # remove m pages from the page2maps..
@@ -1116,7 +1116,7 @@ class SMemory(Memory):
     :todo: improve comments
     """
 
-    def __init__(self, constraints, symbols=None, *args, **kwargs):
+    def __init__(self, constraints: ConstraintSet, symbols=None, *args, **kwargs):
         """
         Builds a memory.
 
@@ -1132,6 +1132,7 @@ class SMemory(Memory):
         super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
         self._constraints = constraints
+        self._symbols: Dict
         if symbols is None:
             self._symbols = {}
         else:

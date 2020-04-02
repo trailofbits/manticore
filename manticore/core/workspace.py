@@ -464,7 +464,7 @@ class Workspace:
         """
         return self._store.load_state(f"{self._prefix}{state_id:08x}{self._suffix}", delete=delete)
 
-    def save_state(self, state, state_id=None):
+    def save_state(self, state: StateBase, state_id=None):
         """
         Save a state to storage, return identifier.
 

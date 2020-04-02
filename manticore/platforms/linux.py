@@ -296,7 +296,6 @@ class SymbolicFile(File):
         """
         Repositions the file C{offset} according to C{whence}.
         Returns the resulting offset or -1 in case of error.
-        :rtype: int
         :return: the file offset.
         """
         assert isinstance(offset, int)
