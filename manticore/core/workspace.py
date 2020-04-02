@@ -651,5 +651,5 @@ class ManticoreOutput:
     def save_input_symbols(testcase, state):
         with testcase.open_stream("input") as f:
             for symbol in state.input_symbols:
-                buf = Z3Solver().get_value(state.constraints, symbol)
+                buf = Z3Solver.instance().get_value(state.constraints, symbol)
                 f.write(f"{symbol.name}: {buf!r}\n")

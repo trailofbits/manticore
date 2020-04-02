@@ -2036,7 +2036,7 @@ class Linux(Platform):
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             if issymbolic(size):
-                size = Z3Solver().get_value(self.constraints, size)
+                size = Z3Solver.instance().get_value(self.constraints, size)
 
             data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
@@ -2137,8 +2137,12 @@ class Linux(Platform):
         logger.info("Ignoring sys_madvise")
         return 0
 
-    def sys_fadvise64(self, fd, offset, length, advice):
+    def sys_fadvise64(self, fd: int, offset: int, length: int, advice: int) -> int:
         logger.info("Ignoring sys_fadvise64")
+        return 0
+
+    def sys_arm_fadvise64_64(self, fd: int, offset: int, length: int, advice: int) -> int:
+        logger.info("Ignoring sys_arm_fadvise64_64")
         return 0
 
     def sys_socket(self, domain, socket_type, protocol):
@@ -2978,7 +2982,7 @@ class SLinux(Linux):
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
-                c = bytes([Z3Solver().get_value(self.constraints, c)])
+                c = bytes([Z3Solver.instance().get_value(self.constraints, c)])
             concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
@@ -2990,7 +2994,7 @@ class SLinux(Linux):
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
-            error_code = Z3Solver().get_value(self.constraints, error_code)
+            error_code = Z3Solver.instance().get_value(self.constraints, error_code)
             return self._exit(
                 f"Program finished with exit status: {ctypes.c_int32(error_code).value} (*)"
             )
@@ -3177,7 +3181,7 @@ class SLinux(Linux):
             try:
                 for c in data:
                     if issymbolic(c):
-                        c = Z3Solver().get_value(self.constraints, c)
+                        c = Z3Solver.instance().get_value(self.constraints, c)
                     fd.write(make_chr(c))
             except SolverError:
                 fd.write("{SolverError}")
