@@ -736,7 +736,9 @@ class ManticoreEVM(ManticoreBase):
             :param price: gas unit price
             :raises NoAliveStates: if there are no alive states to execute
         """
-        self._transaction("CALL", caller, value=value, address=address, data=data, gas=gas, price=price)
+        self._transaction(
+            "CALL", caller, value=value, address=address, data=data, gas=gas, price=price
+        )
 
     def create_account(self, balance=0, address=None, code=None, name=None, nonce=None):
         """ Low level creates an account. This won't generate a transaction.
