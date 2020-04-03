@@ -754,6 +754,7 @@ class ModuleInstance(Eventful):
         "local_names",
         "_instruction_queue",
         "_block_depths",
+        "_advice",
         "_state",
     ]
 
@@ -787,10 +788,12 @@ class ModuleInstance(Eventful):
     # instruction queue, so the meaning of an `end` instruction could be otherwise ambiguous. Loosely put, the sum of
     # all the digits in this list is the number of `end` instructions we need to see before execution is finished.
     _block_depths: typing.List[int]
+    #: Stickies the advice conditions before each instruction.
+    _advice: typing.Optional[typing.List[bool]]
     #: Prevents the user from invoking functions before instantiation
     instantiated: bool
     #: Stickies the current state before each instruction
-    state: State
+    _state: State
 
     def __init__(self, constraints=None):
         self.types = []
@@ -805,6 +808,7 @@ class ModuleInstance(Eventful):
         self.local_names = {}
         self._instruction_queue = deque()
         self._block_depths = [0]
+        self._advice = None
         self._state = None
 
         super().__init__()
@@ -842,6 +846,7 @@ class ModuleInstance(Eventful):
         self.local_names = state["local_names"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
+        self._advice = None
         self._state = None
         super().__setstate__(state)
 
@@ -1229,7 +1234,7 @@ class ModuleInstance(Eventful):
         out.append(i)
         return out
 
-    def exec_instruction(self, store: Store, stack: "Stack", current_state=None) -> bool:
+    def exec_instruction(self, store: Store, stack: "Stack", advice: typing.Optional[typing.List[bool]] = None, current_state=None) -> bool:
         """
         The core instruction execution function. Pops an instruction from the queue, then dispatches it to the Executor
         if it's a numeric instruction, or executes it internally if it's a control-flow instruction.
@@ -1238,10 +1243,12 @@ class ModuleInstance(Eventful):
         | instruction implementations, but for brevity's sake, it's only explicitly documented here.
         :param stack: The execution Stack to use, likewise passed in from the parent WASMWorld and only documented here,
         | despite being passed to all the instruction implementations.
+        :param advice: A list of concretized conditions to advice execution of the instruction.
         :return: True if execution succeeded, False if there are no more instructions to execute
         """
         # Maps return types from instruction immediates into actual types
         ret_type_map = {-1: [I32], -2: [I64], -3: [F32], -4: [F64], -64: []}
+        self._advice = advice
         self._state = current_state
         # Use the AtomicStack context manager to catch Concretization and roll back changes
         with AtomicStack(stack) as aStack:
@@ -1447,16 +1454,14 @@ class ModuleInstance(Eventful):
 
         https://www.w3.org/TR/wasm-core-1/#exec-if
         """
-        stack.has_type_on_top((I32, Condition), 1)
-        item = stack.pop()
-        if isinstance(item, Condition):
-            stack.has_type_on_top(I32, 1)
-            stack.pop()
-            cond = item.value
-        elif isinstance(item, Expression):
-            raise ConcretizeCondition("Concretizing if_", item != 0)
+        stack.has_type_on_top(I32, 1)
+        i = stack.pop()
+        if self._advice is not None:
+            cond = self._advice[0]
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition("Concretizing if_", i != 0)
         else:
-            cond = item != 0
+            cond = i != 0
 
         insn_block = self.look_forward(0x0B)  # Get the entire `if` block
         # Split it into the true and false branches
@@ -1530,16 +1535,14 @@ class ModuleInstance(Eventful):
 
         https://www.w3.org/TR/wasm-core-1/#exec-br-if
         """
-        stack.has_type_on_top((I32, Condition), 1)
-        item = stack.pop()
-        if isinstance(item, Condition):
-            stack.has_type_on_top(I32, 1)
-            stack.pop()
-            cond = item.value
-        elif isinstance(item, Expression):
-            raise ConcretizeCondition("Concretizing if_", item != 0)
+        stack.has_type_on_top(I32, 1)
+        i = stack.pop()
+        if self._advice is not None:
+            cond = self._advice[0]
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition("Concretizing br_if_", i != 0)
         else:
-            cond = item != 0
+            cond = i != 0
 
         if cond:
             self.br(store, stack, imm.relative_depth)
@@ -1551,22 +1554,18 @@ class ModuleInstance(Eventful):
 
         https://www.w3.org/TR/wasm-core-1/#exec-br-table
         """
-        stack.has_type_on_top((I32, Condition), 1)
-        item = stack.pop()
-        if isinstance(item, Condition):
-            in_range = item.value
-            stack.has_type_on_top(I32, 1)
-            i = stack.pop()
+        stack.has_type_on_top(I32, 1)
+        i = stack.pop()
+        if self._advice is not None:
+            in_range = self._advice[0]
             if not in_range:
                 i = imm.target_count
             elif issymbolic(i):
-                raise ConcretizeStack(-2, I32, "Concretizing br_table index", i)
-        else:
-            i = item
-            if isinstance(i, Expression):
-                raise ConcretizeCondition(
-                    "Concretizing br_table range check", (i >= 0) & (i < imm.target_count)
-                )
+                raise ConcretizeStack(-1, I32, "Concretizing br_table index", i)
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition(
+                "Concretizing br_table range check", (i >= 0) & (i < imm.target_count)
+            )
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
         # execute br target_table[i]. The tests, however, pass a negative i, which doesn't make sense in this
@@ -1631,23 +1630,23 @@ class ModuleInstance(Eventful):
         assert imm.type_index in range(len(f.frame.module.types))
         ft_expect = f.frame.module.types[imm.type_index]
 
-        stack.has_type_on_top((I32, Condition), 1)
+        stack.has_type_on_top(I32, 1)
         item = stack.pop()
-        if isinstance(item, Condition):
-            in_range = item.value
-            stack.has_type_on_top(I32, 1)
-            i = stack.pop()
+        if self._advice is not None:
+            in_range = self._advice[0]
             if not in_range:
-                i = len(tab.elem)
-            if issymbolic(i):
-                raise ConcretizeStack(-2, I32, "Concretizing call_indirect operand", i)
+                i = I32.cast(len(tab.elem))
+            elif issymbolic(item):
+                raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", item)
+            else:
+                i = item
         elif isinstance(item, Expression):
             raise ConcretizeCondition(
                 "Concretizing call_indirect range check", (item >= 0) & (item < len(tab.elem))
             )
         else:
-            assert isinstance(item, I32)
             i = item
+            assert isinstance(i, I32)
 
         if i not in range(len(tab.elem)):
             raise NonExistentFunctionCallTrap()
@@ -1705,20 +1704,6 @@ class Activation:
         self.arity = arity
         self.frame = frame
         self.expected_block_depth = expected_block_depth
-
-
-@dataclass
-class Condition:
-    """
-    A boolean condition pushed to the stack to advise execution control flow.
-
-    This is a simple typed wrapper around a boolean.
-    """
-
-    value: bool  #: The boolean condition value
-
-    def __init__(self, value: bool):
-        self.value = value
 
 
 StackItem = typing.Union[Value, Label, Activation]
@@ -1886,9 +1871,6 @@ class AtomicStack(Stack):
         if isinstance(exc_val, Concretize):
             logger.info("Rolling back stack for concretization")
             self.rollback()
-        if isinstance(exc_val, ConcretizeCondition):
-            # Create a slot on the top of the stack for the concretized Condition.
-            self.parent.push(None)
 
     def rollback(self):
         while self.actions:
@@ -1968,6 +1950,6 @@ class ConcretizeCondition(Concretize):
         """
 
         def setstate(state, value: bool):
-            state.platform.stack.data[-1] = Condition(value)
+            state.platform.advice = [value]
 
         super().__init__(message, condition, setstate, **kwargs)
