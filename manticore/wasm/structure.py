@@ -1234,7 +1234,13 @@ class ModuleInstance(Eventful):
         out.append(i)
         return out
 
-    def exec_instruction(self, store: Store, stack: "Stack", advice: typing.Optional[typing.List[bool]] = None, current_state=None) -> bool:
+    def exec_instruction(
+        self,
+        store: Store,
+        stack: "Stack",
+        advice: typing.Optional[typing.List[bool]] = None,
+        current_state=None,
+    ) -> bool:
         """
         The core instruction execution function. Pops an instruction from the queue, then dispatches it to the Executor
         if it's a numeric instruction, or executes it internally if it's a control-flow instruction.
@@ -1459,7 +1465,7 @@ class ModuleInstance(Eventful):
         if self._advice is not None:
             cond = self._advice[0]
         elif isinstance(i, Expression):
-            raise ConcretizeCondition("Concretizing if_", i != 0)
+            raise ConcretizeCondition("Concretizing if_", i != 0, self._advice)
         else:
             cond = i != 0
 
@@ -1540,7 +1546,7 @@ class ModuleInstance(Eventful):
         if self._advice is not None:
             cond = self._advice[0]
         elif isinstance(i, Expression):
-            raise ConcretizeCondition("Concretizing br_if_", i != 0)
+            raise ConcretizeCondition("Concretizing br_if_", i != 0, self._advice)
         else:
             cond = i != 0
 
@@ -1564,7 +1570,7 @@ class ModuleInstance(Eventful):
                 raise ConcretizeStack(-1, I32, "Concretizing br_table index", i)
         elif isinstance(i, Expression):
             raise ConcretizeCondition(
-                "Concretizing br_table range check", (i >= 0) & (i < imm.target_count)
+                "Concretizing br_table range check", (i >= 0) & (i < imm.target_count), self._advice
             )
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
@@ -1642,7 +1648,9 @@ class ModuleInstance(Eventful):
                 i = item
         elif isinstance(item, Expression):
             raise ConcretizeCondition(
-                "Concretizing call_indirect range check", (item >= 0) & (item < len(tab.elem))
+                "Concretizing call_indirect range check",
+                (item >= 0) & (item < len(tab.elem)),
+                self._advice,
             )
         else:
             i = item
@@ -1943,13 +1951,21 @@ class HostFunc(ProtoFuncInst):
 class ConcretizeCondition(Concretize):
     """Tells Manticore to concretize a condition required to direct execution."""
 
-    def __init__(self, message: str, condition: Bool, **kwargs):
+    def __init__(
+        self,
+        message: str,
+        condition: Bool,
+        current_advice: typing.Optional[typing.List[bool]],
+        **kwargs,
+    ):
         """
         :param message: Debug message describing the reason for concretization
         :param condition: The boolean expression to concretize
         """
 
+        current_advice = current_advice if current_advice is not None else []
+
         def setstate(state, value: bool):
-            state.platform.advice = [value]
+            state.platform.advice = current_advice + [value]
 
         super().__init__(message, condition, setstate, **kwargs)
