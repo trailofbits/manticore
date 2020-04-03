@@ -799,7 +799,7 @@ class Cpu(Eventful):
 
         self.write_bytes(where, string + "\x00", force)
 
-    def read_string(self, where: int, max_length: int = Optional[None], force: bool = False) -> str:
+    def read_string(self, where: int, max_length: Optional[int] = None, force: bool = False) -> str:
         """
         Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
