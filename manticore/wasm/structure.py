@@ -1963,9 +1963,9 @@ class ConcretizeCondition(Concretize):
         :param condition: The boolean expression to concretize
         """
 
-        current_advice = current_advice if current_advice is not None else []
+        advice = current_advice if current_advice is not None else []
 
         def setstate(state, value: bool):
-            state.platform.advice = current_advice + [value]
+            state.platform.advice = advice + [value]
 
         super().__init__(message, condition, setstate, **kwargs)
