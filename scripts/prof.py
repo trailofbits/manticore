@@ -7,15 +7,18 @@ from __future__ import print_function
 from sys import argv, exit
 
 from manticore.native import Manticore
-
+from manticore.core.plugin import Profiler
 
 def profile(program, sort="cumulative"):
     print(f'[*] Profiling program "{program}"')
 
     m = Manticore(program)
-    m.run(should_profile=True)
+    profiler = Profiler()
+    m.register_plugin(profiler)
+    m.run()
+    m.finalize()
 
-    stats = m.get_profiling_stats()
+    stats = profiler.get_profiling_data()
     print(f"[*] Loaded profiling data.")
 
     if stats is None:
