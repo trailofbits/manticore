@@ -300,8 +300,14 @@ class Z3Solver(Solver):
         """
         # logger.debug('>%s', cmd)
         try:
-            self._proc.stdout.flush()
-            self._proc.stdin.write(f"{cmd}\n")
+            if self._proc.stdout:
+                self._proc.stdout.flush()
+            else:
+                raise SolverError("Could not flush stdout: file descriptor is None")
+            if self._proc.stdin:
+                self._proc.stdin.write(f"{cmd}\n")
+            else:
+                raise SolverError("Could not write to stdin: file descriptor is None")
         except IOError as e:
             raise SolverError(str(e))
 
