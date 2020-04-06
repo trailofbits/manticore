@@ -61,6 +61,7 @@ class ConcretizeMemory(MemoryException):
             self.message = f"Concretizing memory address {address} size {size}"
         else:
             self.message = message
+        super().__init__(self.message, address)
         self.mem = mem
         self.address = address
         self.size = size
