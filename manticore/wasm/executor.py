@@ -1454,8 +1454,8 @@ class Executor(Eventful):
             stack.push(F32.cast(c1))
             return
         raise NotImplementedError("f32_demote_f64")
-        c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
-        stack.push(F32.cast(c1))
+        # c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
+        # stack.push(F32.cast(c1))
 
     def f64_convert_s_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
