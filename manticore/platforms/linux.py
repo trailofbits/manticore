@@ -3093,7 +3093,7 @@ class SLinux(Linux):
             sock.buffer.append(symb[i])
         return fd
 
-    def sys_open(self, buf, flags, mode):
+    def sys_open(self, buf: int, flags: int, mode: int) -> int:
         """
         A version of open(2) that includes a special case for a symbolic path.
         When given a symbolic path, it will create a temporary file with
@@ -3106,11 +3106,9 @@ class SLinux(Linux):
         offset = 0
         symbolic_path = issymbolic(self.current.read_int(buf, 8))
         if symbolic_path:
-            import tempfile
-
             fd, path = tempfile.mkstemp()
             with open(path, "wb+") as f:
-                f.write("+" * 64)
+                f.write(b"+" * 64)
             self.symbolic_files.append(path)
             buf = self.current.memory.mmap(None, 1024, "rw ", data_init=path)
 
