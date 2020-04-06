@@ -9,6 +9,7 @@ from sys import argv, exit
 from manticore.native import Manticore
 from manticore.core.plugin import Profiler
 
+
 def profile(program, sort="cumulative"):
     print(f'[*] Profiling program "{program}"')
 
