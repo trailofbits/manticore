@@ -1594,7 +1594,7 @@ class Linux(Platform):
 
         return f
 
-    def sys_open(self, buf, flags, mode):
+    def sys_open(self, buf: int, flags: int, mode) -> int:
         """
         :param buf: address of zero-terminated pathname
         :param flags: file access bits
@@ -1610,7 +1610,7 @@ class Linux(Platform):
 
         return self._open(f)
 
-    def sys_openat(self, dirfd, buf, flags, mode) -> int:
+    def sys_openat(self, dirfd: int, buf: int, flags: int, mode) -> int:
         """
         Openat SystemCall - Similar to open system call except dirfd argument
         when path contained in buf is relative, dirfd is referred to set the relative path
@@ -3121,7 +3121,7 @@ class SLinux(Linux):
 
         return rv
 
-    def sys_openat(self, dirfd, buf, flags, mode):
+    def sys_openat(self, dirfd: int, buf: int, flags: int, mode: int) -> int:
         """
         A version of openat that includes a symbolic path and symbolic directory file descriptor
 
