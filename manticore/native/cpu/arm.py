@@ -4,6 +4,7 @@ import logging
 import struct
 
 import capstone as cs
+import operator as ops
 
 from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
 from .abstractcpu import instruction as abstract_instruction
@@ -763,8 +764,8 @@ class Armv7Cpu(Cpu):
                 return "ASR"
         return OP_NAME_MAP.get(name, name)
 
-    def _wrap_operands(self, ops):
-        return [Armv7Operand(self, op) for op in ops]
+    def _wrap_operands(self, operands):
+        return [Armv7Operand(self, op) for op in operands]
 
     def should_commit_flags(cpu):
         # workaround for a capstone bug (issue #980);
