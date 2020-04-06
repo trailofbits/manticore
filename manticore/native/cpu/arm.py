@@ -1520,9 +1520,9 @@ class Armv7Cpu(Cpu):
     @instruction(can_take_denormalized_mod_imm=True)
     def ORR(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.or_, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x | y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.or_, dest, dest, op1)
 
     @instruction(can_take_denormalized_mod_imm=True)
     def ORN(cpu, dest, op1, op2=None):
@@ -1534,20 +1534,20 @@ class Armv7Cpu(Cpu):
     @instruction(can_take_denormalized_mod_imm=True)
     def EOR(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.xor, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.xor, dest, dest, op1)
 
     @instruction(can_take_denormalized_mod_imm=True)
     def AND(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x & y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.and_, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x & y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.and_, dest, dest, op1)
 
     @instruction(can_take_denormalized_mod_imm=True)
     def TEQ(cpu, op1, op2=None):
-        cpu._bitwise_instruction(lambda x, y: x ^ y, None, op1, op2)
+        cpu._bitwise_instruction(ops.xor, None, op1, op2)
         cpu.commit_flags()
 
     @instruction(can_take_denormalized_mod_imm=True)
