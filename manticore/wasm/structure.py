@@ -1077,7 +1077,7 @@ class ModuleInstance(Eventful):
         ty = f.type
         assert len(ty.result_types) <= 1
         local_vars: typing.List[Value] = []
-        for v in [stack.pop() for _t in ty.param_types][::-1]:
+        for v in [stack.pop() for _ in ty.param_types][::-1]:
             assert not isinstance(v, (Label, Activation))
             local_vars.append(v)
 
@@ -1798,7 +1798,7 @@ class Stack(Eventful):
         raise RuntimeError("Couldn't find a frame on the stack")
 
 
-class AtomicStack(Stack):
+class AtomicStack(Stack):  # lgtm [py/missing-call-to-init]
     """
     Allows for the rolling-back of the stack in the event of a concretization exception.
     Inherits from Stack so that the types will be correct, but never calls `super`.
