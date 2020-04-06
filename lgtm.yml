@@ -1,0 +1,2 @@
+queries:
+  - exclude: py/clear-text-logging-sensitive-data
