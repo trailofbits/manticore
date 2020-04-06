@@ -176,7 +176,7 @@ jobs:
 
         run_tests_from_dir() {
             DIR=$1
-            pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+            pytest --typeguard-packages=manticore --durations=100 --cov=manticore -n auto "tests/$DIR"
             coverage xml
         }
 

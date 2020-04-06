@@ -28,6 +28,7 @@ dev_noks = (
         "pytest-cov==2.8.1",
         "pytest-xdist==1.30.0",
         "Sphinx",
+        "typeguard",
     ]
     + lint_deps
 )
