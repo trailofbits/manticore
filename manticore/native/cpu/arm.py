@@ -1511,9 +1511,13 @@ class Armv7Cpu(Cpu):
     def STMDB(cpu, base, *regs):
         cpu._STM(cs.arm.ARM_INS_STMDB, base, regs)
 
-    def _bitwise_instruction(cpu, operation, dest, op1, op2):
-        op2_val, carry = op2.read(with_carry=True)
-        result = operation(op1.read(), op2_val)
+    def _bitwise_instruction(cpu, operation, dest, op1, op2=None):
+        if op2:
+            op2_val, carry = op2.read(with_carry=True)
+            result = operation(op1.read(), op2_val)
+        else:
+            op1_val, carry = op1.read(with_carry=True)
+            result = operation(op1_val)
         if dest is not None:
             dest.write(result)
         cpu.set_flags(C=carry, N=HighBit(result), Z=(result == 0))
