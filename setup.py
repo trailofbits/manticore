@@ -51,7 +51,6 @@ setup(
     install_requires=[
         "pyyaml",
         "wrapt",
-        # evm dependencies
         "pysha3",
         "prettytable",
         "rlp",
@@ -59,11 +58,11 @@ setup(
         "crytic-compile>=0.1.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
-        "pyevmasm-dev",
+        "pyevmasm==0.2.2",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
-    dependency_links=["https://github.com/crytic/pyevmasm/tarball/master#egg=pyevmasm-dev"],
+    dependency_links=["https://github.com/crytic/pyevmasm/tarball/master#egg=pyevmasm-0.2.2"],
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
 )
