@@ -726,7 +726,7 @@ class Cpu(Eventful):
         self._publish("did_read_memory", where, value, size)
         return value
 
-    def write_bytes(self, where, data, force=False):
+    def write_bytes(self, where: int, data, force: bool = False) -> None:
         """
         Write a concrete or symbolic (or mixed) buffer to memory
 
@@ -907,7 +907,9 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack("B", Z3Solver().get_value(self.memory.constraints, c))
+                        c = struct.pack(
+                            "B", Z3Solver.instance().get_value(self.memory.constraints, c)
+                        )
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:

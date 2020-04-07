@@ -43,7 +43,7 @@ consts.add(
 consts.add("dir", default=".", description="Location of where to create workspace directories")
 
 
-class Testcase:
+class WorkspaceTestcase:
     def __init__(self, workspace, prefix):
         self._num = workspace._increment_id()
         self._prefix = prefix
@@ -511,7 +511,7 @@ class ManticoreOutput:
         self._store = Store.fromdescriptor(desc)
 
     def testcase(self, prefix="test"):
-        return Testcase(self, prefix)
+        return WorkspaceTestcase(self, prefix)
 
     @property
     def store(self):
@@ -651,5 +651,5 @@ class ManticoreOutput:
     def save_input_symbols(testcase, state):
         with testcase.open_stream("input") as f:
             for symbol in state.input_symbols:
-                buf = Z3Solver().get_value(state.constraints, symbol)
+                buf = Z3Solver.instance().get_value(state.constraints, symbol)
                 f.write(f"{symbol.name}: {buf!r}\n")

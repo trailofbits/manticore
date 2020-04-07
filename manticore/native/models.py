@@ -46,7 +46,7 @@ def _find_zero(cpu, constrs, ptr):
         byt = cpu.read_int(ptr + offset, 8)
 
         if issymbolic(byt):
-            if not Z3Solver().can_be_true(constrs, byt != 0):
+            if not Z3Solver.instance().can_be_true(constrs, byt != 0):
                 break
         else:
             if byt == 0:
