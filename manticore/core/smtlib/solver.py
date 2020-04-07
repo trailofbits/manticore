@@ -26,6 +26,7 @@ from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
+from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -356,7 +357,11 @@ class Z3Solver(Solver):
         if status == "unknown":
             raise SolverUnknown(status)
 
-        return status == "sat"
+        is_sat = status == "sat"
+        if not is_sat:
+            check_memory_usage()
+            check_disk_usage()
+        return is_sat
 
     def _assert(self, expression: Bool):
         """Auxiliary method to send an assert"""
