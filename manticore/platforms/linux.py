@@ -9,11 +9,12 @@ import struct
 import time
 import resource
 import tempfile
-from typing import Union, List, TypeVar, cast
+from typing import Deque, Union, List, TypeVar, cast, Optional
 
 import io
 import os
 import random
+
 from elftools.elf.descriptions import describe_symbol_type
 
 # Remove in favor of binary.py
@@ -23,19 +24,24 @@ from elftools.elf.sections import SymbolTableSection
 from . import linux_syscalls
 from .linux_syscall_stubs import SyscallStubs
 from ..core.state import TerminateState
-from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic
+from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import Z3Solver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
+from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import List, Set
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
+
+
+def errorcode(code: int) -> str:
+    return f"errno.{errno.errorcode[code]}"
 
 
 class RestartSyscall(Exception):
@@ -56,15 +62,15 @@ class FdError(Exception):
         super().__init__(message)
 
 
-def perms_from_elf(elf_flags):
+def perms_from_elf(elf_flags: int) -> str:
     return ["   ", "  x", " w ", " wx", "r  ", "r x", "rw ", "rwx"][elf_flags & 7]
 
 
-def perms_from_protflags(prot_flags):
+def perms_from_protflags(prot_flags: int) -> str:
     return ["   ", "r  ", " w ", "rw ", "  x", "r x", " wx", "rwx"][prot_flags & 7]
 
 
-def mode_from_flags(file_flags):
+def mode_from_flags(file_flags: int) -> str:
     return {os.O_RDWR: "rb+", os.O_RDONLY: "rb", os.O_WRONLY: "wb"}[file_flags & 7]
 
 
@@ -103,15 +109,15 @@ class File:
             self.seek(pos)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.file.name
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         return self.file.mode
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self.file.closed
 
     def stat(self):
@@ -127,11 +133,11 @@ class File:
             logger.error(f"Invalid Fcntl request: {request}")
             return -e.errno
 
-    def tell(self, *args):
+    def tell(self, *args) -> int:
         return self.file.tell(*args)
 
-    def seek(self, *args):
-        return self.file.seek(*args)
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
+        return self.file.seek(offset, whence)
 
     def write(self, buf):
         return self.file.write(buf)
@@ -145,19 +151,19 @@ class File:
     def fileno(self, *args):
         return self.file.fileno(*args)
 
-    def is_full(self):
+    def is_full(self) -> bool:
         return False
 
-    def sync(self):
+    def sync(self) -> None:
         """
-        Flush buffered data. Currently not implemented.
+        Flush buffered data. Currently implemented as a no-op.
         """
         return
 
 
 # TODO - we should consider refactoring File so that we don't have to mute these errors
 class ProcSelfMaps(File):  # lgtm [py/missing-call-to-init]
-    def __init__(self, flags, linux):
+    def __init__(self, flags: int, linux):
         # WARN: Does not call File.__init__. Should have the File API, but we manually
         # manage the underlying file and mode
         self.file = tempfile.NamedTemporaryFile(mode="w", delete=False)
@@ -170,7 +176,7 @@ class ProcSelfMaps(File):  # lgtm [py/missing-call-to-init]
 
 
 class Directory(File):  # lgtm [py/missing-call-to-init]
-    def __init__(self, path, flags):
+    def __init__(self, path: str, flags: int):
         # WARN: Does not call File.__init__ because we don't want to open the directory,
         # even though we still want it to present the same API as File
         assert os.path.isdir(path)
@@ -191,17 +197,17 @@ class Directory(File):  # lgtm [py/missing-call-to-init]
         self.fd = os.open(self.path, self.flags)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.path
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         return mode_from_flags(self.flags)
 
-    def tell(self, *args):
+    def tell(self, *args) -> int:
         return 0
 
-    def seek(self, *args):
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         return 0
 
     def write(self, buf):
@@ -225,7 +231,14 @@ class SymbolicFile(File):
     Represents a symbolic file.
     """
 
-    def __init__(self, constraints, path="sfile", mode="rw", max_size=100, wildcard="+"):
+    def __init__(
+        self,
+        constraints,
+        path: str = "sfile",
+        mode: str = "rw",
+        max_size: int = 100,
+        wildcard: str = "+",
+    ):
         """
         Builds a symbolic file
 
@@ -277,7 +290,7 @@ class SymbolicFile(File):
         self.array = state["array"]
         super().__setstate__(state)
 
-    def tell(self):
+    def tell(self, *args) -> int:
         """
         Returns the read/write file offset
         :rtype: int
@@ -285,11 +298,10 @@ class SymbolicFile(File):
         """
         return self.pos
 
-    def seek(self, offset, whence=os.SEEK_SET):
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         """
         Repositions the file C{offset} according to C{whence}.
         Returns the resulting offset or -1 in case of error.
-        :rtype: int
         :return: the file offset.
         """
         assert isinstance(offset, int)
@@ -384,14 +396,30 @@ class Socket:
         a.connect(b)
         return a, b
 
-    def __init__(self):
+    def __init__(self, net: bool = False):
+        """
+        Builds a normal socket that does not introduce symbolic bytes.
+
+        :param net: Whether this is a network socket
+        """
         from collections import deque
 
-        self.buffer = deque()  # queue os bytes
-        self.peer = None
+        self.buffer: Deque[
+            Union[bytes, Expression]
+        ] = deque()  # current bytes received but not read
+        self.peer: Optional[Socket] = None
+        self.net: bool = net
+
+    def __getstate__(self):
+        state = {"buffer": self.buffer, "net": self.net}
+        return state
+
+    def __setstate__(self, state):
+        self.buffer = state["buffer"]
+        self.net = state["net"]
 
     def __repr__(self):
-        return f"SOCKET({hash(self):x}, {self.buffer!r}, {hash(self.peer):x})"
+        return f"SOCKET({hash(self):x}, buffer={self.buffer!r}, net={self.net}, peer={hash(self.peer):x})"
 
     def is_connected(self):
         return self.peer is not None
@@ -420,7 +448,14 @@ class Socket:
         return ret
 
     def write(self, buf):
-        assert self.is_connected()
+        if self.net:
+            # Just return like we were able to send all data
+            # TODO: We should put this data somewhere to let the user know what is being sent.
+            #   I don't think stdout is correct. It would be nice to know what is being sent
+            #   over each network connection
+            return len(buf)
+        # If not a network Socket, it should be connected
+        assert self.is_connected(), f"Non-network socket is not connected: {self.__repr__()}"
         return self.peer._transmit(buf)
 
     def _transmit(self, buf) -> int:
@@ -441,6 +476,84 @@ class Socket:
         pass
 
 
+class SymbolicSocket(Socket):
+    """
+    Symbolic sockets are generally used for network communications that contain user-controlled input.
+    """
+
+    def __init__(
+        self,
+        constraints: ConstraintSet,
+        name: str,
+        max_recv_symbolic: int = 80,
+        net: bool = True,
+        wildcard: str = "+",
+    ):
+        """
+        Builds a symbolic socket.
+
+        :param constraints: the SMT constraints
+        :param name: The name of the SymbolicSocket, which is propagated to the symbolic variables introduced
+        :param max_recv_symbolic: Maximum number of bytes allowed to be read from this socket. 0 for unlimited
+        :param net: Whether this is a network connection socket
+        :param wildcard: Wildcard to be used for symbolic bytes in socket. Not supported, yet
+        """
+        super().__init__(net=net)
+        self._constraints = constraints
+        self.symb_name = name
+        self.max_recv_symbolic = max_recv_symbolic  # 0 for unlimited. Unlimited is not tested
+        # Keep track of the symbolic inputs we create
+        self.inputs_recvd: List[ArrayProxy] = []
+        self.recv_pos = 0
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["inputs_recvd"] = self.inputs_recvd
+        state["symb_name"] = self.symb_name
+        state["recv_pos"] = self.recv_pos
+        state["max_recv_symbolic"] = self.max_recv_symbolic
+        state["constraints"] = self._constraints
+        return state
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self.inputs_recvd = state["inputs_recvd"]
+        self.symb_name = state["symb_name"]
+        self.recv_pos = state["recv_pos"]
+        self.max_recv_symbolic = state["max_recv_symbolic"]
+        self._constraints = state["constraints"]
+
+    def __repr__(self):
+        return f"SymbolicSocket({hash(self):x}, inputs_recvd={self.inputs_recvd}, buffer={self.buffer}, net={self.net}"
+
+    def _next_symb_name(self) -> str:
+        """
+        Return the next name for a symbolic array, based on previous number of other receives
+        """
+        return f"{self.symb_name}-{len(self.inputs_recvd)}"
+
+    def receive(self, size: int) -> Union[ArrayProxy, List[bytes]]:
+        """
+        Return a symbolic array of either `size` or rest of remaining symbolic bytes
+        :param size: Size of receive
+        :return: Symbolic array or list of concrete bytes
+        """
+        # NOTE: self.buffer isn't used at all for SymbolicSocket. Not sure if there is a better
+        #   way to use it for on-demand generation of symbolic data or not.
+        rx_bytes = (
+            size
+            if self.max_recv_symbolic == 0
+            else min(size, self.max_recv_symbolic - self.recv_pos)
+        )
+        if rx_bytes == 0:
+            # If no symbolic bytes left, return empty list
+            return []
+        ret = self._constraints.new_array(name=self._next_symb_name(), index_max=rx_bytes)
+        self.recv_pos += rx_bytes
+        self.inputs_recvd.append(ret)
+        return ret
+
+
 class Linux(Platform):
     """
     A simple Linux Operating System Platform.
@@ -454,7 +567,14 @@ class Linux(Platform):
     BASE_DYN_ADDR_32 = 0x56555000
     BASE_DYN_ADDR = 0x555555554000
 
-    def __init__(self, program, argv=None, envp=None, disasm="capstone", **kwargs):
+    def __init__(
+        self,
+        program: Optional[str],
+        argv: List[str] = [],
+        envp: List[str] = [],
+        disasm: str = "capstone",
+        **kwargs,
+    ):
         """
         Builds a Linux OS platform
         :param string program: The path to ELF binary
@@ -462,17 +582,17 @@ class Linux(Platform):
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         :ivar files: List of active file descriptors
-        :type files: list[Socket] or list[File]
+        :type files: list[Socket or File or None]
         """
         super().__init__(path=program, **kwargs)
 
         self.program = program
         self.clocks = 0
-        self.files = []
+        self.files: List[Union[None, File, Socket]] = []
         # A cache for keeping state when reading directories { fd: dent_iter }
-        self._getdents_c = {}
-        self._closed_files = []
-        self.syscall_trace = []
+        self._getdents_c: Dict[int, Any] = {}
+        self._closed_files: List[Union[File, Socket]] = []
+        self.syscall_trace: List[Tuple[str, int, bytes]] = []
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
@@ -551,7 +671,7 @@ class Linux(Platform):
 
         assert (in_fd, out_fd, err_fd) == (0, 1, 2)
 
-    def _init_cpu(self, arch) -> None:
+    def _init_cpu(self, arch: str) -> None:
         # create memory and CPU
         cpu = self._mk_proc(arch)
         self.procs = [cpu]
@@ -581,9 +701,6 @@ class Linux(Platform):
         :param argv list: argv array
         :param envp list: envp array
         """
-        argv = [] if argv is None else argv
-        envp = [] if envp is None else envp
-
         logger.debug(f"Loading {program} as a {self.arch} elf")
 
         self.load(program, envp)
@@ -626,7 +743,7 @@ class Linux(Platform):
         state_files = []
         for fd in self.files:
             if isinstance(fd, Socket):
-                state_files.append(("Socket", fd.buffer))
+                state_files.append(("Socket", fd))
             else:
                 state_files.append(("File", fd))
         state["files"] = state_files
@@ -673,13 +790,8 @@ class Linux(Platform):
 
         # fetch each file descriptor (Socket or File())
         self.files = []
-        for ty, file_or_buffer in state["files"]:
-            if ty == "Socket":
-                f = Socket()
-                f.buffer = file_or_buffer
-                self.files.append(f)
-            else:
-                self.files.append(file_or_buffer)
+        for ty, file_or_socket in state["files"]:
+            self.files.append(file_or_socket)
 
         # If file descriptors for stdin/stdout/stderr aren't closed, propagate them
         if self.files[0]:
@@ -724,7 +836,7 @@ class Linux(Platform):
         for proc in self.procs:
             self.forward_events_from(proc)
 
-    def _init_arm_kernel_helpers(self):
+    def _init_arm_kernel_helpers(self) -> None:
         """
         ARM kernel helpers
 
@@ -798,21 +910,7 @@ class Linux(Platform):
 
         self.current.memory.mmap(0xFFFF0000, len(page_data), "r x", page_data)
 
-    def load_vdso(self, bits):
-        # load vdso #TODO or #IGNORE
-        vdso_top = {32: 0x7FFF0000, 64: 0x7FFF00007FFF0000}[bits]
-        with open(f"vdso{bits:2d}.dump") as f:
-            vdso_size = len(f.read())
-        vdso_addr = self.memory.mmapFile(
-            self.memory._floor(vdso_top - vdso_size),
-            vdso_size,
-            "r x",
-            {32: "vdso32.dump", 64: "vdso64.dump"}[bits],
-            0,
-        )
-        return vdso_addr
-
-    def setup_stack(self, argv, envp):
+    def setup_stack(self, argv: List[str], envp: List[str]) -> None:
         """
         :param Cpu cpu: The cpu instance
         :param argv: list of parameters for the program to execute.
@@ -945,7 +1043,7 @@ class Linux(Platform):
         self.current.PC = elf_entry
         logger.debug(f"Entry point updated: {elf_entry:016x}")
 
-    def load(self, filename, env):
+    def load(self, filename: str, env) -> None:
         """
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
@@ -972,7 +1070,7 @@ class Linux(Platform):
         interpreter = None
 
         # Need to clean up when we are done
-        def _clean_interp_stream():
+        def _clean_interp_stream() -> None:
             if interpreter is not None:
                 try:
                     interpreter.stream.close()
@@ -1164,9 +1262,6 @@ class Linux(Platform):
         # free reserved brk space
         cpu.memory.munmap(reserved, 0x1000000)
 
-        # load vdso
-        # vdso_addr = load_vdso(addressbitsize)
-
         cpu.STACK = stack
         cpu.PC = entry
 
@@ -1207,7 +1302,7 @@ class Linux(Platform):
         # Clean up interpreter ELFFile
         _clean_interp_stream()
 
-    def _to_signed_dword(self, dword):
+    def _to_signed_dword(self, dword: int):
         arch_width = self.current.address_bit_size
         if arch_width == 32:
             sdword = ctypes.c_int32(dword).value
@@ -1217,7 +1312,7 @@ class Linux(Platform):
             raise EnvironmentError(f"Corrupted internal CPU state (arch width is {arch_width})")
         return sdword
 
-    def _open(self, f) -> int:
+    def _open(self, f: Union[File, Socket]) -> int:
         """
         Adds a file descriptor to the current file descriptor list
 
@@ -1238,25 +1333,16 @@ class Linux(Platform):
         Removes a file descriptor from the file descriptor list
         :rtype: int
         :param fd: the file descriptor to close.
-        :return: C{0} on success.
         """
         try:
-            self.files[fd].close()
-            self._closed_files.append(
-                self.files[fd]
-            )  # Keep track for SymbolicFile testcase generation
+            f = self.files[fd]
+            if f is None:
+                raise FdError(f"Bad file descriptor ({fd})", errno.EBADF)
+            f.close()
+            self._closed_files.append(f)  # Keep track for SymbolicFile testcase generation
             self.files[fd] = None
         except IndexError:
             raise FdError(f"Bad file descriptor ({fd})", errno.EBADF)
-
-    def _dup(self, fd: int) -> int:
-        """
-        Duplicates a file descriptor
-        :rtype: int
-        :param fd: the file descriptor to duplicate.
-        :return: C{0} on success.
-        """
-        return self._open(self.files[fd])
 
     def _is_fd_open(self, fd: int) -> bool:
         """
@@ -1265,11 +1351,17 @@ class Linux(Platform):
         """
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
-    def _get_fd(self, fd: int) -> File:
-        if not self._is_fd_open(fd):
+    def _get_fd(self, fd: int) -> Union[File, Socket]:
+        """
+        Returns the File or Socket corresponding to the given file descriptor.
+        """
+        try:
+            f = self.files[fd]
+        except IndexError:
             raise FdError(f"File descriptor is not open", errno.EBADF)
-        else:
-            return self.files[fd]
+        if f is None:
+            raise FdError(f"File descriptor is not open", errno.EBADF)
+        return f
 
     def _transform_write_data(self, data) -> bytes:
         """
@@ -1360,7 +1452,7 @@ class Linux(Platform):
             return self._get_fd(fd).seek(signed_offset, whence)
         except FdError as e:
             logger.info(
-                f"LSEEK: Not valid file descriptor on lseek. Fd not seekable. Returning {-e.err}"
+                f"sys_lseek: Not valid file descriptor on lseek. Fd not seekable. Returning -{errorcode(e.err)}"
             )
             return -e.err
 
@@ -1401,7 +1493,7 @@ class Linux(Platform):
             return 0
         except FdError as e:
             logger.info(
-                f"LSEEK: Not valid file descriptor on llseek. Fd not seekable. Returning {-e.err}"
+                f"sys_llseek: Not valid file descriptor on llseek. Fd not seekable. Returning -{errorcode(e.err)}"
             )
             return -e.err
 
@@ -1410,14 +1502,16 @@ class Linux(Platform):
         if count != 0:
             # TODO check count bytes from buf
             if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
-                logger.info("READ: buf points to invalid address. Returning -errno.EFAULT")
+                logger.info("sys_read: buf points to invalid address. Returning -errno.EFAULT")
                 return -errno.EFAULT
 
             try:
                 # Read the data and put it in memory
                 data = self._get_fd(fd).read(count)
             except FdError as e:
-                logger.info(f"READ: Not valid file descriptor ({fd}). Returning -{e.err}")
+                logger.info(
+                    f"sys_read: Not valid file descriptor ({fd}). Returning -{errorcode(e.err)}"
+                )
                 return -e.err
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
@@ -1443,12 +1537,14 @@ class Linux(Platform):
             try:
                 write_fd = self._get_fd(fd)
             except FdError as e:
-                logger.error(f"WRITE: Not valid file descriptor ({fd}). Returning -{e.err}")
+                logger.error(
+                    f"sys_write: Not valid file descriptor ({fd}). Returning -{errorcode(e.err)}"
+                )
                 return -e.err
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf + count not in cpu.memory:
-                logger.debug("WRITE: buf points to invalid address. Returning -errno.EFAULT")
+                logger.debug("sys_write: buf points to invalid address. Returning -errno.EFAULT")
                 return -errno.EFAULT
 
             if fd > 2 and write_fd.is_full():
@@ -1464,7 +1560,7 @@ class Linux(Platform):
                 line_str = line.decode(
                     "latin-1"
                 )  # latin-1 encoding will happily decode any byte (0x00-0xff)
-                logger.debug(f"WRITE({fd}, 0x{buf:08x}, {count}) -> <{repr(line_str):48s}>")
+                logger.debug(f"sys_write({fd}, 0x{buf:08x}, {count}) -> <{repr(line_str):48s}>")
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
@@ -1582,10 +1678,11 @@ class Linux(Platform):
         else:
             return -errno.EINVAL
 
-    def _sys_open_get_file(self, filename, flags):
+    def _sys_open_get_file(self, filename: str, flags: int) -> File:
         # TODO(yan): Remove this special case
         if os.path.abspath(filename).startswith("/proc/self"):
             if filename == "/proc/self/exe":
+                assert self.program is not None
                 filename = os.path.abspath(self.program)
             elif filename == "/proc/self/maps":
                 return ProcSelfMaps(flags, self)
@@ -1593,13 +1690,11 @@ class Linux(Platform):
                 raise EnvironmentError("/proc/self is largely unsupported")
 
         if os.path.isdir(filename):
-            f = Directory(filename, flags)
+            return Directory(filename, flags)
         else:
-            f = File(filename, flags)
+            return File(filename, flags)
 
-        return f
-
-    def sys_open(self, buf, flags, mode):
+    def sys_open(self, buf: int, flags: int, mode) -> int:
         """
         :param buf: address of zero-terminated pathname
         :param flags: file access bits
@@ -1608,9 +1703,9 @@ class Linux(Platform):
         filename = self.current.read_string(buf)
         try:
             f = self._sys_open_get_file(filename, flags)
-            logger.debug(f"Opening file {filename} for real fd {f.fileno()}")
+            logger.debug(f"sys_open: Opening file {filename} for real fd {f.fileno()}")
         except IOError as e:
-            logger.warning(f"Could not open file {filename}. Reason: {e!s}")
+            logger.warning(f"sys_open: Could not open file {filename}. Reason: {e!s}")
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
@@ -1636,11 +1731,11 @@ class Linux(Platform):
         try:
             dir_entry = self._get_fd(dirfd)
         except FdError as e:
-            logger.info(f"openat: Not valid file descriptor. Returning {-e.err}")
+            logger.info(f"sys_openat: Not valid file descriptor. Returning -{errorcode(e.err)}")
             return -e.err
 
         if not isinstance(dir_entry, Directory):
-            logger.info("openat: Not directory descriptor. Returning -errno.ENOTDIR")
+            logger.info("sys_openat: Not directory descriptor. Returning -errno.ENOTDIR")
             return -errno.ENOTDIR
 
         dir_path = dir_entry.name
@@ -1648,14 +1743,14 @@ class Linux(Platform):
         filename = os.path.join(dir_path, filename)
         try:
             f = self._sys_open_get_file(filename, flags)
-            logger.debug(f"Opening file {filename} for real fd {f.fileno()}")
+            logger.debug(f"sys_openat: Opening file {filename} for real fd {f.fileno()}")
         except IOError as e:
-            logger.info(f"Could not open file {filename}. Reason: {e!s}")
+            logger.info(f"sys_openat: Could not open file {filename}. Reason: {e!s}")
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
 
-    def sys_rename(self, oldnamep, newnamep) -> int:
+    def sys_rename(self, oldnamep: int, newnamep: int) -> int:
         """
         Rename filename `oldnamep` to `newnamep`.
 
@@ -1665,28 +1760,27 @@ class Linux(Platform):
         oldname = self.current.read_string(oldnamep)
         newname = self.current.read_string(newnamep)
 
-        ret = 0
         try:
             os.rename(oldname, newname)
         except OSError as e:
-            ret = -e.errno
-
-        return ret
+            return -e.errno
+        return 0
 
     def sys_fsync(self, fd: int) -> int:
         """
         Synchronize a file's in-core state with that on disk.
         """
 
-        ret = 0
         try:
-            self.files[fd].sync()
+            f = self.files[fd]
+            if f is None:
+                return -errno.EBADF
+            f.sync()
+            return 0
         except IndexError:
-            ret = -errno.EBADF
+            return -errno.EBADF
         except FdError:
-            ret = -errno.EINVAL
-
-        return ret
+            return -errno.EINVAL
 
     def sys_getpid(self):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
@@ -1723,7 +1817,7 @@ class Linux(Platform):
         logger.warning(f"SIGACTION, Ignoring changing signal mask set cmd:%s", how)
         return 0
 
-    def sys_dup(self, fd):
+    def sys_dup(self, fd: int) -> int:
         """
         Duplicates an open file descriptor
         :rtype: int
@@ -1731,14 +1825,14 @@ class Linux(Platform):
         :return: the new file descriptor.
         """
 
-        if not self._is_fd_open(fd):
-            logger.info(f"DUP: Passed fd is not open ({fd}). Returning -errno.EBADF")
-            return -errno.EBADF
+        try:
+            f = self._get_fd(fd)
+        except FdError as e:
+            logger.info(f"sys_dup: fd ({fd}) is not open. Returning -{errorcode(e.err)}")
+            return -e.err
+        return self._open(f)
 
-        newfd = self._dup(fd)
-        return newfd
-
-    def sys_dup2(self, fd, newfd):
+    def sys_dup2(self, fd: int, newfd: int) -> int:
         """
         Duplicates an open fd to newfd. If newfd is open, it is first closed
         :rtype: int
@@ -1749,12 +1843,14 @@ class Linux(Platform):
         try:
             file = self._get_fd(fd)
         except FdError as e:
-            logger.info("DUP2: fd ({fd}) is not open. Returning {-e.err}")
+            logger.info("sys_dup2: fd ({fd}) is not open. Returning -{errorcode(e.err)}")
             return -e.err
 
-        soft_max, hard_max = self._rlimits[self.RLIMIT_NOFILE]
+        soft_max, hard_max = self._rlimits[resource.RLIMIT_NOFILE]
         if newfd >= soft_max:
-            logger.info(f"DUP2: newfd ({newfd}) is above max descriptor table size")
+            logger.info(
+                f"sys_dup2: newfd ({newfd}) is above max descriptor table size ({soft_max})"
+            )
             return -errno.EBADF
 
         if self._is_fd_open(newfd):
@@ -1787,17 +1883,16 @@ class Linux(Platform):
 
         return -errno.EPERM
 
-    def sys_close(self, fd):
+    def sys_close(self, fd: int) -> int:
         """
         Closes a file descriptor
         :rtype: int
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         """
-        if self._is_fd_open(fd):
-            self._close(fd)
-        else:
+        if not self._is_fd_open(fd):
             return -errno.EBADF
+        self._close(fd)
         logger.debug(f"sys_close({fd})")
         return 0
 
@@ -2191,12 +2286,11 @@ class Linux(Platform):
         if ret != 0:
             return ret
 
-        sock = Socket()
+        sock = Socket(net=True)
         fd = self._open(sock)
         return fd
 
     def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
-        data: bytes = bytes()
         if not self.current.memory.access_ok(slice(buf, buf + count), "w"):
             logger.info("RECV: buf within invalid memory. Returning -errno.EFAULT")
             return -errno.EFAULT
@@ -2210,6 +2304,8 @@ class Linux(Platform):
             return -errno.ENOTSOCK
 
         data = sock.read(count)
+        if len(data) == 0:
+            return 0
         self.syscall_trace.append((trace_str, sockfd, data))
         self.current.write_bytes(buf, data)
 
@@ -2526,7 +2622,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info("Calling fstat with invalid fd")
+            logger.info(f"sys_newfstat: invalid fd ({fd}), returning -{errorcode(e.err)}")
             return -e.err
 
         def add(width, val):
@@ -2571,7 +2667,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info(f"Calling fstat with invalid fd, returning {-e.err}")
+            logger.info(f"sys_fstat: invalid fd ({fd}), returning -{errorcode(e.err)}")
             return -e.err
 
         def add(width, val):
@@ -2614,7 +2710,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info(f"Calling fstat with invalid fd, returning {-e.err}")
+            logger.info(f"sys_fstat64: invalid fd ({fd}), returning -{errorcode(e.err)}")
             return -e.err
 
         def add(width, val):
@@ -2726,13 +2822,16 @@ class Linux(Platform):
         :return 0 on success
         """
         try:
-            file = self._get_fd(fd)
+            f = self._get_fd(fd)
         except FdError as e:
-            logger.info("File descriptor %s is not open", fd)
             return -e.err
         except OSError as e:
             return -e.errno
-        file.file.truncate(length)
+        if isinstance(f, Directory):
+            return -errno.EISDIR
+        if not isinstance(f, File):
+            return -errno.EINVAL
+        f.file.truncate(length)
         return 0
 
     def sys_link(self, oldname, newname) -> int:
@@ -2769,7 +2868,6 @@ class Linux(Platform):
         try:
             file = self._get_fd(fd)
         except FdError as e:
-            logger.info("File descriptor %s is not open", fd)
             return -e.err
         if not isinstance(file, Directory):
             logger.info("Can't get directory entries for a file")
@@ -3083,20 +3181,28 @@ class SLinux(Linux):
         return super().sys_recvfrom(sockfd, buf, count, flags, src_addr, addrlen)
 
     def sys_accept(self, sockfd, addr, addrlen):
-        # TODO(yan): Transmit some symbolic bytes as soon as we start.
-        # Remove this hack once no longer needed.
+        if issymbolic(sockfd):
+            logger.debug("Symbolic sockfd")
+            raise ConcretizeArgument(self, 0)
 
-        fd = super().sys_accept(sockfd, addr, addrlen)
-        if fd < 0:
-            return fd
-        sock = self._get_fd(fd)
-        nbytes = 32
-        symb = self.constraints.new_array(
-            name=f"socket{fd}", index_max=nbytes, avoid_collisions=True
-        )
-        for i in range(nbytes):
-            sock.buffer.append(symb[i])
+        if issymbolic(addr):
+            logger.debug("Symbolic address")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(addrlen):
+            logger.debug("Symbolic address length")
+            raise ConcretizeArgument(self, 2)
+
+        ret = self._is_sockfd(sockfd)
+        if ret != 0:
+            return ret
+
+        # TODO: maybe combine name with addr?
+        sock = SymbolicSocket(self.constraints, "SymbSocket", net=True)
+        fd = self._open(sock)
         return fd
+        # TODO: Make a concrete connection actually an option
+        # return super().sys_accept(sockfd, addr, addrlen)
 
     def sys_open(self, buf, flags, mode):
         """

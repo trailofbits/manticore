@@ -85,7 +85,7 @@ class ForkState(Concretize):
         in forked states.
     """
 
-    def __init__(self, message, expression, **kwargs):
+    def __init__(self, message, expression: Bool, **kwargs):
         assert isinstance(expression, Bool), "Need a Bool to fork a state in two states"
         super().__init__(message, expression, policy="ALL", **kwargs)
 
