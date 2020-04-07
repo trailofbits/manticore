@@ -73,13 +73,11 @@ class ConstraintSet:
             return len(self._constraints) + len(self._parent)
         return len(self._constraints)
 
-    def add(self, constraint, check=False):
+    def add(self, constraint) -> None:
         """
         Add a constraint to the set
 
         :param constraint: The constraint to add to the set.
-        :param check: Currently unused.
-        :return:
         """
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
@@ -100,12 +98,6 @@ class ConstraintSet:
                 return
 
         self._constraints.append(constraint)
-
-        if check:
-            from ...core.smtlib import solver
-
-            if not solver.check(self):
-                raise ValueError("Added an impossible constraint")
 
     def _get_sid(self):
         """ Returns a unique id. """
