@@ -261,8 +261,12 @@ class StateBase(Eventful):
         return expr
 
     def concretize(self, symbolic, policy, maxcount=7):
-        """ This finds a set of solutions for symbolic using policy.
-            This raises TooManySolutions if more solutions than maxcount
+        """This finds a set of solutions for symbolic using policy.
+
+        This limits the number of solutions returned to `maxcount` to avoid
+        a blowup in the state space. **This means that if there are more
+        than `maxcount` feasible solutions, some states will be silently
+        ignored.**
         """
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)

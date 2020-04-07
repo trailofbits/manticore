@@ -41,7 +41,7 @@ from .types import (
     ConcretizeStack,
 )
 from .state import State
-from ..core.smtlib import BitVec, issymbolic, Operators, Expression
+from ..core.smtlib import BitVec, Bool, issymbolic, Operators, Expression
 from ..core.state import Concretize
 from ..utils.event import Eventful
 from ..utils import config
@@ -754,6 +754,7 @@ class ModuleInstance(Eventful):
         "local_names",
         "_instruction_queue",
         "_block_depths",
+        "_advice",
         "_state",
     ]
 
@@ -787,10 +788,12 @@ class ModuleInstance(Eventful):
     # instruction queue, so the meaning of an `end` instruction could be otherwise ambiguous. Loosely put, the sum of
     # all the digits in this list is the number of `end` instructions we need to see before execution is finished.
     _block_depths: typing.List[int]
+    #: Stickies the advice conditions before each instruction.
+    _advice: typing.Optional[typing.List[bool]]
     #: Prevents the user from invoking functions before instantiation
     instantiated: bool
     #: Stickies the current state before each instruction
-    state: State
+    _state: State
 
     def __init__(self, constraints=None):
         self.types = []
@@ -805,6 +808,7 @@ class ModuleInstance(Eventful):
         self.local_names = {}
         self._instruction_queue = deque()
         self._block_depths = [0]
+        self._advice = None
         self._state = None
 
         super().__init__()
@@ -842,6 +846,7 @@ class ModuleInstance(Eventful):
         self.local_names = state["local_names"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
+        self._advice = None
         self._state = None
         super().__setstate__(state)
 
@@ -1229,7 +1234,13 @@ class ModuleInstance(Eventful):
         out.append(i)
         return out
 
-    def exec_instruction(self, store: Store, stack: "Stack", current_state=None) -> bool:
+    def exec_instruction(
+        self,
+        store: Store,
+        stack: "Stack",
+        advice: typing.Optional[typing.List[bool]] = None,
+        current_state=None,
+    ) -> bool:
         """
         The core instruction execution function. Pops an instruction from the queue, then dispatches it to the Executor
         if it's a numeric instruction, or executes it internally if it's a control-flow instruction.
@@ -1238,10 +1249,12 @@ class ModuleInstance(Eventful):
         | instruction implementations, but for brevity's sake, it's only explicitly documented here.
         :param stack: The execution Stack to use, likewise passed in from the parent WASMWorld and only documented here,
         | despite being passed to all the instruction implementations.
+        :param advice: A list of concretized conditions to advice execution of the instruction.
         :return: True if execution succeeded, False if there are no more instructions to execute
         """
         # Maps return types from instruction immediates into actual types
         ret_type_map = {-1: [I32], -2: [I64], -3: [F32], -4: [F64], -64: []}
+        self._advice = advice
         self._state = current_state
         # Use the AtomicStack context manager to catch Concretization and roll back changes
         with AtomicStack(stack) as aStack:
@@ -1448,16 +1461,21 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#exec-if
         """
         stack.has_type_on_top(I32, 1)
-        c = stack.pop()
-        if issymbolic(c):
-            raise ConcretizeStack(-1, I32, "Concretizing if_", c)
+        i = stack.pop()
+        if self._advice is not None:
+            cond = self._advice[0]
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition("Concretizing if_", i != 0, self._advice)
+        else:
+            cond = i != 0
+
         insn_block = self.look_forward(0x0B)  # Get the entire `if` block
         # Split it into the true and false branches
         t_block, f_block = self._split_if_block(deque(insn_block))
         label = Label(len(ret_type), [])
 
         # Enter the true branch if the top of the stack is nonzero
-        if c != 0:
+        if cond:
             self.enter_block(list(t_block), label, stack)
         # Otherwise, take the false branch
         else:
@@ -1524,10 +1542,15 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#exec-br-if
         """
         stack.has_type_on_top(I32, 1)
-        c = stack.pop()
-        if issymbolic(c):
-            raise ConcretizeStack(-1, I32, "Concretizing br_if", c)
-        if c != 0:
+        i = stack.pop()
+        if self._advice is not None:
+            cond = self._advice[0]
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition("Concretizing br_if_", i != 0, self._advice)
+        else:
+            cond = i != 0
+
+        if cond:
             self.br(store, stack, imm.relative_depth)
 
     def br_table(self, store: "Store", stack: "AtomicStack", imm: BranchTableImm):
@@ -1539,8 +1562,16 @@ class ModuleInstance(Eventful):
         """
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
-        if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing br_table", i)
+        if self._advice is not None:
+            in_range = self._advice[0]
+            if not in_range:
+                i = imm.target_count
+            elif issymbolic(i):
+                raise ConcretizeStack(-1, I32, "Concretizing br_table index", i)
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition(
+                "Concretizing br_table range check", (i >= 0) & (i < imm.target_count), self._advice
+            )
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
         # execute br target_table[i]. The tests, however, pass a negative i, which doesn't make sense in this
@@ -1604,11 +1635,27 @@ class ModuleInstance(Eventful):
         tab = store.tables[ta]
         assert imm.type_index in range(len(f.frame.module.types))
         ft_expect = f.frame.module.types[imm.type_index]
+
         stack.has_type_on_top(I32, 1)
-        # mypy can't figure out that I32 is a Value
-        i: I32 = stack.pop()  # type: ignore
-        if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", i)
+        item = stack.pop()
+        if self._advice is not None:
+            in_range = self._advice[0]
+            if not in_range:
+                i = I32.cast(len(tab.elem))
+            elif issymbolic(item):
+                raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", item)
+            else:
+                i = item
+        elif isinstance(item, Expression):
+            raise ConcretizeCondition(
+                "Concretizing call_indirect range check",
+                (item >= 0) & (item < len(tab.elem)),
+                self._advice,
+            )
+        else:
+            i = item
+            assert isinstance(i, I32)
+
         if i not in range(len(tab.elem)):
             raise NonExistentFunctionCallTrap()
         if tab.elem[i] is None:
@@ -1667,6 +1714,9 @@ class Activation:
         self.expected_block_depth = expected_block_depth
 
 
+StackItem = typing.Union[Value, Label, Activation]
+
+
 class Stack(Eventful):
     """
     Stores the execution stack & provides helper methods
@@ -1674,9 +1724,7 @@ class Stack(Eventful):
     https://www.w3.org/TR/wasm-core-1/#stack%E2%91%A0
     """
 
-    data: typing.Deque[
-        typing.Union[Value, Label, Activation]
-    ]  #: Underlying datastore for the "stack"
+    data: typing.Deque[StackItem]  #: Underlying datastore for the "stack"
 
     _published_events = {"push_item", "pop_item"}
 
@@ -1696,7 +1744,7 @@ class Stack(Eventful):
         self.data = state["data"]
         super().__setstate__(state)
 
-    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+    def push(self, val: StackItem) -> None:
         """
         Push a value to the stack
 
@@ -1710,7 +1758,7 @@ class Stack(Eventful):
         self.data.append(val)
         self._publish("did_push_item", val, len(self.data))
 
-    def pop(self) -> typing.Union[Value, Label, Activation]:
+    def pop(self) -> StackItem:
         """
         Pop a value from the stack
 
@@ -1722,7 +1770,7 @@ class Stack(Eventful):
         self._publish("did_pop_item", item, len(self.data))
         return item
 
-    def peek(self) -> typing.Optional[typing.Union[Value, Label, Activation]]:
+    def peek(self) -> typing.Optional[StackItem]:
         """
         :return: the item on top of the stack (without removing it)
         """
@@ -1736,7 +1784,7 @@ class Stack(Eventful):
         """
         return len(self.data) == 0
 
-    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type, ...]], n: int):
         """
         *Asserts* that the stack has at least n values of type t or type BitVec on the top
 
@@ -1774,7 +1822,7 @@ class Stack(Eventful):
                 return True
         return False
 
-    def get_nth(self, t: type, n: int) -> typing.Optional[typing.Union[Value, Label, Activation]]:
+    def get_nth(self, t: type, n: int) -> typing.Optional[StackItem]:
         """
         :param t: type to look for
         :param n: number to look for
@@ -1810,7 +1858,7 @@ class AtomicStack(Stack):
 
     @dataclass
     class PopItem:
-        val: typing.Union[Value, Label, Activation]
+        val: StackItem
 
     def __init__(self, parent: Stack):
         self.parent = parent
@@ -1828,11 +1876,9 @@ class AtomicStack(Stack):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val and isinstance(exc_val, Concretize):
+        if isinstance(exc_val, Concretize):
             logger.info("Rolling back stack for concretization")
             self.rollback()
-        else:
-            pass
 
     def rollback(self):
         while self.actions:
@@ -1842,11 +1888,11 @@ class AtomicStack(Stack):
             elif isinstance(action, AtomicStack.PushItem):
                 self.parent.pop()
 
-    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+    def push(self, val: StackItem) -> None:
         self.actions.append(AtomicStack.PushItem())
         self.parent.push(val)
 
-    def pop(self) -> typing.Union[Value, Label, Activation]:
+    def pop(self) -> StackItem:
         val = self.parent.pop()
         self.actions.append(AtomicStack.PopItem(val))
         return val
@@ -1857,7 +1903,7 @@ class AtomicStack(Stack):
     def empty(self):
         return self.parent.empty()
 
-    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type]], n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type, ...]], n: int):
         return self.parent.has_type_on_top(t, n)
 
     def find_type(self, t: type):
@@ -1900,3 +1946,26 @@ class HostFunc(ProtoFuncInst):
         https://www.w3.org/TR/wasm-core-1/#host-functions%E2%91%A2
         """
         pass
+
+
+class ConcretizeCondition(Concretize):
+    """Tells Manticore to concretize a condition required to direct execution."""
+
+    def __init__(
+        self,
+        message: str,
+        condition: Bool,
+        current_advice: typing.Optional[typing.List[bool]],
+        **kwargs,
+    ):
+        """
+        :param message: Debug message describing the reason for concretization
+        :param condition: The boolean expression to concretize
+        """
+
+        advice = current_advice if current_advice is not None else []
+
+        def setstate(state, value: bool):
+            state.platform.advice = advice + [value]
+
+        super().__init__(message, condition, setstate, **kwargs)
