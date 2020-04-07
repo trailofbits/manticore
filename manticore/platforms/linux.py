@@ -9,7 +9,7 @@ import struct
 import time
 import resource
 import tempfile
-from typing import Union, List, TypeVar, cast
+from typing import Deque, Union, List, TypeVar, cast, Optional
 
 import io
 import os
@@ -24,12 +24,13 @@ from elftools.elf.sections import SymbolTableSection
 from . import linux_syscalls
 from .linux_syscall_stubs import SyscallStubs
 from ..core.state import TerminateState
-from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic
+from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import Z3Solver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
+from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -390,14 +391,30 @@ class Socket:
         a.connect(b)
         return a, b
 
-    def __init__(self):
+    def __init__(self, net: bool = False):
+        """
+        Builds a normal socket that does not introduce symbolic bytes.
+
+        :param net: Whether this is a network socket
+        """
         from collections import deque
 
-        self.buffer = deque()  # queue os bytes
-        self.peer = None
+        self.buffer: Deque[
+            Union[bytes, Expression]
+        ] = deque()  # current bytes received but not read
+        self.peer: Optional[Socket] = None
+        self.net: bool = net
+
+    def __getstate__(self):
+        state = {"buffer": self.buffer, "net": self.net}
+        return state
+
+    def __setstate__(self, state):
+        self.buffer = state["buffer"]
+        self.net = state["net"]
 
     def __repr__(self):
-        return f"SOCKET({hash(self):x}, {self.buffer!r}, {hash(self.peer):x})"
+        return f"SOCKET({hash(self):x}, buffer={self.buffer!r}, net={self.net}, peer={hash(self.peer):x})"
 
     def is_connected(self):
         return self.peer is not None
@@ -426,7 +443,14 @@ class Socket:
         return ret
 
     def write(self, buf):
-        assert self.is_connected()
+        if self.net:
+            # Just return like we were able to send all data
+            # TODO: We should put this data somewhere to let the user know what is being sent.
+            #   I don't think stdout is correct. It would be nice to know what is being sent
+            #   over each network connection
+            return len(buf)
+        # If not a network Socket, it should be connected
+        assert self.is_connected(), f"Non-network socket is not connected: {self.__repr__()}"
         return self.peer._transmit(buf)
 
     def _transmit(self, buf) -> int:
@@ -445,6 +469,84 @@ class Socket:
         Doesn't need to do anything; fixes "no attribute 'close'" error.
         """
         pass
+
+
+class SymbolicSocket(Socket):
+    """
+    Symbolic sockets are generally used for network communications that contain user-controlled input.
+    """
+
+    def __init__(
+        self,
+        constraints: ConstraintSet,
+        name: str,
+        max_recv_symbolic: int = 80,
+        net: bool = True,
+        wildcard: str = "+",
+    ):
+        """
+        Builds a symbolic socket.
+
+        :param constraints: the SMT constraints
+        :param name: The name of the SymbolicSocket, which is propagated to the symbolic variables introduced
+        :param max_recv_symbolic: Maximum number of bytes allowed to be read from this socket. 0 for unlimited
+        :param net: Whether this is a network connection socket
+        :param wildcard: Wildcard to be used for symbolic bytes in socket. Not supported, yet
+        """
+        super().__init__(net=net)
+        self._constraints = constraints
+        self.symb_name = name
+        self.max_recv_symbolic = max_recv_symbolic  # 0 for unlimited. Unlimited is not tested
+        # Keep track of the symbolic inputs we create
+        self.inputs_recvd: List[ArrayProxy] = []
+        self.recv_pos = 0
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["inputs_recvd"] = self.inputs_recvd
+        state["symb_name"] = self.symb_name
+        state["recv_pos"] = self.recv_pos
+        state["max_recv_symbolic"] = self.max_recv_symbolic
+        state["constraints"] = self._constraints
+        return state
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self.inputs_recvd = state["inputs_recvd"]
+        self.symb_name = state["symb_name"]
+        self.recv_pos = state["recv_pos"]
+        self.max_recv_symbolic = state["max_recv_symbolic"]
+        self._constraints = state["constraints"]
+
+    def __repr__(self):
+        return f"SymbolicSocket({hash(self):x}, inputs_recvd={self.inputs_recvd}, buffer={self.buffer}, net={self.net}"
+
+    def _next_symb_name(self) -> str:
+        """
+        Return the next name for a symbolic array, based on previous number of other receives
+        """
+        return f"{self.symb_name}-{len(self.inputs_recvd)}"
+
+    def receive(self, size: int) -> Union[ArrayProxy, List[bytes]]:
+        """
+        Return a symbolic array of either `size` or rest of remaining symbolic bytes
+        :param size: Size of receive
+        :return: Symbolic array or list of concrete bytes
+        """
+        # NOTE: self.buffer isn't used at all for SymbolicSocket. Not sure if there is a better
+        #   way to use it for on-demand generation of symbolic data or not.
+        rx_bytes = (
+            size
+            if self.max_recv_symbolic == 0
+            else min(size, self.max_recv_symbolic - self.recv_pos)
+        )
+        if rx_bytes == 0:
+            # If no symbolic bytes left, return empty list
+            return []
+        ret = self._constraints.new_array(name=self._next_symb_name(), index_max=rx_bytes)
+        self.recv_pos += rx_bytes
+        self.inputs_recvd.append(ret)
+        return ret
 
 
 class Linux(Platform):
@@ -636,7 +738,7 @@ class Linux(Platform):
         state_files = []
         for fd in self.files:
             if isinstance(fd, Socket):
-                state_files.append(("Socket", fd.buffer))
+                state_files.append(("Socket", fd))
             else:
                 state_files.append(("File", fd))
         state["files"] = state_files
@@ -683,13 +785,8 @@ class Linux(Platform):
 
         # fetch each file descriptor (Socket or File())
         self.files = []
-        for ty, file_or_buffer in state["files"]:
-            if ty == "Socket":
-                f = Socket()
-                f.buffer = file_or_buffer
-                self.files.append(f)
-            else:
-                self.files.append(file_or_buffer)
+        for ty, file_or_socket in state["files"]:
+            self.files.append(file_or_socket)
 
         # If file descriptors for stdin/stdout/stderr aren't closed, propagate them
         if self.files[0]:
@@ -2184,12 +2281,11 @@ class Linux(Platform):
         if ret != 0:
             return ret
 
-        sock = Socket()
+        sock = Socket(net=True)
         fd = self._open(sock)
         return fd
 
     def sys_recv(self, sockfd, buf, count, flags, trace_str="_recv"):
-        data: bytes = bytes()
         if not self.current.memory.access_ok(slice(buf, buf + count), "w"):
             logger.info("RECV: buf within invalid memory. Returning -errno.EFAULT")
             return -errno.EFAULT
@@ -2203,6 +2299,8 @@ class Linux(Platform):
             return -errno.ENOTSOCK
 
         data = sock.read(count)
+        if len(data) == 0:
+            return 0
         self.syscall_trace.append((trace_str, sockfd, data))
         self.current.write_bytes(buf, data)
 
@@ -3078,20 +3176,28 @@ class SLinux(Linux):
         return super().sys_recvfrom(sockfd, buf, count, flags, src_addr, addrlen)
 
     def sys_accept(self, sockfd, addr, addrlen):
-        # TODO(yan): Transmit some symbolic bytes as soon as we start.
-        # Remove this hack once no longer needed.
+        if issymbolic(sockfd):
+            logger.debug("Symbolic sockfd")
+            raise ConcretizeArgument(self, 0)
 
-        fd = super().sys_accept(sockfd, addr, addrlen)
-        if fd < 0:
-            return fd
-        sock = self._get_fd(fd)
-        nbytes = 32
-        symb = self.constraints.new_array(
-            name=f"socket{fd}", index_max=nbytes, avoid_collisions=True
-        )
-        for i in range(nbytes):
-            sock.buffer.append(symb[i])
+        if issymbolic(addr):
+            logger.debug("Symbolic address")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(addrlen):
+            logger.debug("Symbolic address length")
+            raise ConcretizeArgument(self, 2)
+
+        ret = self._is_sockfd(sockfd)
+        if ret != 0:
+            return ret
+
+        # TODO: maybe combine name with addr?
+        sock = SymbolicSocket(self.constraints, "SymbSocket", net=True)
+        fd = self._open(sock)
         return fd
+        # TODO: Make a concrete connection actually an option
+        # return super().sys_accept(sockfd, addr, addrlen)
 
     def sys_open(self, buf, flags, mode):
         """
