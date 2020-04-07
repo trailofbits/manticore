@@ -23,6 +23,8 @@ from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
 from capstone.arm import ARM_REG_ENDING
 
+from typing import Any, Dict, Optional
+
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f"{__name__}.registers")
 
@@ -124,7 +126,7 @@ class Operand:
         scale = property(lambda self: self.parent.op.mem.scale)
         disp = property(lambda self: self.parent.op.mem.disp)
 
-    def __init__(self, cpu, op):
+    def __init__(self, cpu: "Cpu", op):
         """
         This encapsulates the arch-independent way to access instruction
         operands and immediates based on the disassembler operand descriptor in
@@ -142,12 +144,12 @@ class Operand:
         self.op = op
         self.mem = Operand.MemSpec(self)
 
-    def _reg_name(self, reg_id):
+    def _reg_name(self, reg_id: int):
         """
         Translates a register ID from the disassembler object into the
         register name based on manticore's alias in the register file
 
-        :param int reg_id: Register ID
+        :param reg_id: Register ID
         """
         # XXX: Support other architectures.
         if (
@@ -495,18 +497,18 @@ class Cpu(Eventful):
         "execute_syscall",
     }
 
-    def __init__(self, regfile, memory, **kwargs):
+    def __init__(self, regfile: RegisterFile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", "capstone")
         super().__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
-        self._instruction_cache = {}
+        self._instruction_cache: Dict[int, Any] = {}
         self._icount = 0
         self._last_pc = None
         self._concrete = kwargs.pop("concrete", False)
         self.emu = None
-        self._break_unicorn_at = None
+        self._break_unicorn_at: Optional[int] = None
         self._delayed_event = False
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
@@ -730,7 +732,7 @@ class Cpu(Eventful):
         """
         Write a concrete or symbolic (or mixed) buffer to memory
 
-        :param int where: address to write to
+        :param where: address to write to
         :param data: data to write
         :type data: str or list
         :param force: whether to ignore memory permissions
@@ -761,12 +763,12 @@ class Cpu(Eventful):
             for i in range(len(data)):
                 self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
-    def read_bytes(self, where, size, force=False):
+    def read_bytes(self, where: int, size: int, force: bool = False):
         """
         Read from memory.
 
-        :param int where: address to read data from
-        :param int size: number of bytes
+        :param where: address to read data from
+        :param size: number of bytes
         :param force: whether to ignore memory permissions
         :return: data
         :rtype: list[int or Expression]
@@ -776,13 +778,15 @@ class Cpu(Eventful):
             result.append(Operators.CHR(self.read_int(where + i, 8, force)))
         return result
 
-    def write_string(self, where, string, max_length=None, force=False):
+    def write_string(
+        self, where: int, string: str, max_length: Optional[int] = None, force: bool = False
+    ) -> None:
         """
         Writes a string to memory, appending a NULL-terminator at the end.
 
-        :param int where: Address to write the string to
-        :param str string: The string to write to memory
-        :param int max_length:
+        :param where: Address to write the string to
+        :param string: The string to write to memory
+        :param max_length:
 
         The size in bytes to cap the string at, or None [default] for no
         limit. This includes the NULL terminator.
@@ -795,17 +799,16 @@ class Cpu(Eventful):
 
         self.write_bytes(where, string + "\x00", force)
 
-    def read_string(self, where, max_length=None, force=False):
+    def read_string(self, where: int, max_length: Optional[int] = None, force: bool = False) -> str:
         """
         Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
-        :param int where: Address to read string from
-        :param int max_length:
+        :param where: Address to read string from
+        :param max_length:
             The size in bytes to cap the string at, or None [default] for no
             limit.
         :param force: whether to ignore memory permissions
         :return: string read
-        :rtype: str
         """
         s = io.BytesIO()
         while True:
@@ -822,23 +825,23 @@ class Cpu(Eventful):
             where += 1
         return s.getvalue().decode()
 
-    def push_bytes(self, data, force=False):
+    def push_bytes(self, data: str, force: bool = False):
         """
         Write `data` to the stack and decrement the stack pointer accordingly.
 
-        :param str data: Data to write
+        :param data: Data to write
         :param force: whether to ignore memory permissions
         """
         self.STACK -= len(data)
         self.write_bytes(self.STACK, data, force)
         return self.STACK
 
-    def pop_bytes(self, nbytes, force=False):
+    def pop_bytes(self, nbytes: int, force: bool = False):
         """
         Read `nbytes` from the stack, increment the stack pointer, and return
         data.
 
-        :param int nbytes: How many bytes to read
+        :param nbytes: How many bytes to read
         :param force: whether to ignore memory permissions
         :return: Data read from the stack
         """
@@ -846,11 +849,11 @@ class Cpu(Eventful):
         self.STACK += nbytes
         return data
 
-    def push_int(self, value, force=False):
+    def push_int(self, value: int, force: bool = False):
         """
         Decrement the stack pointer and write `value` to the stack.
 
-        :param int value: The value to write
+        :param value: The value to write
         :param force: whether to ignore memory permissions
         :return: New stack pointer
         """
@@ -858,7 +861,7 @@ class Cpu(Eventful):
         self.write_int(self.STACK, value, force=force)
         return self.STACK
 
-    def pop_int(self, force=False):
+    def pop_int(self, force: bool = False):
         """
         Read a value from the stack and increment the stack pointer.
 
@@ -879,11 +882,11 @@ class Cpu(Eventful):
         """
         raise NotImplementedError
 
-    def decode_instruction(self, pc):
+    def decode_instruction(self, pc: int):
         """
         This will decode an instruction from memory pointed by `pc`
 
-        :param int pc: address of the instruction
+        :param pc: address of the instruction
         """
         # No dynamic code!!! #TODO!
         # Check if instruction was already decoded
