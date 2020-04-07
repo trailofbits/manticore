@@ -292,7 +292,7 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
-    def _send(self, cmd: Union[str, ConstraintSet]):
+    def _send(self, cmd: str) -> None:
         """
         Send a string to the solver.
 
