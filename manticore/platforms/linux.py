@@ -9,7 +9,7 @@ import struct
 import time
 import resource
 import tempfile
-from typing import Deque, Union, List, TypeVar, cast
+from typing import Deque, Union, List, TypeVar, cast, Optional
 
 import io
 import os
@@ -391,8 +391,8 @@ class Socket:
         self.buffer: Deque[
             Union[bytes, Expression]
         ] = deque()  # current bytes received but not read
-        self.peer = None
-        self.net = net
+        self.peer: Optional[Socket] = None
+        self.net: bool = net
 
     def __getstate__(self):
         state = {"buffer": self.buffer, "net": self.net}
