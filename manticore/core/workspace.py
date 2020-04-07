@@ -58,7 +58,7 @@ class WorkspaceTestcase:
     def num(self) -> int:
         return self._num
 
-    def open_stream(self, suffix="", binary=False):
+    def open_stream(self, suffix: str, binary: bool = False):
         stream_name = f"{self._prefix}_{self._num:08x}.{suffix}"
         return self._ws.save_stream(stream_name, binary=binary)
 
