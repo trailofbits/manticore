@@ -7,7 +7,7 @@
 int main(int argc, const char **argv) {
     if (argc != 2) {
         fprintf(stderr, "Usage: %s FILE\n", argv[0]);
-        return 1;
+        return 0;
     }
 
     const char *fname = argv[1];
