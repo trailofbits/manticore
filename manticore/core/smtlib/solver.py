@@ -411,7 +411,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints: ConstraintSet, expression=True):
+    def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True):
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
@@ -592,7 +592,7 @@ class Z3Solver(Solver):
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
 
-    def get_value(self, constraints, *expressions):
+    def get_value(self, constraints: ConstraintSet, *expressions):
         """
         Ask the solver for one possible result of given expressions using
         given set of constraints.
