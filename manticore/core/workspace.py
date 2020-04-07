@@ -295,7 +295,7 @@ class FilesystemStore(Store):
         """
         Return just the filenames that match `glob_str` inside the store directory.
 
-        :param glob_str: A glob string, i.e. 'state_*'
+        :param glob_str: A glob string, e.g. 'state_*'
         :return: list of matched keys
         """
         path = os.path.join(self.uri, glob_str)
@@ -564,7 +564,7 @@ class ManticoreOutput:
     @contextmanager
     def _named_stream(self, name, binary=False, lock=False):
         """
-        Create an indexed output stream i.e. 'test_00000001.name'
+        Create an indexed output stream e.g. 'test_00000001.name'
 
         :param name: Identifier for the stream
         :param lock: exclusive access if True
