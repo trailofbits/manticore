@@ -157,7 +157,7 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(conn_fd, 4)
 
         sock_obj = self.linux.files[conn_fd]
-        # Any socket that comes from an accept, should probably be symbolic for now
+        # Any socket that comes from an accept should probably be symbolic for now
         assert isinstance(sock_obj, SymbolicSocket)
 
         # Start with 0 symbolic bytes
