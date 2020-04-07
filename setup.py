@@ -59,11 +59,11 @@ setup(
         "crytic-compile>=0.1.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
-        "pyevmasm",
+        "pyevmasm-dev",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
-    dependency_links=["git+https://github.com/crytic/pyevmasm.git"],
+    dependency_links=["https://github.com/crytic/pyevmasm/tarball/master#egg=pyevmasm-dev"],
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
 )
