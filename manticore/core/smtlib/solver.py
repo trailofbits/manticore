@@ -330,8 +330,13 @@ class Z3Solver(Solver):
 
         return buf
 
-    def __readline_and_count(self):
-        buf = self._proc.stdout.readline()
+    def __readline_and_count(self) -> Tuple[str, int, int]:
+        stdout = self._proc.stdout
+        if stdout is None:
+            raise SolverError("Could not read from stdout: file descriptor is None")
+        buf = stdout.readline()
+        if buf is None:
+            raise SolverError("Could not read from stdout")
         return buf, buf.count("("), buf.count(")")
 
     # UTILS: check-sat get-value
