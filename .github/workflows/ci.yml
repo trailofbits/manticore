@@ -44,7 +44,7 @@ jobs:
       with:
         python-version: 3.6
     - name: Install Kestone (MacOS)
-      if: matrix.os == 'macos-latest' && matri.type == 'native'
+      if: matrix.os == 'macos-latest' && matrix.type == 'native'
       run: |
         brew install keystone
     - name: Install NPM
