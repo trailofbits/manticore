@@ -220,9 +220,16 @@ class FilesystemStore(Store):
 
         super().__init__(uri)
 
+    def _uri_of_key(self, key: str) -> str:
+        """
+        Produce a URI for the given key, designed to be usable as a filename.
+        """
+        key = key.replace("/", "_")
+        return os.path.join(self.uri, key)
+
     @contextmanager
-    def lock(self):
-        lockfile = os.path.join(self.uri, ".lock")
+    def lock(self) -> Generator[None, None, None]:
+        lockfile = self._uri_of_key(".lock")
         with self._tlock:
             while True:
                 try:
@@ -247,12 +254,13 @@ class FilesystemStore(Store):
         :param lock: exclusive access if True
         :return:
         """
+        fname = self._uri_of_key(key)
         if lock:
             with self.lock():
-                with self.stream(key, mode, lock=False) as f:
+                with open(fname, mode) as f:
                     yield f
         else:
-            with open(os.path.join(self.uri, key), mode) as f:
+            with open(fname, mode) as f:
                 yield f
 
     @contextmanager
@@ -287,7 +295,7 @@ class FilesystemStore(Store):
 
         :param key: The file to delete
         """
-        path = os.path.join(self.uri, key)
+        path = self._uri_of_key(key)
         if os.path.exists(path):
             os.remove(path)
 
@@ -298,7 +306,7 @@ class FilesystemStore(Store):
         :param glob_str: A glob string, e.g. 'state_*'
         :return: list of matched keys
         """
-        path = os.path.join(self.uri, glob_str)
+        path = self._uri_of_key(glob_str)
         return [os.path.split(s)[1] for s in glob.glob(path)]
 
 
