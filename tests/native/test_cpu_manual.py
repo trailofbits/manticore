@@ -11,6 +11,8 @@ from manticore.core.smtlib.solver import Z3Solver
 from .mockmem import Memory as MockMemory
 from functools import reduce
 
+from typing import List
+
 solver = Z3Solver.instance()
 
 
@@ -392,13 +394,13 @@ class SymCPUTest(unittest.TestCase):
         check_flag(self.cpu.ZF, "ZF")
 
     def test_get_sym_eflags(self):
-        def flatten_ors(x):
+        def flatten_ors(x: BitVecOr) -> List:
             """
             Retrieve all nodes of a BitVecOr expression tree
             """
             assert isinstance(x, BitVecOr)
             if any(isinstance(op, BitVecOr) for op in x.operands):
-                ret = []
+                ret: List = []
                 for op in x.operands:
                     if isinstance(op, BitVecOr):
                         ret += flatten_ors(op)

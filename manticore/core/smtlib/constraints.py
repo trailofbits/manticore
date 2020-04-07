@@ -158,7 +158,7 @@ class ConstraintSet:
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
-                    and isinstance(expression.operands[1], (Variable, Constant))
+                    and isinstance(expression.operands[1], (*Variable, *Constant))
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
@@ -327,7 +327,7 @@ class ConstraintSet:
                     ).array
                 else:
                     raise NotImplemented(
-                        f"Unknown expression type {type(var)} encountered during expression migration"
+                        f"Unknown expression type {type(foreign_var)} encountered during expression migration"
                     )
                 # Update the var to var mapping
                 object_migration_map[foreign_var] = new_var
