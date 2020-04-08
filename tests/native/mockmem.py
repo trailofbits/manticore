@@ -58,7 +58,7 @@ class SMem:
             return self.code[addr]
         return self.mem[addr]
 
-    def putchar(self, addr, char):
+    def putchar(self, addr: int, char: str) -> None:
         assert isinstance(addr, int)
         assert isinstance(char, str) and len(char) == 1
         self.mem[addr] = char

@@ -2837,9 +2837,7 @@ class Aarch64Cpu(Cpu):
         insn_rx += "1{5}"
 
         assert re.match(insn_rx, cpu.insn_bit_str)
-
         # XXX: Assumes sequential execution.
-        pass
 
     # XXX: Support DUP (element).
     @instruction

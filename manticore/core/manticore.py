@@ -346,7 +346,7 @@ class ManticoreBase(Eventful):
         The optional setstate() function is supposed to set the concrete value
         in the child state.
 
-        Parent state is removed from the busy list and tht child states are added
+        Parent state is removed from the busy list and the child states are added
         to the ready list.
 
         """
@@ -433,6 +433,7 @@ class ManticoreBase(Eventful):
         state = self._workspace.load_state(state_id, delete=False)
         state._id = state_id
         self.forward_events_from(state, True)
+        state.manticore = self
         self.stcache[state_id] = state
         return state
 
@@ -712,7 +713,7 @@ class ManticoreBase(Eventful):
         """ Terminated states count """
         return len(self._terminated_states)
 
-    def generate_testcase(self, state, message="test", name="test"):
+    def generate_testcase(self, state, message: str = "test", name: str = "test"):
         if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
             message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)
@@ -727,7 +728,7 @@ class ManticoreBase(Eventful):
         return testcase
 
     @at_not_running
-    def register_plugin(self, plugin):
+    def register_plugin(self, plugin: Plugin):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"

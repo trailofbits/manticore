@@ -38,14 +38,7 @@ class Executor(Eventful):
     https://www.w3.org/TR/wasm-core-1/#a7-index-of-instructions
     """
 
-    _published_events = {
-        "write_memory",
-        "read_memory",
-        "set_global",
-        "read_global",
-        "set_local",
-        "read_local",
-    }
+    _published_events = {"set_global", "get_global", "set_local", "get_local"}
 
     def __init__(self, constraints, *args, **kwargs):
 
@@ -343,7 +336,7 @@ class Executor(Eventful):
         a = f.module.globaladdrs[imm.global_index]
         assert a in range(len(store.globals))
         stack.has_type_on_top(Value_t, 1)
-        self._publish("did_set_global", imm.global_index, stack.peek())
+        self._publish("will_set_global", imm.global_index, stack.peek())
         store.globals[a].value = stack.pop()
         self._publish("did_set_global", imm.global_index, store.globals[a].value)
 
@@ -360,12 +353,10 @@ class Executor(Eventful):
                 -1, I32, "Concretizing memory read", i
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
-        if (ea + 4) not in range(len(mem.data) + 1):
+        if (ea + 4) - 1 not in mem:
             raise OutOfBoundsMemoryTrap(ea + 4)
-        self._publish("will_read_memory", ea, ea + 4)
-        c = Operators.CONCAT(32, *map(Operators.ORD, reversed(mem.data[ea : ea + 4])))
+        c = mem.read_int(ea, 32)
         stack.push(I32.cast(c))
-        self._publish("did_read_memory", ea, stack.peek())
 
     def i64_load(self, store, stack, imm: MemoryImm):
         f = stack.get_frame().frame
@@ -380,12 +371,10 @@ class Executor(Eventful):
                 -1, I32, "Concretizing memory read", i
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
-        if (ea + 8) not in range(len(mem.data) + 1):
+        if (ea + 8) - 1 not in mem:
             raise OutOfBoundsMemoryTrap(ea + 8)
-        self._publish("will_read_memory", ea, ea + 8)
-        c = Operators.CONCAT(64, *map(Operators.ORD, reversed(mem.data[ea : ea + 8])))
+        c = mem.read_int(ea, 64)
         stack.push(I64.cast(c))
-        self._publish("did_read_memory", ea, stack.peek())
 
     def int_load(self, store, stack, imm: MemoryImm, ty: type, size: int, signed: bool):
         assert ty in {I32, I64}, f"{type(ty)} is not an I32 or I64"
@@ -401,12 +390,11 @@ class Executor(Eventful):
                 -1, I32, "Concretizing memory read", i
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
-        if ea not in range(len(mem.data)):
+        if ea not in mem:
             raise OutOfBoundsMemoryTrap(ea)
-        if ea + (size // 8) not in range(len(mem.data) + 1):
+        if ea + (size // 8) - 1 not in mem:
             raise OutOfBoundsMemoryTrap(ea + (size // 8))
-        self._publish("will_read_memory", ea, ea + size // 8)
-        c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
+        c = mem.read_int(ea, size)
         width = 32 if ty is I32 else 64
         if signed:
             c = Operators.SEXTEND(c, size, width)
@@ -414,7 +402,6 @@ class Executor(Eventful):
             c = Operators.ZEXTEND(c, width)
         # Mypy can't figure out that that ty will definitely have a cast method, so we ignore the type
         stack.push(ty.cast(c))  # type: ignore
-        self._publish("did_read_memory", ea, stack.peek())
 
     def i32_load8_s(self, store, stack, imm: MemoryImm):
         self.int_load(store, stack, imm, I32, 8, True)
@@ -463,9 +450,9 @@ class Executor(Eventful):
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         N = n if n else (32 if ty is I32 else 64)
-        if ea not in range(len(mem.data)):
+        if ea not in mem:
             raise OutOfBoundsMemoryTrap(ea)
-        if (ea + (N // 8)) not in range(len(mem.data) + 1):
+        if (ea + (N // 8)) - 1 not in mem:
             raise OutOfBoundsMemoryTrap(ea + (N // 8))
         if n:
             b = [
@@ -474,10 +461,7 @@ class Executor(Eventful):
         else:
             b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, N, 8)]
 
-        self._publish("will_write_memory", ea, ea + len(b), b)
-        for idx, v in enumerate(b):
-            mem.data[ea + idx] = v
-        self._publish("did_write_memory", ea, b)
+        mem.write_bytes(ea, b)
 
     def i32_store(self, store, stack, imm: MemoryImm):
         self.int_store(store, stack, imm, I32)
@@ -506,7 +490,7 @@ class Executor(Eventful):
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
         mem = store.mems[a]
-        stack.push(I32(len(mem.data) // 65536))
+        stack.push(I32(mem.npages))
 
     def grow_memory(self, store, stack, imm: CurGrowMemImm):
         f = stack.get_frame().frame
@@ -514,7 +498,7 @@ class Executor(Eventful):
         a = f.module.memaddrs[0]
         assert a in range(len(store.mems))
         mem = store.mems[a]
-        sz = len(mem.data) // 65536
+        sz = mem.npages
         stack.has_type_on_top(I32, 1)
         if issymbolic(stack.peek()):
             raise ConcretizeStack(-1, I32, "Concretizing memory grow operand", stack.peek())
@@ -1225,16 +1209,14 @@ class Executor(Eventful):
                 -1, I32, "Concretizing float memory read", i
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
-        if ea not in range(len(mem.data)):
+        if ea not in mem:
             raise OutOfBoundsMemoryTrap(ea)
-        if (ea + (size // 8)) not in range(len(mem.data) + 1):
+        if (ea + (size // 8)) - 1 not in mem:
             raise OutOfBoundsMemoryTrap(ea + (size // 8))
-        self._publish("will_read_memory", ea, ea + (size // 8))
-        c = Operators.CONCAT(size, *map(Operators.ORD, reversed(mem.data[ea : ea + (size // 8)])))
+        c = mem.read_int(ea, size)
         # Mypy can't figure out that that ty will definitely have a cast method, so we ignore the type
         ret = ty.cast(c)  # type: ignore
         stack.push(ret)
-        self._publish("did_read_memory", ea, stack.peek())
 
     def f32_load(self, store, stack, imm: MemoryImm):
         return self.float_load(store, stack, imm, F32)
@@ -1255,19 +1237,16 @@ class Executor(Eventful):
             size = 32
         else:
             size = 64
-        if ea not in range(len(mem.data)):
+        if ea not in mem:
             raise OutOfBoundsMemoryTrap(ea)
-        if (ea + (size // 8)) not in range(len(mem.data) + 1):
+        if (ea + (size // 8)) - 1 not in mem:
             raise OutOfBoundsMemoryTrap(ea + (size // 8))
         if not issymbolic(c):
             c = struct.unpack(
                 "i" if size == 32 else "q", struct.pack("f" if size == 32 else "d", c)
             )[0]
         b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, size, 8)]
-        self._publish("will_write_memory", ea, ea + len(b), b)
-        for idx, v in enumerate(b):
-            mem.data[ea + idx] = v
-        self._publish("did_write_memory", ea, b)
+        mem.write_bytes(ea, b)
 
     def float_push_compare_return(self, stack, v, rettype=I32):
         if issymbolic(v):
@@ -1472,8 +1451,8 @@ class Executor(Eventful):
             stack.push(F32.cast(c1))
             return
         raise NotImplementedError("f32_demote_f64")
-        c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
-        stack.push(F32.cast(c1))
+        # c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
+        # stack.push(F32.cast(c1))
 
     def f64_convert_s_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)

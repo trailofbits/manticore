@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from .executor import Executor
 from collections import deque
+from math import ceil
 from .types import (
     U32,
     I32,
@@ -34,6 +35,7 @@ from .types import (
     OverflowDivisionTrap,
     NonExistentFunctionCallTrap,
     TypeMismatchTrap,
+    OutOfBoundsMemoryTrap,
     MissingExportException,
     ConcretizeStack,
     BranchImm,
@@ -42,9 +44,10 @@ from .types import (
     CallIndirectImm,
 )
 from .state import State
-from ..core.smtlib import BitVec, issymbolic
+from ..core.smtlib import BitVec, Bool, issymbolic, Operators, Expression
 from ..core.state import Concretize
 from ..utils.event import Eventful
+from ..utils import config
 
 from wasm import decode_module, Section
 from wasm.wasmtypes import (
@@ -59,6 +62,7 @@ from wasm.wasmtypes import (
     SEC_ELEMENT,
     SEC_CODE,
     SEC_DATA,
+    SEC_UNK,
 )
 
 from ..core.smtlib.solver import Z3Solver
@@ -67,6 +71,16 @@ solver = Z3Solver.instance()
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
+
+consts = config.get_group("wasm")
+consts.add(
+    "decode_names",
+    default=False,
+    description="Should Manticore attempt to decode custom name sections",
+)
+
+#: Size of a standard WASM memory page
+PAGESIZE = 2 ** 16
 
 
 # Wrappers around integers that we use for indexing the store.
@@ -269,6 +283,8 @@ class Module:
         "start",
         "imports",
         "exports",
+        "function_names",
+        "local_names",
         "_raw",
     ]
     _raw: bytes
@@ -286,6 +302,8 @@ class Module:
         ] = None  #: https://www.w3.org/TR/wasm-core-1/#start-function%E2%91%A0
         self.imports: typing.List[Import] = []
         self.exports: typing.List[Export] = []
+        self.function_names: typing.Dict[FuncAddr, str] = {}
+        self.local_names: typing.Dict[FuncAddr, typing.Dict[int, str]] = {}
 
     def __getstate__(self):
         state = {
@@ -299,6 +317,8 @@ class Module:
             "start": self.start,
             "imports": self.imports,
             "exports": self.exports,
+            "function_names": self.function_names,
+            "local_names": self.local_names,
             "_raw": self._raw,
         }
         return state
@@ -314,6 +334,8 @@ class Module:
         self.start = state["start"]
         self.imports = state["imports"]
         self.exports = state["exports"]
+        self.function_names = state["function_names"]
+        self.local_names = state["local_names"]
         self._raw = state["_raw"]
 
     def get_funcnames(self) -> typing.List[Name]:
@@ -333,13 +355,14 @@ class Module:
         with open(filename, "rb") as wasm_file:
             m._raw = wasm_file.read()
 
-        module_iter = decode_module(m._raw)
+        # Test modules break name subsection decoding. TODO: Find a better WASM importer
+        module_iter = decode_module(m._raw, decode_name_subsections=consts.decode_names)
         _header = next(module_iter)
         section: Section
         # Parse the sections from the WASM module into internal types. For each section, the code usually resembles:
         # `module.<something>.append(<InstanceOfSomething>(data, from, binary, module))`
         for section, section_data in module_iter:
-            sec_id = section_data.id
+            sec_id = getattr(section_data, "id", SEC_UNK)
             if sec_id == SEC_TYPE:  # https://www.w3.org/TR/wasm-core-1/#type-section%E2%91%A0
                 for ft in section_data.payload.entries:
                     m.types.append(
@@ -445,7 +468,34 @@ class Module:
                     m.data.append(
                         Data(MemIdx(d.index), convert_instructions(d.offset), d.data.tolist())
                     )
-            # TODO - custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
+            elif sec_id == SEC_UNK:
+                # WASM module renders all types as `GeneratedStructureData` so `isinstance` doesn't work :(
+                if (
+                    hasattr(section, "name_type")
+                    and hasattr(section, "payload_len")
+                    and hasattr(section, "payload")
+                ):
+                    # https://webassembly.github.io/spec/core/appendix/custom.html#subsections
+                    name_type = section_data.name_type
+                    if name_type == 0:  # module name
+                        pass
+                    elif name_type == 1:  # function names
+                        for n in section_data.payload.names:
+                            ty = n.get_decoder_meta()["types"]["name_str"]
+                            m.function_names[FuncAddr(n.index)] = strip_quotes(
+                                ty.to_string(n.name_str)
+                            )
+                    elif name_type == 2:  # local variable names
+                        for func in section_data.payload.funcs:
+                            func_idx = func.index
+                            for n in func.local_map.names:
+                                ty = n.get_decoder_meta()["types"]["name_str"]
+                                m.local_names.setdefault(FuncAddr(func_idx), {})[
+                                    n.index
+                                ] = strip_quotes(ty.to_string(n.name_str))
+                else:
+                    logger.info("Encountered unknown section")
+                    # TODO - other custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
 
         return m
 
@@ -474,8 +524,7 @@ class TableInst:
     max: typing.Optional[U32]  #: Optional maximum size of the table
 
 
-@dataclass
-class MemInst:
+class MemInst(Eventful):
     """
     Runtime representation of a memory. As with tables, if you're dealing with a memory at runtime, it's probably a
     MemInst. Currently doesn't support any sort of symbolic indexing, although you can read and write symbolic bytes
@@ -491,8 +540,59 @@ class MemInst:
     https://www.w3.org/TR/wasm-core-1/#memory-instances%E2%91%A0
     """
 
-    data: typing.List[int]  #: The backing array for this memory
+    _published_events = {"write_memory", "read_memory"}
+
+    _pages: typing.Dict[int, typing.List[int]]
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
+    _current_size: int  # Tracks the theoretical size of the memory instance, including unmapped pages
+
+    def __init__(self, starting_data, max=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._current_size = ceil(len(starting_data) / PAGESIZE)
+        self.max = max
+        self._pages = {}
+
+        chunked = [starting_data[i : i + PAGESIZE] for i in range(0, len(starting_data), PAGESIZE)]
+        for idx, page in enumerate(chunked):
+            if len(page) < PAGESIZE:
+                page.extend([0x0] * (PAGESIZE - len(page)))
+            self._pages[idx] = page
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["pages"] = self._pages
+        state["max"] = self.max
+        state["current"] = self._current_size
+        return state
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self._pages = state["pages"]
+        self.max = state["max"]
+        self._current_size = state["current"]
+
+    def __contains__(self, item):
+        return item in range(self.npages * PAGESIZE)
+
+    def _check_initialize_index(self, memidx):
+        page = memidx // PAGESIZE
+        if page not in range(self.npages):
+            raise OutOfBoundsMemoryTrap(memidx)
+        if page not in self._pages:
+            self._pages[page] = [0x0] * PAGESIZE
+        return divmod(memidx, PAGESIZE)
+
+    def _read_byte(self, addr):
+        page, idx = self._check_initialize_index(addr)
+        return self._pages[page][idx]
+
+    def _write_byte(self, addr, val):
+        page, idx = self._check_initialize_index(addr)
+        self._pages[page][idx] = val
+
+    @property
+    def npages(self):
+        return self._current_size
 
     def grow(self, n: int) -> bool:
         """
@@ -503,15 +603,69 @@ class MemInst:
         :param n: The number of pages to attempt to add
         :return: True if the operation succeeded, otherwise False
         """
-        assert len(self.data) % 65536 == 0
-        ln = n + (len(self.data) // 65536)
-        if ln > (2 ** 16):
+        ln = n + self.npages
+        if ln > (PAGESIZE):
             return False
         if self.max is not None:
             if ln > self.max:
                 return False
-        self.data.extend(0x0 for _ in range(n * 65536))  # TODO - these should also be symbolic
+        self._current_size = ln
         return True
+
+    def write_int(self, base: int, expression: typing.Union[Expression, int], size: int = 32):
+        """
+        Writes an integer into memory.
+
+        :param base: Index to write at
+        :param expression: integer to write
+        :param size: Optional size of the integer
+        """
+        b = [
+            Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)
+        ]
+        self.write_bytes(base, b)
+
+    def write_bytes(
+        self, base: int, data: typing.Union[str, typing.Sequence[int], typing.Sequence[bytes]]
+    ):
+        """
+        Writes  a stream of bytes into memory
+
+        :param base: Index to start writing at
+        :param data: Data to write
+        """
+        self._publish("will_write_memory", base, base + len(data), data)
+        for idx, v in enumerate(data):
+            self._write_byte(base + idx, v)
+        self._publish("did_write_memory", base, data)
+
+    def read_int(self, base: int, size: int = 32) -> int:
+        """
+        Reads bytes from memory and combines them into an int
+
+        :param base: Address to read the int from
+        :param size: Size of the int (in bits)
+        :return: The int in question
+        """
+        return Operators.CONCAT(
+            size, *map(Operators.ORD, reversed(self.read_bytes(base, size // 8)))
+        )
+
+    def read_bytes(self, base: int, size: int) -> typing.List[typing.Union[int, bytes]]:
+        """
+        Reads bytes from memory
+
+        :param base: Address to read from
+        :param size: number of bytes to read
+        :return: List of bytes
+        """
+        self._publish("will_read_memory", base, base + size)
+        d = [self._read_byte(i) for i in range(base, base + size)]
+        self._publish("did_read_memory", base, d)
+        return d
+
+    def dump(self):
+        return self.read_bytes(0, self._current_size * PAGESIZE)
 
 
 @dataclass
@@ -597,9 +751,13 @@ class ModuleInstance(Eventful):
         "memaddrs",
         "globaladdrs",
         "exports",
-        "export_map" "executor",
+        "export_map",
+        "executor",
+        "function_names",
+        "local_names",
         "_instruction_queue",
         "_block_depths",
+        "_advice",
         "_state",
     ]
 
@@ -621,6 +779,10 @@ class ModuleInstance(Eventful):
     export_map: typing.Dict[str, int]
     #: Contains instruction implementations for all non-control-flow instructions
     executor: Executor
+    #: Stores names of store functions, if available
+    function_names: typing.Dict[FuncAddr, str]
+    #: Stores names of local variables, if available
+    local_names: typing.Dict[FuncAddr, typing.Dict[int, str]]
     #: Stores the unpacked sequence of instructions in the order they should be executed
     _instruction_queue: typing.Deque[Instruction]
     #: Keeps track of the current call depth, both for functions and for code blocks. Each function call is represented
@@ -629,10 +791,12 @@ class ModuleInstance(Eventful):
     # instruction queue, so the meaning of an `end` instruction could be otherwise ambiguous. Loosely put, the sum of
     # all the digits in this list is the number of `end` instructions we need to see before execution is finished.
     _block_depths: typing.List[int]
+    #: Stickies the advice conditions before each instruction.
+    _advice: typing.Optional[typing.List[bool]]
     #: Prevents the user from invoking functions before instantiation
     instantiated: bool
     #: Stickies the current state before each instruction
-    state: State
+    _state: State
 
     def __init__(self, constraints=None):
         self.types = []
@@ -643,8 +807,11 @@ class ModuleInstance(Eventful):
         self.exports = []
         self.export_map = {}
         self.executor = Executor(constraints)
+        self.function_names = {}
+        self.local_names = {}
         self._instruction_queue = deque()
         self._block_depths = [0]
+        self._advice = None
         self._state = None
 
         super().__init__()
@@ -661,6 +828,8 @@ class ModuleInstance(Eventful):
                 "exports": self.exports,
                 "export_map": self.export_map,
                 "executor": self.executor,
+                "function_names": self.function_names,
+                "local_names": self.local_names,
                 "_instruction_queue": self._instruction_queue,
                 "_block_depths": self._block_depths,
             }
@@ -676,8 +845,11 @@ class ModuleInstance(Eventful):
         self.exports = state["exports"]
         self.export_map = state["export_map"]
         self.executor = state["executor"]
+        self.function_names = state["function_names"]
+        self.local_names = state["local_names"]
         self._instruction_queue = state["_instruction_queue"]
         self._block_depths = state["_block_depths"]
+        self._advice = None
         self._state = None
         super().__setstate__(state)
 
@@ -765,10 +937,9 @@ class ModuleInstance(Eventful):
             assert memaddr in range(len(store.mems))
             meminst = store.mems[memaddr]
             dend = doval + len(data.init)
-            assert dend <= len(meminst.data)
+            assert dend <= meminst.npages * (PAGESIZE)
 
-            for j, b in enumerate(data.init):
-                meminst.data[doval + j] = b
+            meminst.write_bytes(doval, data.init)
 
         # #11 & #12
         last_frame = stack.pop()
@@ -816,8 +987,15 @@ class ModuleInstance(Eventful):
             if isinstance(ev, GlobalAddr):
                 self.globaladdrs.append(ev)
 
-        for func_i in module.funcs:
-            self.funcaddrs.append(func_i.allocate(store, self))
+        for func in module.funcs:
+            addr = func.allocate(store, self)
+            self.funcaddrs.append(addr)
+            name = module.function_names.get(addr, None)
+            if name:
+                self.function_names[addr] = name
+            local_map = module.local_names.get(addr, None)
+            if local_map:
+                self.local_names[addr] = local_map.copy()
         for table_i in module.tables:
             self.tableaddrs.append(table_i.allocate(store))
         for memory_i in module.mems:
@@ -907,9 +1085,13 @@ class ModuleInstance(Eventful):
         ty = f.type
         assert len(ty.result_types) <= 1
         local_vars: typing.List[Value] = []
-        for v in [stack.pop() for _t in ty.param_types][::-1]:
+        for v in [stack.pop() for _ in ty.param_types][::-1]:
             assert not isinstance(v, (Label, Activation))
             local_vars.append(v)
+
+        name = self.function_names.get(funcaddr, f"Func{funcaddr}")
+        buffer = " | " * (len(self._block_depths) - 1)
+        logger.debug(buffer + "%s(%s)" % (name, ", ".join(str(i) for i in local_vars)))
         if isinstance(f, HostFunc):  # Call native function
             self._publish("will_call_hostfunc", f, local_vars)
             res = list(f.hostcode(self._state, *local_vars))
@@ -997,14 +1179,17 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#returning-from-a-function%E2%91%A0
         """
         if len(self._block_depths) > 1:  # Only if we're in a _real_ function, not initialization
-            logger.debug(
-                "EXITING FUNCTION (FD: %d, BD: %d)", len(self._block_depths), self._block_depths[-1]
-            )
             # Pop return values
             f = stack.get_frame()
             n = f.arity
             stack.has_type_on_top(Value_t, n)
             vals = [stack.pop() for _ in range(n)]
+            logger.debug(
+                "EXITING FUNCTION (FD: %d, BD: %d) (%s)",
+                len(self._block_depths),
+                self._block_depths[-1],
+                vals,
+            )
             assert isinstance(
                 stack.peek(), Activation
             ), f"Stack should have an activation on top, instead has {type(stack.peek())}"
@@ -1052,7 +1237,13 @@ class ModuleInstance(Eventful):
         out.append(i)
         return out
 
-    def exec_instruction(self, store: Store, stack: "Stack", current_state=None) -> bool:
+    def exec_instruction(
+        self,
+        store: Store,
+        stack: "Stack",
+        advice: typing.Optional[typing.List[bool]] = None,
+        current_state=None,
+    ) -> bool:
         """
         The core instruction execution function. Pops an instruction from the queue, then dispatches it to the Executor
         if it's a numeric instruction, or executes it internally if it's a control-flow instruction.
@@ -1061,10 +1252,12 @@ class ModuleInstance(Eventful):
         | instruction implementations, but for brevity's sake, it's only explicitly documented here.
         :param stack: The execution Stack to use, likewise passed in from the parent WASMWorld and only documented here,
         | despite being passed to all the instruction implementations.
+        :param advice: A list of concretized conditions to advice execution of the instruction.
         :return: True if execution succeeded, False if there are no more instructions to execute
         """
         # Maps return types from instruction immediates into actual types
         ret_type_map = {-1: [I32], -2: [I64], -3: [F32], -4: [F64], -64: []}
+        self._advice = advice
         self._state = current_state
         # Use the AtomicStack context manager to catch Concretization and roll back changes
         with AtomicStack(stack) as aStack:
@@ -1271,16 +1464,21 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#exec-if
         """
         stack.has_type_on_top(I32, 1)
-        c = stack.pop()
-        if issymbolic(c):
-            raise ConcretizeStack(-1, I32, "Concretizing if_", c)
+        i = stack.pop()
+        if self._advice is not None:
+            cond = self._advice[0]
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition("Concretizing if_", i != 0, self._advice)
+        else:
+            cond = i != 0
+
         insn_block = self.look_forward(0x0B)  # Get the entire `if` block
         # Split it into the true and false branches
         t_block, f_block = self._split_if_block(deque(insn_block))
         label = Label(len(ret_type), [])
 
         # Enter the true branch if the top of the stack is nonzero
-        if c != 0:
+        if cond:
             self.enter_block(list(t_block), label, stack)
         # Otherwise, take the false branch
         else:
@@ -1347,10 +1545,15 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#exec-br-if
         """
         stack.has_type_on_top(I32, 1)
-        c = stack.pop()
-        if issymbolic(c):
-            raise ConcretizeStack(-1, I32, "Concretizing br_if", c)
-        if c != 0:
+        i = stack.pop()
+        if self._advice is not None:
+            cond = self._advice[0]
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition("Concretizing br_if_", i != 0, self._advice)
+        else:
+            cond = i != 0
+
+        if cond:
             self.br(store, stack, imm.relative_depth)
 
     def br_table(self, store: "Store", stack: "AtomicStack", imm: BranchTableImm):
@@ -1362,8 +1565,16 @@ class ModuleInstance(Eventful):
         """
         stack.has_type_on_top(I32, 1)
         i = stack.pop()
-        if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing br_table", i)
+        if self._advice is not None:
+            in_range = self._advice[0]
+            if not in_range:
+                i = imm.target_count
+            elif issymbolic(i):
+                raise ConcretizeStack(-1, I32, "Concretizing br_table index", i)
+        elif isinstance(i, Expression):
+            raise ConcretizeCondition(
+                "Concretizing br_table range check", (i >= 0) & (i < imm.target_count), self._advice
+            )
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
         # execute br target_table[i]. The tests, however, pass a negative i, which doesn't make sense in this
@@ -1427,11 +1638,27 @@ class ModuleInstance(Eventful):
         tab = store.tables[ta]
         assert imm.type_index in range(len(f.frame.module.types))
         ft_expect = f.frame.module.types[imm.type_index]
+
         stack.has_type_on_top(I32, 1)
-        # mypy can't figure out that I32 is a Value
-        i: I32 = stack.pop()  # type: ignore
-        if issymbolic(i):
-            raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", i)
+        item = stack.pop()
+        if self._advice is not None:
+            in_range = self._advice[0]
+            if not in_range:
+                i = I32.cast(len(tab.elem))
+            elif issymbolic(item):
+                raise ConcretizeStack(-1, I32, "Concretizing call_indirect operand", item)
+            else:
+                i = item
+        elif isinstance(item, Expression):
+            raise ConcretizeCondition(
+                "Concretizing call_indirect range check",
+                (item >= 0) & (item < len(tab.elem)),
+                self._advice,
+            )
+        else:
+            i = item
+            assert isinstance(i, I32)
+
         if i not in range(len(tab.elem)):
             raise NonExistentFunctionCallTrap()
         if tab.elem[i] is None:
@@ -1490,6 +1717,9 @@ class Activation:
         self.expected_block_depth = expected_block_depth
 
 
+StackItem = typing.Union[Value, Label, Activation]
+
+
 class Stack(Eventful):
     """
     Stores the execution stack & provides helper methods
@@ -1497,9 +1727,7 @@ class Stack(Eventful):
     https://www.w3.org/TR/wasm-core-1/#stack%E2%91%A0
     """
 
-    data: typing.Deque[
-        typing.Union[Value, Label, Activation]
-    ]  #: Underlying datastore for the "stack"
+    data: typing.Deque[StackItem]  #: Underlying datastore for the "stack"
 
     _published_events = {"push_item", "pop_item"}
 
@@ -1519,7 +1747,7 @@ class Stack(Eventful):
         self.data = state["data"]
         super().__setstate__(state)
 
-    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+    def push(self, val: StackItem) -> None:
         """
         Push a value to the stack
 
@@ -1533,7 +1761,7 @@ class Stack(Eventful):
         self.data.append(val)
         self._publish("did_push_item", val, len(self.data))
 
-    def pop(self) -> typing.Union[Value, Label, Activation]:
+    def pop(self) -> StackItem:
         """
         Pop a value from the stack
 
@@ -1545,7 +1773,7 @@ class Stack(Eventful):
         self._publish("did_pop_item", item, len(self.data))
         return item
 
-    def peek(self) -> typing.Optional[typing.Union[Value, Label, Activation]]:
+    def peek(self) -> typing.Optional[StackItem]:
         """
         :return: the item on top of the stack (without removing it)
         """
@@ -1559,7 +1787,7 @@ class Stack(Eventful):
         """
         return len(self.data) == 0
 
-    def has_type_on_top(self, t: typing.Union[type, tuple], n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type, ...]], n: int):
         """
         *Asserts* that the stack has at least n values of type t or type BitVec on the top
 
@@ -1597,7 +1825,7 @@ class Stack(Eventful):
                 return True
         return False
 
-    def get_nth(self, t: type, n: int) -> typing.Optional[typing.Union[Value, Label, Activation]]:
+    def get_nth(self, t: type, n: int) -> typing.Optional[StackItem]:
         """
         :param t: type to look for
         :param n: number to look for
@@ -1621,7 +1849,7 @@ class Stack(Eventful):
         raise RuntimeError("Couldn't find a frame on the stack")
 
 
-class AtomicStack(Stack):
+class AtomicStack(Stack):  # lgtm [py/missing-call-to-init]
     """
     Allows for the rolling-back of the stack in the event of a concretization exception.
     Inherits from Stack so that the types will be correct, but never calls `super`.
@@ -1633,7 +1861,7 @@ class AtomicStack(Stack):
 
     @dataclass
     class PopItem:
-        val: typing.Union[Value, Label, Activation]
+        val: StackItem
 
     def __init__(self, parent: Stack):
         self.parent = parent
@@ -1651,11 +1879,9 @@ class AtomicStack(Stack):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val and isinstance(exc_val, Concretize):
+        if isinstance(exc_val, Concretize):
             logger.info("Rolling back stack for concretization")
             self.rollback()
-        else:
-            pass
 
     def rollback(self):
         while self.actions:
@@ -1665,11 +1891,11 @@ class AtomicStack(Stack):
             elif isinstance(action, AtomicStack.PushItem):
                 self.parent.pop()
 
-    def push(self, val: typing.Union[Value, Label, Activation]) -> None:
+    def push(self, val: StackItem) -> None:
         self.actions.append(AtomicStack.PushItem())
         self.parent.push(val)
 
-    def pop(self) -> typing.Union[Value, Label, Activation]:
+    def pop(self) -> StackItem:
         val = self.parent.pop()
         self.actions.append(AtomicStack.PopItem(val))
         return val
@@ -1680,7 +1906,7 @@ class AtomicStack(Stack):
     def empty(self):
         return self.parent.empty()
 
-    def has_type_on_top(self, t: typing.Union[type, tuple], n: int):
+    def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type, ...]], n: int):
         return self.parent.has_type_on_top(t, n)
 
     def find_type(self, t: type):
@@ -1723,3 +1949,26 @@ class HostFunc(ProtoFuncInst):
         https://www.w3.org/TR/wasm-core-1/#host-functions%E2%91%A2
         """
         pass
+
+
+class ConcretizeCondition(Concretize):
+    """Tells Manticore to concretize a condition required to direct execution."""
+
+    def __init__(
+        self,
+        message: str,
+        condition: Bool,
+        current_advice: typing.Optional[typing.List[bool]],
+        **kwargs,
+    ):
+        """
+        :param message: Debug message describing the reason for concretization
+        :param condition: The boolean expression to concretize
+        """
+
+        advice = current_advice if current_advice is not None else []
+
+        def setstate(state, value: bool):
+            state.platform.advice = advice + [value]
+
+        super().__init__(message, condition, setstate, **kwargs)

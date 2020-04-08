@@ -14,9 +14,9 @@ def rtd_dependent_deps():
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
-native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc1"]
+native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc2"]
 
-lint_deps = ["black==19.3b0", "mypy==0.740"]
+lint_deps = ["black==19.10b0", "mypy==0.770"]
 
 # Development dependencies without keystone
 dev_noks = (
@@ -34,13 +34,18 @@ extra_require = {
     "lint": lint_deps,
 }
 
+this_directory = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
+    long_description = f.read()
 
 setup(
     name="manticore",
     description="Manticore is a symbolic execution tool for analysis of binaries and smart contracts.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.2.1",
+    version="0.3.3",
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
