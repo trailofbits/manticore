@@ -1307,14 +1307,18 @@ class ModuleInstance(Eventful):
                             # a little bit cleaner. Same issue w/ mypy not understanding immediate types
                             self.br(store, aStack, inst.imm.relative_depth)  # type: ignore
                         elif inst.opcode == 0x0D:
+                            assert isinstance(inst.imm, BranchImm)
                             self.br_if(store, aStack, inst.imm)
                         elif inst.opcode == 0x0E:
+                            assert isinstance(inst.imm, BranchTableImm)
                             self.br_table(store, aStack, inst.imm)
                         elif inst.opcode == 0x0F:
                             self.return_(store, aStack)
                         elif inst.opcode == 0x10:
+                            assert isinstance(inst.imm, CallImm)
                             self.call(store, aStack, inst.imm)
                         elif inst.opcode == 0x11:
+                            assert isinstance(inst.imm, CallIndirectImm)
                             self.call_indirect(store, aStack, inst.imm)
                         else:
                             raise Exception("Unhandled control flow instruction")
@@ -1568,18 +1572,19 @@ class ModuleInstance(Eventful):
         if self._advice is not None:
             in_range = self._advice[0]
             if not in_range:
-                i = imm.target_count
+                i = I32.cast(imm.target_count)
             elif issymbolic(i):
                 raise ConcretizeStack(-1, I32, "Concretizing br_table index", i)
         elif isinstance(i, Expression):
             raise ConcretizeCondition(
-                "Concretizing br_table range check", (i >= 0) & (i < imm.target_count), self._advice
+                "Concretizing br_table range check", Operators.AND((i >= 0), (i < imm.target_count)), self._advice
             )
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
         # execute br target_table[i]. The tests, however, pass a negative i, which doesn't make sense in this
         # situation. For that reason, we use `in range` even though it's a different behavior.
         if i in range(imm.target_count):
+            assert isinstance(i, int)  # If we made it past the concretization, i should be an I32
             lab = imm.target_table[i]
         else:
             lab = imm.default_target
