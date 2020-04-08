@@ -1516,7 +1516,8 @@ class Armv7Cpu(Cpu):
             op2_val, carry = op2.read(with_carry=True)
             result = operation(op1.read(), op2_val)
         else:
-            op1_val, carry = op1.read(with_carry=True)
+            # We _do_ use this form, contrary to what LGTM says
+            op1_val, carry = op1.read(with_carry=True)  # lgtm [py/call/wrong-arguments]
             result = operation(op1_val)
         if dest is not None:
             dest.write(result)
