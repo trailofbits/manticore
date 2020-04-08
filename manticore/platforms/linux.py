@@ -161,8 +161,11 @@ class File:
         return
 
 
-class ProcSelfMaps(File):
+# TODO - we should consider refactoring File so that we don't have to mute these errors
+class ProcSelfMaps(File):  # lgtm [py/missing-call-to-init]
     def __init__(self, flags: int, linux):
+        # WARN: Does not call File.__init__. Should have the File API, but we manually
+        # manage the underlying file and mode
         self.file = tempfile.NamedTemporaryFile(mode="w", delete=False)
         self.file.write(linux.current.memory.__proc_self__)
         self.file.close()
@@ -172,8 +175,10 @@ class ProcSelfMaps(File):
         self.file = open(self.file.name, mode)
 
 
-class Directory(File):
+class Directory(File):  # lgtm [py/missing-call-to-init]
     def __init__(self, path: str, flags: int):
+        # WARN: Does not call File.__init__ because we don't want to open the directory,
+        # even though we still want it to present the same API as File
         assert os.path.isdir(path)
 
         self.fd = os.open(path, flags)

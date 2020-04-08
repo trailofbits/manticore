@@ -1082,12 +1082,8 @@ class SDecree(Decree):
 
         data = []
         for i in range(count):
-            if False:
-                # Too slow for the new age.
-                value = self.constraints.new_bitvec(8, name="RANDOM_%04d" % self.random)
-                self.constraints.add(symb == cgcrandom.stream[self.random])
-            else:
-                value = cgcrandom.stream[self.random]
+            # TODO - should value be symbolic?
+            value = cgcrandom.stream[self.random]
             data.append(value)
             self.random += 1
 

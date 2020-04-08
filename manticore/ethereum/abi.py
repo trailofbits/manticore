@@ -264,7 +264,7 @@ class ABI:
                 result.append(ABI._deserialize(ty[2], buf, dyn_offset))
                 dyn_offset += ty_size
         else:
-            raise NotImplemented
+            raise NotImplementedError(f"Could not deserialize type: {ty[0]}")
 
         return result
 

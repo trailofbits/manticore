@@ -513,7 +513,7 @@ class ManticoreEVM(ManticoreBase):
             for _ in range(rep):
                 result.append(self._make_symbolic_arguments(ty[2]))
         else:
-            raise NotImplemented
+            raise NotImplementedError(f"Could not produce symbolic argument of type {ty[0]}")
 
         return result
 
