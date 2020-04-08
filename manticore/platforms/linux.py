@@ -161,8 +161,11 @@ class File:
         return
 
 
-class ProcSelfMaps(File):
+# TODO - we should consider refactoring File so that we don't have to mute these errors
+class ProcSelfMaps(File):  # lgtm [py/missing-call-to-init]
     def __init__(self, flags: int, linux):
+        # WARN: Does not call File.__init__. Should have the File API, but we manually
+        # manage the underlying file and mode
         self.file = tempfile.NamedTemporaryFile(mode="w", delete=False)
         self.file.write(linux.current.memory.__proc_self__)
         self.file.close()
@@ -172,8 +175,10 @@ class ProcSelfMaps(File):
         self.file = open(self.file.name, mode)
 
 
-class Directory(File):
+class Directory(File):  # lgtm [py/missing-call-to-init]
     def __init__(self, path: str, flags: int):
+        # WARN: Does not call File.__init__ because we don't want to open the directory,
+        # even though we still want it to present the same API as File
         assert os.path.isdir(path)
 
         self.fd = os.open(path, flags)
@@ -1705,7 +1710,7 @@ class Linux(Platform):
 
         return self._open(f)
 
-    def sys_openat(self, dirfd, buf, flags, mode) -> int:
+    def sys_openat(self, dirfd: int, buf: int, flags: int, mode) -> int:
         """
         Openat SystemCall - Similar to open system call except dirfd argument
         when path contained in buf is relative, dirfd is referred to set the relative path
@@ -3199,7 +3204,7 @@ class SLinux(Linux):
         # TODO: Make a concrete connection actually an option
         # return super().sys_accept(sockfd, addr, addrlen)
 
-    def sys_open(self, buf, flags, mode):
+    def sys_open(self, buf: int, flags: int, mode: int) -> int:
         """
         A version of open(2) that includes a special case for a symbolic path.
         When given a symbolic path, it will create a temporary file with
@@ -3212,11 +3217,9 @@ class SLinux(Linux):
         offset = 0
         symbolic_path = issymbolic(self.current.read_int(buf, 8))
         if symbolic_path:
-            import tempfile
-
             fd, path = tempfile.mkstemp()
             with open(path, "wb+") as f:
-                f.write("+" * 64)
+                f.write(b"+" * 64)
             self.symbolic_files.append(path)
             buf = self.current.memory.mmap(None, 1024, "rw ", data_init=path)
 
@@ -3227,7 +3230,7 @@ class SLinux(Linux):
 
         return rv
 
-    def sys_openat(self, dirfd, buf, flags, mode):
+    def sys_openat(self, dirfd: int, buf: int, flags: int, mode: int) -> int:
         """
         A version of openat that includes a symbolic path and symbolic directory file descriptor
 

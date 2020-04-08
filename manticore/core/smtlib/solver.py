@@ -275,7 +275,6 @@ class Z3Solver(Solver):
             # self._proc.wait()
         except Exception as e:
             logger.error(str(e))
-            pass
 
     def _reset(self, constraints=None):
         """Auxiliary method to reset the smtlib external solver to initial defaults"""

@@ -326,7 +326,7 @@ class ConstraintSet:
                         name=migrated_name,
                     ).array
                 else:
-                    raise NotImplemented(
+                    raise NotImplementedError(
                         f"Unknown expression type {type(foreign_var)} encountered during expression migration"
                     )
                 # Update the var to var mapping

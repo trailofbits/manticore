@@ -1,0 +1,6 @@
+queries:
+  - exclude: py/clear-text-logging-sensitive-data
+
+path_classifiers:
+  examples:
+    - examples/
