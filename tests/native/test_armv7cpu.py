@@ -11,6 +11,7 @@ from manticore.core.smtlib import *
 from manticore.core.state import Concretize
 from manticore.core.smtlib.solver import Z3Solver
 from manticore.native.memory import SMemory32
+from manticore.utils.helpers import pickle_dumps
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
@@ -223,6 +224,23 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read("APSR_C"), c)
         self.assertEqual(self.rf.read("APSR_V"), v)
 
+    # MVN
+    @itest("mvn r0, #0x0")
+    def test_mvn_imm_min(self):
+        self.assertEqual(self.rf.read("R0"), 0xFFFFFFFF)
+
+    @itest("mvn r0, #0xFFFFFFFF")
+    def test_mvn_imm_max(self):
+        self.assertEqual(self.rf.read("R0"), 0x0)
+
+    @itest("mvn r0, #0x18000")
+    def test_mvn_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R0"), 0xFFFE7FFF)
+
+    @itest("mvn r0, #24, 20")
+    def test_mvn_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R0"), 0xFFFE7FFF)
+
     # MOV
 
     @itest("mov r0, 0x0")
@@ -240,6 +258,14 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest("mov r0, 0xff000000")
     def test_mov_imm_modified_imm_max(self):
         self.assertEqual(self.rf.read("R0"), 0xFF000000)
+
+    @itest("mov r0, #0x18000")
+    def test_mov_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R0"), 0x18000)
+
+    @itest("mov r0, #24, 20")
+    def test_mov_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R0"), 0x18000)
 
     @itest_custom("mov r0, r1")
     def test_mov_immreg(self):
@@ -365,6 +391,18 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 44 + 0x100)
 
+    @itest_custom("add r3, r1, 0x18000")
+    def test_add_imm_mod_imm_case1(self):
+        self.rf.write("R1", 44)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 44 + 0x18000)
+
+    @itest_custom("add r3, r1, 24, 20")
+    def test_add_imm_mod_imm_case2(self):
+        self.rf.write("R1", 44)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 44 + 0x18000)
+
     @itest_custom("add r3, r1, 0xff000000")
     def test_add_imm_mod_imm_max(self):
         self.rf.write("R1", 44)
@@ -460,11 +498,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 0x60000000)
 
+    # ADCS
     @itest_setregs("R3=0xfffffff6", "R4=10")
     @itest_thumb("adcs r3, r4")
     def test_thumb_adc_basic(self):
         self.assertEqual(self.rf.read("R3"), 0)
 
+    # ADC
     @itest_custom("adc r3, r1, r2")
     @itest_setregs("R1=1", "R2=2", "APSR_C=1")
     def test_adc_basic(self):
@@ -478,6 +518,18 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.rf.write("R2", 0x3)
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 0x60000001)
+
+    @itest_custom("adc r3, r1, #0x18000")
+    @itest_setregs("R1=1", "APSR_C=1")
+    def test_adc_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x18002)
+
+    @itest_custom("adc r3, r1, #24, 20")
+    @itest_setregs("R1=1", "APSR_C=1")
+    def test_adc_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x18002)
 
     # TODO what is shifter_carry_out in the manual, A8-291? it gets set to
     # Bit[0] presumably, but i have no clue what it is. Not mentioned again in
@@ -982,8 +1034,28 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     # ADR
 
-    @itest_custom("adr r0, #16", mode=CS_MODE_THUMB)
+    @itest_custom("adr r0, #16")
     def test_adr(self):
+        pre_pc = self.rf.read("PC")
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 8) + 16)
+
+    # Note, ARM ARM says that the following is an alternative encoding for a form of ADR
+    @itest_custom("add r0, PC, #0x10")
+    def test_adr_mod_imm_1(self):
+        pre_pc = self.rf.read("PC")
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 8) + 0x10)
+
+    # Note, ARM ARM says that the following is an alternative encoding for a form of ADR
+    @itest_custom("add r0, PC, #1, 28")
+    def test_adr_mod_imm_2(self):
+        pre_pc = self.rf.read("PC")
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R0"), (pre_pc + 8) + 0x10)
+
+    @itest_custom("adr r0, #16", mode=CS_MODE_THUMB)
+    def test_adr_thumb(self):
         pre_pc = self.rf.read("PC")
         self.cpu.execute()
         self.assertEqual(self.rf.read("R0"), (pre_pc + 4) + 16)  # adr is 4 bytes long
@@ -1110,11 +1182,33 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("PC"), (pre_pc + 4) + 42)  # tbh is 4 bytes long
 
+    # CMN
+
+    @itest_setregs("R0=-0x18000")
+    @itest("cmn r0, #0x18000")
+    def test_cmn_eq_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
+    @itest_setregs("R0=-0x18000")
+    @itest("cmn r0, #24, 20")
+    def test_cmn_eq_mod_imm_2(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
     # CMP
 
     @itest_setregs("R0=3")
     @itest("cmp r0, 3")
     def test_cmp_eq(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
+    @itest_setregs("R0=0x18000")
+    @itest("cmp r0, #0x18000")
+    def test_cmp_eq_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 1, 1, 0)
+
+    @itest_setregs("R0=0x18000")
+    @itest("cmp r0, #24, 20")
+    def test_cmp_eq_mod_imm_2(self):
         self._checkFlagsNZCV(0, 1, 1, 0)
 
     @itest_setregs("R0=3")
@@ -1174,6 +1268,8 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R1"), 1)
 
+    # SUB
+
     @itest_custom("sub r3, r1, r2")
     @itest_setregs("R1=4", "R2=2")
     def test_sub_basic(self):
@@ -1190,6 +1286,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_sub_imm(self):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 5)
+
+    @itest_custom("sub r3, r1, #0x18000")
+    @itest_setregs("R1=0x18000")
+    def test_sub_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("sub r3, r1, #24, 20")
+    @itest_setregs("R1=0x18000")
+    def test_sub_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
 
     @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R1=0x04030201", "R2=0x01010101")
@@ -1214,6 +1322,34 @@ class Armv7CpuInstructions(unittest.TestCase):
         all_vals = solver.get_all_values(self.cpu.memory.constraints, self.cpu.R3)
         self.assertIn(0x03020100, all_vals)
 
+    # RSC
+
+    @itest_custom("rsc r3, r1, #0x18000")
+    @itest_setregs("R1=0x18000", "APSR_C=1")
+    def test_rsc_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("rsc r3, r1, #0x18000")
+    @itest_setregs("R1=0x17fff", "APSR_C=0")
+    def test_rsc_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("rsc r3, r1, #24, 20")
+    @itest_setregs("R1=0x18000", "APSR_C=1")
+    def test_rsc_mod_imm_3(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    @itest_custom("rsc r3, r1, #24, 20")
+    @itest_setregs("R1=0x17fff", "APSR_C=0")
+    def test_rsc_mod_imm_4(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0)
+
+    # SBC
+
     @itest_custom("sbc r3, r1, #5")
     @itest_setregs("R1=10")
     def test_sbc_imm(self):
@@ -1224,6 +1360,30 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_thumb("sbcs r0, r3")
     def test_sbc_thumb(self):
         self.assertEqual(self.rf.read("R0"), 0)
+
+    @itest_custom("sbc r3, r1, #0x18000")
+    @itest_setregs("R1=0x18010", "APSR_C=1")
+    def test_sbc_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x10)
+
+    @itest_custom("sbc r3, r1, #0x18000")
+    @itest_setregs("R1=0x18010", "APSR_C=0")
+    def test_sbc_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0xF)
+
+    @itest_custom("sbc r3, r1, #24, 20")
+    @itest_setregs("R1=0x18010", "APSR_C=1")
+    def test_sbc_mod_imm_3(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0x10)
+
+    @itest_custom("sbc r3, r1, #24, 20")
+    @itest_setregs("R1=0x18010", "APSR_C=0")
+    def test_sbc_mod_imm_4(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R3"), 0xF)
 
     # LDM/LDMIB/LDMDA/LDMDB
 
@@ -1413,6 +1573,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_thumb_orr_imm(self):
         self.assertEqual(self.rf.read("R3"), 0x1005)
 
+    @itest_custom("orr r2, r3, #0x18000")
+    @itest_setregs("R3=0x1000")
+    def test_orr_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x19000)
+
+    @itest_custom("orr r2, r3, #24, 20")
+    @itest_setregs("R3=0x1000")
+    def test_orr_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x19000)
+
     @itest_custom("orrs r2, r3")
     @itest_setregs("R2=0x5", "R3=0x80000000")
     def test_orrs_imm_flags(self):
@@ -1484,6 +1656,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_eor_reg_two_op_shifted(self):
         self.cpu.execute()
         self.assertEqual(self.rf.read("R2"), 0x5)
+
+    @itest_custom("eor r2, r3, #0x18000")
+    @itest_setregs("R3=0xA")
+    def test_eor_mod_imm_1(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x1800A)
+
+    @itest_custom("eor r2, r3, #24, 20")
+    @itest_setregs("R3=0xA")
+    def test_eor_mod_imm_2(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read("R2"), 0x1800A)
 
     # LDRH - see also LDR tests
 
@@ -1580,7 +1764,58 @@ class Armv7CpuInstructions(unittest.TestCase):
     # TST
     @itest_setregs("R1=1", "R3=0")
     @itest("tst r3, r1")
-    def test_tst(self):
+    def test_tst_1(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R1=1", "R3=1")
+    @itest("tst r3, r1")
+    def test_tst_2(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R1=1", "R3=3")
+    @itest("tst r3, r1")
+    def test_tst_3(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("tst r3, #0x18000")
+    def test_tst_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("tst r3, #24, 20")
+    def test_tst_mod_imm_2(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    # TEQ
+    @itest_setregs("R1=1", "R3=0")
+    @itest("teq r3, r1")
+    def test_teq_1(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R1=1", "R3=1")
+    @itest("teq r3, r1")
+    def test_teq_2(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("teq r3, #0x18000")
+    def test_teq_mod_imm_1(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R3=0x18000")
+    @itest("teq r3, #0x18000")
+    def test_teq_mod_imm_2(self):
+        self._checkFlagsNZCV(0, 1, 0, 0)
+
+    @itest_setregs("R3=0")
+    @itest("teq r3, #24, 20")
+    def test_teq_mod_imm_3(self):
+        self._checkFlagsNZCV(0, 0, 0, 0)
+
+    @itest_setregs("R3=0x18000")
+    @itest("teq r3, #24, 20")
+    def test_teq_mod_imm_4(self):
         self._checkFlagsNZCV(0, 1, 0, 0)
 
     # AND
@@ -1599,6 +1834,16 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_and_reg_carry(self):
         self.assertEqual(self.rf.read("R1"), 3 & 5)
         self.assertEqual(self.rf.read("APSR_C"), 1)
+
+    @itest_setregs("R2=5")
+    @itest("and r2, r2, #0x18000")
+    def test_and_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R2"), 0)
+
+    @itest_setregs("R2=5")
+    @itest("and r2, r2, #24, 20")
+    def test_and_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R2"), 0)
 
     # svc
 
@@ -1676,11 +1921,23 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_asrw_thumb(self):
         self.assertEqual(self.cpu.R5, 16 >> 3)
 
+    # RSB
+
     @itest_setregs("R2=29")
     @itest("RSB r2, r2, #31")
     def test_rsb_imm(self):
         # Diverging instruction from trace
         self.assertEqual(self.rf.read("R2"), 2)
+
+    @itest_setregs("R2=0x17000")
+    @itest("RSB r2, r2, #0x18000")
+    def test_rsb_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R2"), 0x1000)
+
+    @itest_setregs("R2=0x17000")
+    @itest("RSB r2, r2, #24, 20")
+    def test_rsb_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R2"), 0x1000)
 
     @itest_setregs("R6=2", "R8=0xfffffffe")
     @itest("RSBS r8, r6, #0")
@@ -1734,6 +1991,16 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest("BIC R1, #0x10")
     def test_thumb_bic_reg_imm(self):
         self.assertEqual(self.rf.read("R1"), 0xEF)
+
+    @itest_setregs("R1=0x18002")
+    @itest("BIC R2, R1, #0x18000")
+    def test_bic_reg_mod_imm_1(self):
+        self.assertEqual(self.rf.read("R2"), 0x2)
+
+    @itest_setregs("R1=0x18002")
+    @itest("BIC R2, R1, #24, 20")
+    def test_bic_reg_mod_imm_2(self):
+        self.assertEqual(self.rf.read("R2"), 0x2)
 
     @itest_setregs("R1=0x1008")
     @itest("BLX R1")
@@ -1927,7 +2194,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_arm_save_restore_cpu(self):
         import pickle
 
-        dumped_s = pickle.dumps(self.cpu)
+        dumped_s = pickle_dumps(self.cpu)
         self.cpu = pickle.loads(dumped_s)
 
     def test_symbolic_conditional(self):

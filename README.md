@@ -7,9 +7,11 @@
 
 [![Build Status](https://img.shields.io/github/workflow/status/trailofbits/manticore/CI/master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
 [![Codecov](https://img.shields.io/codecov/c/github/trailofbits/manticore)](https://codecov.io/github/trailofbits/manticore)
-[![PyPI version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
+[![PyPI Version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
+[![Example Status](https://img.shields.io/github/workflow/status/trailofbits/manticore-examples/CI/master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
+[![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/manticore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/manticore/alerts/)
 
 Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
 
@@ -102,6 +104,32 @@ def hook(state):
 m.run()
 ```
 
+Manticore can also evaluate WebAssembly functions over symbolic inputs.
+
+```python
+from manticore.wasm import ManticoreWASM
+
+m = ManticoreWASM("collatz.wasm")
+
+def arg_gen(state):
+    # Generate a symbolic argument to pass to the collatz function.
+    # Possible values: 4, 6, 8
+    arg = state.new_symbolic_value(32, "collatz_arg")
+    state.constrain(arg > 3)
+    state.constrain(arg < 9)
+    state.constrain(arg % 2 == 0)
+    return [arg]
+
+
+# Run the collatz function with the given argument generator.
+m.collatz(arg_gen)
+
+# Manually collect return values
+# Prints 2, 3, 8
+for idx, val_list in enumerate(m.collect_returns()):
+    print("State", idx, "::", val_list[0])
+```
+
 ## Requirements
 
 * Manticore is supported on Linux and requires **Python 3.6+**.
@@ -115,7 +143,7 @@ Install and try Manticore in a few shell commands:
 
 ```bash
 # Install system dependencies
-sudo apt-get update && sudo apt-get install python3 python3-pip -y
+sudo apt-get update && sudo apt-get install python3 python3-dev python3-pip -y
 
 # Install Manticore and its dependencies
 sudo pip3 install manticore[native]

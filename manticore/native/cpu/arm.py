@@ -1,14 +1,18 @@
 from functools import wraps
+from inspect import signature as inspect_signature
 import logging
 import struct
 
 import capstone as cs
+import operator as ops
 
 from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
 from .abstractcpu import instruction as abstract_instruction
 from .bitwise import *
 from .register import Register
 from ...core.smtlib import Operators, BitVecConstant, issymbolic
+
+from typing import NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -20,35 +24,135 @@ def HighBit(n):
     return Bit(n, 31)
 
 
-def instruction(body):
-    @wraps(body)
-    def instruction_implementation(cpu, *args, **kwargs):
-        ret = None
+ARMV7_CPU_ADDRESS_BIT_SIZE = 32
 
-        should_execute = cpu.should_execute_conditional()
 
-        if cpu._at_symbolic_conditional == cpu.instruction.address:
-            cpu._at_symbolic_conditional = None
-            should_execute = True
+def instruction(instruction_body=None, *, can_take_denormalized_mod_imm: bool = False):
+    """
+    This decorator is used to annotate Armv7Cpu methods as
+    instruction-implementing methods.
+
+    This centralizes some common ARM-specific logic about CPU flags in one place.
+
+    Additionally, this optionally adds /modified immediate normalization/ logic
+    to the wrapped method.
+
+    This decorator works both as `@instruction` and as
+    `@instruction(can_take_denormalized_mod_imm=True)`.
+
+
+    What is this normalization logic?
+
+    First, it helps to understand how ARM encodes immediate constants.
+    In encoded ARM instructions, immediate constant values are encoded as an
+    8-bit unsigned number and a 4-bit rotation value; you can read about the
+    details in the ARM Architecture Reference Manual, ARMv7-A and ARMv7-R
+    edition, section A5.2.3, "Data-processing (immediate)".
+
+    Second, it turns out that the Capstone disassembler we use will sometimes
+    disassemble an ARM immediate constant value into /two/ immediate operand
+    values, explicitly representing the 8-bit unsigned number and two times the
+    4-bit shift.  In particular, it seems that Capstone uses this explicit
+    representation when the modified immediate value is encoded in a
+    non-canonical form.  A blog post has some more explanation around this:
+
+        https://alisdair.mcdiarmid.org/arm-immediate-value-encoding/
+
+    So, finally, the /modified immediate normalization/ logic that this
+    decorator adds converts an explicitly-represented unsigned number and
+    rotation into a single immediate operand-like value (`_ImmediatePseudoOperand`)
+    that has the appropriate integer value, so that the actual implementation
+    of an ARM instruction here can expect only normalized immediates, and not
+    have to concern itself with this quirk of Capstone.
+    """
+
+    def decorator(body):
+        if can_take_denormalized_mod_imm:
+            # Need to possibly normalize a modified immediate argument that's
+            # been explicitly split by Capstone into (number, rotation)
+            # components.
+
+            body_sig = inspect_signature(body)
+            # subtract 1 to account for the first parameter (`cpu`), present in
+            # all instruction methods.
+            num_body_params = len(body_sig.parameters) - 1
+            assert num_body_params > 0
+
+            def normalize_mod_imm_arg(args):
+                if len(args) == num_body_params + 1:
+                    # We got 1 more argument than the wrapped function expects;
+                    # this is the case of a modified immediate represented
+                    # explicitly as 2 immediate operands.
+                    # Normalize the two into one!
+                    args = list(args)
+                    rot = args.pop()
+                    assert rot.type == "immediate"
+                    num = args.pop()
+                    assert num.type == "immediate"
+                    imm = ROR(num.imm, rot.imm, ARMV7_CPU_ADDRESS_BIT_SIZE)
+                    args.append(_ImmediatePseudoOperand(imm))
+                return args
+
         else:
-            if issymbolic(should_execute):
-                # Let's remember next time we get here we should not do this again
-                cpu._at_symbolic_conditional = cpu.instruction.address
-                i_size = cpu.instruction.size
-                cpu.PC = Operators.ITEBV(
-                    cpu.address_bit_size, should_execute, cpu.PC - i_size, cpu.PC
-                )
-                return
+            # No normalization of a modified immediate required; return what's given.
+            def normalize_mod_imm_arg(args):
+                return args
 
-        if should_execute:
-            ret = body(cpu, *args, **kwargs)
+        @wraps(body)
+        def instruction_implementation(cpu, *args, **kwargs):
+            should_execute = cpu.should_execute_conditional()
 
-        if cpu.should_commit_flags():
-            cpu.commit_flags()
+            if cpu._at_symbolic_conditional == cpu.instruction.address:
+                cpu._at_symbolic_conditional = None
+                should_execute = True
+            else:
+                if issymbolic(should_execute):
+                    # Let's remember next time we get here we should not do this again
+                    cpu._at_symbolic_conditional = cpu.instruction.address
+                    i_size = cpu.instruction.size
+                    cpu.PC = Operators.ITEBV(
+                        cpu.address_bit_size, should_execute, cpu.PC - i_size, cpu.PC
+                    )
+                    return
 
-        return ret
+            if should_execute:
+                ret = body(cpu, *normalize_mod_imm_arg(args), **kwargs)
+            else:
+                ret = None
 
-    return abstract_instruction(instruction_implementation)
+            if cpu.should_commit_flags():
+                cpu.commit_flags()
+
+            return ret
+
+        return abstract_instruction(instruction_implementation)
+
+    # Here's where we support using this decorator both like
+    # `@instruction` and like `@instruction(can_take_denormalized_mod_imm=True)`.
+    # See https://stackoverflow.com/questions/3888158/making-decorators-with-optional-arguments
+    # for some decorator-fu.
+    if instruction_body is not None:
+        return decorator(instruction_body)
+    else:
+        return decorator
+
+
+class _ImmediatePseudoOperand(NamedTuple):
+    """
+    This is a hacky class that is used to represent an object that looks close
+    enough to an Armv7Operand to be used in the places where immediate operands
+    are used.
+
+    See the `instruction` decorator for more detail.
+    """
+
+    imm: int
+
+    def read(self, with_carry: bool = False):
+        if with_carry:
+            return self.imm, 0
+        else:
+            return self.imm
 
 
 _TYPE_MAP = {
@@ -482,7 +586,7 @@ class Armv7Cpu(Cpu):
     current instruction + 8 (section A2.3).
     """
 
-    address_bit_size = 32
+    address_bit_size = ARMV7_CPU_ADDRESS_BIT_SIZE
     max_instr_width = 4
     machine = "armv7"
     arch = cs.CS_ARCH_ARM
@@ -660,8 +764,8 @@ class Armv7Cpu(Cpu):
                 return "ASR"
         return OP_NAME_MAP.get(name, name)
 
-    def _wrap_operands(self, ops):
-        return [Armv7Operand(self, op) for op in ops]
+    def _wrap_operands(self, operands):
+        return [Armv7Operand(self, op) for op in operands]
 
     def should_commit_flags(cpu):
         # workaround for a capstone bug (issue #980);
@@ -768,7 +872,7 @@ class Armv7Cpu(Cpu):
             )
         dest.write(Operators.CONCAT(32, *reversed(result)))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def MOV(cpu, dest, src):
         """
         Implement the MOV{S} instruction.
@@ -1014,7 +1118,7 @@ class Armv7Cpu(Cpu):
 
         return result, carry_out, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def ADC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read("APSR_C")
         if op2 is not None:
@@ -1024,7 +1128,7 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def ADD(cpu, dest, src, add=None):
         if add is not None:
             result, carry, overflow = cpu._ADD(src.read(), add.read())
@@ -1034,14 +1138,14 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def RSB(cpu, dest, src, add):
         inv_src = GetNBits(~src.read(), cpu.address_bit_size)
         result, carry, overflow = cpu._ADD(inv_src, add.read(), 1)
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def RSC(cpu, dest, src, add):
         carry = cpu.regfile.read("APSR_C")
         inv_src = GetNBits(~src.read(), cpu.address_bit_size)
@@ -1049,7 +1153,7 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def SUB(cpu, dest, src, add=None):
         if add is not None:
             result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
@@ -1060,7 +1164,7 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         return result, carry, overflow
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def SBC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read("APSR_C")
         if op2 is not None:
@@ -1248,7 +1352,7 @@ class Armv7Cpu(Cpu):
 
         cpu.PC += offset << 1
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def CMP(cpu, reg, compare):
         notcmp = ~compare.read() & Mask(cpu.address_bit_size)
         cpu._ADD(reg.read(), notcmp, 1)
@@ -1407,54 +1511,55 @@ class Armv7Cpu(Cpu):
     def STMDB(cpu, base, *regs):
         cpu._STM(cs.arm.ARM_INS_STMDB, base, regs)
 
-    def _bitwise_instruction(cpu, operation, dest, op1, *op2):
+    def _bitwise_instruction(cpu, operation, dest, op1, op2=None):
         if op2:
-            op2_val, carry = op2[0].read(with_carry=True)
+            op2_val, carry = op2.read(with_carry=True)
             result = operation(op1.read(), op2_val)
         else:
-            op1_val, carry = op1.read(with_carry=True)
+            # We _do_ use this form, contrary to what LGTM says
+            op1_val, carry = op1.read(with_carry=True)  # lgtm [py/call/wrong-arguments]
             result = operation(op1_val)
         if dest is not None:
             dest.write(result)
         cpu.set_flags(C=carry, N=HighBit(result), Z=(result == 0))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def ORR(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.or_, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x | y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.or_, dest, dest, op1)
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def ORN(cpu, dest, op1, op2=None):
         if op2 is not None:
             cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
         else:
             cpu._bitwise_instruction(lambda x, y: x | ~y, dest, dest, op1)
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def EOR(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.xor, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.xor, dest, dest, op1)
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def AND(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x & y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.and_, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x & y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.and_, dest, dest, op1)
 
-    @instruction
-    def TEQ(cpu, *operands):
-        cpu._bitwise_instruction(lambda x, y: x ^ y, None, *operands)
+    @instruction(can_take_denormalized_mod_imm=True)
+    def TEQ(cpu, op1, op2=None):
+        cpu._bitwise_instruction(ops.xor, None, op1, op2)
         cpu.commit_flags()
 
-    @instruction
-    def TST(cpu, Rn, Rm):
-        shifted, carry = Rm.read(with_carry=True)
-        result = Rn.read() & shifted
+    @instruction(can_take_denormalized_mod_imm=True)
+    def TST(cpu, op1, op2):
+        shifted, carry = op2.read(with_carry=True)
+        result = op1.read() & shifted
         cpu.set_flags(N=HighBit(result), Z=(result == 0), C=carry)
 
     @instruction
@@ -1463,7 +1568,7 @@ class Armv7Cpu(Cpu):
             logger.warning(f"Bad SVC number: {op.read():08}")
         raise Interruption(0)
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def CMN(cpu, src, add):
         result, carry, overflow = cpu._ADD(src.read(), add.read())
         return result, carry, overflow
@@ -1543,7 +1648,7 @@ class Armv7Cpu(Cpu):
         dest.write(result & Mask(width))
         cpu.set_flags(N=HighBit(result), Z=(result == 0))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def MVN(cpu, dest, op):
         cpu._bitwise_instruction(lambda x: ~x, dest, op)
 
@@ -1558,7 +1663,7 @@ class Armv7Cpu(Cpu):
         dest.write(result & Mask(cpu.address_bit_size))
         cpu.set_flags(N=HighBit(result), Z=(result == 0))
 
-    @instruction
+    @instruction(can_take_denormalized_mod_imm=True)
     def BIC(cpu, dest, op1, op2=None):
         if op2 is not None:
             result = (op1.read() & ~op2.read()) & Mask(cpu.address_bit_size)

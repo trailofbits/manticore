@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-rm -rf */
+# rm -rf */
 touch __init__.py
 
 wget -nc -nv -O wabt.tgz -c https://github.com/WebAssembly/wabt/releases/download/1.0.12/wabt-1.0.12-linux.tar.gz
-wget -nc -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/ace189a8f906f4f0760656a2aa53b6dc7046e771.zip
+wget -nc -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/v1.1.zip
 
 yes | unzip -q -j spec.zip 'spec-*/test/core/*' -d .
 rm run.py README.md 
@@ -33,12 +33,13 @@ mkdir _\$module
 touch _\$module/__init__.py
 ./wast2json --debug-names \$module.wast -o _\$module/\$module.json
 mv \$module.wast _\$module/
-python3 json2smc.py _\$module/\$module.json | black --quiet --fast - > _\$module/test_symbolic_\$module.py
 python3 json2mc.py _\$module/\$module.json | black --quiet --fast - > _\$module/test_\$module.py
 EOF
 
 chmod +x gen.sh
 cat modules.txt | xargs -n1 -P"$cores" ./gen.sh
 rm gen.sh
+
+mv test_callbacks.skip test_callbacks.py
 
 exit 0

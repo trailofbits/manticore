@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 
 
-def stub(arity, _constraints, *args):
+def stub(arity, _state, *args):
     """Default function used for hostfunc calls when a proper import wasn't provided """
     logger.info("Called stub function with args: %s", args)
-    return [0 for _ in range(arity)]
+    return [0 for _ in range(arity)]  # TODO: Return symbolic values
 
 
 class WASMWorld(Platform):
@@ -58,6 +58,9 @@ class WASMWorld(Platform):
         #: Stores numeric values, branch labels, and execution frames
         self.stack = Stack()
 
+        #: Stores concretized information used to advise execution of the next instruction.
+        self.advice = None
+
         self.forward_events_from(self.stack)
         self.forward_events_from(self.instance)
         self.forward_events_from(self.instance.executor)
@@ -67,6 +70,7 @@ class WASMWorld(Platform):
         state["modules"] = self.modules
         state["store"] = self.store
         state["stack"] = self.stack
+        state["advice"] = self.advice
         state["constraints"] = self.constraints
         state["instantiated"] = self.instantiated
         state["module_names"] = self.module_names
@@ -78,6 +82,7 @@ class WASMWorld(Platform):
         self.modules = state["modules"]
         self.store = state["store"]
         self.stack = state["stack"]
+        self.advice = state["advice"]
         self.constraints = state["constraints"]
         self.instantiated = state["instantiated"]
         self.module_names = state["module_names"]
@@ -86,6 +91,8 @@ class WASMWorld(Platform):
         self.forward_events_from(self.stack)
         self.forward_events_from(self.instance)
         self.forward_events_from(self.instance.executor)
+        for mem in self.store.mems:
+            self.forward_events_from(mem)
         super().__setstate__(state)
 
     @property
@@ -254,7 +261,9 @@ class WASMWorld(Platform):
                             partial(stub, len(func_type.result_types)),  # type: ignore
                         )
                     )
-                    imports.append(FuncAddr(len(self.store.funcs) - 1))
+                    addr = FuncAddr(len(self.store.funcs) - 1)
+                    imports.append(addr)
+                    self.instance.function_names[addr] = f"{i.module}.{i.name}"
 
                 elif isinstance(i.desc, TableType):
                     self.store.tables.append(
@@ -311,6 +320,8 @@ class WASMWorld(Platform):
         for k in supplemental_env:
             self.set_env(supplemental_env[k], k)
         self.import_module(self.default_module, exec_start, stub_missing)
+        for mem in self.store.mems:
+            self.forward_events_from(mem)
 
     def invoke(self, name="main", argv=[], module=None):
         """
@@ -346,7 +357,7 @@ class WASMWorld(Platform):
 
         # Call exec_instruction until it returns false or throws an error
         try:
-            while instance.exec_instruction(self.store, self.stack):
+            while self._exec_instruction(instance):
                 pass
             # Return the top `rets` values from the stack
             return [self.stack.pop() for _i in range(rets)]
@@ -355,7 +366,7 @@ class WASMWorld(Platform):
             self.stack = Stack()
             raise e
 
-    def execute(self):
+    def execute(self, current_state):
         """
         Tells the underlying ModuleInstance to execute a single WASM instruction. Raises TerminateState if there are
         no more instructions to execute, or if the instruction raises a Trap.
@@ -363,7 +374,16 @@ class WASMWorld(Platform):
         if not self.instantiated:
             raise RuntimeError("Trying to execute before instantiation!")
         try:
-            if not self.instance.exec_instruction(self.store, self.stack):
+            if not self._exec_instruction(self.instance, current_state):
                 raise TerminateState(f"Execution returned {self.stack.peek()}")
         except Trap as e:
             raise TerminateState(f"Execution raised Trap: {str(e)}")
+
+    def _exec_instruction(self, instance, current_state=None):
+        """
+        Executes a single instruction on the instance and clears the advice.
+        """
+        try:
+            return instance.exec_instruction(self.store, self.stack, self.advice, current_state)
+        finally:
+            self.advice = None

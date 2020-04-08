@@ -11,10 +11,10 @@ git clone https://github.com/ethereum/tests --depth=1
 for i in ./tests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
 
 ## Generate symbolic tests:
-$ for i in ./tests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+for i in ./tests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
 
 ## Remove the eth tests repo
-$ rm -rf ./tests  # cleanup/remove the ethereum/tests repo
+rm -rf ./tests  # cleanup/remove the ethereum/tests repo
 
 
 ### To test just one:

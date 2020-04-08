@@ -1,17 +1,20 @@
 import errno
-import pickle
 import unittest
 from binascii import hexlify
 
 import os
 import shutil
 import tempfile
+import re
+
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.smtlib import BitVecVariable, issymbolic
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
+from manticore.utils.helpers import pickle_dumps
+from manticore.platforms.linux import EnvironmentError
 
 
 class LinuxTest(unittest.TestCase):
@@ -69,6 +72,40 @@ class LinuxTest(unittest.TestCase):
         second_map_name = os.path.basename(second_map[4])
         self.assertEqual(first_map_name, "basic_linux_amd64")
         self.assertEqual(second_map_name, "basic_linux_amd64")
+
+    def test_load_proc_self_maps(self):
+        proc_maps = self.linux.current.memory.proc_self_mappings()
+
+        # check that proc self raises error when not being read created as read only
+        maps = self.linux.current.push_bytes("/proc/self/maps\x00")
+        self.assertRaises(EnvironmentError, self.linux.sys_open, maps, os.O_RDWR, None)
+        self.assertRaises(EnvironmentError, self.linux.sys_open, maps, os.O_WRONLY, None)
+
+        # addresses should be in ascending order
+        for i in range(1, len(proc_maps)):
+            self.assertLess(proc_maps[i - 1].start, proc_maps[i].start)
+            self.assertLess(proc_maps[i - 1].end, proc_maps[i].end)
+
+        for m in proc_maps:
+            # check all properties are initialized
+            self.assertNotEqual(m.start, None)
+            self.assertNotEqual(m.end, None)
+            self.assertNotEqual(m.perms, None)
+            self.assertNotEqual(m.offset, None)
+            self.assertNotEqual(m.device, None)
+            self.assertNotEqual(m.inode, None)
+            self.assertNotEqual(m.pathname, None)
+
+            # check that address and perms properties are working and properly formatted
+            self.assertNotEqual(re.fullmatch(r"[0-9a-f]{16}\-[0-9a-f]{16}", m.address), None)
+            self.assertNotEqual(re.fullmatch(r"[r-][w-][x-][sp-]", m.perms), None)
+            self.assertNotEqual(
+                re.fullmatch(
+                    r"[0-9a-f]{16}-[0-9a-f]{16} [r-][w-][x-][sp-] [0-9a-f]{8} [0-9a-f]{2}:[0-9a-f]{2} (?=.{9})\ *\d+ [^\n]*",
+                    str(m),
+                ),
+                None,
+            )
 
     def test_aarch64_syscall_write(self):
         nr_write = 64
@@ -311,7 +348,7 @@ class LinuxTest(unittest.TestCase):
         filename = platform.current.push_bytes("/bin/true\x00")
         fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
         platform.sys_close(fd)
-        pickle.dumps(platform)
+        pickle_dumps(platform)
 
     def test_thumb_mode_entrypoint(self):
         # thumb_mode_entrypoint is a binary with only one instruction
