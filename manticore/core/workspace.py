@@ -45,7 +45,7 @@ consts.add("dir", default=".", description="Location of where to create workspac
 
 
 class WorkspaceTestcase:
-    def __init__(self, workspace: 'ManticoreOutput', prefix: str):
+    def __init__(self, workspace: "ManticoreOutput", prefix: str):
         self._num = workspace._increment_id()
         self._prefix = prefix
         self._ws = workspace
@@ -245,7 +245,9 @@ class FilesystemStore(Store):
                     break
 
     @contextmanager
-    def stream(self, key: str, mode: str = "r", lock: bool = False) -> Generator[IO[Any], None, None]:
+    def stream(
+        self, key: str, mode: str = "r", lock: bool = False
+    ) -> Generator[IO[Any], None, None]:
         """
         Yield a file object representing `key`
 
@@ -264,7 +266,9 @@ class FilesystemStore(Store):
                 yield f
 
     @contextmanager
-    def save_stream(self, key: str, binary: bool = False, lock: bool = False) -> Generator[Any, None, None]:
+    def save_stream(
+        self, key: str, binary: bool = False, lock: bool = False
+    ) -> Generator[Any, None, None]:
         """
         Yield a file object representing `key`
 
@@ -278,7 +282,9 @@ class FilesystemStore(Store):
             yield f
 
     @contextmanager
-    def load_stream(self, key: str, binary: bool = False, lock: bool = False) -> Generator[IO[Any], None, None]:
+    def load_stream(
+        self, key: str, binary: bool = False, lock: bool = False
+    ) -> Generator[IO[Any], None, None]:
         """
         :param str key: name of stream to load
         :param bool binary: Whether we should treat it as binary
