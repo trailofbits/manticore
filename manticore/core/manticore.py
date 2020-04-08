@@ -144,9 +144,7 @@ class ManticoreBase(Eventful):
 
     def __init__(self, initial_state, workspace_url=None, outputspace_url=None, **kwargs):
         """
-        :param initial_state: State to start from.
-
-               Manticore symbolically explores program states.
+        Manticore symbolically explores program states.
 
 
         **Manticore phases**
@@ -251,9 +249,9 @@ class ManticoreBase(Eventful):
         further user action. This is a final list.
 
 
-        :param initial_state: the initial root `State` object
-        :type state: State
+        :param initial_state: the initial root `State` object to start from
         :param workspace_url: workspace folder name
+        :param outputspace_url: Folder to place final output. Defaults to workspace
         :param kwargs: other kwargs, e.g.
         """
         super().__init__()
