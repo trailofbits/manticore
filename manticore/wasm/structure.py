@@ -1577,7 +1577,9 @@ class ModuleInstance(Eventful):
                 raise ConcretizeStack(-1, I32, "Concretizing br_table index", i)
         elif isinstance(i, Expression):
             raise ConcretizeCondition(
-                "Concretizing br_table range check", Operators.AND((i >= 0), (i < imm.target_count)), self._advice
+                "Concretizing br_table range check",
+                Operators.AND((i >= 0), (i < imm.target_count)),
+                self._advice,
             )
 
         # The spec (https://www.w3.org/TR/wasm-core-1/#exec-br-table) says that if i < the length of the table,
