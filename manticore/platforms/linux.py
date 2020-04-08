@@ -909,7 +909,7 @@ class Linux(Platform):
 
         self.current.memory.mmap(0xFFFF0000, len(page_data), "r x", page_data)
 
-    def setup_stack(self, argv: List[str], envp: List[str]) -> None:
+    def setup_stack(self, argv: List, envp: List) -> None:
         """
         :param Cpu cpu: The cpu instance
         :param argv: list of parameters for the program to execute.
