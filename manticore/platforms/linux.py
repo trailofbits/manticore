@@ -1693,11 +1693,11 @@ class Linux(Platform):
         else:
             return File(filename, flags)
 
-    def sys_open(self, buf: int, flags: int, mode: int) -> int:
+    def sys_open(self, buf: int, flags: int, mode: Optional[int]) -> int:
         """
         :param buf: address of zero-terminated pathname
         :param flags: file access bits
-        :param mode: file permission mode
+        :param mode: file permission mode (ignored)
         """
         filename = self.current.read_string(buf)
         try:
@@ -3201,7 +3201,7 @@ class SLinux(Linux):
         # TODO: Make a concrete connection actually an option
         # return super().sys_accept(sockfd, addr, addrlen)
 
-    def sys_open(self, buf: int, flags: int, mode: int) -> int:
+    def sys_open(self, buf: int, flags: int, mode: Optional[int]) -> int:
         """
         A version of open(2) that includes a special case for a symbolic path.
         When given a symbolic path, it will create a temporary file with
