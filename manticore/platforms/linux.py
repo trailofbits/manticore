@@ -1572,10 +1572,9 @@ class Linux(Platform):
         """
         return -errno.ENOSYS
 
-    def sys_access(self, buf, mode) -> int:
+    def sys_access(self, buf: int, mode: int) -> int:
         """
         Checks real user's permissions for a file
-        :rtype: int
 
         :param buf: a buffer containing the pathname to the file to check its permissions.
         :param mode: the access permissions to check.
