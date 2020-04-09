@@ -33,7 +33,7 @@ from .smtlib.solver import Z3Solver
 from .state import StateBase
 from ..exceptions import ManticoreError
 
-from typing import Any, Generator, List, IO, Optional
+from typing import Any, List, IO, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ class Store:
             return s.read()
 
     @contextmanager
-    def save_stream(self, key: str, binary: bool = False) -> Generator[Any, None, None]:
+    def save_stream(self, key: str, binary: bool = False):
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
@@ -228,7 +228,7 @@ class FilesystemStore(Store):
         return os.path.join(self.uri, key)
 
     @contextmanager
-    def lock(self) -> Generator[None, None, None]:
+    def lock(self):
         lockfile = self._uri_of_key(".lock")
         with self._tlock:
             while True:
@@ -245,9 +245,7 @@ class FilesystemStore(Store):
                     break
 
     @contextmanager
-    def stream(
-        self, key: str, mode: str = "r", lock: bool = False
-    ) -> Generator[IO[Any], None, None]:
+    def stream(self, key: str, mode: str = "r", lock: bool = False):
         """
         Yield a file object representing `key`
 
@@ -266,9 +264,7 @@ class FilesystemStore(Store):
                 yield f
 
     @contextmanager
-    def save_stream(
-        self, key: str, binary: bool = False, lock: bool = False
-    ) -> Generator[Any, None, None]:
+    def save_stream(self, key: str, binary: bool = False, lock: bool = False):
         """
         Yield a file object representing `key`
 
@@ -282,9 +278,7 @@ class FilesystemStore(Store):
             yield f
 
     @contextmanager
-    def load_stream(
-        self, key: str, binary: bool = False, lock: bool = False
-    ) -> Generator[IO[Any], None, None]:
+    def load_stream(self, key: str, binary: bool = False, lock: bool = False):
         """
         :param str key: name of stream to load
         :param bool binary: Whether we should treat it as binary
