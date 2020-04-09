@@ -26,6 +26,7 @@ dev_noks = (
         "jinja2",
         "pytest==5.3.0",
         "pytest-cov==2.8.1",
+        "pytest-randomly==3.2.1",
         "pytest-xdist==1.30.0",
         "Sphinx",
     ]
