@@ -2,6 +2,8 @@ import wrapt
 import logging
 from ..utils.event import Eventful
 
+from typing import Callable, Iterable, Mapping
+
 logger = logging.getLogger(__name__)
 
 
@@ -10,14 +12,14 @@ class OSException(Exception):
 
 
 @wrapt.decorator
-def unimplemented(wrapped, _instance, args, kwargs):
+def unimplemented(wrapped: Callable, _instance, args: Iterable, kwargs: Mapping):
     cpu = getattr(getattr(_instance, "parent", None), "current", None)
-    addr = None if cpu is None else cpu.read_register("PC")
+    addr_str = "" if cpu is None else f" at {hex(cpu.read_register('PC'))}"
     logger.warning(
-        f"Unimplemented system call%s: %s(%s)",
-        "" if addr is None else " at " + hex(addr),
+        f"Unimplemented system call: %s: %s(%s)",
+        addr_str,
         wrapped.__name__,
-        ", ".join(hex(a) for a in args),
+        ", ".join(hex(a) if isinstance(a, int) else str(a) for a in args),
     )
     return wrapped(*args, **kwargs)
 
