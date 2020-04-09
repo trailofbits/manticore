@@ -10,7 +10,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
-from ..memory import LazySMemory
+from ..memory import LazySMemory, Memory
 from ...core.smtlib import Operators, Constant, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
@@ -497,7 +497,7 @@ class Cpu(Eventful):
         "execute_syscall",
     }
 
-    def __init__(self, regfile: RegisterFile, memory, **kwargs):
+    def __init__(self, regfile: RegisterFile, memory: Memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", "capstone")
         super().__init__(**kwargs)
@@ -645,7 +645,7 @@ class Cpu(Eventful):
     #############################
     # Memory access
     @property
-    def memory(self):
+    def memory(self) -> Memory:
         return self._memory
 
     def write_int(self, where, expression, size=None, force=False):
@@ -680,8 +680,7 @@ class Cpu(Eventful):
         """
         map = self.memory.map_containing(where)
         start = map._get_offset(where)
-        mapType = type(map)
-        if mapType is FileMap:
+        if isinstance(map, FileMap):
             end = map._get_offset(where + size)
 
             if end > map._mapped_size:
@@ -699,7 +698,7 @@ class Cpu(Eventful):
                 data += map._overlay[offset]
             data += raw_data[len(data) :]
 
-        elif mapType is AnonMap:
+        elif isinstance(map, AnonMap):
             data = bytes(map._data[start : start + size])
         else:
             data = b"".join(self.memory[where : where + size])
@@ -743,15 +742,13 @@ class Cpu(Eventful):
         # At the very least, using it in non-concrete mode will break the symbolic strcmp/strlen models. The 1024 byte
         # minimum is intended to minimize the potential effects of this by ensuring that if there _are_ any other
         # issues, they'll only crop up when we're doing very large writes, which are fairly uncommon.
-        can_write_raw = (
-            type(mp) is AnonMap
+        if (
+            isinstance(mp, AnonMap)
             and isinstance(data, (str, bytes))
             and (mp.end - mp.start + 1) >= len(data) >= 1024
             and not issymbolic(data)
             and self._concrete
-        )
-
-        if can_write_raw:
+        ):
             logger.debug("Using fast write")
             offset = mp._get_offset(where)
             if isinstance(data, str):
