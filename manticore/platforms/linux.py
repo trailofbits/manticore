@@ -3227,7 +3227,7 @@ class SLinux(Linux):
 
         return rv
 
-    def sys_openat(self, dirfd: int, buf: int, flags: int, mode: int) -> int:
+    def sys_openat(self, dirfd, buf, flags: int, mode: int) -> int:
         """
         A version of openat that includes a symbolic path and symbolic directory file descriptor
 
