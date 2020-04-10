@@ -619,7 +619,7 @@ class ArithmeticSimplifier(Visitor):
                             size -= item.size - begining
                             begining = 0
         elif isinstance(op, BitVecConstant):
-            return BitVecConstant(size, (op.value>>begining)&  ~(1<<size))
+            return BitVecConstant(size, (op.value >> begining) & ~(1 << size))
 
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands

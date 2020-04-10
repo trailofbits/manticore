@@ -725,10 +725,18 @@ class ManticoreEVM(ManticoreBase):
             if new_address not in all_addresses:
                 return new_address
 
-    def start_block(self, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=None):
+    def start_block(
+        self, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=None
+    ):
         for state in self.ready_states:
             world = state.platform
-            world.start_block(blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty, gaslimit=gaslimit, coinbase=coinbase)
+            world.start_block(
+                blocknumber=blocknumber,
+                timestamp=timestamp,
+                difficulty=difficulty,
+                gaslimit=gaslimit,
+                coinbase=coinbase,
+            )
 
     def end_block(self):
         for state in self.ready_states:
@@ -749,7 +757,9 @@ class ManticoreEVM(ManticoreBase):
             :param price: gas unit price
             :raises NoAliveStates: if there are no alive states to execute
         """
-        self._transaction("CALL", caller, value=value, address=address, data=data, gas=gas, price=price)
+        self._transaction(
+            "CALL", caller, value=value, address=address, data=data, gas=gas, price=price
+        )
 
     def create_account(self, balance=0, address=None, code=None, name=None, nonce=None):
         """ Low level creates an account. This won't generate a transaction.
