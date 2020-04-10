@@ -195,7 +195,7 @@ jobs:
             echo Ran example scripts
             coverage xml
             popd
-            cp examples/linux/coverage.xml .
+            cp examples/script/coverage.xml .
             return $RESULT
         }
 
