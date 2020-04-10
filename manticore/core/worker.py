@@ -257,17 +257,24 @@ class ReusableTCPServer(socketserver.TCPServer):
 class LogCaptureWorker(DaemonThread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.log_buffer = deque(maxlen=4000)
+        self.activated = False
         register_log_callback(self.log_callback)
 
     def log_callback(self, msg):
-        self.log_buffer.append(msg)
+        q = self.manticore._log_queue
+        if q.full():
+            q.get()
+        q.put(msg)
 
     def dump_logs(self):
+        self.activated = True
         serialized = MessageList()
-        while self.log_buffer:
-            msg = LogMessage(content=self.log_buffer.popleft())
+        q = self.manticore._log_queue
+        i = 0
+        while i < 50 and not q.empty():
+            msg = LogMessage(content=q.get())
             serialized.messages.append(msg)
+            i += 1
         return serialized.SerializeToString()
 
     def run(self, *args):

@@ -2,6 +2,7 @@ import itertools
 import logging
 import sys
 import time
+import queue
 import random
 import weakref
 from typing import Callable
@@ -1013,6 +1014,17 @@ class ManticoreBase(Eventful):
             self.generate_testcase(state)
         self.remove_all()
 
+    def wait_for_log_purge(self):
+        """
+        If a client has accessed the log server, and there are still buffered logs,
+        waits up to 2 seconds for the client to retrieve the logs.
+        """
+        if self._log_capture.activated:
+            for _ in range(8):
+                if self._log_queue.empty():
+                    break
+                time.sleep(0.25 * 10)
+
     ############################################################################
     ############################################################################
     ############################################################################
@@ -1028,6 +1040,7 @@ class ManticoreBase(Eventful):
             config.save(f)
 
         logger.info("Results in %s", self._output.store.uri)
+        self.wait_for_log_purge()
 
 
 class ManticoreSingle(ManticoreBase):
@@ -1059,6 +1072,7 @@ class ManticoreSingle(ManticoreBase):
         self._killed_states = []
 
         self._shared_context = {}
+        self._log_queue = queue.Queue(5000)
         super().__init__(*args, **kwargs)
 
 
@@ -1076,7 +1090,7 @@ class ManticoreThreading(ManticoreBase):
         self._killed_states = []
 
         self._shared_context = {}
-
+        self._log_queue = queue.Queue(5000)
         super().__init__(*args, **kwargs)
 
 
@@ -1104,6 +1118,7 @@ class ManticoreMultiprocessing(ManticoreBase):
         self._busy_states = self._manager.list()
         self._killed_states = self._manager.list()
         self._shared_context = self._manager.dict()
+        self._log_queue = self._manager.Queue(5000)
         self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
 
         super().__init__(*args, **kwargs)
