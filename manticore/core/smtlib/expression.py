@@ -777,6 +777,7 @@ class Array(Expression):
         return array
 
     def read_BE(self, address, size):
+        address = self.cast_index(address)
         bytes = []
         for offset in range(size):
             bytes.append(self.get(address + offset, 0))
@@ -1025,6 +1026,7 @@ class ArrayProxy(Array):
             self._concrete_cache = {}
 
         # potentially generate and update .written set
+        # if index is symbolic it may overwrite other previous indexes
         self.written.add(index)
         self._array = self._array.store(index, value)
         return self
@@ -1103,11 +1105,17 @@ class ArrayProxy(Array):
 
         is_known_index = BoolConstant(False)
         written = self.written
+        if isinstance(index, Constant):
+            if index.value in {x.value for x in written if isinstance(x, Constant) }:
+                return BoolConstant(True)
+
+            for known_index in {x for x in written if not isinstance(x, Constant) }:
+                is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
+            return is_known_index
+
         for known_index in written:
-            if isinstance(index, Constant) and isinstance(known_index, Constant):
-                if known_index.value == index.value:
-                    return BoolConstant(True)
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
+
         return is_known_index
 
     def get(self, index, default=None):
@@ -1124,12 +1132,15 @@ class ArrayProxy(Array):
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
 
-        value = self._array.select(index)
-        if default is None:
-            return value
+        if default is not None:
+            default = self.cast_value(default)
+            is_known = self.is_known(index)
+            if isinstance(is_known, Constant) and is_known.value == False:
+                return default
+        else:
+            return self._array.select(index)
 
-        is_known = self.is_known(index)
-        default = self.cast_value(default)
+        value = self._array.select(index)
         return BitVecITE(self._array.value_bits, is_known, value, default)
 
 

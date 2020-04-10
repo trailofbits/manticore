@@ -592,6 +592,8 @@ class ArithmeticSimplifier(Visitor):
                             new_operands.append(BitVecExtract(item, begining, item.size - begining))
                             size -= item.size - begining
                             begining = 0
+        elif isinstance(op, BitVecConstant):
+            return BitVecConstant(size, (op.value>>begining)&  ~(1<<size))
 
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
@@ -737,7 +739,7 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
+arithmetic_simplifier_cache = CacheDict(max_size=250000, flush_perc=25)
 
 
 @lru_cache(maxsize=128, typed=True)

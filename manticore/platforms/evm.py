@@ -102,6 +102,9 @@ PendingTransaction = namedtuple(
     "PendingTransaction", ["type", "address", "price", "data", "caller", "value", "gas"]
 )
 EVMLog = namedtuple("EVMLog", ["address", "memlog", "topics"])
+BlockHeader = namedtuple(
+    "BlockHeader", ["blocknumber", "timestamp", "difficulty", "gaslimit", "coinbase"]
+)
 
 
 def ceil32(x):
@@ -127,6 +130,7 @@ class Transaction:
         "_return_data",
         "_result",
         "gas",
+        "_used_gas",
     )
 
     def __init__(
@@ -141,6 +145,7 @@ class Transaction:
         depth=None,
         result=None,
         return_data=None,
+        used_gas=None
     ):
         self.sort = sort
         self.address = address
@@ -150,7 +155,7 @@ class Transaction:
         self.value = value
         self.depth = depth
         self.gas = gas
-        self.set_result(result, return_data)
+        self.set_result(result, return_data, used_gas)
 
     def concretize(self, state, constrain=False):
         """
@@ -163,6 +168,7 @@ class Transaction:
         conc_gas = state.solve_one(self.gas, constrain=constrain)
         conc_data = state.solve_one(self.data, constrain=constrain)
         conc_return_data = state.solve_one(self.return_data, constrain=constrain)
+        conc_used_gas = state.solve_one(self.used_gas, constrain=constrain)
         return Transaction(
             self.sort,
             conc_address,
@@ -189,6 +195,7 @@ class Transaction:
             value=self.value,
             gas=self.gas,
             data=binascii.hexlify(self.data).decode(),
+            used_gas=self.used_gas
         )
 
     def dump(self, stream, state, mevm, conc_tx=None):
@@ -308,7 +315,7 @@ class Transaction:
 
     @sort.setter
     def sort(self, sort):
-        if sort not in {"CREATE", "CALL", "DELEGATECALL"}:
+        if sort not in {"CREATE", "CALL", "CALLCODE", "DELEGATECALL"}:
             raise EVMException(f"Invalid transaction type: {sort}")
         self._sort = sort
 
@@ -342,9 +349,15 @@ class Transaction:
             assert self.result in {"TXERROR", "REVERT", "THROW"}
             return 0
 
-    def set_result(self, result, return_data=None):
+    @property
+    def used_gas(self):
+        return self._used_gas
+
+    def set_result(self, result, return_data=None, used_gas=None):
         if getattr(self, "result", None) is not None:
             raise EVMException("Transaction result already set")
+        if not isinstance(used_gas, (int, BitVec, type(None))):
+            raise EVMException("Invalid used gas in Transaction")
         if result not in {None, "TXERROR", "REVERT", "RETURN", "THROW", "STOP", "SELFDESTRUCT"}:
             raise EVMException("Invalid transaction result")
         if result in {"RETURN", "REVERT"}:
@@ -354,7 +367,7 @@ class Transaction:
                 )
         elif result in {"STOP", "THROW", "SELFDESTRUCT"}:
             if return_data is None:
-                return_data = bytearray()
+                return_data = b''
             if not isinstance(return_data, (bytes, bytearray, Array)) or len(return_data) != 0:
                 raise EVMException(
                     f"Invalid transaction return_data. Too much data ({len(return_data)}) for STOP, THROW or SELFDESTRUCT"
@@ -364,6 +377,7 @@ class Transaction:
                 raise EVMException("Invalid transaction return_data")
         self._result = result
         self._return_data = return_data
+        self._used_gas = used_gas
 
     def __reduce__(self):
         """Implements serialization/pickle"""
@@ -380,12 +394,13 @@ class Transaction:
                 self.depth,
                 self.result,
                 self.return_data,
+                self.used_gas,
             ),
         )
 
     def __str__(self):
-        return "Transaction({:s}, from=0x{:x}, to=0x{:x}, value={!r}, depth={:d}, data={!r}, result={!r}..)".format(
-            self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result
+        return "Transaction({:s}, from=0x{:x}, to=0x{:x}, value={!r}, depth={:d}, data={!r}, result={!r}, gas={!r} ..)".format(
+            self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result, self.gas
         )
 
 
@@ -456,33 +471,27 @@ class EndTx(EVMException):
     def __str__(self):
         return f"EndTX<{self.result}>"
 
+class Throw(EndTx):
+    def __init__(self):
+        super().__init__("THROW")
 
-class InvalidOpcode(EndTx):
+class InvalidOpcode(Throw):
     """Trying to execute invalid opcode"""
 
-    def __init__(self):
-        super().__init__("THROW")
 
-
-class StackOverflow(EndTx):
+class StackOverflow(Throw):
     """Attempted to push more than 1024 items"""
-
-    def __init__(self):
-        super().__init__("THROW")
+    pass
 
 
-class StackUnderflow(EndTx):
+class StackUnderflow(Throw):
     """Attempted to pop from an empty stack"""
-
-    def __init__(self):
-        super().__init__("THROW")
+    pass
 
 
-class NotEnoughGas(EndTx):
+class NotEnoughGas(Throw):
     """Not enough gas for operation"""
-
-    def __init__(self):
-        super().__init__("THROW")
+    pass
 
 
 class Stop(EndTx):
@@ -580,7 +589,7 @@ def concretized_args(**policies):
 
     return concretizer
 
-
+import functools
 class EVM(Eventful):
     """
     Machine State. The machine state is defined as
@@ -618,8 +627,7 @@ class EVM(Eventful):
             if self._pre is None:
                 raise AttributeError("unreadable attribute")
             from types import MethodType
-
-            # return different version depending on obj._pending_transaction
+            @functools.wraps(self._pre)
             def _pre_func(my_obj, *args, **kwargs):
                 if my_obj._on_transaction:
                     result = self._pos(my_obj, *args, **kwargs)
@@ -634,7 +642,6 @@ class EVM(Eventful):
                     except StartTx:
                         my_obj._on_transaction = True
                         raise
-
             return MethodType(_pre_func, obj)
 
         def __set__(self, obj, value):
@@ -647,7 +654,7 @@ class EVM(Eventful):
             return type(self)(self._pre, pos)
 
     def __init__(
-        self, constraints, address, data, caller, value, bytecode, world=None, gas=210000, fork=DEFAULT_FORK, **kwargs
+        self, constraints, address, data, caller, value, bytecode, world=None, gas=None, fork=DEFAULT_FORK, **kwargs
     ):
         """
         Builds a Ethereum Virtual Machine instance
@@ -757,6 +764,7 @@ class EVM(Eventful):
         self._used_calldata_size = 0
         self._valid_jmpdests = set()
         self._sha3 = {}
+        self._refund = 0
 
     @property
     def pc(self):
@@ -808,6 +816,7 @@ class EVM(Eventful):
         state["_check_jumpdest"] = self._check_jumpdest
         state["_return_data"] = self._return_data
         state["evmfork"] = self.evmfork
+        state["_refund"] = self._refund
         return state
 
     def __setstate__(self, state):
@@ -834,6 +843,7 @@ class EVM(Eventful):
         self._check_jumpdest = state["_check_jumpdest"]
         self._return_data = state["_return_data"]
         self.evmfork = state["evmfork"]
+        self._refund = state["_refund"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -900,6 +910,13 @@ class EVM(Eventful):
     def PC(self):
         return self.pc
 
+    def _getcode(self, pc):
+        bytecode = self.bytecode
+        for pc_i in range(pc, len(bytecode)):
+            yield simplify(bytecode[pc_i]).value
+        while True:
+            yield 0
+
     @property
     def instruction(self):
         """
@@ -912,8 +929,9 @@ class EVM(Eventful):
         #    raise InvalidOpcode('Opcode inside a PUSH immediate')
         try:
             _decoding_cache = getattr(self, "_decoding_cache")
-        except Exception:
-            _decoding_cache = self._decoding_cache = {}
+        except Exception as e:
+            self._decoding_cache = {}
+            _decoding_cache = self._decoding_cache
 
         pc = self.pc
         if isinstance(pc, Constant):
@@ -922,18 +940,15 @@ class EVM(Eventful):
         if pc in _decoding_cache:
             return _decoding_cache[pc]
 
-        def getcode():
-            bytecode = self.bytecode
-            for pc_i in range(pc, len(bytecode)):
-                yield simplify(bytecode[pc_i]).value
-            while True:
-                yield 0
-
-        instruction = EVMAsm.disassemble_one(getcode(), pc=pc, fork=self.evmfork)
+        instruction = EVMAsm.disassemble_one(self._getcode(pc), pc=pc, fork=self.evmfork)
         _decoding_cache[pc] = instruction
         return instruction
 
     # auxiliary funcs
+    def _throw(self):
+        self._gas = 0
+        raise InvalidOpcode()
+
     # Stack related
     def _push(self, value):
         """
@@ -1199,7 +1214,7 @@ class EVM(Eventful):
 
         if should_check_jumpdest:
             if pc not in self._valid_jumpdests:
-                raise InvalidOpcode()
+                self._throw()
 
     def _advance(self, result=None, exception=False):
         if self._checkpoint_data is None:
@@ -1248,10 +1263,12 @@ class EVM(Eventful):
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
         try:
+            #print(self)
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
+
         except ConcretizeGas as ex:
 
             def setstate(state, value):
@@ -1318,6 +1335,8 @@ class EVM(Eventful):
         except StartTx:
             raise
         except EndTx as ex:
+            if isinstance(ex, Throw):
+                self._gas = 0
             self._advance(exception=True)
             raise
 
@@ -1327,7 +1346,8 @@ class EVM(Eventful):
         if size == 0:
             return b""
         self._allocate(offset, size)
-        return self.memory[offset : offset + size]
+        data = self.memory[offset : offset + size]
+        return ArrayProxy(data)
 
     def write_buffer(self, offset, data):
         self._allocate(offset, len(data))
@@ -1370,7 +1390,7 @@ class EVM(Eventful):
 
     def INVALID(self):
         """Halts execution"""
-        raise InvalidOpcode()
+        self._throw()
 
     ############################################################################
     # Stop and Arithmetic Operations
@@ -1455,14 +1475,13 @@ class EVM(Eventful):
 
     def EXP_gas(self, base, exponent):
         """Calculate extra gas fee"""
-        EXP_SUPPLEMENTAL_GAS = 10  # cost of EXP exponent per byte
+        EXP_SUPPLEMENTAL_GAS = 50  # cost of EXP exponent per byte
 
         def nbytes(e):
             result = 0
             for i in range(32):
-                result = Operators.ITEBV(512, Operators.EXTRACT(e, i * 8, 8) != 0, i + 1, result)
+                result = Operators.ITEBV(512, Operators.EXTRACT(e, i*8, 8) != 0, i+1, result)
             return result
-
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
     @concretized_args(base="SAMPLED", exponent="SAMPLED")
@@ -1557,7 +1576,9 @@ class EVM(Eventful):
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
-        for c in data:
+        #for c in data:
+        for index in range(len(data)):
+            c = dat.get(index,0)
             simplified = simplify(c)
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
@@ -1885,33 +1906,54 @@ class EVM(Eventful):
 
     def SSTORE_gas(self, offset, value):
         storage_address = self.address
-        GSTORAGEREFUND = 15000
-        GSTORAGEKILL = 5000
-        GSTORAGEMOD = 5000
-        GSTORAGEADD = 20000
+        SSSTORESENTRYGAS   = 2300  # Minimum gas required to be present for an SSTORE call, not consumed
+        SSTORENOOP         = 800   # Once per SSTORE operation if the value doesn't change.
+        SSTOREDIRTYGAS    = 800   # Once per SSTORE operation if a dirty value is changed.
+        SSTOREINITGAS     = 20000 # Once per SSTORE operation from clean zero to non-zero
+        SstoreInitRefund  = 19200 # Once per SSTORE operation for resetting to the original zero value
+        SSTORECLEANGAS    = 5000  # Once per SSTORE operation from clean non-zero to something else
+        SstoreCleanRefund = 4200  # Once per SSTORE operation for resetting to the original non-zero value
+        SstoreClearRefund = 15000 # Once per SSTORE operation for clearing an originally existing storage slot
 
-        previous_value = self.world.get_storage_data(storage_address, offset)
+        if self.gas <= SSSTORESENTRYGAS:
+            raise NotEnoughGas()
 
-        gascost = Operators.ITEBV(
-            512,
-            previous_value != 0,
-            Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
-            Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD),
-        )
+        original_value = self.world._callstack[-1][-2].get(offset,0)
+        current_value = self.world.get_storage_data(storage_address, offset)
+
+        ITE = lambda *args: Operators.ITEBV(512, *args)
+        AND = lambda *args: Operators.AND(*args)
+        #current_value == value => SSTORENOOP
+        #current_value != value, original_value == current_gas, original_value == 0 => SSTOREINITGAS
+        #current_value != value, original_value == current_gas, original_value != 0 => SSTORECLEANGAS
+        #current_value != value, original_value != current_gas => SSTOREDIRTYGASS
+        gascost = ITE(current_value == value,
+                    SSTORENOOP,
+                    ITE(original_value == current_value,
+                            ITE(original_value == 0, SSTOREINITGAS, SSTORECLEANGAS),
+                            SSTOREDIRTYGAS
+                        )
+                    )
+        refund = 0
+        refund += ITE(AND(current_value != value, original_value == current_value, original_value != 0, value == 0),  SstoreClearRefund, 0)
+        refund += ITE(AND(current_value != value, original_value != current_value, original_value != 0, current_value == 0), -SstoreClearRefund, 0)
+        refund += ITE(AND(current_value != value, original_value != current_value, original_value != 0, current_value != 0, value == 0), SstoreClearRefund, 0)
+
+        refund += ITE(AND(current_value != value, original_value != current_value, original_value == value, original_value == 0), SstoreInitRefund, 0)
+        refund += ITE(AND(current_value != value, original_value != current_value, original_value == value, original_value != 0), SstoreCleanRefund, 0)
+        self._refund += to_constant(refund)
+
         return gascost
 
     def SSTORE(self, offset, value):
         """Save word to storage"""
         storage_address = self.address
         self._publish("will_evm_write_storage", storage_address, offset, value)
-        # refund = Operators.ITEBV(256,
-        #                         previous_value != 0,
-        #                         Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
-        #                         0)
 
         if istainted(self.pc):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
+
         self.world.set_storage_data(storage_address, offset, value)
         self._publish("did_evm_write_storage", storage_address, offset, value)
 
@@ -1983,15 +2025,11 @@ class EVM(Eventful):
     @transact
     def CREATE(self, value, offset, size):
         """Create a new account with associated code"""
-        address = self.world.create_account(
-            address=EVMWorld.calculate_new_address(
-                sender=self.address, nonce=self.world.get_nonce(self.address)
-            )
-        )
+        data = self.read_buffer(offset, size)
         self.world.start_transaction(
             "CREATE",
-            address,
-            data=self.read_buffer(offset, size),
+            None,
+            data=data,
             caller=self.address,
             value=value,
             gas=self.gas,
@@ -2003,16 +2041,55 @@ class EVM(Eventful):
     def CREATE(self, value, offset, size):
         """Create a new account with associated code"""
         tx = self.world.last_transaction  # At this point last and current tx are the same.
-        address = tx.address
-        if tx.result == "RETURN":
-            self.world.set_code(tx.address, tx.return_data)
-        else:
-            self.world.delete_account(address)
-            address = 0
-        return address
+        return tx.return_value
 
-    def CALL_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        return self._get_memfee(in_offset, in_size)
+    def CALL_gas(self, wanted_gas, address, value, in_offset, in_size, out_offset, out_size):
+        '''temp_call_gas = 0; # fuck this
+
+            def dynamic_gas(wanted_gas, address, value, in_offset, in_size):
+                GCALLVALUE = 9000
+                GCALLNEW = 25000
+                extra_gas = 0
+                if value != 0:
+                    extra_gas += GCALLVALUE
+                    if address not in accounts:
+                        extra_gas += GCALLNEW
+                extra_gas += self._get_memfee(in_offset, in_size)
+
+                available_gas = self.gas
+                available_gas -= extra_gas
+                available_gas *= 63
+                available_gas /= 64
+
+                if available_gas > wanted_gas:
+                    temp_call_gas = wanted_gas
+                else:
+                    temp_call_gas = available_gas
+
+                return temp_call_gas + extra_gas
+    '''
+        GCALLVALUE = 9000
+        GCALLNEW = 25000
+
+        fee = Operators.ITEBV(512, value==0, 0, GCALLVALUE)
+        if address not in self.world.accounts:
+            fee += Operators.ITEBV(512, value==0, 0, GCALLNEW)
+        fee += self._get_memfee(in_offset, in_size)
+
+        exception = False
+        available_gas = self._gas
+        available_gas -= fee
+
+        exception = Operators.OR(Operators.UGT(fee, self._gas), Operators.ULT(self.safe_mul(available_gas, 63),available_gas))
+        available_gas *= 63
+        available_gas //= 64
+
+        temp_call_gas = Operators.ITEBV(512, Operators.UGT(available_gas, wanted_gas),
+                                             wanted_gas,
+                                             available_gas )
+        self.temp_call_gas = temp_call_gas
+
+        return temp_call_gas + fee
 
     @transact
     @concretized_args(address="ACCOUNTS", gas="MINMAX", in_offset="SAMPLED", in_size="SAMPLED")
@@ -2024,7 +2101,7 @@ class EVM(Eventful):
             data=self.read_buffer(in_offset, in_size),
             caller=self.address,
             value=value,
-            gas=gas,
+            gas=self.temp_call_gas+2300,
         )
         raise StartTx()
 
@@ -2033,7 +2110,8 @@ class EVM(Eventful):
         data_size = len(data)
         size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
         self.write_buffer(out_offset, data[:size])
-        return self.world.last_transaction.return_value
+        self._get_memfee(out_offset, size)
+        return self.world.transactions[-1].return_value
 
     @CALL.pos  # type: ignore
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
@@ -2123,6 +2201,19 @@ class EVM(Eventful):
         # revert balance on CALL fail
         raise EndTx("THROW")
 
+    def SELFDESTRUCT_gas(self, recipient):
+        CreateBySelfdestructGas = 25000
+        SelfdestructRefundGas =  24000
+        fee = 0
+        if recipient not in self.world and self.world.get_balance(self.address) != 0:
+            fee += CreateBySelfdestructGas
+
+        if self.address not in self.world._deleted_accounts:
+            self._refund += SelfdestructRefundGas
+
+        return fee
+
+    @concretized_args(recipient="ACCOUNTS")
     def SELFDESTRUCT(self, recipient):
         """Halt execution and register account for later deletion"""
         # This may create a user account
@@ -2144,7 +2235,8 @@ class EVM(Eventful):
     def __str__(self):
         m = []
         for offset in range(128):
-            c = simplify(self.memory[offset])
+            #c = simplify(self.memory[offset])
+            c = self.memory[offset]
             try:
                 c = c.value
             except Exception:
@@ -2178,14 +2270,13 @@ class EVM(Eventful):
                     inspect.getfullargspec(implementation).args[1 : self.instruction.pops + 1]
                 )
             )
-
         clmn = 80
         result.append(
             "Stack                                                                           Memory"
         )
         sp = 0
         for i in list(reversed(self.stack))[:10]:
-            argname = args.get(sp, "top" if sp == 0 else "")
+            argname = args.get(sp, "")
             r = ""
             if issymbolic(i):
                 r = "{:>12s} {:66s}".format(argname, repr(i))
@@ -2208,10 +2299,10 @@ class EVM(Eventful):
         # Append gas
         gas = self.gas
         if issymbolic(gas):
-            gas = simplify(gas)
+            #gas = simplify(gas)
             result.append(f"Gas: {translate_to_smtlib(gas)[:20]} {gas.taint}")
         else:
-            result.append(f"Gas: {gas}")
+            result.append(f"Gas: {gas, self.world.current_transaction.gas, self.world.current_transaction.gas-gas}" + str(self.world.current_transaction))
 
         return "\n".join(hex(self.address) + ": " + x for x in result)
 
@@ -2235,22 +2326,25 @@ class EVMWorld(Platform):
         "symbolic_function",
     }
 
-#    def _start_block(self, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=None):
+    def start_block(self, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=None):
+        if coinbase not in self.accounts and coinbase != 0:
+            raise Exception("Coinbase account does not exists")
+        self._block_header = BlockHeader(blocknumber, timestamp, difficulty, gaslimit, coinbase)
+
+    def end_block(self, block_reward=None):
+        if block_reward is None:
+            block_reward = 2000000000000000000
+        self.add_to_balance(self.block_coinbase(), BLOCK_REWARD)
+        self._block_header = None
 
     def __init__(
         self,
         constraints,
-        storage=None,
-        blocknumber=None,
-        timestamp=None,
-        difficulty=0,
-        gaslimit=0,
-        coinbase=0,
         fork=DEFAULT_FORK,
         **kwargs,
     ):
         super().__init__(path="NOPATH", **kwargs)
-        self._world_state = {} if storage is None else storage
+        self._world_state = {}
         self._constraints = constraints
         self._callstack: List[
             Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, ArrayProxy], EVM]
@@ -2259,61 +2353,44 @@ class EVMWorld(Platform):
         self._logs: List[EVMLog] = list()
         self._pending_transaction = None
         self._transactions: List[Transaction] = list()
-
-        if blocknumber is None:
-            # assume initial byzantium block
-            blocknumber = 4370000
-        self._blocknumber = blocknumber
-
-        if timestamp is None:
-            # 1524785992; // Thu Apr 26 23:39:52 UTC 2018
-            timestamp = 1524785992
-        self._timestamp = timestamp
-
-        self._difficulty = difficulty
-        self._gaslimit = gaslimit
-        self._coinbase = coinbase
         self._fork = fork
+        self._block_header = None
+        self.start_block()
 
     def __getstate__(self):
         state = super().__getstate__()
-        state["pending_transaction"] = self._pending_transaction
-        state["logs"] = self._logs
-        state["world_state"] = self._world_state
-        state["constraints"] = self._constraints
-        state["callstack"] = self._callstack
-        state["deleted_accounts"] = self._deleted_accounts
-        state["transactions"] = self._transactions
-        state["_blocknumber"] = self._blocknumber
-        state["_timestamp"] = self._timestamp
-        state["_difficulty"] = self._difficulty
-        state["_gaslimit"] = self._gaslimit
-        state["_coinbase"] = self._coinbase
+        state["_pending_transaction"] = self._pending_transaction
+        state["_logs"] = self._logs
+        state["_world_state"] = self._world_state
+        state["_constraints"] = self._constraints
+        state["_callstack"] = self._callstack
+        state["_deleted_accounts"] = self._deleted_accounts
+        state["_transactions"] = self._transactions
         state["_fork"] = self._fork
+        state["_block_header"] = self._block_header
+
         return state
 
     def __setstate__(self, state):
         super().__setstate__(state)
-        self._constraints = state["constraints"]
-        self._pending_transaction = state["pending_transaction"]
-        self._world_state = state["world_state"]
-        self._deleted_accounts = state["deleted_accounts"]
-        self._logs = state["logs"]
-        self._callstack = state["callstack"]
-        self._transactions = state["transactions"]
-        self._blocknumber = state["_blocknumber"]
-        self._timestamp = state["_timestamp"]
-        self._difficulty = state["_difficulty"]
-        self._gaslimit = state["_gaslimit"]
-        self._coinbase = state["_coinbase"]
+        self._constraints = state["_constraints"]
+        self._pending_transaction = state["_pending_transaction"]
+        self._world_state = state["_world_state"]
+        self._deleted_accounts = state["_deleted_accounts"]
+        self._logs = state["_logs"]
+        self._callstack = state["_callstack"]
+        self._transactions = state["_transactions"]
         self._fork = state["_fork"]
+        self._block_header = state["_block_header"]
 
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
-        for c in data:
+        #for c in data:
+        for index in range(len(data)):
+            c=data[index]
             simplified = simplify(c)
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
@@ -2386,19 +2463,65 @@ class EVMWorld(Platform):
     def evmfork(self):
         return self._fork
 
+    def _transaction_fee(self, sort, address, price, bytecode_or_data, caller, value):
+        GTXCREATE = 32000  # Paid by all contract creating transactions after the Homestead transition.
+        GTXDATAZERO = 4  # Paid for every zero byte of data or code for a transaction.
+        GTXDATANONZERO = 16  # Paid for every non - zero byte of data or code for a transaction.
+        GTRANSACTION = 21000 # Paid for every transaction
+        if sort == "CREATE":
+            tx_fee = GTXCREATE
+        else:
+            tx_fee = GTRANSACTION  # Simple transaction fee
+
+        zerocount=0
+        nonzerocount=0
+        if isinstance(bytecode_or_data, (Array, ArrayProxy)):
+            # if nothing was written we can assume all elements are default to zero
+            if len(bytecode_or_data.written) == 0:
+                zerocount = len(bytecode_or_data)
+        else:
+            for index in range(len(bytecode_or_data)):
+                try:
+                    c = bytecode_or_data.get(index, 0)
+                except:
+                    c = bytecode_or_data[index]
+
+                zerocount += Operators.ITEBV(256, c == 0, 1, 0)
+                nonzerocount += Operators.ITEBV(256, c == 0, 0, 1)
+
+        tx_fee += zerocount*GTXDATAZERO
+        tx_fee += nonzerocount*GTXDATANONZERO
+        return simplify(tx_fee)
+
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
-        assert price is not None
         if self.depth > 0:
             origin = self.tx_origin()
         else:
             origin = caller
-            # Pay full gas budget in advance
-            #self.send_funds(caller, coinbase, price*gas)
+            # Debit full gas budget in advance
             self.sub_from_balance(caller, price * gas)
 
         # Send the tx funds
-        if sort in {"CALLCODE", "DELEGATECALL"} and value != 0:
-            raise ManticoreException(f"{sort} can not send value")
+        if sort in {"DELEGATECALL"} and value != 0:
+            raise Exception(f"{sort} can not send value")
+
+        tx_fee = self._transaction_fee(sort, address, price, bytecode_or_data, caller, value)
+
+        if address not in self.accounts:
+            self.create_account(address)
+
+        enough_gas = Operators.UGE(gas, tx_fee)
+        enough_gas_solutions = Z3Solver.instance().get_all_values(
+            self._constraints, enough_gas
+        )
+        if set(enough_gas_solutions) == {True, False}:
+            raise Concretize(
+                "Forking on tx gas fee",
+                expression=enough_gas,
+                setstate=lambda a, b: None,
+                policy="ALL",
+            )
+        failed = set(enough_gas_solutions) == {False}
         self.send_funds(caller, address, value)
 
 
@@ -2424,23 +2547,10 @@ class EVMWorld(Platform):
             address = self.current_transaction.address
             caller = self.current_transaction.caller
             value = self.current_transaction.value
-        GTXCREATE = 21000  # Paid by all contract creating transactions after the Homestead transition.
-        GTXDATAZERO = 4  # Paid for every zero byte of data or code for a transaction.
-        GTXDATANONZERO = 68  # Paid for every non - zero byte of data or code for a transaction.
-        GTRANSACTION = 21000 # Paid for every transaction
 
-        tx_fee = 0
-        for c in data:
-            tx_fee += Operators.ITEBV(256, c==0, GTXDATAZERO, GTXDATANONZERO)
-        for c in bytecode:
-            tx_fee += Operators.ITEBV(256, c==0, GTXDATAZERO, GTXDATANONZERO)
-
-        if tx.sort == "CREATE":
-            tx_fee += GTXCREATE
-        else:
-            tx_fee += GTRANSACTION  # Simple transaction fee
-
-        gas -= Operators.ITEBV(256, Operators.ULT(gas, tx_fee), gas, tx_fee)
+        gas-=tx_fee
+        if failed:
+            gas = 0
 
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
 
@@ -2463,7 +2573,6 @@ class EVMWorld(Platform):
             self.current_vm._return_data = data
 
         if rollback:
-            print ("IS ROLLBACK!", tx.sort, result, vm.gas)
             self._set_storage(vm.address, account_storage)
             self._logs = logs
             # Return the transaction value
@@ -2472,21 +2581,43 @@ class EVMWorld(Platform):
             self._deleted_accounts = deleted_accounts
         self.increase_nonce(tx.caller)
 
+
+
+
+        if result in {'THROW'}:
+            unused_gas = 0
+            refund = 0
+        else:
+            unused_gas = vm.gas
+            refund = vm._refund
+
+        used_gas = tx.gas - unused_gas
+        refund = Operators.ITEBV(512, Operators.UGE(refund, used_gas//2), used_gas//2, refund)
+
         if tx.is_human:
             for deleted_account in self._deleted_accounts:
                 if deleted_account in self._world_state:
                     del self._world_state[deleted_account]
-            if not rollback:
-                remaining_gas = vm.gas
-                print ("Refunding", tx.sort, result, remaining_gas*tx.price)
-                self.add_to_balance(tx.caller, remaining_gas*tx.price)
+            unused_fee = unused_gas * tx.price
+            used_fee = used_gas * tx.price
+            self.add_to_balance(tx.caller, unused_fee)
+            self.add_to_balance(tx.caller, refund*tx.price)
+            self.add_to_balance(self.block_coinbase(), used_fee -refund*tx.price)
         else:
+            #if not rollback:
             #Refund unused gas to caller if
-            self.current_vm._gas += vm.gas
+            self.current_vm._gas += remaining_gas
+            self.current_vm._refund += refund
 
-        tx.set_result(result, data)
+        if tx.sort == 'CREATE':
+            if tx.result in ("RETURN", "STOP"):
+                #vm.consume(len(tx.return_data) * GCREATEDATAGAS)
+                self.set_code(tx.address, tx.return_data)
+            else:
+                self.delete_account(tx.address)
+
+        tx.set_result(result, data, used_gas - refund)
         self._transactions.append(tx)
-
         self._publish("did_close_transaction", tx)
 
         if self.depth == 0:
@@ -2500,7 +2631,7 @@ class EVMWorld(Platform):
     @property
     def transactions(self):
         """Completed completed transaction"""
-        return tuple((tx for tx in self._transactions if tx.result != "TXERROR"))
+        return tuple(self._transactions)
 
     @property
     def human_transactions(self):
@@ -2660,15 +2791,6 @@ class EVMWorld(Platform):
     def get_nonce(self, address):
         if issymbolic(address):
             raise ValueError(f"Cannot retrieve the nonce of symbolic address {address}")
-        elif address not in self._world_state:
-            # assume that the caller is a regular account, so initialize its nonce to zero
-            ret = 0
-        elif "nonce" not in self._world_state[address]:
-            if self._world_state[address]["code"]:
-                # this is a contract account, so set the nonce to 1 per EIP 161
-                ret = 1
-            else:
-                ret = 0
         else:
             ret = self._world_state[address]["nonce"]
         return ret
@@ -2684,7 +2806,7 @@ class EVMWorld(Platform):
     def get_balance(self, address):
         if address not in self._world_state:
             return 0
-        return self._world_state[address]["balance"]
+        return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
 
     def add_to_balance(self, address, value):
         self._world_state[address]["balance"] += value
@@ -2718,25 +2840,45 @@ class EVMWorld(Platform):
         pass
 
     def add_refund(self, value):
-        pass
+        self._refund += value
+
+    def sub_refund(self, value):
+        self._refund -= value
 
     def block_prevhash(self):
         return 0
 
+    # Block header related
+    def start_block(self, blocknumber=4370000, timestamp=1524785992, difficulty=0x200,
+                    gaslimit=0x7fffffff, coinbase=None):
+        if coinbase not in self.accounts and coinbase != 0:
+            logger.warning("Coinbase account does not exists")
+
+        if coinbase not in self.accounts:
+            self.create_account(coinbase)
+        self._block_header = BlockHeader(blocknumber, timestamp, difficulty,
+                                         gaslimit, coinbase)
+
+    def end_block(self, block_reward=None):
+        if block_reward is None:
+            block_reward = 2000000000000000000  # 2 eth
+        self.add_to_balance(self.block_coinbase(), block_reward)
+        #self._block_header = None
+
     def block_coinbase(self):
-        return self._coinbase
+        return self._block_header.coinbase
 
     def block_timestamp(self):
-        return self._timestamp
+        return self._block_header.timestamp
 
     def block_number(self):
-        return self._blocknumber
+        return self._block_header.blocknumber
 
     def block_difficulty(self):
-        return self._difficulty
+        return self._block_header.difficulty
 
     def block_gaslimit(self):
-        return self._gaslimit
+        return self._block_header.gaslimit
 
     def block_hash(self, block_number=None, force_recent=True):
         """
@@ -2839,7 +2981,7 @@ class EVMWorld(Platform):
         # nonce default to initial nonce
         if nonce is None:
             # As per EIP 161, contract accounts are initialized with a nonce of 1
-            nonce = 1 if code else 0
+            nonce = 1 if len(code)>0 else 0
 
         if address is None:
             address = self.new_address()
@@ -2903,13 +3045,6 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run
         on the network.
         """
-        expected_address = self.create_account(self.new_address(sender=caller))
-        if address is None:
-            address = expected_address
-        elif caller is not None and address != expected_address:
-            raise EthereumError(
-                f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
-            )
         self.start_transaction(
             "CREATE", address, price=price, data=init, caller=caller, value=balance, gas=gas
         )
@@ -2938,6 +3073,7 @@ class EVMWorld(Platform):
         :param gas: gas budget for this transaction.
         """
         assert self._pending_transaction is None, "Already started tx"
+        assert caller is not None
         self._pending_transaction = PendingTransaction(
             sort, address, price, data, caller, value, gas
         )
@@ -3008,6 +3144,7 @@ class EVMWorld(Platform):
             return
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
+        # sort
         if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
             if sort == "STATICCALL":
                 # TODO: Remove this once Issue #1168 is resolved
@@ -3017,51 +3154,70 @@ class EVMWorld(Platform):
             else:
                 raise EVMException(f"Transaction type '{sort}' not supported")
 
+        # price
         if self.depth > 0:
             assert price is None, "Price should not be used in internal transactions"
             price = self.tx_gasprice()
 
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
-        self._pending_transaction_concretize_address()
+
+        # caller
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
             raise EVMException(
                 f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
             )
 
-        if address not in self.accounts:
-            # Creating an unaccessible account
-            self.create_account(address=address)
+        # to/address
+        self._pending_transaction_concretize_address()
+        if sort == 'CREATE':
+            expected_address = self.new_address(sender=caller)
+            if address is None:
+                address = expected_address
+            self.create_account(address)
+            if address != expected_address:
+                raise EthereumError(
+                    f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
+                )
+        else:
+            if address not in self.accounts:
+                # Creating an unaccessible account
+                self.create_account(address=address, nonce=0)
+
+        failed = value > self.get_balance(caller)
 
         # Check depth
-        failed = self.depth > 1024
+        failed = failed or self.depth >= 1024
 
         # Fork on enough funds
         if not failed:
-            aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
-            aux_value = Operators.ZEXTEND(value, 512)
-            aux_price = Operators.ZEXTEND(price, 512)
-            aux_gas = Operators.ZEXTEND(gas, 512)
-            fee = aux_price * aux_gas
-            # Iff a human tx debit the fee
-            if self.depth ==0:
-                enough_balance = Operators.UGE(aux_src_balance, aux_value + fee)
-            else:
-                enough_balance = Operators.UGE(aux_src_balance, aux_value)
+            if self.depth == 0:
+                # take the gas from the balance
+                aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
+                aux_value = Operators.ZEXTEND(value, 512)
+                aux_price = Operators.ZEXTEND(price, 512)
+                aux_gas = Operators.ZEXTEND(gas, 512)
+                fee = aux_price * aux_gas
+                # Iff a human tx debit the fee
+                if self.depth ==0:
+                    enough_balance = Operators.UGE(aux_src_balance, aux_value + fee)
+                else:
+                    enough_balance = Operators.UGE(aux_src_balance, aux_value)
 
-            enough_balance_solutions = Z3Solver.instance().get_all_values(
-                self._constraints, enough_balance
-            )
-
-            if set(enough_balance_solutions) == {True, False}:
-                raise Concretize(
-                    "Forking on available funds",
-                    expression=enough_balance,
-                    setstate=lambda a, b: None,
-                    policy="ALL",
+                enough_balance_solutions = Z3Solver.instance().get_all_values(
+                    self._constraints, enough_balance
                 )
-            failed = set(enough_balance_solutions) == {False}
+
+                if set(enough_balance_solutions) == {True, False}:
+                    raise Concretize(
+                        "Forking on available funds",
+                        expression=enough_balance,
+                        setstate=lambda a, b: None,
+                        policy="ALL",
+                    )
+                failed = set(enough_balance_solutions) == {False}
+
         # processed
         self._pending_transaction = None
 
@@ -3069,9 +3225,11 @@ class EVMWorld(Platform):
 
         if failed:
             self._close_transaction("TXERROR", rollback=True)
+
         # Transaction to normal account
-        elif sort in ("CALL", "DELEGATECALL", "CALLCODE") and not self.get_code(address):
+        elif not self.get_code(address):  #sort in ("CALL", "DELEGATECALL", "CALLCODE") and\
             self._close_transaction("STOP")
+
 
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged

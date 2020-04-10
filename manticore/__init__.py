@@ -8,5 +8,6 @@ from .utils import config, log
 from .utils.log import set_verbosity
 from .core.smtlib import issymbolic, istainted
 from .ethereum.manticore import ManticoreEVM
+from .core.plugin import Plugin
 
 __all__ = [issymbolic.__name__, istainted.__name__, ManticoreEVM.__name__, set_verbosity.__name__]
