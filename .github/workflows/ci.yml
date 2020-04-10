@@ -193,8 +193,9 @@ jobs:
             launch_examples
             RESULT=$?
             echo Ran example scripts
-            popd
             coverage xml
+            popd
+            cp examples/linux/coverage.xml .
             return $RESULT
         }
 
