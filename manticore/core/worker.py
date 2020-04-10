@@ -92,7 +92,7 @@ class Worker:
                         # At RUNNING
                         # The START has been requested, we operate with under the assumption
                         # that manticore we will let us stay at this phase for a _while_
-                        # Requests to STOP will we honored ASAP (i.e. Not immediately)
+                        # Requests to STOP will be honored ASAP (i.e. Not immediately)
 
                         # Select a single state
                         # wait for other worker to add states to the READY list

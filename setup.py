@@ -14,9 +14,9 @@ def rtd_dependent_deps():
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
-native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc1"]
+native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc2"]
 
-lint_deps = ["black==19.3b0", "mypy==0.740"]
+lint_deps = ["black==19.10b0", "mypy==0.770"]
 
 # Development dependencies without keystone
 dev_noks = (
@@ -61,6 +61,7 @@ setup(
         "crytic-compile>=0.1.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
+        "psutil",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,

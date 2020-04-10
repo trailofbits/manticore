@@ -158,7 +158,7 @@ def read_operand(o):
     elif o.type == X86_OP_REG:
         reg_name = str(instruction.reg_name(o.reg).upper())
         return gdb.getR(reg_name)
-    raise NotImplemented
+    raise NotImplementedError(f"Unknown operand typ: {o.type}")
 
 
 STACK_INSTRUCTIONS = [

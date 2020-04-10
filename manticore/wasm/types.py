@@ -62,7 +62,7 @@ class I32(int):
     """
 
     def __new__(cls, val):
-        val = struct.unpack("i", c_int32(int(val) & 0xFFFFFFFF))[0]
+        val = struct.unpack("i", c_int32(int(val)))[0]
         return super(I32, cls).__new__(cls, val)
 
     @classmethod
@@ -165,8 +165,7 @@ class F64(float):
 
 
 ValType = type  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
-# For reasons I don't understand, Tuple[Type] != Tuple[I32]
-Value_t: typing.Tuple[typing.Type] = (I32, I64, F32, F64, BitVec)  # type: ignore
+Value_t = (I32, I64, F32, F64, BitVec)
 # Value = typing.TypeVar('Value', I32, I64, F32, F64, BitVec)  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
 Value = typing.Union[I32, I64, F32, F64, BitVec]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
 
@@ -453,19 +452,11 @@ class ConcretizeStack(Concretize):
         :param message: Debug message describing the reason for concretization
         :param expression: The expression to concretize, either a Value or a BitVec
         """
-        if policy is None:
-            policy = "ALL"
-        if policy not in self._ValidPolicies:
-            raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
 
         def setstate(state, value):
             state.platform.stack.data[depth] = ty(value)
 
-        self.setstate = setstate
-        self.expression = expression
-        self.policy = policy
-        self.message = f"Concretize: {message} (Policy: {policy})"
-        super().__init__(message, expression, setstate=self.setstate, **kwargs)
+        super().__init__(message, expression, setstate, policy, **kwargs)
 
 
 class MissingExportException(Trap):

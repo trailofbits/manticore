@@ -18,7 +18,7 @@ import threading
 import collections
 import shlex
 import time
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 from subprocess import PIPE, Popen
 import re
 from . import operators as Operators
@@ -26,6 +26,7 @@ from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
+from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -274,7 +275,6 @@ class Z3Solver(Solver):
             # self._proc.wait()
         except Exception as e:
             logger.error(str(e))
-            pass
 
     def _reset(self, constraints=None):
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
@@ -292,17 +292,22 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
-    def _send(self, cmd: str):
+    def _send(self, cmd: Union[str, ConstraintSet]):
         """
         Send a string to the solver.
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         # logger.debug('>%s', cmd)
-        # print (">",self._proc.stdin.name, threading.get_ident())
         try:
-            self._proc.stdout.flush()
-            self._proc.stdin.write(f"{cmd}\n")
+            if self._proc.stdout:
+                self._proc.stdout.flush()
+            else:
+                raise SolverError("Could not flush stdout: file descriptor is None")
+            if self._proc.stdin:
+                self._proc.stdin.write(f"{cmd}\n")
+            else:
+                raise SolverError("Could not write to stdin: file descriptor is None")
         except IOError as e:
             raise SolverError(str(e))
 
@@ -316,12 +321,13 @@ class Z3Solver(Solver):
             bufl.append(buf)
             left += l
             right += r
+            if "(error" in bufl[0]:
+                raise SolverException(f"Error in smtlib: {bufl[0]}")
 
         buf = "".join(bufl).strip()
-
-        # logger.debug('<%s', buf)
         if "(error" in bufl[0]:
             raise SolverException(f"Error in smtlib: {bufl[0]}")
+
         return buf
 
     def __readline_and_count(self):
@@ -350,7 +356,11 @@ class Z3Solver(Solver):
         if status == "unknown":
             raise SolverUnknown(status)
 
-        return status == "sat"
+        is_sat = status == "sat"
+        if not is_sat:
+            check_memory_usage()
+            check_disk_usage()
+        return is_sat
 
     def _assert(self, expression: Bool):
         """Auxiliary method to send an assert"""
@@ -401,7 +411,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints, expression=True):
+    def can_be_true(self, constraints: ConstraintSet, expression=True):
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
@@ -609,7 +619,9 @@ class Z3Solver(Solver):
 
                     self._reset(temp_cs)
                     if not self._is_sat():
-                        raise SolverError("Model is not available")
+                        raise SolverError(
+                            "Solver could not find a value for expression under current constraint set"
+                        )
 
                     for i in range(expression.index_max):
                         self._send("(get-value (%s))" % var[i].name)
@@ -629,7 +641,9 @@ class Z3Solver(Solver):
                 self._reset(temp_cs)
 
                 if not self._is_sat():
-                    raise SolverError("Model is not available")
+                    raise SolverError(
+                        "Solver could not find a value for expression under current constraint set"
+                    )
 
                 self._send("(get-value (%s))" % var.name)
                 ret = self._recv()

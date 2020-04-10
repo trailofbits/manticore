@@ -10,26 +10,26 @@ import tempfile
 from manticore.binary import Elf, CGCElf
 from manticore.native.mappings import mmap, munmap
 
-DIRPATH = os.path.dirname(__file__)
+from typing import List, Set
 
-# TLDR: when we launch `python -m manticore` and one uses PyCharm remote interpreter
-# the `python` might not refer to proper interpreter. The `/proc/self/exe` is a workaround
-# so one doesn't have to set up virtualenv in a remote interpreter.
-PYTHON_BIN = sys.executable
+
+DIRPATH: str = os.path.dirname(__file__)
+
+PYTHON_BIN: str = sys.executable
 
 
 class NativeIntegrationTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
-    def setUp(self):
+    def setUp(self) -> None:
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
 
-    def _load_visited_set(self, visited):
+    def _load_visited_set(self, visited: str) -> Set[int]:
         self.assertTrue(os.path.exists(visited))
 
         with open(visited, "r") as f:
@@ -37,7 +37,7 @@ class NativeIntegrationTest(unittest.TestCase):
 
         return set(int(x[2:], 16) for x in vitems)
 
-    def _run_with_timeout(self, procargs, logfile, timeout=1200):
+    def _run_with_timeout(self, procargs: List[str], logfile: str, timeout: int = 1200) -> None:
 
         with open(os.path.join(os.pardir, logfile), "w") as output:
             po = subprocess.Popen(procargs, stdout=output)
@@ -52,7 +52,7 @@ class NativeIntegrationTest(unittest.TestCase):
             self.assertTrue(secs_used < timeout)
             sys.stderr.write("\n")
 
-    def test_timeout(self):
+    def test_timeout(self) -> None:
         filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "arguments_linux_amd64"))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd()) + 1 :]
@@ -79,12 +79,15 @@ class NativeIntegrationTest(unittest.TestCase):
 
         self.assertTrue(time.time() - t < 20)
 
-    def test_logger_verbosity(self):
+    def test_logger_verbosity(self) -> None:
         """
         Tests that default verbosity produces the expected volume of output
         """
         filename = os.path.join(DIRPATH, "binaries", "basic_linux_amd64")
-        output = subprocess.check_output([PYTHON_BIN, "-m", "manticore", "--no-color", filename])
+        workspace = os.path.join(self.test_dir, "workspace")
+        output = subprocess.check_output(
+            [PYTHON_BIN, "-m", "manticore", "--no-color", "--workspace", workspace, filename]
+        )
 
         output_lines = output.splitlines()
 
@@ -96,8 +99,8 @@ class NativeIntegrationTest(unittest.TestCase):
         self.assertIn(b"Generated testcase No. 1 -", output_lines[2])
 
     def _test_arguments_assertions_aux(
-        self, binname, testcases_number, visited, add_assertion=False
-    ):
+        self, binname: str, testcases_number: int, visited: List[int], add_assertion: bool = False
+    ) -> None:
         filename = os.path.abspath(os.path.join(DIRPATH, "binaries", binname))
 
         self.assertTrue(filename.startswith(os.getcwd()))
@@ -155,7 +158,7 @@ class NativeIntegrationTest(unittest.TestCase):
 
         self.assertEqual(len(set(visited)), len(visited))  # just a sanity check
 
-    def test_arguments_assertions_amd64(self):
+    def test_arguments_assertions_amd64(self) -> None:
         self._test_arguments_assertions_aux(
             "arguments_linux_amd64",
             testcases_number=1,
@@ -194,7 +197,7 @@ class NativeIntegrationTest(unittest.TestCase):
             add_assertion=True,
         )
 
-    def test_arguments_assertions_armv7(self):
+    def test_arguments_assertions_armv7(self) -> None:
         self._test_arguments_assertions_aux(
             "arguments_linux_armv7",
             testcases_number=19,
@@ -215,7 +218,7 @@ class NativeIntegrationTest(unittest.TestCase):
             ],
         )
 
-    def test_decree(self):
+    def test_decree(self) -> None:
         filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "cadet_decree_x86"))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd()) + 1 :]
@@ -242,7 +245,7 @@ class NativeIntegrationTest(unittest.TestCase):
         actual = self._load_visited_set(os.path.join(DIRPATH, workspace, "visited.txt"))
         self.assertTrue(len(actual) > 100)
 
-    def test_basic_arm(self):
+    def test_basic_arm(self) -> None:
         filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "basic_linux_armv7"))
         workspace = os.path.join(self.test_dir, "workspace")
         cmd = [PYTHON_BIN, "-m", "manticore", "--no-color", "--workspace", workspace, filename]
@@ -260,7 +263,43 @@ class NativeIntegrationTest(unittest.TestCase):
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
             self.assertIn("Message", f.read())
 
-    def test_brk_regression(self):
+    def test_fclose_linux_amd64(self) -> None:
+        """
+        Tests that the `fclose` example for amd64 linux doesn't crash; see #1602 and #1604.
+        """
+        filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "fclose_linux_amd64"))
+        workspace = os.path.join(self.test_dir, "workspace")
+        cmd = [
+            PYTHON_BIN,
+            "-m",
+            "manticore",
+            "--no-color",
+            "--workspace",
+            workspace,
+            filename,
+            "+++++++",
+        ]
+        subprocess.check_call(cmd)
+
+    def test_fileio_linux_amd64(self) -> None:
+        """
+        Tests that the `fileio` example for amd64 linux doesn't crash.
+        """
+        filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "fileio_linux_amd64"))
+        workspace = os.path.join(self.test_dir, "workspace")
+        cmd = [
+            PYTHON_BIN,
+            "-m",
+            "manticore",
+            "--no-color",
+            "--workspace",
+            workspace,
+            filename,
+            "+",
+        ]
+        subprocess.check_call(cmd)
+
+    def test_brk_regression(self) -> None:
         """
         Tests for brk behavior. Source of brk_static_amd64:
 
@@ -299,7 +338,7 @@ class NativeIntegrationTest(unittest.TestCase):
         # with open(os.path.join(workspace, "test_00000000.messages")) as f:
         #     self.assertIn("finished with exit status: 0", f.read())
 
-    def test_unaligned_mappings(self):
+    def test_unaligned_mappings(self) -> None:
         # This test ensures that mapping file contents at non page-aligned offsets is possible.
         filename = os.path.join(os.path.dirname(__file__), "binaries", "basic_linux_amd64")
         with open(filename, "rb") as f:
