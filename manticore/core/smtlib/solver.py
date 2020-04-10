@@ -26,6 +26,7 @@ from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
+from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -355,7 +356,11 @@ class Z3Solver(Solver):
         if status == "unknown":
             raise SolverUnknown(status)
 
-        return status == "sat"
+        is_sat = status == "sat"
+        if not is_sat:
+            check_memory_usage()
+            check_disk_usage()
+        return is_sat
 
     def _assert(self, expression: Bool):
         """Auxiliary method to send an assert"""
@@ -614,7 +619,9 @@ class Z3Solver(Solver):
 
                     self._reset(temp_cs)
                     if not self._is_sat():
-                        raise SolverError("Model is not available")
+                        raise SolverError(
+                            "Solver could not find a value for expression under current constraint set"
+                        )
 
                     for i in range(expression.index_max):
                         self._send("(get-value (%s))" % var[i].name)
@@ -634,7 +641,9 @@ class Z3Solver(Solver):
                 self._reset(temp_cs)
 
                 if not self._is_sat():
-                    raise SolverError("Model is not available")
+                    raise SolverError(
+                        "Solver could not find a value for expression under current constraint set"
+                    )
 
                 self._send("(get-value (%s))" % var.name)
                 ret = self._recv()
