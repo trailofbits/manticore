@@ -20,14 +20,10 @@ class Visitor:
             visit_BitVecAdd()          if not defined then it will try with
             visit_BitVecOperation()    if not defined then it will try with
             visit_BitVec()             if not defined then it will try with
-            visit_Operation()          if not defined then it will try with
             visit_Expression()
 
         Other class named visitors are:
 
-        visit_Constant()
-        visit_Variable()
-        visit_Operation()
         visit_BitVec()
         visit_Bool()
         visit_Array()
@@ -149,8 +145,12 @@ class GetDeclarations(Visitor):
         super().__init__(**kwargs)
         self.variables = set()
 
-    def visit_Variable(self, expression):
+    def _visit_variable(self, expression):
         self.variables.add(expression)
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     @property
     def result(self):
@@ -168,8 +168,13 @@ class GetDepth(Translator):
     def visit_Expression(self, expression):
         return 1
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         return 1 + max(operands)
+
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
 
 def get_depth(exp):
@@ -213,7 +218,7 @@ class PrettyPrinter(Visitor):
                 return
         return
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         self._print(expression.__class__.__name__, expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
@@ -223,6 +228,11 @@ class PrettyPrinter(Visitor):
             self._print("...")
         self.indent -= 2
         return ""
+
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecExtract(self, expression):
         self._print(
@@ -238,13 +248,20 @@ class PrettyPrinter(Visitor):
         self.indent -= 2
         return ""
 
-    def visit_Constant(self, expression):
+    def _visit_constant(self, expression):
         self._print(expression.value)
         return ""
 
-    def visit_Variable(self, expression):
+    visit_BitVecConstant = _visit_constant
+    visit_BoolConstant = _visit_constant
+
+    def _visit_variable(self, expression):
         self._print(expression.name)
         return ""
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     @property
     def result(self):
@@ -323,7 +340,7 @@ class ConstantFolderSimplifier(Visitor):
         if isinstance(b, Constant) and b.value == True:
             return a
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
         if operation is not None and all(isinstance(o, Constant) for o in operands):
@@ -337,6 +354,11 @@ class ConstantFolderSimplifier(Visitor):
             if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
                 expression = self._rebuild(expression, operands)
         return expression
+
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
 
 constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
@@ -365,13 +387,17 @@ class ArithmeticSimplifier(Visitor):
         arity = len(operands)
         return any(operands[i] is not expression.operands[i] for i in range(arity))
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         if all(isinstance(o, Constant) for o in operands):
             expression = constant_folder(expression)
         if self._changed(expression, operands):
             expression = self._rebuild(expression, operands)
         return expression
+
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecZeroExtend(self, expression, *operands):
         if self._changed(expression, operands):
@@ -708,7 +734,7 @@ class ArithmeticSimplifier(Visitor):
         """
         arr, index = operands
         if isinstance(arr, ArrayVariable):
-            return
+            return self._visit_operation(expression, *operands)
 
         if isinstance(index, BitVecConstant):
             ival = index.value
@@ -728,10 +754,14 @@ class ArithmeticSimplifier(Visitor):
             and isinstance(arr.index, BitVecConstant)
             and arr.index.value == index.value
         ):
-            return arr.value
+            if arr.value is not None:
+                return arr.value
         else:
             if arr is not expression.array:
-                return arr.select(index)
+                out = arr.select(index)
+                if out is not None:
+                    return arr.select(index)
+        return self._visit_operation(expression, *operands)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
@@ -863,8 +893,12 @@ class TranslatorSmtlib(Translator):
     def visit_BoolConstant(self, expression):
         return expression.value and "true" or "false"
 
-    def visit_Variable(self, expression):
+    def _visit_variable(self, expression):
         return expression.name
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     def visit_ArraySelect(self, expression, *operands):
         array_smt, index_smt = operands
@@ -873,7 +907,7 @@ class TranslatorSmtlib(Translator):
 
         return "(select %s %s)" % (array_smt, index_smt)
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
         if isinstance(expression, (BitVecSignExtend, BitVecZeroExtend)):
             operation = operation % expression.extend
@@ -882,6 +916,10 @@ class TranslatorSmtlib(Translator):
 
         operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
         return "(%s %s)" % (operation, " ".join(operands))
+
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     @property
     def results(self):
@@ -911,10 +949,14 @@ class Replace(Visitor):
             raise ValueError("bindings needed in replace")
         self._replace_bindings = bindings
 
-    def visit_Variable(self, expression):
+    def _visit_variable(self, expression):
         if expression in self._replace_bindings:
             return self._replace_bindings[expression]
         return expression
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
 
 def replace(expression, bindings):

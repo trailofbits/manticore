@@ -1201,7 +1201,7 @@ class EVM(Eventful):
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
-            should_check_jumpdest_solutions = Z3Solver().get_all_values(
+            should_check_jumpdest_solutions = Z3Solver.instance().get_all_values(
                 self.constraints, should_check_jumpdest
             )
             if len(should_check_jumpdest_solutions) != 1:
@@ -1758,7 +1758,7 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
-            max_size = Z3Solver().max(self.constraints, size)
+            max_size = Z3Solver.instance().max(self.constraints, size)
         else:
             max_size = size
 
@@ -2222,7 +2222,7 @@ class EVM(Eventful):
         # FIXME for on the known addresses
         if issymbolic(recipient):
             logger.info("Symbolic recipient on self destruct")
-            recipient = Z3Solver().get_value(self.constraints, recipient)
+            recipient = Z3Solver.instance().get_value(self.constraints, recipient)
 
         if recipient not in self.world:
             self.world.create_account(address=recipient)

@@ -979,6 +979,28 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 
+    def test_API(self):
+        """
+        As we've split up the Constant, Variable, and Operation classes to avoid using multiple inheritance,
+        this test ensures that their expected properties are still present on their former subclasses. Doesn't
+        check the types or behavior, but hopefully will at least help avoid footguns related to defining new
+        Constant/Variable/Operation types in the future.
+        """
+        for cls in Constant:
+            attrs = ["value"]
+            for attr in attrs:
+                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
+
+        for cls in Variable:
+            attrs = ["name", "declaration", "__copy__", "__deepcopy__"]
+            for attr in attrs:
+                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
+
+        for cls in Operation:
+            attrs = ["operands"]
+            for attr in attrs:
+                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
+
 
 if __name__ == "__main__":
     unittest.main()

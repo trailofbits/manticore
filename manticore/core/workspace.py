@@ -5,7 +5,6 @@ import logging
 import tempfile
 import io
 
-
 from contextlib import contextmanager
 
 try:
@@ -34,6 +33,8 @@ from .smtlib.solver import Z3Solver
 from .state import StateBase
 from ..exceptions import ManticoreError
 
+from typing import Any, Generator, List, IO, Optional
+
 logger = logging.getLogger(__name__)
 
 consts = config.get_group("workspace")
@@ -44,20 +45,20 @@ consts.add("dir", default=".", description="Location of where to create workspac
 
 
 class WorkspaceTestcase:
-    def __init__(self, workspace, prefix):
+    def __init__(self, workspace: "ManticoreOutput", prefix: str):
         self._num = workspace._increment_id()
         self._prefix = prefix
         self._ws = workspace
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
         return self._prefix
 
     @property
-    def num(self):
+    def num(self) -> int:
         return self._num
 
-    def open_stream(self, suffix="", binary=False):
+    def open_stream(self, suffix: str, binary: bool = False):
         stream_name = f"{self._prefix}_{self._num:08x}.{suffix}"
         return self._ws.save_stream(stream_name, binary=binary)
 
@@ -93,13 +94,13 @@ class Store:
                 return subclass(uri)
         raise NotImplementedError(f"Storage type '{type_}' not supported.")
 
-    def __init__(self, uri, state_serialization_method="pickle"):
+    def __init__(self, uri: str, state_serialization_method: str = "pickle"):
         assert (
             self.__class__ != Store
         ), "The Store class can not be instantiated (create a subclass)"
 
         self.uri = uri
-        self._sub = []
+        self._sub: List = []
 
         if state_serialization_method == "pickle":
             self._serializer = PickleSerializer()
@@ -110,18 +111,17 @@ class Store:
 
     # save_value/load_value and save_stream/load_stream are implemented in terms of each other. A backing store
     # can choose the pair it's best optimized for.
-    def save_value(self, key, value):
+    def save_value(self, key: str, value) -> None:
         """
         Save an arbitrary, serializable `value` under `key`.
 
         :param str key: A string identifier under which to store the value.
         :param value: A serializable value
-        :return:
         """
         with self.save_stream(key) as s:
             s.write(value)
 
-    def load_value(self, key, binary=False):
+    def load_value(self, key: str, binary: bool = False):
         """
         Load an arbitrary value identified by `key`.
 
@@ -132,7 +132,7 @@ class Store:
             return s.read()
 
     @contextmanager
-    def save_stream(self, key, binary=False):
+    def save_stream(self, key: str, binary: bool = False) -> Generator[Any, None, None]:
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
@@ -142,10 +142,10 @@ class Store:
         """
         s = io.BytesIO() if binary else io.StringIO()
         yield s
-        self.save_value(key, s.getvalue())
+        self.save_value(key, s.getvalue())  # type: ignore
 
     @contextmanager
-    def load_stream(self, key, binary=False):
+    def load_stream(self, key: str, binary: bool = False):
         """
         Return a managed file-like object from which the calling code can read
         previously-serialized data.
@@ -156,23 +156,21 @@ class Store:
         value = self.load_value(key, binary=binary)
         yield io.BytesIO(value) if binary else io.StringIO(value)
 
-    def save_state(self, state, key):
+    def save_state(self, state: StateBase, key: str) -> None:
         """
         Save a state to storage.
 
         :param manticore.core.StateBase state:
-        :param str key:
-        :return:
+        :param key: the key to save under
         """
         with self.save_stream(key, binary=True) as f:
             self._serializer.serialize(state, f)
 
-    def load_state(self, key, delete=True):
+    def load_state(self, key: str, delete: bool = True) -> StateBase:
         """
         Load a state from storage.
 
-        :param key: key that identifies state
-        :rtype: manticore.core.StateBase
+        :param key: the key to load from
         """
 
         with self.load_stream(key, binary=True) as f:
@@ -182,19 +180,17 @@ class Store:
 
             return state
 
-    def rm(self, key):
+    def rm(self, key: str) -> None:
         """
         Remove value identified by `key` from storage.
 
-        :param str key: What to remove
+        :param key: What to remove
         """
         raise NotImplementedError
 
-    def ls(self, glob_str):
+    def ls(self, glob_str: str) -> List[str]:
         """
-        List all keys in storage
-
-        :return:
+        List all keys in storage that match `glob_str`.
         """
         raise NotImplementedError
 
@@ -209,7 +205,7 @@ class FilesystemStore(Store):
 
     store_type = "fs"
 
-    def __init__(self, uri=None):
+    def __init__(self, uri: Optional[str] = None):
         """
         :param uri: The path to on-disk workspace, or None.
         """
@@ -224,9 +220,16 @@ class FilesystemStore(Store):
 
         super().__init__(uri)
 
+    def _uri_of_key(self, key: str) -> str:
+        """
+        Produce a URI for the given key, designed to be usable as a filename.
+        """
+        key = key.replace("/", "_")
+        return os.path.join(self.uri, key)
+
     @contextmanager
-    def lock(self):
-        lockfile = os.path.join(self.uri, ".lock")
+    def lock(self) -> Generator[None, None, None]:
+        lockfile = self._uri_of_key(".lock")
         with self._tlock:
             while True:
                 try:
@@ -242,25 +245,30 @@ class FilesystemStore(Store):
                     break
 
     @contextmanager
-    def stream(self, key, mode="r", lock=False):
+    def stream(
+        self, key: str, mode: str = "r", lock: bool = False
+    ) -> Generator[IO[Any], None, None]:
         """
         Yield a file object representing `key`
 
-        :param str key: The file to save to
+        :param key: The file to save to
         :param mode: mode is an optional string that specifies the mode in which the file is opened
         :param lock: exclusive access if True
         :return:
         """
+        fname = self._uri_of_key(key)
         if lock:
             with self.lock():
-                with self.stream(key, mode, lock=False) as f:
+                with open(fname, mode) as f:
                     yield f
         else:
-            with open(os.path.join(self.uri, key), mode) as f:
+            with open(fname, mode) as f:
                 yield f
 
     @contextmanager
-    def save_stream(self, key, binary=False, lock=False):
+    def save_stream(
+        self, key: str, binary: bool = False, lock: bool = False
+    ) -> Generator[Any, None, None]:
         """
         Yield a file object representing `key`
 
@@ -274,7 +282,9 @@ class FilesystemStore(Store):
             yield f
 
     @contextmanager
-    def load_stream(self, key, binary=False, lock=False):
+    def load_stream(
+        self, key: str, binary: bool = False, lock: bool = False
+    ) -> Generator[IO[Any], None, None]:
         """
         :param str key: name of stream to load
         :param bool binary: Whether we should treat it as binary
@@ -285,24 +295,24 @@ class FilesystemStore(Store):
         with self.stream(key, mode, lock) as f:
             yield f
 
-    def rm(self, key):
+    def rm(self, key: str) -> None:
         """
         Remove file identified by `key`.
 
-        :param str key: The file to delete
+        :param key: The file to delete
         """
-        path = os.path.join(self.uri, key)
+        path = self._uri_of_key(key)
         if os.path.exists(path):
             os.remove(path)
 
-    def ls(self, glob_str):
+    def ls(self, glob_str: str) -> List[str]:
         """
         Return just the filenames that match `glob_str` inside the store directory.
 
-        :param str glob_str: A glob string, i.e. 'state_*'
+        :param glob_str: A glob string, e.g. 'state_*'
         :return: list of matched keys
         """
-        path = os.path.join(self.uri, glob_str)
+        path = self._uri_of_key(glob_str)
         return [os.path.split(s)[1] for s in glob.glob(path)]
 
 
@@ -464,7 +474,7 @@ class Workspace:
         """
         return self._store.load_state(f"{self._prefix}{state_id:08x}{self._suffix}", delete=delete)
 
-    def save_state(self, state, state_id=None):
+    def save_state(self, state: StateBase, state_id=None):
         """
         Save a state to storage, return identifier.
 
@@ -510,7 +520,7 @@ class ManticoreOutput:
         self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
 
-    def testcase(self, prefix="test"):
+    def testcase(self, prefix: str = "test") -> WorkspaceTestcase:
         return WorkspaceTestcase(self, prefix)
 
     @property
@@ -532,11 +542,9 @@ class ManticoreOutput:
 
         return self._descriptor
 
-    def _increment_id(self):
+    def _increment_id(self) -> int:
         """
         Get a unique testcase id.
-
-        :rtype: int
         """
         filename = ".testcase_id"
         with self._store.lock():
@@ -570,7 +578,7 @@ class ManticoreOutput:
     @contextmanager
     def _named_stream(self, name, binary=False, lock=False):
         """
-        Create an indexed output stream i.e. 'test_00000001.name'
+        Create an indexed output stream e.g. 'test_00000001.name'
 
         :param name: Identifier for the stream
         :param lock: exclusive access if True
@@ -580,13 +588,13 @@ class ManticoreOutput:
             yield s
 
     # Remove/move ...
-    def save_testcase(self, state, testcase, message=""):
+    def save_testcase(self, state: StateBase, testcase: WorkspaceTestcase, message: str = ""):
         """
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
 
-        :param State state: The state to serialize
-        :param str message: The message to add to output
+        :param state: The state to serialize
+        :param message: The message to add to output
         :return: A state id representing the saved state
         """
 
@@ -632,7 +640,7 @@ class ManticoreOutput:
                     summary.write("  Instruction: {symbolic}\n")
 
     @staticmethod
-    def save_trace(testcase, state):
+    def save_trace(testcase, state: StateBase):
         with testcase.open_stream("trace") as f:
             if "trace" not in state.context:
                 return
@@ -640,7 +648,7 @@ class ManticoreOutput:
                 f.write(f"0x{entry:x}\n")
 
     @staticmethod
-    def save_constraints(testcase, state):
+    def save_constraints(testcase, state: StateBase):
         # XXX(yan): We want to conditionally enable this check
         # assert solver.check(state.constraints)
 
@@ -648,8 +656,8 @@ class ManticoreOutput:
             f.write(str(state.constraints))
 
     @staticmethod
-    def save_input_symbols(testcase, state):
+    def save_input_symbols(testcase, state: StateBase):
         with testcase.open_stream("input") as f:
             for symbol in state.input_symbols:
-                buf = Z3Solver().get_value(state.constraints, symbol)
+                buf = Z3Solver.instance().get_value(state.constraints, symbol)
                 f.write(f"{symbol.name}: {buf!r}\n")

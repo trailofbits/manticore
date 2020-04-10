@@ -1,14 +1,3 @@
-# from ..utils.event import Eventful
-from wasm.immtypes import (
-    LocalVarXsImm,
-    GlobalVarXsImm,
-    MemoryImm,
-    CurGrowMemImm,
-    I32ConstImm,
-    I64ConstImm,
-    F32ConstImm,
-    F64ConstImm,
-)
 import struct
 from ctypes import c_int32
 from .types import (
@@ -23,6 +12,14 @@ from .types import (
     OverflowDivisionTrap,
     InvalidConversionTrap,
     OutOfBoundsMemoryTrap,
+    I32ConstImm,
+    I64ConstImm,
+    F32ConstImm,
+    F64ConstImm,
+    LocalVarXsImm,
+    GlobalVarXsImm,
+    MemoryImm,
+    CurGrowMemImm,
 )
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..utils.event import Eventful
@@ -1454,8 +1451,8 @@ class Executor(Eventful):
             stack.push(F32.cast(c1))
             return
         raise NotImplementedError("f32_demote_f64")
-        c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
-        stack.push(F32.cast(c1))
+        # c1 = struct.unpack("f", struct.pack("d", c1)[:4])[0]
+        # stack.push(F32.cast(c1))
 
     def f64_convert_s_i32(self, store, stack):
         stack.has_type_on_top(I32, 1)
