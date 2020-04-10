@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rm -rf */
+# rm -rf */
 touch __init__.py
 
 if ! [ -x "$(command -v wast2json)" ]; then

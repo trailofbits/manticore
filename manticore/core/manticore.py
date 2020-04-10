@@ -142,11 +142,9 @@ class ManticoreBase(Eventful):
         "terminate_execution",
     }
 
-    def __init__(self, initial_state, workspace_url=None, policy="random", **kwargs):
+    def __init__(self, initial_state, workspace_url=None, outputspace_url=None, **kwargs):
         """
-        :param initial_state: State to start from.
-
-               Manticore symbolically explores program states.
+        Manticore symbolically explores program states.
 
 
         **Manticore phases**
@@ -251,10 +249,9 @@ class ManticoreBase(Eventful):
         further user action. This is a final list.
 
 
-        :param initial_state: the initial root `State` object
-        :type state: State
+        :param initial_state: the initial root `State` object to start from
         :param workspace_url: workspace folder name
-        :param policy: scheduling policy
+        :param outputspace_url: Folder to place final output. Defaults to workspace
         :param kwargs: other kwargs, e.g.
         """
         super().__init__()
@@ -288,9 +285,9 @@ class ManticoreBase(Eventful):
                 raise TypeError(f"Invalid workspace type: {type(workspace_url).__name__}")
         self._workspace = Workspace(workspace_url)
         # reuse the same workspace if not specified
-        if workspace_url is None:
-            workspace_url = f"fs:{self._workspace.uri}"
-        self._output = ManticoreOutput(workspace_url)
+        if outputspace_url is None:
+            outputspace_url = f"fs:{self._workspace.uri}"
+        self._output = ManticoreOutput(outputspace_url)
 
         # The set of registered plugins
         # The callback methods defined in the plugin object will be called when
@@ -346,7 +343,7 @@ class ManticoreBase(Eventful):
         The optional setstate() function is supposed to set the concrete value
         in the child state.
 
-        Parent state is removed from the busy list and tht child states are added
+        Parent state is removed from the busy list and the child states are added
         to the ready list.
 
         """
@@ -713,7 +710,7 @@ class ManticoreBase(Eventful):
         """ Terminated states count """
         return len(self._terminated_states)
 
-    def generate_testcase(self, state, message="test", name="test"):
+    def generate_testcase(self, state, message: str = "test", name: str = "test"):
         if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
             message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)

@@ -60,6 +60,7 @@ setup(
         "crytic-compile>=0.1.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
+        "psutil",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
