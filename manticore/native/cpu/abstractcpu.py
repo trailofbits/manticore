@@ -392,7 +392,7 @@ class Abi:
 platform_logger = logging.getLogger("manticore.platforms.platform")
 
 
-def unsigned_hexlify(i):
+def unsigned_hexlify(i: Any) -> Any:
     if type(i) is int:
         if i < 0:
             return hex((1 << 64) + i)
