@@ -264,9 +264,9 @@ class Abi:
     Used for function call and system call models.
     """
 
-    def __init__(self, cpu):
+    def __init__(self, cpu: "Cpu"):
         """
-        :param manticore.core.cpu.Cpu cpu: CPU to initialize with
+        :param CPU to initialize with
         """
         self._cpu = cpu
 
