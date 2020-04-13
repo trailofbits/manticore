@@ -728,7 +728,7 @@ class Cpu(Eventful):
         self._publish("did_read_memory", where, value, size)
         return value
 
-    def write_bytes(self, where: int, data: Union[str, bytes, List], force: bool = False) -> None:
+    def write_bytes(self, where: int, data, force: bool = False) -> None:
         """
         Write a concrete or symbolic (or mixed) buffer to memory
 
@@ -824,7 +824,7 @@ class Cpu(Eventful):
             where += 1
         return s.getvalue().decode()
 
-    def push_bytes(self, data: Union[str, bytes, List], force: bool = False):
+    def push_bytes(self, data, force: bool = False):
         """
         Write `data` to the stack and decrement the stack pointer accordingly.
 
