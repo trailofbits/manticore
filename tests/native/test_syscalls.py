@@ -22,9 +22,8 @@ class LinuxTest(unittest.TestCase):
         self.linux = linux.SLinux(self.BIN_PATH)
 
     def tearDown(self):
-        for f in self.linux.files:
-            if isinstance(f, linux.File):
-                f.close()
+        for entry in self.linux.fd_table.entries():
+            entry.fdlike.close()
         self.tmp_dir.cleanup()
 
     def get_path(self, basename: str) -> str:
@@ -160,7 +159,7 @@ class LinuxTest(unittest.TestCase):
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 
-        sock_obj = self.linux.files[conn_fd]
+        sock_obj = self.linux.fd_table.get_fdlike(conn_fd)
         # Any socket that comes from an accept should probably be symbolic for now
         assert isinstance(sock_obj, SymbolicSocket)
 
@@ -207,7 +206,7 @@ class LinuxTest(unittest.TestCase):
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 
-        sock_obj = self.linux.files[conn_fd]
+        sock_obj = self.linux.fd_table.get_fdlike(conn_fd)
         # Any socket that comes from an accept should probably be symbolic for now
         assert isinstance(sock_obj, SymbolicSocket)
 
