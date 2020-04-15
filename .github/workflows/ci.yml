@@ -154,10 +154,9 @@ jobs:
             npm install -g ganache-cli truffle
         }
 
-        run_truffle_tests(){
+        run_metacoin_tests(){
             ADDITIONAL_ARGS=""
             if [ "$1" = "deploy" ]; then
-                ganache-cli -p 7545 -i 5777 &
                 ADDRESS="$(truffle deploy | grep '> contract address:.*' | tail -n 1 | grep -o '0x.*$')"
                 ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txvictim $ADDRESS"
             fi
@@ -207,10 +206,12 @@ jobs:
             ethereum_truffle)
                 echo "Running truffle tests"
                 install_node_packages
-                mkdir truffle_tests
-                cd truffle_tests
-                truffle unbox metacoin
-                run_truffle_tests && run_truffle_tests deploy
+                ganache-cli -p 7545 -i 5777 &
+                run_tests_from_dir $TEST_TYPE \
+                    && cd "$(mktemp -d)" \
+                    && truffle unbox metacoin \
+                    && run_metacoin_tests \
+                    && run_metacoin_tests deploy
                 RV=$?
                 ;;
             ethereum_vm)
