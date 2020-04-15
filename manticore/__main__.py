@@ -189,7 +189,7 @@ def parse_arguments():
         "--rpc",
         type=str,
         dest="url",
-        help="Url of an Ethereum node to connect to. Must be of the form 'IP:PORT'",
+        help="URL of an Ethereum node to connect to. Must be of the form 'IP:PORT'",
     )
 
     eth_detectors = parser.add_argument_group("Ethereum detectors")
