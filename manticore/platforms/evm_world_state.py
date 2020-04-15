@@ -190,7 +190,7 @@ class RemoteWorldState(WorldState):
         if endpoint.blocknumber != blocknumber:
             if not endpoint.warned:
                 logger.warning(
-                    "%s blocknumber has changed: %d != %d---someone is using the endpoint beside us",
+                    "%s blocknumber has changed: %d != %d---someone is using the endpoint besides us",
                     self._url,
                     endpoint.blocknumber,
                     blocknumber,
