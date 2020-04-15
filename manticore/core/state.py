@@ -1,8 +1,10 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool, issymbolic
+from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
+from ..utils.helpers import PickleSerializer
+
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +56,26 @@ class Concretize(StateException):
         super().__init__(**kwargs)
 
 
+class SerializeState(Concretize):
+    """ Allows the user to save a copy of the current state somewhere on the
+        disk so that analysis can later be resumed from this point.
+    """
+
+    def _setstate(self, state, _value):
+        with open(self.filename, "wb") as statef:
+            PickleSerializer().serialize(state, statef)
+
+    def __init__(self, filename, **kwargs):
+        super().__init__(
+            f"Saving state to {filename}",
+            BitVecConstant(32, 0),
+            setstate=self._setstate,
+            policy="ONE",
+            **kwargs,
+        )
+        self.filename = filename
+
+
 class ForkState(Concretize):
     """ Specialized concretization class for Bool expressions.
         It tries True and False as concrete solutions. /
@@ -63,7 +85,7 @@ class ForkState(Concretize):
         in forked states.
     """
 
-    def __init__(self, message, expression, **kwargs):
+    def __init__(self, message, expression: Bool, **kwargs):
         assert isinstance(expression, Bool), "Need a Bool to fork a state in two states"
         super().__init__(message, expression, policy="ALL", **kwargs)
 
@@ -239,8 +261,12 @@ class StateBase(Eventful):
         return expr
 
     def concretize(self, symbolic, policy, maxcount=7):
-        """ This finds a set of solutions for symbolic using policy.
-            This raises TooManySolutions if more solutions than maxcount
+        """This finds a set of solutions for symbolic using policy.
+
+        This limits the number of solutions returned to `maxcount` to avoid
+        a blowup in the state space. **This means that if there are more
+        than `maxcount` feasible solutions, some states will be silently
+        ignored.**
         """
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)

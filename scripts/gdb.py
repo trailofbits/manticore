@@ -95,7 +95,6 @@ def getM(m):
         return int(correspond(f"x/xg {m}\n").strip().split("\t")[-1], 0)
     except Exception as e:
         raise e
-        return 0
 
 
 def getPid():
@@ -138,5 +137,5 @@ def get_arch():
         _arch = "armv7"
     else:
         print(infotarget)
-        raise NotImplemented
+        raise NotImplementedError
     return _arch

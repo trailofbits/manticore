@@ -127,7 +127,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(g.var3, [1, 2, 3])
         self.assertEqual(g.var4, [])
 
-    def test_parse(self):
+    def test_parse_badconfig(self):
         conf = "bad config"
         f = io.StringIO(conf)
         # this shouldn't raise

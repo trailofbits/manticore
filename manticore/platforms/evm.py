@@ -58,7 +58,13 @@ consts = config.get_group("evm")
 
 
 def globalsha3(data):
+    if issymbolic(data):
+        return None
     return int(sha3.keccak_256(data).hexdigest(), 16)
+
+
+def globalfakesha3(data):
+    return None
 
 
 consts.add(
@@ -306,7 +312,7 @@ class Transaction:
     @sort.setter
     def sort(self, sort):
         if sort not in {"CREATE", "CALL", "DELEGATECALL"}:
-            raise EVMException("Invalid transaction type")
+            raise EVMException(f"Invalid transaction type: {sort}")
         self._sort = sort
 
     @property
@@ -747,6 +753,7 @@ class EVM(Eventful):
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
         self._published_pre_instruction_events = False
+        self._return_data = b""
 
         # Used calldata size
         self._used_calldata_size = 0
@@ -776,7 +783,7 @@ class EVM(Eventful):
 
     @property
     def gas(self):
-        return self._gas
+        return Operators.EXTRACT(self._gas, 0, 256)
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -801,6 +808,7 @@ class EVM(Eventful):
         state["_used_calldata_size"] = self._used_calldata_size
         state["_valid_jumpdests"] = self._valid_jumpdests
         state["_check_jumpdest"] = self._check_jumpdest
+        state["_return_data"] = self._return_data
         return state
 
     def __setstate__(self, state):
@@ -825,6 +833,7 @@ class EVM(Eventful):
         self._used_calldata_size = state["_used_calldata_size"]
         self._valid_jumpdests = state["_valid_jumpdests"]
         self._check_jumpdest = state["_check_jumpdest"]
+        self._return_data = state["_return_data"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -1177,7 +1186,7 @@ class EVM(Eventful):
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
-            should_check_jumpdest_solutions = Z3Solver().get_all_values(
+            should_check_jumpdest_solutions = Z3Solver.instance().get_all_values(
                 self.constraints, should_check_jumpdest
             )
             if len(should_check_jumpdest_solutions) != 1:
@@ -1576,24 +1585,11 @@ class EVM(Eventful):
 
         """
         data = self.read_buffer(start, size)
-
-        if consts.sha3 == consts.sha3.fake:
-            # Fake hash selected. Replace with symbol friendly hash.
-            h = len(data) + 0x4141414141414141414141414141414141414141414141414141414141414100
-            for i in range(0, len(data), 32):
-                h <<= 16
-                h += data.read_BE(i, 32)
-
-            # Try to avoid some common incorrect cases
-            self.constraints.add(h != 0)
-            # Force fake collision resistance
-            for x, y in self._sha3.items():
-                self.constraints.add((data == x) == (h == y))
-
-            self._sha3[data] = h
-            return h
+        if consts.sha3 is consts.sha3.fake:
+            func = globalfakesha3
         else:
-            return self.world.symbolic_function(globalsha3, data)
+            func = globalsha3
+        return self.world.symbolic_function(func, data)
 
     ############################################################################
     # Environmental Information
@@ -1738,7 +1734,7 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
-            max_size = Z3Solver().max(self.constraints, size)
+            max_size = Z3Solver.instance().max(self.constraints, size)
         else:
             max_size = size
 
@@ -1800,7 +1796,7 @@ class EVM(Eventful):
         return self._get_memfee(mem_offset, size)
 
     def RETURNDATACOPY(self, mem_offset, return_offset, size):
-        return_data = self.world.last_transaction.return_data
+        return_data = self._return_data
 
         self._allocate(mem_offset, size)
         for i in range(size):
@@ -1810,7 +1806,7 @@ class EVM(Eventful):
                 self._store(mem_offset + i, 0)
 
     def RETURNDATASIZE(self):
-        return len(self.world.last_transaction.return_data)
+        return len(self._return_data)
 
     ############################################################################
     # Block Information
@@ -1940,7 +1936,7 @@ class EVM(Eventful):
     def GAS(self):
         """Get the amount of available gas, including the corresponding reduction the amount of available gas"""
         # fixme calculate gas consumption
-        return Operators.EXTRACT(self._gas, 0, 256)
+        return self.gas
 
     def JUMPDEST(self):
         """Mark a valid destination for jumps"""
@@ -2030,15 +2026,16 @@ class EVM(Eventful):
         )
         raise StartTx()
 
+    def __pos_call(self, out_offset, out_size):
+        data = self._return_data
+        data_size = len(data)
+        size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+        self.write_buffer(out_offset, data[:size])
+        return self.world.last_transaction.return_value
+
     @CALL.pos  # type: ignore
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def CALLCODE_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         return self._get_memfee(in_offset, in_size)
@@ -2059,13 +2056,7 @@ class EVM(Eventful):
 
     @CALLCODE.pos  # type: ignore
     def CALLCODE(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def RETURN_gas(self, offset, size):
         return self._get_memfee(offset, size)
@@ -2095,13 +2086,7 @@ class EVM(Eventful):
 
     @DELEGATECALL.pos  # type: ignore
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def STATICCALL_gas(self, gas, address, in_offset, in_size, out_offset, out_size):
         return self._get_memfee(in_offset, in_size)
@@ -2122,13 +2107,7 @@ class EVM(Eventful):
 
     @STATICCALL.pos  # type: ignore
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.last_transaction.return_data
-        if data is not None:
-            data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.write_buffer(out_offset, data[:size])
-
-        return self.world.last_transaction.return_value
+        return self.__pos_call(out_offset, out_size)
 
     def REVERT_gas(self, offset, size):
         return self._get_memfee(offset, size)
@@ -2150,7 +2129,7 @@ class EVM(Eventful):
         # FIXME for on the known addresses
         if issymbolic(recipient):
             logger.info("Symbolic recipient on self destruct")
-            recipient = Z3Solver().get_value(self.constraints, recipient)
+            recipient = Z3Solver.instance().get_value(self.constraints, recipient)
 
         if recipient not in self.world:
             self.world.create_account(address=recipient)
@@ -2389,11 +2368,16 @@ class EVMWorld(Platform):
             self.current_vm.constraints = constraints
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
+        assert price is not None
         if self.depth > 0:
             origin = self.tx_origin()
         else:
             origin = caller
-        assert price is not None
+
+        # If not a human tx, reset returndata
+        # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
+        if self.current_vm:
+            self.current_vm._return_data = b""
 
         tx = Transaction(
             sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas
@@ -2434,13 +2418,17 @@ class EVMWorld(Platform):
         assert self.constraints == vm.constraints
         # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
+
+        # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
+        if data is not None and self.current_vm is not None:
+            self.current_vm._return_data = data
+
         if rollback:
             self._world_state.set_storage(vm.address, account_storage)
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
         else:
             self._deleted_accounts = deleted_accounts
-
             # FIXME: BUG: a CREATE can be successful and still return an empty contract :shrug:
             if not issymbolic(tx.caller) and (tx.sort == "CREATE" or not self.get_code(tx.caller)):
                 # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
@@ -3018,34 +3006,43 @@ class EVMWorld(Platform):
             balance = blockchain.get_balance(account_address)
             is_balance_symbolic = issymbolic(balance)
             is_something_symbolic = is_something_symbolic or is_balance_symbolic
-            balance = state.solve_one(balance)
+            balance = state.solve_one(balance, constrain=True)
             stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain._get_storage(state.constraints, account_address)
+            concrete_indexes = set()
+            for sindex in storage.written:
+                concrete_indexes.add(state.solve_one(sindex, constrain=True))
+
+            for index in concrete_indexes:
+                stream.write(
+                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}"
+                )
             stream.write("Storage: %s\n" % translate_to_smtlib(storage.data, use_bindings=False))
 
-            all_used_indexes = []
-            with state.constraints as temp_cs:
-                # make a free symbolic idex that could address any storage slot
-                index = temp_cs.new_bitvec(256)
-                # get the storage for account_address
-                storage = blockchain._get_storage(temp_cs, account_address)
-                # we are interested only in used slots
-                temp_cs.add(storage.map.get(index) != 0)
-                # Query the solver to get all storage indexes with used slots
-                all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
+            if consts.sha3 is consts.sha3.concretize:
+                all_used_indexes = []
+                with state.constraints as temp_cs:
+                    # make a free symbolic idex that could address any storage slot
+                    index = temp_cs.new_bitvec(256)
+                    # get the storage for account_address
+                    storage = blockchain._get_storage(temp_cs, account_address)
+                    # we are interested only in used slots
+                    temp_cs.add(storage.map.get(index) != 0)
+                    # Query the solver to get all storage indexes with used slots
+                    all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
 
-            if all_used_indexes:
-                stream.write("Storage:\n")
-                for i in all_used_indexes:
-                    value = simplify(storage.data.get(i))
-                    is_storage_symbolic = issymbolic(value) and not isinstance(
-                        value, BitVecConstant
-                    )
-                    stream.write(
-                        "storage[%x] = %x %s\n"
-                        % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic))
-                    )
+                if all_used_indexes:
+                    stream.write("Storage:\n")
+                    for i in all_used_indexes:
+                        value = simplify(storage.data.get(i))
+                        is_storage_symbolic = issymbolic(value) and not isinstance(
+                            value, BitVecConstant
+                        )
+                        stream.write(
+                            "storage[%x] = %x %s\n"
+                            % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic))
+                        )
 
             runtime_code = state.solve_one(blockchain.get_code(account_address))
             if runtime_code:

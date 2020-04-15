@@ -1,6 +1,33 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.2...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.3...HEAD)
+
+## 0.3.3 - 2020-01
+
+Thanks to our external contributors!
+
+ - [catenacyber](https://github.com/trailofbits/manticore/commits?author=catenacyber)
+
+### Ethereum
+* **[added API]** Flag to only generate alive states when finalizing Manticore [#1554](https://github.com/trailofbits/manticore/pull/1554)
+* Fix gas check [#1587](https://github.com/trailofbits/manticore/pull/1587)
+
+### Native
+* **[added API]** Add post-instruction hooks [#1579](https://github.com/trailofbits/manticore/pull/1579)
+* Fix issue with re-using stdio file descriptors after they'd been closed [#1604](https://github.com/trailofbits/manticore/pull/1604)
+
+### WASM
+* **[added API]** getattr-style calls for WASM functions [#1578](https://github.com/trailofbits/manticore/pull/1578)
+* **[changed API]** Pass state to function calls instead of constraint sets [#1578](https://github.com/trailofbits/manticore/pull/1578)
+* **[added API]** Added read/write helper methods to memory instances [#1589](https://github.com/trailofbits/manticore/pull/1589)
+
+### Other
+* **[added API]** Added streamlined state serialization interface [#1596](https://github.com/trailofbits/manticore/pull/1596)
+* Fixed Z3 version parsing [#1551](https://github.com/trailofbits/manticore/pull/1551)
+* Unique names for ArrayVars [#1552](https://github.com/trailofbits/manticore/pull/1552)
+* Improve pickling and multiprocessing compatibility [#1583](https://github.com/trailofbits/manticore/pull/1583)
+* Fix SMTLib visitor bug that broke the example tests [#1577](https://github.com/trailofbits/manticore/pull/1577)
+* Optimize MinMax SMTLib operations [#1599](https://github.com/trailofbits/manticore/pull/1599)
 
 ## 0.3.2 - 2019-11-11
 

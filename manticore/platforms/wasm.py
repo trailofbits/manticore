@@ -58,6 +58,9 @@ class WASMWorld(Platform):
         #: Stores numeric values, branch labels, and execution frames
         self.stack = Stack()
 
+        #: Stores concretized information used to advise execution of the next instruction.
+        self.advice = None
+
         self.forward_events_from(self.stack)
         self.forward_events_from(self.instance)
         self.forward_events_from(self.instance.executor)
@@ -67,6 +70,7 @@ class WASMWorld(Platform):
         state["modules"] = self.modules
         state["store"] = self.store
         state["stack"] = self.stack
+        state["advice"] = self.advice
         state["constraints"] = self.constraints
         state["instantiated"] = self.instantiated
         state["module_names"] = self.module_names
@@ -78,6 +82,7 @@ class WASMWorld(Platform):
         self.modules = state["modules"]
         self.store = state["store"]
         self.stack = state["stack"]
+        self.advice = state["advice"]
         self.constraints = state["constraints"]
         self.instantiated = state["instantiated"]
         self.module_names = state["module_names"]
@@ -86,6 +91,8 @@ class WASMWorld(Platform):
         self.forward_events_from(self.stack)
         self.forward_events_from(self.instance)
         self.forward_events_from(self.instance.executor)
+        for mem in self.store.mems:
+            self.forward_events_from(mem)
         super().__setstate__(state)
 
     @property
@@ -119,7 +126,9 @@ class WASMWorld(Platform):
 
     def set_env(
         self,
-        exports: typing.Dict[str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]],
+        exports: typing.Dict[
+            str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
+        ],
         mod_name="env",
     ):
         """
@@ -182,7 +191,9 @@ class WASMWorld(Platform):
 
     def get_export(
         self, export_name, mod_name=None
-    ) -> typing.Optional[typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]]:
+    ) -> typing.Optional[
+        typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
+    ]:
         """
         Gets the export _instance_ for a given export & module name
         (basically just dereferences _get_export_addr into the store)
@@ -244,6 +255,10 @@ class WASMWorld(Platform):
                     func_type = module.types[i.desc]
                     if i.module == "env" and imported_version:
                         if callable(imported_version):
+                            logger.info(
+                                "Auto-converting callable %s into HostFunc of appropriate type",
+                                i.name,
+                            )
                             imported_version = HostFunc(func_type, imported_version)
                     self.store.funcs.append(
                         imported_version
@@ -254,7 +269,9 @@ class WASMWorld(Platform):
                             partial(stub, len(func_type.result_types)),  # type: ignore
                         )
                     )
-                    imports.append(FuncAddr(len(self.store.funcs) - 1))
+                    addr = FuncAddr(len(self.store.funcs) - 1)
+                    imports.append(addr)
+                    self.instance.function_names[addr] = f"{i.module}.{i.name}"
 
                 elif isinstance(i.desc, TableType):
                     self.store.tables.append(
@@ -287,10 +304,13 @@ class WASMWorld(Platform):
     def instantiate(
         self,
         env_import_dict: typing.Dict[
-            str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]
+            str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
         ],
         supplemental_env: typing.Dict[
-            str, typing.Dict[str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]]
+            str,
+            typing.Dict[
+                str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
+            ],
         ] = {},
         exec_start=False,
         stub_missing=True,
@@ -311,6 +331,8 @@ class WASMWorld(Platform):
         for k in supplemental_env:
             self.set_env(supplemental_env[k], k)
         self.import_module(self.default_module, exec_start, stub_missing)
+        for mem in self.store.mems:
+            self.forward_events_from(mem)
 
     def invoke(self, name="main", argv=[], module=None):
         """
@@ -346,7 +368,7 @@ class WASMWorld(Platform):
 
         # Call exec_instruction until it returns false or throws an error
         try:
-            while instance.exec_instruction(self.store, self.stack):
+            while self._exec_instruction(instance):
                 pass
             # Return the top `rets` values from the stack
             return [self.stack.pop() for _i in range(rets)]
@@ -363,7 +385,16 @@ class WASMWorld(Platform):
         if not self.instantiated:
             raise RuntimeError("Trying to execute before instantiation!")
         try:
-            if not self.instance.exec_instruction(self.store, self.stack, current_state):
+            if not self._exec_instruction(self.instance, current_state):
                 raise TerminateState(f"Execution returned {self.stack.peek()}")
         except Trap as e:
             raise TerminateState(f"Execution raised Trap: {str(e)}")
+
+    def _exec_instruction(self, instance, current_state=None):
+        """
+        Executes a single instruction on the instance and clears the advice.
+        """
+        try:
+            return instance.exec_instruction(self.store, self.stack, self.advice, current_state)
+        finally:
+            self.advice = None

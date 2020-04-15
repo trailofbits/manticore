@@ -1,0 +1,207 @@
+import unittest
+from pathlib import Path
+from manticore.wasm import ManticoreWASM
+from manticore.core.plugin import Plugin
+from manticore.wasm.types import I32, I64
+
+
+class EverythingPlugin(Plugin):
+    def will_exec_expression_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_exec_expression"] = ctx.setdefault("will_exec_expression", 0) + 1
+
+    def did_exec_expression_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_exec_expression"] = ctx.setdefault("did_exec_expression", 0) + 1
+
+    def will_get_global_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_get_global"] = ctx.setdefault("will_get_global", 0) + 1
+
+    def did_get_global_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_get_global"] = ctx.setdefault("did_get_global", 0) + 1
+
+    def will_set_global_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_set_global"] = ctx.setdefault("will_set_global", 0) + 1
+
+    def did_set_global_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_set_global"] = ctx.setdefault("did_set_global", 0) + 1
+
+    def will_call_hostfunc_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_call_hostfunc"] = ctx.setdefault("will_call_hostfunc", 0) + 1
+
+    def did_call_hostfunc_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_call_hostfunc"] = ctx.setdefault("did_call_hostfunc", 0) + 1
+
+    def will_execute_instruction_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_execute_instruction"] = ctx.setdefault("will_execute_instruction", 0) + 1
+
+    def did_execute_instruction_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_execute_instruction"] = ctx.setdefault("did_execute_instruction", 0) + 1
+
+    def will_pop_item_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_pop_item"] = ctx.setdefault("will_pop_item", 0) + 1
+
+    def did_pop_item_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_pop_item"] = ctx.setdefault("did_pop_item", 0) + 1
+
+    def will_push_item_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_push_item"] = ctx.setdefault("will_push_item", 0) + 1
+
+    def did_push_item_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_push_item"] = ctx.setdefault("did_push_item", 0) + 1
+
+    def will_get_local_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_get_local"] = ctx.setdefault("will_get_local", 0) + 1
+
+    def did_get_local_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_get_local"] = ctx.setdefault("did_get_local", 0) + 1
+
+    def will_set_local_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_set_local"] = ctx.setdefault("will_set_local", 0) + 1
+
+    def did_set_local_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_set_local"] = ctx.setdefault("did_set_local", 0) + 1
+
+    def will_read_memory_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_read_memory"] = ctx.setdefault("will_read_memory", 0) + 1
+
+    def did_read_memory_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_read_memory"] = ctx.setdefault("did_read_memory", 0) + 1
+
+    def will_write_memory_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_write_memory"] = ctx.setdefault("will_write_memory", 0) + 1
+
+    def did_write_memory_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["did_write_memory"] = ctx.setdefault("did_write_memory", 0) + 1
+
+    def will_raise_trap_callback(self, *args, **kwargs):
+        with self.locked_context("cb_count", dict) as ctx:
+            ctx["will_raise_trap"] = ctx.setdefault("will_raise_trap", 0) + 1
+
+
+collatz_file = str(
+    Path(__file__).parent.parent.parent.joinpath("examples", "wasm", "collatz", "collatz.wasm")
+)
+trap_file = str(Path(__file__).parent.joinpath("_traps", "traps.0.wasm"))
+global_file = str(Path(__file__).parent.joinpath("_globals", "globals.0.wasm"))
+memory_file = str(Path(__file__).parent.joinpath("_memory", "memory.25.wasm"))
+
+
+def getchar(state, addr):
+    res = state.new_symbolic_value(32, "getchar_res")
+    state.constrain(res > -4)
+    state.constrain(res < 8)
+    return [res]
+
+
+class TestCallbacksFire(unittest.TestCase):
+    """ Makes sure that the callbacks are firing correctly, since it's easy to screw up and drop them """
+
+    all_callbacks = {
+        # "will_exec_expression",  # This is only fired during initialization and thus gets dropped
+        # "did_exec_expression",   # We probably don't need it anyway
+        "will_get_global",
+        "did_get_global",
+        "will_set_global",
+        "did_set_global",
+        "will_call_hostfunc",
+        "did_call_hostfunc",
+        "will_execute_instruction",
+        "did_execute_instruction",
+        "will_pop_item",
+        "did_pop_item",
+        "will_push_item",
+        "did_push_item",
+        "will_get_local",
+        "did_get_local",
+        "will_set_local",
+        "did_set_local",
+        "will_read_memory",
+        "did_read_memory",
+        "will_write_memory",
+        "did_write_memory",
+        "will_raise_trap",
+    }
+
+    seen_callbacks = set()
+
+    def test_for_missing(self):
+        self.globals()
+        self.traps()
+        self.collatz()
+        self.memory()
+
+        for cb in self.all_callbacks:
+            with self.subTest(cb):
+                self.assertIn(cb, self.seen_callbacks, f"Event '{cb}' was never fired")
+
+    def collatz(self):
+        m = ManticoreWASM(collatz_file, {"getchar": getchar})
+        plugin = EverythingPlugin()
+        m.register_plugin(plugin)
+        m.main()
+
+        counts = plugin.context.get("cb_count")
+        self.seen_callbacks |= set(counts.keys())
+
+    def traps(self):
+        m = ManticoreWASM(trap_file)
+        plugin = EverythingPlugin()
+        m.register_plugin(plugin)
+        m.invoke("no_dce.i32.div_s", lambda s: [I32(1), I32(0)])
+        m.run()
+
+        counts = plugin.context.get("cb_count")
+        self.seen_callbacks |= set(counts.keys())
+
+    def globals(self):
+        m = ManticoreWASM(global_file)
+        plugin = EverythingPlugin()
+        m.register_plugin(plugin)
+        m.invoke("get-a")
+        m.run()
+
+        m._reinit()
+        m.invoke("set-y", lambda s: [I64(7)])
+        m.run()
+
+        counts = plugin.context.get("cb_count")
+        self.seen_callbacks |= set(counts.keys())
+
+    def memory(self):
+        m = ManticoreWASM(memory_file)
+        plugin = EverythingPlugin()
+        m.register_plugin(plugin)
+        m.invoke("i64_load32_s", lambda s: [I64(18364758543954109763)])
+        m.run()
+
+        m._reinit()
+        m.invoke("i32_load8_s", lambda s: [I32(4294967295)])
+        m.run()
+
+        counts = plugin.context.get("cb_count")
+        self.seen_callbacks |= set(counts.keys())
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -484,7 +484,7 @@ class EthTests(unittest.TestCase):
 
         expected_exception = (
             f"Can't create solidity contract with balance (2) because "
-            f"the owner account ({owner}) has insufficient balance (1)."
+            f"the owner account ({owner}) has insufficient balance."
         )
         self.assertEqual(str(e.exception), expected_exception)
 
@@ -914,7 +914,9 @@ class EthTests(unittest.TestCase):
         mevm.multi_tx_analysis(filename, tx_limit=2, tx_preconstrain=True)
 
         self.assertIn("endtx_instructions", p.context)
-        self.assertSetEqual(p.context["endtx_instructions"], {"INVALID", "RETURN", "STOP"})
+        self.assertSetEqual(
+            p.context["endtx_instructions"], {"INVALID", "RETURN", "STOP", "REVERT"}
+        )
 
     def test_call_with_concretized_args(self):
         """Test a CALL with symbolic arguments that will to be concretized.

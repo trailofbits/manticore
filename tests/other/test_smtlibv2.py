@@ -429,6 +429,25 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a >= 100)
         self.assertTrue(self.solver.check(cs))
         self.assertEqual(self.solver.minmax(cs, a), (100, 200))
+        from manticore import config
+
+        consts = config.get_group("smt")
+        consts.optimize = False
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32)
+        cs.add(a <= 200)
+        cs.add(a >= 100)
+        self.assertTrue(self.solver.check(cs))
+        self.assertEqual(self.solver.minmax(cs, a), (100, 200))
+        consts.optimize = True
+
+    def testBitvector_max_noop(self):
+        from manticore import config
+
+        consts = config.get_group("smt")
+        consts.optimize = False
+        self.testBitvector_max()
+        consts.optimize = True
 
     def testBitvector_max1(self):
         cs = ConstraintSet()
@@ -437,6 +456,14 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a > 100)
         self.assertTrue(self.solver.check(cs))
         self.assertEqual(self.solver.minmax(cs, a), (101, 199))
+
+    def testBitvector_max1_noop(self):
+        from manticore import config
+
+        consts = config.get_group("smt")
+        consts.optimize = False
+        self.testBitvector_max1()
+        consts.optimize = True
 
     def testBool_nonzero(self):
         self.assertTrue(BoolConstant(True).__bool__())
@@ -951,6 +978,28 @@ class ExpressionTest(unittest.TestCase):
             == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
         )
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+
+    def test_API(self):
+        """
+        As we've split up the Constant, Variable, and Operation classes to avoid using multiple inheritance,
+        this test ensures that their expected properties are still present on their former subclasses. Doesn't
+        check the types or behavior, but hopefully will at least help avoid footguns related to defining new
+        Constant/Variable/Operation types in the future.
+        """
+        for cls in Constant:
+            attrs = ["value"]
+            for attr in attrs:
+                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
+
+        for cls in Variable:
+            attrs = ["name", "declaration", "__copy__", "__deepcopy__"]
+            for attr in attrs:
+                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
+
+        for cls in Operation:
+            attrs = ["operands"]
+            for attr in attrs:
+                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
 
 
 if __name__ == "__main__":
