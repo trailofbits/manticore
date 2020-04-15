@@ -38,7 +38,7 @@ def main():
 
     set_verbosity(args.v)
 
-    if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
+    if args.url is not None or args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
         ethereum_main(args, logger)
     elif args.argv[0].endswith(".wasm") or args.argv[0].endswith(".wat"):
         wasm_main(args, logger)
@@ -247,6 +247,9 @@ def parse_arguments():
 
     parsed = parser.parse_args(sys.argv[1:])
     config.process_config_values(parser, parsed)
+
+    if parsed.url is not None and parsed.txvictim is not None and not parsed.argv:
+        parsed.argv = [None]
 
     if not parsed.argv:
         print(parser.format_usage() + "error: the following arguments are required: argv")
