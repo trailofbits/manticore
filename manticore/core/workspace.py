@@ -28,7 +28,7 @@ import os
 import errno
 import threading
 from ..utils import config
-from ..utils.helpers import PickleSerializer, StateSerializer
+from ..utils.helpers import PickleSerializer
 from .smtlib.solver import Z3Solver
 from .state import StateBase
 from ..exceptions import ManticoreError
