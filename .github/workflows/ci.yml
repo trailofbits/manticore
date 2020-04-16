@@ -155,9 +155,11 @@ jobs:
 
         run_metacoin_tests(){
             ADDITIONAL_ARGS=""
+            EXPECTED_TX=34
             if [ "$1" = "deploy" ]; then
                 ADDRESS="$(truffle deploy | grep '> contract address:.*' | tail -n 1 | grep -o '0x.*$')"
                 ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txvictim $ADDRESS"
+                EXPECTED_TX=31
             fi
             manticore . --contract MetaCoin --workspace output $ADDITIONAL_ARGS
             ### The original comment says we should get 41 states, but after implementing the shift
@@ -169,8 +171,8 @@ jobs:
             # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
             N="$(ls output/*tx -l | wc -l)"
             rm -rf output
-            if [ "$N" != "34" ]; then
-                echo "Truffle test failed: $N != 34"
+            if [ "$N" != "$EXPECTED_TX" ]; then
+                echo "Truffle test failed: $N != $EXPECTED_TX"
                 return 1
             fi
             echo "Truffle test succeded"
