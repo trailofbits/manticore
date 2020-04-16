@@ -64,7 +64,7 @@ setup(
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
-    dependency_links=["https://github.com/crytic/pyevmasm/tarball/master#egg=pyevmasm-0.2.2"],
+    dependency_links=["https://github.com/crytic/pyevmasm/tarball/master/#egg=pyevmasm-0.2.2"],
 
 
 
