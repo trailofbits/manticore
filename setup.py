@@ -60,10 +60,11 @@ setup(
         "wasm",
         "dataclasses; python_version < '3.7'",
         "psutil",
-        "pyevmasm>=0.2.1",
+        "pyevmasm @ git+https://github.com/crytic/pyevmasm.git@master#egg=pyevmasm",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
+    dependency_links=["git+https://github.com/crytic/pyevmasm.git@master#egg=pyevmasm"],
     entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
 )
