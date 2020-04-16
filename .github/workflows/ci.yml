@@ -49,7 +49,7 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
-        git clone git@github.com:crytic/pyevmasm.git
+        git clone https://github.com/crytic/pyevmasm.git
         cd pyevmasm; python setup install
         # Install solc unconditionally because it only takes a second or two
         sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
