@@ -1,10 +1,13 @@
 import logging
 from abc import ABC, abstractmethod
+from eth_typing import ChecksumAddress, URI
+from io import TextIOBase
 from typing import Dict, Optional, Set, Union
 from urllib.parse import ParseResult, urlparse
 from web3 import Web3
-from ..exceptions import EthereumError
 from ..core.smtlib import Array, BitVec, BitVecConstant, BitVecITE, BitVecZeroExtend, ConstraintSet
+from ..ethereum.state import State
+from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +40,16 @@ class Storage:
         self.map[offset] = 1
         self.data[offset] = value
         self.dirty = True
+
+    def dump(self, stream: TextIOBase, state: State):
+        concrete_indexes = set()
+        for sindex in self.map.written:
+            concrete_indexes.add(state.solve_one(sindex, constrain=True))
+
+        for index in concrete_indexes:
+            stream.write(
+                f"storage[{index:x}] = {state.solve_one(self.data[index], constrain=True):x}"
+            )
 
     @staticmethod
     def from_dict(constraints: ConstraintSet, address: int, items: Dict[int, int]) -> "Storage":
@@ -154,7 +167,7 @@ class Endpoint:
 _endpoints: Dict[str, Endpoint] = {}
 
 
-def _web3_address(address: int) -> str:
+def _web3_address(address: int) -> ChecksumAddress:
     return Web3.toChecksumAddress("0x%0.40x" % address)
 
 
@@ -180,7 +193,7 @@ class RemoteWorldState(WorldState):
         # sam.moelius: Force WebsocketProvider.__init__ to call _get_threaded_loop.  The existing
         # "threaded loop" could be leftover from a fork, in which case it will not work.
         Web3.WebsocketProvider._loop = None
-        web3 = Web3(Web3.WebsocketProvider("ws://" + self._url))
+        web3 = Web3(Web3.WebsocketProvider(URI("ws://" + self._url)))
         blocknumber = web3.eth.blockNumber
         endpoint = _endpoints.get(self._url)
         if endpoint is None:
@@ -225,16 +238,16 @@ class RemoteWorldState(WorldState):
         return self._web3().eth.blockNumber
 
     def get_timestamp(self) -> int:
-        return self._web3().eth.timestamp
+        return self._web3().eth.getBlock("latest")["timestamp"]
 
     def get_difficulty(self) -> int:
-        return self._web3().eth.difficulty
+        return self._web3().eth.getBlock("latest")["difficulty"]
 
     def get_gaslimit(self) -> int:
-        return self._web3().eth.gasLimit
+        return self._web3().eth.getBlock("latest")["gasLimit"]
 
     def get_coinbase(self) -> int:
-        return self._web3().eth.coinbase
+        return int(self._web3().eth.coinbase)
 
 
 ####################################################################################################
