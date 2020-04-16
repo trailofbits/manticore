@@ -1164,8 +1164,8 @@ class Linux(Platform):
 
         # NULL ARGV
         cpu.push_int(0)
-        for arg in reversed(argvlst):  # Argv n
-            cpu.push_int(arg)
+        for val in reversed(argvlst):  # Argv n
+            cpu.push_int(val)
         argv = cpu.STACK
 
         # ARGC
