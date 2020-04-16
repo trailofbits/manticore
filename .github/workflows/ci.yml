@@ -180,6 +180,9 @@ jobs:
         run_tests_from_dir() {
             DIR=$1
             pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
             coverage xml
         }
 
@@ -211,19 +214,16 @@ jobs:
                     && truffle unbox metacoin \
                     && run_metacoin_tests \
                     && run_metacoin_tests deploy
-                RV=$?
                 ;;
             ethereum_vm)
                 make_vmtests
                 echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
-                RV=$?
                 ;;
             wasm)
                 make_wasm_tests
                 echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
-                RV=$?
                 ;;
             wasm_sym)
                 make_wasm_sym_tests ;&
@@ -233,7 +233,6 @@ jobs:
             other)
                 echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
-                RV=$?
                 ;;
             examples)
                 run_examples
