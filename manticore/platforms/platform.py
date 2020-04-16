@@ -2,7 +2,7 @@ import wrapt
 import logging
 from ..utils.event import Eventful
 
-from typing import Callable, Iterable, Mapping
+from typing import Callable, Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ class OSException(Exception):
 
 
 @wrapt.decorator
-def unimplemented(wrapped: Callable, _instance, args: Iterable, kwargs: Mapping):
+def unimplemented(wrapped: Callable, _instance, args: Tuple, kwargs: Dict):
     cpu = getattr(getattr(_instance, "parent", None), "current", None)
     addr_str = "" if cpu is None else f" at {hex(cpu.read_register('PC'))}"
     logger.warning(
