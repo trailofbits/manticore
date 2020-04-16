@@ -560,7 +560,6 @@ class ManticoreEVM(ManticoreBase):
             deps = {}
         else:
             deps = dict(libraries)
-
         contract_names = [contract_name]
         while contract_names:
             contract_name_i = contract_names.pop()
@@ -579,11 +578,12 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = ABI.serialize(constructor_types, *args)
                     else:
                         constructor_data = b""
-
+                    """
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
                         # balance always != 0
+                        print ("CRAZY"*100)
                         if not md.constructor_abi["payable"]:
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
@@ -597,7 +597,7 @@ class ManticoreEVM(ManticoreBase):
                             f"Can't create solidity contract with balance ({balance}) "
                             f"because the owner account ({owner}) has insufficient balance."
                         )
-
+                    """
                     contract_account = self.create_contract(
                         owner=owner,
                         balance=balance,
@@ -608,7 +608,7 @@ class ManticoreEVM(ManticoreBase):
                     )
                 else:
                     contract_account = self.create_contract(
-                        owner=owner, init=md._init_bytecode, balance=balance
+                        owner=owner, init=md._init_bytecode, balance=0, gas=gas
                     )
 
                 if contract_account is None:
@@ -634,6 +634,7 @@ class ManticoreEVM(ManticoreBase):
         for state in self.ready_states:
             if state.platform.get_code(int(contract_account)):
                 return contract_account
+
         logger.info("Failed to compile contract %r", contract_names)
         return None
 
@@ -690,7 +691,7 @@ class ManticoreEVM(ManticoreBase):
             # Account name already used
             raise EthereumError("Name already used")
 
-        self._transaction("CREATE", owner, balance, address, data=init, gaslimit=gas)
+        self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
 
         self._accounts[name] = EVMContract(
@@ -826,7 +827,7 @@ class ManticoreEVM(ManticoreBase):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
-    def _migrate_tx_expressions(self, state, caller, address, value, data):
+    def _migrate_tx_expressions(self, state, caller, address, value, data, gas, price):
         # Copy global constraints into each state.
         # We should somehow remember what has been copied to each state
         # In a second transaction we should only add new constraints.
@@ -855,10 +856,16 @@ class ManticoreEVM(ManticoreBase):
             if isinstance(data, Array):
                 data = ArrayProxy(data)
 
+        if issymbolic(gas):
+            gas = state.migrate_expression(gas)
+
+        if issymbolic(price):
+            gas = state.migrate_expression(price)
+
         for c in global_constraints:
             state.constrain(c)
 
-        return caller, address, value, data
+        return caller, address, value, data, gas, price
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, gas=None, price=1):
         """ Initiates a transaction
@@ -936,8 +943,8 @@ class ManticoreEVM(ManticoreBase):
                 address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
-            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(
-                state, caller, address, value, data
+            caller_migrated, address_migrated, value_migrated, data_migrated, gas_migrated, price_migrated = self._migrate_tx_expressions(
+                state, caller, address, value, data, gas, price
             )
 
             # Different states may CREATE a different set of accounts. Accounts
@@ -954,11 +961,11 @@ class ManticoreEVM(ManticoreBase):
             state.platform.start_transaction(
                 sort=sort,
                 address=address_migrated,
-                price=price,
+                price=price_migrated,
                 data=data_migrated,
                 caller=caller_migrated,
                 value=value_migrated,
-                gas=gas,
+                gas=gas_migrated,
             )
 
         # run over potentially several states and
@@ -1036,6 +1043,7 @@ class ManticoreEVM(ManticoreBase):
             create_value = self.make_symbolic_value()
         else:
             create_value = 0
+
         contract_account = self.solidity_create_contract(
             solidity_filename,
             contract_name=contract_name,
@@ -1043,6 +1051,7 @@ class ManticoreEVM(ManticoreBase):
             args=args,
             compile_args=compile_args,
             balance=create_value,
+            gas=230000
         )
 
         if tx_account == "attacker":
@@ -1085,6 +1094,7 @@ class ManticoreEVM(ManticoreBase):
                     address=contract_account,
                     data=symbolic_data,
                     value=value,
+                    gas=230000
                 )
 
                 logger.info(
@@ -1418,6 +1428,7 @@ class ManticoreEVM(ManticoreBase):
 
         # we initiated the Tx; we need process the outcome for now.
         # Fixme incomplete.
+        '''
         if tx.is_human:
             if tx.sort == "CREATE":
                 if tx.result == "RETURN":
@@ -1428,7 +1439,7 @@ class ManticoreEVM(ManticoreBase):
             logger.info(
                 "Manticore exception: state should be terminated only at the end of the human transaction"
             )
-
+        s'''
         # Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROW; it actually changes the balance and nonce? of some accounts

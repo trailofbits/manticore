@@ -1291,12 +1291,10 @@ class EVM(Eventful):
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
         try:
-            # print(self)
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
-
         except ConcretizeGas as ex:
 
             def setstate(state, value):
@@ -1602,26 +1600,6 @@ class EVM(Eventful):
     def SAR(self, a, b):
         """Arithmetic Shift Right operation"""
         return Operators.SAR(256, b, a)
-
-    def try_simplify_to_constant(self, data):
-        concrete_data = bytearray()
-        # for c in data:
-        for index in range(len(data)):
-            c = dat.get(index, 0)
-            simplified = simplify(c)
-            if isinstance(simplified, Constant):
-                concrete_data.append(simplified.value)
-            else:
-                # simplify by solving. probably means that we need to improve simplification
-                solutions = Z3Solver.instance().get_all_values(
-                    self.constraints, simplified, 2, silent=True
-                )
-                if len(solutions) != 1:
-                    break
-                concrete_data.append(solutions[0])
-        else:
-            data = bytes(concrete_data)
-        return data
 
     def SHA3_gas(self, start, size):
         GSHA3WORD = 6  # Cost of SHA3 per word
@@ -2026,7 +2004,7 @@ class EVM(Eventful):
             SstoreCleanRefund,
             0,
         )
-        self._refund += to_constant(refund)
+        self._refund += simplify(refund)
 
         return gascost
 
@@ -2386,8 +2364,8 @@ class EVM(Eventful):
             result.append(f"Gas: {translate_to_smtlib(gas)[:20]} {gas.taint}")
         else:
             result.append(
-                f"Gas: {gas, self.world.current_transaction.gas, self.world.current_transaction.gas-gas}"
-                + str(self.world.current_transaction)
+                f"Gas: {self.world.current_transaction.gas, '-', gas, '=',self.world.current_transaction.gas-gas}"
+                + str(self.world.current_transaction.sort)
             )
 
         return "\n".join(hex(self.address) + ": " + x for x in result)
@@ -2462,6 +2440,7 @@ class EVMWorld(Platform):
         for index in range(len(data)):
             c = data[index]
             simplified = simplify(c)
+
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
             else:
@@ -2566,6 +2545,7 @@ class EVMWorld(Platform):
         return simplify(tx_fee)
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
+
         if self.depth > 0:
             origin = self.tx_origin()
         else:
@@ -2582,17 +2562,12 @@ class EVMWorld(Platform):
         if address not in self.accounts:
             self.create_account(address)
 
-        enough_gas = Operators.UGE(gas, tx_fee)
-        enough_gas_solutions = Z3Solver.instance().get_all_values(self._constraints, enough_gas)
-        if set(enough_gas_solutions) == {True, False}:
-            raise Concretize(
-                "Forking on tx gas fee",
-                expression=enough_gas,
-                setstate=lambda a, b: None,
-                policy="ALL",
-            )
-        failed = set(enough_gas_solutions) == {False}
-        self.send_funds(caller, address, value)
+        enough_gas_for_tx_fee = Operators.UGE(gas, tx_fee)
+        print ("enough_gas_for_tx_fee", gas, tx_fee)
+        failed = not self._concretize_bool(enough_gas_for_tx_fee)
+
+        if not failed:
+            self.send_funds(caller, address, value)
 
         # If not a human tx, reset returndata
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
@@ -2654,10 +2629,10 @@ class EVMWorld(Platform):
             unused_gas = 0
             refund = 0
         else:
-            unused_gas = vm.gas
+            unused_gas = vm._gas
             refund = vm._refund
 
-        used_gas = tx.gas - unused_gas
+        used_gas = Operators.ZEXTEND(tx.gas, 512) - unused_gas
         refund = Operators.ITEBV(512, Operators.UGE(refund, used_gas // 2), used_gas // 2, refund)
 
         if tx.is_human:
@@ -2668,17 +2643,19 @@ class EVMWorld(Platform):
             used_fee = used_gas * tx.price
             self.add_to_balance(tx.caller, unused_fee)
             self.add_to_balance(tx.caller, refund * tx.price)
-            self.add_to_balance(self.block_coinbase(), used_fee - refund * tx.price)
+            if self.block_coinbase() in self:
+                self.add_to_balance(self.block_coinbase(), used_fee - refund * tx.price)
+            else:
+                logger.warning("Coinbase not set. Throwing %r weis for the gas", used_fee - refund * tx.price)
         else:
             # if not rollback:
             # Refund unused gas to caller if
             self.current_vm._gas += remaining_gas
             self.current_vm._refund += refund
-
         if tx.sort == "CREATE":
-            if tx.result in ("RETURN", "STOP"):
+            if result in ("RETURN", "STOP"):
                 # vm.consume(len(tx.return_data) * GCREATEDATAGAS)
-                self.set_code(tx.address, tx.return_data)
+                self.set_code(tx.address, data)
             else:
                 self.delete_account(tx.address)
 
@@ -2686,8 +2663,8 @@ class EVMWorld(Platform):
         self._transactions.append(tx)
         self._publish("did_close_transaction", tx)
 
-        if self.depth == 0:
-            raise TerminateState(tx.result)
+        #if self.depth == 0:
+        #    raise TerminateState(tx.result)
 
     @property
     def all_transactions(self):
@@ -2867,6 +2844,8 @@ class EVMWorld(Platform):
         return new_nonce
 
     def set_balance(self, address, value):
+        if isinstance(value, BitVec):
+            value = Operators.ZEXTEND(value, 512)
         self._world_state[int(address)]["balance"] = value
 
     def get_balance(self, address):
@@ -2875,12 +2854,18 @@ class EVMWorld(Platform):
         return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
 
     def add_to_balance(self, address, value):
+        if isinstance(value, BitVec):
+            value = Operators.ZEXTEND(value, 512)
         self._world_state[address]["balance"] += value
 
     def sub_from_balance(self, address, value):
+        if isinstance(value, BitVec):
+            value = Operators.ZEXTEND(value, 512)
         self._world_state[address]["balance"] -= value
 
     def send_funds(self, sender, recipient, value):
+        if isinstance(value, BitVec):
+            value = Operators.ZEXTEND(value, 512)
         self._world_state[sender]["balance"] -= value
         self._world_state[recipient]["balance"] += value
 
@@ -2931,6 +2916,10 @@ class EVMWorld(Platform):
         self._block_header = BlockHeader(blocknumber, timestamp, difficulty, gaslimit, coinbase)
 
     def end_block(self, block_reward=None):
+        coinbase = self.block_coinbase()
+        if coinbase not in self:
+            raise EVMException("Coinbase not set")
+
         if block_reward is None:
             block_reward = 2000000000000000000  # 2 eth
         self.add_to_balance(self.block_coinbase(), block_reward)
@@ -3209,6 +3198,25 @@ class EVMWorld(Platform):
                 policy="ALL",
             )
 
+
+    def _concretize_bool(self, constraint, message="Concretizing generic condition"):
+
+        if isinstance(constraint, bool):
+            constraint_solutions = {constraint}
+        else:
+            constraint_solutions = Z3Solver.instance().get_all_values(
+            self._constraints, constraint
+            )
+
+        if set(constraint_solutions) == {True, False}:
+            raise Concretize(
+                message,
+                expression=constraint,
+                setstate=lambda a, b: None,
+                policy="ALL",
+            )
+        return set(constraint_solutions) == {True}
+
     def _process_pending_transaction(self):
         # Nothing to do here if no pending transactions
         if self._pending_transaction is None:
@@ -3246,7 +3254,8 @@ class EVMWorld(Platform):
             expected_address = self.new_address(sender=caller)
             if address is None:
                 address = expected_address
-            self.create_account(address)
+            if address not in self.accounts:
+                self.create_account(address)
             if address != expected_address:
                 raise EthereumError(
                     f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
@@ -3256,50 +3265,41 @@ class EVMWorld(Platform):
                 # Creating an unaccessible account
                 self.create_account(address=address, nonce=0)
 
-        failed = value > self.get_balance(caller)
-
         # Check depth
-        failed = failed or self.depth >= 1024
+        failed = self.depth >= 1024
 
-        # Fork on enough funds
+        # Fork on enough funds for value and gas
         if not failed:
+            aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
+            aux_value = Operators.ZEXTEND(value, 512)
             if self.depth == 0:
                 # take the gas from the balance
-                aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
-                aux_value = Operators.ZEXTEND(value, 512)
                 aux_price = Operators.ZEXTEND(price, 512)
                 aux_gas = Operators.ZEXTEND(gas, 512)
-                fee = aux_price * aux_gas
+                aux_fee = aux_price * aux_gas
                 # Iff a human tx debit the fee
-                if self.depth == 0:
-                    enough_balance = Operators.UGE(aux_src_balance, aux_value + fee)
-                else:
-                    enough_balance = Operators.UGE(aux_src_balance, aux_value)
+                enough_balance = Operators.UGE(aux_src_balance, aux_value + aux_fee)
 
-                enough_balance_solutions = Z3Solver.instance().get_all_values(
-                    self._constraints, enough_balance
-                )
+            else:
+                enough_balance = Operators.UGE(aux_src_balance, aux_value)
 
-                if set(enough_balance_solutions) == {True, False}:
-                    raise Concretize(
-                        "Forking on available funds",
-                        expression=enough_balance,
-                        setstate=lambda a, b: None,
-                        policy="ALL",
-                    )
-                failed = set(enough_balance_solutions) == {False}
+            failed = not self._concretize_bool(enough_balance, "Forking on available funds")
+
+        if failed:
+            logger.debug("Failing TX. Too deep or not enough balance to pay for gas")
 
         # processed
         self._pending_transaction = None
-
         self._open_transaction(sort, address, price, data, caller, value, gas=gas)
 
         if failed:
             self._close_transaction("TXERROR", rollback=True)
 
-        # Transaction to normal account
-        elif not self.get_code(address):  # sort in ("CALL", "DELEGATECALL", "CALLCODE") and\
+        elif not self.get_code(address) and sort in ("CALL", "DELEGATECALL", "CALLCODE"):
+            # Transaction to normal account with empty code
             self._close_transaction("STOP")
+
+
 
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged
@@ -3312,13 +3312,13 @@ class EVMWorld(Platform):
 
         if last_tx:
             at_runtime = last_tx.sort != "CREATE"
-            address, offset, at_init = state.context["evm.trace"][-1]
+            address, offset, at_init = state.context.get("evm.trace", ((None,None,None),))[-1]
             assert last_tx.result is not None or at_runtime != at_init
 
             # Last instruction if last tx was valid
             if str(state.context["last_exception"]) != "TXERROR":
                 metadata = mevm.get_metadata(blockchain.last_transaction.address)
-                if metadata is not None:
+                if metadata is not None and address is not None:
                     stream.write("Last instruction at contract %x offset %x\n" % (address, offset))
                     source_code_snippet = metadata.get_source_for(offset, at_runtime)
                     if source_code_snippet:

@@ -102,9 +102,9 @@ class ConstraintSet:
         self._constraints.append(constraint)
 
         if check:
-            from ...core.smtlib import solver
+            from ...core.smtlib import Z3Solver
 
-            if not solver.check(self):
+            if not Z3Solver.instance().check(self):
                 raise ValueError("Added an impossible constraint")
 
     def _get_sid(self):

@@ -325,12 +325,12 @@ class ConstantFolderSimplifier(Visitor):
             return operands[0]
 
     def visit_BitVecExtract(self, expression, *operands):
-        if all(isinstance(o, Constant) for o in expression.operands):
+        if all(isinstance(o, Constant) for o in operands):
             value = expression.operands[0].value
             begining = expression.begining
             end = expression.end
             value = value >> begining
-            mask = 2 ** (end - begining + 1) - 1
+            mask = (1 << (end - begining)) - 1
             value = value & mask
             return BitVecConstant(expression.size, value, taint=expression.taint)
 

@@ -479,7 +479,7 @@ class BitVecConstant(BitVec):
     __slots__ = ["_value"]
 
     def __init__(self, size: int, value: int, *args, **kwargs):
-        self._value = value
+        self._value = value & ((1 << size) - 1)
         super().__init__(size, *args, **kwargs)
 
     def __bool__(self):
@@ -1153,10 +1153,10 @@ class ArrayProxy(Array):
         is_known_index = BoolConstant(False)
         written = self.written
         if isinstance(index, Constant):
-            if index.value in {x.value for x in written if isinstance(x, Constant) }:
+            if index.value in {x.value for x in written if isinstance(x, Constant)}:
                 return BoolConstant(True)
 
-            for known_index in {x for x in written if not isinstance(x, Constant) }:
+            for known_index in {x for x in written if not isinstance(x, Constant)}:
                 is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
             return is_known_index
 
