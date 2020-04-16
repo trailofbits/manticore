@@ -15,7 +15,7 @@ consts = get_group("core")
 consts.add(
     "compress_states",
     default=True,
-    description="Seamlessly compress state files on disk. Reduces space usage and improves performance on slow disks,"
+    description="Seamlessly compress state files on disk. Reduces space usage and improves performance on slow disks, "
     "at the cost of some slight [de]compression overhead.",
 )
 
