@@ -2563,7 +2563,6 @@ class EVMWorld(Platform):
             self.create_account(address)
 
         enough_gas_for_tx_fee = Operators.UGE(gas, tx_fee)
-        print ("enough_gas_for_tx_fee", gas, tx_fee)
         failed = not self._concretize_bool(enough_gas_for_tx_fee)
 
         if not failed:
@@ -2646,7 +2645,9 @@ class EVMWorld(Platform):
             if self.block_coinbase() in self:
                 self.add_to_balance(self.block_coinbase(), used_fee - refund * tx.price)
             else:
-                logger.warning("Coinbase not set. Throwing %r weis for the gas", used_fee - refund * tx.price)
+                logger.warning(
+                    "Coinbase not set. Throwing %r weis for the gas", used_fee - refund * tx.price
+                )
         else:
             # if not rollback:
             # Refund unused gas to caller if
@@ -2663,7 +2664,7 @@ class EVMWorld(Platform):
         self._transactions.append(tx)
         self._publish("did_close_transaction", tx)
 
-        #if self.depth == 0:
+        # if self.depth == 0:
         #    raise TerminateState(tx.result)
 
     @property
@@ -3198,22 +3199,16 @@ class EVMWorld(Platform):
                 policy="ALL",
             )
 
-
     def _concretize_bool(self, constraint, message="Concretizing generic condition"):
 
         if isinstance(constraint, bool):
             constraint_solutions = {constraint}
         else:
-            constraint_solutions = Z3Solver.instance().get_all_values(
-            self._constraints, constraint
-            )
+            constraint_solutions = Z3Solver.instance().get_all_values(self._constraints, constraint)
 
         if set(constraint_solutions) == {True, False}:
             raise Concretize(
-                message,
-                expression=constraint,
-                setstate=lambda a, b: None,
-                policy="ALL",
+                message, expression=constraint, setstate=lambda a, b: None, policy="ALL"
             )
         return set(constraint_solutions) == {True}
 
@@ -3299,8 +3294,6 @@ class EVMWorld(Platform):
             # Transaction to normal account with empty code
             self._close_transaction("STOP")
 
-
-
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged
 
@@ -3312,7 +3305,7 @@ class EVMWorld(Platform):
 
         if last_tx:
             at_runtime = last_tx.sort != "CREATE"
-            address, offset, at_init = state.context.get("evm.trace", ((None,None,None),))[-1]
+            address, offset, at_init = state.context.get("evm.trace", ((None, None, None),))[-1]
             assert last_tx.result is not None or at_runtime != at_init
 
             # Last instruction if last tx was valid
