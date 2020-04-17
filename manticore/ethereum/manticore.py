@@ -1,7 +1,6 @@
 import binascii
 import json
 import logging
-import string
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from typing import Dict, Optional, Union
@@ -37,7 +36,7 @@ from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
 from ..utils import config, log
 from ..utils.deprecated import deprecated
-from ..utils.helpers import PickleSerializer
+from ..utils.helpers import PickleSerializer, printable_bytes
 
 logger = logging.getLogger(__name__)
 logging.getLogger("CryticCompile").setLevel(logging.ERROR)
@@ -1653,16 +1652,13 @@ class ManticoreEVM(ManticoreBase):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = "".join(
-                    [c for c in map(chr, solved_memlog) if c in string.printable]
-                )
 
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write(
                     "Memlog: %s (%s) %s\n"
                     % (
                         binascii.hexlify(solved_memlog).decode(),
-                        printable_bytes,
+                        printable_bytes(solved_memlog),
                         flagged(is_log_symbolic),
                     )
                 )

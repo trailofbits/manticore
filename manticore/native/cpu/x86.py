@@ -21,8 +21,10 @@ from .abstractcpu import (
 
 
 from ...core.smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors, issymbolic
-from ..memory import ConcretizeMemory
+from ..memory import Memory, ConcretizeMemory
 from functools import reduce
+
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -723,8 +725,8 @@ class AMD64RegFile(RegisterFile):
 class AMD64Operand(Operand):
     """ This class deals with capstone X86 operands """
 
-    def __init__(self, cpu, op, **kwargs):
-        super().__init__(cpu, op, **kwargs)
+    def __init__(self, cpu: Cpu, op):
+        super().__init__(cpu, op)
 
     @property
     def type(self):
@@ -804,7 +806,7 @@ class X86Cpu(Cpu):
     A CPU model.
     """
 
-    def __init__(self, regfile, memory, *args, **kwargs):
+    def __init__(self, regfile: RegisterFile, memory: Memory, *args, **kwargs):
         """
         Builds a CPU model.
         :param regfile: regfile object for this CPU.
@@ -812,7 +814,7 @@ class X86Cpu(Cpu):
         """
         super().__init__(regfile, memory, *args, **kwargs)
         # Segments ('base', 'limit', 'perms', 'gatetype')
-        self._segments = {}
+        self._segments: Dict[str, Any] = {}
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -6474,7 +6476,7 @@ class AMD64Cpu(X86Cpu):
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_64
 
-    def __init__(self, memory, *args, **kwargs):
+    def __init__(self, memory: Memory, *args, **kwargs):
         """
         Builds a CPU model.
         :param memory: memory object for this CPU.
@@ -6598,7 +6600,7 @@ class I386Cpu(X86Cpu):
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_32
 
-    def __init__(self, memory, *args, **kwargs):
+    def __init__(self, memory: Memory, *args, **kwargs):
         """
         Builds a CPU model.
         :param memory: memory object for this CPU.

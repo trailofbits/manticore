@@ -18,7 +18,7 @@ import threading
 import collections
 import shlex
 import time
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 from subprocess import PIPE, Popen
 import re
 from . import operators as Operators
@@ -276,7 +276,7 @@ class Z3Solver(Solver):
         except Exception as e:
             logger.error(str(e))
 
-    def _reset(self, constraints=None):
+    def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
         if self._proc is None:
             self._start_proc()
@@ -292,7 +292,7 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
-    def _send(self, cmd: Union[str, ConstraintSet]):
+    def _send(self, cmd: str) -> None:
         """
         Send a string to the solver.
 
@@ -330,8 +330,13 @@ class Z3Solver(Solver):
 
         return buf
 
-    def __readline_and_count(self):
-        buf = self._proc.stdout.readline()
+    def __readline_and_count(self) -> Tuple[str, int, int]:
+        stdout = self._proc.stdout
+        if stdout is None:
+            raise SolverError("Could not read from stdout: file descriptor is None")
+        buf = stdout.readline()
+        if buf is None:
+            raise SolverError("Could not read from stdout")
         return buf, buf.count("("), buf.count(")")
 
     # UTILS: check-sat get-value
@@ -411,14 +416,14 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints: ConstraintSet, expression=True):
+    def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
                 return expression
             else:
                 # if True check if constraints are feasible
-                self._reset(constraints)
+                self._reset(constraints.to_string())
                 return self._is_sat()
         assert isinstance(expression, Bool)
 
@@ -532,7 +537,7 @@ class Z3Solver(Solver):
                             raise SolverError("Could not match objective value regex")
                 finally:
                     self._pop()
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     self._send(aux.declaration)
 
             operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
@@ -592,7 +597,7 @@ class Z3Solver(Solver):
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
 
-    def get_value(self, constraints, *expressions):
+    def get_value(self, constraints: ConstraintSet, *expressions):
         """
         Ask the solver for one possible result of given expressions using
         given set of constraints.
@@ -617,7 +622,7 @@ class Z3Solver(Solver):
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
 
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     if not self._is_sat():
                         raise SolverError(
                             "Solver could not find a value for expression under current constraint set"
@@ -638,7 +643,7 @@ class Z3Solver(Solver):
 
                 temp_cs.add(var == expression)
 
-                self._reset(temp_cs)
+                self._reset(temp_cs.to_string())
 
                 if not self._is_sat():
                     raise SolverError(

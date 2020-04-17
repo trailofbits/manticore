@@ -56,7 +56,7 @@ class ConstraintSet:
             },
         )
 
-    def __enter__(self):
+    def __enter__(self) -> "ConstraintSet":
         assert self._child is None
         self._child = self.__class__()
         self._child._parent = self
@@ -64,22 +64,20 @@ class ConstraintSet:
         self._child._declarations = dict(self._declarations)
         return self._child
 
-    def __exit__(self, ty, value, traceback):
+    def __exit__(self, ty, value, traceback) -> None:
         self._child._parent = None
         self._child = None
 
-    def __len__(self):
+    def __len__(self) -> int:
         if self._parent is not None:
             return len(self._constraints) + len(self._parent)
         return len(self._constraints)
 
-    def add(self, constraint, check=False):
+    def add(self, constraint) -> None:
         """
         Add a constraint to the set
 
         :param constraint: The constraint to add to the set.
-        :param check: Currently unused.
-        :return:
         """
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
@@ -101,13 +99,7 @@ class ConstraintSet:
 
         self._constraints.append(constraint)
 
-        if check:
-            from ...core.smtlib import Z3Solver
-
-            if not Z3Solver.instance().check(self):
-                raise ValueError("Added an impossible constraint")
-
-    def _get_sid(self):
+    def _get_sid(self) -> int:
         """ Returns a unique id. """
         assert self._child is None
         self._sid += 1
@@ -263,7 +255,7 @@ class ConstraintSet:
             name = f"{name}_{self._get_sid()}"
         return name
 
-    def is_declared(self, expression_var):
+    def is_declared(self, expression_var) -> bool:
         """ True if expression_var is declared in this constraint set """
         if not isinstance(expression_var, Variable):
             raise ValueError(f"Expression must be a Variable (not a {type(expression_var)})")
