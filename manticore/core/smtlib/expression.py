@@ -159,6 +159,10 @@ class Bool(Expression):
         return BoolXor(self.cast(other), self)
 
     def __bool__(self):
+        from .visitors import simplify
+        x = simplify(self)
+        if isinstance(x, Constant):
+            return x.value
         raise NotImplementedError("__bool__ for Bool")
 
 

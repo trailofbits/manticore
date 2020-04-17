@@ -326,7 +326,7 @@ class ConstantFolderSimplifier(Visitor):
 
     def visit_BitVecExtract(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
-            value = expression.operands[0].value
+            value = operands[0].value
             begining = expression.begining
             end = expression.end
             value = value >> begining
