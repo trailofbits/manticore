@@ -1935,6 +1935,7 @@ class EVM(Eventful):
 
         def ITE(*args):
             return Operators.ITEBV(512, *args)
+
         def AND(*args):
             return Operators.AND(*args)
 
