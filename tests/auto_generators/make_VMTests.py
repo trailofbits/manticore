@@ -302,13 +302,12 @@ if __name__ == '__main__':
     elif os.path.isdir(args.output_path):
         # /xxx/yyy/testfile.json -> $output_path/yyy_testfile.py
         stem, ext = os.path.splitext(os.path.basename(args.input_path))
-        output_path = os.path.join(args.output_path, stem + '.py')
+        output_path = os.path.join(args.output_path, f'test_{stem}.py')
         #If output pats collides add the containing folder to the name
         if os.path.exists(output_path):
             folders = args.input_path.split(os.sep)
             if len(folders) >= 2:
-                stem = f"{folders[-2]}_{stem}"
-            output_path = os.path.join(args.output_path, stem + '.py')
+                output_path = os.path.join(args.output_path, f"test_{folders[-2]}_{stem}.py")
         args.output_path = output_path
     #or else /xxx/yyy/testfile.json -> $whatever
 
