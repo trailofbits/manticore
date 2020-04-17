@@ -242,7 +242,7 @@ def gen_testfile(testcases, fork):
             logging.warning(f"Skipping testcase {name}. Wrong fork: {testcase['network']} != {fork}")
             continue
         total_count += 1
-        output += gen_body(name, testcase)
+        output += gen_body(name.replace("-", "_", testcase)
     output += gen_footer(testcases)
     return output
 
