@@ -603,9 +603,6 @@ def concretized_args(**policies):
     return concretizer
 
 
-import functools
-
-
 class EVM(Eventful):
     """
     Machine State. The machine state is defined as
@@ -644,7 +641,7 @@ class EVM(Eventful):
                 raise AttributeError("unreadable attribute")
             from types import MethodType
 
-            @functools.wraps(self._pre)
+            @wraps(self._pre)
             def _pre_func(my_obj, *args, **kwargs):
                 if my_obj._on_transaction:
                     result = self._pos(my_obj, *args, **kwargs)
@@ -1936,12 +1933,11 @@ class EVM(Eventful):
         original_value = self.world._callstack[-1][-2].get(offset, 0)
         current_value = self.world.get_storage_data(storage_address, offset)
 
-        ITE = lambda *args: Operators.ITEBV(512, *args)
-        AND = lambda *args: Operators.AND(*args)
-        # current_value == value => SSTORENOOP
-        # current_value != value, original_value == current_gas, original_value == 0 => SSTOREINITGAS
-        # current_value != value, original_value == current_gas, original_value != 0 => SSTORECLEANGAS
-        # current_value != value, original_value != current_gas => SSTOREDIRTYGASS
+        def ITE(*args):
+            return Operators.ITEBV(512, *args)
+        def AND(*args):
+            return Operators.AND(*args)
+
         gascost = ITE(
             current_value == value,
             SSTORENOOP,
@@ -2534,7 +2530,7 @@ class EVMWorld(Platform):
             for index in range(len(bytecode_or_data)):
                 try:
                     c = bytecode_or_data.get(index, 0)
-                except:
+                except AttributeError:
                     c = bytecode_or_data[index]
 
                 zerocount += Operators.ITEBV(256, c == 0, 1, 0)
