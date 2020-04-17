@@ -28,7 +28,7 @@ import os
 import errno
 import threading
 from ..utils import config
-from ..utils.helpers import PickleSerializer
+from ..utils.helpers import StateSerializer, PickleSerializer
 from .smtlib.solver import Z3Solver
 from .state import StateBase
 from ..exceptions import ManticoreError
@@ -420,12 +420,12 @@ class Workspace:
 
     def __init__(self, store_or_desc: Union[None, Store, str] = None):
         if isinstance(store_or_desc, Store):
-            self._store = store_or_desc
+            self._store: Store = store_or_desc
         else:
             self._store = Store.fromdescriptor(store_or_desc)
-        self._serializer = PickleSerializer()
-        self._prefix = "state_"
-        self._suffix = ".pkl"
+        self._serializer: StateSerializer = PickleSerializer()
+        self._prefix: str = "state_"
+        self._suffix: str = ".pkl"
 
     @property
     def uri(self):

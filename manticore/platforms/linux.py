@@ -1042,13 +1042,13 @@ class Linux(Platform):
         self.current.PC = elf_entry
         logger.debug(f"Entry point updated: {elf_entry:016x}")
 
-    def load(self, filename: str, env) -> None:
+    def load(self, filename: str, env_list: List) -> None:
         """
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
 
         :param filename: pathname of the file to be executed. (used for auxv)
-        :param list env: A list of env variables. (used for extracting vars that control ld behavior)
+        :param env_list: A list of env variables. (used for extracting vars that control ld behavior)
         :raises error:
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
@@ -1059,7 +1059,7 @@ class Linux(Platform):
         cpu = self.current
         elf = self.elf
         arch = self.arch
-        env = dict(var.split("=", 1) for var in env if "=" in var)
+        env = dict(var.split("=", 1) for var in env_list if "=" in var)
         addressbitsize = {"x86": 32, "x64": 64, "ARM": 32, "AArch64": 64}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
@@ -1496,7 +1496,7 @@ class Linux(Platform):
             )
             return -e.err
 
-    def sys_read(self, fd: int, buf, count) -> int:
+    def sys_read(self, fd: int, buf: int, count: int) -> int:
         data: bytes = bytes()
         if count != 0:
             # TODO check count bytes from buf
@@ -1571,10 +1571,9 @@ class Linux(Platform):
         """
         return -errno.ENOSYS
 
-    def sys_access(self, buf, mode) -> int:
+    def sys_access(self, buf: int, mode: int) -> int:
         """
         Checks real user's permissions for a file
-        :rtype: int
 
         :param buf: a buffer containing the pathname to the file to check its permissions.
         :param mode: the access permissions to check.
@@ -2258,7 +2257,7 @@ class Linux(Platform):
         fd = self._open(f)
         return fd
 
-    def _is_sockfd(self, sockfd):
+    def _is_sockfd(self, sockfd: int) -> int:
         try:
             fd = self.files[sockfd]
             if not isinstance(fd, SocketDesc):
@@ -2267,19 +2266,19 @@ class Linux(Platform):
         except IndexError:
             return -errno.EBADF
 
-    def sys_bind(self, sockfd, address, address_len):
+    def sys_bind(self, sockfd: int, address, address_len) -> int:
         return self._is_sockfd(sockfd)
 
-    def sys_listen(self, sockfd, backlog):
+    def sys_listen(self, sockfd: int, backlog) -> int:
         return self._is_sockfd(sockfd)
 
-    def sys_accept(self, sockfd, addr, addrlen):
+    def sys_accept(self, sockfd: int, addr, addrlen) -> int:
         """
         https://github.com/torvalds/linux/blob/63bdf4284c38a48af21745ceb148a087b190cd21/net/socket.c#L1649-L1653
         """
         return self.sys_accept4(sockfd, addr, addrlen, 0)
 
-    def sys_accept4(self, sockfd, addr, addrlen, flags):
+    def sys_accept4(self, sockfd: int, addr, addrlen, flags) -> int:
         # TODO: ehennenfent - Only handles the flags=0 (sys_accept) case
         ret = self._is_sockfd(sockfd)
         if ret != 0:

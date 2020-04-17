@@ -292,7 +292,7 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
-    def _send(self, cmd: str):
+    def _send(self, cmd: str) -> None:
         """
         Send a string to the solver.
 
@@ -330,8 +330,13 @@ class Z3Solver(Solver):
 
         return buf
 
-    def __readline_and_count(self):
-        buf = self._proc.stdout.readline()
+    def __readline_and_count(self) -> Tuple[str, int, int]:
+        stdout = self._proc.stdout
+        if stdout is None:
+            raise SolverError("Could not read from stdout: file descriptor is None")
+        buf = stdout.readline()
+        if buf is None:
+            raise SolverError("Could not read from stdout")
         return buf, buf.count("("), buf.count(")")
 
     # UTILS: check-sat get-value
@@ -411,7 +416,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints: ConstraintSet, expression=True):
+    def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
@@ -592,7 +597,7 @@ class Z3Solver(Solver):
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
 
-    def get_value(self, constraints, *expressions):
+    def get_value(self, constraints: ConstraintSet, *expressions):
         """
         Ask the solver for one possible result of given expressions using
         given set of constraints.
