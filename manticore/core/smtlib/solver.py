@@ -18,7 +18,7 @@ import threading
 import collections
 import shlex
 import time
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 from subprocess import PIPE, Popen
 import re
 from . import operators as Operators
@@ -276,7 +276,7 @@ class Z3Solver(Solver):
         except Exception as e:
             logger.error(str(e))
 
-    def _reset(self, constraints=None):
+    def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
         if self._proc is None:
             self._start_proc()
@@ -423,7 +423,7 @@ class Z3Solver(Solver):
                 return expression
             else:
                 # if True check if constraints are feasible
-                self._reset(constraints)
+                self._reset(constraints.to_string())
                 return self._is_sat()
         assert isinstance(expression, Bool)
 
@@ -537,7 +537,7 @@ class Z3Solver(Solver):
                             raise SolverError("Could not match objective value regex")
                 finally:
                     self._pop()
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     self._send(aux.declaration)
 
             operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
@@ -622,7 +622,7 @@ class Z3Solver(Solver):
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
 
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     if not self._is_sat():
                         raise SolverError(
                             "Solver could not find a value for expression under current constraint set"
@@ -643,7 +643,7 @@ class Z3Solver(Solver):
 
                 temp_cs.add(var == expression)
 
-                self._reset(temp_cs)
+                self._reset(temp_cs.to_string())
 
                 if not self._is_sat():
                     raise SolverError(

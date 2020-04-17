@@ -23,7 +23,7 @@ from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
 from capstone.arm import ARM_REG_ENDING
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f"{__name__}.registers")
@@ -733,7 +733,6 @@ class Cpu(Eventful):
 
         :param where: address to write to
         :param data: data to write
-        :type data: str or list
         :param force: whether to ignore memory permissions
         """
 
@@ -822,7 +821,7 @@ class Cpu(Eventful):
             where += 1
         return s.getvalue().decode()
 
-    def push_bytes(self, data: str, force: bool = False):
+    def push_bytes(self, data, force: bool = False):
         """
         Write `data` to the stack and decrement the stack pointer accordingly.
 

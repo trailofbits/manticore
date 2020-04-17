@@ -33,7 +33,7 @@ from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemor
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, IO, List, Optional, Set, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -75,14 +75,13 @@ def mode_from_flags(file_flags: int) -> str:
 
 
 class File:
-    def __init__(self, path, flags):
+    def __init__(self, path: str, flags: int):
         # TODO: assert file is seekable; otherwise we should save what was
         # read from/written to the state
         mode = mode_from_flags(flags)
         if mode == "rb+" and not os.path.exists(path):
-            self.file = open(path, "wb+")
-        else:
-            self.file = open(path, mode)
+            mode = "wb+"
+        self.file: IO[Any] = open(path, mode)
 
     def __getstate__(self):
         state = {"name": self.name, "mode": self.mode, "closed": self.closed}
@@ -235,7 +234,7 @@ class SymbolicFile(File):
         self,
         constraints,
         path: str = "sfile",
-        mode: str = "rw",
+        flags: int = os.O_RDWR,
         max_size: int = 100,
         wildcard: str = "+",
     ):
@@ -243,12 +242,12 @@ class SymbolicFile(File):
         Builds a symbolic file
 
         :param constraints: the SMT constraints
-        :param str path: the pathname of the symbolic file
-        :param str mode: the access permissions of the symbolic file
+        :param path: the pathname of the symbolic file
+        :param mode: the access permissions of the symbolic file
         :param max_size: Maximum amount of bytes of the symbolic file
-        :param str wildcard: Wildcard to be used in symbolic file
+        :param wildcard: Wildcard to be used in symbolic file
         """
-        super().__init__(path, mode)
+        super().__init__(path, flags)
 
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
@@ -910,7 +909,7 @@ class Linux(Platform):
 
         self.current.memory.mmap(0xFFFF0000, len(page_data), "r x", page_data)
 
-    def setup_stack(self, argv: List[str], envp: List[str]) -> None:
+    def setup_stack(self, argv: List, envp: List) -> None:
         """
         :param Cpu cpu: The cpu instance
         :param argv: list of parameters for the program to execute.
@@ -1693,11 +1692,11 @@ class Linux(Platform):
         else:
             return File(filename, flags)
 
-    def sys_open(self, buf: int, flags: int, mode) -> int:
+    def sys_open(self, buf: int, flags: int, mode: Optional[int]) -> int:
         """
         :param buf: address of zero-terminated pathname
         :param flags: file access bits
-        :param mode: file permission mode
+        :param mode: file permission mode (ignored)
         """
         filename = self.current.read_string(buf)
         try:
@@ -3069,14 +3068,12 @@ class SLinux(Linux):
         self.symbolic_files = state["symbolic_files"]
         super().__setstate__(state)
 
-    def _sys_open_get_file(self, filename, flags):
+    def _sys_open_get_file(self, filename: str, flags: int) -> File:
         if filename in self.symbolic_files:
             logger.debug(f"{filename} file is considered symbolic")
-            f = SymbolicFile(self.constraints, filename, flags)
+            return SymbolicFile(self.constraints, filename, flags)
         else:
-            f = super()._sys_open_get_file(filename, flags)
-
-        return f
+            return super()._sys_open_get_file(filename, flags)
 
     def _transform_write_data(self, data: MixedSymbolicBuffer) -> bytes:
         bytes_concretized: int = 0
@@ -3203,7 +3200,7 @@ class SLinux(Linux):
         # TODO: Make a concrete connection actually an option
         # return super().sys_accept(sockfd, addr, addrlen)
 
-    def sys_open(self, buf: int, flags: int, mode: int) -> int:
+    def sys_open(self, buf: int, flags: int, mode: Optional[int]) -> int:
         """
         A version of open(2) that includes a special case for a symbolic path.
         When given a symbolic path, it will create a temporary file with
@@ -3229,7 +3226,7 @@ class SLinux(Linux):
 
         return rv
 
-    def sys_openat(self, dirfd: int, buf: int, flags: int, mode: int) -> int:
+    def sys_openat(self, dirfd, buf, flags: int, mode: int) -> int:
         """
         A version of openat that includes a symbolic path and symbolic directory file descriptor
 
