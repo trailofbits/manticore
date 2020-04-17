@@ -291,6 +291,8 @@ if __name__ == '__main__':
         if not os.path.isfile(args.input_path) or not args.input_path.endswith('.json'):
             logging.debug('Input file args.input_path looks odd. Expecting a .json file.')
         testcases = dict(json.loads(fp.read()))
+
+    logging.info(f"Loaded {len(testcases)} testcases from {args.input_path}")
     
     #output path
     if args.output_path == '!inplace':
@@ -298,9 +300,16 @@ if __name__ == '__main__':
         stem, ext = os.path.splitext(args.input_path)
         args.output_path = stem + '.py'
     elif os.path.isdir(args.output_path):
-        # /xxx/yyy/testfile.json -> /xxx/yyy/testfile.py
+        # /xxx/yyy/testfile.json -> $output_path/yyy_testfile.py
         stem, ext = os.path.splitext(os.path.basename(args.input_path))
-        args.output_path = os.path.join(args.output_path, stem + '.py')
+        output_path = os.path.join(args.output_path, stem + '.py')
+        #If output pats collides add the containing folder to the name
+        if os.path.exists(output_path):
+            folders = args.input_path.split(os.sep)
+            if len(folders) >= 2:
+                stem = f"{folders[-2]}_{stem}"
+            output_path = os.path.join(args.output_path, stem + '.py')
+        args.output_path = output_path
     #or else /xxx/yyy/testfile.json -> $whatever
 
     if os.path.exists(args.output_path):
