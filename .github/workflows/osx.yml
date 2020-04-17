@@ -1,0 +1,144 @@
+name: MacOS Tests
+
+on:
+  # Delete the following line before merging:
+  pull_request:
+  schedule:
+    # Run every day at 11 PM.
+    - cron:  '0 23 * * *'
+
+jobs:
+  tests:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        type: ["ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install NPM
+      uses: actions/setup-node@v1
+      with:
+        node-version: '13.x'
+    - name: Install dependencies (Linux)
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+        EXTRAS="dev-noks"
+        pip install -e .[$EXTRAS]
+    - name: Install Dependencies
+      run: |
+        brew install bash
+        brew tap ethereum/ethereum
+        brew install solidity@4
+        brew install wabt
+    - name: Run Tests
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+
+        make_vmtests(){
+            DIR=`pwd`
+            if  [ ! -f ethereum_vm/.done ]; then
+                echo "Automaking VMTests" `pwd`
+                cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
+                rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
+                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
+                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+                rm -rf ./vmtests
+                touch ethereum_vm/.done
+            fi
+            cd $DIR
+        }
+
+        make_wasm_tests(){
+            DIR=`pwd`
+            if  [ ! -f .wasm_done ]; then
+                echo "Automaking WASM Tests" `pwd`
+                cd ./tests/wasm
+                ./generate_tests.sh
+                touch .wasm_done
+            fi
+            cd $DIR
+        }
+
+        make_wasm_sym_tests(){
+            DIR=`pwd`
+            if  [ ! -f .wasm_sym_done ]; then
+                echo "Automaking Symbolic WASM Tests" `pwd`
+                cd ./tests/wasm_sym
+                ./generate_symbolic_tests.sh
+                touch .wasm_sym_done
+            fi
+            cd $DIR
+        }
+
+        install_truffle(){
+            npm install -g truffle
+        }
+
+        run_truffle_tests(){
+            mkdir truffle_tests
+            cd truffle_tests
+            truffle unbox metacoin
+            manticore . --contract MetaCoin --workspace output
+            ### The original comment says we should get 41 states, but after implementing the shift
+            ### insructions, we get 31. Was the original comment a typo?
+
+            # The correct answer should be 41
+            # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
+            # see https://github.com/trailofbits/manticore/issues/1166
+            # if [ "$(ls -l output/*tx | wc -l)" != "41" ]; then
+            count=$(find output/ -name '*tx' -type f | wc -l)
+            if [ "$count" -ne 34 ]; then
+                echo "Truffle test failed! $count != 34"
+                return 1
+            fi
+            echo "Truffle test succeded"
+            cd ..
+            return 0
+        }
+
+        run_tests_from_dir() {
+            DIR=$1
+            pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+            coverage xml
+        }
+
+        # Test type
+        case $TEST_TYPE in
+            ethereum_vm)
+                make_vmtests
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
+                run_tests_from_dir $TEST_TYPE
+                RV=$?
+
+                echo "Running truffle test"
+                install_truffle
+                run_truffle_tests
+                RV=$(($RV + $?))
+                ;;
+            wasm)
+                make_wasm_tests
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
+                run_tests_from_dir $TEST_TYPE
+                RV=$?
+                ;;
+            wasm_sym)
+                make_wasm_sym_tests ;&
+            ethereum)               ;&  # Fallthrough
+            ethereum_bench)         ;&  # Fallthrough
+            other)
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
+                run_tests_from_dir $TEST_TYPE
+                RV=$?
+                ;;
+            *)
+                echo "Unknown TEST_TYPE: '$TEST_TYPE'"
+                exit 3;
+                ;;
+        esac
