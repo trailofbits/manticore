@@ -1930,7 +1930,8 @@ class EVM(Eventful):
             15000
         )  # Once per SSTORE operation for clearing an originally existing storage slot
 
-        if self.gas <= SSSTORESENTRYGAS:
+        enough_gas = self.world._concretize_bool(Operators.ULE(self.gas, SSSTORESENTRYGAS))
+        if not enough_gas:
             raise NotEnoughGas()
 
         original_value = self.world._callstack[-1][-2].get(offset, 0)
@@ -2651,7 +2652,7 @@ class EVMWorld(Platform):
         else:
             # if not rollback:
             # Refund unused gas to caller if
-            self.current_vm._gas += remaining_gas
+            self.current_vm._gas += unused_gas
             self.current_vm._refund += refund
         if tx.sort == "CREATE":
             if result in ("RETURN", "STOP"):
