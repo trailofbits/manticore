@@ -121,6 +121,7 @@ jobs:
                 cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
                 rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
                 for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -vvv -o ethereum_vm/VMTests_concrete; done
+                rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
                 rm -rf ./vmtests
                 touch ethereum_vm/.done
             fi
