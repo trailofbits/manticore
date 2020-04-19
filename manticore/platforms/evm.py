@@ -1930,7 +1930,7 @@ class EVM(Eventful):
             15000
         )  # Once per SSTORE operation for clearing an originally existing storage slot
 
-        enough_gas = self.world._concretize_bool(Operators.ULE(self.gas, SSSTORESENTRYGAS))
+        enough_gas = self.world._concretize_bool(Operators.UGE(self.gas, SSSTORESENTRYGAS))
         if not enough_gas:
             raise NotEnoughGas()
 
@@ -2006,7 +2006,6 @@ class EVM(Eventful):
             0,
         )
         self._refund += simplify(refund)
-
         return gascost
 
     def SSTORE(self, offset, value):
@@ -2365,8 +2364,7 @@ class EVM(Eventful):
             result.append(f"Gas: {translate_to_smtlib(gas)[:20]} {gas.taint}")
         else:
             result.append(
-                f"Gas: {self.world.current_transaction.gas, '-', gas, '=',self.world.current_transaction.gas-gas}"
-                + str(self.world.current_transaction.sort)
+                f"Gas: {gas}"
             )
 
         return "\n".join(hex(self.address) + ": " + x for x in result)
