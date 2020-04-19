@@ -166,8 +166,8 @@ jobs:
             # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
             # see https://github.com/trailofbits/manticore/issues/1166
             # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
-            if [ "$(ls output/*tx -l | wc -l)" != "64" ]; then
-                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
+            if [ "$(ls output/*tx -l | wc -l)" != "32" ]; then
+                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 32"
                 return 1
             fi
             echo "Truffle test succeded"
