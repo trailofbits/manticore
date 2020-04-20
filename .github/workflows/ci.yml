@@ -177,7 +177,8 @@ jobs:
 
         run_tests_from_dir() {
             DIR=$1
-            pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+            echo "Running only the tests from 'tests/$DIR' directory"
+            pytest -v --durations=100 --cov=manticore -n auto "tests/$DIR"
             coverage xml
         }
 
@@ -202,7 +203,6 @@ jobs:
         case $TEST_TYPE in
             ethereum_vm)
                 make_vmtests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
                 ;;
@@ -214,7 +214,6 @@ jobs:
                 ;;
             wasm)
                 make_wasm_tests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
                 ;;
@@ -224,7 +223,6 @@ jobs:
             ethereum)               ;&  # Fallthrough
             ethereum_bench)         ;&  # Fallthrough
             other)
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
                 ;;
