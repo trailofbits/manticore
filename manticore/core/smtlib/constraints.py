@@ -106,7 +106,19 @@ class ConstraintSet:
         return self._sid
 
     def __get_related(self, related_to=None):
-        if related_to is not None:
+        # sam.moelius: There is a flaw in how __get_related works: when called on certain
+        # unsatisfiable sets, it can return a satisfiable one. The flaw arises when:
+        #   * self consists of a single constraint C
+        #   * C is the value of the related_to parameter
+        #   * C contains no variables
+        #   * C is unsatisfiable
+        # Since C contains no variables, it is not considered "related to" itself and is thrown out
+        # by __get_related. Since C was the sole element of self, __get_related returns the empty
+        # set. Thus, __get_related was called on an unsatisfiable set, {C}, but it returned a
+        # satisfiable one, {}.
+        #   In light of the above, the core __get_related logic is currently disabled.
+        # if related_to is not None:
+        if False:
             number_of_constraints = len(self.constraints)
             remaining_constraints = set(self.constraints)
             related_variables = get_variables(related_to)
