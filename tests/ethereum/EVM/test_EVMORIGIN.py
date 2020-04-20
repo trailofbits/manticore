@@ -43,7 +43,8 @@ class EVMTest_ORIGIN(unittest.TestCase):
         owner_account = world.create_account(balance=1000)
         contract_account = world.create_account(balance=1000, code=b"2")
 
-        world._open_transaction("CALL", contract_account, 10, "", owner_account, 0)
+        #Gas txfee:21000  origin fee:2
+        world._open_transaction("CALL", contract_account, 10, "", owner_account, value=0, gas=21002)
 
         new_vm = world.current_vm
         last_exception, last_returned = self._execute(new_vm)
