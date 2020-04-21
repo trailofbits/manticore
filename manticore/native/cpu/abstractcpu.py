@@ -320,8 +320,8 @@ class Abi:
         Extract arguments for model from the environment and return as a tuple that
         is ready to be passed to the model.
 
-        :param callable model: Python model of the function
-        :param tuple prefix_args: Parameters to pass to model before actual ones
+        :param model: Python model of the function
+        :param prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
         """
         sig = inspect.signature(model)
