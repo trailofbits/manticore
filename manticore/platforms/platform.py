@@ -2,7 +2,7 @@ import logging
 from ..utils.event import Eventful
 
 from functools import wraps
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -11,9 +11,12 @@ class OSException(Exception):
     pass
 
 
-def unimplemented(wrapped: Callable) -> Callable:
+T = TypeVar("T")
+
+
+def unimplemented(wrapped: Callable[..., T]) -> Callable[..., T]:
     @wraps(wrapped)
-    def new_wrapped(*args, **kwargs):
+    def new_wrapped(_instance, *args, **kwargs) -> T:
         cpu = getattr(getattr(_instance, "parent", None), "current", None)
         addr_str = "" if cpu is None else f" at {hex(cpu.read_register('PC'))}"
         logger.warning(
