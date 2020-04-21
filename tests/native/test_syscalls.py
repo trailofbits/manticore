@@ -376,6 +376,7 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_write(fd, 0x1200, len(buf))
 
         # FIXME: currently broken -- raises a Python OSError invalid argument exception!
+        resultp = 0x1900
         res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
         self.assertTrue(res < 0)
 
