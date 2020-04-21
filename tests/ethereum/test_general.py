@@ -1724,22 +1724,12 @@ class EthPluginTests(unittest.TestCase):
             self.assertEqual(len(m.world.all_transactions), 2)
 
             # The fallbackCounter value must have been increased by 1.
-            contract_account.fallbackCounter()
-            self.assertEqual(m.count_ready_states(), 1)
-
-            self.assertEqual(len(m.world.all_transactions), 3)
-            self.assertEqual(
-                ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 123 + 1
-            )
-
-            # The otherCounter value must not have changed.
-            contract_account.otherCounter()
             self.assertEqual(m.count_ready_states(), 1)
             for st in m.ready_states:
-                self.assertEqual(len(st.platform.all_transactions), 4)
-            self.assertEqual(
-                ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 456
-            )
+                world = st.platform
+                self.assertEqual(len(st.platform.all_transactions), 2)
+                self.assertTrue(st.must_be_true(world.get_storage_data(contract_account, 0) == 124)) #123 + 1
+                self.assertTrue(st.must_be_true(world.get_storage_data(contract_account, 1) == 456))
 
 
 if __name__ == "__main__":
