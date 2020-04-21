@@ -1,7 +1,7 @@
-import wrapt
 import logging
 from ..utils.event import Eventful
 
+from functools import wraps
 from typing import Callable, Dict, Tuple
 
 logger = logging.getLogger(__name__)
@@ -11,17 +11,20 @@ class OSException(Exception):
     pass
 
 
-@wrapt.decorator
-def unimplemented(wrapped: Callable, _instance, args: Tuple, kwargs: Dict):
-    cpu = getattr(getattr(_instance, "parent", None), "current", None)
-    addr_str = "" if cpu is None else f" at {hex(cpu.read_register('PC'))}"
-    logger.warning(
-        f"Unimplemented system call: %s: %s(%s)",
-        addr_str,
-        wrapped.__name__,
-        ", ".join(hex(a) if isinstance(a, int) else str(a) for a in args),
-    )
-    return wrapped(*args, **kwargs)
+def unimplemented(wrapped: Callable) -> Callable:
+    @wraps(wrapped)
+    def new_wrapped(*args, **kwargs):
+        cpu = getattr(getattr(_instance, "parent", None), "current", None)
+        addr_str = "" if cpu is None else f" at {hex(cpu.read_register('PC'))}"
+        logger.warning(
+            f"Unimplemented system call: %s: %s(%s)",
+            addr_str,
+            wrapped.__name__,
+            ", ".join(hex(a) if isinstance(a, int) else str(a) for a in args),
+        )
+        return wrapped(*args, **kwargs)
+
+    return new_wrapped
 
 
 class SyscallNotImplemented(OSException):
