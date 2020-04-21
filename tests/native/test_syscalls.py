@@ -1,14 +1,15 @@
+import logging
 import random
 import struct
 import socket
 import tempfile
+import time
 import unittest
 
 import os
 import errno
 import re
 
-from manticore.core.smtlib import *
 from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.linux import SymbolicSocket
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
