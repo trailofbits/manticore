@@ -551,7 +551,6 @@ class ManticoreEVM(ManticoreBase):
             :type gas: int
             :rtype: EVMAccount
         """
-
         if compile_args is None:
             compile_args = dict()
 
@@ -609,7 +608,6 @@ class ManticoreEVM(ManticoreBase):
                     contract_account = self.create_contract(
                         owner=owner, init=md._init_bytecode, balance=0, gas=gas
                     )
-
                 if contract_account is None:
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
                 self.metadata[int(contract_account)] = md
@@ -622,10 +620,6 @@ class ManticoreEVM(ManticoreBase):
                         contract_names.append(lib_name)
             except EthereumError as e:
                 logger.error(e)
-                self.kill()
-                raise
-            except Exception as e:
-                logger.info("Failed to compile contract", str(e))
                 self.kill()
                 raise
 
@@ -689,9 +683,12 @@ class ManticoreEVM(ManticoreBase):
         if name in self._accounts:
             # Account name already used
             raise EthereumError("Name already used")
+            raise EthereumError("Name already used")
 
         self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
+        if not self.count_ready_states():
+            raise NoAliveStates
 
         self._accounts[name] = EVMContract(
             address=address, manticore=self, default_caller=owner, name=name

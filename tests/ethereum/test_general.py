@@ -92,11 +92,10 @@ class EthAbiTests(unittest.TestCase):
             }
         }
         """
-        user_account = m.create_account(balance=1000, name="user_account")
+        user_account = m.create_account(balance=1000000, name="user_account")
         contract_account = m.solidity_create_contract(
-            source_code, owner=user_account, name="contract_account"
+            source_code, owner=user_account, name="contract_account", gas=36225
         )
-
         calldata = binascii.unhexlify(
             b"9de4886f9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d"
         )
@@ -1711,8 +1710,8 @@ class EthPluginTests(unittest.TestCase):
             )  # Only matches the fallback function.
             m.register_plugin(plugin)
 
-            creator_account = m.create_account(balance=1000)
-            contract_account = m.solidity_create_contract(source_code, owner=creator_account)
+            creator_account = m.create_account(balance=10000000000000)
+            contract_account = m.solidity_create_contract(source_code, owner=creator_account, gas=2134322)
 
             symbolic_data = m.make_symbolic_buffer(320)
             m.transaction(
@@ -1726,6 +1725,8 @@ class EthPluginTests(unittest.TestCase):
 
             # The fallbackCounter value must have been increased by 1.
             contract_account.fallbackCounter()
+            self.assertEqual(m.count_ready_states(), 1)
+
             self.assertEqual(len(m.world.all_transactions), 3)
             self.assertEqual(
                 ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 123 + 1
@@ -1733,7 +1734,9 @@ class EthPluginTests(unittest.TestCase):
 
             # The otherCounter value must not have changed.
             contract_account.otherCounter()
-            self.assertEqual(len(m.world.all_transactions), 4)
+            self.assertEqual(m.count_ready_states(), 1)
+            for st in m.ready_states:
+                self.assertEqual(len(st.platform.all_transactions), 4)
             self.assertEqual(
                 ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 456
             )

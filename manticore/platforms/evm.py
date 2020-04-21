@@ -793,6 +793,7 @@ class EVM(Eventful):
         self._valid_jmpdests = set()
         self._sha3 = {}
         self._refund = 0
+        self._temp_call_gas = None
 
     @property
     def pc(self):
@@ -845,6 +846,7 @@ class EVM(Eventful):
         state["_return_data"] = self._return_data
         state["evmfork"] = self.evmfork
         state["_refund"] = self._refund
+        state["_temp_call_gas"] = self._temp_call_gas
         return state
 
     def __setstate__(self, state):
@@ -872,6 +874,7 @@ class EVM(Eventful):
         self._return_data = state["_return_data"]
         self.evmfork = state["evmfork"]
         self._refund = state["_refund"]
+        self._temp_call_gas = state["_temp_call_gas"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -1382,13 +1385,9 @@ class EVM(Eventful):
 
     def _load(self, offset, size=1):
         value = self.memory.read_BE(offset, size)
-        try:
-            value = simplify(value)
-            if not value.taint:
-                value = value.value
-        except Exception:
-            pass
-
+        value = simplify(value)
+        if isinstance(value, Constant) and not value.taint:
+            value = value.value
         self._publish("did_evm_read_memory", offset, value, size)
         return value
 
@@ -2107,7 +2106,7 @@ class EVM(Eventful):
         return tx.return_value
 
     def CALL_gas(self, wanted_gas, address, value, in_offset, in_size, out_offset, out_size):
-        """temp_call_gas = 0; # fuck this
+        """temp_call_gas = 0;
 
             def dynamic_gas(wanted_gas, address, value, in_offset, in_size):
                 GCALLVALUE = 9000
@@ -2133,10 +2132,12 @@ class EVM(Eventful):
     """
         GCALLVALUE = 9000
         GCALLNEW = 25000
-
+        wanted_gas =  Operators.ZEXTEND(wanted_gas, 512)
         fee = Operators.ITEBV(512, value == 0, 0, GCALLVALUE)
-        if address not in self.world.accounts:
-            fee += Operators.ITEBV(512, value == 0, 0, GCALLNEW)
+        known_address = False
+        for address_i in self.world.accounts:
+            known_address = Operators.OR(known_address, address == address_i)
+        fee += Operators.ITEBV(512,Operators.AND(known_address, value == 0), 0, GCALLNEW)
         fee += self._get_memfee(in_offset, in_size)
 
         exception = False
@@ -2153,7 +2154,7 @@ class EVM(Eventful):
         temp_call_gas = Operators.ITEBV(
             512, Operators.UGT(available_gas, wanted_gas), wanted_gas, available_gas
         )
-        self.temp_call_gas = temp_call_gas
+        self._temp_call_gas = temp_call_gas
 
         return temp_call_gas + fee
 
@@ -2167,7 +2168,7 @@ class EVM(Eventful):
             data=self.read_buffer(in_offset, in_size),
             caller=self.address,
             value=value,
-            gas=self.temp_call_gas + 2300,
+            gas=self._temp_call_gas + 2300,
         )
         raise StartTx()
 
@@ -2549,7 +2550,6 @@ class EVMWorld(Platform):
         return simplify(tx_fee)
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
-
         if self.depth > 0:
             origin = self.tx_origin()
         else:
@@ -2649,7 +2649,7 @@ class EVMWorld(Platform):
             if self.block_coinbase() in self:
                 self.add_to_balance(self.block_coinbase(), used_fee - refund * tx.price)
             else:
-                logger.warning(
+                logger.info(
                     "Coinbase not set. Throwing %r weis for the gas", used_fee - refund * tx.price
                 )
         else:
@@ -2914,7 +2914,7 @@ class EVMWorld(Platform):
         coinbase=None,
     ):
         if coinbase not in self.accounts and coinbase != 0:
-            logger.warning("Coinbase account does not exists")
+            logger.info("Coinbase account does not exists")
 
         if coinbase not in self.accounts:
             self.create_account(coinbase)
@@ -3285,7 +3285,7 @@ class EVMWorld(Platform):
             failed = not self._concretize_bool(enough_balance, "Forking on available funds")
 
         if failed:
-            logger.debug("Failing TX. Too deep or not enough balance to pay for gas")
+            logger.info("Failing TX. Too deep or not enough balance to pay for gas")
 
         # processed
         self._pending_transaction = None
