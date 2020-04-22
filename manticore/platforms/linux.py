@@ -338,13 +338,13 @@ class Directory(FdLike):
     def read(self, size):
         raise FdError("Is a directory", errno.EISDIR)
 
-    def close(self, *args):
+    def close(self):
         try:
             return os.close(self.fd)
         except OSError as e:
             return -e.errno
 
-    def fileno(self, *args):
+    def fileno(self):
         return self.fd
 
     def sync(self) -> None:
@@ -487,7 +487,7 @@ class SocketDesc(FdLike):
     def close(self):
         pass
 
-    def seek(self, *args):
+    def seek(self, offset: int, whence: int = os.SEEK_SET):
         raise FdError("Invalid write() operation on SocketDesc", errno.ESPIPE)  # EINVAL?  EBADF?
 
     def is_full(self):
@@ -609,7 +609,7 @@ class Socket(FdLike):
     def sync(self):
         raise FdError("Invalid sync() operation on Socket", errno.EINVAL)
 
-    def seek(self, *args):
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         raise FdError("Invalid lseek() operation on Socket", errno.ESPIPE)
 
     def tell(self) -> int:
