@@ -127,7 +127,7 @@ class FdTable:
     descriptor.
     """
 
-    __slots__ = ["_mapping", "_closed_fds"]
+    __slots__ = ["_mapping"]
 
     def __init__(self):
         self._mapping: Dict[int, FdTableEntry] = {}
