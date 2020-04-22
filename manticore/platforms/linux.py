@@ -110,6 +110,10 @@ class FdLike(ABC):
     def ioctl(self, request, argp) -> int:
         ...
 
+    @abstractmethod
+    def tell(self) -> int:
+        ...
+
 
 @dataclass
 class FdTableEntry:
@@ -255,8 +259,8 @@ class File(FdLike):
             logger.error(f"Invalid Fcntl request: {request}")
             return -e.errno
 
-    def tell(self, *args) -> int:
-        return self.file.tell(*args)
+    def tell(self) -> int:
+        return self.file.tell()
 
     def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         return self.file.seek(offset, whence)
@@ -322,7 +326,7 @@ class Directory(FdLike):
     def mode(self) -> str:
         return mode_from_flags(self.flags)
 
-    def tell(self, *args) -> int:
+    def tell(self) -> int:
         return 0
 
     def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
@@ -417,11 +421,9 @@ class SymbolicFile(File):
         self.array = state["array"]
         super().__setstate__(state)
 
-    def tell(self, *args) -> int:
+    def tell(self) -> int:
         """
         Returns the read/write file offset
-        :rtype: int
-        :return: the read/write file offset.
         """
         return self.pos
 
@@ -609,6 +611,9 @@ class Socket(FdLike):
 
     def seek(self, *args):
         raise FdError("Invalid lseek() operation on Socket", errno.ESPIPE)
+
+    def tell(self) -> int:
+        raise FdError("Invalid tell() operation on Socket", errno.EBADF)
 
     def close(self):
         """
