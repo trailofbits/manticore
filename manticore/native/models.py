@@ -2,10 +2,12 @@
 Models here are intended to be passed to :meth:`~manticore.native.state.State.invoke_model`, not invoked directly.
 """
 
-from .cpu.abstractcpu import ConcretizeArgument
+from .cpu.abstractcpu import ConcretizeArgument, Cpu
 from ..core.smtlib import issymbolic
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
+
+from dataclasses import dataclass, field
 
 VARIADIC_FUNC_ATTR = "_variadic"
 
@@ -140,3 +142,78 @@ def strlen(state, s):
             ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
 
     return ret
+
+
+@dataclass
+class basic_string_class:
+    _cpu: Cpu
+    addr: int
+    _M_dataplus__M_p_addr: int = field(init=False)
+    _M_string_length_addr: int = field(init=False)
+    _M_local_buf_addr: int = field(init=False)
+    _M_allocated_capacity_addr: int = field(init=False)
+
+    def __post_init__(self):
+        """
+        Represents basic_string object information 
+        Naming conventions below preserve basic_string variables for easy reference.
+        See: https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/include/bits/basic_string.h
+        """
+        # FIXME: automate memory size info and remove the hardcoded memory values below
+        # FIXME: symbolic input completely unsupported - make sure concrete input functions correctly first
+        self._M_dataplus__M_p_addr = self.addr  # address of c_str address
+        self._M_string_length_addr = self.addr + 8  # string length address
+        # These two values are contained in a union.
+        # See: https://github.com/gcc-mirror/gcc/blob/2930bb321794c241d8df5591a5bf447bf89c6e82/libstdc%2B%2B-v3/include/bits/basic_string.h#L171
+        self._M_local_buf_addr = self.addr + 16
+        self._M_allocated_capacity_addr = self.addr + 16
+
+        print(f"Length = {self.len}\n{self.addr:016x}")
+
+    def update_len(self, new_len):
+        """
+        :param new_length: integer of desired new length
+        """
+        self._cpu.write_int(self._M_string_length_addr, new_len, 64)
+
+    def update_c_str(self, new_str):
+        """
+        :param new_str: address of the start of new string
+        """
+        self._cpu.write_int(self._M_dataplus__M_p_addr, new_str, 64)
+
+    @property
+    def star_this(self):
+        return self._cpu.read_int(self.objref, 256)
+
+    @property
+    def c_str(self):
+        return self._cpu.read_int(self._M_dataplus__M_p_addr, 64)
+
+    @property
+    def len(self):
+        return self._cpu.read_int(self._M_string_length_addr, 64)
+
+
+def basic_string_append_c_str(state, objref, s):
+    """
+    Extends the basic_string by appending additional characters at the end of its current value
+
+    :param State state: current program state
+    :param int objref: Address of basic_string object (this)
+    :param int s: Address of char * string to append
+    :return: *this
+    :rtype: std::basic_string
+    """
+    cpu = state.cpu
+    b_string = basic_string_class(cpu, objref)
+    # TODO: add support for when c_str() there is out of space
+    zero_idx = _find_zero(cpu, state.constraints, s)
+    for i in range(0, zero_idx - 1):
+        src_addr = s + i
+        dest_addr = b_string.c_str + b_string.len + i
+        c = cpu.read_int(src_addr, 8)
+        cpu.write_int(char_addr, c, 8)
+    b_string.update_len(b_string.c_str + b_string.len)
+    cpu.write_int(b_string.c_str + b_string.len, 0, 8)
+    return b_string.star_this
