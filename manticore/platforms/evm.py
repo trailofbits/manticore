@@ -584,6 +584,7 @@ def concretized_args(**policies):
                     world = args[0].world
                     # special handler for EVM only policy
                     cond = world._constraint_to_accounts(value, ty="both", include_zero=True)
+                    print (translate_to_smtlib(simplify(cond)))
                     world.constraints.add(cond)
                     policy = "ALL"
 
@@ -2020,7 +2021,6 @@ class EVM(Eventful):
         if istainted(self.pc):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
-
         self.world.set_storage_data(storage_address, offset, value)
         self._publish("did_evm_write_storage", storage_address, offset, value)
 
@@ -2549,7 +2549,7 @@ class EVMWorld(Platform):
         tx_fee += nonzerocount * GTXDATANONZERO
         return simplify(tx_fee)
 
-    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
+    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=None):
         if self.depth > 0:
             origin = self.tx_origin()
         else:
@@ -2568,9 +2568,10 @@ class EVMWorld(Platform):
 
         enough_gas_for_tx_fee = Operators.UGE(gas, tx_fee)
         failed = not self._concretize_bool(enough_gas_for_tx_fee)
-
         if not failed:
             self.send_funds(caller, address, value)
+        else:
+            logger.info(f"Not enough gas ({Z3Solver.instance().minmax(self.constraints, gas)}) for tx_fee ({tx_fee})")
 
         # If not a human tx, reset returndata
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
@@ -2618,7 +2619,6 @@ class EVMWorld(Platform):
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
         if data is not None and self.current_vm is not None:
             self.current_vm._return_data = data
-
         if rollback:
             self._set_storage(vm.address, account_storage)
             self._logs = logs
@@ -2668,8 +2668,8 @@ class EVMWorld(Platform):
         self._transactions.append(tx)
         self._publish("did_close_transaction", tx)
 
-        # if self.depth == 0:
-        #    raise TerminateState(tx.result)
+        if self.depth == 0:
+            raise TerminateState(tx.result)
 
     @property
     def all_transactions(self):
@@ -3143,6 +3143,7 @@ class EVMWorld(Platform):
             sort, address, price, data, caller, value, gas
         )
 
+
     def _constraint_to_accounts(self, address, include_zero=False, ty="both"):
         if ty not in ("both", "normal", "contract"):
             raise ValueError("Bad account type. It must be `normal`, `contract` or `both`")
@@ -3221,10 +3222,10 @@ class EVMWorld(Platform):
         if self._pending_transaction is None:
             return
         sort, address, price, data, caller, value, gas = self._pending_transaction
-
         # sort
         if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
             if sort == "STATICCALL":
+                print ("A"*9999)
                 # TODO: Remove this once Issue #1168 is resolved
                 raise EVMException(
                     f"The STATICCALL opcode is not yet supported; see https://github.com/trailofbits/manticore/issues/1168"
@@ -3243,6 +3244,7 @@ class EVMWorld(Platform):
         # caller
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
+            logger.info("Caller not in account")
             raise EVMException(
                 f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
             )
@@ -3261,6 +3263,7 @@ class EVMWorld(Platform):
                 )
         else:
             if address not in self.accounts:
+                logger.info("Address does not exists creating it.")
                 # Creating an unaccessible account
                 self.create_account(address=address, nonce=0)
 

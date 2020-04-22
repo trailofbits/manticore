@@ -576,12 +576,10 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = ABI.serialize(constructor_types, *args)
                     else:
                         constructor_data = b""
-                    """
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
                         # balance always != 0
-                        print ("CRAZY"*100)
                         if not md.constructor_abi["payable"]:
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
@@ -595,7 +593,6 @@ class ManticoreEVM(ManticoreBase):
                             f"Can't create solidity contract with balance ({balance}) "
                             f"because the owner account ({owner}) has insufficient balance."
                         )
-                    """
                     contract_account = self.create_contract(
                         owner=owner,
                         balance=balance,

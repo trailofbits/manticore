@@ -52,7 +52,7 @@ class EVMTest_INVALID(unittest.TestCase):
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
         last_exception, last_returned = self._execute(new_vm)
         self.assertEqual(last_exception, "INVALID")
-        self.assertEqual(new_vm.gas, 1000000)
+        self.assertEqual(new_vm.gas, 0) #All gas consumed
 
 
 if __name__ == "__main__":
