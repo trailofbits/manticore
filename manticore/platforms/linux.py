@@ -32,8 +32,7 @@ from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemor
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from functools import wraps
-from typing import Any, Callable, cast, Deque, Dict, IO, List, Optional, Set, Tuple, TypeVar, Union
+from typing import Any, cast, Deque, Dict, IO, List, Optional, Set, Tuple, Union
 
 
 logger = logging.getLogger(__name__)
