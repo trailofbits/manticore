@@ -126,7 +126,9 @@ class WASMWorld(Platform):
 
     def set_env(
         self,
-        exports: typing.Dict[str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]],
+        exports: typing.Dict[
+            str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
+        ],
         mod_name="env",
     ):
         """
@@ -189,7 +191,9 @@ class WASMWorld(Platform):
 
     def get_export(
         self, export_name, mod_name=None
-    ) -> typing.Optional[typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]]:
+    ) -> typing.Optional[
+        typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
+    ]:
         """
         Gets the export _instance_ for a given export & module name
         (basically just dereferences _get_export_addr into the store)
@@ -251,6 +255,10 @@ class WASMWorld(Platform):
                     func_type = module.types[i.desc]
                     if i.module == "env" and imported_version:
                         if callable(imported_version):
+                            logger.info(
+                                "Auto-converting callable %s into HostFunc of appropriate type",
+                                i.name,
+                            )
                             imported_version = HostFunc(func_type, imported_version)
                     self.store.funcs.append(
                         imported_version
@@ -296,10 +304,13 @@ class WASMWorld(Platform):
     def instantiate(
         self,
         env_import_dict: typing.Dict[
-            str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]
+            str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
         ],
         supplemental_env: typing.Dict[
-            str, typing.Dict[str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst]]
+            str,
+            typing.Dict[
+                str, typing.Union[ProtoFuncInst, TableInst, MemInst, GlobalInst, typing.Callable]
+            ],
         ] = {},
         exec_start=False,
         stub_missing=True,
