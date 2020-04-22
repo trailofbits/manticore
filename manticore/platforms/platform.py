@@ -1,8 +1,10 @@
-import wrapt
 import logging
+
+from functools import wraps
+from typing import Any, Callable, TypeVar
+
 from ..utils.event import Eventful
 
-from typing import Callable, Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -11,23 +13,29 @@ class OSException(Exception):
     pass
 
 
-@wrapt.decorator
-def unimplemented(wrapped: Callable, _instance, args: Tuple, kwargs: Dict):
-    cpu = getattr(getattr(_instance, "parent", None), "current", None)
-    addr_str = "" if cpu is None else f" at {hex(cpu.read_register('PC'))}"
-    logger.warning(
-        f"Unimplemented system call: %s: %s(%s)",
-        addr_str,
-        wrapped.__name__,
-        ", ".join(hex(a) if isinstance(a, int) else str(a) for a in args),
-    )
-    return wrapped(*args, **kwargs)
+T = TypeVar("T")
+
+
+def unimplemented(wrapped: Callable[..., T]) -> Callable[..., T]:
+    @wraps(wrapped)
+    def new_wrapped(self: Any, *args, **kwargs) -> T:
+        cpu = getattr(getattr(self, "parent", None), "current", None)
+        pc_str = "<unknown PC>" if cpu is None else hex(cpu.read_register("PC"))
+        logger.warning(
+            f"Unimplemented system call: %s: %s(%s)",
+            pc_str,
+            wrapped.__name__,
+            ", ".join(hex(a) if isinstance(a, int) else str(a) for a in args),
+        )
+        return wrapped(self, *args, **kwargs)
+
+    return new_wrapped
 
 
 class SyscallNotImplemented(OSException):
     """
     Exception raised when you try to call an unimplemented system call.
-    Go to linux.py and add it!
+    Go to linux.py and add an implementation!
     """
 
     def __init__(self, idx, name):

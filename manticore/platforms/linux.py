@@ -9,7 +9,6 @@ import struct
 import time
 import resource
 import tempfile
-from typing import Deque, Union, List, TypeVar, cast, Optional
 
 import io
 import os
@@ -33,9 +32,11 @@ from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemor
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import Any, Dict, IO, List, Optional, Set, Tuple, Union
+from typing import Any, cast, Deque, Dict, IO, List, Optional, Set, Tuple, Union
+
 
 logger = logging.getLogger(__name__)
+
 
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 

@@ -1,16 +1,18 @@
+import logging
 import random
 import struct
 import socket
 import tempfile
+import time
 import unittest
 
 import os
 import errno
+import re
 
-from manticore.core.smtlib import *
 from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.linux import SymbolicSocket
-from manticore.platforms.platform import SyscallNotImplemented
+from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
 
 
 class LinuxTest(unittest.TestCase):
@@ -374,27 +376,31 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_write(fd, 0x1200, len(buf))
 
         # FIXME: currently broken -- raises a Python OSError invalid argument exception!
+        resultp = 0x1900
         res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
         self.assertTrue(res < 0)
 
-    def test_unimplemented(self):
+    def test_unimplemented_stubs(self) -> None:
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
 
-        if hasattr(stubs, "sys_bpf"):
+        with self.assertLogs(platform_logger, logging.WARNING) as cm:
             self.assertRaises(SyscallNotImplemented, stubs.sys_bpf, 0, 0, 0)
+        # make sure that log message contains expected info
+        pat = re.compile(r"Unimplemented system call: .+: .+\(.+\)", re.MULTILINE)
+        self.assertRegex("\n".join(cm.output), pat)
 
-            self.linux.stubs.default_to_fail = False
-            self.linux.current.RAX = 321  # SYS_BPF
-            self.assertRaises(SyscallNotImplemented, self.linux.syscall)
+        self.linux.stubs.default_to_fail = False
+        self.linux.current.RAX = 321  # SYS_BPF
+        self.assertRaises(SyscallNotImplemented, self.linux.syscall)
 
-            self.linux.stubs.default_to_fail = True
-            self.linux.current.RAX = 321
-            self.linux.syscall()
-            self.assertEqual(0xFFFFFFFFFFFFFFFF, self.linux.current.RAX)
-        else:
-            import warnings
+        self.linux.stubs.default_to_fail = True
+        self.linux.current.RAX = 321
+        self.linux.syscall()
+        self.assertEqual(0xFFFFFFFFFFFFFFFF, self.linux.current.RAX)
 
-            warnings.warn(
-                "Couldn't find sys_bpf in the stubs file. "
-                + "If you've implemented it, you need to fix test_syscalls:LinuxTest.test_unimplemented"
-            )
+    def test_unimplemented_linux(self) -> None:
+        with self.assertLogs(platform_logger, logging.WARNING) as cm:
+            self.linux.sys_futex(0, 0, 0, 0, 0, 0)
+        # make sure that log message contains expected info
+        pat = re.compile(r"Unimplemented system call: .+: .+\(.+\)", re.MULTILINE)
+        self.assertRegex("\n".join(cm.output), pat)
