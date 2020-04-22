@@ -2,7 +2,6 @@ import binascii
 import ctypes
 import errno
 import fcntl
-import itertools
 import logging
 import socket
 import struct
@@ -38,7 +37,9 @@ from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
 from typing import cast, Any, Deque, Dict, IO, Iterable, List, Optional, Set, Tuple, Union
 
+
 logger = logging.getLogger(__name__)
+
 
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
@@ -3029,7 +3030,7 @@ class Linux(Platform):
 
         if item:
             # Prepend the last valid item that didn't fit to the list for next time
-            self._getdents_c[fd] = itertools.chain([item], dent_iter)
+            self._getdents_c[fd] = chain([item], dent_iter)
         else:
             # If everything fit, then save just the dent_iter
             self._getdents_c[fd] = dent_iter
