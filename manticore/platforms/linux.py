@@ -83,7 +83,7 @@ class FdLike(ABC):
     """
 
     @abstractmethod
-    def read(self, size: int = -1):
+    def read(self, size: int):
         ...
 
     @abstractmethod
@@ -264,7 +264,7 @@ class File(FdLike):
     def write(self, buf):
         return self.file.write(buf)
 
-    def read(self, size=-1):
+    def read(self, size):
         return self.file.read(size)
 
     def close(self) -> None:
@@ -331,7 +331,7 @@ class Directory(FdLike):
     def write(self, buf):
         raise FdError("Is a directory", errno.EBADF)
 
-    def read(self, *args):
+    def read(self, size):
         raise FdError("Is a directory", errno.EISDIR)
 
     def close(self, *args):
