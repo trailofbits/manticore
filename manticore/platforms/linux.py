@@ -163,7 +163,7 @@ class FdTable:
 
     def add_entry(self, f: FdLike) -> int:
         """
-        Adds and entry for the given C{FdLike} to the file descriptor table,
+        Adds an entry for the given C{FdLike} to the file descriptor table,
         returning the file descriptor for it.
         """
         fd = self._get_available_fd()
