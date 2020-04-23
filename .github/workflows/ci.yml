@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        type: ["ethereum_bench", "examples", "ethereum", "ethereum_vm", "ethereum_truffle", "native", "wasm", "wasm_sym", "other"]
+        type: ["examples", "ethereum", "ethereum_vm", "ethereum_truffle", "native", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
@@ -221,7 +221,6 @@ jobs:
                 make_wasm_sym_tests ;&
             native)                 ;&  # Fallthrough
             ethereum)               ;&  # Fallthrough
-            ethereum_bench)         ;&  # Fallthrough
             other)
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
