@@ -919,6 +919,16 @@ class TranslatorSmtlib(Translator):
     visit_BoolOperation = _visit_operation
     visit_BitVecOperation = _visit_operation
 
+    def __iter__(self):
+        self._stack.sort()  # TODO: semantic sorting
+        return self
+
+    def __next__(self):
+        out = self.pop()
+        if out is not None:
+            return out
+        raise StopIteration
+
     @property
     def results(self):
         raise SmtlibError("NOOO")

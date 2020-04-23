@@ -17,9 +17,30 @@ from .expression import (
     Constant,
 )
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from functools import cmp_to_key
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def _sort_names(x, y):
+    x_tok = x.split("_")
+    y_tok = y.split("_")
+    # If available, sort on the types
+    if x_tok[0] != y_tok[0]:
+        return -1 if x_tok[0] < y_tok[0] else 1
+
+    # The base value for a type doesn't get a number
+    if len(x_tok) == 1:
+        return -1
+    if len(y_tok) == 1:
+        return 1
+
+    # Otherwise, sort on the attached numbers
+    return -1 if int(x_tok[1]) < int(y_tok[1]) else 1
+
+
+sort_names = cmp_to_key(_sort_names)
 
 
 class ConstraintException(SmtlibError):
@@ -156,7 +177,7 @@ class ConstraintSet:
 
         tmp = set()
         result = ""
-        for var in related_variables:
+        for var in sorted(related_variables, key=lambda x: sort_names(x.name)):
             # FIXME
             # band aid hack around the fact that we are double declaring stuff :( :(
             if var.declaration in tmp:
@@ -177,7 +198,7 @@ class ConstraintSet:
             for k, v in constant_bindings.items():
                 translator.visit(k == v)
 
-        for name, exp, smtlib in translator.bindings:
+        for name, exp, smtlib in sorted(translator.bindings, key=lambda x: sort_names(x[0])):
             if isinstance(exp, BitVec):
                 result += f"(declare-fun {name} () (_ BitVec {exp.size}))"
             elif isinstance(exp, Bool):
@@ -188,11 +209,9 @@ class ConstraintSet:
                 raise ConstraintException(f"Type not supported {exp!r}")
             result += f"(assert (= {name} {smtlib}))\n"
 
-        constraint_str = translator.pop()
-        while constraint_str is not None:
+        for constraint_str in translator:
             if constraint_str != "true":
                 result += f"(assert {constraint_str})\n"
-            constraint_str = translator.pop()
         return result
 
     def _declare(self, var):
