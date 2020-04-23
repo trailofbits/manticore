@@ -377,10 +377,11 @@ class OverlayWorldState(WorldState):
             return self._underlay.get_coinbase()
 
     def delete_account(self, constraints: ConstraintSet, address: int):
-        self._nonce[address] = DefaultWorldState().get_nonce(address)
-        self._balance[address] = DefaultWorldState().get_balance(address)
+        default_world_state = DefaultWorldState()
+        self._nonce[address] = default_world_state.get_nonce(address)
+        self._balance[address] = default_world_state.get_balance(address)
         self._storage[address] = Storage(constraints, address)
-        self._code[address] = DefaultWorldState().get_code(address)
+        self._code[address] = default_world_state.get_code(address)
         self._deleted_accounts.add(address)
 
     def set_nonce(self, address: int, value: Union[int, BitVec]):
