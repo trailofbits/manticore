@@ -78,6 +78,33 @@ def mode_from_flags(file_flags: int) -> str:
     return {os.O_RDWR: "rb+", os.O_RDONLY: "rb", os.O_WRONLY: "wb"}[file_flags & 7]
 
 
+def concreteclass(cls):
+    """
+    This decorator indicates that the given class is intended to have no
+    unimplemented abstract methods.  If this is not the case, a TypeError
+    exception is raised.
+
+    It only really makes sense to use this in conjunction with classes that
+    have ABCMeta as a metaclass, but it should work without issue with other
+    classes too.
+
+    Without using this decorator, instead of getting a TypeError just after
+    class creation time, you will get an error only if you try to instantiate
+    the class.  In short, using this decorator pushes error detection earlier.
+
+    It would be nice if this existed in the Python standard library `abc`
+    module, but it doesn't seem to be present.
+    """
+    methods = getattr(cls, "__abstractmethods__", None)
+    if methods:
+        methods_str = ", ".join(repr(n) for n in sorted(methods))
+        raise TypeError(
+            f"Class {cls.__name__} marked as concrete, but has "
+            f"unimplemented abstract methods: {methods_str}"
+        )
+    return cls
+
+
 class FdLike(ABC):
     """
     An abstract class for different kinds of file descriptors.
@@ -202,6 +229,7 @@ class FdTable:
         return self._lookup(fd).twaiters
 
 
+@concreteclass
 class File(FdLike):
     def __init__(self, path: str, flags: int):
         # TODO: assert file is seekable; otherwise we should save what was
@@ -286,6 +314,7 @@ class File(FdLike):
 
 
 # TODO - we should consider refactoring File so that we don't have to mute these errors
+@concreteclass
 class ProcSelfMaps(File):  # lgtm [py/missing-call-to-init]
     def __init__(self, flags: int, linux):
         # WARN: Does not call File.__init__. Should have the File API, but we manually
@@ -299,6 +328,7 @@ class ProcSelfMaps(File):  # lgtm [py/missing-call-to-init]
         self.file = open(self.file.name, mode)
 
 
+@concreteclass
 class Directory(FdLike):
     def __init__(self, path: str, flags: int):
         # WARN: Does not call File.__init__ because we don't want to open the directory,
@@ -358,6 +388,7 @@ class Directory(FdLike):
         raise FdError("Invalid ioctl() operation on Directory", errno.ENOTTY)
 
 
+@concreteclass
 class SymbolicFile(File):
     """
     Represents a symbolic file.
@@ -475,6 +506,7 @@ class SymbolicFile(File):
             self.array[i] = data[i - self.pos]
 
 
+@concreteclass
 class SocketDesc(FdLike):
     """
     Represents a socket descriptor that is not yet connected (i.e. a value returned by socket(2))
@@ -507,6 +539,7 @@ class SocketDesc(FdLike):
         raise FdError("Invalid ioctl() operation on SocketDesc", errno.ENOTTY)
 
 
+@concreteclass
 class Socket(FdLike):
     def stat(self):
         from collections import namedtuple
@@ -626,6 +659,7 @@ class Socket(FdLike):
         raise FdError("Invalid ioctl() operation on Socket", errno.ENOTTY)
 
 
+@concreteclass
 class SymbolicSocket(Socket):
     """
     Symbolic sockets are generally used for network communications that contain user-controlled input.
