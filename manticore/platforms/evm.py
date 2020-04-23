@@ -584,7 +584,6 @@ def concretized_args(**policies):
                     world = args[0].world
                     # special handler for EVM only policy
                     cond = world._constraint_to_accounts(value, ty="both", include_zero=True)
-                    print (translate_to_smtlib(simplify(cond)))
                     world.constraints.add(cond)
                     policy = "ALL"
 
@@ -2132,12 +2131,12 @@ class EVM(Eventful):
     """
         GCALLVALUE = 9000
         GCALLNEW = 25000
-        wanted_gas =  Operators.ZEXTEND(wanted_gas, 512)
+        wanted_gas = Operators.ZEXTEND(wanted_gas, 512)
         fee = Operators.ITEBV(512, value == 0, 0, GCALLVALUE)
         known_address = False
         for address_i in self.world.accounts:
             known_address = Operators.OR(known_address, address == address_i)
-        fee += Operators.ITEBV(512,Operators.AND(known_address, value == 0), 0, GCALLNEW)
+        fee += Operators.ITEBV(512, Operators.AND(known_address, value == 0), 0, GCALLNEW)
         fee += self._get_memfee(in_offset, in_size)
 
         exception = False
@@ -3143,7 +3142,6 @@ class EVMWorld(Platform):
             sort, address, price, data, caller, value, gas
         )
 
-
     def _constraint_to_accounts(self, address, include_zero=False, ty="both"):
         if ty not in ("both", "normal", "contract"):
             raise ValueError("Bad account type. It must be `normal`, `contract` or `both`")
@@ -3225,7 +3223,6 @@ class EVMWorld(Platform):
         # sort
         if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
             if sort == "STATICCALL":
-                print ("A"*9999)
                 # TODO: Remove this once Issue #1168 is resolved
                 raise EVMException(
                     f"The STATICCALL opcode is not yet supported; see https://github.com/trailofbits/manticore/issues/1168"
