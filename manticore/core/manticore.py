@@ -32,7 +32,11 @@ import signal
 from enum import Enum
 
 consts = config.get_group("core")
-consts.add("workspace", default='', description="A folder name for temporaries and results." "(default mcore_?????)")
+consts.add(
+    "workspace",
+    default="",
+    description="A folder name for temporaries and results." "(default mcore_?????)",
+)
 
 
 class MProcessingType(Enum):
@@ -288,10 +292,9 @@ class ManticoreBase(Eventful):
         # Manticore will use the output to save the final reports.
         # By default the output folder and the workspace folder are the same.
         # Check type, default to fs:
-        workspace_url = cfg['core'].workspace
+        workspace_url = cfg["core"].workspace
         if not isinstance(workspace_url, str):
-            raise TypeError(
-                f"Invalid workspace type: {type(workspace).__name__}")
+            raise TypeError(f"Invalid workspace type: {type(workspace).__name__}")
         if ":" not in workspace_url:
             workspace_url = f"fs:{workspace_url}"
         self._workspace = Workspace(workspace_url)

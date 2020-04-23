@@ -18,18 +18,20 @@ import os
 import yaml
 from difflib import SequenceMatcher
 
+
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
+
 logger = logging.getLogger(__name__)
+
 
 class ConfigError(Exception):
     pass
 
 
 class _Var:
-    def __init__(self, name: str = "", default=None, description: str = None,
-                 defined: bool = True):
+    def __init__(self, name: str = "", default=None, description: str = None, defined: bool = True):
         self.name = name
         self.description = description
         self._value = None
@@ -94,7 +96,7 @@ class _Group:
         updates the description if a new one is set.
 
         """
-        name = name.replace('-', '_')
+        name = name.replace("-", "_")
         if name in self._vars:
             raise ConfigError(f"{self.name}.{name} already defined.")
 
@@ -104,14 +106,13 @@ class _Group:
         v = _Var(name, description=description, default=default)
         self._vars[name] = v
 
-    def update(self, name: str, value=None, default=None,
-               description: str = None):
+    def update(self, name: str, value=None, default=None, description: str = None):
         """
         Like add, but can tolerate existing values; also updates the value.
 
         Mostly used for setting fields from imported INI files and modified CLI flags.
         """
-        name = name.replace('-', '_')
+        name = name.replace("-", "_")
         if name in self._vars:
             description = description or self._vars[name].description
             default = default or self._vars[name].default
@@ -142,8 +143,7 @@ class _Group:
             return self._vars[name]
         except KeyError:
             potentials = sorted(self._vars.keys(), key=lambda x: similar(x, name))
-            raise KeyError(
-                f"Group '{self.name}' has no variable '{name}'. Try '{potentials[-1]}'")
+            raise KeyError(f"Group '{self.name}' has no variable '{name}'. Try '{potentials[-1]}'")
 
     def __getattr__(self, name):
         return self._var_object(name).value
@@ -188,8 +188,7 @@ class _TemporaryGroup:
     def __init__(self, group: _Group):
         object.__setattr__(self, "_group", group)
         object.__setattr__(self, "_entered", False)
-        object.__setattr__(self, "_saved",
-                           {k: v.value for k, v in group._vars.items()})
+        object.__setattr__(self, "_saved", {k: v.value for k, v in group._vars.items()})
 
     def __getattr__(self, item):
         return getattr(self._grp, item)
@@ -279,7 +278,9 @@ class Config:
         # Any exception here should trigger the warning; from not being able to parse yaml
         # to reading poorly formatted values
         except Exception:
-            raise ConfigError("Failed reading config file. Do you have a local [.]manticore.yml file?")
+            raise ConfigError(
+                "Failed reading config file. Do you have a local [.]manticore.yml file?"
+            )
 
     def clear(self, f):
         """Clear current config"""
@@ -301,13 +302,17 @@ class Config:
                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             )
 
-        self["config"].add('file', default=".manticore.yml", description="Overriding defaults for configuration values")
+        self["config"].add(
+            "file",
+            default=".manticore.yml",
+            description="Overriding defaults for configuration values",
+        )
 
         for group_name, group in self._groups.items():
             args = parser.add_argument_group(group_name)
             for key in group:
                 obj = group._var_object(key)
-                mykey = key.replace('_', '-')
+                mykey = key.replace("_", "-")
                 if obj.default is False:
                     args.add_argument(
                         f"--{group_name}-{mykey}",
@@ -342,8 +347,8 @@ class Config:
         """
         try:
             # First, load a local config file, if passed or look for one in pwd if it wasn't.
-            self.load(open(getattr(args, 'config_file'),'rb'))
-        except (FileNotFoundError,ConfigError):
+            self.load(open(getattr(args, "config_file"), "rb"))
+        except (FileNotFoundError, ConfigError):
             pass
 
         # Get a list of defined config vals. If these are passed on the command line,
@@ -367,13 +372,12 @@ class Config:
                 else:
                     # Update a var's native group
                     group_name = k.split("-")[0]
-                    key = k[len(group_name)+1:]
+                    key = k[len(group_name) + 1 :]
                     group = get_group(group_name)
                     setattr(group, key, set_val)
             else:
                 if k in config_cli_args:
                     setattr(args, k, getattr(config_cli_args, k))
-
 
     def get_config_keys(self):
         """
@@ -387,7 +391,7 @@ class Config:
         """
         The disable any further modification of the config parameters.
         """
-        self._frozen=True
+        self._frozen = True
         for group_name, group in self._groups.items():
             object.__setattr__(group, "__setattr__", group._fail)
             object.__setattr__(group, "add", group._fail)
@@ -401,8 +405,10 @@ class Config:
 
 global_default = Config()
 
+
 def get_group(name):
     return global_default.get_group(name)
+
 
 def get_default_config():
     return global_default

@@ -16,11 +16,12 @@ from .utils import config, log, install_helper
 consts = config.get_group("cli")
 consts.add("recursionlimit", default=10000, description="Value to set for Python recursion limit")
 consts.add("no-colors", default=True, description="Disable ANSI color escape sequences in output")
-consts.add("verbosity", default=1, description="Specify verbosity level [1-4]" )
+consts.add("verbosity", default=1, description="Specify verbosity level [1-4]")
 
 
 if install_helper.has_native:
     from manticore.native.cli import native_main
+
 
 def parse_arguments():
     def positive(value):
@@ -112,17 +113,20 @@ def parse_arguments():
 
     return config
 
+
 def is_eth():
     for arg in sys.argv[1:]:
         if not arg.startswith("-") and (arg.endswith(".sol") or is_supported(arg)):
             return True
     return False
 
+
 def is_wasm():
     for arg in sys.argv[1:]:
         if not arg.startswith("-") and (arg.endswith(".wasm") or arg.endswith(".wat")):
             return True
     return False
+
 
 if __name__ == "__main__":
     """
