@@ -117,7 +117,7 @@ class EVMContract(EVMAccount):
                 signature: Optional[str] = None,
                 caller=None,
                 value=0,
-                gas=0xFFFFFFFFFFFF,
+                gas=210000,
                 **kwargs,
             ):
                 try:

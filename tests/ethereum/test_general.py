@@ -36,6 +36,8 @@ from manticore.utils.deprecated import ManticoreDeprecationWarning
 solver = Z3Solver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+from manticore.utils.log import set_verbosity
+set_verbosity(9)
 
 
 @contextmanager
@@ -92,11 +94,10 @@ class EthAbiTests(unittest.TestCase):
             }
         }
         """
-        user_account = m.create_account(balance=1000, name="user_account")
+        user_account = m.create_account(balance=1000000, name="user_account")
         contract_account = m.solidity_create_contract(
-            source_code, owner=user_account, name="contract_account"
+            source_code, owner=user_account, name="contract_account", gas=36225
         )
-
         calldata = binascii.unhexlify(
             b"9de4886f9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d"
         )
@@ -558,7 +559,7 @@ class EthTests(unittest.TestCase):
     def test_contract_create_and_access_non_existing_function(self):
         source_code = "contract A {}"
 
-        owner = self.mevm.create_account()
+        owner = self.mevm.create_account(balance=10000000)
         contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=[])
 
         with self.assertRaises(AttributeError) as e:
@@ -604,9 +605,10 @@ class EthTests(unittest.TestCase):
                 }
             }
         """
-        user_account = self.mevm.create_account(balance=1000)
+
+        user_account = self.mevm.create_account(balance=1000000000000000000000)
         contract_account = self.mevm.solidity_create_contract(
-            source_code, owner=user_account, contract_name="D", gas=9000000
+            source_code, owner=user_account, contract_name="D", gas=900000
         )
         contract_account.t(
             gas=9000000
@@ -699,7 +701,7 @@ class EthTests(unittest.TestCase):
             }
         }
         """,
-            owner=self.mevm.create_account(balance=1000),
+            owner=self.mevm.create_account(balance=10000000),
         )
 
         c.mul(1, 2)
@@ -925,20 +927,23 @@ class EthTests(unittest.TestCase):
 
         contract_src = """
         contract C {
-          function transferHalfTo(address receiver) public payable {
-              receiver.transfer(this.balance/2);
+          function transferHalfTo(address payable receiver) public payable {
+              receiver.transfer(address(this).balance/2);
           }
         }
         """
 
-        owner = m.create_account(balance=10 ** 10)
+        owner = m.create_account(balance=20 ** 10)
         contract = m.solidity_create_contract(contract_src, owner=owner)
-        receiver = m.create_account(0)
+        receiver = m.create_account(balance=0)
         symbolic_address = m.make_symbolic_address()
         m.constrain(symbolic_address == receiver.address)
         self.assertTrue(m.count_ready_states() > 0)
-        contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
-        self.assertTrue(m.count_ready_states() > 0)
+        contract.transferHalfTo(symbolic_address, caller=owner, value=1000, gas=9999999999)
+
+
+            
+
         self.assertTrue(
             any(
                 state.can_be_true(state.platform.get_balance(receiver.address) > 0)
@@ -1102,7 +1107,7 @@ class EthTests(unittest.TestCase):
         m = self.mevm
         m.register_detector(DetectExternalCallAndLeak())
 
-        owner = m.create_account(name="owner", balance=1000)
+        owner = m.create_account(name="owner", balance=100000000000)
         wallet = m.solidity_create_contract(
             source_code, name="wallet", contract_name="Wallet", owner=owner, balance=1000
         )
@@ -1406,7 +1411,7 @@ class EthSolidityMetadataTests(unittest.TestCase):
                 function() public payable {}
             }
             """
-            user_account = m.create_account(balance=1000, name="user_account")
+            user_account = m.create_account(balance=100000000000, name="user_account")
             contract_account = m.solidity_create_contract(
                 source_code, owner=user_account, name="contract_account", args=(0,)
             )
@@ -1465,7 +1470,7 @@ class EthSolidityMetadataTests(unittest.TestCase):
                 event E(uint, string);
             }
             """
-            user_account = m.create_account(balance=1000, name="user_account")
+            user_account = m.create_account(balance=100000000, name="user_account")
             contract_account = m.solidity_create_contract(
                 source_code, owner=user_account, name="contract_account"
             )
@@ -1598,7 +1603,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                         PUSH1 0x0
                         PUSH2 0X0
                         PUSH32 0x111111111111111111111111111111111111111
-                        PUSH32 0x10000
+                        PUSH32 0x100000
                         DELEGATECALL
                         STOP
             """
@@ -1621,7 +1626,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             0x222222222222222222222222222222222222222,
             caller=0x333333333333333333333333333333333333333,
             value=10,
-            gas=5000000,
+            gas=50000000,
         )
 
         try:
@@ -1673,11 +1678,11 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         world.create_account(
             address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
         )
-        world.create_account(address=0x222222222222222222222222222222222222222)
+        world.create_account(address=0x222222222222222222222222222222222222222, balance=10000000000000)
         world.transaction(
             0x111111111111111111111111111111111111111,
             caller=0x222222222222222222222222222222222222222,
-            gas=5003,
+            gas=50030,
         )
         try:
             while True:
@@ -1711,8 +1716,8 @@ class EthPluginTests(unittest.TestCase):
             )  # Only matches the fallback function.
             m.register_plugin(plugin)
 
-            creator_account = m.create_account(balance=1000)
-            contract_account = m.solidity_create_contract(source_code, owner=creator_account)
+            creator_account = m.create_account(balance=10000000000000)
+            contract_account = m.solidity_create_contract(source_code, owner=creator_account, gas=2134322)
 
             symbolic_data = m.make_symbolic_buffer(320)
             m.transaction(
@@ -1725,18 +1730,12 @@ class EthPluginTests(unittest.TestCase):
             self.assertEqual(len(m.world.all_transactions), 2)
 
             # The fallbackCounter value must have been increased by 1.
-            contract_account.fallbackCounter()
-            self.assertEqual(len(m.world.all_transactions), 3)
-            self.assertEqual(
-                ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 123 + 1
-            )
-
-            # The otherCounter value must not have changed.
-            contract_account.otherCounter()
-            self.assertEqual(len(m.world.all_transactions), 4)
-            self.assertEqual(
-                ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 456
-            )
+            self.assertEqual(m.count_ready_states(), 1)
+            for st in m.ready_states:
+                world = st.platform
+                self.assertEqual(len(st.platform.all_transactions), 2)
+                self.assertTrue(st.must_be_true(world.get_storage_data(contract_account, 0) == 124)) #123 + 1
+                self.assertTrue(st.must_be_true(world.get_storage_data(contract_account, 1) == 456))
 
 
 if __name__ == "__main__":

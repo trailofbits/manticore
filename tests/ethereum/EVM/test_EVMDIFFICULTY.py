@@ -46,7 +46,11 @@ class EVMTest_DIFFICULTY(unittest.TestCase):
         value = 10000
         bytecode = b"D"
         data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-        header = {"coinbase": 0, "timestamp": 0, "number": 0, "difficulty": 0, "gaslimit": 0}
+        world.start_block(blocknumber=0,
+                            timestamp=0,
+                            difficulty=0,
+                            gaslimit=0,
+                            coinbase=0)
         gas = 1000000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)

@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        type: ["ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
+        type: ["ethereum_bench", "examples", "ethereum", "ethereum_vm", "ethereum_truffle", "native", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
@@ -114,13 +114,14 @@ jobs:
         }
 
         make_vmtests(){
+        
             DIR=`pwd`
             if  [ ! -f ethereum_vm/.done ]; then
                 echo "Automaking VMTests" `pwd`
                 cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
                 rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
-                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
-                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+                for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -vvv -o ethereum_vm/VMTests_concrete; done
+                rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
                 rm -rf ./vmtests
                 touch ethereum_vm/.done
             fi
@@ -165,8 +166,8 @@ jobs:
             # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
             # see https://github.com/trailofbits/manticore/issues/1166
             # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
-            if [ "$(ls output/*tx -l | wc -l)" != "34" ]; then
-                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
+            if [ "$(ls output/*tx -l | wc -l)" != "32" ]; then
+                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 32"
                 return 1
             fi
             echo "Truffle test succeded"
@@ -176,7 +177,8 @@ jobs:
 
         run_tests_from_dir() {
             DIR=$1
-            pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+            echo "Running only the tests from 'tests/$DIR' directory"
+            pytest -v --durations=100 --cov=manticore -n auto "tests/$DIR"
             coverage xml
         }
 
@@ -201,18 +203,17 @@ jobs:
         case $TEST_TYPE in
             ethereum_vm)
                 make_vmtests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
-
+                ;;
+            ethereum_truffle)
                 echo "Running truffle test"
                 install_truffle
                 run_truffle_tests
-                RV=$(($RV + $?))
+                RV=$?
                 ;;
             wasm)
                 make_wasm_tests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
                 ;;
@@ -222,7 +223,6 @@ jobs:
             ethereum)               ;&  # Fallthrough
             ethereum_bench)         ;&  # Fallthrough
             other)
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
                 ;;
