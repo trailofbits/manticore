@@ -607,6 +607,7 @@ class ManticoreEVM(ManticoreBase):
                     )
                 if contract_account is None:
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
+
                 self.metadata[int(contract_account)] = md
 
                 deps[contract_name_i] = int(contract_account)
@@ -616,9 +617,8 @@ class ManticoreEVM(ManticoreBase):
                     if lib_name not in deps:
                         contract_names.append(lib_name)
             except EthereumError as e:
-                logger.error(e)
+                logger.info(f"Failed to build contract {contract_name_i}")
                 self.kill()
-                raise
 
         # If the contract was created successfully in at least 1 state return account
         for state in self.ready_states:
@@ -626,7 +626,6 @@ class ManticoreEVM(ManticoreBase):
                 return contract_account
 
         logger.info("Failed to compile contract %r", contract_names)
-        return None
 
     def get_nonce(self, address):
         # type forgiveness:
@@ -680,17 +679,13 @@ class ManticoreEVM(ManticoreBase):
         if name in self._accounts:
             # Account name already used
             raise EthereumError("Name already used")
-            raise EthereumError("Name already used")
-
         self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
-        if not self.count_ready_states():
-            raise NoAliveStates
-
-        self._accounts[name] = EVMContract(
-            address=address, manticore=self, default_caller=owner, name=name
-        )
-        return self.accounts[name]
+        if self.count_ready_states():
+            self._accounts[name] = EVMContract(
+                address=address, manticore=self, default_caller=owner, name=name
+            )
+            return self.accounts[name]
 
     def _get_uniq_name(self, stem):
         count = 0
@@ -964,7 +959,6 @@ class ManticoreEVM(ManticoreBase):
         # run over potentially several states and
         # generating potentially several others
         self.run()
-
         return address
 
     def preconstraint_for_call_transaction(
