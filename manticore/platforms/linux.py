@@ -538,6 +538,9 @@ class SocketDesc(FdLike):
     def ioctl(self, request, argp):
         raise FdError("Invalid ioctl() operation on SocketDesc", errno.ENOTTY)
 
+    def tell(self) -> int:
+        raise FdError("Invalid tell() operation on SocketDesc", errno.EBADF)
+
 
 @concreteclass
 class Socket(FdLike):
