@@ -687,7 +687,7 @@ class ManticoreEVM(ManticoreBase):
             # Account name already used
             raise EthereumError("Name already used")
 
-        self._transaction("CREATE", owner, balance, address, data=init, gaslimit=gas)
+        self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
 
         self._accounts[name] = EVMContract(
