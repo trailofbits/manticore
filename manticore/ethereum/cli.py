@@ -139,8 +139,8 @@ def ethereum_main(args, logger):
 
         with m.kill_timeout():
             contract_account = None
-            if args.txvictim is not None:
-                contract_account = int(args.txvictim, base=0)
+            if args.txtarget is not None:
+                contract_account = int(args.txtarget, base=0)
 
             m.multi_tx_analysis(
                 args.argv[0],

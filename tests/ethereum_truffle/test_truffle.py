@@ -49,7 +49,7 @@ class EthTruffleTests(unittest.TestCase):
             "--no-color",
             "--rpc",
             URL,
-            "--txvictim",
+            "--txtarget",
             address,
             "--txlimit",
             "1",
@@ -172,7 +172,7 @@ class EthTruffleTests(unittest.TestCase):
             "--no-color",
             "--rpc",
             URL,
-            "--txvictim",
+            "--txtarget",
             address,
             "--txnocoverage",
         ]

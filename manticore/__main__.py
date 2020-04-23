@@ -165,7 +165,7 @@ def parse_arguments():
         "--txnoether", action="store_true", help="Do not attempt to send ether to contract"
     )
 
-    eth_flags.add_argument("--txvictim", type=str, help="Address of a deployed contract to attack")
+    eth_flags.add_argument("--txtarget", type=str, help="Address of a deployed contract to attack")
 
     eth_flags.add_argument(
         "--txaccount",
@@ -251,7 +251,7 @@ def parse_arguments():
     parsed = parser.parse_args(sys.argv[1:])
     config.process_config_values(parser, parsed)
 
-    if parsed.url is not None and parsed.txvictim is not None and not parsed.argv:
+    if parsed.url is not None and parsed.txtarget is not None and not parsed.argv:
         parsed.argv = [None]
 
     if not parsed.argv:

@@ -158,7 +158,7 @@ jobs:
             EXPECTED_TX=34
             if [ "$1" = "deploy" ]; then
                 ADDRESS="$(truffle deploy | grep '> contract address:.*' | tail -n 1 | grep -o '0x.*$')"
-                ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txvictim $ADDRESS"
+                ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txtarget $ADDRESS"
                 EXPECTED_TX=31
             fi
             manticore . --contract MetaCoin --workspace output $ADDITIONAL_ARGS
