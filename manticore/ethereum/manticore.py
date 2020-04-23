@@ -558,6 +558,7 @@ class ManticoreEVM(ManticoreBase):
             deps = {}
         else:
             deps = dict(libraries)
+
         contract_names = [contract_name]
         while contract_names:
             contract_name_i = contract_names.pop()
@@ -619,6 +620,7 @@ class ManticoreEVM(ManticoreBase):
             except EthereumError as e:
                 logger.info(f"Failed to build contract {contract_name_i}")
                 self.kill()
+                return None
 
         # If the contract was created successfully in at least 1 state return account
         for state in self.ready_states:
