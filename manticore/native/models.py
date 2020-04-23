@@ -7,7 +7,6 @@ from ..core.smtlib import issymbolic
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 
-
 VARIADIC_FUNC_ATTR = "_variadic"
 
 

@@ -10,7 +10,6 @@ from .models import _find_zero
 
 from dataclasses import dataclass, field
 
-
 @dataclass
 class basic_string_class:
     _cpu: Cpu
@@ -22,7 +21,7 @@ class basic_string_class:
 
     def __post_init__(self):
         """
-        Represents basic_string object information 
+        Represents basic_string object information
         Naming conventions below preserve basic_string variables for easy reference.
         See: https://github.com/gcc-mirror/gcc/blob/master/libstdc%2B%2B-v3/include/bits/basic_string.h
         """
@@ -53,7 +52,11 @@ class basic_string_class:
     def resize(self, new_size):
         """
         """
-        return None
+        allocate new mem
+        and copy to it
+        if not self.is_local:
+            delete the old memory 
+        return 
 
     @property
     def star_this(self):
@@ -86,7 +89,7 @@ class basic_string_class:
     @property
     def capacity(self):
         """
-        :return: The size of the storage capacity 
+        :return: The size of the storage capacity
         """
         if self.is_local:
             return self._S_local_capacity
