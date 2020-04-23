@@ -4,6 +4,7 @@ import logging
 import struct
 
 import capstone as cs
+import operator as ops
 
 from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
 from .abstractcpu import instruction as abstract_instruction
@@ -763,8 +764,8 @@ class Armv7Cpu(Cpu):
                 return "ASR"
         return OP_NAME_MAP.get(name, name)
 
-    def _wrap_operands(self, ops):
-        return [Armv7Operand(self, op) for op in ops]
+    def _wrap_operands(self, operands):
+        return [Armv7Operand(self, op) for op in operands]
 
     def should_commit_flags(cpu):
         # workaround for a capstone bug (issue #980);
@@ -1515,7 +1516,8 @@ class Armv7Cpu(Cpu):
             op2_val, carry = op2.read(with_carry=True)
             result = operation(op1.read(), op2_val)
         else:
-            op1_val, carry = op1.read(with_carry=True)
+            # We _do_ use this form, contrary to what LGTM says
+            op1_val, carry = op1.read(with_carry=True)  # lgtm [py/call/wrong-arguments]
             result = operation(op1_val)
         if dest is not None:
             dest.write(result)
@@ -1524,9 +1526,9 @@ class Armv7Cpu(Cpu):
     @instruction(can_take_denormalized_mod_imm=True)
     def ORR(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.or_, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x | y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.or_, dest, dest, op1)
 
     @instruction(can_take_denormalized_mod_imm=True)
     def ORN(cpu, dest, op1, op2=None):
@@ -1538,20 +1540,20 @@ class Armv7Cpu(Cpu):
     @instruction(can_take_denormalized_mod_imm=True)
     def EOR(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.xor, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.xor, dest, dest, op1)
 
     @instruction(can_take_denormalized_mod_imm=True)
     def AND(cpu, dest, op1, op2=None):
         if op2 is not None:
-            cpu._bitwise_instruction(lambda x, y: x & y, dest, op1, op2)
+            cpu._bitwise_instruction(ops.and_, dest, op1, op2)
         else:
-            cpu._bitwise_instruction(lambda x, y: x & y, dest, dest, op1)
+            cpu._bitwise_instruction(ops.and_, dest, dest, op1)
 
     @instruction(can_take_denormalized_mod_imm=True)
     def TEQ(cpu, op1, op2=None):
-        cpu._bitwise_instruction(lambda x, y: x ^ y, None, op1, op2)
+        cpu._bitwise_instruction(ops.xor, None, op1, op2)
         cpu.commit_flags()
 
     @instruction(can_take_denormalized_mod_imm=True)

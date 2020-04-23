@@ -29,6 +29,7 @@ from ..core.smtlib import (
 )
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
+from ..utils.helpers import printable_bytes
 from ..utils import config
 from ..core.smtlib.visitors import simplify
 from ..exceptions import EthereumError
@@ -242,8 +243,10 @@ class Transaction:
             return_data = conc_tx.return_data
 
             stream.write(
-                "Return_data: 0x{} {}\n".format(
-                    binascii.hexlify(return_data).decode(), flagged(issymbolic(self.return_data))
+                "Return_data: 0x{} ({}) {}\n".format(
+                    binascii.hexlify(return_data).decode(),
+                    printable_bytes(return_data),
+                    flagged(issymbolic(self.return_data))
                 )
             )
 

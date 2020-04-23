@@ -265,7 +265,7 @@ class NativeIntegrationTest(unittest.TestCase):
 
     def test_fclose_linux_amd64(self) -> None:
         """
-        Tests that the fclose example for amd64 linux doesn't crash; see #1602 and #1604.
+        Tests that the `fclose` example for amd64 linux doesn't crash; see #1602 and #1604.
         """
         filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "fclose_linux_amd64"))
         workspace = os.path.join(self.test_dir, "workspace")
@@ -278,6 +278,24 @@ class NativeIntegrationTest(unittest.TestCase):
             workspace,
             filename,
             "+++++++",
+        ]
+        subprocess.check_call(cmd)
+
+    def test_fileio_linux_amd64(self) -> None:
+        """
+        Tests that the `fileio` example for amd64 linux doesn't crash.
+        """
+        filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "fileio_linux_amd64"))
+        workspace = os.path.join(self.test_dir, "workspace")
+        cmd = [
+            PYTHON_BIN,
+            "-m",
+            "manticore",
+            "--no-color",
+            "--workspace",
+            workspace,
+            filename,
+            "+",
         ]
         subprocess.check_call(cmd)
 

@@ -1,15 +1,18 @@
+import logging
 import random
 import struct
 import socket
 import tempfile
+import time
 import unittest
 
 import os
 import errno
+import re
 
-from manticore.core.smtlib import *
 from manticore.platforms import linux, linux_syscall_stubs
-from manticore.platforms.platform import SyscallNotImplemented
+from manticore.platforms.linux import SymbolicSocket
+from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
 
 
 class LinuxTest(unittest.TestCase):
@@ -146,7 +149,7 @@ class LinuxTest(unittest.TestCase):
 
         self.assertEqual(-errno.EPERM, self.linux.sys_chown(0x1100, 0, 0))
 
-    def test_recvfrom(self):
+    def test_read_symb_socket(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
 
         sock_fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
@@ -160,23 +163,82 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(conn_fd, 4)
 
         sock_obj = self.linux.files[conn_fd]
+        # Any socket that comes from an accept should probably be symbolic for now
+        assert isinstance(sock_obj, SymbolicSocket)
+
+        # Start with 0 symbolic bytes
         init_len = len(sock_obj.buffer)
+        self.assertEqual(init_len, 0)
+
+        # Try to receive 5 symbolic bytes
+        BYTES = 5
+        wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
+        self.assertEqual(wrote, BYTES)
+
+        # Try to receive into address 0x0
+        wrote = self.linux.sys_read(conn_fd, 0x0, 100)
+        self.assertEqual(wrote, -errno.EFAULT)
+
+        # Try to receive all remaining symbolic bytes plus some more
+        recvd_bytes = sock_obj.recv_pos
+        remaining_bytes = sock_obj.max_recv_symbolic - sock_obj.recv_pos
+        BYTES = remaining_bytes + 10
+        wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
+        self.assertNotEqual(wrote, BYTES)
+        self.assertEqual(wrote, remaining_bytes)
+
+        # Try to receive 10 more bytes when already at max
+        wrote = self.linux.sys_read(conn_fd, 0x1100, 10)
+        self.assertEqual(wrote, 0)
+
+        # Close and make sure we can't write more stuff
+        self.linux.sys_close(conn_fd)
+        wrote = self.linux.sys_read(conn_fd, 0x1100, 10)
+        self.assertEqual(wrote, -errno.EBADF)
+
+    def test_recvfrom_symb_socket(self):
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+
+        sock_fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        self.assertEqual(sock_fd, 3)
+        # Unimplemented
+        # self.linux.current.write_int(0x1000, 1, size=8 * 4)
+        # self.linux.sys_setsockopt(sock_fd, socket.SOL_SOCKET, socket.SO_REUSEPORT, 0x1000, 4)
+        self.linux.sys_bind(sock_fd, None, None)
+        self.linux.sys_listen(sock_fd, None)
+        conn_fd = self.linux.sys_accept(sock_fd, None, 0)
+        self.assertEqual(conn_fd, 4)
+
+        sock_obj = self.linux.files[conn_fd]
+        # Any socket that comes from an accept should probably be symbolic for now
+        assert isinstance(sock_obj, SymbolicSocket)
+
+        # Start with 0 symbolic bytes
+        init_len = len(sock_obj.buffer)
+        self.assertEqual(init_len, 0)
+
+        # Try to receive 5 symbolic bytes
         BYTES = 5
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, BYTES)
 
+        # Try to receive into address 0x0
         wrote = self.linux.sys_recvfrom(conn_fd, 0x0, 100, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, -errno.EFAULT)
 
-        remain_len = init_len - BYTES
-        self.assertEqual(remain_len, len(sock_obj.buffer))
+        # Try to receive all remaining symbolic bytes plus some more
+        recvd_bytes = sock_obj.recv_pos
+        remaining_bytes = sock_obj.max_recv_symbolic - sock_obj.recv_pos
+        BYTES = remaining_bytes + 10
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
+        self.assertNotEqual(wrote, BYTES)
+        self.assertEqual(wrote, remaining_bytes)
 
-        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, remain_len + 10, 0x0, 0x0, 0x0)
-        self.assertEqual(wrote, remain_len)
-
+        # Try to receive 10 more bytes when already at max
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, 0)
 
+        # Close and make sure we can't write more stuff
         self.linux.sys_close(conn_fd)
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, -errno.EBADF)
@@ -314,27 +376,31 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_write(fd, 0x1200, len(buf))
 
         # FIXME: currently broken -- raises a Python OSError invalid argument exception!
+        resultp = 0x1900
         res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
         self.assertTrue(res < 0)
 
-    def test_unimplemented(self):
+    def test_unimplemented_stubs(self) -> None:
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
 
-        if hasattr(stubs, "sys_bpf"):
+        with self.assertLogs(platform_logger, logging.WARNING) as cm:
             self.assertRaises(SyscallNotImplemented, stubs.sys_bpf, 0, 0, 0)
+        # make sure that log message contains expected info
+        pat = re.compile(r"Unimplemented system call: .+: .+\(.+\)", re.MULTILINE)
+        self.assertRegex("\n".join(cm.output), pat)
 
-            self.linux.stubs.default_to_fail = False
-            self.linux.current.RAX = 321  # SYS_BPF
-            self.assertRaises(SyscallNotImplemented, self.linux.syscall)
+        self.linux.stubs.default_to_fail = False
+        self.linux.current.RAX = 321  # SYS_BPF
+        self.assertRaises(SyscallNotImplemented, self.linux.syscall)
 
-            self.linux.stubs.default_to_fail = True
-            self.linux.current.RAX = 321
-            self.linux.syscall()
-            self.assertEqual(0xFFFFFFFFFFFFFFFF, self.linux.current.RAX)
-        else:
-            import warnings
+        self.linux.stubs.default_to_fail = True
+        self.linux.current.RAX = 321
+        self.linux.syscall()
+        self.assertEqual(0xFFFFFFFFFFFFFFFF, self.linux.current.RAX)
 
-            warnings.warn(
-                "Couldn't find sys_bpf in the stubs file. "
-                + "If you've implemented it, you need to fix test_syscalls:LinuxTest.test_unimplemented"
-            )
+    def test_unimplemented_linux(self) -> None:
+        with self.assertLogs(platform_logger, logging.WARNING) as cm:
+            self.linux.sys_futex(0, 0, 0, 0, 0, 0)
+        # make sure that log message contains expected info
+        pat = re.compile(r"Unimplemented system call: .+: .+\(.+\)", re.MULTILINE)
+        self.assertRegex("\n".join(cm.output), pat)

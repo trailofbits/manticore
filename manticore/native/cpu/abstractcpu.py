@@ -10,7 +10,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
-from ..memory import LazySMemory
+from ..memory import LazySMemory, Memory
 from ...core.smtlib import Operators, Constant, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
@@ -23,8 +23,16 @@ from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
 from capstone.arm import ARM_REG_ENDING
 
+from typing import Any, Callable, Dict, Optional, Tuple
+
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f"{__name__}.registers")
+
+
+def _sig_is_varargs(sig: inspect.Signature) -> bool:
+    VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
+    return any(p.kind == VAR_POSITIONAL for p in sig.parameters.values())
+
 
 ###################################################################################
 # Exceptions
@@ -124,7 +132,7 @@ class Operand:
         scale = property(lambda self: self.parent.op.mem.scale)
         disp = property(lambda self: self.parent.op.mem.disp)
 
-    def __init__(self, cpu, op):
+    def __init__(self, cpu: "Cpu", op):
         """
         This encapsulates the arch-independent way to access instruction
         operands and immediates based on the disassembler operand descriptor in
@@ -142,12 +150,12 @@ class Operand:
         self.op = op
         self.mem = Operand.MemSpec(self)
 
-    def _reg_name(self, reg_id):
+    def _reg_name(self, reg_id: int):
         """
         Translates a register ID from the disassembler object into the
         register name based on manticore's alias in the register file
 
-        :param int reg_id: Register ID
+        :param reg_id: Register ID
         """
         # XXX: Support other architectures.
         if (
@@ -262,9 +270,9 @@ class Abi:
     Used for function call and system call models.
     """
 
-    def __init__(self, cpu):
+    def __init__(self, cpu: "Cpu"):
         """
-        :param manticore.core.cpu.Cpu cpu: CPU to initialize with
+        :param CPU to initialize with
         """
         self._cpu = cpu
 
@@ -307,26 +315,21 @@ class Abi:
             yield base
             base += word_bytes
 
-    def get_argument_values(self, model, prefix_args):
+    def get_argument_values(self, model: Callable, prefix_args: Tuple) -> Tuple:
         """
         Extract arguments for model from the environment and return as a tuple that
         is ready to be passed to the model.
 
-        :param callable model: Python model of the function
-        :param tuple prefix_args: Parameters to pass to model before actual ones
+        :param model: Python model of the function
+        :param prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
-        :rtype: tuple
         """
-        spec = inspect.getfullargspec(model)
+        sig = inspect.signature(model)
+        if _sig_is_varargs(sig):
+            model_name = getattr(model, "__qualname__", "<no name>")
+            logger.warning("ABI: %s: a vararg model must be a unary function.", model_name)
 
-        if spec.varargs:
-            logger.warning("ABI: A vararg model must be a unary function.")
-
-        nargs = len(spec.args) - len(prefix_args)
-
-        # If the model is a method, we need to account for `self`
-        if inspect.ismethod(model):
-            nargs -= 1
+        nargs = len(sig.parameters) - len(prefix_args)
 
         def resolve_argument(arg):
             if isinstance(arg, str):
@@ -341,11 +344,9 @@ class Abi:
         from ..models import isvariadic  # prevent circular imports
 
         if isvariadic(model):
-            arguments = prefix_args + (argument_iter,)
+            return prefix_args + (argument_iter,)
         else:
-            arguments = prefix_args + tuple(islice(argument_iter, nargs))
-
-        return arguments
+            return prefix_args + tuple(islice(argument_iter, nargs))
 
     def invoke(self, model, prefix_args=None):
         """
@@ -390,7 +391,7 @@ class Abi:
 platform_logger = logging.getLogger("manticore.platforms.platform")
 
 
-def unsigned_hexlify(i):
+def unsigned_hexlify(i: Any) -> Any:
     if type(i) is int:
         if i < 0:
             return hex((1 << 64) + i)
@@ -495,18 +496,18 @@ class Cpu(Eventful):
         "execute_syscall",
     }
 
-    def __init__(self, regfile, memory, **kwargs):
+    def __init__(self, regfile: RegisterFile, memory: Memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", "capstone")
         super().__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
-        self._instruction_cache = {}
+        self._instruction_cache: Dict[int, Any] = {}
         self._icount = 0
         self._last_pc = None
         self._concrete = kwargs.pop("concrete", False)
         self.emu = None
-        self._break_unicorn_at = None
+        self._break_unicorn_at: Optional[int] = None
         self._delayed_event = False
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
@@ -643,7 +644,7 @@ class Cpu(Eventful):
     #############################
     # Memory access
     @property
-    def memory(self):
+    def memory(self) -> Memory:
         return self._memory
 
     def write_int(self, where, expression, size=None, force=False):
@@ -678,8 +679,7 @@ class Cpu(Eventful):
         """
         map = self.memory.map_containing(where)
         start = map._get_offset(where)
-        mapType = type(map)
-        if mapType is FileMap:
+        if isinstance(map, FileMap):
             end = map._get_offset(where + size)
 
             if end > map._mapped_size:
@@ -697,7 +697,7 @@ class Cpu(Eventful):
                 data += map._overlay[offset]
             data += raw_data[len(data) :]
 
-        elif mapType is AnonMap:
+        elif isinstance(map, AnonMap):
             data = bytes(map._data[start : start + size])
         else:
             data = b"".join(self.memory[where : where + size])
@@ -730,9 +730,8 @@ class Cpu(Eventful):
         """
         Write a concrete or symbolic (or mixed) buffer to memory
 
-        :param int where: address to write to
+        :param where: address to write to
         :param data: data to write
-        :type data: str or list
         :param force: whether to ignore memory permissions
         """
 
@@ -741,15 +740,13 @@ class Cpu(Eventful):
         # At the very least, using it in non-concrete mode will break the symbolic strcmp/strlen models. The 1024 byte
         # minimum is intended to minimize the potential effects of this by ensuring that if there _are_ any other
         # issues, they'll only crop up when we're doing very large writes, which are fairly uncommon.
-        can_write_raw = (
-            type(mp) is AnonMap
+        if (
+            isinstance(mp, AnonMap)
             and isinstance(data, (str, bytes))
             and (mp.end - mp.start + 1) >= len(data) >= 1024
             and not issymbolic(data)
             and self._concrete
-        )
-
-        if can_write_raw:
+        ):
             logger.debug("Using fast write")
             offset = mp._get_offset(where)
             if isinstance(data, str):
@@ -761,12 +758,12 @@ class Cpu(Eventful):
             for i in range(len(data)):
                 self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
-    def read_bytes(self, where, size, force=False):
+    def read_bytes(self, where: int, size: int, force: bool = False):
         """
         Read from memory.
 
-        :param int where: address to read data from
-        :param int size: number of bytes
+        :param where: address to read data from
+        :param size: number of bytes
         :param force: whether to ignore memory permissions
         :return: data
         :rtype: list[int or Expression]
@@ -776,13 +773,15 @@ class Cpu(Eventful):
             result.append(Operators.CHR(self.read_int(where + i, 8, force)))
         return result
 
-    def write_string(self, where, string, max_length=None, force=False):
+    def write_string(
+        self, where: int, string: str, max_length: Optional[int] = None, force: bool = False
+    ) -> None:
         """
         Writes a string to memory, appending a NULL-terminator at the end.
 
-        :param int where: Address to write the string to
-        :param str string: The string to write to memory
-        :param int max_length:
+        :param where: Address to write the string to
+        :param string: The string to write to memory
+        :param max_length:
 
         The size in bytes to cap the string at, or None [default] for no
         limit. This includes the NULL terminator.
@@ -795,17 +794,16 @@ class Cpu(Eventful):
 
         self.write_bytes(where, string + "\x00", force)
 
-    def read_string(self, where, max_length=None, force=False):
+    def read_string(self, where: int, max_length: Optional[int] = None, force: bool = False) -> str:
         """
         Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
-        :param int where: Address to read string from
-        :param int max_length:
+        :param where: Address to read string from
+        :param max_length:
             The size in bytes to cap the string at, or None [default] for no
             limit.
         :param force: whether to ignore memory permissions
         :return: string read
-        :rtype: str
         """
         s = io.BytesIO()
         while True:
@@ -822,23 +820,23 @@ class Cpu(Eventful):
             where += 1
         return s.getvalue().decode()
 
-    def push_bytes(self, data, force=False):
+    def push_bytes(self, data, force: bool = False):
         """
         Write `data` to the stack and decrement the stack pointer accordingly.
 
-        :param str data: Data to write
+        :param data: Data to write
         :param force: whether to ignore memory permissions
         """
         self.STACK -= len(data)
         self.write_bytes(self.STACK, data, force)
         return self.STACK
 
-    def pop_bytes(self, nbytes, force=False):
+    def pop_bytes(self, nbytes: int, force: bool = False):
         """
         Read `nbytes` from the stack, increment the stack pointer, and return
         data.
 
-        :param int nbytes: How many bytes to read
+        :param nbytes: How many bytes to read
         :param force: whether to ignore memory permissions
         :return: Data read from the stack
         """
@@ -846,11 +844,11 @@ class Cpu(Eventful):
         self.STACK += nbytes
         return data
 
-    def push_int(self, value, force=False):
+    def push_int(self, value: int, force: bool = False):
         """
         Decrement the stack pointer and write `value` to the stack.
 
-        :param int value: The value to write
+        :param value: The value to write
         :param force: whether to ignore memory permissions
         :return: New stack pointer
         """
@@ -858,7 +856,7 @@ class Cpu(Eventful):
         self.write_int(self.STACK, value, force=force)
         return self.STACK
 
-    def pop_int(self, force=False):
+    def pop_int(self, force: bool = False):
         """
         Read a value from the stack and increment the stack pointer.
 
@@ -879,11 +877,11 @@ class Cpu(Eventful):
         """
         raise NotImplementedError
 
-    def decode_instruction(self, pc):
+    def decode_instruction(self, pc: int):
         """
         This will decode an instruction from memory pointed by `pc`
 
-        :param int pc: address of the instruction
+        :param pc: address of the instruction
         """
         # No dynamic code!!! #TODO!
         # Check if instruction was already decoded
