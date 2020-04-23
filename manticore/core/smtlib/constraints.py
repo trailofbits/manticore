@@ -43,7 +43,7 @@ def _sort_names(x, y):
         return 1
 
     # Otherwise, sort on the attached numbers
-    return -1 if int(x_tok[-1]) < int(y_tok[-1]) else 1
+    return -1 if int(x_tok[-1], 0) < int(y_tok[-1], 0) else 1
 
 
 sort_names = cmp_to_key(_sort_names)
