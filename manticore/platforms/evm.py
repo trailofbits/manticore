@@ -2934,6 +2934,10 @@ class EVMWorld(Platform):
                 f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
             )
 
+        if not self._world_state.is_remote() and address not in self.accounts:
+            # Creating an unaccessible account
+            self.create_account(address=address)
+
         # Check depth
         failed = self.depth > 1024
 

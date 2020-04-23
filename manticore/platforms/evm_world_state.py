@@ -64,6 +64,10 @@ class Storage:
 
 class WorldState:
     @abstractmethod
+    def is_remote(self) -> bool:
+        pass
+
+    @abstractmethod
     def accounts(self) -> Set[int]:
         pass
 
@@ -116,6 +120,9 @@ class WorldState:
 
 
 class DefaultWorldState(WorldState):
+    def is_remote(self) -> bool:
+        return False
+
     def accounts(self) -> Set[int]:
         return set()
 
@@ -211,6 +218,9 @@ class RemoteWorldState(WorldState):
                 endpoint.warned = True
         return web3
 
+    def is_remote(self) -> bool:
+        return True
+
     def accounts(self) -> Set[int]:
         raise NotImplementedError
 
@@ -274,6 +284,9 @@ class OverlayWorldState(WorldState):
         self._difficulty: Optional[Union[int, BitVec]] = None
         self._gaslimit: Optional[Union[int, BitVec]] = None
         self._coinbase: Optional[Union[int, BitVec]] = None
+
+    def is_remote(self) -> bool:
+        return self._underlay.is_remote()
 
     def accounts(self) -> Set[int]:
         accounts: Set[int] = set()
