@@ -6,9 +6,10 @@ from .cpu.abstractcpu import ConcretizeArgument, Cpu
 from ..core.smtlib import issymbolic
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
-from .models import _find_zero
+from .models import _find_zero  # , strcpy
 
 from dataclasses import dataclass, field
+
 
 @dataclass
 class basic_string_class:
@@ -43,20 +44,29 @@ class basic_string_class:
         """
         self._cpu.write_int(self._M_string_length_addr, new_len, 64)
 
-    def update_c_str(self, new_str):
+    def reserve(self, new_size):
+        """
+        :param n: Planned length for the basic_string.
+        :return: none
+
+        Note: the resulting string capacity may be equal or greater than n.
+        """
+        if new_size != self.capacity:
+            new_str = malloc(state, new_size)  # TODO: this needs to be implemented in models
+            strcpy(state, new_str, self.c_str)  # TODO: this needs to be implemented in models
+            if not self.is_local:
+                dealloc(state, self.c_str())  # TODO: this needs to be implemented in models
+            self._update_c_str(new_str)
+            self._update_capacity(new_size)
+
+    def _update_c_str(self, new_str):
         """
         :param new_str: address of the start of new string
         """
         self._cpu.write_int(self._M_dataplus__M_p_addr, new_str, 64)
 
-    def resize(self, new_size):
-        """
-        """
-        allocate new mem
-        and copy to it
-        if not self.is_local:
-            delete the old memory 
-        return 
+    def _update_capacity(self, new_capacity):
+        self._cpu.write_int(self._M_allocated_capacity_addr, new_capacity, 64)
 
     @property
     def star_this(self):
@@ -111,15 +121,17 @@ def basic_string_append_c_str(state, objref, s):
     b_string = basic_string_class(cpu, objref)
     # TODO: add support for when c_str() there is out of space
     # TODO: implement capacity & resize then finish this
-    zero_idx = _find_zero(cpu, state.constraints, s)
+    new_len = zero_idx + b_string.len
+    # if new_len > self.capacity:
+    #    reserve(some_new_size) # FIXME: figure out what heuristic is used when the string is resized
+    zero_idx = _find_zero(
+        cpu, state.constraints, s
+    )  # FIXME this prob needs to be strlen but this should be determined when adding symbolic values
     for i in range(0, zero_idx):
         src_addr = s + i
         dst_addr = b_string.c_str + b_string.len + i
         c = cpu.read_int(src_addr, 8)
-        print(i, ":", c)
         cpu.write_int(dst_addr, c, 8)
-    new_len = zero_idx + b_string.len
-    print("New length", new_len)
     b_string.update_len(new_len)
     cpu.write_int(b_string.c_str + b_string.len, 0, 8)
     return b_string.star_this
@@ -131,6 +143,18 @@ def basic_string_capacity(state, objref):
 
     Member type size_type is an unsigned integral type.
     """
-    cpu = state.cpu
-    b_string = basic_string_class(cpu, objref)
+    b_string = basic_string_class(state.cpu, objref)
     return b_string.capacity
+
+
+def basic_string_reserve(state, objref, size):
+    """
+    Request a change in capacity
+    Requests that the string capacity be adapted to a planned change in size to a length of up to n characters.
+    """
+    b_string = basic_string_class(state.cpu, objref)
+    # This function has no effect on the string length and cannot alter its content.
+    # Thus make sure the string is not shrunk less than it's current length
+    if size < basic_string.length:
+        size = self.length
+    b_string.reserve(size)
