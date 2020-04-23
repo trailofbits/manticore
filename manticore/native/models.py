@@ -167,6 +167,7 @@ class basic_string_class:
         # See: https://github.com/gcc-mirror/gcc/blob/2930bb321794c241d8df5591a5bf447bf89c6e82/libstdc%2B%2B-v3/include/bits/basic_string.h#L171
         self._M_local_buf_addr = self.addr + 16
         self._M_allocated_capacity_addr = self.addr + 16
+        self._S_local_capacity = 15  # 15 chars + '\000'
 
         print(f"Length = {self.len}\n{self.addr:016x}")
 
@@ -184,15 +185,41 @@ class basic_string_class:
 
     @property
     def star_this(self):
+        """
+        :return *this: return dereferenced object
+        """
         return self._cpu.read_int(self.addr, 256)
 
     @property
     def c_str(self):
+        """
+        :return int: internal c_str address
+        """
         return self._cpu.read_int(self._M_dataplus__M_p_addr, 64)
 
     @property
     def len(self):
+        """
+        :return int: length of string
+        """
         return self._cpu.read_int(self._M_string_length_addr, 64)
+
+    @property
+    def is_local(self):
+        """
+        :return bool: whether the string is stored in local buffer
+        """
+        return self.c_str == self._M_local_buf_addr
+
+    @property
+    def capacity(self):
+        """
+        :return: The size of the storage capacity 
+        """
+        if self.is_local:
+            return self._S_local_capacity
+        else:
+            return self._cpu.read_int(self._M_allocated_capacity_addr, 64)
 
 
 def basic_string_append_c_str(state, objref, s):
@@ -223,3 +250,12 @@ def basic_string_append_c_str(state, objref, s):
     return b_string.star_this
 
 
+def basic_string_capacity(state, objref):
+    """
+    The size of the storage capacity currently allocated for the basic_string.
+
+    Member type size_type is an unsigned integral type.
+    """
+    cpu = state.cpu
+    b_string = basic_string_class(cpu, objref)
+    return b_string.capacity
