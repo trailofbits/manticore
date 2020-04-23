@@ -242,4 +242,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
         yml: ./codecov.yml
-        fail_ci_if_error: true
+# Disabled this line because Codecov has been extra flaky lately, and having to re-run the entire
+# test suite until every coverage upload step succeeds is more of a hassle than it's worth. 
+#        fail_ci_if_error: true
