@@ -184,7 +184,7 @@ class basic_string_class:
 
     @property
     def star_this(self):
-        return self._cpu.read_int(self.objref, 256)
+        return self._cpu.read_int(self.addr, 256)
 
     @property
     def c_str(self):
@@ -208,12 +208,18 @@ def basic_string_append_c_str(state, objref, s):
     cpu = state.cpu
     b_string = basic_string_class(cpu, objref)
     # TODO: add support for when c_str() there is out of space
+    # TODO: implement capacity & resize then finish this
     zero_idx = _find_zero(cpu, state.constraints, s)
-    for i in range(0, zero_idx - 1):
+    for i in range(0, zero_idx):
         src_addr = s + i
-        dest_addr = b_string.c_str + b_string.len + i
+        dst_addr = b_string.c_str + b_string.len + i
         c = cpu.read_int(src_addr, 8)
-        cpu.write_int(char_addr, c, 8)
-    b_string.update_len(b_string.c_str + b_string.len)
+        print(i, ":", c)
+        cpu.write_int(dst_addr, c, 8)
+    new_len = zero_idx + b_string.len
+    print("New length", new_len)
+    b_string.update_len(new_len)
     cpu.write_int(b_string.c_str + b_string.len, 0, 8)
     return b_string.star_this
+
+
