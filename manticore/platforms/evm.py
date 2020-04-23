@@ -2236,7 +2236,7 @@ class EVMWorld(Platform):
     def __init__(
         self,
         constraints,
-        world_state: WorldState = None,
+        world_state: Optional[WorldState] = None,
         blocknumber=None,
         timestamp=None,
         difficulty=None,
@@ -2737,7 +2737,7 @@ class EVMWorld(Platform):
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
     def create_account(
-        self, address=None, balance=0, code=None, storage: Dict[int, int] = None, nonce=None
+        self, address=None, balance=0, code=None, storage: Optional[Dict[int, int]] = None, nonce=None
     ):
         """
         Low level account creation. No transaction is done.

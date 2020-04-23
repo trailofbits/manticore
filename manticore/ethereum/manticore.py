@@ -386,7 +386,7 @@ class ManticoreEVM(ManticoreBase):
         return self._accounts[name]
 
     def __init__(
-        self, world_state: WorldState = None, workspace_url: str = None, policy: str = "random"
+        self, world_state: Optional[WorldState] = None, workspace_url: str = None, policy: str = "random"
     ):
         """
         A Manticore EVM manager
@@ -1000,7 +1000,7 @@ class ManticoreEVM(ManticoreBase):
         tx_limit=None,
         tx_use_coverage=True,
         tx_send_ether=True,
-        contract_account: int = None,
+        contract_account: Optional[int] = None,
         tx_account="attacker",
         tx_preconstrain=False,
         args=None,
