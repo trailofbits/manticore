@@ -24,8 +24,14 @@ logger = logging.getLogger(__name__)
 
 
 def _sort_names(x, y):
-    x_tok = x.split("_")
-    y_tok = y.split("_")
+    def _split_name(n):
+        tokens = n.split("_")
+        if len(tokens) == 1:
+            return tokens
+        return ["_".join(tokens[:-1]), tokens[-1]]
+
+    x_tok = _split_name(x)
+    y_tok = _split_name(y)
     # If available, sort on the types
     if x_tok[0] != y_tok[0]:
         return -1 if x_tok[0] < y_tok[0] else 1
@@ -37,7 +43,7 @@ def _sort_names(x, y):
         return 1
 
     # Otherwise, sort on the attached numbers
-    return -1 if int(x_tok[1]) < int(y_tok[1]) else 1
+    return -1 if int(x_tok[-1]) < int(y_tok[-1]) else 1
 
 
 sort_names = cmp_to_key(_sort_names)
