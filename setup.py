@@ -58,7 +58,7 @@ setup(
         "crytic-compile>=0.1.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
-        "pyevmasmi>=0.2.2",
+        "pyevmasm>=0.2.3",
         "psutil",
     ]
     + rtd_dependent_deps(),
