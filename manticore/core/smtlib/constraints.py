@@ -19,36 +19,16 @@ from .expression import (
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 from functools import cmp_to_key
 import logging
+import re
+import typing
 
 logger = logging.getLogger(__name__)
 
-
-def _sort_names(x, y):
-    def _split_name(n):
-        tokens = n.split("_")
-        if len(tokens) == 1:
-            return tokens
-        if tokens[-1].isdigit():
-            return ["_".join(tokens[:-1]), tokens[-1]]
-        return [n]
-
-    x_tok = _split_name(x)
-    y_tok = _split_name(y)
-    # If available, sort on the types
-    if x_tok[0] != y_tok[0]:
-        return -1 if x_tok[0] < y_tok[0] else 1
-
-    # The base value for a type doesn't get a number
-    if len(x_tok) == 1:
-        return -1
-    if len(y_tok) == 1:
-        return 1
-
-    # Otherwise, sort on the attached numbers
-    return -1 if int(x_tok[-1], 0) < int(y_tok[-1], 0) else 1
+extract_digit = re.compile('_([0-9]+)')
 
 
-sort_names = cmp_to_key(_sort_names)
+def sort_names(x: str) -> typing.List[str]:
+    return [int(tok) if tok.isdigit() else tok for tok in extract_digit.split(x)]
 
 
 class ConstraintException(SmtlibError):
@@ -171,7 +151,11 @@ class ConstraintSet:
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=False):
-        related_variables, related_constraints = self.__get_related(related_to)
+        rv, related_constraints = self.__get_related(related_to)
+
+        # Since these are just variable declarations, sorting them probably doesn't make much
+        # of a difference. It's relatively cheap, but we could skip it if it slows us down.
+        related_variables = sorted(rv, key=lambda x: sort_names(x.name))
 
         if replace_constants:
             constant_bindings = {}
@@ -185,9 +169,7 @@ class ConstraintSet:
 
         tmp = set()
         result = ""
-        # Since these are just variable declarations, sorting them probably doesn't make much
-        # of a difference. It's relatively cheap, but we could skip it if it slows us down.
-        for var in sorted(related_variables, key=lambda x: sort_names(x.name)):
+        for var in related_variables:
             # FIXME
             # band aid hack around the fact that we are double declaring stuff :( :(
             if var.declaration in tmp:
