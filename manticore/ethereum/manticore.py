@@ -618,7 +618,7 @@ class ManticoreEVM(ManticoreBase):
                     if lib_name not in deps:
                         contract_names.append(lib_name)
             except EthereumError as e:
-                logger.info(f"Failed to build contract {contract_name_i}")
+                logger.info(f"Failed to build contract {contract_name_i} {str(e)}")
                 self.kill()
                 return None
 
