@@ -825,8 +825,8 @@ class TranslatorSmtlib(Translator):
         if not self.use_bindings or len(smtlib) <= 10:
             return smtlib
 
-        if smtlib in self._bindings_cache:
-            return self._bindings_cache[smtlib]
+        if expression in self._bindings_cache:
+            return self._bindings_cache[expression]
 
         TranslatorSmtlib.unique += 1
         name = "a_%d" % TranslatorSmtlib.unique
