@@ -347,9 +347,16 @@ class ManticoreEVM(ManticoreBase):
                 source_code, contract_name, libraries, crytic_compile_args
             )
 
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi = (
-            compilation_result
-        )
+        (
+            name,
+            source_code,
+            bytecode,
+            runtime,
+            srcmap,
+            srcmap_runtime,
+            hashes,
+            abi,
+        ) = compilation_result
         warnings = ""
 
         return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings)
@@ -910,9 +917,12 @@ class ManticoreEVM(ManticoreBase):
                 address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
-            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(
-                state, caller, address, value, data
-            )
+            (
+                caller_migrated,
+                address_migrated,
+                value_migrated,
+                data_migrated,
+            ) = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
