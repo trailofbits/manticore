@@ -28,6 +28,58 @@ class EthTruffleTests(unittest.TestCase):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
 
+    def test_bad_ip(self):
+        workspace = os.path.join(self.test_dir, "workspace")
+
+        cmd = [
+            PYTHON_BIN,
+            "-m",
+            "manticore",
+            "--workspace",
+            workspace,
+            "--no-color",
+            "--rpc",
+            "127.0.0.2:7545",
+            "--txtarget",
+            "0x111111111111111111111111111111111111111",
+        ]
+        mcore = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
+        # sam.moelius: Manticore should have failed to connect.
+        self.assertRegex(
+            mcore.stdout.read().decode(),
+            r"\bConnectionRefusedError\(111, \"Connect call failed \('127.0.0.2', 7545\)\"\)",
+        )
+
+        # sam.moelius: Wait for manticore to finish.
+        self.assertEqual(mcore.wait(), 0)
+
+    def test_bad_port(self):
+        workspace = os.path.join(self.test_dir, "workspace")
+
+        cmd = [
+            PYTHON_BIN,
+            "-m",
+            "manticore",
+            "--workspace",
+            workspace,
+            "--no-color",
+            "--rpc",
+            "127.0.0.1:7546",
+            "--txtarget",
+            "0x111111111111111111111111111111111111111",
+        ]
+        mcore = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
+        # sam.moelius: Manticore should have failed to connect.
+        self.assertRegex(
+            mcore.stdout.read().decode(),
+            r"\bConnectionRefusedError\(111, \"Connect call failed \('127.0.0.1', 7546\)\"\)",
+        )
+
+        # sam.moelius: Wait for manticore to finish.
+        self.assertEqual(mcore.wait(), 0)
+
     def test_basic(self):
         dir = os.path.abspath(os.path.join(DIRPATH, "truffle", "basic"))
         workspace = os.path.join(self.test_dir, "workspace")
