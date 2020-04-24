@@ -144,6 +144,10 @@ def strlen(state, s):
 
 def strcpy(state, dst, src):
     """
+    strcpy symbolic model
+
+    Algorithm: Copy every byte from the src to dst until finding a byte that will is or must be '\000'
+
     :param State state: current program state
     :param int dst: destination string address
     :param int src: source string address
@@ -160,10 +164,14 @@ def strcpy(state, dst, src):
         raise ConcretizeArgument(state.cpu, 2)
 
     c = cpu.read_int(src, 8)
-    while c != 0:
+    while (
+        issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c != 0)
+    ) or c != 0:
         cpu.write_int(dst, c, 8)
         src += 1
         dst += 1
         c = cpu.read_int(src, 8)
+
+    # Even if the byte was symbolic and constrained to '\000' write a concrete '\000'
     cpu.write_int(dst, 0, 8)
     return ret
