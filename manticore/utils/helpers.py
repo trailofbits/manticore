@@ -33,9 +33,7 @@ def interval_intersection(min1, max1, min2, max2):
 
 
 def printable_bytes(bytes: bytes):
-    return "".join(
-        [c for c in map(chr, bytes) if c in string.printable]
-    )
+    return "".join([c for c in map(chr, bytes) if c in string.printable])
 
 
 class CacheDict(OrderedDict):

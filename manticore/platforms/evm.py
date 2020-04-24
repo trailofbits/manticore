@@ -254,7 +254,7 @@ class Transaction:
                 "Return_data: 0x{} ({}) {}\n".format(
                     binascii.hexlify(return_data).decode(),
                     printable_bytes(return_data),
-                    flagged(issymbolic(self.return_data))
+                    flagged(issymbolic(self.return_data)),
                 )
             )
 
@@ -765,8 +765,8 @@ class EVM(Eventful):
         )
         self.address = address
         self.caller = (
-            caller
-        )  # address of the account that is directly responsible for this execution
+            caller  # address of the account that is directly responsible for this execution
+        )
         self.data = data
         self.value = value
         self._bytecode = bytecode
@@ -1311,9 +1311,14 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 current_vm = state.platform.current_vm
-                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = (
-                    current_vm._checkpoint_data
-                )
+                (
+                    _pc,
+                    _old_gas,
+                    _instruction,
+                    _arguments,
+                    _fee,
+                    _allocated,
+                ) = current_vm._checkpoint_data
                 current_vm._checkpoint_data = (
                     _pc,
                     _old_gas,
@@ -1334,9 +1339,14 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 current_vm = state.platform.current_vm
-                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = (
-                    current_vm._checkpoint_data
-                )
+                (
+                    _pc,
+                    _old_gas,
+                    _instruction,
+                    _arguments,
+                    _fee,
+                    _allocated,
+                ) = current_vm._checkpoint_data
                 new_arguments = []
                 for old_arg in _arguments:
                     if len(new_arguments) == pos:

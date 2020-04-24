@@ -347,9 +347,16 @@ class ManticoreEVM(ManticoreBase):
                 source_code, contract_name, libraries, crytic_compile_args
             )
 
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi = (
-            compilation_result
-        )
+        (
+            name,
+            source_code,
+            bytecode,
+            runtime,
+            srcmap,
+            srcmap_runtime,
+            hashes,
+            abi,
+        ) = compilation_result
         warnings = ""
 
         return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings)
@@ -1040,7 +1047,7 @@ class ManticoreEVM(ManticoreBase):
             args=args,
             compile_args=compile_args,
             balance=create_value,
-            gas=230000
+            gas=230000,
         )
 
         if tx_account == "attacker":
@@ -1083,7 +1090,7 @@ class ManticoreEVM(ManticoreBase):
                     address=contract_account,
                     data=symbolic_data,
                     value=value,
-                    gas=230000
+                    gas=230000,
                 )
 
                 logger.info(
@@ -1417,7 +1424,7 @@ class ManticoreEVM(ManticoreBase):
 
         # we initiated the Tx; we need process the outcome for now.
         # Fixme incomplete.
-        '''
+        """
         if tx.is_human:
             if tx.sort == "CREATE":
                 if tx.result == "RETURN":
@@ -1428,7 +1435,7 @@ class ManticoreEVM(ManticoreBase):
             logger.info(
                 "Manticore exception: state should be terminated only at the end of the human transaction"
             )
-        s'''
+        s"""
         # Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROW; it actually changes the balance and nonce? of some accounts
