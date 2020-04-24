@@ -5,7 +5,7 @@ from manticore.core.smtlib import ConstraintSet, Z3Solver
 from manticore.native.state import State
 from manticore.platforms import linux
 
-from manticore.native.models import variadic, isvariadic, strcmp, strlen
+from manticore.native.models import variadic, isvariadic, strcmp, strlen, strcpy
 
 
 class ModelMiscTest(unittest.TestCase):
@@ -41,6 +41,16 @@ class ModelTest(unittest.TestCase):
         cpu = self.state.cpu
         cpu.RSP -= len(s)
         cpu.write_bytes(cpu.RSP, s)
+        return cpu.RSP
+
+    def _push_string_space(self, l):
+        cpu = self.state.cpu
+        cpu.RSP -= l
+        return cpu.RSP
+
+    def _pop_string_space(self, l):
+        cpu = self.state.cpu
+        cpu.RSP += l
         return cpu.RSP
 
     def assertItemsEqual(self, a, b):
@@ -198,3 +208,31 @@ class StrlenTest(ModelTest):
         self.state.constrain(sy[3] != 0)
         ret = strlen(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 4))
+
+
+class StrcpyTest(ModelTest):
+    def _test_strcpy(self, string, dst_len=None):
+        if dst_len is None:
+            dst_len = len(string)
+        cpu = self.state.cpu
+        s = self._push_string(string)
+        d = self._push_string_space(dst_len)
+        ret = strcpy(self.state, d, s)
+        self.assertEqual(ret, d) #addresses should match
+
+        for i in range(len(string) - 1):
+            self.assertEqual(cpu.read_int(s + i, 8), cpu.read_int(d + i, 8))
+        self.assertEqual(0, cpu.read_int(d + len(string) - 1, 8))
+
+        self._pop_string_space(dst_len + len(string))
+
+    def test_concrete(self):
+        self._test_strcpy("abc\0")
+        self._test_strcpy("a\0", dst_len=10)
+        self._test_strcpy("abcdefghijklm\0")
+        self._test_strcpy("a\0", dst_len=5)
+
+    """def test_concrete_empty(self):
+    def test_symbolic_effective_null(self):
+    def test_symbolic(self):
+    def test_symbolic_mixed(self):"""
