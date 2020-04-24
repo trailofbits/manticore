@@ -28,7 +28,9 @@ def _sort_names(x, y):
         tokens = n.split("_")
         if len(tokens) == 1:
             return tokens
-        return ["_".join(tokens[:-1]), tokens[-1]]
+        if tokens[-1].isdigit():
+            return ["_".join(tokens[:-1]), tokens[-1]]
+        return [n]
 
     x_tok = _split_name(x)
     y_tok = _split_name(y)
