@@ -24,7 +24,7 @@ import typing
 
 logger = logging.getLogger(__name__)
 
-extract_digit = re.compile('_([0-9]+)')
+extract_digit = re.compile("_([0-9]+)")
 
 
 def sort_names(x: str) -> typing.List[str]:
