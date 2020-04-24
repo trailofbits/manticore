@@ -920,7 +920,7 @@ class TranslatorSmtlib(Translator):
     visit_BitVecOperation = _visit_operation
 
     def __iter__(self):
-        self._stack.sort()  # TODO: semantic sorting
+        self._stack.sort(reverse=True)  # TODO: semantic sorting
         return self
 
     def __next__(self):
