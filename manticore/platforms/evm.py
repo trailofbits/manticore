@@ -3125,7 +3125,7 @@ class EVMWorld(Platform):
         self, sort, address, *, price=None, data=None, caller=None, value=0, gas=2300
     ):
         """
-        Initiate a transaction
+        Initiate a transaction.
 
         :param sort: the type of transaction. CREATE or CALL or DELEGATECALL
         :param address: the address of the account which owns the code that is executing.
