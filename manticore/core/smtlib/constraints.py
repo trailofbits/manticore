@@ -185,6 +185,8 @@ class ConstraintSet:
 
         tmp = set()
         result = ""
+        # Since these are just variable declarations, sorting them probably doesn't make much
+        # of a difference. It's relatively cheap, but we could skip it if it slows us down.
         for var in sorted(related_variables, key=lambda x: sort_names(x.name)):
             # FIXME
             # band aid hack around the fact that we are double declaring stuff :( :(
