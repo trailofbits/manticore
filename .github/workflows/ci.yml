@@ -119,8 +119,8 @@ jobs:
                 echo "Automaking VMTests" `pwd`
                 cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
                 rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
-                for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -vvv -o ethereum_vm/VMTests_concrete; done
-                rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
+                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
+                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
                 rm -rf ./vmtests
                 touch ethereum_vm/.done
             fi
@@ -165,8 +165,8 @@ jobs:
             # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
             # see https://github.com/trailofbits/manticore/issues/1166
             # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
-            if [ "$(ls output/*tx -l | wc -l)" != "32" ]; then
-                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 32"
+            if [ "$(ls output/*tx -l | wc -l)" != "34" ]; then
+                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
                 return 1
             fi
             echo "Truffle test succeded"
@@ -176,8 +176,7 @@ jobs:
 
         run_tests_from_dir() {
             DIR=$1
-            echo "Running only the tests from 'tests/$DIR' directory"
-            pytest -v --durations=100 --cov=manticore -n auto "tests/$DIR"
+            pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
             coverage xml
         }
 
@@ -204,6 +203,7 @@ jobs:
         case $TEST_TYPE in
             ethereum_vm)
                 make_vmtests
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
 
@@ -214,6 +214,7 @@ jobs:
                 ;;
             wasm)
                 make_wasm_tests
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
                 ;;
@@ -223,6 +224,7 @@ jobs:
             ethereum)               ;&  # Fallthrough
             ethereum_bench)         ;&  # Fallthrough
             other)
+                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 RV=$?
                 ;;
