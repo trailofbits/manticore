@@ -153,11 +153,17 @@ def strcpy(state, dst, src):
     cpu = state.cpu
     ret = dst
 
+    if issymbolic(src):
+        raise ConcretizeArgument(state.cpu, 1)
+
+    if issymbolic(dst):
+        raise ConcretizeArgument(state.cpu, 2)
+
     c = cpu.read_int(src, 8)
     while c != 0:
         cpu.write_int(dst, c, 8)
-        src+=1
-        dst+=1
+        src += 1
+        dst += 1
         c = cpu.read_int(src, 8)
+    cpu.write_int(dst, 0, 8)
     return ret
-
