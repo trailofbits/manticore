@@ -140,3 +140,24 @@ def strlen(state, s):
             ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
 
     return ret
+
+
+def strcpy(state, dst, src):
+    """
+    :param State state: current program state
+    :param int dst: destination string address
+    :param int src: source string address
+    :return: pointer to the dst
+    :rtype: int
+    """
+    cpu = state.cpu
+    ret = dst
+
+    c = cpu.read_int(src, 8)
+    while c != 0:
+        cpu.write_int(dst, c, 8)
+        src+=1
+        dst+=1
+        c = cpu.read_int(src, 8)
+    return ret
+
