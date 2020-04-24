@@ -165,7 +165,7 @@ def parse_arguments():
         "--txnoether", action="store_true", help="Do not attempt to send ether to contract"
     )
 
-    eth_flags.add_argument("--txtarget", type=str, help="Address of a deployed contract to attack")
+    eth_flags.add_argument("--txtarget", type=str, help="Address of a deployed contract to target")
 
     eth_flags.add_argument(
         "--txaccount",
