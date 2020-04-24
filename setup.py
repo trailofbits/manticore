@@ -53,7 +53,6 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "pyyaml",
-        # evm dependencies
         "pysha3",
         "prettytable",
         "ply",
@@ -61,6 +60,7 @@ setup(
         "crytic-compile>=0.1.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
+        "pyevmasm>=0.2.3",
         "psutil",
         "pyevmasm>=0.2.2",
     ]
