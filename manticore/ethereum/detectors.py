@@ -329,7 +329,7 @@ class DetectReentrancyAdvanced(Detector):
             # Check is the tx was successful
             if tx.result:
                 # Check if gas was enough for a reentrancy attack
-                if tx.gas > 2300:
+                if state.can_be_true(Operators.UGE(tx.gas, 2300)):
                     # Check if target address is attaker controlled
                     if (
                         self._addresses is None

@@ -285,7 +285,7 @@ class ConstantFolderSimplifier(Visitor):
         BitVecAdd: operator.__add__,
         BitVecSub: operator.__sub__,
         BitVecMul: operator.__mul__,
-        BitVecDiv: operator.__truediv__,
+        BitVecDiv: operator.__floordiv__,
         BitVecShiftLeft: operator.__lshift__,
         BitVecShiftRight: operator.__rshift__,
         BitVecAnd: operator.__and__,
