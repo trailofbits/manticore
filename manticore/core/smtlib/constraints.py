@@ -163,11 +163,12 @@ class ConstraintSet:
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=False):
-        rv, related_constraints = self.__get_related(related_to)
+        rv, rc = self.__get_related(related_to)
 
         # Since these are just variable declarations, sorting them probably doesn't make much
         # of a difference. It's relatively cheap, but we could skip it if it slows us down.
         related_variables = sorted(rv, key=lambda x: sort_names(x.name))
+        related_constraints = sorted(rc, key=lambda x: x.order)
 
         if replace_constants:
             constant_bindings = {}

@@ -18,12 +18,16 @@ class ExpressionException(SmtlibError):
 class Expression:
     """ Abstract taintable Expression. """
 
-    __slots__ = ["_taint"]
+    _nth = 0
+
+    __slots__ = ["_taint", "order"]
 
     def __init__(self, taint: Union[tuple, frozenset] = ()):
         if self.__class__ is Expression:
             raise TypeError
         super().__init__()
+        self.order = Expression._nth
+        Expression._nth += 1
         self._taint = frozenset(taint)
 
     def __repr__(self):
