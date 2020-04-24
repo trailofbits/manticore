@@ -168,3 +168,7 @@ class EthBenchmark(unittest.TestCase):
     def test_eth_tx_order_dependence_multitx_1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
+
+
+if __name__ == "__main__":
+    unittest.main()

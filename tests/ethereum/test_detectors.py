@@ -268,10 +268,12 @@ class EthDelegatecall(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
+    @unittest.skip("Too slow for these modern times")
     def test_delegatecall_ok1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
+    @unittest.skip("Too slow for these modern times")
     def test_delegatecall_ok2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
