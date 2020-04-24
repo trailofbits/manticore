@@ -3,9 +3,11 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 """
 
 from .cpu.abstractcpu import ConcretizeArgument
-from ..core.smtlib import issymbolic
+from .state import State
+from ..core.smtlib import issymbolic, Expression
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
+from typing import Union
 
 VARIADIC_FUNC_ATTR = "_variadic"
 
@@ -57,7 +59,7 @@ def _find_zero(cpu, constrs, ptr):
     return offset
 
 
-def strcmp(state, s1, s2):
+def strcmp(state: State, s1: Union[int, Expression], s2: Union[int, Expression]):
     """
     strcmp symbolic model.
 
@@ -113,7 +115,7 @@ def strcmp(state, s1, s2):
     return ret
 
 
-def strlen(state, s):
+def strlen(state: State, s: Union[int, Expression]):
     """
     strlen symbolic model.
 
@@ -142,27 +144,25 @@ def strlen(state, s):
     return ret
 
 
-def strcpy(state, dst, src):
+def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) -> int:
     """
     strcpy symbolic model
 
     Algorithm: Copy every byte from the src to dst until finding a byte that will is or must be '\000'
 
-    :param State state: current program state
-    :param int dst: destination string address
-    :param int src: source string address
+    :param state: current program state
+    :param dst: destination string address
+    :param src: source string address
     :return: pointer to the dst
-    :rtype: int
     """
-    cpu = state.cpu
-    ret = dst
-
     if issymbolic(src):
         raise ConcretizeArgument(state.cpu, 1)
 
     if issymbolic(dst):
         raise ConcretizeArgument(state.cpu, 2)
 
+    cpu = state.cpu
+    ret = dst
     c = cpu.read_int(src, 8)
     while (
         issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c != 0)
