@@ -208,7 +208,7 @@ class ConstraintSet:
             for k, v in constant_bindings.items():
                 translator.visit(k == v)
 
-        for name, exp, smtlib in sorted(translator.bindings, key=lambda x: sort_names(x[0])):
+        for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
                 result += f"(declare-fun {name} () (_ BitVec {exp.size}))"
             elif isinstance(exp, Bool):
