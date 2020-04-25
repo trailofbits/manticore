@@ -920,6 +920,7 @@ class TranslatorSmtlib(Translator):
     visit_BitVecOperation = _visit_operation
 
     def __iter__(self):
+        self._stack.reverse()  # Send constraints to Z3 depth-first
         return self
 
     def __next__(self):
