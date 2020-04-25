@@ -17,7 +17,6 @@ from .expression import (
     Constant,
 )
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
-from functools import cmp_to_key
 import logging
 import re
 import typing
@@ -168,7 +167,13 @@ class ConstraintSet:
         # Since these are just variable declarations, sorting them probably doesn't make much
         # of a difference. It's relatively cheap, but we could skip it if it slows us down.
         related_variables = sorted(rv, key=lambda x: sort_names(x.name))
-        related_constraints = sorted(rc, key=lambda x: x.order)
+
+        # We sort the constraints based on the order the expressions were created in. This
+        # may vary depending on the order states were explored in, but should be consistent
+        # with a fixed seed. The actual ordering that comes out isn't important at this step
+        # (the translator will do a depth-first ordering for expressions with operands), but we
+        # need some kind of structure to consistently order disjoint, unhashable expressions.
+        related_constraints = sorted(rc, key=lambda x: x._order)
 
         if replace_constants:
             constant_bindings = {}

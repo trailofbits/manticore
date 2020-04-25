@@ -18,15 +18,19 @@ class ExpressionException(SmtlibError):
 class Expression:
     """ Abstract taintable Expression. """
 
-    _nth = 0
+    # Static data bad, I know. Since the creation order is only used to order the expressions
+    # consistently, we don't need to worry about race conditions here. Collisions will introduce
+    # a little bit of nondeterminism, but should be rare. UNLESS state merging gets involved,
+    # in which case I haven't thought enough about what might happen.
+    _nth: int = 0  #: Total number of existing Expressions
 
-    __slots__ = ["_taint", "order"]
+    __slots__ = ["_taint", "_order"]
 
     def __init__(self, taint: Union[tuple, frozenset] = ()):
         if self.__class__ is Expression:
             raise TypeError
         super().__init__()
-        self.order = Expression._nth
+        self._order = Expression._nth  #: This is the nth expression created. Internal use only.
         Expression._nth += 1
         self._taint = frozenset(taint)
 
