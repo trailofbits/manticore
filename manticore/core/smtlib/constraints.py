@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 extract_digit = re.compile("_([0-9]+)")
 
 
-def sort_names(x: str) -> typing.List[str]:
+def sort_names(x: str) -> typing.List[typing.Union[int, str]]:
     return [int(tok) if tok.isdigit() else tok for tok in extract_digit.split(x)]
 
 
