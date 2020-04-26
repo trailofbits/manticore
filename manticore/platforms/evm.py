@@ -349,7 +349,10 @@ class Transaction:
     @property
     def return_value(self):
         if self.result in {"RETURN", "STOP", "SELFDESTRUCT"}:
-            return 1
+            if self.sort == "CREATE":
+                return self.address
+            else:
+                return 1
         else:
             assert self.result in {"TXERROR", "REVERT", "THROW"}
             return 0
@@ -2118,7 +2121,7 @@ class EVM(Eventful):
         """Create a new account with associated code"""
         data = self.read_buffer(offset, size)
         self.world.start_transaction(
-            "CREATE", None, data=data, caller=self.address, value=value, gas=self.gas
+            "CREATE", None, data=data, caller=self.address, value=value, gas=self.gas*63//64
         )
 
         raise StartTx()
@@ -2179,7 +2182,6 @@ class EVM(Eventful):
             512, Operators.UGT(available_gas, wanted_gas), wanted_gas, available_gas
         )
         self._temp_call_gas = temp_call_gas
-
         return temp_call_gas + fee
 
     @transact
@@ -2192,7 +2194,7 @@ class EVM(Eventful):
             data=self.read_buffer(in_offset, in_size),
             caller=self.address,
             value=value,
-            gas=self._temp_call_gas + 2300,
+            gas=self._temp_call_gas + Operators.ITEBV(256,value!=0, 2300, 0),
         )
         raise StartTx()
 
@@ -2574,28 +2576,31 @@ class EVMWorld(Platform):
         return simplify(tx_fee)
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=None):
-        if self.depth > 0:
-            origin = self.tx_origin()
-        else:
-            origin = caller
+        failed = False
+
+        #Only at human level we need to debit the tx_fee from the gas
+        #In case of an internal tx the CALL-like instruction will
+        #take the fee
+        if self.depth == 0:
             # Debit full gas budget in advance
             self.sub_from_balance(caller, price * gas)
+            tx_fee = self._transaction_fee(sort, address, price, bytecode_or_data, caller, value)
+
+            enough_gas_for_tx_fee = Operators.UGE(gas, tx_fee)
+            failed = not self._concretize_bool(enough_gas_for_tx_fee)
+            gas -= tx_fee
 
         # Send the tx funds
         if sort in {"DELEGATECALL"} and value != 0:
             raise Exception(f"{sort} can not send value")
 
-        tx_fee = self._transaction_fee(sort, address, price, bytecode_or_data, caller, value)
-
-        if address not in self.accounts:
-            self.create_account(address)
-
-        enough_gas_for_tx_fee = Operators.UGE(gas, tx_fee)
-        failed = not self._concretize_bool(enough_gas_for_tx_fee)
         if not failed:
             self.send_funds(caller, address, value)
         else:
             logger.info(f"Not enough gas ({Z3Solver.instance().minmax(self.constraints, gas)}) for tx_fee ({tx_fee})")
+
+        if address not in self.accounts:
+            self.create_account(address)
 
         # If not a human tx, reset returndata
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
@@ -2620,7 +2625,6 @@ class EVMWorld(Platform):
             caller = self.current_transaction.caller
             value = self.current_transaction.value
 
-        gas -= tx_fee
         if failed:
             gas = 0
 
@@ -3273,6 +3277,7 @@ class EVMWorld(Platform):
 
         # to/address
         self._pending_transaction_concretize_address()
+
         if sort == "CREATE":
             expected_address = self.new_address(sender=caller)
             if address is None:
@@ -3310,7 +3315,7 @@ class EVMWorld(Platform):
             failed = not self._concretize_bool(enough_balance, "Forking on available funds")
 
         if failed:
-            logger.info("Failing TX. Too deep or not enough balance to pay for gas")
+            logger.info(f"Failing TX. Too deep or not enough balance to pay for gas{(aux_src_balance, aux_value + aux_fee)}")
 
         # processed
         self._pending_transaction = None

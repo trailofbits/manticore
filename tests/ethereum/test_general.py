@@ -36,8 +36,6 @@ from manticore.utils.deprecated import ManticoreDeprecationWarning
 solver = Z3Solver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-from manticore.utils.log import set_verbosity
-set_verbosity(9)
 
 
 @contextmanager
@@ -523,7 +521,7 @@ class EthTests(unittest.TestCase):
         source_code = (
             "contract DontWork1{ string s; constructor(string memory s_) public{ s = s_;} }"
         )
-        owner = self.mevm.create_account()
+        owner = self.mevm.create_account(balance=200000000)
 
         sym_args = self.mevm.make_symbolic_arguments("(string)")
         contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=sym_args)
@@ -532,7 +530,7 @@ class EthTests(unittest.TestCase):
 
     def test_create_contract_two_instances(self):
         source_code = "contract A { constructor(uint32 arg) {} }"
-        owner = self.mevm.create_account()
+        owner = self.mevm.create_account(6000000)
 
         contracts = [
             # When we pass no `args`, the default is `()` so it ends up with `b''` as constructor data
@@ -551,7 +549,7 @@ class EthTests(unittest.TestCase):
     def test_contract_create_and_call_underscore_function(self):
         source_code = "contract A { function _f(uint x) returns (uint) { return x + 0x1234; } }"
 
-        owner = self.mevm.create_account()
+        owner = self.mevm.create_account(balance=300000000)
         contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=[])
 
         contract._f(123)
@@ -677,7 +675,7 @@ class EthTests(unittest.TestCase):
 
         }
         """
-        user_account = self.mevm.create_account(balance=1000)
+        user_account = self.mevm.create_account(balance=1000000000)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         with self.assertRaises(EthereumError):
             contract_account.ret(self.mevm.make_symbolic_value())
@@ -927,7 +925,7 @@ class EthTests(unittest.TestCase):
 
         contract_src = """
         contract C {
-          function transferHalfTo(address payable receiver) public payable {
+          function transferHalfTo(address receiver) public payable {
               receiver.transfer(address(this).balance/2);
           }
         }
@@ -939,10 +937,7 @@ class EthTests(unittest.TestCase):
         symbolic_address = m.make_symbolic_address()
         m.constrain(symbolic_address == receiver.address)
         self.assertTrue(m.count_ready_states() > 0)
-        contract.transferHalfTo(symbolic_address, caller=owner, value=1000, gas=9999999999)
-
-
-            
+        contract.transferHalfTo(symbolic_address, caller=owner, value=1000000, gas=9999999999)
 
         self.assertTrue(
             any(
@@ -1081,7 +1076,7 @@ class EthTests(unittest.TestCase):
 
         contract Lib {
            function isSeven(uint a) public pure returns (bool) {
-               if (a == 7) {
+               if (a == 0x414243444546) {
                    return true;
                } else {
                    return false;
@@ -1107,13 +1102,13 @@ class EthTests(unittest.TestCase):
         m = self.mevm
         m.register_detector(DetectExternalCallAndLeak())
 
-        owner = m.create_account(name="owner", balance=100000000000)
+        owner = m.create_account(name="owner", balance=30000000000000000)
         wallet = m.solidity_create_contract(
-            source_code, name="wallet", contract_name="Wallet", owner=owner, balance=1000
+            source_code, name="wallet", contract_name="Wallet", owner=owner, balance=10000000000000000
         )
-        attacker = m.create_account(name="attacker", balance=0)
-
-        wallet.luckyNumber(m.make_symbolic_value(), caller=attacker)
+        attacker = m.create_account(name="attacker", balance=30000000000000000)
+        print ("A"*999999, attacker)
+        wallet.luckyNumber(m.make_symbolic_value(), caller=attacker, gas=2312312312222)
         m.finalize()
 
         self.assertListEqual([x[2] for x in m.global_findings], ["Reachable ether leak to sender"])
