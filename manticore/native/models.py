@@ -209,7 +209,7 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
 
     zeros = _find_zeros(cpu, constrs, src)
     null = zeros[-1]
-    # If the symmbolic byte was not constrained to '\000' write the appropriate symbolic bytes
+    # If the symbolic byte was not constrained to '\000' write the appropriate symbolic bytes
     for offset in range(null, -1, -1):
         src_val = cpu.read_int(src + offset, 8)
         dst_val = cpu.read_int(dst + offset, 8)
