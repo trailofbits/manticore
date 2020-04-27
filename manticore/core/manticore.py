@@ -26,6 +26,7 @@ from .workspace import Workspace
 from .worker import WorkerSingle, WorkerThread, WorkerProcess
 
 from multiprocessing.managers import SyncManager
+from multiprocessing import cpu_count
 import threading
 import ctypes
 import signal
@@ -59,7 +60,9 @@ consts.add(
     default=False,
     description="If True enables to run workers over the network UNIMPLEMENTED",
 )
-consts.add("procs", default=10, description="Number of parallel processes to spawn")
+consts.add(
+    "procs", default=min(cpu_count(), 10), description="Number of parallel processes to spawn"
+)
 
 proc_type = MProcessingType.multiprocessing
 if sys.platform != "linux":
