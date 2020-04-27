@@ -164,8 +164,9 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
     cpu = state.cpu
     ret = dst
     c = cpu.read_int(src, 8)
+    # Copy until '\000' is reached or symbolic memory that can be '\000'
     while (
-        issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c != 0)
+        issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c == 0)
     ) or c != 0:
         cpu.write_int(dst, c, 8)
         src += 1
@@ -173,5 +174,19 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         c = cpu.read_int(src, 8)
 
     # Even if the byte was symbolic and constrained to '\000' write a concrete '\000'
-    cpu.write_int(dst, 0, 8)
+    if (issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c != 0)) or c == 0:
+        cpu.write_int(dst, 0, 8)
+        return ret
+
+    # If the symmbolic byte was not constrained to '\000'write the appropriate symbolic bytes
+    null_index = []
+    while (
+        issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c != 0)
+    ) or c != 0:
+        if issymbolic(c):
+            if not Z3Solver.instance().can_be_true(state.constraints, c == 0):
+                # Handle case for new null
+                pass
+        # Make new ITEBV
+    # Write null
     return ret
