@@ -265,8 +265,9 @@ class ManticoreBase(Eventful):
                 "_killed",
                 "_ready_states",
                 "_terminated_states",
-                "_killed_states",
                 "_busy_states",
+                "_killed_states",
+                "_preserved_states",
                 "_shared_context",
             )
         ):
@@ -325,7 +326,7 @@ class ManticoreBase(Eventful):
 
         return cls(deserialized, *args, **kwargs)
 
-    def _fork(self, state, expression, policy="ALL", setstate=None):
+    def _fork(self, state, expression, policy="ALL", setstate=None, delete: bool = True):
         """
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
@@ -370,6 +371,8 @@ class ManticoreBase(Eventful):
         children = []
         for new_value in solutions:
             with state as new_state:
+                new_state.parent_id = state.parent_id if delete else state.id
+
                 new_state.constrain(expression == new_value)
 
                 # and set the PC of the new state to the concrete pc-dest
@@ -384,8 +387,11 @@ class ManticoreBase(Eventful):
 
         with self._lock:
             self._busy_states.remove(state.id)
-            self._remove(state.id)
-            state._id = None
+            if delete:
+                self._remove(state.id)
+                state._id = None
+            else:
+                self._preserved_states.append(state.id)
             self._lock.notify_all()
 
         self._publish("did_fork_state", new_state, expression, new_value, policy)
@@ -675,6 +681,18 @@ class ManticoreBase(Eventful):
         See also `ready_states`.
         """
         for state_id in self._all_states:
+            state = self._load(state_id)
+            yield state
+            # Re-save the state in case the user changed its data
+            self._save(state, state_id=state_id)
+
+    @property
+    @sync
+    def preserved_states(self):
+        """
+        Iterates over the states that were forked but not deleted.
+        """
+        for state_id in self._preserved_states:
             state = self._load(state_id)
             yield state
             # Re-save the state in case the user changed its data
@@ -1037,6 +1055,7 @@ class ManticoreSingle(ManticoreBase):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
+        self._preserved_states = []
 
         self._shared_context = {}
         super().__init__(*args, **kwargs)
@@ -1054,6 +1073,7 @@ class ManticoreThreading(ManticoreBase):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
+        self._preserved_states = []
 
         self._shared_context = {}
 
@@ -1083,6 +1103,7 @@ class ManticoreMultiprocessing(ManticoreBase):
         self._terminated_states = self._manager.list()
         self._busy_states = self._manager.list()
         self._killed_states = self._manager.list()
+        self._preserved_states = self._manager.list()
         self._shared_context = self._manager.dict()
         self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
 

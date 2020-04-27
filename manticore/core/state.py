@@ -1,6 +1,8 @@
 import copy
 import logging
+import traceback
 
+from typing import Optional
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
@@ -42,7 +44,7 @@ class Concretize(StateException):
 
     _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE"]
 
-    def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
+    def __init__(self, message, expression, setstate=None, policy=None, delete: bool = True, **kwargs):
         if policy is None:
             policy = "ALL"
         if policy not in self._ValidPolicies:
@@ -52,6 +54,7 @@ class Concretize(StateException):
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
+        self.delete = delete
         self.message = f"Concretize: {message} (Policy: {policy})"
         super().__init__(**kwargs)
 
@@ -62,18 +65,28 @@ class SerializeState(Concretize):
     """
 
     def _setstate(self, state, _value):
+        assert self.filename is not None
         with open(self.filename, "wb") as statef:
             PickleSerializer().serialize(state, statef)
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename: Optional[str], **kwargs):
         super().__init__(
             f"Saving state to {filename}",
             BitVecConstant(32, 0),
-            setstate=self._setstate,
+            setstate=self._setstate if filename is not None else None,
             policy="ONE",
+            delete=filename is not None,
             **kwargs,
         )
-        self.filename = filename
+        self.filename: Optional[str] = filename
+
+        if all(frame[2] not in (
+            "will_execute_instruction_callback",
+            "did_execute_instruction_callback",
+            "will_evm_execute_instruction_callback",
+            "did_evm_execute_instruction_callback",
+        ) for frame in traceback.extract_stack()):
+            raise StateException("SerializeState raised outside of whitelisted callback")
 
 
 class ForkState(Concretize):
@@ -102,6 +115,7 @@ class StateBase(Eventful):
     def __init__(self, constraints, platform, **kwargs):
         super().__init__(**kwargs)
         self._platform = platform
+        self._parent_id: Optional[int] = None
         self._constraints = constraints
         self._platform.constraints = constraints
         self._input_symbols = list()
@@ -115,6 +129,7 @@ class StateBase(Eventful):
     def __getstate__(self):
         state = super().__getstate__()
         state["platform"] = self._platform
+        state["parent_id"] = self._parent_id
         state["constraints"] = self._constraints
         state["input_symbols"] = self._input_symbols
         state["child"] = self._child
@@ -125,6 +140,7 @@ class StateBase(Eventful):
     def __setstate__(self, state):
         super().__setstate__(state)
         self._platform = state["platform"]
+        self._parent_id = state["parent_id"]
         self._constraints = state["constraints"]
         self._input_symbols = state["input_symbols"]
         self._child = state["child"]
@@ -133,6 +149,14 @@ class StateBase(Eventful):
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._platform)
+
+    @property
+    def parent_id(self) -> Optional[int]:
+        return self._parent_id
+
+    @parent_id.setter
+    def parent_id(self, parent_id: int):
+        self._parent_id = parent_id
 
     @property
     def id(self):
@@ -162,6 +186,10 @@ class StateBase(Eventful):
         self._constraints.__exit__(ty, value, traceback)
         self._child = None
         self.platform.constraints = self.constraints
+
+    @staticmethod
+    def preserve():
+        raise SerializeState(None)
 
     @property
     def input_symbols(self):

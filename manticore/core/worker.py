@@ -132,14 +132,14 @@ class Worker:
                         assert current_state is None
                     # Handling Forking and terminating exceptions
                     except Concretize as exc:
-                        logger.info("[%r] Debug %r", self.id, exc)
+                        logger.info("[%r] Debug %r", self.id, exc.message)
                         # The fork() method can decides which state to keep
                         # exploring. For example when the fork results in a
                         # single state it is better to just keep going.
                         # Though, normally fork() saves the spawned childs,
                         # returns a None and let _get_state choose what to explore
                         # next
-                        m._fork(current_state, exc.expression, exc.policy, exc.setstate)
+                        m._fork(current_state, exc.expression, exc.policy, exc.setstate, delete=exc.delete)
                         current_state = None
 
                     except TerminateState as exc:
