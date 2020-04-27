@@ -221,7 +221,7 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         # For every byte that could be null before the current byte add an if then else case to the bitvec tree to set the value to the src or dst byte accordingly
         for zero in reverse(zeros):
             c = cpu.read_int(src + zero, 8)
-            true_val = ITEBV(cpu.address_bit_size, c != 0, src_val, dst_val)
+            src_val = ITEBV(cpu.address_bit_size, c != 0, src_val, dst_val)
         cpu.write(dst + offset, true_val, 8)
 
     return ret
