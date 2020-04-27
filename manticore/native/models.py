@@ -59,6 +59,36 @@ def _find_zero(cpu, constrs, ptr):
     return offset
 
 
+def _find_zeros(cpu, constrs, ptr):
+    """
+    Helper for finding the closest NULL or, effectively NULL byte from a starting address.
+
+    :param Cpu cpu:
+    :param ConstraintSet constrs: Constraints for current `State`
+    :param int ptr: Address to start searching for a zero from
+    :return: Offset from `ptr` to first byte that is 0 or an `Expression` that must be zero
+    """
+
+    offset = 0
+    zeros = []
+    while True:
+        byt = cpu.read_int(ptr + offset, 8)
+
+        if issymbolic(byt):
+            if Z3Solver.instance().can_be_true(constrs, byt == 0):
+                zeros.append(offset)
+            if not Z3Solver.instance().can_be_true(constrs, byt != 0):
+                break
+        else:
+            if byt == 0:
+                zeros.append(offset)
+                break
+
+        offset += 1
+
+    return zeros
+
+
 def strcmp(state: State, s1: Union[int, Expression], s2: Union[int, Expression]):
     """
     strcmp symbolic model.
@@ -162,31 +192,37 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         raise ConcretizeArgument(state.cpu, 2)
 
     cpu = state.cpu
+    constrs = state.constraints
     ret = dst
     c = cpu.read_int(src, 8)
     # Copy until '\000' is reached or symbolic memory that can be '\000'
-    while (
-        issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c == 0)
-    ) or c != 0:
+    while (issymbolic(c) and not Z3Solver.instance().can_be_true(constrs, c == 0)) or c != 0:
         cpu.write_int(dst, c, 8)
         src += 1
         dst += 1
         c = cpu.read_int(src, 8)
 
     # Even if the byte was symbolic and constrained to '\000' write a concrete '\000'
-    if (issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c != 0)) or c == 0:
+    if (issymbolic(c) and not Z3Solver.instance().can_be_true(constrs, c != 0)) or c == 0:
         cpu.write_int(dst, 0, 8)
         return ret
 
-    # If the symmbolic byte was not constrained to '\000'write the appropriate symbolic bytes
-    null_index = []
-    while (
-        issymbolic(c) and not Z3Solver.instance().can_be_true(state.constraints, c != 0)
-    ) or c != 0:
-        if issymbolic(c):
-            if not Z3Solver.instance().can_be_true(state.constraints, c == 0):
-                # Handle case for new null
-                pass
-        # Make new ITEBV
-    # Write null
+    zeros = _find_zeros(cpu, constrs, src)
+    null = zeros[-1]
+    # If the symmbolic byte was not constrained to '\000' write the appropriate symbolic bytes
+    for offset in range(null, -1, -1):
+        src_val = cpu.read_int(src + offset, 8)
+        dst_val = cpu.read_int(dst + offset, 8)
+        if zeros[-1] == offset:
+            c = cpu.read_int(src + offset, 8)
+            # Make sure last byte of the copy is always a concrete '\000'
+            true_val = ITEBV(cpu.address_bit_size, c == 0, 0, src_val)
+            zeros.pop()
+
+        # For every byte that could be null before the current byte add an if then else case to the bitvec tree to set the value to the src or dst byte accordingly
+        for zero in reverse(zeros):
+            c = cpu.read_int(src + zero, 8)
+            true_val = ITEBV(cpu.address_bit_size, c != 0, src_val, dst_val)
+        cpu.write(dst + offset, true_val, 8)
+
     return ret
