@@ -4,6 +4,7 @@ import os
 import shutil
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
 from manticore.utils import log
+from manticore.utils import config
 
 from manticore.ethereum import (
     ManticoreEVM,
@@ -37,6 +38,7 @@ class EthBenchmark(unittest.TestCase):
         mevm.register_detector(DetectIntegerOverflow())
         mevm.register_detector(DetectReentrancyAdvanced())
 
+        print("SEED:", config.get_group("core").seed)
         filename = os.path.join(THIS_DIR, "consensys_benchmark", f"{name}.sol")
 
         if use_ctor_sym_arg:
