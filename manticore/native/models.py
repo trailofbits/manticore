@@ -61,32 +61,37 @@ def _find_zero(cpu, constrs, ptr):
 
 def _find_zeros(cpu, constrs, ptr):
     """
-    Helper for finding the closest NULL or, effectively NULL byte from a starting address.
+    Helper for finding all bytes that can be NULL until one is found that is NULL or is effectively NULL from the starting address.
 
     :param Cpu cpu:
     :param ConstraintSet constrs: Constraints for current `State`
     :param int ptr: Address to start searching for a zero from
     :return: Offset from `ptr` to first byte that is 0 or an `Expression` that must be zero
+    :return: List of offsets from `ptr` to a byte that can be 0. The last value in the 
+    list is the offset to the first byte found that is 0 or an `Expression` that must be 0
     """
 
     offset = 0
-    zeros = []
+    can_be_zero = []
     while True:
         byt = cpu.read_int(ptr + offset, 8)
 
         if issymbolic(byt):
+            # If the byte can be 0 append the offset location to can_be_zero
             if Z3Solver.instance().can_be_true(constrs, byt == 0):
-                zeros.append(offset)
+                can_be_zero.append(offset)
+            # If it is not the case that there exists another possible val for byt than 0
+            # (Byt is constrained to 0) then an effectively NULL byte has been found
             if not Z3Solver.instance().can_be_true(constrs, byt != 0):
                 break
         else:
             if byt == 0:
-                zeros.append(offset)
+                can_be_zero.append(offset)
                 break
 
         offset += 1
 
-    return zeros
+    return can_be_zero
 
 
 def strcmp(state: State, s1: Union[int, Expression], s2: Union[int, Expression]):
@@ -178,7 +183,11 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
     """
     strcpy symbolic model
 
-    Algorithm: Copy every byte from the src to dst until finding a byte that will is or must be '\000'
+    Algorithm: Copy every byte from the src to dst until finding a byte that can be or is NULL. 
+    If the byte is NULL or is constrained to only the NULL value, append the NULL value to dst
+    and return. If the value can be NULL or another value write an `Expression` for every following
+    byte that sets a value to the src or dst byte according to the preceding bytes until a NULL
+    byte or effectively NULL byte is found.
 
     :param state: current program state
     :param dst: destination string address
@@ -202,7 +211,7 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         dst += 1
         c = cpu.read_int(src, 8)
 
-    # Even if the byte was symbolic and constrained to '\000' write a concrete '\000'
+    # If the byte is symbolic and constrained to '\000' or is '\000' write concrete val and return
     if (issymbolic(c) and not Z3Solver.instance().can_be_true(constrs, c != 0)) or c == 0:
         cpu.write_int(dst, 0, 8)
         return ret
@@ -218,7 +227,8 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
             true_val = ITEBV(cpu.address_bit_size, src_val == 0, 0, src_val)
             zeros.pop()
 
-        # For every byte that could be null before the current byte add an if then else case to the bitvec tree to set the value to the src or dst byte accordingly
+        # For every byte that could be null before the current byte add an
+        # if then else case to the bitvec tree to set the value to the src or dst byte accordingly
         for zero in reverse(zeros):
             c = cpu.read_int(src + zero, 8)
             src_val = ITEBV(cpu.address_bit_size, c != 0, src_val, dst_val)
