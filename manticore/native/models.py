@@ -214,9 +214,8 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         src_val = cpu.read_int(src + offset, 8)
         dst_val = cpu.read_int(dst + offset, 8)
         if zeros[-1] == offset:
-            c = cpu.read_int(src + offset, 8)
             # Make sure last byte of the copy is always a concrete '\000'
-            true_val = ITEBV(cpu.address_bit_size, c == 0, 0, src_val)
+            true_val = ITEBV(cpu.address_bit_size, src_val == 0, 0, src_val)
             zeros.pop()
 
         # For every byte that could be null before the current byte add an if then else case to the bitvec tree to set the value to the src or dst byte accordingly
