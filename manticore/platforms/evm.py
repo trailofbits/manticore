@@ -2582,6 +2582,7 @@ class EVMWorld(Platform):
         storage = self._world_state.get_storage(address)
         if storage is None:
             storage = Storage(constraints, address)
+            self._world_state.set_storage(address, storage)
         return storage
 
     def _set_storage(self, address: int, storage: Union[Dict[int, int], Optional[Storage]]):
