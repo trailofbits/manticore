@@ -81,7 +81,7 @@ class StateTest(unittest.TestCase):
     def test_workspace_id_start_with_zero(self):
         workspace = Workspace("mem:")
         id_ = workspace.save_state(self.state)
-        self.assertEquals(id_, 0)
+        self.assertEqual(id_, 0)
 
     def test_output(self):
         out = ManticoreOutput("mem:")

@@ -1,7 +1,6 @@
 import binascii
 import json
 import logging
-import string
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from typing import Dict, Optional, Union
@@ -37,7 +36,7 @@ from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
 from ..utils import config, log
 from ..utils.deprecated import deprecated
-from ..utils.helpers import PickleSerializer
+from ..utils.helpers import PickleSerializer, printable_bytes
 
 logger = logging.getLogger(__name__)
 logging.getLogger("CryticCompile").setLevel(logging.ERROR)
@@ -348,9 +347,16 @@ class ManticoreEVM(ManticoreBase):
                 source_code, contract_name, libraries, crytic_compile_args
             )
 
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi = (
-            compilation_result
-        )
+        (
+            name,
+            source_code,
+            bytecode,
+            runtime,
+            srcmap,
+            srcmap_runtime,
+            hashes,
+            abi,
+        ) = compilation_result
         warnings = ""
 
         return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings)
@@ -513,7 +519,7 @@ class ManticoreEVM(ManticoreBase):
             for _ in range(rep):
                 result.append(self._make_symbolic_arguments(ty[2]))
         else:
-            raise NotImplemented
+            raise NotImplementedError(f"Could not produce symbolic argument of type {ty[0]}")
 
         return result
 
@@ -911,9 +917,12 @@ class ManticoreEVM(ManticoreBase):
                 address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
-            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(
-                state, caller, address, value, data
-            )
+            (
+                caller_migrated,
+                address_migrated,
+                value_migrated,
+                data_migrated,
+            ) = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -1617,16 +1626,13 @@ class ManticoreEVM(ManticoreBase):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = "".join(
-                    [c for c in map(chr, solved_memlog) if c in string.printable]
-                )
 
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write(
                     "Memlog: %s (%s) %s\n"
                     % (
                         binascii.hexlify(solved_memlog).decode(),
-                        printable_bytes,
+                        printable_bytes(solved_memlog),
                         flagged(is_log_symbolic),
                     )
                 )

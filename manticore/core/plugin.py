@@ -129,7 +129,6 @@ class ExtendedTracer(Plugin):
     def did_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             raise Exception
-            return
 
         entry = {"type": "mem_write", "where": where, "value": value, "size": size}
         state.context.setdefault(self.context_key, []).append(entry)

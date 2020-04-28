@@ -1,6 +1,10 @@
 from ..platforms.platform import SyscallNotImplemented, unimplemented
 from .linux_syscalls import amd64
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class SyscallStubs:
     """
@@ -20,9 +24,11 @@ class SyscallStubs:
         self.parent = parent
 
     def __getattr__(self, item):
-        print(
-            "System calls should be copied and pasted into linux.py, not implemented within the stub file.",
-            "If you're seeing this message, you may have forgotten to do that.",
+        logger.warning(
+            f"Getting {item!r} attribute from {self.__class__}: "
+            "System calls should be copied and pasted into linux.py, "
+            "not implemented within the stub file. "
+            "If you're seeing this message, you may have forgotten to do that."
         )
         return getattr(self.parent, item)
 

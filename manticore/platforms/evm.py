@@ -29,6 +29,7 @@ from ..core.smtlib import (
 )
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
+from ..utils.helpers import printable_bytes
 from ..utils import config
 from ..core.smtlib.visitors import simplify
 from ..exceptions import EthereumError
@@ -96,7 +97,7 @@ TT256M1 = 2 ** 256 - 1
 MASK160 = 2 ** 160 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
-DEFAULT_FORK = "constantinople"
+DEFAULT_FORK = "istanbul"
 
 # FIXME. We should just use a Transaction() for this
 PendingTransaction = namedtuple(
@@ -242,8 +243,10 @@ class Transaction:
             return_data = conc_tx.return_data
 
             stream.write(
-                "Return_data: 0x{} {}\n".format(
-                    binascii.hexlify(return_data).decode(), flagged(issymbolic(self.return_data))
+                "Return_data: 0x{} ({}) {}\n".format(
+                    binascii.hexlify(return_data).decode(),
+                    printable_bytes(return_data),
+                    flagged(issymbolic(self.return_data)),
                 )
             )
 
@@ -730,8 +733,8 @@ class EVM(Eventful):
         )
         self.address = address
         self.caller = (
-            caller
-        )  # address of the account that is directly responsible for this execution
+            caller  # address of the account that is directly responsible for this execution
+        )
         self.data = data
         self.value = value
         self._bytecode = bytecode
@@ -1184,7 +1187,7 @@ class EVM(Eventful):
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
-            should_check_jumpdest_solutions = Z3Solver().get_all_values(
+            should_check_jumpdest_solutions = Z3Solver.instance().get_all_values(
                 self.constraints, should_check_jumpdest
             )
             if len(should_check_jumpdest_solutions) != 1:
@@ -1262,9 +1265,14 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 current_vm = state.platform.current_vm
-                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = (
-                    current_vm._checkpoint_data
-                )
+                (
+                    _pc,
+                    _old_gas,
+                    _instruction,
+                    _arguments,
+                    _fee,
+                    _allocated,
+                ) = current_vm._checkpoint_data
                 current_vm._checkpoint_data = (
                     _pc,
                     _old_gas,
@@ -1285,9 +1293,14 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 current_vm = state.platform.current_vm
-                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = (
-                    current_vm._checkpoint_data
-                )
+                (
+                    _pc,
+                    _old_gas,
+                    _instruction,
+                    _arguments,
+                    _fee,
+                    _allocated,
+                ) = current_vm._checkpoint_data
                 new_arguments = []
                 for old_arg in _arguments:
                     if len(new_arguments) == pos:
@@ -1602,6 +1615,9 @@ class EVM(Eventful):
         """Get balance of the given account"""
         return self.world.get_balance(account)
 
+    def SELFBALANCE(self):
+        return self.world.get_balance(self.address)
+
     def ORIGIN(self):
         """Get execution origination address"""
         return Operators.ZEXTEND(self.world.tx_origin(), 256)
@@ -1732,7 +1748,7 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
-            max_size = Z3Solver().max(self.constraints, size)
+            max_size = Z3Solver.instance().max(self.constraints, size)
         else:
             max_size = size
 
@@ -1770,6 +1786,12 @@ class EVM(Eventful):
     def EXTCODESIZE(self, account):
         """Get size of an account's code"""
         return len(self.world.get_code(account))
+
+    @concretized_args(account="ACCOUNTS")
+    def EXTCODEHASH(self, account):
+        """Get hash of code"""
+        bytecode = self.world.get_code(account)
+        return globalsha3(bytecode)
 
     def EXTCODECOPY_gas(self, account, address, offset, size):
         GCOPY = 3  # cost to copy one 32 byte word
@@ -1831,6 +1853,11 @@ class EVM(Eventful):
     def GASLIMIT(self):
         """Get the block's gas limit"""
         return self.world.block_gaslimit()
+
+    def CHAINID(self):
+        """Get current chainid."""
+        #  1:= Ethereum Mainnet - https://chainid.network/
+        return 1
 
     ############################################################################
     # Stack, Memory, Storage and Flow Operations
@@ -2127,7 +2154,7 @@ class EVM(Eventful):
         # FIXME for on the known addresses
         if issymbolic(recipient):
             logger.info("Symbolic recipient on self destruct")
-            recipient = Z3Solver().get_value(self.constraints, recipient)
+            recipient = Z3Solver.instance().get_value(self.constraints, recipient)
 
         if recipient not in self.world:
             self.world.create_account(address=recipient)

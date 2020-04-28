@@ -8,6 +8,7 @@ EXAMPLES=      \
   basic        \
   crackme      \
   fclose       \
+  fileio       \
   helloworld   \
   ibranch      \
   indexhell    \

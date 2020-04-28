@@ -19,7 +19,7 @@ from .detectors import (
 )
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM, set_verbosity
-from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIfStorageChanges
+from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace, KeepOnlyIfStorageChanges, SkipRevertBasicBlocks
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config, log
 
@@ -120,6 +120,11 @@ eth_flags.add(
     default=False,
     description="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
     "do not explore constant functions. Disable all detectors.",
+
+eth_flags.add(
+    "skip_reverts",
+    default=False,
+    description="Simply avoid exploring basic blocks that end in a REVERT",
 )
 
 
@@ -172,6 +177,7 @@ def ethereum_main():
         cfg["eth"].include_all = False
         cfg["eth"].only_alive_testcases = True
         cfg["evm"].oog = "ignore"
+        cfg["evm"].skip_reverts = True
 
     if cfg["eth"].list_detectors:
         print("Detectors: ", ", ".join(detector.ARGUMENT for detector in get_detectors_classes()))
@@ -179,6 +185,9 @@ def ethereum_main():
     m = ManticoreEVM(cfg=cfg)
 
     with WithKeyboardInterruptAs(m.kill):
+        if cfg["eth"].skip_reverts:
+            m.register_plugin(SkipRevertBasicBlocks())
+
         if cfg["eth"].explore_balance:
             m.register_plugin(KeepOnlyIfStorageChanges())
 

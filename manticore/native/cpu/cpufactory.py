@@ -8,6 +8,7 @@ from .x86 import (
     I386CdeclAbi,
     SystemVAbi,
 )
+from .abstractcpu import Abi, Cpu, SyscallAbi
 
 
 class CpuFactory:
@@ -28,20 +29,20 @@ class CpuFactory:
     }
 
     @staticmethod
-    def get_cpu(mem, machine):
+    def get_cpu(mem, machine: str) -> Cpu:
         cpu = CpuFactory._cpus[machine](mem)
         mem.cpu = cpu
         return cpu
 
     @staticmethod
-    def get_function_abi(cpu, os, machine):
+    def get_function_abi(cpu: Cpu, os: str, machine: str) -> Abi:
         if os != "linux" or machine not in CpuFactory._linux_abis:
             raise NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")
 
         return CpuFactory._linux_abis[machine](cpu)
 
     @staticmethod
-    def get_syscall_abi(cpu, os, machine):
+    def get_syscall_abi(cpu: Cpu, os: str, machine: str) -> SyscallAbi:
         if os != "linux" or machine not in CpuFactory._linux_syscalls_abis:
             raise NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")
 

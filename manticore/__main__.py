@@ -11,7 +11,7 @@ from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity
 from .ethereum.cli import ethereum_main
 from .wasm.cli import wasm_main
-from .utils import config, log, install_helper
+from .utils import config, log, install_helper, resources
 
 consts = config.get_group("cli")
 consts.add("recursionlimit", default=10000, description="Value to set for Python recursion limit")

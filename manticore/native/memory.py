@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
+from dataclasses import dataclass, field
 from ..core.smtlib import (
     Operators,
     ConstraintSet,
@@ -18,6 +19,8 @@ from ..utils import config
 import functools
 import logging
 
+from typing import Dict, Generator, Iterable, List, MutableMapping, Optional, Set
+
 logger = logging.getLogger(__name__)
 
 consts = config.get_group("native")
@@ -34,7 +37,7 @@ class MemoryException(Exception):
     Memory exceptions
     """
 
-    def __init__(self, message, address=None):
+    def __init__(self, message: str, address=None):
         """
         Builds a memory exception.
 
@@ -60,6 +63,7 @@ class ConcretizeMemory(MemoryException):
             self.message = f"Concretizing memory address {address} size {size}"
         else:
             self.message = message
+        super().__init__(self.message, address)
         self.mem = mem
         self.address = address
         self.size = size
@@ -69,10 +73,9 @@ class ConcretizeMemory(MemoryException):
 class InvalidMemoryAccess(MemoryException):
     _message = "Invalid memory access"
 
-    def __init__(self, address, mode):
+    def __init__(self, address, mode: str):
         assert mode in "rwx"
-        suffix = f" (mode:{mode})"
-        message = self._message + suffix
+        message = f"{self._message} (mode:{mode})"
         super(InvalidMemoryAccess, self).__init__(message, address)
         self.mode = mode
 
@@ -80,7 +83,7 @@ class InvalidMemoryAccess(MemoryException):
 class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
     _message = "Invalid symbolic memory access"
 
-    def __init__(self, address, mode, size, constraint):
+    def __init__(self, address, mode: str, size, constraint):
         super(InvalidSymbolicMemoryAccess, self).__init__(address, mode)
         # the crashing constraint you need to assert
         self.constraint = constraint
@@ -115,7 +118,7 @@ class Map(object, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, start, size, perms, name=None):
+    def __init__(self, start: int, size: int, perms: str, name=None):
         """
         Abstract memory map.
 
@@ -132,11 +135,11 @@ class Map(object, metaclass=ABCMeta):
         self._set_perms(perms)
         self._name = name
 
-    def _get_perms(self):
+    def _get_perms(self) -> str:
         """ Gets the access permissions of the map. """
         return self._perms
 
-    def _set_perms(self, perms):
+    def _set_perms(self, perms: str) -> None:
         """
         Sets the access permissions of the map.
 
@@ -152,7 +155,7 @@ class Map(object, metaclass=ABCMeta):
     # Property
     perms = property(_get_perms, _set_perms)
 
-    def access_ok(self, access):
+    def access_ok(self, access) -> bool:
         """ Check if there is enough permissions for access """
         for c in access:
             if c not in self.perms:
@@ -160,11 +163,11 @@ class Map(object, metaclass=ABCMeta):
         return True
 
     @property
-    def start(self):
+    def start(self) -> int:
         return self._start
 
     @property
-    def end(self):
+    def end(self) -> int:
         return self._end
 
     @property
@@ -189,7 +192,7 @@ class Map(object, metaclass=ABCMeta):
         """
         return iter(range(self._start, self._end))
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (
             self.start == other.start
             and self.end == other.end
@@ -207,10 +210,10 @@ class Map(object, metaclass=ABCMeta):
             return self.perms < other.perms
         return self.name < other.name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return object.__hash__(self)
 
-    def _in_range(self, index):
+    def _in_range(self, index) -> bool:
         """ Returns True if index is in range """
         if isinstance(index, slice):
             in_range = (
@@ -268,7 +271,7 @@ class Map(object, metaclass=ABCMeta):
 class AnonMap(Map):
     """ A concrete anonymous memory map """
 
-    def __init__(self, start, size, perms, data_init=None, name=None, **kwargs):
+    def __init__(self, start: int, size: int, perms: str, data_init=None, name=None):
         """
         Builds a concrete anonymous memory map.
 
@@ -277,7 +280,7 @@ class AnonMap(Map):
         :param perms: the access permissions of the map.
         :param data_init: the data to initialize the map.
         """
-        super().__init__(start, size, perms, name, **kwargs)
+        super().__init__(start, size, perms, name)
         self._data = bytearray(size)
         if data_init is not None:
             assert len(data_init) <= size, "More initial data than reserved memory"
@@ -325,10 +328,12 @@ class AnonMap(Map):
 
 
 class ArrayMap(Map):
-    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs):
-        super(ArrayMap, self).__init__(address, size, perms)
+    def __init__(
+        self, start: int, size: int, perms: str, index_bits, backing_array=None, name=None
+    ):
+        super().__init__(start, size, perms, name)
         if name is None:
-            name = "ArrayMap_{:x}".format(address)
+            name = "ArrayMap_{:x}".format(start)
         if backing_array is not None:
             self._array = backing_array
         else:
@@ -355,7 +360,7 @@ class ArrayMap(Map):
     def __getitem__(self, key):
         return self._array[key]
 
-    def split(self, address):
+    def split(self, address: int):
         if address <= self.start:
             return None, self
         if address >= self.end:
@@ -391,7 +396,9 @@ class FileMap(Map):
     correspond to added or removed regions of the file is unspecified.
     """
 
-    def __init__(self, addr, size, perms, filename, offset=0, overlay=None, **kwargs):
+    def __init__(
+        self, addr: int, size: int, perms: str, filename: str, offset: int = 0, overlay=None
+    ):
         """
         Builds a map of memory  initialized with the content of filename.
 
@@ -402,7 +409,7 @@ class FileMap(Map):
         :param offset: the offset into the file where to start the mapping. \
                 This offset must be a multiple of pagebitsize.
         """
-        super().__init__(addr, size, perms, **kwargs)
+        super().__init__(addr, size, perms)
         assert isinstance(offset, int)
         assert offset >= 0
         self._filename = filename
@@ -457,13 +464,13 @@ class FileMap(Map):
         else:
             return get_byte_at_offset(index)
 
-    def split(self, address):
+    def split(self, address: int):
         if address <= self.start:
             return None, self
         if address >= self.end:
             return self, None
 
-        assert address > self.start and address <= self.end
+        assert self.start < address <= self.end
         head = COWMap(self, size=address - self.start)
         tail = COWMap(self, offset=address - self.start)
         return head, tail
@@ -474,7 +481,9 @@ class COWMap(Map):
     Copy-on-write based map.
     """
 
-    def __init__(self, parent, offset=0, perms=None, size=None, **kwargs):
+    def __init__(
+        self, parent: Map, offset: int = 0, perms: Optional[str] = None, size=None, **kwargs
+    ):
         """
         A copy on write copy of parent. Writes to the parent after a copy on
         write are unspecified.
@@ -494,8 +503,9 @@ class COWMap(Map):
 
         super().__init__(parent.start + offset, size, perms, **kwargs)
         self._parent = parent
-        self._parent.__setitem__ = False
-        self._cow = {}
+        # See (https://github.com/python/mypy/issues/2427)
+        self._parent.__setitem__ = False  # type: ignore
+        self._cow: Dict = {}
 
     def __setitem__(self, index, value):
         assert self._in_range(index)
@@ -517,7 +527,7 @@ class COWMap(Map):
         else:
             return _normalize(self._cow.get(index, self._parent[index]))
 
-    def split(self, address):
+    def split(self, address: int):
         if address <= self.start:
             return None, self
         if address >= self.end:
@@ -534,24 +544,50 @@ class StubCPU:
         return None
 
 
+@dataclass
+class ProcSelfMapInfo:
+    start: int
+    end: int
+    rwx_perms: str
+    shared_perms: str = "-"
+    offset: int = 0
+    device: str = "00:00"
+    inode: int = 0
+    pathname: str = ""
+
+    perms: str = field(init=False)
+
+    def __post_init__(self):
+        self.perms = self.rwx_perms.replace(" ", "-") + self.shared_perms
+        if self.pathname == "stack":
+            self.pathname = "[" + self.pathname + "]"
+
+    def __str__(self):
+        return f"{self.address} {self.perms:>4s} {self.offset:08x} {self.device} {self.inode:9} {self.pathname}"
+
+    @property
+    def address(self):
+        return f"{self.start:016x}-{self.end:016x}"
+
+
 class Memory(object, metaclass=ABCMeta):
     """
     The memory manager.
     This class handles all virtual memory mappings and symbolic chunks.
     """
 
-    def __init__(self, maps=None, cpu=StubCPU()):
+    def __init__(self, maps: Optional[Iterable[Map]] = None, cpu=StubCPU()):
         """
         Builds a memory manager.
         """
         super().__init__()
         if maps is None:
-            self._maps = set()
+            self._maps: Set[Map] = set()
         else:
             self._maps = set(maps)
         self.cpu = cpu
-        self._page2map = WeakValueDictionary()  # {page -> ref{MAP}}
-        self._recording_stack = []
+        self._page2map: MutableMapping[int, Map] = WeakValueDictionary()  # {page -> ref{MAP}}
+        self._recording_stack: List = []
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
                 assert i not in self._page2map
@@ -562,64 +598,61 @@ class Memory(object, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def memory_bit_size(self):
+    def memory_bit_size(self) -> int:
         return 32
 
     @property
     @abstractmethod
-    def page_bit_size(self):
+    def page_bit_size(self) -> int:
         return 12
 
     @property
-    def memory_size(self):
+    def memory_size(self) -> int:
         return 1 << self.memory_bit_size
 
     @property
-    def page_size(self):
+    def page_size(self) -> int:
         return 1 << self.page_bit_size
 
     @property
-    def memory_mask(self):
+    def memory_mask(self) -> int:
         return self.memory_size - 1
 
     @property
-    def page_mask(self):
+    def page_mask(self) -> int:
         return self.page_size - 1
 
     @property
-    def maps(self):
+    def maps(self) -> Set[Map]:
         return self._maps
 
-    def _ceil(self, address):
+    def _ceil(self, address) -> int:
         """
         Returns the smallest page boundary value not less than the address.
-        :rtype: int
         :param address: the address to calculate its ceil.
         :return: the ceil of C{address}.
         """
         return (((address - 1) + self.page_size) & ~self.page_mask) & self.memory_mask
 
-    def _floor(self, address):
+    def _floor(self, address) -> int:
         """
         Returns largest page boundary value not greater than the address.
 
         :param address: the address to calculate its floor.
         :return: the floor of C{address}.
-        :rtype: int
         """
         return address & ~self.page_mask
 
-    def _page(self, address):
+    def _page(self, address) -> int:
         """
         Calculates the page number of an address.
 
         :param address: the address to calculate its page number.
         :return: the page number of address.
-        :rtype: int
         """
         return address >> self.page_bit_size
 
-    def _search(self, size, start=None, counter=0):
+    def _search(self, size, start=None, counter=0) -> int:
         """
         Recursively searches the address space for enough free space to allocate C{size} bytes.
 
@@ -628,7 +661,6 @@ class Memory(object, metaclass=ABCMeta):
         :param counter: internal parameter to know if all the memory was already scanned.
         :return: the address of an available space to map C{size} bytes.
         :raises MemoryException: if there is no space available to allocate the desired memory.
-        :rtype: int
 
 
         todo: Document what happens when you try to allocate something that goes round the address 32/64 bit representation.
@@ -755,7 +787,7 @@ class Memory(object, metaclass=ABCMeta):
         self.cpu._publish("did_map_memory", addr, size, perms, None, None, addr)
         return addr
 
-    def _add(self, m):
+    def _add(self, m: Map) -> None:
         assert isinstance(m, Map)
         assert m not in self._maps
         assert m.start & self.page_mask == 0
@@ -765,7 +797,7 @@ class Memory(object, metaclass=ABCMeta):
         for i in range(self._page(m.start), self._page(m.end)):
             self._page2map[i] = m
 
-    def _del(self, m):
+    def _del(self, m: Map) -> None:
         assert isinstance(m, Map)
         assert m in self._maps
         # remove m pages from the page2maps..
@@ -774,7 +806,7 @@ class Memory(object, metaclass=ABCMeta):
         # remove m from the maps set
         self._maps.remove(m)
 
-    def map_containing(self, address):
+    def map_containing(self, address: int) -> Map:
         """
         Returns the L{MMap} object containing the address.
 
@@ -806,7 +838,7 @@ class Memory(object, metaclass=ABCMeta):
 
         return sorted(result)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(
             [
                 f'{start:016x}-{end:016x} {p:>4s} {offset:08x} {name or ""}'
@@ -814,7 +846,43 @@ class Memory(object, metaclass=ABCMeta):
             ]
         )
 
-    def _maps_in_range(self, start, end):
+    def proc_self_mappings(self) -> List[ProcSelfMapInfo]:
+        """
+        Returns a sorted list of all the mappings for this memory for /proc/self/maps.
+        Device, inode, and private/shared permissions are unsupported.
+        Stack is the only memory section supported in the memory map (heap, vdso, etc.)
+        are unsupported.
+        Pathname is substituted by filename
+
+        :return: a list of mappings.
+        """
+        result = []
+        # TODO: Device, inode, and private/shared permissions are unsupported
+        # TODO: Add complete paths
+        for m in self.maps:
+            if isinstance(m, AnonMap):
+                if m.name is not None:
+                    result.append(
+                        ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms, pathname=m.name)
+                    )
+                else:
+                    result.append(ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms))
+            elif isinstance(m, FileMap):
+                result.append(
+                    ProcSelfMapInfo(
+                        m.start, m.end, rwx_perms=m.perms, offset=m._offset, pathname=m._filename
+                    )
+                )
+            else:
+                result.append(ProcSelfMapInfo(m.start, m.end, rwx_perms=m.perms, pathname=m.name))
+        return sorted(result, key=lambda m: m.start)
+
+    @property
+    def __proc_self__(self):
+        self.proc_self_mappings()
+        return "\n".join([f"{m}" for m in self.proc_self_mappings()])
+
+    def _maps_in_range(self, start: int, end: int) -> Generator[Map, None, None]:
         """
         Generates the list of maps that overlaps with the range [start:end]
         """
@@ -937,12 +1005,12 @@ class Memory(object, metaclass=ABCMeta):
             return force or m.access_ok(access)
 
     # write and read potentially symbolic bytes at symbolic indexes
-    def read(self, addr, size, force=False):
+    def read(self, addr, size, force: bool = False) -> List[bytes]:
         if not self.access_ok(slice(addr, addr + size), "r", force):
             raise InvalidMemoryAccess(addr, "r")
 
         assert size > 0
-        result = []
+        result: List[bytes] = []
         stop = addr + size
         p = addr
         while p < stop:
@@ -1043,7 +1111,7 @@ class SMemory(Memory):
     :todo: improve comments
     """
 
-    def __init__(self, constraints, symbols=None, *args, **kwargs):
+    def __init__(self, constraints: ConstraintSet, symbols=None, *args, **kwargs):
         """
         Builds a memory.
 
@@ -1059,6 +1127,7 @@ class SMemory(Memory):
         super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
         self._constraints = constraints
+        self._symbols: Dict
         if symbols is None:
             self._symbols = {}
         else:
@@ -1180,7 +1249,7 @@ class SMemory(Memory):
                             )
             return list(map(Operators.CHR, result))
 
-    def write(self, address, value, force=False):
+    def write(self, address, value, force: bool = False) -> None:
         """
         Write a value at address.
 
@@ -1495,35 +1564,35 @@ class LazySMemory(SMemory):
 
 
 class Memory32(Memory):
-    memory_bit_size = 32
-    page_bit_size = 12
+    memory_bit_size: int = 32
+    page_bit_size: int = 12
 
 
 class Memory64(Memory):
-    memory_bit_size = 64
-    page_bit_size = 12
+    memory_bit_size: int = 64
+    page_bit_size: int = 12
 
 
 class SMemory32(SMemory):
-    memory_bit_size = 32
-    page_bit_size = 12
+    memory_bit_size: int = 32
+    page_bit_size: int = 12
 
 
 class SMemory32L(SMemory):
-    memory_bit_size = 32
-    page_bit_size = 13
+    memory_bit_size: int = 32
+    page_bit_size: int = 13
 
 
 class SMemory64(SMemory):
-    memory_bit_size = 64
-    page_bit_size = 12
+    memory_bit_size: int = 64
+    page_bit_size: int = 12
 
 
 class LazySMemory32(LazySMemory):
-    memory_bit_size = 32
-    page_bit_size = 12
+    memory_bit_size: int = 32
+    page_bit_size: int = 12
 
 
 class LazySMemory64(LazySMemory):
-    memory_bit_size = 64
-    page_bit_size = 12
+    memory_bit_size: int = 64
+    page_bit_size: int = 12

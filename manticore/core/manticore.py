@@ -37,7 +37,11 @@ consts.add(
     default="",
     description="A folder name for temporaries and results." "(default mcore_?????)",
 )
-
+consts.add(
+    "outputspace",
+    default="",
+    description="Folder to place final output. Defaults to workspace (default: use the worspace)",
+)
 
 class MProcessingType(Enum):
     """Used as configuration constant for choosing multiprocessing flavor"""
@@ -259,10 +263,7 @@ class ManticoreBase(Eventful):
         further user action. This is a final list.
 
 
-        :param initial_state: the initial root `State` object
-        :type state: State
-        :param workspace_url: workspace folder name
-        :param policy: scheduling policy
+        :param initial_state: the initial root `State` object to start from
         :param kwargs: other kwargs, e.g.
         """
         if cfg is None:
@@ -293,13 +294,16 @@ class ManticoreBase(Eventful):
         # By default the output folder and the workspace folder are the same.
         # Check type, default to fs:
         workspace_url = cfg["core"].workspace
+        outputspace_url = cfg["core"].outputspace
         if not isinstance(workspace_url, str):
             raise TypeError(f"Invalid workspace type: {type(workspace).__name__}")
         if ":" not in workspace_url:
             workspace_url = f"fs:{workspace_url}"
         self._workspace = Workspace(workspace_url)
         # reuse the same workspace if not specified
-        self._output = ManticoreOutput(workspace_url)
+        if not outputspace_url:
+            outputspace_url = f"fs:{self._workspace.uri}"
+        self._output = ManticoreOutput(outputspace_url)
 
         # The set of registered plugins
         # The callback methods defined in the plugin object will be called when
@@ -355,7 +359,7 @@ class ManticoreBase(Eventful):
         The optional setstate() function is supposed to set the concrete value
         in the child state.
 
-        Parent state is removed from the busy list and tht child states are added
+        Parent state is removed from the busy list and the child states are added
         to the ready list.
 
         """
@@ -722,7 +726,7 @@ class ManticoreBase(Eventful):
         """ Terminated states count """
         return len(self._terminated_states)
 
-    def generate_testcase(self, state, message="test", name="test"):
+    def generate_testcase(self, state, message: str = "test", name: str = "test"):
         if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
             message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)
@@ -737,7 +741,7 @@ class ManticoreBase(Eventful):
         return testcase
 
     @at_not_running
-    def register_plugin(self, plugin):
+    def register_plugin(self, plugin: Plugin):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"
