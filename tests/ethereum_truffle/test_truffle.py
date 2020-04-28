@@ -48,7 +48,7 @@ class EthTruffleTests(unittest.TestCase):
         # sam.moelius: Manticore should have failed to connect.
         self.assertRegex(
             mcore.stdout.read().decode(),
-            r"\bConnectionRefusedError\(111, \"Connect call failed \('127.0.0.2', 7545\)\"\)",
+            r"\bEthereumError\(\"Could not connect to 127.0.0.2:7545: Connect call failed \('127.0.0.2', 7545\)\",\)",
         )
 
         # sam.moelius: Wait for manticore to finish.
@@ -74,7 +74,7 @@ class EthTruffleTests(unittest.TestCase):
         # sam.moelius: Manticore should have failed to connect.
         self.assertRegex(
             mcore.stdout.read().decode(),
-            r"\bConnectionRefusedError\(111, \"Connect call failed \('127.0.0.1', 7546\)\"\)",
+            r"\bEthereumError\(\"Could not connect to 127.0.0.1:7546: Connect call failed \('127.0.0.1', 7546\)\",\)",
         )
 
         # sam.moelius: Wait for manticore to finish.

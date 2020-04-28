@@ -201,7 +201,11 @@ class RemoteWorldState(WorldState):
         # "threaded loop" could be leftover from a fork, in which case it will not work.
         Web3.WebsocketProvider._loop = None
         web3 = Web3(Web3.WebsocketProvider(URI("ws://" + self._url)))
-        blocknumber = web3.eth.blockNumber
+        blocknumber = None
+        try:
+            blocknumber = web3.eth.blockNumber
+        except ConnectionRefusedError as e:
+            raise EthereumError("Could not connect to %s: %s" % (self._url, e.args[1]))
         endpoint = _endpoints.get(self._url)
         if endpoint is None:
             endpoint = Endpoint(blocknumber, False)
