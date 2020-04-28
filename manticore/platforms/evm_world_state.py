@@ -267,15 +267,15 @@ class RemoteWorldState(WorldState):
 ####################################################################################################
 
 
-# sam.moelius: If we decide to cache results returned from a RemoteWorldState, then they should NOT
-# be cached within an overlay.  The reason is that this could affect the results of subsequent
-# operations.  Consider a call to get_storage_data followed by a call to has_storage.  If nothing
-# was written to storage within the overlay, then the call to has_storage will throw an exception.
-# But if the result of the call to get_storage_data was cached in the overlay, then no exception
-# would be thrown.
-
-
 class OverlayWorldState(WorldState):
+    """
+    If we decide to cache results returned from a RemoteWorldState, then they should NOT be cached
+    within an overlay.  The reason is that this could affect the results of subsequent operations.
+    Consider a call to get_storage_data followed by a call to has_storage.  If nothing was written
+    to storage within the overlay, then the call to has_storage will throw an exception.  But if the
+    result of the call to get_storage_data was cached in the overlay, then no exception would be
+    thrown.
+    """
     def __init__(self, underlay: WorldState):
         self._underlay: WorldState = underlay
         self._deleted_accounts: Set[int] = set()
