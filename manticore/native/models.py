@@ -228,7 +228,7 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         dst_val = cpu.read_int(dst + offset, 8)
         if zeros[-1] == offset:
             # Make sure last byte of the copy is always a concrete '\000'
-            true_val = ITEBV(8, src_val == 0, 0, src_val)
+            src_val = ITEBV(8, src_val == 0, 0, src_val)
             zeros.pop()
 
         # For every byte that could be null before the current byte add an
@@ -236,6 +236,6 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         for zero in reversed(zeros):
             c = cpu.read_int(src + zero, 8)
             src_val = ITEBV(8, c != 0, src_val, dst_val)
-        cpu.write_int(dst + offset, true_val, 8)
+        cpu.write_int(dst + offset, src_val, 8)
 
     return ret
