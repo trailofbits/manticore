@@ -205,14 +205,18 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
     ret = dst
     c = cpu.read_int(src, 8)
     # Copy until '\000' is reached or symbolic memory that can be '\000'
-    while (issymbolic(c) and not Z3Solver.instance().can_be_true(constrs, c == 0)) or c != 0:
+    while (issymbolic(c) and not Z3Solver.instance().can_be_true(constrs, c == 0)) or (
+        not issymbolic(c) and c != 0
+    ):
         cpu.write_int(dst, c, 8)
         src += 1
         dst += 1
         c = cpu.read_int(src, 8)
 
     # If the byte is symbolic and constrained to '\000' or is '\000' write concrete val and return
-    if (issymbolic(c) and not Z3Solver.instance().can_be_true(constrs, c != 0)) or c == 0:
+    if (issymbolic(c) and not Z3Solver.instance().can_be_true(constrs, c != 0)) or (
+        not issymbolic(c) and c == 0
+    ):
         cpu.write_int(dst, 0, 8)
         return ret
 
@@ -224,14 +228,14 @@ def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) ->
         dst_val = cpu.read_int(dst + offset, 8)
         if zeros[-1] == offset:
             # Make sure last byte of the copy is always a concrete '\000'
-            true_val = ITEBV(cpu.address_bit_size, src_val == 0, 0, src_val)
+            true_val = ITEBV(8, src_val == 0, 0, src_val)
             zeros.pop()
 
         # For every byte that could be null before the current byte add an
         # if then else case to the bitvec tree to set the value to the src or dst byte accordingly
-        for zero in reverse(zeros):
+        for zero in reversed(zeros):
             c = cpu.read_int(src + zero, 8)
-            src_val = ITEBV(cpu.address_bit_size, c != 0, src_val, dst_val)
-        cpu.write(dst + offset, true_val, 8)
+            src_val = ITEBV(8, c != 0, src_val, dst_val)
+        cpu.write_int(dst + offset, true_val, 8)
 
     return ret
