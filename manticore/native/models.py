@@ -178,18 +178,34 @@ def strlen(state: State, s: Union[int, Expression]):
 
     return ret
 
-#TODO: WILL add some comment to this later
-def is_NULL(byte, constrs):
+
+def is_NULL(byte, constrs) -> bool:
+    """
+    Checks if a given byte read from memory is NULL or effectively NULL
+
+    :param byte: byte read from memory to be examined
+    :param constrs: state constraints
+    :return: whether a given byte is NULL or constrained to NULL
+    """
     if issymbolic(byte):
         return not Z3Solver.instance().can_be_true(constrs, byte != 0)
     else:
         return byte == 0
 
-def not_NULL(byte, constrs):
+
+def not_NULL(byte, constrs) -> bool:
+    """
+    Checks if a given byte read from memory is not NULL or cannot be NULL
+
+    :param byte: byte read from memory to be examined
+    :param constrs: state constraints
+    :return: whether a given byte is not NULL or cannot be NULL
+    """
     if issymbolic(byte):
         return not Z3Solver.instance().can_be_true(constrs, byte == 0)
     else:
         return byte != 0
+
 
 def strcpy(state: State, dst: Union[int, Expression], src: Union[int, Expression]) -> int:
     """
