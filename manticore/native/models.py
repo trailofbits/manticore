@@ -67,7 +67,7 @@ def _find_zeros(cpu, constrs, ptr):
     :param ConstraintSet constrs: Constraints for current `State`
     :param int ptr: Address to start searching for a zero from
     :return: Offset from `ptr` to first byte that is 0 or an `Expression` that must be zero
-    :return: List of offsets from `ptr` to a byte that can be 0. The last value in the 
+    :return: List of offsets from `ptr` to a byte that can be 0. The last value in the
     list is the offset to the first byte found that is 0 or an `Expression` that must be 0
     """
 
@@ -179,11 +179,11 @@ def strlen(state: State, s: Union[int, Expression]):
     return ret
 
 
-def strcpy(state: State, dst: Union[int, Expression], src: [int, Expression]) -> int:
+def strcpy(state: State, dst: Union[int, Expression], src: Union[int, Expression]) -> int:
     """
     strcpy symbolic model
 
-    Algorithm: Copy every byte from the src to dst until finding a byte that can be or is NULL. 
+    Algorithm: Copy every byte from the src to dst until finding a byte that can be or is NULL.
     If the byte is NULL or is constrained to only the NULL value, append the NULL value to dst
     and return. If the value can be NULL or another value write an `Expression` for every following
     byte that sets a value to the src or dst byte according to the preceding bytes until a NULL
