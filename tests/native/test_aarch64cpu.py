@@ -1,8 +1,8 @@
+import binascii
 import unittest
 
 from capstone import CS_MODE_ARM
 from functools import wraps
-from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 
 from manticore.core.smtlib import ConstraintSet, Z3Solver
 from manticore.native.memory import SMemory64, Memory64
@@ -16,14 +16,26 @@ from manticore.native.cpu.bitwise import LSL, Mask
 from manticore.utils.fallback_emulator import UnicornEmulator
 from tests.native.test_aarch64rf import MAGIC_64, MAGIC_32
 
-ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
+from tests.native.aarch64cpu_asm_cache import assembly_cache
+
+ks = None
+
+
+def _ks_assemble(asm):
+    global ks
+    from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
+
+    if ks is None:
+        ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
+
+    ords = ks.asm(asm)[0]
+    if not ords:
+        raise Exception(f"bad assembly: {asm}")
+    return binascii.hexlify(bytearray(ords))
 
 
 def assemble(asm):
-    ords = ks.asm(asm)[0]
-    if not ords:
-        raise Exception(f"Bad assembly: '{asm}'")
-    return "".join(map(chr, ords))
+    return binascii.unhexlify(assembly_cache.get(asm, _ks_assemble(asm)))
 
 
 # XXX: These functions are taken from 'test_armv7cpu' and modified to be more
