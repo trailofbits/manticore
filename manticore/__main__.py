@@ -136,7 +136,9 @@ if __name__ == "__main__":
     if is_eth():
         ethereum_main()
     elif is_wasm():
-        wasm_main(args, logging.getLogger("manticore.main"))
+        pass #See etehreum_main
+        #wasm_main(args, logging.getLogger("manticore.main"))
     else:
-        install_helper.ensure_native_deps()
-        native_main(args, logging.getLogger("manticore.main"))
+        pass #See etehreum_main help
+        #install_helper.ensure_native_deps()
+        #native_main(args, logging.getLogger("manticore.main"))

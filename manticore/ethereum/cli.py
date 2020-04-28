@@ -119,7 +119,8 @@ eth_flags.add(
     "quick-mode",
     default=False,
     description="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
-    "do not explore constant functions. Disable all detectors.",
+    "do not explore constant functions. Disable all detectors."
+)
 
 eth_flags.add(
     "skip_reverts",
@@ -152,9 +153,12 @@ logger = logging.getLogger("manticoreEVM.main")
 
 
 def ethereum_main():
+    # Gets the default config constants/variables from their declarations
     cfg = config.get_default_config()
+    # Build an argument parser out of the declared configuration
+    # So user of CLI can override ALL config variables
     parser = cfg.prepare_argument_parser()
-
+    # Add non conflicting application specific items: argv
     parser.add_argument(
         "argv",
         type=str,
@@ -163,8 +167,12 @@ def ethereum_main():
         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).",
     )
 
+    # Parse the actual commandline
     args = parser.parse_args(sys.argv[1:])
+    # Procces and ingest the overwrided values
     cfg.process_config_values(parser, args)
+
+    # Application code starts
     if cfg["cli"].no_colors:
         log.disable_colors()
     sys.setrecursionlimit(cfg["cli"].recursionlimit)
