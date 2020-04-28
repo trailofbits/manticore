@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from manticore.core.smtlib import ConstraintSet, Z3Solver
+from manticore.core.smtlib import ConstraintSet, Z3Solver, issymbolic
 from manticore.native.state import State
 from manticore.platforms import linux
 
@@ -211,6 +211,38 @@ class StrlenTest(ModelTest):
 
 
 class StrcpyTest(ModelTest):
+    def _assert_concrete_start(self, s, d):
+        cpu = self.state.cpu
+        src = cpu.read_int(s, 8)
+        dst = cpu.read_int(d, 8)
+        offset = 0
+        while not issymbolic(src) and src != 0:
+            self.assertTrue(not issymbolic(dst))
+            self.assertEqual(src, dst)
+            offset += 1
+            src = cpu.read_int(s + offset, 8)
+            dst = cpu.read_int(d + offset, 8)
+        return offset
+
+    def _assert_symbolic_end(self, s, d, offset):
+        cpu = self.state.cpu
+        src = cpu.read_int(s + offset, 8)
+        dst = cpu.read_int(d + offset, 8)
+
+        # If entire source string was symbolic
+        if not issymbolic(dst):
+            self.assertEqual(0, dst)
+        # FIXME:
+        """
+        while issymbolic(dst) and (not issymbolic()): # Condition is messed up
+            # Compare symbolic values
+            print("Vars: ", vars(dst))
+            print("src: ", src, "Dst: ", dst)
+            offset += 1
+            src = cpu.read_int(s + i, 8)
+            dst = cpu.read_int(d + i, 8)
+        """
+
     def _test_strcpy(self, string, dst_len=None):
         if dst_len is None:
             dst_len = len(string)
@@ -218,11 +250,10 @@ class StrcpyTest(ModelTest):
         s = self._push_string(string)
         d = self._push_string_space(dst_len)
         ret = strcpy(self.state, d, s)
-        self.assertEqual(ret, d) #addresses should match
+        self.assertEqual(ret, d)  # addresses should match
 
-        for i in range(len(string) - 1):
-            self.assertEqual(cpu.read_int(s + i, 8), cpu.read_int(d + i, 8))
-        self.assertEqual(0, cpu.read_int(d + len(string) - 1, 8))
+        offset = self._assert_concrete_start(s, d)
+        self._assert_symbolic_end(s, d, offset)
 
         self._pop_string_space(dst_len + len(string))
 
@@ -232,7 +263,24 @@ class StrcpyTest(ModelTest):
         self._test_strcpy("abcdefghijklm\0")
         self._test_strcpy("a\0", dst_len=5)
 
-    """def test_concrete_empty(self):
-    def test_symbolic_effective_null(self):
-    def test_symbolic(self):
-    def test_symbolic_mixed(self):"""
+    def test_concrete_empty(self):
+        self._test_strcpy("\0")
+        self._test_strcpy("\0", dst_len=10)
+
+    def test_symbolic_mixed(self):
+        src = self.state.symbolicate_buffer("++\0")
+        self._test_strcpy(src, dst_len=3)
+        # TODO: Finish this
+        # Starts with symbolic
+        src = self.state.symbolicate_buffer("xy++\0")
+        src = self.state.symbolicate_buffer("iv++")
+        # Starts with concrete
+        src = self.state.symbolicate_buffer("+++jl\0")
+        src = self.state.symbolicate_buffer("+++df++")
+
+    def test_only_symbolic(self):
+        src = self.state.symbolicate_buffer("+++")
+
+    # TODO:
+    # def test_symbolic_src_address(self):
+    # def test_symbolic_dst_address(self):
