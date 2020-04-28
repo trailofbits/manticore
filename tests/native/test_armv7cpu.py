@@ -270,7 +270,9 @@ def _ks_assemble(asm, mode=CS_MODE_ARM):
 
 
 def assemble(asm, mode=CS_MODE_ARM):
-    return binascii.unhexlify(assembly_cache[mode].get(asm, _ks_assemble(asm, mode=mode)))
+    if asm in assembly_cache[mode]:
+        return binascii.unhexlify(assembly_cache[mode][asm])
+    return binascii.unhexlify(_ks_assemble(asm, mode=mode))
 
 
 class Armv7CpuTest(unittest.TestCase):

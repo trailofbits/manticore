@@ -35,7 +35,9 @@ def _ks_assemble(asm):
 
 
 def assemble(asm):
-    return binascii.unhexlify(assembly_cache.get(asm, _ks_assemble(asm)))
+    if asm in assembly_cache:
+        return binascii.unhexlify(assembly_cache[asm])
+    return binascii.unhexlify(_ks_assemble(asm))
 
 
 # XXX: These functions are taken from 'test_armv7cpu' and modified to be more
