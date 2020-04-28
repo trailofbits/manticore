@@ -338,7 +338,9 @@ class OverlayWorldState(WorldState):
         # sam.moelius: Rightfully, the overlay's storage should be merged into the underlay's
         # storage.  However, this is not currently implemented.
         if storage is not None:
-            raise NotImplementedError
+            # sam.moelius: At present, the get_storage methods of both DefaultWorldState and
+            # RemoteWorldState raise NotImplementedError.  So this exception should be unreachable.
+            raise NotImplementedError("Merging of storage is not implemented")
         storage = self._storage.get(address)
         return storage
 
