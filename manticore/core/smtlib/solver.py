@@ -442,6 +442,9 @@ class Z3Solver(Solver):
         expression = simplify(expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
+            if isinstance(expression, Bool):
+                maxcnt=2
+                silent=True
 
         with constraints as temp_cs:
             if isinstance(expression, Bool):

@@ -798,6 +798,14 @@ class EVM(Eventful):
         self._sha3 = {}
         self._refund = 0
         self._temp_call_gas = None
+        self._failed = False
+
+    def fail_if(self, failed):
+        self._failed = Operators.OR(self._failed, failed)
+
+    def is_failed(self):
+        self._failed = self.world._concretize_bool(self._failed, "Checking for exceptions")
+        return self._failed
 
     @property
     def pc(self):
@@ -851,6 +859,7 @@ class EVM(Eventful):
         state["evmfork"] = self.evmfork
         state["_refund"] = self._refund
         state["_temp_call_gas"] = self._temp_call_gas
+        state["_failed"] = self._failed
         return state
 
     def __setstate__(self, state):
@@ -879,6 +888,7 @@ class EVM(Eventful):
         self.evmfork = state["evmfork"]
         self._refund = state["_refund"]
         self._temp_call_gas = state["_temp_call_gas"]
+        self._failed = state["_failed"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -1047,76 +1057,57 @@ class EVM(Eventful):
                 self._gas -= fee
                 self._mgas = reps, m - fee
                 return
+        oog_condition = simplify(Operators.ULT(self._gas, fee))
+        self.fail_if(oog_condition)
 
-        if consts.oog in ("pedantic", "complete"):
-            # gas is faithfully accounted and ogg checked at instruction/BB level.
-            if consts.oog == "pedantic" or self.instruction.is_terminator:
-                # explore both options / fork
-                constraint = simplify(Operators.UGE(self._gas, fee))
-
-                # FIXME if gas can be both enough and insufficient this will
-                #  reenter here and generate redundant queries
-                if isinstance(constraint, Constant):
-                    enough_gas_solutions = (constraint.value,)  # (self._gas - fee >= 0,)
-                elif isinstance(constraint, bool):
-                    enough_gas_solutions = (constraint,)  # (self._gas - fee >= 0,)
-                else:
-                    enough_gas_solutions = Z3Solver.instance().get_all_values(
-                        self.constraints, constraint
-                    )
-
-                if len(enough_gas_solutions) == 2:
-                    # if gas can be both enough and insufficient, fork
-                    raise Concretize(
-                        "Concretize gas fee", expression=constraint, setstate=None, policy="ALL"
-                    )
-                elif enough_gas_solutions[0] is False:
-                    # if gas if only insuficient OOG!
-                    logger.debug(
-                        f"Not enough gas for instruction {self.instruction.name} at 0x{self.pc:x}"
-                    )
-                    raise NotEnoughGas()
-                else:
-                    assert enough_gas_solutions[0] is True
-                    # if there is enough gas keep going
-
-        elif consts.oog == "concrete":
-            # Keep gas concrete. Concretize symbolic fees to some values.
-            # this can happen only if symbolic gas is provided for the TX
-            if issymbolic(self._gas):
-                raise ConcretizeGas()
-            if issymbolic(fee):
-                raise ConcretizeFee()
-        elif consts.oog == "optimistic":
-            # Try not to OOG. If it may be enough gas we ignore the OOG case.
-            # A constraint is added to assert the gas is enough and the OOG state is ignored.
-            # explore only when there is enough gas if possible
-            if Z3Solver.instance().can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
-                self.constraints.add(Operators.UGT(self.gas, fee))
-            else:
-                logger.debug(
-                    f"Not enough gas for instruction {self.instruction.name} at 0x{self.pc:x}"
-                )
-                raise NotEnoughGas()
-        elif consts.oog == "pesimistic":
-            # OOG soon. If it may NOT be enough gas we ignore the normal case.
-            # A constraint is added to assert the gas is NOT enough and the other state is ignored.
-            # explore only when there is enough gas if possible
-            if Z3Solver.instance().can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
-                self.constraints.add(Operators.ULE(self.gas, fee))
-                raise NotEnoughGas()
-        else:
-            if consts.oog != "ignore":
-                raise EVMException("Wrong oog config variable")
-            # do nothing. gas is not even changed
-            return
         self._gas = simplify(self._gas - fee)
         if isinstance(self._gas, Constant) and not self._gas.taint:
             self._gas = self._gas.value
 
+    def check_oog(self):
+        if consts.oog == "concrete":
+            # Keep gas concrete and ogg checked at every instruction
+            if issymbolic(self._gas):
+                raise ConcretizeGas()
+            if self.is_failed():
+                raise NotEnoughGas()
+
+        if consts.oog == "pedantic":
+            # gas is faithfully accounted and ogg checked at every instruction
+            if self.is_failed():
+                raise NotEnoughGas()
+
+        elif consts.oog == "complete" and self.instruction.is_terminator:
+            # gas is faithfully accounted and ogg checked at every BB
+            if self.is_failed():
+                raise NotEnoughGas()
+
+        elif consts.oog == "optimistic":
+            self.constraints.add(self._failed == False)
+            if self.is_failed():
+                raise NotEnoughGas()
+
+        elif consts.oog == "pesimistic":
+            # OOG soon. If it may NOT be enough gas we ignore the normal case.
+            # A constraint is added to assert the gas is NOT enough and the other state is ignored.
+            # explore only when there is enough gas if possible
+            self.constraints.add(self._failed == True)
+            if self.is_failed():
+                raise NotEnoughGas()
+        else:
+            assert consts.oog != "ignore", "Wrong oog config variable"
+            # do nothing. gas is not even changed
+            return
+
+
+
+
+
         # If everything is concrete lets just check at every instruction
         if not issymbolic(self._gas) and self._gas < 0:
             raise NotEnoughGas()
+
+
 
     def _indemnify(self, fee):
         self._gas += fee
@@ -1298,6 +1289,7 @@ class EVM(Eventful):
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
         try:
+            self.check_oog()
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
@@ -1957,7 +1949,7 @@ class EVM(Eventful):
             15000
         )  # Once per SSTORE operation for clearing an originally existing storage slot
 
-        enough_gas = self.world._concretize_bool(Operators.UGE(self.gas, SSSTORESENTRYGAS))
+        enough_gas = self.world._concretize_bool(Operators.UGE(self.gas, SSSTORESENTRYGAS), "Enough gas for SENTRYGAS")
         if not enough_gas:
             raise NotEnoughGas()
 
@@ -2575,47 +2567,13 @@ class EVMWorld(Platform):
         tx_fee += nonzerocount * GTXDATANONZERO
         return simplify(tx_fee)
 
-    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=None):
-        failed = False
-
-        #Only at human level we need to debit the tx_fee from the gas
-        #In case of an internal tx the CALL-like instruction will
-        #take the fee
-        if self.depth == 0:
-            # Debit full gas budget in advance
-            self.sub_from_balance(caller, price * gas)
-            tx_fee = self._transaction_fee(sort, address, price, bytecode_or_data, caller, value)
-
-            enough_gas_for_tx_fee = Operators.UGE(gas, tx_fee)
-            failed = not self._concretize_bool(enough_gas_for_tx_fee)
-            gas -= tx_fee
-
-        # Send the tx funds
-        if sort in {"DELEGATECALL"} and value != 0:
-            raise Exception(f"{sort} can not send value")
-
-        if not failed:
-            self.send_funds(caller, address, value)
-        else:
-            logger.info(f"Not enough gas ({Z3Solver.instance().minmax(self.constraints, gas)}) for tx_fee ({tx_fee})")
-
-        if address not in self.accounts:
-            self.create_account(address)
-
-        # If not a human tx, reset returndata
-        # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
-        if self.current_vm:
-            self.current_vm._return_data = b""
-
-        tx = Transaction(
-            sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas
-        )
-        if sort == "CREATE":
-            bytecode = bytecode_or_data
+    def _make_vm_for_tx(self, tx):
+        if tx.sort == "CREATE":
+            bytecode = tx.data
             data = bytearray()
         else:
-            bytecode = self.get_code(address)
-            data = bytecode_or_data
+            bytecode = self.get_code(tx.address)
+            data = tx.data
 
         if tx.sort == "DELEGATECALL":
             # So at a DELEGATECALL the environment should look exactly the same as the original tx
@@ -2624,18 +2582,108 @@ class EVMWorld(Platform):
             address = self.current_transaction.address
             caller = self.current_transaction.caller
             value = self.current_transaction.value
+        else:
+            address = tx.address
+            caller = tx.caller
+            value = tx.value
 
-        if failed:
-            gas = 0
+        gas = tx.gas
 
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
+        if self.depth == 0:
+            # Only at human level we need to debit the tx_fee from the gas
+            # In case of an internal tx the CALL-like instruction will
+            # take the fee by itself
+            tx_fee = self._transaction_fee(tx.sort, tx.address, tx.price,
+                                           tx.data, tx.caller, tx.value)
+            vm._consume(tx_fee)
+        return vm
 
+    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=None):
+        '''
+        This try to opens a transaction.
+
+        :param sort: CREATE, CALL, CALLCODE, STATICCALL, DELEGATECALL
+        :param address: the destination address
+        :param price: the gas price. Used at human transactions
+        :param bytecode_or_data: the calldata or bytecode in creates
+        :param caller: the caller account
+        :param value: wei to transfer
+        :param gas: gas budget
+        :return: True if the transaction got accepted (enough balance to pay for stuff)
+        '''
+        # sort
+        if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
+            raise EVMException(f"Transaction type '{sort}' not supported")
+
+        if caller not in self.accounts:
+            logger.info("Caller not in account")
+            raise EVMException(
+                f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
+            )
+
+        if sort == "CREATE":
+            expected_address = self.new_address(sender=caller)
+            if address is None:
+                address = expected_address
+            if address != expected_address:
+                raise EthereumError(
+                    f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
+                )
+        if address not in self.accounts:
+            logger.info("Address does not exists creating it.")
+            # Creating an unaccessible account
+            self.create_account(address=address, nonce=(sort!="CREATE"))
+
+        # Check depth
+        tx_failed = self.depth >= 1024
+
+        # Fork on enough funds for value and gas
+        if not tx_failed:
+            aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
+            aux_value = Operators.ZEXTEND(value, 512)
+            if self.depth == 0:
+                # take the gas from the balance
+                aux_price = Operators.ZEXTEND(price, 512)
+                aux_gas = Operators.ZEXTEND(gas, 512)
+                aux_fee = aux_price * aux_gas
+                # Iff a human tx debit the fee
+                enough_balance = Operators.UGE(aux_src_balance, aux_value + aux_fee)
+            else:
+                enough_balance = Operators.UGE(aux_src_balance, aux_value)
+
+            tx_failed = not self._concretize_bool(enough_balance, "Forking on available funds")
+
+        if tx_failed:
+            logger.info(f"Failing TX. Too deep or not enough balance to pay for gas{(aux_src_balance, aux_value + aux_fee)}")
+            return False
+
+        tx = Transaction(
+            sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas
+        )
         self._publish("will_open_transaction", tx)
+        # Send the tx funds (We know there are enough at this point)
+        if self.depth == 0:
+            # Debit full gas budget in advance
+            self.sub_from_balance(caller, aux_price * aux_gas)
+        self.send_funds(tx.caller, tx.address, tx.value)
+
+        if tx.address not in self.accounts:
+            self.create_account(tx.address)
+
+        # If not a human tx, reset returndata
+        # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
+        if self.current_vm:
+            self.current_vm._return_data = b""
+
+        vm = self._make_vm_for_tx(tx)
+
         self._callstack.append(
             (tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm)
         )
         self.forward_events_from(vm)
         self._publish("did_open_transaction", tx)
+        return True
 
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish("will_close_transaction", self._callstack[-1][0])
@@ -3232,12 +3280,11 @@ class EVMWorld(Platform):
             )
 
     def _concretize_bool(self, constraint, message="Concretizing generic condition"):
-
         if isinstance(constraint, bool):
             constraint_solutions = {constraint}
         else:
+            constraint = simplify(constraint)
             constraint_solutions = Z3Solver.instance().get_all_values(self._constraints, constraint)
-
         if set(constraint_solutions) == {True, False}:
             raise Concretize(
                 message, expression=constraint, setstate=lambda a, b: None, policy="ALL"
@@ -3249,84 +3296,21 @@ class EVMWorld(Platform):
         if self._pending_transaction is None:
             return
         sort, address, price, data, caller, value, gas = self._pending_transaction
-        # sort
-        if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
-            if sort == "STATICCALL":
-                # TODO: Remove this once Issue #1168 is resolved
-                raise EVMException(
-                    f"The STATICCALL opcode is not yet supported; see https://github.com/trailofbits/manticore/issues/1168"
-                )
-            else:
-                raise EVMException(f"Transaction type '{sort}' not supported")
-
-        # price
-        if self.depth > 0:
-            assert price is None, "Price should not be used in internal transactions"
-            price = self.tx_gasprice()
-
-        if price is None:
-            raise EVMException("Need to set a gas price on human tx")
 
         # caller
         self._pending_transaction_concretize_caller()
-        if caller not in self.accounts:
-            logger.info("Caller not in account")
-            raise EVMException(
-                f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
-            )
-
         # to/address
         self._pending_transaction_concretize_address()
 
-        if sort == "CREATE":
-            expected_address = self.new_address(sender=caller)
-            if address is None:
-                address = expected_address
-            if address not in self.accounts:
-                self.create_account(address)
-            if address != expected_address:
-                raise EthereumError(
-                    f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
-                )
-        else:
-            if address not in self.accounts:
-                logger.info("Address does not exists creating it.")
-                # Creating an unaccessible account
-                self.create_account(address=address, nonce=0)
-
-        # Check depth
-        failed = self.depth >= 1024
-
-        # Fork on enough funds for value and gas
-        if not failed:
-            aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
-            aux_value = Operators.ZEXTEND(value, 512)
-            if self.depth == 0:
-                # take the gas from the balance
-                aux_price = Operators.ZEXTEND(price, 512)
-                aux_gas = Operators.ZEXTEND(gas, 512)
-                aux_fee = aux_price * aux_gas
-                # Iff a human tx debit the fee
-                enough_balance = Operators.UGE(aux_src_balance, aux_value + aux_fee)
-
-            else:
-                enough_balance = Operators.UGE(aux_src_balance, aux_value)
-
-            failed = not self._concretize_bool(enough_balance, "Forking on available funds")
-
-        if failed:
-            logger.info(f"Failing TX. Too deep or not enough balance to pay for gas{(aux_src_balance, aux_value + aux_fee)}")
-
+        self._open_transaction(sort, address, price, data, caller, value, gas=gas)
+        #    self._pending_transaction = None
+        #    self._close_transaction("TXERROR", rollback=True)
         # processed
         self._pending_transaction = None
-        self._open_transaction(sort, address, price, data, caller, value, gas=gas)
 
-        if failed:
-            self._close_transaction("TXERROR", rollback=True)
-
-        elif not self.get_code(address) and sort in ("CALL", "DELEGATECALL", "CALLCODE"):
+        #elif not self.get_code(address) and sort in ("CALL", "DELEGATECALL", "CALLCODE"):
             # Transaction to normal account with empty code
-            self._close_transaction("STOP")
+        #    self._close_transaction("STOP")
 
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged

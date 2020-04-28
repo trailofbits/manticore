@@ -283,7 +283,7 @@ class ManticoreEVM(ManticoreBase):
             if not contract_name:
                 if len(crytic_compile.contracts_names_without_libraries) > 1:
                     raise EthereumError(
-                        f"Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {', '.join(crytic_compile.contracts_names)}"
+                        f"Solidity file must contain exactly one contract or you must select one. Contracts found: {', '.join(crytic_compile.contracts_names)}"
                     )
                 contract_name = list(crytic_compile.contracts_names_without_libraries)[0]
 
@@ -627,7 +627,7 @@ class ManticoreEVM(ManticoreBase):
             except EthereumError as e:
                 logger.info(f"Failed to build contract {contract_name_i} {str(e)}")
                 self.kill()
-                return None
+                raise
 
         # If the contract was created successfully in at least 1 state return account
         for state in self.ready_states:

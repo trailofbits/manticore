@@ -175,6 +175,8 @@ def gen_body(name, testcase):
                       difficulty={blockheader['difficulty']},
                       coinbase={blockheader['coinbase']},
                       gaslimit={hex(int(blockheader['gasLimit'],0))})
+
+        #VMtest Transaction
 '''
 
         for transaction in block['transactions']:
