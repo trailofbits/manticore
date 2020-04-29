@@ -1,11 +1,11 @@
 import unittest
 import os
 
-from manticore.core.smtlib import ConstraintSet, Z3Solver, issymbolic
+from manticore.core.smtlib import ConstraintSet, Z3Solver, issymbolic, BitVecConstant, BitVecITE
 from manticore.native.state import State
 from manticore.platforms import linux
 
-from manticore.native.models import variadic, isvariadic, strcmp, strlen, strcpy
+from manticore.native.models import variadic, isvariadic, strcmp, strlen, strcpy, is_NULL, not_NULL
 
 
 class ModelMiscTest(unittest.TestCase):
@@ -231,23 +231,46 @@ class StrcpyTest(ModelTest):
 
         # If entire source string was symbolic
         if not issymbolic(dst):
+            self.assertTrue(is_NULL(src, self.state.constraints))
             self.assertEqual(0, dst)
-        # FIXME:
-        """
-        while issymbolic(dst) and (not issymbolic()): # Condition is messed up
+            return
+
+        # Everything below here is WIP!!!!
+        while issymbolic(src) or src != 0:  # Condition is messed up
+            temp = dst
+            print(temp.operands)
+            # while type(temp.operands[2]) is not BitVecConstant:
+            while type(temp.operands[1]) is BitVecITE:
+                self.assertEqual(type(temp.operands[1]), BitVecITE)
+                # self.assertEqual(temp.operands[2].value, org_dest_val) # dst = false_val
+                print(temp)
+                temp = temp.operands[1]
+
+            # Check that the innermost true_val == src
+            if issymbolic(src):
+                if not not_NULL(src, self.state.constraints):
+                    self.assertEqual(temp.operands[2].value, 0)
+                else:
+                    self.assertEqual(temp.operands[1], src)
+            else:
+                self.assertEqual(temp.operands[1].value, src)
             # Compare symbolic values
-            print("Vars: ", vars(dst))
+            # print(dst.operands)
+            """if type(dst.operands[2]) is BitVecConstant:
+                print((dst.operands[2]).value)
             print("src: ", src, "Dst: ", dst)
+            """
             offset += 1
-            src = cpu.read_int(s + i, 8)
-            dst = cpu.read_int(d + i, 8)
-        """
+            src = cpu.read_int(s + offset, 8)
+            dst = cpu.read_int(d + offset, 8)
+        # END WIP
 
     def _test_strcpy(self, string, dst_len=None):
         if dst_len is None:
             dst_len = len(string)
         cpu = self.state.cpu
         s = self._push_string(string)
+        # d = self._push_string("abcdefghijklm\0")
         d = self._push_string_space(dst_len)
         ret = strcpy(self.state, d, s)
         self.assertEqual(ret, d)  # addresses should match
@@ -267,9 +290,10 @@ class StrcpyTest(ModelTest):
         self._test_strcpy("\0")
         self._test_strcpy("\0", dst_len=10)
 
+    # Everything below here is WIP!!!!
     def test_symbolic_mixed(self):
         src = self.state.symbolicate_buffer("++\0")
-        self._test_strcpy(src, dst_len=3)
+        self._test_strcpy(src, dst_len=4)
         # TODO: Finish this
         # Starts with symbolic
         src = self.state.symbolicate_buffer("xy++\0")
