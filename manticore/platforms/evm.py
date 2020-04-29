@@ -1077,10 +1077,11 @@ class EVM(Eventful):
             if self.is_failed():
                 raise NotEnoughGas()
 
-        elif consts.oog == "complete" and self.instruction.is_terminator:
-            # gas is faithfully accounted and ogg checked at every BB
-            if self.is_failed():
-                raise NotEnoughGas()
+        elif consts.oog == "complete":
+            if self.instruction.is_terminator:
+                # gas is faithfully accounted and ogg checked at every BB
+                if self.is_failed():
+                    raise NotEnoughGas()
 
         elif consts.oog == "optimistic":
             self.constraints.add(self._failed == False)
@@ -1095,7 +1096,8 @@ class EVM(Eventful):
             if self.is_failed():
                 raise NotEnoughGas()
         else:
-            assert consts.oog != "ignore", "Wrong oog config variable"
+            print (consts.oog)
+            assert consts.oog == "ignore", "Wrong oog config variable"
             # do nothing. gas is not even changed
             return
 
@@ -2578,7 +2580,7 @@ class EVMWorld(Platform):
         if tx.sort == "DELEGATECALL":
             # So at a DELEGATECALL the environment should look exactly the same as the original tx
             # This means caller, value and address are the same as prev tx
-            assert value == 0
+            assert tx.value == 0
             address = self.current_transaction.address
             caller = self.current_transaction.caller
             value = self.current_transaction.value

@@ -19,6 +19,8 @@ class EthBenchmark(unittest.TestCase):
     """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
 
     def setUp(self):
+        from manticore.utils import config
+        config.get_group("evm").oog = "ignore"
         self.mevm = ManticoreEVM()
         self.mevm.register_plugin(KeepOnlyIfStorageChanges())
         log.set_verbosity(0)
