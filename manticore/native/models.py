@@ -4,7 +4,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 
 from .cpu.abstractcpu import ConcretizeArgument
 from .state import State
-from ..core.smtlib import issymbolic, Expression
+from ..core.smtlib import issymbolic, BitVec
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 from typing import Union
@@ -94,7 +94,7 @@ def _find_zeros(cpu, constrs, ptr):
     return can_be_zero
 
 
-def strcmp(state: State, s1: Union[int, Expression], s2: Union[int, Expression]):
+def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     """
     strcmp symbolic model.
 
@@ -150,7 +150,7 @@ def strcmp(state: State, s1: Union[int, Expression], s2: Union[int, Expression])
     return ret
 
 
-def strlen(state: State, s: Union[int, Expression]):
+def strlen(state: State, s: Union[int, BitVec]):
     """
     strlen symbolic model.
 
@@ -207,7 +207,7 @@ def not_NULL(byte, constrs) -> bool:
         return byte != 0
 
 
-def strcpy(state: State, dst: Union[int, Expression], src: Union[int, Expression]) -> int:
+def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> int:
     """
     strcpy symbolic model
 
