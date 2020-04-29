@@ -207,7 +207,7 @@ def not_NULL(byte, constrs) -> bool:
         return byte != 0
 
 
-def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> int:
+def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strcpy symbolic model
 
@@ -230,7 +230,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> in
 
     cpu = state.cpu
     constrs = state.constraints
-    ret = int(dst)
+    ret = dst
     c = cpu.read_int(src, 8)
     # Copy until '\000' is reached or symbolic memory that can be '\000'
     while not_NULL(c, constrs):
