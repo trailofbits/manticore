@@ -230,7 +230,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> in
 
     cpu = state.cpu
     constrs = state.constraints
-    ret = dst
+    ret = int(dst)
     c = cpu.read_int(src, 8)
     # Copy until '\000' is reached or symbolic memory that can be '\000'
     while not_NULL(c, constrs):
