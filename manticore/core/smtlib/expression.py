@@ -1192,6 +1192,15 @@ class ArraySelect(BitVec):
 
         super().__init__(array.value_bits, **kwargs)
 
+    def __hash__(self):
+        return super.__hash__(self)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, self.__class__):
+            return self.array is other.array and self.index == other.index
+        else:
+            return super(ArraySelect, self).__eq__(other)
+
     @property
     def array(self):
         return self.operands[0]
@@ -1262,7 +1271,7 @@ class BitVecITE(BitVecOperation):
         assert true_value.size == size
         assert false_value.size == size
         super().__init__(size, condition, true_value, false_value, *args, **kwargs)
-
+    
     @property
     def condition(self):
         return self.operands[0]
