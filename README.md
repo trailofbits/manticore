@@ -244,5 +244,5 @@ Manticore is licensed and distributed under the AGPLv3 license. [Contact us](mai
 If you are using Manticore on an academic work, consider applying to the [Crytic $10k Research Prize](https://blog.trailofbits.com/2019/11/13/announcing-the-crytic-10k-research-prize/).
 
 ## Demo Video from ASE 2019
-[![Brief Manticore demo video](https://img.youtube.com/vi/o6pmBJZpKAc/1.jpg)](youtu.be/o6pmBJZpKAc)
+[![Brief Manticore demo video](https://img.youtube.com/vi/o6pmBJZpKAc/1.jpg)](https://youtu.be/o6pmBJZpKAc)
 
