@@ -1271,7 +1271,7 @@ class BitVecITE(BitVecOperation):
         assert true_value.size == size
         assert false_value.size == size
         super().__init__(size, condition, true_value, false_value, *args, **kwargs)
-    
+
     @property
     def condition(self):
         return self.operands[0]
