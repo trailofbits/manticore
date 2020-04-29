@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Bug Report
+    url: https://github.com/trailofbits/manticore/issues/new?labels=bug?template=bug_report.md
+    about: Report a bug in Manticore
+  - name: Feature Request
+    url: https://github.com/trailofbits/manticore/issues/new?labels=idea?template=feature_request.md
+    about: Request a new feature in Manticore
+  - name: Ask a Question
+    url: https://github.com/trailofbits/manticore/discussions/new
+    about: Ask for help or clarification from the developers
+  - name: Join our Slack
+    url: https://empirehacking.slack.com/archives/C3PTWK7UM
+    about: Engage with other users of Manticore
