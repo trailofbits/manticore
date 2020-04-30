@@ -45,6 +45,14 @@ class Storage:
         )
         self.dirty = False
 
+    def __getitem__(self, offset: Union[int, BitVec]) -> Union[int, BitVec]:
+        return self.get(offset, 0)
+
+    def get(self, offset: Union[int, BitVec], default: Union[int, BitVec]) -> Union[int, BitVec]:
+        if not isinstance(default, BitVec):
+            default = BitVecConstant(256, default)
+        return BitVecITE(256, self.map[offset] != 0, self.data[offset], default)
+
     def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]):
         self.map[offset] = 1
         self.data[offset] = value
@@ -375,9 +383,7 @@ class OverlayWorldState(WorldState):
                 pass
         storage = self._storage.get(address)
         if storage is not None:
-            if not isinstance(value, BitVec):
-                value = BitVecConstant(256, value)
-            value = BitVecITE(256, storage.map[offset] != 0, storage.data[offset], value)
+            value = storage.get(offset, value)
         return value
 
     def get_code(self, address: int) -> Union[bytes, Array]:

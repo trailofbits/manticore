@@ -2577,6 +2577,9 @@ class EVMWorld(Platform):
         """
         return self._world_state.has_storage(address)
 
+    def get_storage(self, address: int) -> Storage:
+        return self._get_storage(self.constraints, address)
+
     def _get_storage(self, constraints: ConstraintSet, address: int) -> Storage:
         """Private auxiliary function to retrieve the storage"""
         storage = self._world_state.get_storage(address)
