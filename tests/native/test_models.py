@@ -1,11 +1,20 @@
 import unittest
 import os
+import random
 
 from manticore.core.smtlib import ConstraintSet, Z3Solver, issymbolic, BitVecConstant, BitVecITE
 from manticore.native.state import State
 from manticore.platforms import linux
 
-from manticore.native.models import variadic, isvariadic, strcmp, strlen, strcpy, is_NULL, not_NULL
+from manticore.native.models import (
+    variadic,
+    isvariadic,
+    strcmp,
+    strlen,
+    strcpy,
+    is_NULL,
+    can_be_NULL,
+)
 
 
 class ModelMiscTest(unittest.TestCase):
@@ -211,6 +220,25 @@ class StrlenTest(ModelTest):
 
 
 class StrcpyTest(ModelTest):
+    def _compare_bytes(self, a, b):
+        if issymbolic(a) and issymbolic(b):
+            return a.equal(b)
+        elif not issymbolic(a) and not issymbolic(b):
+            return a == b
+        elif issymbolic(a) and not issymbolic(b):
+            return a.value == b
+        elif not issymbolic(a) and issymbolic(b):
+            return a == b.value
+        return False
+
+    def _check_BitVecITE(self, dst, dst_val):
+        self.assertTrue(issymbolic(dst))
+        while type(dst.true_value) is BitVecITE:  # check each each if/else in dst
+            # self.assertEqual(dst.false_value, org_dest_val[offset]) # dst = false_val
+            self.assertTrue(self._compare_bytes(dst.false_value, dst_val))
+            dst = dst.true_value
+        return dst
+
     def _assert_concrete_start(self, s, d):
         cpu = self.state.cpu
         src = cpu.read_int(s, 8)
@@ -224,41 +252,35 @@ class StrcpyTest(ModelTest):
             dst = cpu.read_int(d + offset, 8)
         return offset
 
-    def _assert_symbolic_end(self, s: int , d: int, offset: int, org_dest_val: list):
+    def _assert_symbolic_end(self, s, d, offset, org_dest_val):
         cpu = self.state.cpu
         src = cpu.read_int(s + offset, 8)
         dst = cpu.read_int(d + offset, 8)
 
-        # If entire source string was symbolic
         if not issymbolic(dst):
             self.assertTrue(is_NULL(src, self.state.constraints))
             self.assertEqual(0, dst)
-            return
+        else:
+            while not is_NULL(src, self.state.constraints) and offset < len(org_dest_val):
+                dst = self._check_BitVecITE(dst, org_dest_val[offset])
 
-        # Everything below here is WIP!!!!
-        while issymbolic(src) or src != 0:  # Condition is messed up
-            temp = dst
-            # check each if then else and iterate inwards
-            while type(temp.true_value) is BitVecITE:
-                self.assertEqual(temp.false_value, org_dest_val[offset]) # dst = false_val
-                temp = temp.operands[1]
-
-            # Check that the innermost true_val == src
-            if issymbolic(src):
-                # FIXME - should be this: self.assertNotEqual(temp.true_value, src)
-                self.assertTrue(temp.true_value.equal(src))
-                if not not_NULL(src, self.state.constraints):
-                    self.assertEqual(temp.false_value.value, 0)
+                # FIXME - should be this: self.assertNotEqual(dst.true_value, src)
+                self.assertTrue(self._compare_bytes(dst.true_value, src))
+                if issymbolic(src):
+                    if can_be_NULL(src, self.state.constraints):
+                        self.assertEqual(dst.false_value, 0)
+                    else:
+                        self.assertEqual(dst.false_value, org_dest_val[offset])  # dst = false_val
                 else:
-                    self.assertEqual(temp.false_value, org_dest_val[offset]) # dst = false_val
-                    pass
-            else:
-                self.assertEqual(temp.true_value.value, src)
-                self.assertEqual(temp.false_value, org_dest_val[offset]) # dst = false_val
-            offset += 1
-            src = cpu.read_int(s + offset, 8)
-            dst = cpu.read_int(d + offset, 8)
-        # END WIP
+                    self.assertEqual(dst.false_value, org_dest_val[offset])  # dst = false_val
+
+                offset += 1
+                src = cpu.read_int(s + offset, 8)
+                dst = cpu.read_int(d + offset, 8)
+
+            # Check last sym dst byte
+            dst = self._check_BitVecITE(dst, org_dest_val[offset])
+            self.assertEqual(dst.true_value, 0)
 
     def _test_strcpy(self, string, dst_len=None):
         if dst_len is None:
@@ -266,13 +288,23 @@ class StrcpyTest(ModelTest):
         cpu = self.state.cpu
         s = self._push_string(string)
         d = self._push_string_space(dst_len)
-        dst_vals = [cpu.read_int(d + i, 8) for i in range(dst_len)]
-        ret = strcpy(self.state, d, s)
-        self.assertEqual(ret, d)  # addresses should match
 
+        dst_vals = [None] * dst_len
+        for i in range(dst_len):
+            # Set each dst byte to a random char to simplify equal compairisons
+            c = random.randrange(255)
+            cpu.write_int(d + i, c, 8)
+            dst_vals[i] = c
+        ret = strcpy(self.state, d, s)
+
+        # addresses should match
+        self.assertEqual(ret, d)
+        # assert everything is copied up to the 1st possible 0 is copied
         offset = self._assert_concrete_start(s, d)
+        # check all symbolic values created until a value that must be 0 is found
         self._assert_symbolic_end(s, d, offset, dst_vals)
 
+        # Delete stack space created
         self._pop_string_space(dst_len + len(string))
 
     def test_concrete(self):
@@ -285,20 +317,28 @@ class StrcpyTest(ModelTest):
         self._test_strcpy("\0")
         self._test_strcpy("\0", dst_len=10)
 
-    # Everything below here is WIP!!!!
     def test_symbolic_mixed(self):
         src = self.state.symbolicate_buffer("++\0")
         self._test_strcpy(src, dst_len=4)
-        # TODO: Finish this
-        # Starts with symbolic
+
         src = self.state.symbolicate_buffer("xy++\0")
-        src = self.state.symbolicate_buffer("iv++")
-        # Starts with concrete
+        self._test_strcpy(src, dst_len=6)
+
+        src = self.state.symbolicate_buffer("iv+++")
+        self.state.constraints.add(src[-1] == 0)
+        self._test_strcpy(src, dst_len=6)
+
         src = self.state.symbolicate_buffer("+++jl\0")
-        src = self.state.symbolicate_buffer("+++df++")
+        self._test_strcpy(src, dst_len=6)
+
+        src = self.state.symbolicate_buffer("+++df+++")
+        self.state.constraints.add(src[-1] == 0)
+        self._test_strcpy(src, dst_len=12)
 
     def test_only_symbolic(self):
-        src = self.state.symbolicate_buffer("+++")
+        src = self.state.symbolicate_buffer("++++++++++++")
+        self.state.constraints.add(src[-1] == 0)
+        self._test_strcpy(src, dst_len=15)
 
     # TODO:
     # def test_symbolic_src_address(self):

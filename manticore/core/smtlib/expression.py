@@ -1195,11 +1195,18 @@ class ArraySelect(BitVec):
     def __hash__(self):
         return super.__hash__(self)
     
+    """
     def __eq__(self, other) -> bool:
-        if isinstance(other, self.__class__):
+        if isinstance(other, type(self)) and not self.taint:
+            #return super().__eq__(other)
+            print(self)
+            print(other)
+            print(super().__eq__(other).operands)
             return self.array is other.array and self.index == other.index
         else:
+            print(super().__eq__(other))
             return super().__eq__(other)
+    """
 
     def equal(self, other: "ArraySelect") -> bool:
         return self.array is other.array and self.index == other.index

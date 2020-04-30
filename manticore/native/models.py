@@ -193,7 +193,7 @@ def is_NULL(byte, constrs) -> bool:
         return byte == 0
 
 
-def not_NULL(byte, constrs) -> bool:
+def cant_be_NULL(byte, constrs) -> bool:
     """
     Checks if a given byte read from memory is not NULL or cannot be NULL
 
@@ -205,6 +205,20 @@ def not_NULL(byte, constrs) -> bool:
         return not Z3Solver.instance().can_be_true(constrs, byte == 0)
     else:
         return byte != 0
+
+
+def can_be_NULL(byte, constrs) -> bool:
+    """
+    Checks if a given byte read from memory can be NULL
+
+    :param byte: byte read from memory to be examined
+    :param constrs: state constraints
+    :return: whether a given byte is NULL or can be NULL
+    """
+    if issymbolic(byte):
+        return Z3Solver.instance().can_be_true(constrs, byte == 0)
+    else:
+        return byte == 0
 
 
 def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Union[int, BitVec]:
@@ -233,7 +247,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     ret = dst
     c = cpu.read_int(src, 8)
     # Copy until '\000' is reached or symbolic memory that can be '\000'
-    while not_NULL(c, constrs):
+    while cant_be_NULL(c, constrs):
         cpu.write_int(dst, c, 8)
         src += 1
         dst += 1
@@ -246,13 +260,19 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
 
     zeros = _find_zeros(cpu, constrs, src)
     null = zeros[-1]
+    # TODO: Rewrite this w/o calling _find_zeros
+    # Iterate forward from current position till is_NULL(src) - append to zeros when can_be_NULL(src)
+
     # If the symbolic byte was not constrained to '\000' write the appropriate symbolic bytes
     for offset in range(null, -1, -1):
         src_val = cpu.read_int(src + offset, 8)
         dst_val = cpu.read_int(dst + offset, 8)
         if zeros[-1] == offset:
             # Make sure last byte of the copy is always a concrete '\000'
-            src_val = ITEBV(8, src_val != 0, src_val, 0)
+            if is_NULL(src_val, constrs):
+                src_val = 0
+            else:
+                src_val = ITEBV(8, src_val != 0, src_val, 0) # becomes 0 if src is constrained to 0 or is 0
             zeros.pop()
 
         # For every byte that could be null before the current byte add an
