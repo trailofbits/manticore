@@ -540,18 +540,20 @@ class DetectIntegerOverflow(Detector):
 
         if mnemonic in ("SLT", "SGT", "SDIV", "SMOD"):
             result = taint_with(result, "SIGNED")
+        if mnemonic in ("ADD", "SUB", "MUL"):
+            id_val = self._save_current_location(
+                state, "Signed integer overflow at %s instruction" % mnemonic, ios
+            )
+            print ("Result", result)
+            result = taint_with(result, "IOS_{:s}".format(id_val))
 
-        id_val = self._save_current_location(
-            state, "Signed integer overflow at %s instruction" % mnemonic, ios
-        )
-        result = taint_with(result, "IOS_{:s}".format(id_val))
+            id_val = self._save_current_location(
+                state, "Unsigned integer overflow at %s instruction" % mnemonic, iou
+            )
+            result = taint_with(result, "IOU_{:s}".format(id_val))
 
-        id_val = self._save_current_location(
-            state, "Unsigned integer overflow at %s instruction" % mnemonic, iou
-        )
-        result = taint_with(result, "IOU_{:s}".format(id_val))
-
-        vm.change_last_result(result)
+        if mnemonic in ("SLT", "SGT", "SDIV", "SMOD", "ADD", "SUB", "MUL"):
+            vm.change_last_result(result)
 
 
 class DetectUnusedRetVal(Detector):
