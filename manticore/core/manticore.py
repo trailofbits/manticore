@@ -395,7 +395,7 @@ class ManticoreBase(Eventful):
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
     def verbosity(level):
-        """ Sets global vervosity level.
+        """ Sets global verbosity level.
             This will activate different logging profiles globally depending
             on the provided numeric value
         """
