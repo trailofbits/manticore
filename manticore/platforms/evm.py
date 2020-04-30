@@ -2578,6 +2578,13 @@ class EVMWorld(Platform):
         return self._world_state.has_storage(address)
 
     def get_storage(self, address: int) -> Storage:
+        """
+        Gets the storage of an account
+
+        :param address: account address
+        :return: account storage
+        :rtype: bytearray or ArrayProxy
+        """
         return self._get_storage(self.constraints, address)
 
     def _get_storage(self, constraints: ConstraintSet, address: int) -> Storage:
