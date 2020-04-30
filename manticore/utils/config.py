@@ -45,7 +45,7 @@ class _Var:
 
     @value.setter
     def value(self, val):
-        if isinstance(self.default, Enum):
+        if isinstance(self.default, Enum) and isinstance(val, str):
             self._value = self.default.from_string(val)
         else:
             self._value = val
