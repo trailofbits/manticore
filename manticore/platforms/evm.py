@@ -2581,14 +2581,14 @@ class EVMWorld(Platform):
         """Private auxiliary function to retrieve the storage"""
         storage = self._world_state.get_storage(address)
         if storage is None:
-            storage = Storage(constraints, address)
+            storage = self._world_state.new_storage(constraints, address)
             self._world_state.set_storage(address, storage)
         return storage
 
     def _set_storage(self, address: int, storage: Union[Dict[int, int], Optional[Storage]]):
         """Private auxiliary function to replace the storage"""
         if isinstance(storage, dict):
-            storage = Storage.from_dict(self.constraints, address, storage)
+            storage = self._world_state.new_storage(self.constraints, address, storage)
         self._world_state.set_storage(address, storage)
 
     def get_nonce(self, address: int) -> Union[int, BitVec]:

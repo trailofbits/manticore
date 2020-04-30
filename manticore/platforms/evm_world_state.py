@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 class Storage:
     def __init__(self, constraints: ConstraintSet, address: int):
+        """
+        :param constraints: the ConstraintSet with which this Storage object is associated
+        :param address: the address that owns this storage
+        """
         self.constraints = constraints
         self.warned = False
         self.map = constraints.new_array(
@@ -25,6 +29,9 @@ class Storage:
             value_bits=1,
             name=f"STORAGE_MAP_{address:x}",
             avoid_collisions=True,
+            # sam.moelius: The use of default here induces a kind of "closed world assumption,"
+            # i.e., the only writes that occur to this storage are those that we observe.  See
+            # ArrayProxy.get in expression.py.
             default=0,
         )
         self.data = constraints.new_array(
@@ -32,7 +39,9 @@ class Storage:
             value_bits=256,
             name=f"STORAGE_DATA_{address:x}",
             avoid_collisions=True,
-            default=0,
+            # sam.moelius: The use of default here creates unnecessary if-then-elses.  See
+            # ArrayProxy.get in expression.py.
+            # default=0,
         )
         self.dirty = False
 
@@ -51,18 +60,20 @@ class Storage:
                 f"storage[{index:x}] = {state.solve_one(self.data[index], constrain=True):x}"
             )
 
-    @staticmethod
-    def from_dict(constraints: ConstraintSet, address: int, items: Dict[int, int]) -> "Storage":
-        storage = Storage(constraints, address)
-        for key, value in items.items():
-            storage.set(key, value)
-        return storage
-
 
 ####################################################################################################
 
 
 class WorldState:
+    def new_storage(
+        self, constraints: ConstraintSet, address: int, items: Optional[Dict[int, int]] = None
+    ) -> Storage:
+        storage = Storage(constraints, address)
+        if items is not None:
+            for key, value in items.items():
+                storage.set(key, value)
+        return storage
+
     @abstractmethod
     def is_remote(self) -> bool:
         pass
@@ -409,7 +420,7 @@ class OverlayWorldState(WorldState):
         default_world_state = DefaultWorldState()
         self._nonce[address] = default_world_state.get_nonce(address)
         self._balance[address] = default_world_state.get_balance(address)
-        self._storage[address] = Storage(constraints, address)
+        self._storage[address] = self.new_storage(constraints, address)
         self._code[address] = default_world_state.get_code(address)
         self._deleted_accounts.add(address)
 
@@ -434,7 +445,7 @@ class OverlayWorldState(WorldState):
     ):
         storage = self._storage.get(address)
         if storage is None:
-            storage = Storage(constraints, address)
+            storage = self.new_storage(constraints, address)
             self._storage[address] = storage
         if storage.constraints != constraints:
             if not storage.warned:
