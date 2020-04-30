@@ -544,7 +544,6 @@ class DetectIntegerOverflow(Detector):
             id_val = self._save_current_location(
                 state, "Signed integer overflow at %s instruction" % mnemonic, ios
             )
-            print ("Result", result)
             result = taint_with(result, "IOS_{:s}".format(id_val))
 
             id_val = self._save_current_location(

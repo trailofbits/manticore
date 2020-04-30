@@ -50,6 +50,7 @@ class _Var:
         else:
             self._value = val
 
+
 class _Group:
     """
     Configuration group to which you can add variables by simple doing:

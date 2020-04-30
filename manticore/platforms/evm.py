@@ -1100,15 +1100,9 @@ class EVM(Eventful):
             # do nothing. gas is not even changed
             return
 
-
-
-
-
         # If everything is concrete lets just check at every instruction
         if not issymbolic(self._gas) and self._gas < 0:
             raise NotEnoughGas()
-
-
 
     def _indemnify(self, fee):
         self._gas += fee
@@ -2114,7 +2108,7 @@ class EVM(Eventful):
         """Create a new account with associated code"""
         data = self.read_buffer(offset, size)
         self.world.start_transaction(
-            "CREATE", None, data=data, caller=self.address, value=value, gas=self.gas*63//64
+            "CREATE", None, data=data, caller=self.address, value=value, gas=self.gas * 63 // 64
         )
 
         raise StartTx()
@@ -2187,7 +2181,7 @@ class EVM(Eventful):
             data=self.read_buffer(in_offset, in_size),
             caller=self.address,
             value=value,
-            gas=self._temp_call_gas + Operators.ITEBV(512, value!=0, 2300, 0),
+            gas=self._temp_call_gas + Operators.ITEBV(512, value != 0, 2300, 0),
         )
         raise StartTx()
 
