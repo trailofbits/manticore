@@ -2552,7 +2552,7 @@ class EVMWorld(Platform):
         :return: the value
         :rtype: int or BitVec
         """
-        value = self._world_state.get_storage_data(storage_address, offset)
+        value = self._world_state.get_storage_data(self.constraints, storage_address, offset)
         return simplify(value)
 
     def set_storage_data(

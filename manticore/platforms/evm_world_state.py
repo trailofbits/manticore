@@ -87,8 +87,12 @@ class WorldState:
     def get_storage(self, address: int) -> Optional[Storage]:
         pass
 
+    # sam.moelius: The addition of the constraints parameter is future-proofing.  We might want
+    # to create a new Storage object in OverlayWorldState when self._storage.get(address) is None.
     @abstractmethod
-    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
+    def get_storage_data(
+        self, constraints: ConstraintSet, address: int, offset: Union[int, BitVec]
+    ) -> Union[int, BitVec]:
         pass
 
     @abstractmethod
@@ -138,7 +142,9 @@ class DefaultWorldState(WorldState):
     def get_storage(self, address: int) -> Optional[Storage]:
         raise NotImplementedError
 
-    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> int:
+    def get_storage_data(
+        self, constraints: ConstraintSet, address: int, offset: Union[int, BitVec]
+    ) -> int:
         return 0
 
     def get_code(self, address: int) -> bytes:
@@ -240,7 +246,9 @@ class RemoteWorldState(WorldState):
     def get_storage(self, address) -> Storage:
         raise NotImplementedError
 
-    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> int:
+    def get_storage_data(
+        self, constraints: ConstraintSet, address: int, offset: Union[int, BitVec]
+    ) -> int:
         if not isinstance(offset, int):
             raise NotImplementedError
         return int.from_bytes(self._web3().eth.getStorageAt(_web3_address(address), offset), "big")
@@ -344,12 +352,14 @@ class OverlayWorldState(WorldState):
         storage = self._storage.get(address)
         return storage
 
-    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
+    def get_storage_data(
+        self, constraints: ConstraintSet, address: int, offset: Union[int, BitVec]
+    ) -> Union[int, BitVec]:
         value: Union[int, BitVec] = 0
         # sam.moelius: If the account was ever deleted, then ignore the underlay's storage.
         if address not in self._deleted_accounts:
             try:
-                value = self._underlay.get_storage_data(address, offset)
+                value = self._underlay.get_storage_data(constraints, address, offset)
             except NotImplementedError:
                 pass
         storage = self._storage.get(address)
