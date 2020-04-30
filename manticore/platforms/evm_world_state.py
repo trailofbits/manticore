@@ -303,6 +303,7 @@ class OverlayWorldState(WorldState):
     result of the call to get_storage_data was cached in the overlay, then no exception would be
     thrown.
     """
+
     def __init__(self, underlay: WorldState):
         self._underlay: WorldState = underlay
         self._deleted_accounts: Set[int] = set()
