@@ -2583,7 +2583,7 @@ class EVMWorld(Platform):
 
         :param address: account address
         :return: account storage
-        :rtype: bytearray or ArrayProxy
+        :rtype: Storage
         """
         return self._get_storage(self.constraints, address)
 
