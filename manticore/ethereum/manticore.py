@@ -728,7 +728,7 @@ class ManticoreEVM(ManticoreBase):
             if new_address not in all_addresses:
                 return new_address
 
-    def transaction(self, caller, address, value, data, gas=21000, price=1):
+    def transaction(self, caller, address, value, data, gas=None, price=1):
         """ Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
