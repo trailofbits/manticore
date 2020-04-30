@@ -2628,7 +2628,7 @@ class EVMWorld(Platform):
         if address not in self.accounts:
             logger.info("Address does not exists creating it.")
             # Creating an unaccessible account
-            self.create_account(address=address, nonce=(sort!="CREATE"))
+            self.create_account(address=address, nonce=int(sort != "CREATE"))
 
         # Check depth
         tx_failed = self.depth >= 1024
@@ -3305,7 +3305,7 @@ class EVMWorld(Platform):
         self._pending_transaction = None
 
         #elif not self.get_code(address) and sort in ("CALL", "DELEGATECALL", "CALLCODE"):
-            # Transaction to normal account with empty code
+        # Transaction to normal account with empty code
         #    self._close_transaction("STOP")
 
     def dump(self, stream, state, mevm, message):
