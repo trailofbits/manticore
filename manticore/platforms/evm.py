@@ -1046,7 +1046,7 @@ class EVM(Eventful):
         # ignore: Ignore gas. Do not account for it. Do not OOG.
 
         # optimization that speed up concrete fees over symbolic gas sometimes
-        if not issymbolic(fee) and issymbolic(self._gas):
+        if False and not issymbolic(fee) and issymbolic(self._gas):
             reps, m = getattr(self, "_mgas", (0, None))
             reps += 1
             if m is None and reps > 10:
@@ -1096,7 +1096,6 @@ class EVM(Eventful):
             if self.is_failed():
                 raise NotEnoughGas()
         else:
-            print (consts.oog)
             assert consts.oog == "ignore", "Wrong oog config variable"
             # do nothing. gas is not even changed
             return
@@ -2188,7 +2187,7 @@ class EVM(Eventful):
             data=self.read_buffer(in_offset, in_size),
             caller=self.address,
             value=value,
-            gas=self._temp_call_gas + Operators.ITEBV(256,value!=0, 2300, 0),
+            gas=self._temp_call_gas + Operators.ITEBV(512, value!=0, 2300, 0),
         )
         raise StartTx()
 
@@ -2654,6 +2653,7 @@ class EVMWorld(Platform):
             else:
                 enough_balance = Operators.UGE(aux_src_balance, aux_value)
 
+            #TODO: like with OOG we should have am optimistic/pesimistic and complete mode
             tx_failed = not self._concretize_bool(enough_balance, "Forking on available funds")
 
         if tx_failed:

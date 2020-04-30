@@ -327,7 +327,6 @@ class Z3Solver(Solver):
         buf = "".join(bufl).strip()
         if "(error" in bufl[0]:
             raise SolverException(f"Error in smtlib: {bufl[0]}")
-
         return buf
 
     def __readline_and_count(self) -> Tuple[str, int, int]:
@@ -470,7 +469,8 @@ class Z3Solver(Solver):
             while self._is_sat():
                 value = self._getvalue(var)
                 result.append(value)
-                self._assert(var != value)
+                temp_cs.add(var != value)
+                self._reset(temp_cs.to_string(related_to=var))
 
                 if len(result) >= maxcnt:
                     if silent:

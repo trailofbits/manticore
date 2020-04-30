@@ -31,7 +31,7 @@ class _Var:
     def __init__(self, name: str = "", default=None, description: str = None, defined: bool = True):
         self.name = name
         self.description = description
-        self.value = default
+        self._value = default
         self.default = default
         self.defined = defined
 
@@ -39,6 +39,16 @@ class _Var:
     def was_set(self) -> bool:
         return self.value is not self.default
 
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        if isinstance(self.default, Enum):
+            self._value = self.default.from_string(val)
+        else:
+            self._value = val
 
 class _Group:
     """
