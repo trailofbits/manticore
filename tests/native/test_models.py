@@ -224,7 +224,7 @@ class StrcpyTest(ModelTest):
             dst = cpu.read_int(d + offset, 8)
         return offset
 
-    def _assert_symbolic_end(self, s, d, offset):
+    def _assert_symbolic_end(self, s: int , d: int, offset: int, org_dest_val: list):
         cpu = self.state.cpu
         src = cpu.read_int(s + offset, 8)
         dst = cpu.read_int(d + offset, 8)
@@ -238,28 +238,23 @@ class StrcpyTest(ModelTest):
         # Everything below here is WIP!!!!
         while issymbolic(src) or src != 0:  # Condition is messed up
             temp = dst
-            print(temp.operands)
-            # while type(temp.operands[2]) is not BitVecConstant:
-            while type(temp.operands[1]) is BitVecITE:
-                self.assertEqual(type(temp.operands[1]), BitVecITE)
-                # self.assertEqual(temp.operands[2].value, org_dest_val) # dst = false_val
-                print(temp)
+            # check each if then else and iterate inwards
+            while type(temp.true_value) is BitVecITE:
+                self.assertEqual(temp.false_value, org_dest_val[offset]) # dst = false_val
                 temp = temp.operands[1]
 
             # Check that the innermost true_val == src
             if issymbolic(src):
+                # FIXME - should be this: self.assertNotEqual(temp.true_value, src)
+                self.assertTrue(temp.true_value.equal(src))
                 if not not_NULL(src, self.state.constraints):
-                    self.assertEqual(temp.operands[2].value, 0)
+                    self.assertEqual(temp.false_value.value, 0)
                 else:
-                    self.assertEqual(temp.operands[1], src)
+                    self.assertEqual(temp.false_value, org_dest_val[offset]) # dst = false_val
+                    pass
             else:
-                self.assertEqual(temp.operands[1].value, src)
-            # Compare symbolic values
-            # print(dst.operands)
-            """if type(dst.operands[2]) is BitVecConstant:
-                print((dst.operands[2]).value)
-            print("src: ", src, "Dst: ", dst)
-            """
+                self.assertEqual(temp.true_value.value, src)
+                self.assertEqual(temp.false_value, org_dest_val[offset]) # dst = false_val
             offset += 1
             src = cpu.read_int(s + offset, 8)
             dst = cpu.read_int(d + offset, 8)
@@ -270,13 +265,13 @@ class StrcpyTest(ModelTest):
             dst_len = len(string)
         cpu = self.state.cpu
         s = self._push_string(string)
-        # d = self._push_string("abcdefghijklm\0")
         d = self._push_string_space(dst_len)
+        dst_vals = [cpu.read_int(d + i, 8) for i in range(dst_len)]
         ret = strcpy(self.state, d, s)
         self.assertEqual(ret, d)  # addresses should match
 
         offset = self._assert_concrete_start(s, d)
-        self._assert_symbolic_end(s, d, offset)
+        self._assert_symbolic_end(s, d, offset, dst_vals)
 
         self._pop_string_space(dst_len + len(string))
 
