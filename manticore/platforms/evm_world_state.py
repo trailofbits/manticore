@@ -65,7 +65,7 @@ class Storage:
 
         for index in concrete_indexes:
             stream.write(
-                f"storage[{index:x}] = {state.solve_one(self.data[index], constrain=True):x}"
+                f"storage[{index:x}] = {state.solve_one(self.data[index], constrain=True):x}\n"
             )
 
 
