@@ -1025,6 +1025,8 @@ class ManticoreEVM(ManticoreBase):
                 compile_args=compile_args,
                 balance=create_value,
             )
+        elif solidity_filename is not None:
+            raise EthereumError("A target contract and a Solidty filename cannot both be specified")
 
         if tx_account == "attacker":
             tx_account = [attacker_account]

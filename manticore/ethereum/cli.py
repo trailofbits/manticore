@@ -15,6 +15,7 @@ from .detectors import (
     DetectManipulableBalance,
 )
 from ..core.plugin import Profiler
+from ..exceptions import EthereumError
 from .manticore import ManticoreEVM
 from .plugins import (
     FilterFunctions,
@@ -138,21 +139,26 @@ def ethereum_main(args, logger):
         logger.info("Beginning analysis")
 
         with m.kill_timeout():
-            contract_account = None
-            if args.txtarget is not None:
-                contract_account = int(args.txtarget, base=0)
+            try:
+                contract_account = None
+                if args.txtarget is not None:
+                    contract_account = int(args.txtarget, base=0)
+                    if world_state is not None and not world_state.get_code(contract_account):
+                        raise EthereumError("Could not get code for target account: " + args.txtarget)
 
-            m.multi_tx_analysis(
-                args.argv[0],
-                contract_name=args.contract,
-                tx_limit=args.txlimit,
-                tx_use_coverage=not args.txnocoverage,
-                tx_send_ether=not args.txnoether,
-                contract_account=contract_account,
-                tx_account=args.txaccount,
-                tx_preconstrain=args.txpreconstrain,
-                compile_args=vars(args),  # FIXME
-            )
+                m.multi_tx_analysis(
+                    args.argv[0],
+                    contract_name=args.contract,
+                    tx_limit=args.txlimit,
+                    tx_use_coverage=not args.txnocoverage,
+                    tx_send_ether=not args.txnoether,
+                    contract_account=contract_account,
+                    tx_account=args.txaccount,
+                    tx_preconstrain=args.txpreconstrain,
+                    compile_args=vars(args),  # FIXME
+                )
+            except EthereumError as e:
+                logger.error("%r", e.args[0])
 
         if not args.no_testcases:
             m.finalize(only_alive_states=args.only_alive_testcases)
