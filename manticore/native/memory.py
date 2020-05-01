@@ -1329,7 +1329,6 @@ class SMemory(Memory):
 
         crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=2, silent=True)
 
-
         if not consts.fast_crash and len(crash_or_not) == 2:
             from ..core.state import Concretize
 
