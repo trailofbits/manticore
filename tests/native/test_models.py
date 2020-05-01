@@ -2,7 +2,7 @@ import unittest
 import os
 import random
 
-from manticore.core.smtlib import ConstraintSet, Z3Solver, issymbolic, BitVecConstant, BitVecITE
+from manticore.core.smtlib import ConstraintSet, Operators, Z3Solver, issymbolic, ArraySelect, BitVecITE
 from manticore.native.state import State
 from manticore.platforms import linux
 
@@ -220,22 +220,10 @@ class StrlenTest(ModelTest):
 
 
 class StrcpyTest(ModelTest):
-    def _compare_bytes(self, a, b):
-        if issymbolic(a) and issymbolic(b):
-            return a.equal(b)
-        elif not issymbolic(a) and not issymbolic(b):
-            return a == b
-        elif issymbolic(a) and not issymbolic(b):
-            return a.value == b
-        elif not issymbolic(a) and issymbolic(b):
-            return a == b.value
-        return False
-
     def _check_BitVecITE(self, dst, dst_val):
         self.assertTrue(issymbolic(dst))
         while type(dst.true_value) is BitVecITE:  # check each each if/else in dst
-            # self.assertEqual(dst.false_value, org_dest_val[offset]) # dst = false_val
-            self.assertTrue(self._compare_bytes(dst.false_value, dst_val))
+            self.assertEqual(dst.false_value, dst_val) # dst = false_val
             dst = dst.true_value
         return dst
 
@@ -264,8 +252,12 @@ class StrcpyTest(ModelTest):
             while not is_NULL(src, self.state.constraints) and offset < len(org_dest_val):
                 dst = self._check_BitVecITE(dst, org_dest_val[offset])
 
-                # FIXME - should be this: self.assertNotEqual(dst.true_value, src)
-                self.assertTrue(self._compare_bytes(dst.true_value, src))
+                if type(dst.true_value) is ArraySelect:
+                    self.assertEqual(type(src), ArraySelect)
+                    self.assertEqual(src.index, dst.true_value.index)
+                    self.assertTrue(src.array is dst.true_value.array)
+                else:
+                    self.assertTrue(Operators.ITE(dst.true_value == src, True, False))
                 if issymbolic(src):
                     if can_be_NULL(src, self.state.constraints):
                         self.assertEqual(dst.false_value, 0)
