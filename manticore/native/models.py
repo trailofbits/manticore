@@ -59,41 +59,6 @@ def _find_zero(cpu, constrs, ptr):
     return offset
 
 
-def _find_zeros(cpu, constrs, ptr):
-    """
-    Helper for finding all bytes that can be NULL until one is found that is NULL or is effectively NULL from the starting address.
-
-    :param Cpu cpu:
-    :param ConstraintSet constrs: Constraints for current `State`
-    :param int ptr: Address to start searching for a zero from
-    :return: Offset from `ptr` to first byte that is 0 or an `Expression` that must be zero
-    :return: List of offsets from `ptr` to a byte that can be 0. The last value in the
-    list is the offset to the first byte found that is 0 or an `Expression` that must be 0
-    """
-
-    offset = 0
-    can_be_zero = []
-    while True:
-        byt = cpu.read_int(ptr + offset, 8)
-
-        if issymbolic(byt):
-            # If the byte can be 0 append the offset location to can_be_zero
-            if Z3Solver.instance().can_be_true(constrs, byt == 0):
-                can_be_zero.append(offset)
-            # If it is not the case that there exists another possible val for byt than 0
-            # (Byt is constrained to 0) then an effectively NULL byte has been found
-            if not Z3Solver.instance().can_be_true(constrs, byt != 0):
-                break
-        else:
-            if byt == 0:
-                can_be_zero.append(offset)
-                break
-
-        offset += 1
-
-    return can_be_zero
-
-
 def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     """
     strcmp symbolic model.
@@ -258,30 +223,32 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
         cpu.write_int(dst, 0, 8)
         return ret
 
-    zeros = _find_zeros(cpu, constrs, src)
-    null = zeros[-1]
-    # TODO: Rewrite this w/o calling _find_zeros
-    # Iterate forward from current position till is_NULL(src) - append to zeros when can_be_NULL(src)
-
-    # If the symbolic byte was not constrained to '\000' write the appropriate symbolic bytes
-    for offset in range(null, -1, -1):
+    offset = 0
+    zeros = []
+    src_val = cpu.read_int(src, 8)
+    dst_val = cpu.read_int(dst, 8)
+    while not is_NULL(src_val, constrs):
+        if can_be_NULL(c, constrs):
+            src_val = ITEBV(
+                8, src_val != 0, src_val, 0
+            )  # becomes 0 if src is constrained to 0 or is 0
+            _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val)
+            zeros.append(offset)
+        else:
+            _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val)
+        offset += 1
         src_val = cpu.read_int(src + offset, 8)
         dst_val = cpu.read_int(dst + offset, 8)
-        if zeros[-1] == offset:
-            # Make sure last byte of the copy is always a concrete '\000'
-            if is_NULL(src_val, constrs):
-                src_val = 0
-            else:
-                src_val = ITEBV(
-                    8, src_val != 0, src_val, 0
-                )  # becomes 0 if src is constrained to 0 or is 0
-            zeros.pop()
 
-        # For every byte that could be null before the current byte add an
-        # if then else case to the bitvec tree to set the value to the src or dst byte accordingly
-        for zero in reversed(zeros):
-            c = cpu.read_int(src + zero, 8)
-            src_val = ITEBV(8, c != 0, src_val, dst_val)
-        cpu.write_int(dst + offset, src_val, 8)
+    # Build ITE Tree for NULL byte
+    src_val = 0
+    _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val)
 
     return ret
+
+
+def _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val):
+    for zero in reversed(zeros):
+        c = cpu.read_int(src + zero, 8)
+        src_val = ITEBV(8, c != 0, src_val, dst_val)
+    cpu.write_int(dst + offset, src_val, 8)

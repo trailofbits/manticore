@@ -256,6 +256,7 @@ class StrcpyTest(ModelTest):
             self.assertTrue(is_NULL(src, self.state.constraints))
             self.assertEqual(0, dst)
         else:
+            # Loop till src must be NULL or assumed dst space allowed is gone
             while not is_NULL(src, self.state.constraints) and offset < len(org_dest_val):
                 dst = self._check_BitVecITE(dst, org_dest_val[offset])
 
@@ -338,7 +339,3 @@ class StrcpyTest(ModelTest):
         src = self.state.symbolicate_buffer("++++++++++++")
         self.state.constraints.add(src[-1] == 0)
         self._test_strcpy(src, dst_len=15)
-
-    # TODO:
-    # def test_symbolic_src_address(self):
-    # def test_symbolic_dst_address(self):
