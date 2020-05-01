@@ -725,7 +725,6 @@ class ManticoreEVM(ManticoreBase):
             if new_address not in all_addresses:
                 return new_address
 
-<<<<<<< HEAD
     def start_block(
         self, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=None
     ):
@@ -744,8 +743,6 @@ class ManticoreEVM(ManticoreBase):
             world = state.platform
             world.end_block()
 
-=======
->>>>>>> master
     def transaction(self, caller, address, value, data, gas=None, price=1):
         """ Issue a symbolic transaction in all running states
 
