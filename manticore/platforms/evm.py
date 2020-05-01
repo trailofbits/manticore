@@ -2569,6 +2569,16 @@ class EVMWorld(Platform):
         """
         self._world_state.set_storage_data(self.constraints, storage_address, offset, value)
 
+    def get_storage_items(self, address: int) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
+        """
+        Gets all items in an account storage
+
+        :param address: account address
+        :return: all items in account storage. items are tuple of (index, value). value can be symbolic
+        :rtype: list[(storage_index, storage_value)]
+        """
+        return self.get_storage(address).get_items()
+
     def has_storage(self, address: int) -> bool:
         """
         True if something has been written to the storage.

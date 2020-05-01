@@ -2,10 +2,10 @@ import logging
 from abc import ABC, abstractmethod
 from eth_typing import ChecksumAddress, URI
 from io import TextIOBase
-from typing import Dict, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import ParseResult, urlparse
 from web3 import Web3
-from ..core.smtlib import Array, BitVec, BitVecConstant, BitVecITE, BitVecZeroExtend, ConstraintSet
+from ..core.smtlib import Array, ArrayVariable, BitVec, BitVecConstant, BitVecITE, BitVecZeroExtend, ConstraintSet
 from ..ethereum.state import State
 from ..exceptions import EthereumError
 
@@ -57,6 +57,14 @@ class Storage:
         self.map[offset] = 1
         self.data[offset] = value
         self.dirty = True
+
+    def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
+        items = []
+        array = self.data.array
+        while not isinstance(array, ArrayVariable):
+            items.append((array.index, array.value))
+            array = array.array
+        return items
 
     def dump(self, stream: TextIOBase, state: State):
         concrete_indexes = set()
