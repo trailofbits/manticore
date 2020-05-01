@@ -1320,14 +1320,15 @@ class SMemory(Memory):
         """
         assert issymbolic(address)
         solver = Z3Solver.instance()
-        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
+        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions, silent=True)
 
         crashing_condition = False
         for base in solutions:
             if not self.access_ok(slice(base, base + size), access, force):
                 crashing_condition = Operators.OR(address == base, crashing_condition)
 
-        crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=3)
+        crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=2, silent=True)
+
 
         if not consts.fast_crash and len(crash_or_not) == 2:
             from ..core.state import Concretize
