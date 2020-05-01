@@ -272,7 +272,9 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
             if is_NULL(src_val, constrs):
                 src_val = 0
             else:
-                src_val = ITEBV(8, src_val != 0, src_val, 0) # becomes 0 if src is constrained to 0 or is 0
+                src_val = ITEBV(
+                    8, src_val != 0, src_val, 0
+                )  # becomes 0 if src is constrained to 0 or is 0
             zeros.pop()
 
         # For every byte that could be null before the current byte add an

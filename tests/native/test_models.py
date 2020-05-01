@@ -2,7 +2,14 @@ import unittest
 import os
 import random
 
-from manticore.core.smtlib import ConstraintSet, Operators, Z3Solver, issymbolic, ArraySelect, BitVecITE
+from manticore.core.smtlib import (
+    ConstraintSet,
+    Operators,
+    Z3Solver,
+    issymbolic,
+    ArraySelect,
+    BitVecITE,
+)
 from manticore.native.state import State
 from manticore.platforms import linux
 
@@ -223,7 +230,7 @@ class StrcpyTest(ModelTest):
     def _check_BitVecITE(self, dst, dst_val):
         self.assertTrue(issymbolic(dst))
         while type(dst.true_value) is BitVecITE:  # check each each if/else in dst
-            self.assertEqual(dst.false_value, dst_val) # dst = false_val
+            self.assertEqual(dst.false_value, dst_val)  # dst = false_val
             dst = dst.true_value
         return dst
 
