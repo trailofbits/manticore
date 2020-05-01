@@ -9,7 +9,7 @@ def rtd_dependent_deps():
     if on_rtd:
         return native_deps
     else:
-        return ["z3-solver"]
+        return ["z3-solver==4.8.5.0"]
 
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
