@@ -24,16 +24,6 @@ class Storage:
         """
         self.constraints = constraints
         self.warned = False
-        self.map = constraints.new_array(
-            index_bits=256,
-            value_bits=1,
-            name=f"STORAGE_MAP_{address:x}",
-            avoid_collisions=True,
-            # sam.moelius: The use of default here induces a kind of "closed world assumption,"
-            # i.e., the only writes that occur to this storage are those that we observe.  See
-            # ArrayProxy.get in expression.py.
-            default=0,
-        )
         self.data = constraints.new_array(
             index_bits=256,
             value_bits=256,
@@ -51,10 +41,9 @@ class Storage:
     def get(self, offset: Union[int, BitVec], default: Union[int, BitVec]) -> Union[int, BitVec]:
         if not isinstance(default, BitVec):
             default = BitVecConstant(256, default)
-        return BitVecITE(256, self.map[offset] != 0, self.data[offset], default)
+        return self.data.get(offset, default)
 
     def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]):
-        self.map[offset] = 1
         self.data[offset] = value
         self.dirty = True
 
@@ -68,7 +57,7 @@ class Storage:
 
     def dump(self, stream: TextIOBase, state: State):
         concrete_indexes = set()
-        for sindex in self.map.written:
+        for sindex in self.data.written:
             concrete_indexes.add(state.solve_one(sindex, constrain=True))
 
         for index in concrete_indexes:
