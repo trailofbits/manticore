@@ -243,9 +243,9 @@ class ManticoreBase(Eventful):
         *State list: KILLED*
 
         KILLED contains all the READY and BUSY states found at a cancel event.
-        Manticore supports interactive analysis and has a prominetnt event system
-        A useror ui can stop or cancel the exploration at any time. The unfinnished
-        states cought at this situation are simply moved to its own list for
+        Manticore supports interactive analysis and has a prominent event system.
+        A user can stop or cancel the exploration at any time. The unfinished
+        states caught in this situation are simply moved to their own list for
         further user action. This is a final list.
 
 
@@ -395,7 +395,7 @@ class ManticoreBase(Eventful):
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
     def verbosity(level):
-        """ Sets global vervosity level.
+        """ Sets global verbosity level.
             This will activate different logging profiles globally depending
             on the provided numeric value
         """
