@@ -630,6 +630,11 @@ class DetectDelegatecall(Detector):
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
+    def _to_constant(self, expression):
+        if (expression, Constant):
+            return expression.value
+        return expression
+
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         world = state.platform
         mnemonic = instruction.semantics
@@ -646,6 +651,8 @@ class DetectDelegatecall(Detector):
                 if len(possible_addresses) > 1:
                     self.add_finding_here(state, "Delegatecall to user controlled address")
 
+            in_offset = self._to_constant(in_offset)
+            in_size = self._to_constant(in_size)
             calldata = world.current_vm.read_buffer(in_offset, in_size)
             func_id = calldata[:4]
             if issymbolic(func_id):
@@ -670,8 +677,8 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
             if current_contract == known_contract:
-                for offset_i in range(offset, offset + size):
-                    cbu = Operators.AND(cbu, offset_i != known_offset)
+                for offset_i in range(size):
+                    cbu = Operators.AND(cbu, (offset + offset_i) != known_offset)
         if state.can_be_true(cbu):
             self.add_finding_here(
                 state,
@@ -683,9 +690,9 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        for offset_i in range(offset, offset + size):
+        for offset_i in range(size):
             state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
-                (current_contract, offset)
+                (current_contract, offset+offset_i)
             )
 
 
