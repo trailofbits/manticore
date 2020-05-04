@@ -692,7 +692,7 @@ class DetectUninitializedMemory(Detector):
         # concrete or symbolic write
         for offset_i in range(size):
             state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
-                (current_contract, offset+offset_i)
+                (current_contract, offset + offset_i)
             )
 
 
