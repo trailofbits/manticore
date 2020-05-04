@@ -465,8 +465,6 @@ class Z3Solver(Solver):
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
             result = []
-            print ("====")
-            print (temp_cs.to_string(related_to=var))
             start = time.time()
             while self._is_sat():
                 value = self._getvalue(var)
