@@ -165,6 +165,11 @@ class Z3Solver(Solver):
             "(set-logic QF_AUFBV)",
             # The declarations and definitions will be scoped
             "(set-option :global-decls false)",
+            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
+            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
+            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
+            # in test_consensys_benchmark.py.
+            "(set-option :tactic.solve_eqs.context_solve false)",
         ]
 
         self._get_value_fmt = (RE_GET_EXPR_VALUE_FMT, 16)
