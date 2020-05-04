@@ -4,5 +4,5 @@ codecov:
   notify:
     # We have 8 test steps that produce coverage data.
     # If we add or remove any, we need to change this number.
-    after_n_builds: 8
+    after_n_builds: 9
     wait_for_ci: yes
