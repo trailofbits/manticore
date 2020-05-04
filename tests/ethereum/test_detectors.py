@@ -11,20 +11,23 @@ from manticore.platforms.evm import EVMWorld
 
 from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import (
-    ManticoreEVM,
-    DetectIntegerOverflow,
-    DetectUnusedRetVal,
-    DetectSuicidal,
     DetectDelegatecall,
-    DetectExternalCallAndLeak,
     DetectEnvInstruction,
-    DetectRaceCondition,
+    DetectExternalCallAndLeak,
+    DetectIntegerOverflow,
     DetectManipulableBalance,
+    Detector,
+    DetectRaceCondition,
+    DetectSuicidal,
+    DetectUnusedRetVal,
+    ManticoreEVM,
     State,
 )
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
 
 from manticore.utils import config, log
+
+from typing import Tuple, Type
 
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
@@ -39,11 +42,8 @@ def make_mock_evm_state():
 
 
 class EthDetectorTest(unittest.TestCase):
-    """
-    Subclasses must assign this class variable to the class for the detector
-    """
-
-    DETECTOR_CLASS = None
+    # Subclasses must assign this class variable to the class for the detector
+    DETECTOR_CLASS: Type[Detector]
 
     def setUp(self):
         self.mevm = ManticoreEVM()
@@ -55,7 +55,7 @@ class EthDetectorTest(unittest.TestCase):
         self.mevm = None
         shutil.rmtree(self.worksp)
 
-    def _test(self, name, should_find, use_ctor_sym_arg=False):
+    def _test(self, name: str, should_find, use_ctor_sym_arg=False):
         """
         Tests DetectInvalid over the consensys benchmark suit
         """
@@ -65,7 +65,7 @@ class EthDetectorTest(unittest.TestCase):
         filepath = os.path.join(dir, f"{name}.sol")
 
         if use_ctor_sym_arg:
-            ctor_arg = (mevm.make_symbolic_value(),)
+            ctor_arg: Tuple = (mevm.make_symbolic_value(),)
         else:
             ctor_arg = ()
 

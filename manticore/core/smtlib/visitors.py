@@ -20,14 +20,10 @@ class Visitor:
             visit_BitVecAdd()          if not defined then it will try with
             visit_BitVecOperation()    if not defined then it will try with
             visit_BitVec()             if not defined then it will try with
-            visit_Operation()          if not defined then it will try with
             visit_Expression()
 
         Other class named visitors are:
 
-        visit_Constant()
-        visit_Variable()
-        visit_Operation()
         visit_BitVec()
         visit_Bool()
         visit_Array()
@@ -64,7 +60,7 @@ class Visitor:
                     return value
         return self._rebuild(expression, args)
 
-    def visit(self, node_arg, use_fixed_point=False):
+    def visit(self, node, use_fixed_point=False):
         """
         The entry point of the visitor.
         The exploration algorithm is a DFS post-order traversal
@@ -76,10 +72,6 @@ class Visitor:
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         """
-        if isinstance(node_arg, ArrayProxy):
-            node = node_arg.array
-        else:
-            node = node_arg
 
         cache = self._cache
         visited = set()
@@ -112,12 +104,6 @@ class Visitor:
                 old_value = new_value
                 new_value = self.pop()
 
-            if isinstance(node_arg, ArrayProxy):
-                new_value = ArrayProxy(new_value)
-                new_value._default = node_arg._default
-                new_value._written = set(node_arg.written)
-                new_value._concrete_cache = dict(node_arg._concrete_cache)
-
             self.push(new_value)
 
     @staticmethod
@@ -134,9 +120,10 @@ class Translator(Visitor):
     """ Simple visitor to translate an expression into something else
     """
 
-    def _method(self, expression_arg, *args):
+    def _method(self, expression, *args):
         # Special case. Need to get the unsleeved version of the array
-        expression = expression_arg
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
 
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
@@ -158,8 +145,12 @@ class GetDeclarations(Visitor):
         super().__init__(**kwargs)
         self.variables = set()
 
-    def visit_Variable(self, expression):
+    def _visit_variable(self, expression):
         self.variables.add(expression)
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     @property
     def result(self):
@@ -177,8 +168,13 @@ class GetDepth(Translator):
     def visit_Expression(self, expression):
         return 1
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         return 1 + max(operands)
+
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
 
 def get_depth(exp):
@@ -222,7 +218,7 @@ class PrettyPrinter(Visitor):
                 return
         return
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         self._print(expression.__class__.__name__, expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
@@ -232,6 +228,11 @@ class PrettyPrinter(Visitor):
             self._print("...")
         self.indent -= 2
         return ""
+
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecExtract(self, expression):
         self._print(
@@ -247,13 +248,20 @@ class PrettyPrinter(Visitor):
         self.indent -= 2
         return ""
 
-    def visit_Constant(self, expression):
+    def _visit_constant(self, expression):
         self._print(expression.value)
         return ""
 
-    def visit_Variable(self, expression):
+    visit_BitVecConstant = _visit_constant
+    visit_BoolConstant = _visit_constant
+
+    def _visit_variable(self, expression):
         self._print(expression.name)
         return ""
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     @property
     def result(self):
@@ -273,6 +281,7 @@ class ConstantFolderSimplifier(Visitor):
         super().__init__(**kw)
 
     operations = {
+        BitVecMod: operator.__mod__,
         BitVecAdd: operator.__add__,
         BitVecSub: operator.__sub__,
         BitVecMul: operator.__mul__,
@@ -331,7 +340,7 @@ class ConstantFolderSimplifier(Visitor):
         if isinstance(b, Constant) and b.value == True:
             return a
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
         if operation is not None and all(isinstance(o, Constant) for o in operands):
@@ -345,6 +354,11 @@ class ConstantFolderSimplifier(Visitor):
             if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
                 expression = self._rebuild(expression, operands)
         return expression
+
+    visit_ArraySelect = _visit_operation
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
 
 constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
@@ -373,13 +387,17 @@ class ArithmeticSimplifier(Visitor):
         arity = len(operands)
         return any(operands[i] is not expression.operands[i] for i in range(arity))
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         if all(isinstance(o, Constant) for o in operands):
             expression = constant_folder(expression)
         if self._changed(expression, operands):
             expression = self._rebuild(expression, operands)
         return expression
+
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecZeroExtend(self, expression, *operands):
         if self._changed(expression, operands):
@@ -388,19 +406,17 @@ class ArithmeticSimplifier(Visitor):
             return expression
 
     def visit_BoolAnd(self, expression, *operands):
-        if isinstance(expression.operands[0], Constant) and expression.operands[0].value:
-            return expression.operands[1]
-        if isinstance(expression.operands[1], Constant) and expression.operands[1].value:
-            return expression.operands[0]
+        if isinstance(operands[0], Constant) and operands[0].value:
+            return operands[1]
+        if isinstance(operands[1], Constant) and operands[1].value:
+            return operands[0]
 
         # AND ( EQ (EXTRACT(0,8, a), EXTRACT(0,8, b)),  EQ (EXTRACT(8,16, a), EXTRACT(8,16 b)) ->
         # EQ(EXTRACT(0,16, a), EXTRACT(0,16, b))
-        if isinstance(expression.operands[0], BoolEqual) and isinstance(
-            expression.operands[1], BoolEqual
-        ):
+        if isinstance(operands[0], BoolEqual) and isinstance(operands[1], BoolEqual):
             # Eq operands
-            operand_0 = expression.operands[0]
-            operand_1 = expression.operands[1]
+            operand_0 = operands[0]
+            operand_1 = operands[1]
             # Extract operands
             operand_0_0 = operand_0.operands[0]
             operand_0_1 = operand_0.operands[1]
@@ -435,31 +451,27 @@ class ArithmeticSimplifier(Visitor):
                         )
 
     def visit_BoolNot(self, expression, *operands):
-        if isinstance(expression.operands[0], BoolNot):
-            return expression.operands[0].operands[0]
+        if isinstance(operands[0], BoolNot):
+            return operands[0].operands[0]
 
     def visit_BoolEqual(self, expression, *operands):
         """ (EQ, ITE(cond, constant1, constant2), constant1) -> cond
             (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
             (EQ (extract a, b, c) (extract a, b, c))
         """
-        if isinstance(expression.operands[0], BitVecITE) and isinstance(
-            expression.operands[1], Constant
-        ):
-            if isinstance(expression.operands[0].operands[1], Constant) and isinstance(
-                expression.operands[0].operands[2], Constant
+        if isinstance(operands[0], BitVecITE) and isinstance(operands[1], Constant):
+            if isinstance(operands[0].operands[1], Constant) and isinstance(
+                operands[0].operands[2], Constant
             ):
                 value1, value2, value3 = (
-                    expression.operands[1].value,
-                    expression.operands[0].operands[1].value,
-                    expression.operands[0].operands[2].value,
+                    operands[1].value,
+                    operands[0].operands[1].value,
+                    operands[0].operands[2].value,
                 )
                 if value1 == value2 and value1 != value3:
-                    return expression.operands[0].operands[
-                        0
-                    ]  # FIXME: this may break taint propagation
+                    return operands[0].operands[0]  # FIXME: this may break taint propagation
                 elif value1 == value3 and value1 != value2:
-                    return BoolNot(expression.operands[0].operands[0], taint=expression.taint)
+                    return BoolNot(operands[0].operands[0], taint=expression.taint)
 
         if operands[0] is operands[1]:
             return BoolConstant(True, taint=expression.taint)
@@ -536,7 +548,7 @@ class ArithmeticSimplifier(Visitor):
         if changed:
             return BitVecConcat(expression.size, *new_operands)
 
-        op = expression.operands[0]
+        op = operands[0]
         value = None
         end = None
         begining = None
@@ -573,7 +585,7 @@ class ArithmeticSimplifier(Visitor):
             extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
             extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
         """
-        op = expression.operands[0]
+        op = operands[0]
         begining = expression.begining
         end = expression.end
         size = end - begining + 1
@@ -619,8 +631,8 @@ class ArithmeticSimplifier(Visitor):
         """ a + 0  ==> a
             0 + a  ==> a
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return left
@@ -633,8 +645,8 @@ class ArithmeticSimplifier(Visitor):
             (a + b) - b  ==> a
             (b + a) - b  ==> a
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(left, BitVecAdd):
             if self._same_constant(left.operands[0], right):
                 return left.operands[1]
@@ -660,8 +672,8 @@ class ArithmeticSimplifier(Visitor):
             a & 0xffffffff => 0xffffffff
 
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return left
@@ -682,8 +694,8 @@ class ArithmeticSimplifier(Visitor):
             (b & ct2) & ct => b & (ct&ct2)  associative property
             (a & (b | c) => a&b | a&c       distribute over |
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return right
@@ -706,8 +718,8 @@ class ArithmeticSimplifier(Visitor):
         """ a << 0 => a                       remove zero
             a << ct => 0 if ct > sizeof(a)    remove big constant shift
         """
-        left = expression.operands[0]
-        right = expression.operands[1]
+        left = operands[0]
+        right = operands[1]
         if isinstance(right, BitVecConstant):
             if right.value == 0:
                 return left
@@ -720,7 +732,7 @@ class ArithmeticSimplifier(Visitor):
         """
         arr, index = operands
         if isinstance(arr, ArrayVariable):
-            return
+            return self._visit_operation(expression, *operands)
 
         if isinstance(index, BitVecConstant):
             ival = index.value
@@ -740,10 +752,14 @@ class ArithmeticSimplifier(Visitor):
             and isinstance(arr.index, BitVecConstant)
             and arr.index.value == index.value
         ):
-            return arr.value
+            if arr.value is not None:
+                return arr.value
         else:
             if arr is not expression.array:
-                return arr.select(index)
+                out = arr.select(index)
+                if out is not None:
+                    return arr.select(index)
+        return self._visit_operation(expression, *operands)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
@@ -875,8 +891,12 @@ class TranslatorSmtlib(Translator):
     def visit_BoolConstant(self, expression):
         return expression.value and "true" or "false"
 
-    def visit_Variable(self, expression):
+    def _visit_variable(self, expression):
         return expression.name
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
     def visit_ArraySelect(self, expression, *operands):
         array_smt, index_smt = operands
@@ -885,7 +905,7 @@ class TranslatorSmtlib(Translator):
 
         return "(select %s %s)" % (array_smt, index_smt)
 
-    def visit_Operation(self, expression, *operands):
+    def _visit_operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
         if isinstance(expression, (BitVecSignExtend, BitVecZeroExtend)):
             operation = operation % expression.extend
@@ -894,6 +914,10 @@ class TranslatorSmtlib(Translator):
 
         operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
         return "(%s %s)" % (operation, " ".join(operands))
+
+    visit_ArrayOperation = _visit_operation
+    visit_BoolOperation = _visit_operation
+    visit_BitVecOperation = _visit_operation
 
     @property
     def results(self):
@@ -923,10 +947,14 @@ class Replace(Visitor):
             raise ValueError("bindings needed in replace")
         self._replace_bindings = bindings
 
-    def visit_Variable(self, expression):
+    def _visit_variable(self, expression):
         if expression in self._replace_bindings:
             return self._replace_bindings[expression]
         return expression
+
+    visit_ArrayVariable = _visit_variable
+    visit_BitVecVariable = _visit_variable
+    visit_BoolVariable = _visit_variable
 
 
 def replace(expression, bindings):

@@ -8,29 +8,11 @@ from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr, operator, Bool
 from manticore.core.smtlib.solver import Z3Solver
-from .mockmem import Memory
 from functools import reduce
 
+from typing import List
+
 solver = Z3Solver.instance()
-
-
-class ROOperand:
-    """ Mocking class for operand ronly """
-
-    def __init__(self, size, value):
-        self.size = size
-        self.value = value
-
-    def read(self):
-        return self.value & ((1 << self.size) - 1)
-
-
-class RWOperand(ROOperand):
-    """ Mocking class for operand rw """
-
-    def write(self, value):
-        self.value = value & ((1 << self.size) - 1)
-        return self.value
 
 
 sizes = {
@@ -168,31 +150,6 @@ class SymCPUTest(unittest.TestCase):
         "IF": 0x00200,
     }
 
-    class ROOperand:
-        """ Mocking class for operand ronly """
-
-        def __init__(self, size, value):
-            self.size = size
-            self.value = value
-
-        def read(self):
-            return self.value & ((1 << self.size) - 1)
-
-    class RWOperand(ROOperand):
-        """ Mocking class for operand rw """
-
-        def write(self, value):
-            self.value = value & ((1 << self.size) - 1)
-            return self.value
-
-    def setUp(self):
-        mem = Memory()
-        self.cpu = I386Cpu(mem)  # TODO reset cpu in between tests...
-        # TODO mock getchar/putchar in case the instruction accesses memory directly
-
-    def tearDown(self):
-        self.cpu = None
-
     def assertItemsEqual(self, a, b):
         # Required for Python3 compatibility
         self.assertEqual(sorted(a), sorted(b))
@@ -203,7 +160,7 @@ class SymCPUTest(unittest.TestCase):
         return self.assertItemsEqual(a, b)
 
     def testInitialRegState(self):
-        cpu = self.cpu
+        cpu = I386Cpu(Memory32())
         #'CR0', 'CR1', 'CR2', 'CR3', 'CR4', 'CR5', 'CR6', 'CR7', 'CR8',
         # 'DR0', 'DR1', 'DR2', 'DR3', 'DR4', 'DR5', 'DR6', 'DR7',
         #'MM0', 'MM1', 'MM2', 'MM3', 'MM4', 'MM5', 'MM6', 'MM7',
@@ -232,7 +189,7 @@ class SymCPUTest(unittest.TestCase):
                 self.assertEqual(cpu.read_register(reg_name), v)
 
     def testRegisterCacheAccess(self):
-        cpu = self.cpu
+        cpu = I386Cpu(Memory32())
         cpu.ESI = 0x12345678
         self.assertEqual(cpu.ESI, 0x12345678)
         cpu.SI = 0xAAAA
@@ -243,9 +200,8 @@ class SymCPUTest(unittest.TestCase):
         cpu.SI = 0xAAAA
         self.assertEqual(cpu.SI, 0xAAAA)
 
-    def testFlagAccess(self):
-
-        cpu = self.cpu
+    def testFlagAccess(self) -> None:
+        cpu = I386Cpu(Memory32())
         cpu.RFLAGS = 0
         self.assertFalse(cpu.CF)
         self.assertFalse(cpu.PF)
@@ -339,15 +295,15 @@ class SymCPUTest(unittest.TestCase):
         cpu.RFLAGS &= ~self._flags["OF"]
         self.assertFalse(cpu.OF)
 
-    def _check_flags_CPAZSIDO(self, c, p, a, z, s, i, d, o):
-        self.assertEqual(self.cpu.CF, c)
-        self.assertEqual(self.cpu.PF, p)
-        self.assertEqual(self.cpu.AF, a)
-        self.assertEqual(self.cpu.ZF, z)
-        self.assertEqual(self.cpu.SF, s)
-        self.assertEqual(self.cpu.IF, i)
-        self.assertEqual(self.cpu.DF, d)
-        self.assertEqual(self.cpu.OF, o)
+    def _check_flags_CPAZSIDO(self, cpu, c, p, a, z, s, i, d, o) -> None:
+        self.assertEqual(cpu.CF, c)
+        self.assertEqual(cpu.PF, p)
+        self.assertEqual(cpu.AF, a)
+        self.assertEqual(cpu.ZF, z)
+        self.assertEqual(cpu.SF, s)
+        self.assertEqual(cpu.IF, i)
+        self.assertEqual(cpu.DF, d)
+        self.assertEqual(cpu.OF, o)
 
     def _construct_flag_bitfield(self, flags):
         return reduce(operator.or_, (self._flags[f] for f in flags))
@@ -355,24 +311,26 @@ class SymCPUTest(unittest.TestCase):
     def _construct_sym_flag_bitfield(self, flags):
         return reduce(operator.or_, (BitVecConstant(32, self._flags[f]) for f in flags))
 
-    def test_set_eflags(self):
-        self.assertEqual(self.cpu.EFLAGS, 0)
+    def test_set_eflags(self) -> None:
+        cpu = I386Cpu(Memory32())
+        self.assertEqual(cpu.EFLAGS, 0)
 
         flags = ["CF", "PF", "AF", "ZF", "SF"]
-        self.cpu.EFLAGS = self._construct_flag_bitfield(flags)
+        cpu.EFLAGS = self._construct_flag_bitfield(flags)
 
-        self._check_flags_CPAZSIDO(1, 1, 1, 1, 1, 0, 0, 0)
+        self._check_flags_CPAZSIDO(cpu, 1, 1, 1, 1, 1, 0, 0, 0)
 
-    def test_get_eflags(self):
-        self.assertEqual(self.cpu.EFLAGS, 0)
+    def test_get_eflags(self) -> None:
+        cpu = I386Cpu(Memory32())
+        self.assertEqual(cpu.EFLAGS, 0)
 
         flags = ["CF", "AF", "SF"]
-        self.cpu.CF = 1
-        self.cpu.AF = 1
-        self.cpu.SF = 1
-        self.cpu.DF = 0
+        cpu.CF = 1
+        cpu.AF = 1
+        cpu.SF = 1
+        cpu.DF = 0
 
-        self.assertEqual(self.cpu.EFLAGS, self._construct_flag_bitfield(flags))
+        self.assertEqual(cpu.EFLAGS, self._construct_flag_bitfield(flags))
 
     def test_set_sym_eflags(self):
         def check_flag(obj, flag):
@@ -384,21 +342,22 @@ class SymCPUTest(unittest.TestCase):
 
         flags = ["CF", "PF", "AF", "ZF"]
         sym_bitfield = self._construct_sym_flag_bitfield(flags)
-        self.cpu.EFLAGS = sym_bitfield
+        cpu = I386Cpu(Memory32())
+        cpu.EFLAGS = sym_bitfield
 
-        check_flag(self.cpu.CF, "CF")
-        check_flag(self.cpu.PF, "PF")
-        check_flag(self.cpu.AF, "AF")
-        check_flag(self.cpu.ZF, "ZF")
+        check_flag(cpu.CF, "CF")
+        check_flag(cpu.PF, "PF")
+        check_flag(cpu.AF, "AF")
+        check_flag(cpu.ZF, "ZF")
 
     def test_get_sym_eflags(self):
-        def flatten_ors(x):
+        def flatten_ors(x: BitVecOr) -> List:
             """
             Retrieve all nodes of a BitVecOr expression tree
             """
             assert isinstance(x, BitVecOr)
             if any(isinstance(op, BitVecOr) for op in x.operands):
-                ret = []
+                ret: List = []
                 for op in x.operands:
                     if isinstance(op, BitVecOr):
                         ret += flatten_ors(op)
@@ -408,26 +367,27 @@ class SymCPUTest(unittest.TestCase):
             else:
                 return list(x.operands)
 
-        self.cpu.CF = 1
-        self.cpu.AF = 1
+        cpu = I386Cpu(Memory32())
+        cpu.CF = 1
+        cpu.AF = 1
 
         a = BitVecConstant(32, 1) != 0
         b = BitVecConstant(32, 0) != 0
-        self.cpu.ZF = a
-        self.cpu.SF = b
+        cpu.ZF = a
+        cpu.SF = b
 
-        flags = flatten_ors(self.cpu.EFLAGS)
+        flags = flatten_ors(cpu.EFLAGS)
 
-        self.assertTrue(isinstance(self.cpu.EFLAGS, BitVecOr))
+        self.assertTrue(isinstance(cpu.EFLAGS, BitVecOr))
         self.assertEqual(len(flags), 8)
 
-        self.assertEqual(self.cpu.CF, 1)
-        self.assertEqual(self.cpu.AF, 1)
-        self.assertIs(self.cpu.ZF, a)
-        self.assertIs(self.cpu.SF, b)
+        self.assertEqual(cpu.CF, 1)
+        self.assertEqual(cpu.AF, 1)
+        self.assertIs(cpu.ZF, a)
+        self.assertIs(cpu.SF, b)
 
     def testRegisterAccess(self):
-        cpu = self.cpu
+        cpu = I386Cpu(Memory32())
 
         # initially zero
         self.assertEqual(cpu.EAX, 0)

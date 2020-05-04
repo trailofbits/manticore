@@ -26,7 +26,7 @@ class ManticoreDriverTest(unittest.TestCase):
         m.log_file = "/dev/null"
 
     def test_issymbolic(self):
-        v = BitVecVariable(32, "sym")
+        v = BitVecVariable(size=32, name="sym")
         self.assertTrue(issymbolic(v))
 
     def test_issymbolic_neg(self):

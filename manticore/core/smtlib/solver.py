@@ -26,6 +26,7 @@ from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
+from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,9 @@ consts.add(
 )
 consts.add("z3_bin", default="z3", description="Z3 binary to use")
 consts.add("defaultunsat", default=True, description="Consider solver timeouts as unsat core")
+consts.add(
+    "optimize", default=True, description="Use smtlib command optimize to find min/max if available"
+)
 
 
 # Regular expressions used by the solver
@@ -271,9 +275,8 @@ class Z3Solver(Solver):
             # self._proc.wait()
         except Exception as e:
             logger.error(str(e))
-            pass
 
-    def _reset(self, constraints=None):
+    def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
         if self._proc is None:
             self._start_proc()
@@ -289,17 +292,22 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
-    def _send(self, cmd: str):
+    def _send(self, cmd: str) -> None:
         """
         Send a string to the solver.
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         # logger.debug('>%s', cmd)
-        # print (">",self._proc.stdin.name, threading.get_ident())
         try:
-            self._proc.stdout.flush()
-            self._proc.stdin.write(f"{cmd}\n")
+            if self._proc.stdout:
+                self._proc.stdout.flush()
+            else:
+                raise SolverError("Could not flush stdout: file descriptor is None")
+            if self._proc.stdin:
+                self._proc.stdin.write(f"{cmd}\n")
+            else:
+                raise SolverError("Could not write to stdin: file descriptor is None")
         except IOError as e:
             raise SolverError(str(e))
 
@@ -313,16 +321,22 @@ class Z3Solver(Solver):
             bufl.append(buf)
             left += l
             right += r
+            if "(error" in bufl[0]:
+                raise SolverException(f"Error in smtlib: {bufl[0]}")
 
         buf = "".join(bufl).strip()
-
-        # logger.debug('<%s', buf)
         if "(error" in bufl[0]:
             raise SolverException(f"Error in smtlib: {bufl[0]}")
+
         return buf
 
-    def __readline_and_count(self):
-        buf = self._proc.stdout.readline()
+    def __readline_and_count(self) -> Tuple[str, int, int]:
+        stdout = self._proc.stdout
+        if stdout is None:
+            raise SolverError("Could not read from stdout: file descriptor is None")
+        buf = stdout.readline()
+        if buf is None:
+            raise SolverError("Could not read from stdout")
         return buf, buf.count("("), buf.count(")")
 
     # UTILS: check-sat get-value
@@ -347,7 +361,11 @@ class Z3Solver(Solver):
         if status == "unknown":
             raise SolverUnknown(status)
 
-        return status == "sat"
+        is_sat = status == "sat"
+        if not is_sat:
+            check_memory_usage()
+            check_disk_usage()
+        return is_sat
 
     def _assert(self, expression: Bool):
         """Auxiliary method to send an assert"""
@@ -398,14 +416,14 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
-    def can_be_true(self, constraints, expression=True):
+    def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
                 return expression
             else:
                 # if True check if constraints are feasible
-                self._reset(constraints)
+                self._reset(constraints.to_string())
                 return self._is_sat()
         assert isinstance(expression, Bool)
 
@@ -464,7 +482,7 @@ class Z3Solver(Solver):
                     raise SolverError("Timeout")
             return result
 
-    def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, M=10000):
+    def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
         """
         Iteratively finds the maximum or minimum value for the operation
         (Normally Operators.UGT or Operators.ULT)
@@ -472,10 +490,10 @@ class Z3Solver(Solver):
         :param constraints: constraints to take into account
         :param x: a symbol or expression
         :param goal: goal to achieve, either 'maximize' or 'minimize'
-        :param M: maximum number of iterations allowed
+        :param max_iter: maximum number of iterations allowed
         """
+        # TODO: consider adding a mode to return best known value on timeout
         assert goal in ("maximize", "minimize")
-        assert isinstance(x, BitVec)
         operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
 
         with constraints as temp_cs:
@@ -486,7 +504,7 @@ class Z3Solver(Solver):
             self._send(aux.declaration)
 
             start = time.time()
-            if getattr(self, f"support_{goal}"):
+            if consts.optimize and getattr(self, f"support_{goal}", False):
                 self._push()
                 try:
                     self._assert(operation(X, aux))
@@ -498,9 +516,9 @@ class Z3Solver(Solver):
                         # This will be a line like NAME |-> VALUE
                         maybe_sat = self._recv()
                         if maybe_sat == "sat":
-                            m = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
-                            if m:
-                                expr, value = m.group("expr"), m.group("value")
+                            match = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
+                            if match:
+                                expr, value = match.group("expr"), match.group("value")
                                 assert expr == aux.name
                                 return int(value)
                             else:
@@ -510,27 +528,68 @@ class Z3Solver(Solver):
                         if not (ret.startswith("(") and ret.endswith(")")):
                             raise SolverError("bad output on max, z3 may have been killed")
 
-                        m = RE_OBJECTIVES_EXPR_VALUE.match(ret)
-                        if m:
-                            expr, value = m.group("expr"), m.group("value")
+                        match = RE_OBJECTIVES_EXPR_VALUE.match(ret)
+                        if match:
+                            expr, value = match.group("expr"), match.group("value")
                             assert expr == aux.name
                             return int(value)
                         else:
                             raise SolverError("Could not match objective value regex")
                 finally:
                     self._pop()
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     self._send(aux.declaration)
 
-            operation = {"maximize": Operators.UGT, "minimize": Operators.ULT}[goal]
+            operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
             self._assert(aux == X)
+
+            # Find one value and use it as currently known min/Max
+            if not self._is_sat():
+                raise SolverException("UNSAT")
+            last_value = self._getvalue(aux)
+            self._assert(operation(aux, last_value))
+
+            # This uses a binary search to find a suitable range for aux
+            # Use known solution as min or max depending on the goal
+            if goal == "maximize":
+                m, M = last_value, (1 << x.size) - 1
+            else:
+                m, M = 0, last_value
+
+            # Iteratively divide the range
+            L = None
+            while L not in (M, m):
+                L = (m + M) // 2
+                self._push()
+                try:
+                    self._assert(operation(aux, L))
+                    sat = self._is_sat()
+                finally:
+                    self._pop()
+
+                # depending on the goal move one of the extremes
+                if goal == "maximize" and sat or goal == "minimize" and not sat:
+                    m = L
+                else:
+                    M = L
+
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
+
+            # At this point we know aux is inside [m,M]
+            # Lets constrain it to that range
+            self._assert(Operators.UGE(aux, m))
+            self._assert(Operators.ULE(aux, M))
+
+            # And now check all remaining possible extremes
             last_value = None
             i = 0
             while self._is_sat():
                 last_value = self._getvalue(aux)
                 self._assert(operation(aux, last_value))
+                self._assert(aux != last_value)
                 i = i + 1
-                if i > M:
+                if i > max_iter:
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
                 if time.time() - start > consts.timeout:
                     raise SolverError("Timeout")
@@ -538,7 +597,7 @@ class Z3Solver(Solver):
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
 
-    def get_value(self, constraints, *expressions):
+    def get_value(self, constraints: ConstraintSet, *expressions):
         """
         Ask the solver for one possible result of given expressions using
         given set of constraints.
@@ -563,9 +622,11 @@ class Z3Solver(Solver):
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
 
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     if not self._is_sat():
-                        raise SolverError("Model is not available")
+                        raise SolverError(
+                            "Solver could not find a value for expression under current constraint set"
+                        )
 
                     for i in range(expression.index_max):
                         self._send("(get-value (%s))" % var[i].name)
@@ -582,10 +643,12 @@ class Z3Solver(Solver):
 
                 temp_cs.add(var == expression)
 
-                self._reset(temp_cs)
+                self._reset(temp_cs.to_string())
 
                 if not self._is_sat():
-                    raise SolverError("Model is not available")
+                    raise SolverError(
+                        "Solver could not find a value for expression under current constraint set"
+                    )
 
                 self._send("(get-value (%s))" % var.name)
                 ret = self._recv()

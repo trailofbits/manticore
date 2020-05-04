@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rm -rf */
+# rm -rf */
 touch __init__.py
 
 wget -nc -nv -O wabt.tgz -c https://github.com/WebAssembly/wabt/releases/download/1.0.12/wabt-1.0.12-linux.tar.gz
@@ -39,5 +39,7 @@ EOF
 chmod +x gen.sh
 cat modules.txt | xargs -n1 -P"$cores" ./gen.sh
 rm gen.sh
+
+mv test_callbacks.skip test_callbacks.py
 
 exit 0
