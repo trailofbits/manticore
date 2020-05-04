@@ -1733,6 +1733,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         )
         self.assertIn(0x111111111111111111111111111111111111111, world)
         self.assertTrue(world.has_code(0x111111111111111111111111111111111111111))
+        self.assertEqual(world.get_nonce(0x111111111111111111111111111111111111111), 1)
         world.create_account(address=0x222222222222222222222222222222222222222)
         world.transaction(
             0x111111111111111111111111111111111111111,
@@ -1746,6 +1747,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             result = str(e)
         self.assertEqual(result, "SELFDESTRUCT")
         self.assertFalse(world.has_code(0x111111111111111111111111111111111111111))
+        self.assertEqual(world.get_nonce(0x111111111111111111111111111111111111111), 0)
 
 
 class EthPluginTests(unittest.TestCase):
