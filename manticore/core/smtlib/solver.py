@@ -300,7 +300,6 @@ class Z3Solver(Solver):
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         # logger.debug('>%s', cmd)
-        #print (cmd)
         try:
             if self._proc.stdout:
                 self._proc.stdout.flush()
@@ -434,7 +433,6 @@ class Z3Solver(Solver):
             return self._is_sat()
 
     # get-all-values min max minmax
-    @functools.lru_cache(1)
     def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
         """Returns a list with all the possible values for the symbol x"""
         if not isinstance(expression, Expression):
@@ -467,7 +465,8 @@ class Z3Solver(Solver):
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
             result = []
-
+            print ("====")
+            print (temp_cs.to_string(related_to=var))
             start = time.time()
             while self._is_sat():
                 value = self._getvalue(var)

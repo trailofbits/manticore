@@ -1183,6 +1183,7 @@ class EVM(Eventful):
 
             self._checkpoint_data = (pc, old_gas, instruction, arguments, fee, allocated)
             self._consume(fee)
+            self.check_oog()
 
         return self._checkpoint_data
 
@@ -1284,7 +1285,6 @@ class EVM(Eventful):
                 "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
             )
         try:
-            self.check_oog()
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
@@ -2983,13 +2983,12 @@ class EVMWorld(Platform):
         timestamp=1524785992,
         difficulty=0x200,
         gaslimit=0x7FFFFFFF,
-        coinbase=None,
+        coinbase=0,
     ):
         if coinbase not in self.accounts and coinbase != 0:
             logger.info("Coinbase account does not exists")
-
-        if coinbase not in self.accounts:
             self.create_account(coinbase)
+
         self._block_header = BlockHeader(blocknumber, timestamp, difficulty, gaslimit, coinbase)
 
     def end_block(self, block_reward=None):

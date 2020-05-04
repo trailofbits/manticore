@@ -204,7 +204,7 @@ class DetectExternalCallAndLeak(Detector):
                         )
             else:
                 if msg_sender == dest_address:
-                    self.add_finding_here(state, f"Reachable {msg} to sender")
+                    self.add_finding_here(state, f"Reachable {msg} to sender", True)
 
 
 class DetectInvalid(Detector):
@@ -812,7 +812,7 @@ class DetectRaceCondition(Detector):
         world = state.platform
         curr_tx = world.current_transaction
 
-        if curr_tx.sort != "CREATE":
+        if curr_tx.sort != "CREATE" and curr_tx.address in self.manticore.metadata:
             metadata = self.manticore.metadata[curr_tx.address]
             curr_func = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
 

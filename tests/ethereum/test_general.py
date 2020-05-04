@@ -1106,7 +1106,6 @@ class EthTests(unittest.TestCase):
             source_code, name="wallet", contract_name="Wallet", owner=owner, balance=10000000000000000
         )
         attacker = m.create_account(name="attacker", balance=30000000000000000)
-        print ("A"*999999, attacker)
         wallet.luckyNumber(m.make_symbolic_value(), caller=attacker, gas=2312312312222)
         m.finalize()
 
