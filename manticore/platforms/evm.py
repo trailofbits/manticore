@@ -102,7 +102,7 @@ DEFAULT_FORK = "istanbul"
 
 # FIXME. We should just use a Transaction() for this
 PendingTransaction = namedtuple(
-    "PendingTransaction", ["type", "address", "price", "data", "caller", "value", "gas"]
+    "PendingTransaction", ["type", "address", "price", "data", "caller", "value", "gas", "failed"]
 )
 EVMLog = namedtuple("EVMLog", ["address", "memlog", "topics"])
 BlockHeader = namedtuple(
@@ -2625,34 +2625,11 @@ class EVMWorld(Platform):
                 raise EthereumError(
                     f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
                 )
+
         if address not in self.accounts:
             logger.info("Address does not exists creating it.")
             # Creating an unaccessible account
             self.create_account(address=address, nonce=int(sort != "CREATE"))
-
-        # Check depth
-        tx_failed = self.depth >= 1024
-
-        # Fork on enough funds for value and gas
-        if not tx_failed:
-            aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
-            aux_value = Operators.ZEXTEND(value, 512)
-            if self.depth == 0:
-                # take the gas from the balance
-                aux_price = Operators.ZEXTEND(price, 512)
-                aux_gas = Operators.ZEXTEND(gas, 512)
-                aux_fee = aux_price * aux_gas
-                # Iff a human tx debit the fee
-                enough_balance = Operators.UGE(aux_src_balance, aux_value + aux_fee)
-            else:
-                enough_balance = Operators.UGE(aux_src_balance, aux_value)
-
-            #TODO: like with OOG we should have am optimistic/pesimistic and complete mode
-            tx_failed = not self._concretize_bool(enough_balance, "Forking on available funds")
-
-        if tx_failed:
-            logger.info(f"Failing TX. Too deep or not enough balance to pay for gas{(aux_src_balance, aux_value + aux_fee)}")
-            return False
 
         tx = Transaction(
             sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas
@@ -2661,6 +2638,8 @@ class EVMWorld(Platform):
         # Send the tx funds (We know there are enough at this point)
         if self.depth == 0:
             # Debit full gas budget in advance
+            aux_price = Operators.ZEXTEND(tx.price, 512)
+            aux_gas = Operators.ZEXTEND(tx.gas, 512)
             self.sub_from_balance(caller, aux_price * aux_gas)
         self.send_funds(tx.caller, tx.address, tx.value)
 
@@ -3207,11 +3186,12 @@ class EVMWorld(Platform):
         :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
         :param bytecode: the byte array that is the machine code to be executed.
         :param gas: gas budget for this transaction.
+        :param failed: True if the transaction must fail
         """
         assert self._pending_transaction is None, "Already started tx"
         assert caller is not None
         self._pending_transaction = PendingTransaction(
-            sort, address, price, data, caller, value, gas
+            sort, address, price, data, caller, value, gas, None
         )
 
     def _constraint_to_accounts(self, address, include_zero=False, ty="both"):
@@ -3240,12 +3220,12 @@ class EVMWorld(Platform):
         return cond
 
     def _pending_transaction_concretize_address(self):
-        sort, address, price, data, caller, value, gas = self._pending_transaction
+        sort, address, price, data, caller, value, gas, failed = self._pending_transaction
         if issymbolic(address):
 
             def set_address(state, solution):
                 world = state.platform
-                world._pending_transaction = (sort, solution, price, data, caller, value, gas)
+                world._pending_transaction = (sort, solution, price, data, caller, value, gas, failed)
 
             cond = self._constraint_to_accounts(address, ty="contract", include_zero=False)
             self.constraints.add(cond)
@@ -3257,14 +3237,15 @@ class EVMWorld(Platform):
             )
 
     def _pending_transaction_concretize_caller(self):
-        sort, address, price, data, caller, value, gas = self._pending_transaction
+        sort, address, price, data, caller, value, gas, failed = self._pending_transaction
         if issymbolic(caller):
 
             def set_caller(state, solution):
                 world = state.platform
-                world._pending_transaction = (sort, address, price, data, solution, value, gas)
+                world._pending_transaction = (sort, address, price, data, solution, value, gas, failed)
 
             # Constrain it so it can range over all normal accounts
+            #TODO: document and log this is loosing completness
             cond = self._constraint_to_accounts(caller, ty="normal")
             self.constraints.add(cond)
             raise Concretize(
@@ -3273,6 +3254,45 @@ class EVMWorld(Platform):
                 setstate=set_caller,
                 policy="ALL",
             )
+
+    def _pending_transaction_failed(self):
+        sort, address, price, data, caller, value, gas, failed = self._pending_transaction
+
+        #Initially the failed flag is not set. For now we need the caller to be
+        #concrete so the caller balance is easy to get. Initialize falied here
+        if failed is None:
+            # Check depth
+            failed = self.depth >= 1024
+        
+            # Fork on enough funds for value and gas
+            if not failed:
+                aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
+                aux_value = Operators.ZEXTEND(value, 512)
+                if self.depth == 0:
+                    # take the gas from the balance
+                    aux_price = Operators.ZEXTEND(price, 512)
+                    aux_gas = Operators.ZEXTEND(gas, 512)
+                    aux_fee = aux_price * aux_gas
+                    # Iff a human tx debit the fee
+                    enough_balance = Operators.UGE(aux_src_balance, aux_value + aux_fee)
+                else:
+                    enough_balance = Operators.UGE(aux_src_balance, aux_value)
+                failed = Operators.NOT(enough_balance)
+            self._pending_transaction = sort, address, price, data, caller, value, gas, failed
+
+        #TODO: like with OOG we should have am optimistic/pesimistic and complete mode
+        if issymbolic(failed):
+            def set_failed(state, solution):
+                world = state.platform
+                world._pending_transaction = (sort, address, price, data, caller, value, gas, solution)
+
+            raise Concretize(
+                "Concretizing tx-fail on transaction",
+                expression=failed,
+                setstate=set_failed,
+                policy="ALL",
+            )
+        return failed
 
     def _concretize_bool(self, constraint, message="Concretizing generic condition"):
         if isinstance(constraint, bool):
@@ -3290,12 +3310,14 @@ class EVMWorld(Platform):
         # Nothing to do here if no pending transactions
         if self._pending_transaction is None:
             return
-        sort, address, price, data, caller, value, gas = self._pending_transaction
+        sort, address, price, data, caller, value, gas, failed = self._pending_transaction
 
         # caller
         self._pending_transaction_concretize_caller()
         # to/address
         self._pending_transaction_concretize_address()
+
+        failed = self._pending_transaction_failed()
 
         self._open_transaction(sort, address, price, data, caller, value, gas=gas)
         #    self._pending_transaction = None

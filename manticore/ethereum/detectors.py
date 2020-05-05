@@ -631,7 +631,7 @@ class DetectDelegatecall(Detector):
     CONFIDENCE = DetectorClassification.HIGH
 
     def _to_constant(self, expression):
-        if (expression, Constant):
+        if isinstance(expression, Constant):
             return expression.value
         return expression
 
