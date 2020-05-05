@@ -32,7 +32,7 @@ from . import issymbolic
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
-consts.add("timeout", default=30, description="Timeout, in seconds, for each Z3 invocation")
+consts.add("timeout", default=60, description="Timeout, in seconds, for each Z3 invocation")
 consts.add("memory", default=1024 * 8, description="Max memory for Z3 to use (in Megabytes)")
 consts.add(
     "maxsolutions",
@@ -490,9 +490,9 @@ class Z3Solver(Solver):
                         return result
                     raise SolverError("Timeout")
                 #Sometimes adding a new contraint after a check-sat eats all the mem
-                #temp_cs.add(var != value)
-                #self._reset(temp_cs.to_string(related_to=var))
-                self._assert(var != value)
+                temp_cs.add(var != value)
+                self._reset(temp_cs.to_string(related_to=var))
+                #self._assert(var != value)
             return list(result)
 
     def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
