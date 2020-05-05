@@ -3263,7 +3263,7 @@ class EVMWorld(Platform):
         if failed is None:
             # Check depth
             failed = self.depth >= 1024
-        
+
             # Fork on enough funds for value and gas
             if not failed:
                 aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
