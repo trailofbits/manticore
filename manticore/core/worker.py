@@ -133,8 +133,10 @@ class Worker:
                     # Handling Forking and terminating exceptions
                     except Concretize as exc:
                         if exc.policy != "ALL":
-                            import traceback; traceback.print_stack()
-                            logger.debug("[%r] Performing %r. Loosing completness", self.id, exc.message)
+                            logger.debug("[%r] Performing %r. Loosing completness(%r)", self.id, exc.message, exc.policy)
+                        else:
+                            logger.debug("[%r] Performing %r", self.id, exc.message)
+
                         # The fork() method can decides which state to keep
                         # exploring. For example when the fork results in a
                         # single state it is better to just keep going.
