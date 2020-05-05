@@ -2172,7 +2172,7 @@ class EVM(Eventful):
         return temp_call_gas + fee
 
     @transact
-    @concretized_args(address="ACCOUNTS", gas="MINMAX", in_offset="SAMPLED", in_size="SAMPLED")
+    @concretized_args(address="ACCOUNTS", in_offset="SAMPLED", in_size="SAMPLED")
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         """Message-call into an account"""
         self.world.start_transaction(
