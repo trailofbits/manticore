@@ -165,7 +165,9 @@ jobs:
                 return 1
             fi
             echo "Truffle test succeded"
+            coverage xml
             cd ..
+            cp truffle_tests/coverage.xml .
             return 0
         }
 
