@@ -21,7 +21,10 @@ from tests.native.aarch64cpu_asm_cache import assembly_cache
 ks = None
 
 
-def _ks_assemble(asm):
+def _ks_assemble(asm: str) -> bytes:
+    """Assemble the given string using Keystone."""
+    # Explicitly uses late importing so that Keystone will only be imported if this is called.
+    # This lets us avoid requiring installation of Keystone for running tests.
     global ks
     from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 
@@ -34,7 +37,12 @@ def _ks_assemble(asm):
     return binascii.hexlify(bytearray(ords))
 
 
-def assemble(asm):
+def assemble(asm: str) -> bytes:
+    """
+    Assemble the given string.
+    
+    An assembly cache is first checked, and if there is no entry there, then Keystone is used.
+    """
     if asm in assembly_cache:
         return binascii.unhexlify(assembly_cache[asm])
     return binascii.unhexlify(_ks_assemble(asm))

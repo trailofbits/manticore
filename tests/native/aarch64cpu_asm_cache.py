@@ -1,3 +1,8 @@
+# This is a cache of assembled instructions.
+# This exists so that Manticore's tests can run without requiring that the
+# Keystone dependency be installed.
+# If additional test cases are added that require new instructions, this cache
+# will need to be updated.
 assembly_cache = {
     "add w0, w1, w2, lsl #0": b"2000020b",
     "add x0, x1, x2, lsl #0": b"2000028b",

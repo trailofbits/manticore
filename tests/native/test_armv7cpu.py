@@ -21,6 +21,11 @@ import logging
 logger = logging.getLogger("ARM_TESTS")
 solver = Z3Solver.instance()
 
+# This is a cache of assembled instructions.
+# This exists so that Manticore's tests can run without requiring that the
+# Keystone dependency be installed.
+# If additional test cases are added that require new instructions, this cache
+# will need to be updated.
 assembly_cache = {
     CS_MODE_ARM: {
         "adc r3, r1, r2": b"0230a1e0",
@@ -269,7 +274,12 @@ def _ks_assemble(asm, mode=CS_MODE_ARM):
     return binascii.hexlify(bytearray(ords))
 
 
-def assemble(asm, mode=CS_MODE_ARM):
+def assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
+    """
+    Assemble the given string.
+    
+    An assembly cache is first checked, and if there is no entry there, then Keystone is used.
+    """
     if asm in assembly_cache[mode]:
         return binascii.unhexlify(assembly_cache[mode][asm])
     return binascii.unhexlify(_ks_assemble(asm, mode=mode))
