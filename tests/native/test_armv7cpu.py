@@ -253,7 +253,10 @@ assembly_cache = {
 }
 
 
-def _ks_assemble(asm, mode=CS_MODE_ARM):
+def _ks_assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
+    """Assemble the given string using Keystone using the specified CPU mode."""
+    # Explicitly uses late importing so that Keystone will only be imported if this is called.
+    # This lets us avoid requiring installation of Keystone for running tests.
     global ks, ks_thumb
     from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 
