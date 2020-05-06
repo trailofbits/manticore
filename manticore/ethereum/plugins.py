@@ -1,7 +1,6 @@
 import sys
 
 from functools import reduce
-
 import re
 
 from ..core.plugin import Plugin
@@ -44,6 +43,7 @@ class FilterFunctions(Plugin):
         self._fallback = fallback
         self._include = include
 
+    @Plugin.if_enabled
     def will_open_transaction_callback(self, state, tx):
         world = state.platform
         tx_cnt = len(world.all_transactions)

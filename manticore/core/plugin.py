@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import cProfile
 import pstats
 import threading
+from functools import wraps
 
 from .smtlib import issymbolic
 
@@ -12,6 +13,27 @@ logger = logging.getLogger(__name__)
 class Plugin:
     def __init__(self):
         self.manticore = None
+        self._enabled_key = hash(self)
+
+    def enable(self):
+        with self.manticore.locked_context() as context:
+            context[self._enabled_key] = True
+
+    def disable(self):
+        with self.manticore.locked_context() as context:
+            context[self._enabled_key] = False
+
+    def is_enabled(self):
+        with self.manticore.locked_context() as context:
+            return context.get(self._enabled_key, False)
+
+    @staticmethod
+    def if_enabled(f):
+        @wraps(f)
+        def g(self, *args, **kwargs):
+            if self.is_enabled():
+                return f(self, *args, **kwargs)
+        return g
 
     @property
     def name(self):
