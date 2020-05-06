@@ -42,6 +42,7 @@ class FilterFunctions(Plugin):
         self._depth = depth
         self._fallback = fallback
         self._include = include
+        self.enable()
 
     @Plugin.if_enabled
     def will_open_transaction_callback(self, state, tx):
