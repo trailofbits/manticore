@@ -25,7 +25,7 @@ class Plugin:
 
     def is_enabled(self):
         with self.manticore.locked_context() as context:
-            return context.get(self._enabled_key, False)
+            return context.get(self._enabled_key, True)
 
     @staticmethod
     def if_enabled(f):
