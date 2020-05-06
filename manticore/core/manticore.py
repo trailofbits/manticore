@@ -81,6 +81,7 @@ consts.add(
 class ManticoreBase(Eventful):
     def _manticore_single(self):
         self._worker_type = WorkerSingle
+
         class FakeLock:
             def _nothing(self, *args, **kwargs):
                 pass
@@ -303,9 +304,10 @@ class ManticoreBase(Eventful):
         """
         super().__init__()
         random.seed(consts.seed)
-        {'single':self._manticore_single,
-         'threading':self._manticore_threading,
-         'multiprocessing':self._manticore_multiprocessing,}[consts.mprocessing.name]()
+        {'single': self._manticore_single,
+         'threading': self._manticore_threading,
+         'multiprocessing': self._manticore_multiprocessing
+         }[consts.mprocessing.name]()
 
         if any(
             not hasattr(self, x)
