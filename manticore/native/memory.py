@@ -58,7 +58,7 @@ class ConcretizeMemory(MemoryException):
     Raised when a symbolic memory cell needs to be concretized.
     """
 
-    def __init__(self, mem, address, size, message=None, policy="MINMAX"):
+    def __init__(self, mem, address, size, message=None, policy="MINMAX", setstate=None):
         if message is None:
             self.message = f"Concretizing memory address {address} size {size}"
         else:
@@ -68,6 +68,7 @@ class ConcretizeMemory(MemoryException):
         self.address = address
         self.size = size
         self.policy = policy
+        self.setstate = setstate
 
 
 class InvalidMemoryAccess(MemoryException):
