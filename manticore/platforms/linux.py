@@ -2665,8 +2665,6 @@ class Linux(Platform):
         )
         logger.debug(f"\tProcess: {self.procs!r}")
         logger.debug(f"\tRunning: {self.running!r}")
-        # logger.debug(f"\tRWait: {self.rwait!r}")
-        # logger.debug(f"\tTWait: {self.twait!r}")
         logger.debug(f"\tTimers: {self.timers!r}")
 
         assert self._current is not None
