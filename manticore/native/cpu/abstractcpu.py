@@ -11,7 +11,6 @@ import unicorn
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory, Memory
-from ..state import State
 from ...core.smtlib import Operators, Constant, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
@@ -90,13 +89,12 @@ class ConcretizeRegister(CpuException):
     Raised when a symbolic register needs to be concretized.
     """
 
-    def __init__(self, cpu, reg_name, message=None, policy="MINMAX", setstate=None):
+    def __init__(self, cpu, reg_name, message=None, policy="MINMAX"):
         self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
         self.reg_name = reg_name
         self.policy = policy
-        self.setstate = setstate
 
 
 class ConcretizeArgument(CpuException):
@@ -104,19 +102,11 @@ class ConcretizeArgument(CpuException):
     Raised when a symbolic argument needs to be concretized.
     """
 
-    def __init__(self, cpu, argnum, policy="MINMAX", setstate=None):
+    def __init__(self, cpu, argnum, policy="MINMAX"):
         self.message = f"Concretizing argument #{argnum}."
         self.cpu = cpu
         self.policy = policy
         self.argnum = argnum
-
-        def _setstate(state: State, _value):
-            """ Roll back PC to redo last instruction """
-            state.cpu.PC = state.cpu._last_pc
-            if setstate is not None:
-                setstate(state, _value)
-
-        self.setstate = _setstate
 
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
@@ -384,13 +374,14 @@ class Abi:
             descriptors = self.get_arguments()
             src = next(islice(descriptors, idx, idx + 1))
 
+            # Roll back PC to redo last instruction
+            self._cpu.PC = self._cpu._last_pc
+
             msg = "Concretizing due to model invocation"
             if isinstance(src, str):
-                raise ConcretizeRegister(self._cpu, src, msg, setstate=e.setstate)
+                raise ConcretizeRegister(self._cpu, src, msg)
             else:
-                raise ConcretizeMemory(
-                    self._cpu.memory, src, self._cpu.address_bit_size, msg, setstate=e.setstate
-                )
+                raise ConcretizeMemory(self._cpu.memory, src, self._cpu.address_bit_size, msg)
         else:
             if result is not None:
                 self.write_result(result)
