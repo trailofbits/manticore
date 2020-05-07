@@ -64,7 +64,20 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 
 
 class EthDetectorsTransactionReordering(unittest.TestCase):
-    def test_transaction_reordering(self):
+    def test_transaction_reordering_basic(self):
+        # log.set_verbosity(5)
+        consts = config.get_group("evm")
+        consts.sha3 = consts.sha3.concretize
+        mevm = ManticoreEVM()
+        mevm.register_detector(DetectTransactionReordering())
+        filename = os.path.join(THIS_DIR, "contracts/basic.sol")
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.finalize()
+        self.assertEqual(len(mevm.global_findings), 1)
+        all_findings = "".join([x[2] for x in mevm.global_findings])
+        self.assertIn("REVERT following transaction reordering", all_findings)
+
+    def test_transaction_reordering_sqrt(self):
         # log.set_verbosity(5)
         consts = config.get_group("evm")
         consts.sha3 = consts.sha3.concretize
@@ -77,7 +90,7 @@ class EthDetectorsTransactionReordering(unittest.TestCase):
         all_findings = "".join([x[2] for x in mevm.global_findings])
         self.assertIn("REVERT following transaction reordering", all_findings)
 
-    def test_transaction_reordering_better(self):
+    def test_transaction_reordering_sqrt_better(self):
         # log.set_verbosity(5)
         consts = config.get_group("evm")
         consts.sha3 = consts.sha3.concretize
