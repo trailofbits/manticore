@@ -1425,15 +1425,12 @@ class ManticoreEVM(ManticoreBase):
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROW; it actually changes the balance and nonce? of some accounts
 
-        if tx.result in {"SELFDESTRUCT", "REVERT", "THROW", "TXERROR"}:
+        if tx.return_value == 0:
             pass
-        elif tx.result in {"RETURN", "STOP"}:
+        else:
             # if not a revert, we save the state for further transactions
             with self.locked_context("ethereum.saved_states", list) as saved_states:
                 saved_states.append(state.id)
-
-        else:
-            logger.debug("Exception in state. Discarding it")
 
     # Callbacks
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
