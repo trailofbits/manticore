@@ -1,7 +1,7 @@
 from manticore.core.smtlib.visitors import simplify
 import hashlib
 from enum import Enum
-from typing import Optional
+from typing import Optional, Iterable
 import logging
 from contextlib import contextmanager
 
@@ -15,6 +15,9 @@ from ..core.smtlib import (
     taint_with,
 )
 from ..core.plugin import Plugin
+from ..platforms.evm import Transaction
+from ..utils import config
+from .state import State
 
 
 logger = logging.getLogger(__name__)
@@ -871,3 +874,204 @@ class DetectManipulableBalance(Detector):
             for op in arguments:
                 if istainted(op, "BALANCE"):
                     self.add_finding_here(state, "Manipulable balance used in a strict comparison")
+
+
+DEBUG_REPLAY = False
+
+WARNED = "warned"
+TROUBLEMAKER = "troublemaker"
+IN_DID_RUN_CALLBACK = "in_did_run_callback"
+REPLAYING = "replaying"
+
+
+class DetectTransactionReordering(Detector):
+    """
+    Detects cases where:
+    * transaction Y returns successfully
+    * there exists a transaction X from a distinct account such that when X precedes Y, Y reverts
+    """
+
+    ARGUMENT = "transaction-reordering"
+    HELP = "Susceptible to transaction reordering attacks"
+    IMPACT = DetectorClassification.MEDIUM
+    CONFIDENCE = DetectorClassification.HIGH
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @classmethod
+    def state_context_name(cls, name: str):
+        return cls.__name__ + "." + name
+
+    @classmethod
+    def debug(cls, msg: str, *args):
+        logger.debug(cls.__name__ + ": " + msg, *args)
+
+    @classmethod
+    def info(cls, msg: str, *args):
+        logger.info(cls.__name__ + ": " + msg, *args)
+
+    def will_run_callback(self, states: Iterable[State]):
+        with self.locked_context(value_type=dict) as context:
+            if context.get(IN_DID_RUN_CALLBACK):
+                return
+
+            if not context.get(WARNED):
+                consts = config.get_group("evm")
+                if consts.sha3 is consts.sha3.symbolicate:
+                    logger.warn(
+                        "Unsound symbolication can cause the transaction reordering attack"
+                        + " detector to produce false positives"
+                    )
+                context[WARNED] = True
+
+            if not context.get(TROUBLEMAKER):
+                # sam.moelius: Use same initial balance as in ManticoreEVM.multi_tx_analysis.
+                troublemaker = self.manticore.create_account(
+                    balance=10000000000000000000,
+                    name="troublemaker",
+                )
+                context[TROUBLEMAKER] = troublemaker.address
+                self.debug("troublemaker = %s", hex(troublemaker.address))
+
+            for state in states:
+                if state.platform._pending_transaction.type != "CALL":
+                    continue
+
+                with state as new_state:
+                    # sam.moelius: The state returned by StateBase.__enter__ references the original
+                    # platform, but we want an actual copy so that we can clear its
+                    # _pending_transaction field.  As convoluted as this may seem, the easiest way
+                    # to completely copy a state appears to be to _save and re_load it.
+                    state_id = self.manticore._save(new_state)
+                    new_state = self.manticore._load(state_id)
+                    new_state.platform._pending_transaction = None
+                    assert self.manticore._save(new_state, state_id) == state_id
+
+                    assert self.state_context_name("state_id") not in state.context
+                    state.context[self.state_context_name("state_id")] = state_id
+
+                    self.debug("saved state %r as state %r", state.id, state_id)
+
+    def did_close_transaction_callback(self, state: State, tx: Transaction):
+        if not tx.is_human:
+            return
+
+        if tx.sort != "CALL":
+            return
+
+        with self.locked_context(value_type=dict) as context:
+
+            if not context.get(IN_DID_RUN_CALLBACK):
+
+                state_id = state.context[self.state_context_name("state_id")]
+                del state.context[self.state_context_name("state_id")]
+
+                if tx.return_value != 0:
+                    tx = tx.concretize(state, constrain=True)
+                    with self.locked_context("queue", list) as context_queue:
+                        context_queue.append((state_id, tx))
+                    self.debug("queued (%s, %s)", state_id, tx)
+                else:
+                    # sam.moelius: Do not remove state_id.  There could be multiple states whose
+                    # self.state_context_name("state_id") field is state_id.
+                    # self.manticore._remove(state_id)
+                    pass
+
+            else:
+
+                if context.get(REPLAYING):
+                    if tx.return_value == 0:
+                        assert not DEBUG_REPLAY, str(state.platform)
+                        self.add_finding(
+                            state,
+                            tx.address,
+                            0,
+                            f"{tx.result} following transaction reordering",
+                            False,
+                        )
+
+    def did_run_callback(self):
+        with self.locked_context(value_type=dict) as context:
+            if context.get(IN_DID_RUN_CALLBACK):
+                return
+
+            # sam.moelius: Exiting early avoids unnecessary log messages.
+            with self.locked_context("queue", list) as context_queue:
+                if not context_queue:
+                    return
+
+            context[IN_DID_RUN_CALLBACK] = True
+
+        # sam.moelius: Leaving the "with" block saves the context.
+
+        saved_states = []
+        with self.manticore.locked_context("ethereum.saved_states", list) as context_saved_states:
+            while context_saved_states:
+                saved_states.append(context_saved_states.pop())
+
+        queue = []
+        with self.locked_context("queue", list) as context_queue:
+            while context_queue:
+                queue.append(context_queue.pop())
+
+        self.info("injecting symbolic transaction (%d queued states)", len(queue))
+
+        for state_id, tx in queue:
+            # sam.moelius: Manticore deletes states in the ready queue.  But this state_id may have
+            # been queued with multiple txs.  So make a copy of this state.
+            state = self.manticore._load(state_id)
+            with state as new_state:
+                state_id = self.manticore._save(new_state)
+            self.debug("copied state %r to state %r", state.id, state_id)
+
+            assert not self.manticore._ready_states
+            self.manticore._ready_states.append(state_id)
+
+            if not DEBUG_REPLAY:
+                troublemaker = None
+                with self.locked_context(value_type=dict) as context:
+                    troublemaker = context[TROUBLEMAKER]
+                    context[REPLAYING] = False
+
+                symbolic_address = self.manticore.make_symbolic_value()
+                symbolic_data = self.manticore.make_symbolic_buffer(320)
+                symbolic_value = self.manticore.make_symbolic_value()
+
+                self.manticore.transaction(
+                    caller=troublemaker,
+                    address=symbolic_address,
+                    data=symbolic_data,
+                    value=symbolic_value,
+                )
+
+            self.info(
+                "replaying original transaction (%d alive states)",
+                self.manticore.count_ready_states(),
+            )
+
+            with self.locked_context(value_type=dict) as context:
+                context[REPLAYING] = True
+
+            self.manticore.transaction(
+                caller=tx.caller,
+                data=tx.data,
+                address=tx.address,
+                value=tx.value,
+                gas=tx.gas,
+                price=tx.price,
+            )
+
+            # sam.moelius: Move ready states to the terminated list so that test cases are generated
+            # for them.
+            while self.manticore._ready_states:
+                state_id = self.manticore._ready_states.pop()
+                self.manticore._terminated_states.append(state_id)
+
+        with self.manticore.locked_context("ethereum.saved_states", list) as context_saved_states:
+            assert not context_saved_states
+            while saved_states:
+                context_saved_states.append(saved_states.pop())
+
+        with self.locked_context(value_type=dict) as context:
+            context[IN_DID_RUN_CALLBACK] = False

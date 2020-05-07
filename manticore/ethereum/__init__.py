@@ -17,6 +17,7 @@ from .detectors import (
     DetectUninitializedStorage,
     DetectRaceCondition,
     DetectManipulableBalance,
+    DetectTransactionReordering,
 )
 from .account import EVMAccount, EVMContract
 from .solidity import SolidityMetadata
