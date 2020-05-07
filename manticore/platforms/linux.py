@@ -617,7 +617,7 @@ class Socket(FdLike):
         if peer.peer is None:
             peer.peer = self
 
-    def read(self, size: int = -1):
+    def read(self, size: int):
         return self.receive(size)
 
     def receive(self, size: int):
