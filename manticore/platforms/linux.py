@@ -2634,8 +2634,6 @@ class Linux(Platform):
             logger.debug("SCHED:")
             logger.debug(f"\tProcess: {self.procs!r}")
             logger.debug(f"\tRunning: {self.running!r}")
-            # logger.debug(f"\tRWait: {self.rwait!r}")
-            # logger.debug(f"\tTWait: {self.twait!r}")
             logger.debug(f"\tTimers: {self.timers!r}")
             logger.debug(f"\tCurrent clock: {self.clocks}")
             logger.debug(f"\tCurrent cpu: {self._current}")
