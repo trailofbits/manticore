@@ -2,12 +2,12 @@
 Models here are intended to be passed to :meth:`~manticore.native.state.State.invoke_model`, not invoked directly.
 """
 
-from .cpu.abstractcpu import ConcretizeArgument
+from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
 from ..core.smtlib import issymbolic, BitVec
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
-from typing import Union
+from typing import Union, List
 
 VARIADIC_FUNC_ATTR = "_variadic"
 
@@ -210,8 +210,9 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     cpu = state.cpu
     constrs = state.constraints
     ret = dst
-    c = cpu.read_int(src, 8)
+
     # Copy until '\000' is reached or symbolic memory that can be '\000'
+    c = cpu.read_int(src, 8)
     while cant_be_NULL(c, constrs):
         cpu.write_int(dst, c, 8)
         src += 1
@@ -224,30 +225,39 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
         return ret
 
     offset = 0
-    zeros = []
+    zeros: List[int] = []
     src_val = cpu.read_int(src, 8)
-    dst_val = cpu.read_int(dst, 8)
     while not is_NULL(src_val, constrs):
         if can_be_NULL(c, constrs):
-            src_val = ITEBV(
-                8, src_val != 0, src_val, 0
-            )  # becomes 0 if src is constrained to 0 or is 0
-            _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val)
+            # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
+            src_val = ITEBV(8, src_val != 0, src_val, 0)
+            _build_ITE(zeros, cpu, src, dst, offset, src_val)
             zeros.append(offset)
         else:
-            _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val)
+            # If it can't be NULL just build the ITE
+            _build_ITE(zeros, cpu, src, dst, offset, src_val)
         offset += 1
         src_val = cpu.read_int(src + offset, 8)
-        dst_val = cpu.read_int(dst + offset, 8)
 
     # Build ITE Tree for NULL byte
     src_val = 0
-    _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val)
+    _build_ITE(zeros, cpu, src, dst, offset, src_val)
 
     return ret
 
 
-def _build_ITE(zeros, cpu, src, dst, offset, src_val, dst_val):
+def _build_ITE(
+    zeros: List[int],
+    cpu: Cpu,
+    src: Union[int, BitVec],
+    dst: Union[int, BitVec],
+    offset: int,
+    src_val: Union[int, BitVec],
+) -> None:
+    """
+    Builds ITE tree for each symbolic dst byte
+    """
+    dst_val = cpu.read_int(dst + offset, 8)
     for zero in reversed(zeros):
         c = cpu.read_int(src + zero, 8)
         src_val = ITEBV(8, c != 0, src_val, dst_val)
