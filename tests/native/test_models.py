@@ -21,6 +21,7 @@ from manticore.native.models import (
     strcpy,
     is_NULL,
     can_be_NULL,
+    cant_be_NULL,
 )
 
 
@@ -228,18 +229,20 @@ class StrlenTest(ModelTest):
 
 class StrcpyTest(ModelTest):
     def _check_BitVecITE(self, dst, dst_val):
+        # Iterate and check the nested ITE tree for a symbolic byte
         self.assertTrue(issymbolic(dst))
         while type(dst.true_value) is BitVecITE:  # check each each if/else in dst
             self.assertEqual(dst.false_value, dst_val)  # dst = false_val
             dst = dst.true_value
         return dst
 
-    def _assert_concrete_start(self, s, d):
+    def _assert_start(self, s, d):
+        # Checks all characters are copied until the 1st that could be NULL
         cpu = self.state.cpu
         src = cpu.read_int(s, 8)
         dst = cpu.read_int(d, 8)
         offset = 0
-        while not issymbolic(src) and src != 0:
+        while cant_be_NULL(src, self.state.constraints):
             self.assertTrue(not issymbolic(dst))
             self.assertEqual(src, dst)
             offset += 1
@@ -247,30 +250,34 @@ class StrcpyTest(ModelTest):
             dst = cpu.read_int(d + offset, 8)
         return offset
 
-    def _assert_symbolic_end(self, s, d, offset, org_dest_val):
+    def _assert_end(self, s, d, offset, org_dest_val):
         cpu = self.state.cpu
         src = cpu.read_int(s + offset, 8)
         dst = cpu.read_int(d + offset, 8)
 
+        # src string was entirely symbolic
         if not issymbolic(dst):
             self.assertTrue(is_NULL(src, self.state.constraints))
             self.assertEqual(0, dst)
+
+        # Check each symbolic byte in the dst
         else:
             # Loop till src must be NULL or assumed dst space allowed is gone
             while not is_NULL(src, self.state.constraints) and offset < len(org_dest_val):
+                # Check ITE tree in symbolic dst
                 dst = self._check_BitVecITE(dst, org_dest_val[offset])
 
+                # Check that true value is src
                 if type(dst.true_value) is ArraySelect:
                     self.assertEqual(type(src), ArraySelect)
                     self.assertEqual(src.index, dst.true_value.index)
                     self.assertTrue(src.array is dst.true_value.array)
                 else:
                     self.assertTrue(Operators.ITE(dst.true_value == src, True, False))
-                if issymbolic(src):
-                    if can_be_NULL(src, self.state.constraints):
-                        self.assertEqual(dst.false_value, 0)
-                    else:
-                        self.assertEqual(dst.false_value, org_dest_val[offset])  # dst = false_val
+
+                # Check the false value is dst or offset
+                if issymbolic(src) and can_be_NULL(src, self.state.constraints):
+                    self.assertEqual(dst.false_value, 0)
                 else:
                     self.assertEqual(dst.false_value, org_dest_val[offset])  # dst = false_val
 
@@ -283,26 +290,27 @@ class StrcpyTest(ModelTest):
             self.assertEqual(dst.true_value, 0)
 
     def _test_strcpy(self, string, dst_len=None):
+        # Create src and dsty strings
         if dst_len is None:
             dst_len = len(string)
         cpu = self.state.cpu
         s = self._push_string(string)
         d = self._push_string_space(dst_len)
-
         dst_vals = [None] * dst_len
         for i in range(dst_len):
             # Set each dst byte to a random char to simplify equal compairisons
             c = random.randrange(255)
             cpu.write_int(d + i, c, 8)
             dst_vals[i] = c
+
         ret = strcpy(self.state, d, s)
 
         # addresses should match
         self.assertEqual(ret, d)
         # assert everything is copied up to the 1st possible 0 is copied
-        offset = self._assert_concrete_start(s, d)
+        offset = self._assert_start(s, d)
         # check all symbolic values created until a value that must be 0 is found
-        self._assert_symbolic_end(s, d, offset, dst_vals)
+        self._assert_end(s, d, offset, dst_vals)
 
         # Delete stack space created
         self._pop_string_space(dst_len + len(string))
