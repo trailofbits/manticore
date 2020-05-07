@@ -263,11 +263,11 @@ class NativeIntegrationTest(unittest.TestCase):
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
             self.assertIn("Message", f.read())
 
-    def test_fclose_linux_amd64(self) -> None:
+    def _test_no_crash(self, test_name: str, *args) -> None:
         """
-        Tests that the `fclose` example for amd64 linux doesn't crash; see #1602 and #1604.
+        Tests that the specified test binary doesn't cause Manticore to crash.
         """
-        filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "fclose_linux_amd64"))
+        filename = os.path.abspath(os.path.join(DIRPATH, "binaries", test_name))
         workspace = os.path.join(self.test_dir, "workspace")
         cmd = [
             PYTHON_BIN,
@@ -277,27 +277,33 @@ class NativeIntegrationTest(unittest.TestCase):
             "--workspace",
             workspace,
             filename,
-            "+++++++",
         ]
+        cmd.extend(args)
         subprocess.check_call(cmd)
+
+    def test_fclose_linux_amd64(self) -> None:
+        """
+        Tests that the `fclose` example for amd64 linux doesn't crash; see #1602 and #1604.
+        """
+        self._test_no_crash("fclose_linux_amd64", "+++++++")
 
     def test_fileio_linux_amd64(self) -> None:
         """
         Tests that the `fileio` example for amd64 linux doesn't crash.
         """
-        filename = os.path.abspath(os.path.join(DIRPATH, "binaries", "fileio_linux_amd64"))
-        workspace = os.path.join(self.test_dir, "workspace")
-        cmd = [
-            PYTHON_BIN,
-            "-m",
-            "manticore",
-            "--no-color",
-            "--workspace",
-            workspace,
-            filename,
-            "+",
-        ]
-        subprocess.check_call(cmd)
+        self._test_no_crash("fileio_linux_amd64", "+")
+
+    def test_ioctl_bogus(self) -> None:
+        """
+        Tests that the `ioctl_bogus` example for amd64 linux doesn't crash.
+        """
+        self._test_no_crash("ioctl_bogus")
+
+    def test_ioctl_socket(self) -> None:
+        """
+        Tests that the `ioctl_socket` example for amd64 linux doesn't crash.
+        """
+        self._test_no_crash("ioctl_socket")
 
     def test_brk_regression(self) -> None:
         """
