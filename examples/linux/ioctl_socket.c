@@ -18,9 +18,9 @@ int main() {
     int rc = ioctl(sockfd, I_FLUSH, FLUSHRW);
     if (rc == -1) {
         fprintf(stderr, "error calling ioctl: %s\n", strerror(errno));
-        return 2;
+        return 0;
     } else {
         fprintf(stdout, "success!\n");
-        return 0;
+        return 2;
     }
 }
