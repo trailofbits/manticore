@@ -149,6 +149,7 @@ def get_verbosity(logger_name: str) -> int:
 
 
 def set_verbosity(setting: int) -> None:
+    """Set the global verbosity (0-5)."""
     global manticore_verbosity
     manticore_verbosity = min(max(setting, 0), len(get_levels()) - 1)
     for logger_name in all_loggers:
