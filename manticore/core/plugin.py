@@ -58,7 +58,7 @@ class Plugin:
         when parallel analysis is activated. Code within the `with` block is executed
         atomically, so access of shared variables should occur within.
         """
-        plugin_context_name = self._plugin_context_namestr
+        plugin_context_name = self._plugin_context_name
         with self.manticore.locked_context(plugin_context_name, dict) as context:
             if key is None:
                 yield context
