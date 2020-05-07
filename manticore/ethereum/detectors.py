@@ -888,7 +888,7 @@ class DetectTransactionReordering(Detector):
     """
     Detects cases where:
     * transaction Y returns successfully
-    * there exists a transaction X from a distinct account such that when X precedes Y, Y reverts
+    * for some transaction X from a different account, when X precedes Y, Y reverts
     """
 
     ARGUMENT = "transaction-reordering"
