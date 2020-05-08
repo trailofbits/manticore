@@ -3046,7 +3046,7 @@ class EVMWorld(Platform):
                     # get the storage for account_address
                     storage = blockchain._get_storage(temp_cs, account_address)
                     # we are interested only in used slots
-                    temp_cs.add(storage.map.get(index) != 0)
+                    temp_cs.add(storage.data.is_known(index) != 0)
                     # Query the solver to get all storage indexes with used slots
                     all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
 
