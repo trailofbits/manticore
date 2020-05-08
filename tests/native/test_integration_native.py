@@ -295,15 +295,15 @@ class NativeIntegrationTest(unittest.TestCase):
 
     def test_ioctl_bogus(self) -> None:
         """
-        Tests that the `ioctl_bogus` example for amd64 linux doesn't crash.
+        Tests that the `ioctl_bogus_linux_amd64` example for amd64 linux doesn't crash.
         """
-        self._test_no_crash("ioctl_bogus")
+        self._test_no_crash("ioctl_bogus_linux_amd64")
 
     def test_ioctl_socket(self) -> None:
         """
-        Tests that the `ioctl_socket` example for amd64 linux doesn't crash.
+        Tests that the `ioctl_socket_linux_amd64` example for amd64 linux doesn't crash.
         """
-        self._test_no_crash("ioctl_socket")
+        self._test_no_crash("ioctl_socket_linux_amd64")
 
     def test_brk_regression(self) -> None:
         """
