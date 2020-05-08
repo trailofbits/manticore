@@ -66,13 +66,13 @@ jobs:
             # concolic assumes presence of ../linux/simpleassert
             echo "Running concolic.py..."
             HW=../linux/helloworld
-            python ./concolic.py
+            coverage run ./concolic.py
             if [ $? -ne 0 ]; then
                 return 1
             fi
 
             echo "Running count_instructions.py..."
-            python ./count_instructions.py $HW |grep -q Executed
+            coverage run ./count_instructions.py $HW |grep -q Executed
             if [ $? -ne 0 ]; then
                 return 1
             fi
@@ -81,21 +81,21 @@ jobs:
             gcc -static -g src/state_explore.c -o state_explore
             ADDRESS=0x$(objdump -S state_explore | grep -A 1 '((value & 0xff) != 0)' |
                     tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
-            python ./introduce_symbolic_bytes.py state_explore $ADDRESS
+            coverage run ./introduce_symbolic_bytes.py state_explore $ADDRESS
             if [ $? -ne 0 ]; then
                 return 1
             fi
 
             echo "Running run_simple.py..."
             gcc -x c -static -o hello test_run_simple.c
-            python ./run_simple.py hello
+            coverage run ./run_simple.py hello
             if [ $? -ne 0 ]; then
                 return 1
             fi
 
             echo "Running run_hook.py..."
             MAIN_ADDR=$(nm $HW|grep 'T main' | awk '{print "0x"$1}')
-            python ./run_hook.py $HW $MAIN_ADDR
+            coverage run ./run_hook.py $HW $MAIN_ADDR
             if [ $? -ne 0 ]; then
                 return 1
             fi
@@ -105,7 +105,7 @@ jobs:
             gcc -static -g src/state_explore.c -o state_explore
             SE_ADDR=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' |
                        tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
-            python ./state_control.py state_explore $SE_ADDR
+            coverage run ./state_control.py state_explore $SE_ADDR
             if [ $? -ne 0 ]; then
                 return 1
             fi
@@ -161,14 +161,9 @@ jobs:
                 ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txtarget $ADDRESS"
                 EXPECTED_TX=31
             fi
-            manticore --contract MetaCoin --workspace output $ADDITIONAL_ARGS
-            ### The original comment says we should get 41 states, but after implementing the shift
-            ### insructions, we get 31. Was the original comment a typo?
-
-            # The correct answer should be 41
-            # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
-            # see https://github.com/trailofbits/manticore/issues/1166
-            # if [ "$(ls output/*tx -l | wc -l)" != "41" ]; then
+            coverage run -m manticore --contract MetaCoin --workspace output $ADDITIONAL_ARGS
+            # Truffle smoke test. We test if manticore is able to generate states
+            # from a truffle project. 
             ACTUAL_TX="$(ls output/*tx -l | wc -l)"
             rm -rf output
             if [ "$ACTUAL_TX" != "$EXPECTED_TX" ]; then
@@ -201,7 +196,9 @@ jobs:
             launch_examples
             RESULT=$?
             echo Ran example scripts
+            coverage xml
             popd
+            cp examples/script/coverage.xml .
             return $RESULT
         }
 
@@ -212,28 +209,30 @@ jobs:
                 install_node_packages
                 ganache-cli -p 7545 -i 5777 &
                 run_tests_from_dir $TEST_TYPE \
-                    && cd "$(mktemp -d)" \
+                    && mkdir metacoin_tests \
+                    && cd metacoin_tests \
                     && truffle unbox metacoin \
                     && run_metacoin_tests \
-                    && run_metacoin_tests deploy
+                    && run_metacoin_tests deploy \
+                    && coverage combine \
+                    && coverage xml \
+                    && cd .. \
+                    && cp metacoin_tests/coverage.xml .
                 ;;
             ethereum_vm)
                 make_vmtests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 ;;
             wasm)
                 make_wasm_tests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 ;;
             wasm_sym)
-                make_wasm_sym_tests ;&
+                make_wasm_sym_tests ;&  # Fallthrough
             native)                 ;&  # Fallthrough
             ethereum)               ;&  # Fallthrough
             ethereum_bench)         ;&  # Fallthrough
             other)
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
                 ;;
             examples)
@@ -250,3 +249,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
         yml: ./codecov.yml
+# Disabled this line because Codecov has been extra flaky lately, and having to re-run the entire
+# test suite until every coverage upload step succeeds is more of a hassle than it's worth. 
+#        fail_ci_if_error: true
