@@ -451,6 +451,8 @@ class OverlayWorldState(WorldState):
         if storage is None:
             storage = self.new_storage(constraints, address)
             self._storage[address] = storage
+        while storage.constraints != constraints and constraints is not None:
+            constraints = constraints._parent
         if storage.constraints != constraints:
             if not storage.warned:
                 logger.warning("Constraints have changed")
