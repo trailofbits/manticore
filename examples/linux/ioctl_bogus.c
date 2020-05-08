@@ -11,10 +11,10 @@ int main() {
     // try bogus ioctl on a non-open file descriptor
     int rc = ioctl(42, I_FLUSH, FLUSHRW);
     if (rc == -1) {
-        fprintf(stderr, "error: %s\n", strerror(errno));
-        return 1;
-    } else {
-        fprintf(stdout, "success!\n");
+        fprintf(stderr, "got expected error: %s\n", strerror(errno));
         return 0;
+    } else {
+        fprintf(stdout, "unexpectedly succeeded!\n");
+        return 1;
     }
 }

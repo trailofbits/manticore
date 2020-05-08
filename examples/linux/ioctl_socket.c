@@ -17,10 +17,10 @@ int main() {
 
     int rc = ioctl(sockfd, I_FLUSH, FLUSHRW);
     if (rc == -1) {
-        fprintf(stderr, "error calling ioctl: %s\n", strerror(errno));
+        fprintf(stderr, "got expected error calling ioctl: %s\n", strerror(errno));
         return 0;
     } else {
-        fprintf(stdout, "success!\n");
+        fprintf(stdout, "unexpectedly succeeded!\n");
         return 2;
     }
 }
