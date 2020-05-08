@@ -50,17 +50,15 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "pyyaml",
-        "wrapt",
-        # evm dependencies
         "pysha3",
         "prettytable",
-        "pyevmasm==0.2.0",
         "rlp",
         "ply",
         "crytic-compile>=0.1.1",
         "wasm",
         "web3",
         "dataclasses; python_version < '3.7'",
+        "pyevmasm>=0.2.3",
         "psutil",
     ]
     + rtd_dependent_deps(),

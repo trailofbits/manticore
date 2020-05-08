@@ -10,7 +10,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
-from ..memory import LazySMemory
+from ..memory import LazySMemory, Memory
 from ...core.smtlib import Operators, Constant, issymbolic
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import Z3Solver
@@ -23,10 +23,16 @@ from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
 from capstone.arm import ARM_REG_ENDING
 
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f"{__name__}.registers")
+
+
+def _sig_is_varargs(sig: inspect.Signature) -> bool:
+    VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
+    return any(p.kind == VAR_POSITIONAL for p in sig.parameters.values())
+
 
 ###################################################################################
 # Exceptions
@@ -264,9 +270,9 @@ class Abi:
     Used for function call and system call models.
     """
 
-    def __init__(self, cpu):
+    def __init__(self, cpu: "Cpu"):
         """
-        :param manticore.core.cpu.Cpu cpu: CPU to initialize with
+        :param CPU to initialize with
         """
         self._cpu = cpu
 
@@ -309,26 +315,21 @@ class Abi:
             yield base
             base += word_bytes
 
-    def get_argument_values(self, model, prefix_args):
+    def get_argument_values(self, model: Callable, prefix_args: Tuple) -> Tuple:
         """
         Extract arguments for model from the environment and return as a tuple that
         is ready to be passed to the model.
 
-        :param callable model: Python model of the function
-        :param tuple prefix_args: Parameters to pass to model before actual ones
+        :param model: Python model of the function
+        :param prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
-        :rtype: tuple
         """
-        spec = inspect.getfullargspec(model)
+        sig = inspect.signature(model)
+        if _sig_is_varargs(sig):
+            model_name = getattr(model, "__qualname__", "<no name>")
+            logger.warning("ABI: %s: a vararg model must be a unary function.", model_name)
 
-        if spec.varargs:
-            logger.warning("ABI: A vararg model must be a unary function.")
-
-        nargs = len(spec.args) - len(prefix_args)
-
-        # If the model is a method, we need to account for `self`
-        if inspect.ismethod(model):
-            nargs -= 1
+        nargs = len(sig.parameters) - len(prefix_args)
 
         def resolve_argument(arg):
             if isinstance(arg, str):
@@ -343,11 +344,9 @@ class Abi:
         from ..models import isvariadic  # prevent circular imports
 
         if isvariadic(model):
-            arguments = prefix_args + (argument_iter,)
+            return prefix_args + (argument_iter,)
         else:
-            arguments = prefix_args + tuple(islice(argument_iter, nargs))
-
-        return arguments
+            return prefix_args + tuple(islice(argument_iter, nargs))
 
     def invoke(self, model, prefix_args=None):
         """
@@ -392,7 +391,7 @@ class Abi:
 platform_logger = logging.getLogger("manticore.platforms.platform")
 
 
-def unsigned_hexlify(i):
+def unsigned_hexlify(i: Any) -> Any:
     if type(i) is int:
         if i < 0:
             return hex((1 << 64) + i)
@@ -497,7 +496,7 @@ class Cpu(Eventful):
         "execute_syscall",
     }
 
-    def __init__(self, regfile: RegisterFile, memory, **kwargs):
+    def __init__(self, regfile: RegisterFile, memory: Memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", "capstone")
         super().__init__(**kwargs)
@@ -645,7 +644,7 @@ class Cpu(Eventful):
     #############################
     # Memory access
     @property
-    def memory(self):
+    def memory(self) -> Memory:
         return self._memory
 
     def write_int(self, where, expression, size=None, force=False):
@@ -680,8 +679,7 @@ class Cpu(Eventful):
         """
         map = self.memory.map_containing(where)
         start = map._get_offset(where)
-        mapType = type(map)
-        if mapType is FileMap:
+        if isinstance(map, FileMap):
             end = map._get_offset(where + size)
 
             if end > map._mapped_size:
@@ -699,7 +697,7 @@ class Cpu(Eventful):
                 data += map._overlay[offset]
             data += raw_data[len(data) :]
 
-        elif mapType is AnonMap:
+        elif isinstance(map, AnonMap):
             data = bytes(map._data[start : start + size])
         else:
             data = b"".join(self.memory[where : where + size])
@@ -734,7 +732,6 @@ class Cpu(Eventful):
 
         :param where: address to write to
         :param data: data to write
-        :type data: str or list
         :param force: whether to ignore memory permissions
         """
 
@@ -743,15 +740,13 @@ class Cpu(Eventful):
         # At the very least, using it in non-concrete mode will break the symbolic strcmp/strlen models. The 1024 byte
         # minimum is intended to minimize the potential effects of this by ensuring that if there _are_ any other
         # issues, they'll only crop up when we're doing very large writes, which are fairly uncommon.
-        can_write_raw = (
-            type(mp) is AnonMap
+        if (
+            isinstance(mp, AnonMap)
             and isinstance(data, (str, bytes))
             and (mp.end - mp.start + 1) >= len(data) >= 1024
             and not issymbolic(data)
             and self._concrete
-        )
-
-        if can_write_raw:
+        ):
             logger.debug("Using fast write")
             offset = mp._get_offset(where)
             if isinstance(data, str):
@@ -825,7 +820,7 @@ class Cpu(Eventful):
             where += 1
         return s.getvalue().decode()
 
-    def push_bytes(self, data: str, force: bool = False):
+    def push_bytes(self, data, force: bool = False):
         """
         Write `data` to the stack and decrement the stack pointer accordingly.
 

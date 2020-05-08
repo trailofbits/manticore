@@ -176,6 +176,7 @@ jobs:
 
         run_tests_from_dir() {
             DIR=$1
+            echo "Running only the tests from 'tests/$DIR' directory"
             pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
             if [ $? -ne 0 ]; then
                 return 1

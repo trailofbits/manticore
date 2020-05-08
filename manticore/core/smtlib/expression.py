@@ -120,7 +120,7 @@ class Bool(Expression):
     def __init__(self, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
 
-    def cast(self, value: Union[int, bool], **kwargs) -> Union["BoolConstant", "Bool"]:
+    def cast(self, value: Union["Bool", int, bool], **kwargs) -> Union["BoolConstant", "Bool"]:
         if isinstance(value, Bool):
             return value
         return BoolConstant(bool(value), **kwargs)

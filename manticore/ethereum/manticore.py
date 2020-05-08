@@ -1,7 +1,6 @@
 import binascii
 import json
 import logging
-import string
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from typing import Dict, Optional, Union
@@ -38,7 +37,7 @@ from ..platforms import evm
 from ..platforms.evm_world_state import WorldState
 from ..utils import config, log
 from ..utils.deprecated import deprecated
-from ..utils.helpers import PickleSerializer
+from ..utils.helpers import PickleSerializer, printable_bytes
 
 logger = logging.getLogger(__name__)
 logging.getLogger("CryticCompile").setLevel(logging.ERROR)
@@ -349,9 +348,16 @@ class ManticoreEVM(ManticoreBase):
                 source_code, contract_name, libraries, crytic_compile_args
             )
 
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi = (
-            compilation_result
-        )
+        (
+            name,
+            source_code,
+            bytecode,
+            runtime,
+            srcmap,
+            srcmap_runtime,
+            hashes,
+            abi,
+        ) = compilation_result
         warnings = ""
 
         return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings)
@@ -589,14 +595,18 @@ class ManticoreEVM(ManticoreBase):
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"different than 0 because the contract's constructor is not payable."
                             )
-                    if not Z3Solver.instance().can_be_true(
-                        self.constraints,
-                        Operators.UGE(self.world.get_balance(owner.address), balance),
-                    ):
-                        raise EthereumError(
-                            f"Can't create solidity contract with balance ({balance}) "
-                            f"because the owner account ({owner}) has insufficient balance."
-                        )
+
+                    for state in self.ready_states:
+                        world = state.platform
+
+                        if not Z3Solver.instance().can_be_true(
+                            self.constraints,
+                            Operators.UGE(world.get_balance(owner.address), balance),
+                        ):
+                            raise EthereumError(
+                                f"Can't create solidity contract with balance ({balance}) "
+                                f"because the owner account ({owner}) has insufficient balance."
+                            )
 
                     contract_account = self.create_contract(
                         owner=owner,
@@ -690,7 +700,7 @@ class ManticoreEVM(ManticoreBase):
             # Account name already used
             raise EthereumError("Name already used")
 
-        self._transaction("CREATE", owner, balance, address, data=init, gaslimit=gas)
+        self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
 
         self._accounts[name] = EVMContract(
@@ -725,7 +735,7 @@ class ManticoreEVM(ManticoreBase):
             if new_address not in all_addresses:
                 return new_address
 
-    def transaction(self, caller, address, value, data, gas=None):
+    def transaction(self, caller, address, value, data, gas=None, price=1):
         """ Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
@@ -736,11 +746,14 @@ class ManticoreEVM(ManticoreBase):
             :type value: int or BitVecVariable
             :param data: initial data
             :param gas: gas budget
+            :param price: gas unit price
             :raises NoAliveStates: if there are no alive states to execute
         """
-        self._transaction("CALL", caller, value=value, address=address, data=data, gaslimit=gas)
+        self._transaction(
+            "CALL", caller, value=value, address=address, data=data, gas=gas, price=price
+        )
 
-    def create_account(self, balance=0, address=None, code=None, name=None):
+    def create_account(self, balance=0, address=None, code=None, name=None, nonce=None):
         """ Low level creates an account. This won't generate a transaction.
 
             :param balance: balance to be set on creation (optional)
@@ -748,6 +761,7 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address for the new account (optional)
             :type address: int
             :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
+            :param nonce: force a specific nonce
             :param name: a global account name eg. for use as reference in the reports (optional)
             :return: an EVMAccount
         """
@@ -799,7 +813,7 @@ class ManticoreEVM(ManticoreBase):
                 raise EthereumError(
                     "This is bad. Same address is used for different contracts in different states"
                 )
-            world.create_account(address, balance, code=code, storage=None)
+            world.create_account(address, balance, code=code, storage=None, nonce=nonce)
 
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
@@ -838,21 +852,21 @@ class ManticoreEVM(ManticoreBase):
 
         return caller, address, value, data
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=None, price=1):
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gas=21000, price=1):
         """ Initiates a transaction
 
             :param caller: caller account
             :type caller: int or EVMAccount
             :param int address: the address for the transaction (optional)
             :param value: value to be transferred
-            :param price: the price of gas for this transaction. Mostly unused.
+            :param price: the price of gas for this transaction.
             :type value: int or BitVecVariable
             :param str data: initializing evm bytecode and arguments or transaction call data
-            :param gaslimit: gas budget
+            :param gas: gas budget for current transaction
             :rtype: EVMAccount
         """
-        if gaslimit is None:
-            gaslimit = consts.defaultgas
+        if gas is None:
+            gas = consts.defaultgas
         # Type Forgiveness
         if isinstance(address, EVMAccount):
             address = int(address)
@@ -914,9 +928,12 @@ class ManticoreEVM(ManticoreBase):
                 address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
-            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(
-                state, caller, address, value, data
-            )
+            (
+                caller_migrated,
+                address_migrated,
+                value_migrated,
+                data_migrated,
+            ) = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -936,7 +953,7 @@ class ManticoreEVM(ManticoreBase):
                 data=data_migrated,
                 caller=caller_migrated,
                 value=value_migrated,
-                gas=gaslimit,
+                gas=gas,
             )
 
         # run over potentially several states and
@@ -1625,16 +1642,13 @@ class ManticoreEVM(ManticoreBase):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = "".join(
-                    [c for c in map(chr, solved_memlog) if c in string.printable]
-                )
 
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write(
                     "Memlog: %s (%s) %s\n"
                     % (
                         binascii.hexlify(solved_memlog).decode(),
-                        printable_bytes,
+                        printable_bytes(solved_memlog),
                         flagged(is_log_symbolic),
                     )
                 )

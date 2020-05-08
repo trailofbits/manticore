@@ -474,7 +474,7 @@ class EthTests(unittest.TestCase):
         self.assertEqual(str(e.exception), expected_exception)
 
     def test_solidity_create_contract_with_payable_constructor_and_balance_owner_insufficient_founds(
-        self
+        self,
     ):
         source_code = "contract A { constructor() public payable {} }"
         owner = self.mevm.create_account(balance=1)
