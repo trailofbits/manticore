@@ -1,8 +1,26 @@
+from collections import namedtuple
+
 from ..core.state import StateBase, Concretize, TerminateState
 from ..native.memory import ConcretizeMemory, MemoryException
 
 
+CheckpointData = namedtuple("CheckpointData", "pc, last_pc")
+
+
 class State(StateBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._checkpoint_data = self._checkpoint()
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["_checkpoint_data"] = self._checkpoint_data
+        return state
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        self._checkpoint_data = state["_checkpoint_data"]
+
     @property
     def cpu(self):
         """
@@ -16,6 +34,12 @@ class State(StateBase):
         Current virtual memory mappings
         """
         return self._platform.current.memory
+
+    def _checkpoint(self) -> CheckpointData:
+        """
+        Checkpoint all necessary information in the case of a rollback.
+        """
+        return CheckpointData(pc=self.cpu.PC, last_pc=self.cpu._last_pc)
 
     def execute(self):
         """
@@ -36,6 +60,8 @@ class State(StateBase):
 
             def setstate(state, value):
                 state.cpu.write_register(setstate.e.reg_name, value)
+                if setstate.e.rollback:
+                    state.cpu.PC = state._checkpoint_data.last_pc
 
             setstate.e = e
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
@@ -44,6 +70,8 @@ class State(StateBase):
 
             def setstate(state, value):
                 state.cpu.write_int(setstate.e.address, value, setstate.e.size)
+                if setstate.e.rollback:
+                    state.cpu.PC = state._checkpoint_data.last_pc
 
             setstate.e = e
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)

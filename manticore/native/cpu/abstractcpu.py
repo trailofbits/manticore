@@ -89,12 +89,21 @@ class ConcretizeRegister(CpuException):
     Raised when a symbolic register needs to be concretized.
     """
 
-    def __init__(self, cpu, reg_name, message=None, policy="MINMAX"):
+    def __init__(
+        self,
+        cpu: "Cpu",
+        reg_name: str,
+        message: Optional[str] = None,
+        policy: str = "MINMAX",
+        rollback: bool = False,
+    ):
         self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
         self.reg_name = reg_name
         self.policy = policy
+        # Whether to rollback to a checkpoint
+        self.rollback = rollback
 
 
 class ConcretizeArgument(CpuException):
@@ -374,14 +383,13 @@ class Abi:
             descriptors = self.get_arguments()
             src = next(islice(descriptors, idx, idx + 1))
 
-            # Roll back PC to redo last instruction
-            self._cpu.PC = self._cpu._last_pc
-
             msg = "Concretizing due to model invocation"
             if isinstance(src, str):
-                raise ConcretizeRegister(self._cpu, src, msg)
+                raise ConcretizeRegister(self._cpu, src, msg, rollback=True)
             else:
-                raise ConcretizeMemory(self._cpu.memory, src, self._cpu.address_bit_size, msg)
+                raise ConcretizeMemory(
+                    self._cpu.memory, src, self._cpu.address_bit_size, msg, rollback=True
+                )
         else:
             if result is not None:
                 self.write_result(result)
