@@ -11,7 +11,6 @@ import errno
 import re
 from glob import glob
 
-from manticore import set_verbosity
 from manticore.native import Manticore
 
 from manticore.platforms import linux, linux_syscall_stubs
@@ -23,7 +22,6 @@ def test_symbolic_syscall_arg():
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
     tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
     m = Manticore(BIN_PATH, argv=["+"], workspace_url=str(tmp_dir.name))
-    set_verbosity(2)
 
     m.run()
     m.finalize()
