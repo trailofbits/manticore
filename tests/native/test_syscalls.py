@@ -15,7 +15,7 @@ from manticore import set_verbosity
 from manticore.native import Manticore
 
 from manticore.platforms import linux, linux_syscall_stubs
-from manticore.platforms.linux import SymbolicSocket, SLinux
+from manticore.platforms.linux import SymbolicSocket
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
 
 
