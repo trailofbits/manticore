@@ -1,5 +1,5 @@
 // Compiled on Ubuntu 18.04 Manticore Docker image with
-//   gcc symbolic_read_count.c -o symbolic_read_count
+//   gcc -static symbolic_read_count.c -o symbolic_read_count
 
 #include <stdio.h>
 #include <stdlib.h>
