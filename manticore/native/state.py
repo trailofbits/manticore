@@ -39,7 +39,8 @@ class State(StateBase):
         """
         Checkpoint all necessary information in the case of a rollback.
         """
-        return CheckpointData(pc=self.cpu.PC, last_pc=self.cpu._last_pc)
+        self._checkpoint_data = CheckpointData(pc=self.cpu.PC, last_pc=self.cpu._last_pc)
+        return self._checkpoint_data
 
     def execute(self):
         """
@@ -49,6 +50,7 @@ class State(StateBase):
             ConcretizeRegister,
         )  # must be here, otherwise we get circular imports
 
+        self._checkpoint()
         try:
             result = self._platform.execute()
 
@@ -56,24 +58,31 @@ class State(StateBase):
         # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ??
         # We are forcing State to have abstractcpu
         except ConcretizeRegister as e:
-            expression = self.cpu.read_register(e.reg_name)
+            # Need to define local variables to use in closure
+            e_reg_name = e.reg_name
+            e_rollback = e.rollback
+            expression = self.cpu.read_register(e_reg_name)
 
             def setstate(state, value):
-                state.cpu.write_register(setstate.e.reg_name, value)
-                if setstate.e.rollback:
-                    state.cpu.PC = state._checkpoint_data.last_pc
+                state.cpu.write_register(e_reg_name, value)
+                if e_rollback:
+                    state.cpu.PC = self._checkpoint_data.pc
+                    state.cpu._last_pc = self._checkpoint_data.last_pc
 
-            setstate.e = e
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except ConcretizeMemory as e:
-            expression = self.cpu.read_int(e.address, e.size)
+            # Need to define local variables to use in closure
+            e_address = e.address
+            e_size = e.size
+            e_rollback = e.rollback
+            expression = self.cpu.read_int(e_address, e_size)
 
             def setstate(state, value):
-                state.cpu.write_int(setstate.e.address, value, setstate.e.size)
-                if setstate.e.rollback:
-                    state.cpu.PC = state._checkpoint_data.last_pc
+                state.cpu.write_int(e_address, value, e_size)
+                if e_rollback:
+                    state.cpu.PC = self._checkpoint_data.pc
+                    state.cpu._last_pc = self._checkpoint_data.last_pc
 
-            setstate.e = e
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except MemoryException as e:
             raise TerminateState(str(e), testcase=True)
