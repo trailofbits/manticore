@@ -42,6 +42,14 @@ class State(StateBase):
         self._checkpoint_data = CheckpointData(pc=self.cpu.PC, last_pc=self.cpu._last_pc)
         return self._checkpoint_data
 
+    def rollback(self, checkpoint_data: CheckpointData) -> None:
+        """
+        Rollback state to previous values in checkpoint_data
+        """
+        # Keep in this form to make sure we don't miss restoring any newly added
+        # data. Make sure the order is correct
+        self.cpu.PC, self.cpu._last_pc = checkpoint_data
+
     def execute(self):
         """
         Perform a single step on the current state
@@ -63,11 +71,10 @@ class State(StateBase):
             e_rollback = e.rollback
             expression = self.cpu.read_register(e_reg_name)
 
-            def setstate(state, value):
+            def setstate(state: State, value):
                 state.cpu.write_register(e_reg_name, value)
                 if e_rollback:
-                    state.cpu.PC = self._checkpoint_data.pc
-                    state.cpu._last_pc = self._checkpoint_data.last_pc
+                    state.rollback(self._checkpoint_data)
 
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except ConcretizeMemory as e:
@@ -77,11 +84,10 @@ class State(StateBase):
             e_rollback = e.rollback
             expression = self.cpu.read_int(e_address, e_size)
 
-            def setstate(state, value):
+            def setstate(state: State, value):
                 state.cpu.write_int(e_address, value, e_size)
                 if e_rollback:
-                    state.cpu.PC = self._checkpoint_data.pc
-                    state.cpu._last_pc = self._checkpoint_data.last_pc
+                    state.rollback(self._checkpoint_data)
 
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except MemoryException as e:
