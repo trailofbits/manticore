@@ -65,28 +65,25 @@ class State(StateBase):
         # Instead of State importing SymbolicRegisterException and SymbolicMemoryException
         # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ??
         # We are forcing State to have abstractcpu
-        except ConcretizeRegister as e:
-            # Need to define local variables to use in closure
-            e_reg_name = e.reg_name
-            e_rollback = e.rollback
-            expression = self.cpu.read_register(e_reg_name)
+        except ConcretizeRegister as exc:
+            # Need to define local variable to use in closure
+            e = exc
+            expression = self.cpu.read_register(e.reg_name)
 
             def setstate(state: State, value):
-                state.cpu.write_register(e_reg_name, value)
-                if e_rollback:
+                state.cpu.write_register(e.reg_name, value)
+                if e.rollback:
                     state.rollback(self._checkpoint_data)
 
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
-        except ConcretizeMemory as e:
-            # Need to define local variables to use in closure
-            e_address = e.address
-            e_size = e.size
-            e_rollback = e.rollback
-            expression = self.cpu.read_int(e_address, e_size)
+        except ConcretizeMemory as exc:
+            # Need to define local variable to use in closure
+            e = exc
+            expression = self.cpu.read_int(e.address, e.size)
 
             def setstate(state: State, value):
-                state.cpu.write_int(e_address, value, e_size)
-                if e_rollback:
+                state.cpu.write_int(e.address, value, e.size)
+                if e.rollback:
                     state.rollback(self._checkpoint_data)
 
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
