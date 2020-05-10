@@ -15,7 +15,7 @@ def rtd_dependent_deps():
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = [
-    "capstone @ git+https://github.com/ekilmer/capstone.git@dev#subdirectory=bindings/python",
+    "capstone @ git+https://github.com/aquynh/capstone.git@1766485c0c32419e9a17d6ad31f9e218ef4f018f#subdirectory=bindings/python",
     "pyelftools",
     "unicorn==1.0.2rc2",
 ]
