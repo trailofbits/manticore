@@ -69,24 +69,25 @@ class State(StateBase):
             # Need to define local variable to use in closure
             e = exc
             expression = self.cpu.read_register(e.reg_name)
-            if e.rollback:
-                self.rollback(self._checkpoint_data)
 
             def setstate(state: State, value):
                 state.cpu.write_register(e.reg_name, value)
 
+            self.rollback(self._checkpoint_data)
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except ConcretizeMemory as exc:
             # Need to define local variable to use in closure
             e = exc
             expression = self.cpu.read_int(e.address, e.size)
-            if e.rollback:
-                self.rollback(self._checkpoint_data)
 
             def setstate(state: State, value):
                 state.cpu.write_int(e.address, value, e.size)
 
+            self.rollback(self._checkpoint_data)
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
+        except Concretize as e:
+            self.rollback(self._checkpoint_data)
+            raise e
         except MemoryException as e:
             raise TerminateState(str(e), testcase=True)
 

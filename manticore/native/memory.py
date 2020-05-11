@@ -66,7 +66,6 @@ class ConcretizeMemory(MemoryException):
         size: int,
         message: Optional[str] = None,
         policy: str = "MINMAX",
-        rollback: bool = False,
     ):
         if message is None:
             self.message = f"Concretizing memory address {address} size {size}"
@@ -77,8 +76,6 @@ class ConcretizeMemory(MemoryException):
         self.address = address
         self.size = size
         self.policy = policy
-        # Whether to rollback to a checkpoint
-        self.rollback = rollback
 
 
 class InvalidMemoryAccess(MemoryException):

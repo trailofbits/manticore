@@ -90,20 +90,13 @@ class ConcretizeRegister(CpuException):
     """
 
     def __init__(
-        self,
-        cpu: "Cpu",
-        reg_name: str,
-        message: Optional[str] = None,
-        policy: str = "MINMAX",
-        rollback: bool = False,
+        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
     ):
         self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
         self.reg_name = reg_name
         self.policy = policy
-        # Whether to rollback to a checkpoint
-        self.rollback = rollback
 
 
 class ConcretizeArgument(CpuException):
@@ -385,11 +378,9 @@ class Abi:
 
             msg = "Concretizing due to model invocation"
             if isinstance(src, str):
-                raise ConcretizeRegister(self._cpu, src, msg, rollback=True)
+                raise ConcretizeRegister(self._cpu, src, msg)
             else:
-                raise ConcretizeMemory(
-                    self._cpu.memory, src, self._cpu.address_bit_size, msg, rollback=True
-                )
+                raise ConcretizeMemory(self._cpu.memory, src, self._cpu.address_bit_size, msg)
         else:
             if result is not None:
                 self.write_result(result)
