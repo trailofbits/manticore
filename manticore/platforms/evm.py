@@ -826,8 +826,8 @@ class EVM(Eventful):
             state.platform._failed = value
 
         raise Concretize(
-                "Transaction failed", expression=self._failed, setstate=lambda a, b: None, policy="ALL"
-            )
+            "Transaction failed", expression=self._failed, setstate=lambda a, b: None, policy="ALL"
+        )
 
     @property
     def pc(self):
@@ -1303,9 +1303,7 @@ class EVM(Eventful):
                 else:
                     state.platform.current_vm.pc = value
 
-            raise Concretize(
-                "Symbolic PC", expression=expression, setstate=setstate, policy="ALL"
-            )
+            raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
@@ -1716,7 +1714,7 @@ class EVM(Eventful):
         memfee = self._get_memfee(mem_offset, size)
         return self.safe_add(copyfee, memfee)
 
-    #@concretized_args(size="SAMPLED")
+    # @concretized_args(size="SAMPLED")
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
         # calldata_overflow = const.calldata_overflow
@@ -1968,7 +1966,7 @@ class EVM(Eventful):
 
         self.fail_if(Operators.ULT(self.gas, SSSTORESENTRYGAS))
 
-        #Get the storage from the snapshot took before this call
+        # Get the storage from the snapshot took before this call
         try:
             original_value = self.world._callstack[-1][-2].get(offset, 0)
         except IndexError:
@@ -2066,9 +2064,9 @@ class EVM(Eventful):
 
     def JUMPI(self, dest, cond):
         """Conditionally alter the program counter"""
-        #TODO(feliam) If dest is Constant we do not need to 3 queries. There would
+        # TODO(feliam) If dest is Constant we do not need to 3 queries. There would
         # be only 2 options
-        
+
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         # This set ups a check for JMPDEST in the next instruction if cond != 0
         self._set_check_jmpdest(cond != 0)
@@ -2377,9 +2375,7 @@ class EVM(Eventful):
             # gas = simplify(gas)
             result.append(f"Gas: {translate_to_smtlib(gas)[:20]} {gas.taint}")
         else:
-            result.append(
-                f"Gas: {gas}"
-            )
+            result.append(f"Gas: {gas}")
 
         return "\n".join(hex(self.address) + ": " + x for x in result)
 
@@ -2584,13 +2580,14 @@ class EVMWorld(Platform):
             # Only at human level we need to debit the tx_fee from the gas
             # In case of an internal tx the CALL-like instruction will
             # take the fee by itself
-            tx_fee = self._transaction_fee(tx.sort, tx.address, tx.price,
-                                           tx.data, tx.caller, tx.value)
+            tx_fee = self._transaction_fee(
+                tx.sort, tx.address, tx.price, tx.data, tx.caller, tx.value
+            )
             vm._consume(tx_fee)
         return vm
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=None):
-        '''
+        """
         This try to opens a transaction.
 
         :param sort: CREATE, CALL, CALLCODE, STATICCALL, DELEGATECALL
@@ -2601,7 +2598,7 @@ class EVMWorld(Platform):
         :param value: wei to transfer
         :param gas: gas budget
         :return: True if the transaction got accepted (enough balance to pay for stuff)
-        '''
+        """
         # sort
         if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
             raise EVMException(f"Transaction type '{sort}' not supported")
@@ -3163,9 +3160,9 @@ class EVMWorld(Platform):
         return address
 
     def transaction(self, address, price=0, data="", caller=None, value=0, gas=2300):
-        '''Initiates a CALL transaction on current state.
+        """Initiates a CALL transaction on current state.
         Do a world.run() after this to explore all _possible_ outputs
-        '''
+        """
         self.start_transaction(
             "CALL", address, price=price, data=data, caller=caller, value=value, gas=gas
         )
@@ -3223,9 +3220,18 @@ class EVMWorld(Platform):
 
             def set_address(state, solution):
                 world = state.platform
-                world._pending_transaction = (sort, solution, price, data, caller, value, gas, failed)
+                world._pending_transaction = (
+                    sort,
+                    solution,
+                    price,
+                    data,
+                    caller,
+                    value,
+                    gas,
+                    failed,
+                )
 
-            #Assuming this condition has at least one solution
+            # Assuming this condition has at least one solution
             cond = self._constraint_to_accounts(address, ty="contract", include_zero=False)
             self.constraints.add(cond)
 
@@ -3242,10 +3248,19 @@ class EVMWorld(Platform):
 
             def set_caller(state, solution):
                 world = state.platform
-                world._pending_transaction = (sort, address, price, data, solution, value, gas, failed)
+                world._pending_transaction = (
+                    sort,
+                    address,
+                    price,
+                    data,
+                    solution,
+                    value,
+                    gas,
+                    failed,
+                )
 
             # Constrain it so it can range over all normal accounts
-            #TODO: document and log this is loosing completness
+            # TODO: document and log this is loosing completness
             cond = self._constraint_to_accounts(caller, ty="normal")
 
             self.constraints.add(cond)
@@ -3259,8 +3274,8 @@ class EVMWorld(Platform):
     def _pending_transaction_failed(self):
         sort, address, price, data, caller, value, gas, failed = self._pending_transaction
 
-        #Initially the failed flag is not set. For now we need the caller to be
-        #concrete so the caller balance is easy to get. Initialize falied here
+        # Initially the failed flag is not set. For now we need the caller to be
+        # concrete so the caller balance is easy to get. Initialize falied here
         if failed is None:
             # Check depth
             failed = self.depth >= 1024
@@ -3275,17 +3290,29 @@ class EVMWorld(Platform):
                     aux_gas = Operators.ZEXTEND(gas, 512)
                     aux_fee = aux_price * aux_gas
                     # Iff a human tx debit the fee
-                    #enough_balance = Operators.UGE(aux_src_balance, aux_value)
-                    enough_balance = Operators.AND(enough_balance, Operators.UGE(aux_src_balance-aux_value, aux_fee))
+                    enough_balance = Operators.AND(
+                        enough_balance, Operators.UGE(aux_src_balance - aux_value, aux_fee)
+                    )
                 failed = Operators.NOT(enough_balance)
             self._pending_transaction = sort, address, price, data, caller, value, gas, failed
 
         if issymbolic(failed):
-            policy = {"optimistic": "OPTI",
-                      "pesimistic": "PESI"}.get(Operators.NOT(consts.txfail), "ALL")
+            policy = {"optimistic": "OPTI", "pesimistic": "PESI"}.get(
+                Operators.NOT(consts.txfail), "ALL"
+            )
+
             def set_failed(state, solution):
                 world = state.platform
-                world._pending_transaction = (sort, address, price, data, caller, value, gas, solution)
+                world._pending_transaction = (
+                    sort,
+                    address,
+                    price,
+                    data,
+                    caller,
+                    value,
+                    gas,
+                    solution,
+                )
 
             raise Concretize(
                 "Concretizing tx-fail on transaction",
@@ -3301,7 +3328,7 @@ class EVMWorld(Platform):
         tx_fee = Operators.ITEBV(512, self.depth == 0, aux_price * aux_gas, 0)
         aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
         aux_value = Operators.ZEXTEND(value, 512)
-        enough_balance = Operators.UGE(aux_src_balance, aux_value+tx_fee)
+        enough_balance = Operators.UGE(aux_src_balance, aux_value + tx_fee)
         return failed
 
     def _process_pending_transaction(self):
@@ -3323,11 +3350,10 @@ class EVMWorld(Platform):
             self._open_transaction(sort, address, price, data, caller, value, gas=gas)
         else:
             tx = Transaction(
-                sort, address, price, data, caller, value, depth=self.depth+1, gas=gas
+                sort, address, price, data, caller, value, depth=self.depth + 1, gas=gas
             )
             tx.set_result("TXERROR")
             self._transactions.append(tx)
-
 
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged

@@ -24,8 +24,11 @@ logger = logging.getLogger(__name__)
 
 consts = config.get_group("smt")
 consts.add(
-    "related_constraints", default=True, description="Try slicing the current path constraint to contain only related items"
+    "related_constraints",
+    default=True,
+    description="Try slicing the current path constraint to contain only related items",
 )
+
 
 class ConstraintException(SmtlibError):
     """
@@ -60,6 +63,7 @@ class ConstraintSet:
                 "_declarations": self._declarations,
             },
         )
+
     def __hash__(self):
         return hash((self._parent, tuple(self._constraints)))
 
@@ -104,7 +108,6 @@ class ConstraintSet:
             else:
                 return
         self._constraints.append(constraint)
-
 
     def _get_sid(self) -> int:
         """ Returns a unique id. """
