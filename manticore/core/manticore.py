@@ -304,10 +304,10 @@ class ManticoreBase(Eventful):
         """
         super().__init__()
         random.seed(consts.seed)
-        {'single': self._manticore_single,
-         'threading': self._manticore_threading,
-         'multiprocessing': self._manticore_multiprocessing
-         }[consts.mprocessing.name]()
+        {consts.mprocessing.single: self._manticore_single,
+         consts.mprocessing.threading: self._manticore_threading,
+         consts.mprocessing.multiprocessing: self._manticore_multiprocessing
+         }[consts.mprocessing]()
 
         if any(
             not hasattr(self, x)
