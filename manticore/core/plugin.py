@@ -16,6 +16,9 @@ class Plugin:
         self.manticore = None
         self._enabled_key = f"{str(type(self))}_enabled_{hash(self)}"
         self._plugin_context_name = f"{str(type(self))}_context_{hash(self)}"
+        self.__decorate_callbacks()
+
+    def __decorate_callbacks(self):
         for attr in self.__dict__:
             if attr.endswith('_callback'):
                 method = getattr(self, attr)
@@ -70,7 +73,7 @@ class Plugin:
     @property
     def context(self):
         """ Convenient access to shared context """
-        plugin_context_name = str(type(self))
+        plugin_context_name = self._plugin_context_name
         if plugin_context_name not in self.manticore.context:
             self.manticore.context[plugin_context_name] = {}
         return self.manticore.context[plugin_context_name]
