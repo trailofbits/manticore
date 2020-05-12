@@ -1037,8 +1037,8 @@ class ManticoreEVM(ManticoreBase):
         args=None,
         compile_args=None,
     ):
-        owner_account = self.create_account(balance=10000000000000000000000, name="owner")
-        attacker_account = self.create_account(balance=10000000000000000000000, name="attacker")
+        owner_account = self.create_account(balance=10**10, name="owner")
+        attacker_account = self.create_account(balance=10**10, name="attacker")
         # Pretty print
         logger.info("Starting symbolic create contract")
 

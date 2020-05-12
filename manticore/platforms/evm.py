@@ -82,6 +82,17 @@ consts.add(
 )
 
 consts.add(
+    "txfail",
+    default="optimistic",
+    description=(
+        "Default behavior for tansaction failing because not enough funds."
+        "optimistic: Assume there is always enough funds to pay for value and gas. Wont fork"
+        "pesimistic: Assume the balance is never enough for paying fo a transaction. Wont fork"
+        "both: Will fork for both options if possible."
+    ),
+)
+
+consts.add(
     "calldata_max_offset",
     default=1024 * 1024,
     description="Max calldata offset to explore with. Iff offset or size in a calldata related instruction are symbolic it will be constrained to this constant",
@@ -578,7 +589,7 @@ def concretized_args(**policies):
                 # index is 0-indexed, but ConcretizeArgument is 1-indexed. However, this is correct
                 # since implementation method is always a bound method (self is param 0)
                 index = spec.args.index(arg)
-                if not issymbolic(args[index]):
+                if not issymbolic(args[index]) or isinstance(args[index], Constant):
                     continue
                 if not policy:
                     policy = "SAMPLED"
@@ -804,8 +815,19 @@ class EVM(Eventful):
         self._failed = Operators.OR(self._failed, failed)
 
     def is_failed(self):
-        self._failed = self.world._concretize_bool(self._failed, "Checking for exceptions")
-        return self._failed
+        if isinstance(self._failed, bool):
+            return self._failed
+
+        self._failed = simplify(self._failed)
+        if isinstance(self._failed, Constant):
+            return self._failed.value
+
+        def setstate(state, value):
+            state.platform._failed = value
+
+        raise Concretize(
+                "Transaction failed", expression=self._failed, setstate=lambda a, b: None, policy="ALL"
+            )
 
     @property
     def pc(self):
@@ -1046,7 +1068,7 @@ class EVM(Eventful):
         # ignore: Ignore gas. Do not account for it. Do not OOG.
 
         # optimization that speed up concrete fees over symbolic gas sometimes
-        if False and not issymbolic(fee) and issymbolic(self._gas):
+        if not issymbolic(fee) and issymbolic(self._gas):
             reps, m = getattr(self, "_mgas", (0, None))
             reps += 1
             if m is None and reps > 10:
@@ -1282,7 +1304,7 @@ class EVM(Eventful):
                     state.platform.current_vm.pc = value
 
             raise Concretize(
-                "Concretize PC", expression=expression, setstate=setstate, policy="ALL"
+                "Symbolic PC", expression=expression, setstate=setstate, policy="ALL"
             )
         try:
             self._check_jmpdest()
@@ -1371,7 +1393,7 @@ class EVM(Eventful):
             raise
 
     def read_buffer(self, offset, size):
-        if issymbolic(size):
+        if issymbolic(size) and not isinstance(size, Constant):
             raise EVMException("Symbolic size not supported")
         if size == 0:
             return b""
@@ -1709,7 +1731,7 @@ class EVM(Eventful):
         self._allocate(mem_offset, size)
 
         if consts.oog == "complete":
-            # gas reduced
+            # gas reduced #??
             cond = Operators.ULT(self.gas, self._checkpoint_data[1])
             if not Z3Solver.instance().can_be_true(self.constraints, cond):
                 raise NotEnoughGas()
@@ -1944,9 +1966,7 @@ class EVM(Eventful):
             15000
         )  # Once per SSTORE operation for clearing an originally existing storage slot
 
-        enough_gas = self.world._concretize_bool(Operators.UGE(self.gas, SSSTORESENTRYGAS), "Enough gas for SENTRYGAS")
-        if not enough_gas:
-            raise NotEnoughGas()
+        self.fail_if(Operators.ULT(self.gas, SSSTORESENTRYGAS))
 
         #Get the storage from the snapshot took before this call
         try:
@@ -2046,6 +2066,9 @@ class EVM(Eventful):
 
     def JUMPI(self, dest, cond):
         """Conditionally alter the program counter"""
+        #TODO(feliam) If dest is Constant we do not need to 3 queries. There would
+        # be only 2 options
+        
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         # This set ups a check for JMPDEST in the next instruction if cond != 0
         self._set_check_jmpdest(cond != 0)
@@ -2110,7 +2133,6 @@ class EVM(Eventful):
         self.world.start_transaction(
             "CREATE", None, data=data, caller=self.address, value=value, gas=self.gas * 63 // 64
         )
-
         raise StartTx()
 
     @CREATE.pos  # type: ignore
@@ -2120,30 +2142,7 @@ class EVM(Eventful):
         return tx.return_value
 
     def CALL_gas(self, wanted_gas, address, value, in_offset, in_size, out_offset, out_size):
-        """temp_call_gas = 0;
-
-            def dynamic_gas(wanted_gas, address, value, in_offset, in_size):
-                GCALLVALUE = 9000
-                GCALLNEW = 25000
-                extra_gas = 0
-                if value != 0:
-                    extra_gas += GCALLVALUE
-                    if address not in accounts:
-                        extra_gas += GCALLNEW
-                extra_gas += self._get_memfee(in_offset, in_size)
-
-                available_gas = self.gas
-                available_gas -= extra_gas
-                available_gas *= 63
-                available_gas /= 64
-
-                if available_gas > wanted_gas:
-                    temp_call_gas = wanted_gas
-                else:
-                    temp_call_gas = available_gas
-
-                return temp_call_gas + extra_gas
-    """
+        """ Dynamic gas for CALL instruction. _arguably turing complete in itself_   """
         GCALLVALUE = 9000
         GCALLNEW = 25000
         wanted_gas = Operators.ZEXTEND(wanted_gas, 512)
@@ -2299,10 +2298,6 @@ class EVM(Eventful):
         # This may create a user account
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.address
-        # FIXME for on the known addresses
-        if issymbolic(recipient):
-            logger.info("Symbolic recipient on self destruct")
-            recipient = Z3Solver.instance().get_value(self.constraints, recipient)
 
         if recipient not in self.world:
             self.world.create_account(address=recipient)
@@ -3146,7 +3141,9 @@ class EVMWorld(Platform):
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=None):
         """
-        Create a contract account. Sends a transaction to initialize the contract
+        Initiates a CREATE a contract account.
+        Sends a transaction to initialize the contract.
+        Do a world.run() after this to explore all _possible_ outputs
 
         :param address: the address of the new account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
         :param balance: the initial balance of the account in Wei
@@ -3163,14 +3160,15 @@ class EVMWorld(Platform):
         self.start_transaction(
             "CREATE", address, price=price, data=init, caller=caller, value=balance, gas=gas
         )
-        self._process_pending_transaction()
         return address
 
     def transaction(self, address, price=0, data="", caller=None, value=0, gas=2300):
+        '''Initiates a CALL transaction on current state.
+        Do a world.run() after this to explore all _possible_ outputs
+        '''
         self.start_transaction(
             "CALL", address, price=price, data=data, caller=caller, value=value, gas=gas
         )
-        self._process_pending_transaction()
 
     def start_transaction(
         self, sort, address, *, price=None, data=None, caller=None, value=0, gas=2300
@@ -3227,8 +3225,10 @@ class EVMWorld(Platform):
                 world = state.platform
                 world._pending_transaction = (sort, solution, price, data, caller, value, gas, failed)
 
+            #Assuming this condition has at least one solution
             cond = self._constraint_to_accounts(address, ty="contract", include_zero=False)
             self.constraints.add(cond)
+
             raise Concretize(
                 "Concretizing address on transaction",
                 expression=address,
@@ -3247,6 +3247,7 @@ class EVMWorld(Platform):
             # Constrain it so it can range over all normal accounts
             #TODO: document and log this is loosing completness
             cond = self._constraint_to_accounts(caller, ty="normal")
+
             self.constraints.add(cond)
             raise Concretize(
                 "Concretizing caller on transaction",
@@ -3267,20 +3268,21 @@ class EVMWorld(Platform):
             if not failed:
                 aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
                 aux_value = Operators.ZEXTEND(value, 512)
+                enough_balance = Operators.UGE(aux_src_balance, aux_value)
                 if self.depth == 0:
                     # take the gas from the balance
                     aux_price = Operators.ZEXTEND(price, 512)
                     aux_gas = Operators.ZEXTEND(gas, 512)
                     aux_fee = aux_price * aux_gas
                     # Iff a human tx debit the fee
-                    enough_balance = Operators.UGE(aux_src_balance, aux_value + aux_fee)
-                else:
-                    enough_balance = Operators.UGE(aux_src_balance, aux_value)
+                    #enough_balance = Operators.UGE(aux_src_balance, aux_value)
+                    enough_balance = Operators.AND(enough_balance, Operators.UGE(aux_src_balance-aux_value, aux_fee))
                 failed = Operators.NOT(enough_balance)
             self._pending_transaction = sort, address, price, data, caller, value, gas, failed
 
-        #TODO: like with OOG we should have am optimistic/pesimistic and complete mode
         if issymbolic(failed):
+            policy = {"optimistic": "OPTI",
+                      "pesimistic": "PESI"}.get(Operators.NOT(consts.txfail), "ALL")
             def set_failed(state, solution):
                 world = state.platform
                 world._pending_transaction = (sort, address, price, data, caller, value, gas, solution)
@@ -3289,44 +3291,43 @@ class EVMWorld(Platform):
                 "Concretizing tx-fail on transaction",
                 expression=failed,
                 setstate=set_failed,
-                policy="ALL",
+                policy=policy,
             )
-        return failed
 
-    def _concretize_bool(self, constraint, message="Concretizing generic condition"):
-        if isinstance(constraint, bool):
-            constraint_solutions = {constraint}
-        else:
-            constraint = simplify(constraint)
-            constraint_solutions = Z3Solver.instance().get_all_values(self._constraints, constraint)
-        if set(constraint_solutions) == {True, False}:
-            raise Concretize(
-                message, expression=constraint, setstate=lambda a, b: None, policy="ALL"
-            )
-        return set(constraint_solutions) == {True}
+        if self.depth != 0:
+            price = 0
+        aux_price = Operators.ZEXTEND(price, 512)
+        aux_gas = Operators.ZEXTEND(gas, 512)
+        tx_fee = Operators.ITEBV(512, self.depth == 0, aux_price * aux_gas, 0)
+        aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
+        aux_value = Operators.ZEXTEND(value, 512)
+        enough_balance = Operators.UGE(aux_src_balance, aux_value+tx_fee)
+        return failed
 
     def _process_pending_transaction(self):
         # Nothing to do here if no pending transactions
         if self._pending_transaction is None:
             return
         sort, address, price, data, caller, value, gas, failed = self._pending_transaction
-
         # caller
         self._pending_transaction_concretize_caller()
         # to/address
         self._pending_transaction_concretize_address()
-
+        # check onough balance for the value
         failed = self._pending_transaction_failed()
 
-        self._open_transaction(sort, address, price, data, caller, value, gas=gas)
-        #    self._pending_transaction = None
-        #    self._close_transaction("TXERROR", rollback=True)
-        # processed
+        # done concretizing stuff
         self._pending_transaction = None
 
-        #elif not self.get_code(address) and sort in ("CALL", "DELEGATECALL", "CALLCODE"):
-        # Transaction to normal account with empty code
-        #    self._close_transaction("STOP")
+        if not failed:
+            self._open_transaction(sort, address, price, data, caller, value, gas=gas)
+        else:
+            tx = Transaction(
+                sort, address, price, data, caller, value, depth=self.depth+1, gas=gas
+            )
+            tx.set_result("TXERROR")
+            self._transactions.append(tx)
+
 
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged

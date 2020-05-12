@@ -1301,7 +1301,7 @@ class EthTests(unittest.TestCase):
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
 
         results = [state.platform.all_transactions[-1].result for state in m.all_states]
-        self.assertListEqual(sorted(results), ['STOP', 'STOP', 'STOP'])
+        self.assertListEqual(sorted(results), ['STOP', 'STOP', 'TXERROR'])
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
