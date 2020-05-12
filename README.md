@@ -40,7 +40,7 @@ Option 1: Installing from PyPI:
 pip install manticore
 ```
 
-Option 2: Installing from PyPI (with extra native dependencies):
+Option 2: Installing from PyPI, with extra dependencies needed to execute native binaries:
 
 ```bash
 pip install "manticore[native]"
@@ -51,7 +51,7 @@ Option 3: Installing from the `master` branch:
 ```bash
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
-pip install -e ".[dev-noks]"
+pip install -e ".[native]"
 ```
 
 Option 4: Install via Docker:
@@ -205,7 +205,7 @@ for idx, val_list in enumerate(m.collect_returns()):
 
 ## Requirements
 * Manticore requires Python 3.6 or greater 
-* Manticore officially supports the latest LTS version of Ubuntu
+* Manticore officially supports the latest LTS version of Ubuntu provided by Github Actions
   * Manticore has experimental support for EVM and WASM (but not native Linux binaries) on MacOS 
 * We recommend running with increased stack size. This can be done by running `ulimit -s 100000` or by passing `--ulimit stack=100000000:100000000` to `docker run`
 
