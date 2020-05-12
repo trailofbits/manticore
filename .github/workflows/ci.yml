@@ -52,11 +52,7 @@ jobs:
         # Install solc unconditionally because it only takes a second or two
         sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
         sudo chmod +x /usr/bin/solc
-        EXTRAS="dev-noks"
-        if [[ "$TEST_TYPE" == "native" ]]; then
-          EXTRAS="dev"
-        fi
-        pip install -e .[$EXTRAS]
+        pip install -e ".[dev-noks]"
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
@@ -157,7 +153,7 @@ jobs:
             mkdir truffle_tests
             cd truffle_tests
             truffle unbox metacoin
-            manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore
+            coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore
             # Truffle smoke test. We test if manticore is able to generate states
             # from a truffle project. 
             if [ "$(ls output/*tx -l | wc -l)" != "32" ]; then
@@ -165,7 +161,9 @@ jobs:
                 return 1
             fi
             echo "Truffle test succeded"
+            coverage xml
             cd ..
+            cp truffle_tests/coverage.xml .
             return 0
         }
 

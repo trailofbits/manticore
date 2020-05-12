@@ -1205,12 +1205,13 @@ class ManticoreEVM(ManticoreBase):
         if value is not None:
             with self.locked_context("ethereum", dict) as ethereum_context:
                 global_known_pairs = ethereum_context.get(f"symbolic_func_conc_{name}", set())
-                global_known_pairs.add((data, value))
-                ethereum_context[f"symbolic_func_conc_{name}"] = global_known_pairs
+                if (data, value) not in global_known_pairs:
+                    global_known_pairs.add((data, value))
+                    ethereum_context[f"symbolic_func_conc_{name}"] = global_known_pairs
+                    logger.info(f"Found a concrete {name} {data} -> {value}")
             concrete_pairs = state.context.get(f"symbolic_func_conc_{name}", set())
             concrete_pairs.add((data, value))
             state.context[f"symbolic_func_conc_{name}"] = concrete_pairs
-            logger.info(f"Found a concrete {name} {data} -> {value}")
         else:
             # we can not calculate the concrete value lets use a fresh symbol
             with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1447,15 +1448,12 @@ class ManticoreEVM(ManticoreBase):
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROW; it actually changes the balance and nonce? of some accounts
 
-        if tx.result in {"SELFDESTRUCT", "REVERT", "THROW", "TXERROR"}:
+        if tx.return_value == 0:
             pass
-        elif tx.result in {"RETURN", "STOP"}:
+        else:
             # if not a revert, we save the state for further transactions
             with self.locked_context("ethereum.saved_states", list) as saved_states:
                 saved_states.append(state.id)
-
-        else:
-            logger.debug("Exception in state. Discarding it")
 
     # Callbacks
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):

@@ -1682,6 +1682,23 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             result = str(e)
         self.assertEqual(result, "SELFDESTRUCT")
 
+    def test_selfdestruct(self):
+        with disposable_mevm() as m:
+            asm_acc = """  PUSH1 0x0
+                           SELFDESTRUCT
+                      """
+            m.create_account(
+                address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
+            )
+            m.create_account(address=0x222222222222222222222222222222222222222)
+            symbolic_data = m.make_symbolic_buffer(320)
+            m.transaction(
+                caller=0x222222222222222222222222222222222222222,
+                address=0x111111111111111111111111111111111111111,
+                data=symbolic_data,
+                value=0,
+            )
+            self.assertEqual(m.count_ready_states(), 1)
 
 class EthPluginTests(unittest.TestCase):
     def test_FilterFunctions_fallback_function_matching(self):
