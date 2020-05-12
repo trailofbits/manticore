@@ -1850,7 +1850,9 @@ class Linux(Platform):
             elif filename == "/proc/self/maps":
                 return ProcSelfMaps(flags, self)
             else:
-                raise EnvironmentError("/proc/self is largely unsupported")
+                raise EnvironmentError(
+                    f"Trying to read from {filename}.\nThe /proc/self filesystem is largely unsupported."
+                )
 
         if os.path.isdir(filename):
             return Directory(filename, flags)
