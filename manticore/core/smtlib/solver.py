@@ -18,6 +18,7 @@ import threading
 import collections
 import shlex
 import time
+from functools import lru_cache
 from typing import Dict, Tuple
 from subprocess import PIPE, Popen
 import re
@@ -421,6 +422,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
+    @lru_cache(maxsize=32)
     def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
@@ -438,6 +440,7 @@ class Z3Solver(Solver):
             return self._is_sat()
 
     # get-all-values min max minmax
+    @lru_cache(maxsize=32)
     def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
         """Returns a list with all the possible values for the symbol x"""
         if not isinstance(expression, Expression):
