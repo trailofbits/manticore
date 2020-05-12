@@ -6,7 +6,8 @@ Install and try Manticore in a few shell commands:
 
 ```bash
 # (Recommended) Create a virtual environment for Manticore
-mkvirtualenv -p `which python3` mcenv
+virtualenv -p `which python3` mcenv
+source mcenv/bin/activate
 
 # Install Manticore and its dependencies
 pip install manticore[native]
