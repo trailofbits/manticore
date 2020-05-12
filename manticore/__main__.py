@@ -25,7 +25,7 @@ if install_helper.has_native:
     from manticore.native.cli import native_main
 
 
-def main():
+def main() -> None:
     """
     Dispatches execution into one of Manticore's engines: evm or native.
     """
@@ -50,7 +50,7 @@ def main():
         native_main(args, logger)
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     def positive(value):
         ivalue = int(value)
         if ivalue <= 0:
