@@ -5,11 +5,11 @@
 Install and try Manticore in a few shell commands:
 
 ```bash
-# Install system dependencies
-sudo apt-get update && sudo apt-get install python3 python3-dev python3-pip -y
+# (Recommended) Create a virtual environment for Manticore
+mkvirtualenv -p `which python3` mcenv
 
 # Install Manticore and its dependencies
-sudo pip3 install manticore[native]
+pip install manticore[native]
 
 # Download the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
@@ -24,7 +24,7 @@ cat mcore_*/*1.stdin | ./basic
 
 # Use the Manticore API
 cd ../script
-python3 count_instructions.py ../linux/helloworld
+python count_instructions.py ../linux/helloworld
 ```
 
 You can also use Docker to quickly install and try Manticore:
