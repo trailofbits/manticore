@@ -159,6 +159,7 @@ class Bool(Expression):
         return BoolXor(self.cast(other), self)
 
     def __bool__(self):
+        #try to be forgiving. Allow user to use Bool in an IF sometimes
         from .visitors import simplify
         x = simplify(self)
         if isinstance(x, Constant):
@@ -483,7 +484,8 @@ class BitVecConstant(BitVec):
     __slots__ = ["_value"]
 
     def __init__(self, size: int, value: int, *args, **kwargs):
-        self._value = value & ((1 << size) - 1)
+        MASK = ((1 << size) - 1)
+        self._value = value & MASK
         super().__init__(size, *args, **kwargs)
 
     def __bool__(self):
@@ -1157,13 +1159,17 @@ class ArrayProxy(Array):
         is_known_index = BoolConstant(False)
         written = self.written
         if isinstance(index, Constant):
-            if index.value in {x.value for x in written if isinstance(x, Constant)}:
-                return BoolConstant(True)
+            for i in written:
+                #check if the concrete index is explicitly in written
+                if isinstance(i, Constant) and index.value == i.value:
+                    return BoolConstant(True)
 
-            for known_index in {x for x in written if not isinstance(x, Constant)}:
-                is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
+                #Build an expression to check if our concrete index could be the
+                # solution for anyof the used symbolic indexes
+                is_known_index = BoolOr(is_known_index.cast(index == i), is_known_index)
             return is_known_index
 
+        # The index is symbolic we need to compare it agains it all
         for known_index in written:
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
 

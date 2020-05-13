@@ -450,7 +450,8 @@ class Z3Solver(Solver):
         expression = simplify(expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
-            if isinstance(expression, Bool):
+            if isinstance(expression, Bool) and consts.maxsolutions > 1:
+                #We know there is max 2 solutions when Bool
                 maxcnt = 2
                 silent = True
 
