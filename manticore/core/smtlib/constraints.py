@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 consts = config.get_group("smt")
 consts.add(
-    "related_constraints", default=True, description="Try slicing the current path constraint to contain only related items"
+    "related_constraints", default=False, description="Try slicing the current path constraint to contain only related items"
 )
 
 
@@ -63,7 +63,7 @@ class ConstraintSet:
         )
 
     def __hash__(self):
-        return hash((self._parent, tuple(self._constraints)))
+        return hash(self.constraints)
 
     def __enter__(self) -> "ConstraintSet":
         assert self._child is None
