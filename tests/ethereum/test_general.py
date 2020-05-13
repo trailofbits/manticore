@@ -1690,13 +1690,13 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             m.create_account(
                 address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
             )
-            m.create_account(address=0x222222222222222222222222222222222222222)
+            m.create_account(address=0x222222222222222222222222222222222222222, balance=1000000000000000000) #Needs eth to pay for the gas.
             symbolic_data = m.make_symbolic_buffer(320)
             m.transaction(
                 caller=0x222222222222222222222222222222222222222,
                 address=0x111111111111111111111111111111111111111,
                 data=symbolic_data,
-                value=0,
+                value=0
             )
             self.assertEqual(m.count_ready_states(), 1)
 
