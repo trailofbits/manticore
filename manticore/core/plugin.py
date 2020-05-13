@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import cProfile
 import pstats
 import threading
+from functools import wraps
 
 from .smtlib import issymbolic
 
@@ -10,8 +11,43 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin:
+
     def __init__(self):
         self.manticore = None
+        self._enabled_key = f"{str(type(self))}_enabled_{hash(self)}"
+        self._plugin_context_name = f"{str(type(self))}_context_{hash(self)}"
+        self.__decorate_callbacks()
+
+    def __decorate_callbacks(self):
+        for attr in self.__dict__:
+            if attr.endswith('_callback'):
+                method = getattr(self, attr)
+                if callable(method):
+                    setattr(self, attr, self._if_enabled(method))
+
+    def enable(self):
+        """ Enable all callbacks """
+        with self.manticore.locked_context() as context:
+            context[self._enabled_key] = True
+
+    def disable(self):
+        """ Disable all callbacks """
+        with self.manticore.locked_context() as context:
+            context[self._enabled_key] = False
+
+    def is_enabled(self):
+        """ True if callbacks are enabled """
+        with self.manticore.locked_context() as context:
+            return context.get(self._enabled_key, True)
+
+    @staticmethod
+    def _if_enabled(f):
+        """ decorator used to guard callbacks """
+        @wraps(f)
+        def g(self, *args, **kwargs):
+            if self.is_enabled():
+                return f(self, *args, **kwargs)
+        return g
 
     @property
     def name(self):
@@ -25,7 +61,7 @@ class Plugin:
         when parallel analysis is activated. Code within the `with` block is executed
         atomically, so access of shared variables should occur within.
         """
-        plugin_context_name = str(type(self))
+        plugin_context_name = self._plugin_context_name
         with self.manticore.locked_context(plugin_context_name, dict) as context:
             if key is None:
                 yield context
@@ -37,7 +73,7 @@ class Plugin:
     @property
     def context(self):
         """ Convenient access to shared context """
-        plugin_context_name = str(type(self))
+        plugin_context_name = self._plugin_context_name
         if plugin_context_name not in self.manticore.context:
             self.manticore.context[plugin_context_name] = {}
         return self.manticore.context[plugin_context_name]
