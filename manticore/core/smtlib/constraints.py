@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
 consts.add(
     "related_constraints",
-    default=True,
+    default=False,
     description="Try slicing the current path constraint to contain only related items",
 )
 
@@ -65,7 +65,7 @@ class ConstraintSet:
         )
 
     def __hash__(self):
-        return hash((self._parent, tuple(self._constraints)))
+        return hash(self.constraints)
 
     def __enter__(self) -> "ConstraintSet":
         assert self._child is None
@@ -128,6 +128,7 @@ class ConstraintSet:
         # satisfiable one, {}.
         #   In light of the above, the core __get_related logic is currently disabled.
         # if related_to is not None:
+        # feliam: This assumes the previous constraints are already SAT (normal SE forking)
         if consts.related_constraints and related_to is not None:
             number_of_constraints = len(self.constraints)
             remaining_constraints = set(self.constraints)

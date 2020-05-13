@@ -1,7 +1,6 @@
 import sys
 
 from functools import reduce
-
 import re
 
 from ..core.plugin import Plugin
