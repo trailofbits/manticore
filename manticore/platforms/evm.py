@@ -535,7 +535,7 @@ class Stop(EndTx):
 class Return(EndTx):
     """Program reached a RETURN instruction"""
 
-    def __init__(self, data=bytearray()):
+    def __init__(self, data=bytes()):
         super().__init__("RETURN", data)
 
 
@@ -2544,7 +2544,7 @@ class EVMWorld(Platform):
     def _make_vm_for_tx(self, tx):
         if tx.sort == "CREATE":
             bytecode = tx.data
-            data = bytearray()
+            data = bytes()
         else:
             bytecode = self.get_code(tx.address)
             data = tx.data

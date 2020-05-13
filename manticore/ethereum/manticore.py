@@ -893,10 +893,10 @@ class ManticoreEVM(ManticoreBase):
             caller = int(caller)
         # Defaults, call data is empty
         if data is None:
-            data = bytearray(b"")
-        if isinstance(data, (str, bytes)):
-            data = bytearray(data)
-        if not isinstance(data, (bytearray, Array)):
+            data = b""
+        if isinstance(data, str):
+            data = bytes(data)
+        if not isinstance(data, (bytes, Array)):
             raise TypeError("code bad type")
 
         # Check types
