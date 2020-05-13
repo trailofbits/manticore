@@ -3,4 +3,3 @@ source = manticore
 omit =
 	*__init__.py
 dynamic_context = test_function
-concurrency = multiprocessing
