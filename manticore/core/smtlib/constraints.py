@@ -147,7 +147,7 @@ class ConstraintSet:
                             break
 
                     variables = get_variables(constraint)
-                    if related_variables & variables:
+                    if related_variables & variables or not(variables):
                         remaining_constraints.remove(constraint)
                         related_constraints.add(constraint)
                         related_variables |= variables
