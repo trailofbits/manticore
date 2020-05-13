@@ -1067,18 +1067,6 @@ class EVM(Eventful):
         # pesimistic: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
         # ignore: Ignore gas. Do not account for it. Do not OOG.
 
-        # optimization that speed up concrete fees over symbolic gas sometimes
-        if not issymbolic(fee) and issymbolic(self._gas):
-            reps, m = getattr(self, "_mgas", (0, None))
-            reps += 1
-            if m is None and reps > 10:
-                m = Z3Solver.instance().min(self.constraints, self._gas)
-            self._mgas = reps, m
-
-            if m is not None and fee < m:
-                self._gas -= fee
-                self._mgas = reps, m - fee
-                return
         oog_condition = simplify(Operators.ULT(self._gas, fee))
         self.fail_if(oog_condition)
 
