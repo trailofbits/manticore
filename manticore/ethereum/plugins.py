@@ -9,6 +9,7 @@ from ..core.smtlib import Operators, to_constant
 import pyevmasm as EVMAsm
 logger = logging.getLogger(__name__)
 
+
 class FilterFunctions(Plugin):
     def __init__(
         self, regexp=r".*", mutability="both", depth="both", fallback=False, include=True, **kwargs
