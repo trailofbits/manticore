@@ -220,7 +220,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
         dst += 1
         c = cpu.read_int(src, 8)
 
-    # If the byte is symbolic and constrained to '\000' or is '\000' write concrete val and return
+    # If the byte is symbolic and constrained to '\000', or is concrete and '\000', write concrete val and return
     if is_NULL(c, constrs):
         cpu.write_int(dst, 0, 8)
         return ret
