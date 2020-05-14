@@ -298,7 +298,7 @@ class StrcpyTest(ModelTest):
         d = self._push_string_space(dst_len)
         dst_vals = [None] * dst_len
         for i in range(dst_len):
-            # Set each dst byte to a random char to simplify equal compairisons
+            # Set each dst byte to a random char to simplify equal comparisons
             c = random.randrange(255)
             cpu.write_int(d + i, c, 8)
             dst_vals[i] = c
