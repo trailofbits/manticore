@@ -19,7 +19,7 @@ from manticore.native.models import (
     strcmp,
     strlen,
     strcpy,
-    is_NULL,
+    is_definitely_NULL,
     can_be_NULL,
     cant_be_NULL,
 )
@@ -257,13 +257,15 @@ class StrcpyTest(ModelTest):
 
         # src string was entirely symbolic
         if not issymbolic(dst):
-            self.assertTrue(is_NULL(src, self.state.constraints))
+            self.assertTrue(is_definitely_NULL(src, self.state.constraints))
             self.assertEqual(0, dst)
 
         # Check each symbolic byte in the dst
         else:
             # Loop till src must be NULL or assumed dst space allowed is gone
-            while not is_NULL(src, self.state.constraints) and offset < len(org_dest_val):
+            while not is_definitely_NULL(src, self.state.constraints) and offset < len(
+                org_dest_val
+            ):
                 # Check ITE tree in symbolic dst
                 dst = self._check_BitVecITE(dst, org_dest_val[offset])
 
@@ -288,6 +290,14 @@ class StrcpyTest(ModelTest):
             # Check last sym dst byte
             dst = self._check_BitVecITE(dst, org_dest_val[offset])
             self.assertEqual(dst.true_value, 0)
+
+    """
+    This method creates memory for a given src and dst string pointers,
+    asserts that everything is copied from src to dst until the first possible NULL byte,
+    asserts that after that an appropriate ITE tree is written into the 
+    dst based on the preceding possible NULLS until a definite NULL is reached, 
+    and the memory address returned by strcpy is equal to the given dst address.
+    """
 
     def _test_strcpy(self, string, dst_len=None):
         # Create src and dsty strings

@@ -7,7 +7,8 @@ from .state import State
 from ..core.smtlib import issymbolic, BitVec
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
-from typing import Union, List
+from typing import Union, Deque
+from collections import deque
 
 VARIADIC_FUNC_ATTR = "_variadic"
 
@@ -144,7 +145,7 @@ def strlen(state: State, s: Union[int, BitVec]):
     return ret
 
 
-def is_NULL(byte, constrs) -> bool:
+def is_definitely_NULL(byte, constrs) -> bool:
     """
     Checks if a given byte read from memory is NULL or effectively NULL
 
@@ -220,19 +221,19 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
         c = cpu.read_int(src, 8)
 
     # If the byte is symbolic and constrained to '\000' or is '\000' write concrete val and return
-    if is_NULL(c, constrs):
+    if is_definitely_NULL(c, constrs):
         cpu.write_int(dst, 0, 8)
         return ret
 
     offset = 0
-    zeros: List[int] = []
+    zeros: Deque[int] = deque([])
     src_val = cpu.read_int(src, 8)
-    while not is_NULL(src_val, constrs):
+    while not is_definitely_NULL(src_val, constrs):
         if can_be_NULL(c, constrs):
             # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
             src_val = ITEBV(8, src_val != 0, src_val, 0)
             _build_ITE(zeros, cpu, src, dst, offset, src_val)
-            zeros.append(offset)
+            zeros.appendleft(offset)
         else:
             # If it can't be NULL just build the ITE
             _build_ITE(zeros, cpu, src, dst, offset, src_val)
@@ -247,7 +248,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
 
 
 def _build_ITE(
-    zeros: List[int],
+    zeros: Deque[int],
     cpu: Cpu,
     src: Union[int, BitVec],
     dst: Union[int, BitVec],
@@ -258,7 +259,7 @@ def _build_ITE(
     Builds ITE tree for each symbolic dst byte
     """
     dst_val = cpu.read_int(dst + offset, 8)
-    for zero in reversed(zeros):
+    for zero in zeros:
         c = cpu.read_int(src + zero, 8)
         src_val = ITEBV(8, c != 0, src_val, dst_val)
     cpu.write_int(dst + offset, src_val, 8)
