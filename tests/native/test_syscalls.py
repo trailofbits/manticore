@@ -18,7 +18,7 @@ from manticore.platforms.linux import SymbolicSocket
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
 
 
-def test_symbolic_syscall_arg():
+def test_symbolic_syscall_arg() -> None:
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
     tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
     m = Manticore(BIN_PATH, argv=["+"], workspace_url=str(tmp_dir.name))
