@@ -146,7 +146,8 @@ def strlen(state: State, s: Union[int, BitVec]):
 
 def is_NULL(byte, constrs) -> bool:
     """
-    Checks if a given byte read from memory is NULL or effectively NULL
+    Checks if a given byte read from memory is NULL.
+    This supports both concrete & symbolic byte values.
 
     :param byte: byte read from memory to be examined
     :param constrs: state constraints
