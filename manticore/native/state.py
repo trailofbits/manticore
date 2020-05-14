@@ -11,19 +11,6 @@ class CheckpointData(NamedTuple):
 
 
 class State(StateBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._checkpoint_data = self._checkpoint()
-
-    def __getstate__(self):
-        state = super().__getstate__()
-        state["_checkpoint_data"] = self._checkpoint_data
-        return state
-
-    def __setstate__(self, state):
-        super().__setstate__(state)
-        self._checkpoint_data = state["_checkpoint_data"]
-
     @property
     def cpu(self):
         """
@@ -42,10 +29,9 @@ class State(StateBase):
         """
         Checkpoint all necessary information in the case of a rollback.
         """
-        self._checkpoint_data = CheckpointData(pc=self.cpu.PC, last_pc=self.cpu._last_pc)
         return self._checkpoint_data
 
-    def rollback(self, checkpoint_data: CheckpointData) -> None:
+    def _rollback(self, checkpoint_data: CheckpointData) -> None:
         """
         Rollback state to previous values in checkpoint_data
         """
@@ -61,7 +47,7 @@ class State(StateBase):
             ConcretizeRegister,
         )  # must be here, otherwise we get circular imports
 
-        self._checkpoint()
+        checkpoint_data = CheckpointData(pc=self.cpu.PC, last_pc=self.cpu._last_pc)
         try:
             result = self._platform.execute()
 
@@ -76,7 +62,7 @@ class State(StateBase):
             def setstate(state: State, value):
                 state.cpu.write_register(e.reg_name, value)
 
-            self.rollback(self._checkpoint_data)
+            self._rollback(checkpoint_data)
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except ConcretizeMemory as exc:
             # Need to define local variable to use in closure
@@ -86,10 +72,10 @@ class State(StateBase):
             def setstate(state: State, value):
                 state.cpu.write_int(e.address, value, e.size)
 
-            self.rollback(self._checkpoint_data)
+            self._rollback(checkpoint_data)
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except Concretize as e:
-            self.rollback(self._checkpoint_data)
+            self.rollback(checkpoint_data)
             raise e
         except MemoryException as e:
             raise TerminateState(str(e), testcase=True)
