@@ -29,7 +29,7 @@ class FakeCpu:
     def __init__(self):
         self._memory = FakeMemory()
 
-        # Required for mocking of `State._checkpoint()` and `State.rollback()`
+        # Required for mocking of checkpoint and `State._rollback()`
         self.PC = 0
         self._last_pc = None
 
