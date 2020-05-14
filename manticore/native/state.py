@@ -1,10 +1,13 @@
 from collections import namedtuple
+from typing import Any, NamedTuple
 
 from ..core.state import StateBase, Concretize, TerminateState
 from ..native.memory import ConcretizeMemory, MemoryException
 
 
-CheckpointData = namedtuple("CheckpointData", "pc, last_pc")
+class CheckpointData(NamedTuple):
+    pc: Any
+    last_pc: Any
 
 
 class State(StateBase):
