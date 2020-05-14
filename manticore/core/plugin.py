@@ -9,11 +9,11 @@ from .smtlib import issymbolic
 
 logger = logging.getLogger(__name__)
 
-class TestDecorateAllMeta(type):
+
+class DecorateAllMeta(type):
     @staticmethod
     def _if_enabled(f):
         """ decorator used to guard callbacks """
-
         @wraps(f)
         def g(self, *args, **kwargs):
             if self.is_enabled():
@@ -28,9 +28,9 @@ class TestDecorateAllMeta(type):
         return type.__new__(cls, name, bases, local)
 
 
-
-class Plugin(metaclass=TestDecorateAllMeta):
+class Plugin(metaclass=DecorateAllMeta):
     __slots__ = ("manticore", "_enabled_key", "_plugin_context_name")
+
     def __init__(self):
         self.manticore = None
         classname = str(type(self)).split("'")[1]
