@@ -147,7 +147,8 @@ def strlen(state: State, s: Union[int, BitVec]):
 
 def is_definitely_NULL(byte, constrs) -> bool:
     """
-    Checks if a given byte read from memory is NULL or effectively NULL
+    Checks if a given byte read from memory is NULL.
+    This supports both concrete & symbolic byte values.
 
     :param byte: byte read from memory to be examined
     :param constrs: state constraints
@@ -220,7 +221,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
         dst += 1
         c = cpu.read_int(src, 8)
 
-    # If the byte is symbolic and constrained to '\000' or is '\000' write concrete val and return
+    # If the byte is symbolic and constrained to '\000', or is concrete and '\000', write concrete val and return
     if is_definitely_NULL(c, constrs):
         cpu.write_int(dst, 0, 8)
         return ret

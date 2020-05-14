@@ -231,7 +231,7 @@ class StrcpyTest(ModelTest):
     def _check_BitVecITE(self, dst, dst_val):
         # Iterate and check the nested ITE tree for a symbolic byte
         self.assertTrue(issymbolic(dst))
-        while type(dst.true_value) is BitVecITE:  # check each each if/else in dst
+        while type(dst.true_value) is BitVecITE:  # check each if/else in dst
             self.assertEqual(dst.false_value, dst_val)  # dst = false_val
             dst = dst.true_value
         return dst
@@ -308,7 +308,7 @@ class StrcpyTest(ModelTest):
         d = self._push_string_space(dst_len)
         dst_vals = [None] * dst_len
         for i in range(dst_len):
-            # Set each dst byte to a random char to simplify equal compairisons
+            # Set each dst byte to a random char to simplify equal comparisons
             c = random.randrange(255)
             cpu.write_int(d + i, c, 8)
             dst_vals[i] = c
