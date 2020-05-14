@@ -155,7 +155,7 @@ def is_definitely_NULL(byte, constrs) -> bool:
     :return: whether a given byte is NULL or constrained to NULL
     """
     if issymbolic(byte):
-        return not Z3Solver.instance().can_be_true(constrs, byte != 0)
+        return not Z3Solver.instance().must_be_true(constrs, byte != 0)
     else:
         return byte == 0
 
