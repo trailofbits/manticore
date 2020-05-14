@@ -25,12 +25,6 @@ class State(StateBase):
         """
         return self._platform.current.memory
 
-    def _checkpoint(self) -> CheckpointData:
-        """
-        Checkpoint all necessary information in the case of a rollback.
-        """
-        return self._checkpoint_data
-
     def _rollback(self, checkpoint_data: CheckpointData) -> None:
         """
         Rollback state to previous values in checkpoint_data
@@ -75,7 +69,7 @@ class State(StateBase):
             self._rollback(checkpoint_data)
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
         except Concretize as e:
-            self.rollback(checkpoint_data)
+            self._rollback(checkpoint_data)
             raise e
         except MemoryException as e:
             raise TerminateState(str(e), testcase=True)
