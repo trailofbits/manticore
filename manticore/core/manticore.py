@@ -357,6 +357,53 @@ class ManticoreBase(Eventful):
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
         self._is_main = True
+        self._snapshot = None
+
+    @sync
+    @at_not_running
+    def take_snapshot(self):
+        ''' Copy/Duplicate/backup all ready states and save it in a snapshot.
+        If there is a snapshot already saved it will be overrwritten
+        '''
+        if self._snapshot is not None:
+            logger.info("Overwriting a snapshot of the ready states")
+        snapshot = []
+        for state_id in self._ready_states:
+            state = self._load(state_id)
+            # Re-save the state in case the user changed its data
+            snapshot.append(self._save(state))
+        self._snapshot = snapshot
+
+    @sync
+    @at_not_running
+    def goto_snapshot(self):
+        ''' REMOVE current ready states and replace them with the saved states
+        in a snapshot '''
+
+        for state_id in tuple(self._ready_states):
+            self._ready_states.remove(state_id)
+        for state_id in self._snapshot:
+            self._ready_states.append(state_id)
+        self._snapshot=None
+
+    @sync
+    @at_not_running
+    def clear_snapshot(self):
+        ''' Remove any saved states '''
+        if self._snapshot:
+            for state_id in self._snapshot:
+                self._remove(state_id)
+        self._snapshot=None
+
+    @sync
+    @at_not_running
+    def clear_terminated_states(self):
+        ''' Simply remove all states from terminated list '''
+        terminated_states_ids = tuple(self._terminated_states)
+        for state_id in terminated_states_ids:
+            self._terminated_states.remove(state_id)
+            self._remove(state_id)
+        assert self.count_terminated_states() == 0
 
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
