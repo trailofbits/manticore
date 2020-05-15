@@ -3063,7 +3063,7 @@ class EVMWorld(Platform):
 
             storage = blockchain._get_storage(state.constraints, account_address)
             storage.dump(stream, state)
-            stream.write("Storage: %s\n" % translate_to_smtlib(storage.data, use_bindings=False))
+            stream.write("Storage: %s\n" % translate_to_smtlib(storage._data, use_bindings=False))
 
             if consts.sha3 is consts.sha3.concretize:
                 all_used_indexes = []
@@ -3073,14 +3073,14 @@ class EVMWorld(Platform):
                     # get the storage for account_address
                     storage = blockchain._get_storage(temp_cs, account_address)
                     # we are interested only in used slots
-                    temp_cs.add(storage.data.is_known(index) != 0)
+                    temp_cs.add(storage._data.is_known(index) != 0)
                     # Query the solver to get all storage indexes with used slots
                     all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
 
                 if all_used_indexes:
                     stream.write("Storage:\n")
                     for i in all_used_indexes:
-                        value = simplify(storage.data.get(i))
+                        value = simplify(storage._data.get(i))
                         is_storage_symbolic = issymbolic(value) and not isinstance(
                             value, BitVecConstant
                         )

@@ -22,7 +22,7 @@ class Storage:
         :param constraints: the ConstraintSet with which this Storage object is associated
         :param address: the address that owns this storage
         """
-        self.data = constraints.new_array(
+        self._data = constraints.new_array(
             index_bits=256,
             value_bits=256,
             name=f"STORAGE_DATA_{address:x}",
@@ -38,14 +38,14 @@ class Storage:
     def get(self, offset: Union[int, BitVec], default: Union[int, BitVec]) -> Union[int, BitVec]:
         if not isinstance(default, BitVec):
             default = BitVecConstant(256, default)
-        return self.data.get(offset, default)
+        return self._data.get(offset, default)
 
     def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]):
-        self.data[offset] = value
+        self._data[offset] = value
 
     def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
         items = []
-        array = self.data.array
+        array = self._data.array
         while not isinstance(array, ArrayVariable):
             items.append((array.index, array.value))
             array = array.array
@@ -53,12 +53,12 @@ class Storage:
 
     def dump(self, stream: TextIOBase, state: State):
         concrete_indexes = set()
-        for sindex in self.data.written:
+        for sindex in self._data.written:
             concrete_indexes.add(state.solve_one(sindex, constrain=True))
 
         for index in concrete_indexes:
             stream.write(
-                f"storage[{index:x}] = {state.solve_one(self.data[index], constrain=True):x}\n"
+                f"storage[{index:x}] = {state.solve_one(self._data[index], constrain=True):x}\n"
             )
 
 
@@ -347,7 +347,7 @@ class OverlayWorldState(WorldState):
             pass
         storage = self._storage.get(address)
         if storage is not None:
-            dirty = dirty or len(storage.data.written) > 0
+            dirty = dirty or len(storage._data.written) > 0
         return dirty
 
     def get_storage(self, address: int) -> Optional[Storage]:
