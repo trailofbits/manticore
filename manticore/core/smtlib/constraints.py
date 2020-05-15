@@ -17,9 +17,15 @@ from .expression import (
     Constant,
 )
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from ...utils import config
 import logging
 
 logger = logging.getLogger(__name__)
+
+consts = config.get_group("smt")
+consts.add(
+    "related_constraints", default=False, description="Try slicing the current path constraint to contain only related items"
+)
 
 
 class ConstraintException(SmtlibError):
@@ -55,6 +61,9 @@ class ConstraintSet:
                 "_declarations": self._declarations,
             },
         )
+
+    def __hash__(self):
+        return hash(self.constraints)
 
     def __enter__(self) -> "ConstraintSet":
         assert self._child is None
@@ -96,7 +105,6 @@ class ConstraintSet:
                 self._constraints = [constraint]
             else:
                 return
-
         self._constraints.append(constraint)
 
     def _get_sid(self) -> int:
@@ -118,7 +126,8 @@ class ConstraintSet:
         # satisfiable one, {}.
         #   In light of the above, the core __get_related logic is currently disabled.
         # if related_to is not None:
-        if False:
+        # feliam: This assumes the previous constraints are already SAT (normal SE forking)
+        if consts.related_constraints and related_to is not None:
             number_of_constraints = len(self.constraints)
             remaining_constraints = set(self.constraints)
             related_variables = get_variables(related_to)
