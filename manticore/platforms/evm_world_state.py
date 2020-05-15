@@ -31,7 +31,6 @@ class Storage:
             # ArrayProxy.get in expression.py.
             # default=0,
         )
-        self.dirty = False
 
     def __getitem__(self, offset: Union[int, BitVec]) -> Union[int, BitVec]:
         return self.get(offset, 0)
@@ -43,7 +42,6 @@ class Storage:
 
     def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]):
         self.data[offset] = value
-        self.dirty = True
 
     def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
         items = []
@@ -349,7 +347,7 @@ class OverlayWorldState(WorldState):
             pass
         storage = self._storage.get(address)
         if storage is not None:
-            dirty = dirty or storage.dirty
+            dirty = dirty or len(storage.data.written) > 0
         return dirty
 
     def get_storage(self, address: int) -> Optional[Storage]:
