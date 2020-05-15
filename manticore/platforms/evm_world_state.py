@@ -22,8 +22,6 @@ class Storage:
         :param constraints: the ConstraintSet with which this Storage object is associated
         :param address: the address that owns this storage
         """
-        self.constraints = constraints
-        self.warned = False
         self.data = constraints.new_array(
             index_bits=256,
             value_bits=256,
@@ -451,12 +449,6 @@ class OverlayWorldState(WorldState):
         if storage is None:
             storage = self.new_storage(constraints, address)
             self._storage[address] = storage
-        while storage.constraints != constraints and constraints is not None:
-            constraints = constraints._parent
-        if storage.constraints != constraints:
-            if not storage.warned:
-                logger.warning("Constraints have changed")
-                storage.warned = True
         storage.set(offset, value)
 
     def set_code(self, address: int, code: Union[bytes, Array]):
