@@ -147,7 +147,6 @@ class ManticoreBase(Eventful):
         def newFunction(self, *args, **kw):
             with self._lock:
                 return func(self, *args, **kw)
-
         return newFunction
 
     def at_running(func: Callable) -> Callable:  # type: ignore
@@ -865,7 +864,6 @@ class ManticoreBase(Eventful):
         return self._shared_context
 
     @contextmanager
-    @sync
     def locked_context(self, key=None, value_type=list):
         """
         A context manager that provides safe parallel access to the global
@@ -895,20 +893,21 @@ class ManticoreBase(Eventful):
         :param value_type: type of value associated with key
         :type value_type: list or dict or set
         """
+        with self._lock:
 
-        if key is None:
-            # If no key is provided we yield the raw shared context under a lock
-            yield self._shared_context
-        else:
-            # if a key is provided we yield the specific value or a fresh one
-            if value_type not in (list, dict):
-                raise TypeError("Type must be list or dict")
-            if hasattr(self, "_context_value_types"):
-                value_type = self._context_value_types[value_type]
-            context = self._shared_context
-            if key not in context:
-                context[key] = value_type()
-            yield context[key]
+            if key is None:
+                # If no key is provided we yield the raw shared context under a lock
+                yield self._shared_context
+            else:
+                # if a key is provided we yield the specific value or a fresh one
+                if value_type not in (list, dict):
+                    raise TypeError("Type must be list or dict")
+                if hasattr(self, "_context_value_types"):
+                    value_type = self._context_value_types[value_type]
+                context = self._shared_context
+                if key not in context:
+                    context[key] = value_type()
+                yield context[key]
 
     ############################################################################
     # Public API
