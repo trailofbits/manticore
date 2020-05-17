@@ -177,6 +177,19 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
+    def only_from_main(func: Callable) -> Callable:  # type: ignore
+        """Allows the decorated method to run only from the main thread
+        """
+
+        @functools.wraps(func)
+        def newFunction(self, *args, **kw):
+            if not self._is_main:
+                logger.error("Calling from worker or forked process not allowed")
+                raise ManticoreError(f"{func.__name__} only allowed from main")
+            return func(self, *args, **kw)
+
+        return newFunction
+
     _published_events = {
         "run",
         "start_worker",
@@ -361,6 +374,7 @@ class ManticoreBase(Eventful):
 
     @sync
     @at_not_running
+    @only_from_main
     def take_snapshot(self):
         ''' Copy/Duplicate/backup all ready states and save it in a snapshot.
         If there is a snapshot already saved it will be overrwritten
@@ -376,6 +390,7 @@ class ManticoreBase(Eventful):
 
     @sync
     @at_not_running
+    @only_from_main
     def goto_snapshot(self):
         ''' REMOVE current ready states and replace them with the saved states
         in a snapshot '''
@@ -388,6 +403,7 @@ class ManticoreBase(Eventful):
 
     @sync
     @at_not_running
+    @only_from_main
     def clear_snapshot(self):
         ''' Remove any saved states '''
         if self._snapshot:
