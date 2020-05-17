@@ -384,7 +384,7 @@ class ManticoreBase(Eventful):
             self._ready_states.remove(state_id)
         for state_id in self._snapshot:
             self._ready_states.append(state_id)
-        self._snapshot=None
+        self._snapshot = None
 
     @sync
     @at_not_running
@@ -393,7 +393,7 @@ class ManticoreBase(Eventful):
         if self._snapshot:
             for state_id in self._snapshot:
                 self._remove(state_id)
-        self._snapshot=None
+        self._snapshot = None
 
     @sync
     @at_not_running
