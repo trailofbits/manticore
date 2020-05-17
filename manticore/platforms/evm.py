@@ -2411,7 +2411,7 @@ class EVMWorld(Platform):
         )
         if sort == "CREATE":
             bytecode = bytecode_or_data
-            data = bytearray()
+            data = bytes()
         else:
             bytecode = self.get_code(address)
             data = bytecode_or_data
@@ -2773,7 +2773,6 @@ class EVMWorld(Platform):
         return new_address
 
     def execute(self):
-
         self._process_pending_transaction()
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)

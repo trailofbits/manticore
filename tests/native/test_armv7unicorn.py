@@ -4,7 +4,6 @@ import os
 import struct
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from functools import wraps
-from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 import logging
 from unicorn import UC_QUERY_MODE, UC_MODE_THUMB
 
@@ -15,9 +14,10 @@ from manticore.native.state import State
 from manticore.native.memory import ConcretizeMemory, Memory32
 from manticore.platforms import linux
 from manticore.utils.fallback_emulator import UnicornEmulator
+import binascii
 
-ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
-ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
+ks = None
+ks_thumb = None
 
 logger = logging.getLogger("ARM_TESTS")
 
@@ -27,8 +27,149 @@ semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 """
 
+# This is a cache of assembled instructions.
+# This exists so that Manticore's tests can run without requiring that the
+# Keystone dependency be installed.
+# If additional test cases are added that require new instructions, this cache
+# will need to be updated.
+assembly_cache = {
+    CS_MODE_ARM: {
+        "adc r3, r1, r2": b"0230a1e0",
+        "adc r3, r1, r2, ror #3": b"e231a1e0",
+        "add r3, r1, 0x1000000": b"013481e2",
+        "add r3, r1, 0xff000000": b"ff3481e2",
+        "add r3, r1, 0x100": b"013c81e2",
+        "add r3, r1, 55": b"373081e2",
+        "add r3, r1, 0x1": b"013081e2",
+        "add r3, r1, r2": b"023081e0",
+        "add r3, r1, r2, asr #3": b"c23181e0",
+        "add r3, r1, r2, asr r4": b"523481e0",
+        "add r3, r1, r2, lsl #3": b"823181e0",
+        "add r3, r1, r2, lsl r4": b"123481e0",
+        "add r3, r1, r2, lsr #3": b"a23181e0",
+        "add r3, r1, r2, lsr r4": b"323481e0",
+        "add r3, r1, r2, ror #3": b"e23181e0",
+        "add r3, r1, r2, ror r4": b"723481e0",
+        "add r3, r1, r2, rrx": b"623081e0",
+        "adds r3, r1, 0x1000000": b"013491e2",
+        "adds r3, r1, 0x80000000": b"023191e2",
+        "adds r3, r1, 0xff000000": b"ff3491e2",
+        "adds r3, r1, 0x100": b"013c91e2",
+        "adds r3, r1, 55": b"373091e2",
+        "adds r3, r1, 0x1": b"013091e2",
+        "adds r3, r3, 0x0": b"003093e2",
+        "adds r3, r1, r2": b"023091e0",
+        "adds r3, r1, r2, asr #3": b"c23191e0",
+        "adds r3, r1, r2, rrx": b"623091e0",
+        "and r2, r2, #1": b"012002e2",
+        "and r1, r1, r2": b"021001e0",
+        "BIC R2, R1, #0x10": b"1020c1e3",
+        "bl 0x170": b"5a0000eb",
+        "bl #-4": b"fdffffeb",
+        "BLX R1": b"31ff2fe1",
+        "bx r1": b"11ff2fe1",
+        "clz r1, r2": b"121f6fe1",
+        "cmp r0, 0": b"000050e3",
+        "cmp r0, 0x40000000": b"010150e3",
+        "cmp r0, 3": b"030050e3",
+        "cmp r0, 2": b"020050e3",
+        "cmp r0, 5": b"050050e3",
+        "cmp r0, 0xa0000000": b"0a0250e3",
+        "eor r2, r3, #5": b"052023e2",
+        "eor r2, r3, r4": b"042023e0",
+        "eor r2, r3, r4, LSL #4": b"042223e0",
+        "eors r2, r3": b"032032e0",
+        "adds r2, r1, #0x1": b"012091e2",
+        "tst r3, r1": b"010013e1",
+        "ldm sp, {r1, r2, r3}": b"0e009de8",
+        "ldm sp!, {r1, r2, r3}": b"0e00bde8",
+        "ldr r1, [sp, #-4]": b"04101de5",
+        "ldr r1, [sp]": b"00109de5",
+        "ldr r1, [sp, #4]": b"04109de5",
+        "ldr r1, [sp], #-5": b"05101de4",
+        "ldr r1, [sp], #5": b"05109de4",
+        "ldr r1, [sp, #-4]!": b"04103de5",
+        "ldr r1, [sp, #4]!": b"0410bde5",
+        "ldr r1, [sp, r2]": b"02109de7",
+        "ldr r1, [sp, -r2]": b"02101de7",
+        "ldr r1, [sp, -r2, lsl #3]": b"82111de7",
+        "ldr r1, [sp, r2, lsl #3]": b"82119de7",
+        "ldr r1, [sp], r2": b"02109de6",
+        "ldr r1, [sp], -r2, lsl #3": b"82111de6",
+        "ldr r1, [sp, r2]!": b"0210bde7",
+        "ldr r1, [sp, -r2, lsl #3]!": b"82113de7",
+        "ldrb r1, [sp]": b"0010dde5",
+        "ldrb r1, [sp, r2]": b"0210dde7",
+        "ldrh r1, [sp]": b"b010dde1",
+        "ldrh r1, [sp, r2]": b"b2109de1",
+        "ldrsb r1, [sp]": b"d010dde1",
+        "ldrsb r1, [sp, r2]": b"d2109de1",
+        "ldrsh r1, [sp]": b"f010dde1",
+        "ldrsh r1, [sp, r2]": b"f2109de1",
+        "lsls r4, r3, 31": b"834fb0e1",
+        "lsls r4, r3, 1": b"8340b0e1",
+        "lsls r4, r3, r2": b"1342b0e1",
+        "lsr r0, r0, r2": b"3002a0e1",
+        "lsr r0, r0, #3": b"a001a0e1",
+        "MLA R1, R2, R3, R4": b"924321e0",
+        "mov r0, 0x0": b"0000a0e3",
+        "mov r0, 0xff000000": b"ff04a0e3",
+        "mov r0, 0x100": b"010ca0e3",
+        "mov r0, 42": b"2a00a0e3",
+        "mov r0, r1": b"0100a0e1",
+        "movs r0, 0": b"0000b0e3",
+        "movs r0, 0xff000000": b"ff04b0e3",
+        "movs r0, 0x100": b"010cb0e3",
+        "movs r0, 0x0e000000": b"0e04b0e3",
+        "movs r0, 42": b"2a00b0e3",
+        "movs r0, r1": b"0100b0e1",
+        "movw r0, 0xffff": b"ff0f0fe3",
+        "movw r0, 0": b"000000e3",
+        "MUL R1, R2": b"910201e0",
+        "MUL R3, R1, R2": b"910203e0",
+        "orr r2, r3, #5": b"052083e3",
+        "orr r2, r3, r4": b"042083e1",
+        "orr r2, r3, r4, LSL #4": b"042283e1",
+        "orr r2, r3": b"032082e1",
+        "orrs r2, r3": b"032092e1",
+        "pop {r1, r2, r3}": b"0e00bde8",
+        "pop {r1}": b"04109de4",
+        "push {r1, r2, r3}": b"0e002de9",
+        "push {r1}": b"04102de5",
+        "RSB r2, r2, #31": b"1f2062e2",
+        "sbc r3, r1, #5": b"0530c1e2",
+        "stm sp, {r1, r2, r3}": b"0e008de8",
+        "stm sp!, {r1, r2, r3}": b"0e00ade8",
+        "stmib   r3, {r2, r4}": b"140083e9",
+        "str SP, [R1]": b"00d081e5",
+        "str R1, [R2, R3]": b"031082e7",
+        "str R1, [R2, R3, LSL #3]": b"831182e7",
+        "str R1, [R2, #3]!": b"0310a2e5",
+        "str R1, [R2], #3": b"031082e4",
+        "sub r3, r1, r2": b"023041e0",
+        "sub r3, r1, #5": b"053041e2",
+        "svc #0": b"000000ef",
+        "UMULLS R1, R2, R1, R2": b"911292e0",
+        "ldr r0, [pc, #-4]": b"04001fe5",
+        "mov r1, r2": b"0210a0e1",
+        "mov r1, r21, r2": b"0230a1e0",
+    },
+    CS_MODE_THUMB: {"add r0, r1, r2": b"01eb0200"},
+}
 
-def assemble(asm, mode=CS_MODE_ARM):
+
+def _ks_assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
+    """Assemble the given string using Keystone using the specified CPU mode."""
+    # Explicitly uses late importing so that Keystone will only be imported if this is called.
+    # This lets us avoid requiring installation of Keystone for running tests.
+    global ks, ks_thumb
+    from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+
+    if ks is None:
+        ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
+    if ks_thumb is None:
+        ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
+
     if CS_MODE_ARM == mode:
         ords = ks.asm(asm)[0]
     elif CS_MODE_THUMB == mode:
@@ -37,7 +178,18 @@ def assemble(asm, mode=CS_MODE_ARM):
         raise Exception(f"bad processor mode for assembly: {mode}")
     if not ords:
         raise Exception(f"bad assembly: {asm}")
-    return "".join(map(chr, ords))
+    return binascii.hexlify(bytearray(ords))
+
+
+def assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
+    """
+    Assemble the given string.
+    
+    An assembly cache is first checked, and if there is no entry there, then Keystone is used.
+    """
+    if asm in assembly_cache[mode]:
+        return binascii.unhexlify(assembly_cache[mode][asm])
+    return binascii.unhexlify(_ks_assemble(asm, mode=mode))
 
 
 def emulate_next(cpu):
@@ -1404,12 +1556,10 @@ class UnicornConcretization(unittest.TestCase):
         start = self.code + 4
         constant = 0x42424242
 
-        asm = """
-            ldr r0, [pc, #-4]
-        """
+        asm = "ldr r0, [pc, #-4]"
 
         code = assemble(asm)
-        code += "\x78\x56\x34\x12"
+        code += b"\x78\x56\x34\x12"
 
         self.mem.write(start, code)
 
