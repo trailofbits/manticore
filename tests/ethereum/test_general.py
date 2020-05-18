@@ -1798,5 +1798,40 @@ class EthPluginTests(unittest.TestCase):
 
         m.clear_snapshot()  #We can double clear it
 
+
+    def test_is_main(self):
+        #test enable/disable plugin and sync vs contextmanager
+        source_code = """
+        contract C {
+            constructor() public payable {}
+            function f1(uint a) public payable {}
+            function f2(uint a) public payable {}
+        }
+        """
+        class X(Plugin):
+            def will_evm_execute_instruction_callback(self, state, instruction, args):
+                is_main = self.manticore.is_main()
+                is_running = self.manticore.is_running
+                with self.locked_context() as ctx:
+                    ctx['is_main'] = ctx.get('is_main', False) or is_main
+
+        from manticore.utils import config
+        consts = config.get_group("core")
+        for ty in ("multiprocessing", "threading", "single"):
+            consts.mprocessing = ty
+            m: ManticoreEVM = ManticoreEVM()
+            x = X()
+            m.register_plugin(x)
+            self.assertTrue(m.is_main())
+
+            creator_account = m.create_account(balance=10000000000)
+            contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+
+            self.assertTrue(m.is_main())
+            #From the plugin callback is never main
+            self.assertFalse(x.context.get('is_main', True))
+
+
+
 if __name__ == "__main__":
     unittest.main()

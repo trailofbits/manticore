@@ -1,3 +1,4 @@
+import os
 import itertools
 import logging
 import sys
@@ -183,7 +184,7 @@ class ManticoreBase(Eventful):
 
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
-            if not self._is_main:
+            if not self.is_main:
                 logger.error("Calling from worker or forked process not allowed")
                 raise ManticoreError(f"{func.__name__} only allowed from main")
             return func(self, *args, **kw)
@@ -368,9 +369,16 @@ class ManticoreBase(Eventful):
         self._put_state(initial_state)
 
         # Workers will use manticore __dict__ So lets spawn them last
+        self._is_main = None
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
-        self._is_main = True
         self._snapshot = None
+        self._main_id = (consts.mprocessing, os.getpid(), threading.current_thread().ident)
+
+    def is_main(self):
+        if self._main_id[0].value == 'single' and self.is_running():
+            return False
+        return tuple(self._main_id[1:]) == (os.getpid(), threading.current_thread().ident)
+
 
     @sync
     @at_not_running
