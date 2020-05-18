@@ -50,6 +50,7 @@ class _Var:
             value = self.default.from_string(value)
         self._value = value
 
+
 class _Group:
     """
     Configuration group to which you can add variables by simple doing:

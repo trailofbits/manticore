@@ -379,7 +379,6 @@ class ManticoreBase(Eventful):
             return False
         return tuple(self._main_id[1:]) == (os.getpid(), threading.current_thread().ident)
 
-
     @sync
     @at_not_running
     @only_from_main
