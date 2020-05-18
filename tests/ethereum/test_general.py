@@ -1755,6 +1755,48 @@ class EthPluginTests(unittest.TestCase):
                 ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 456
             )
 
+    def test_checkpoint(self):
+        #test enable/disable plugin and sync vs contextmanager
+        source_code = """
+        contract C {
+            constructor() public payable {}
+            function f1(uint a) public payable {}
+            function f2(uint a) public payable {}
+        }
+        """
+
+        m: ManticoreEVM = ManticoreEVM()
+
+        creator_account = m.create_account(balance=10000000000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+
+        #Can not go to unexistant snapshot
+        self.assertRaises(Exception, m.goto_snapshot)
+        self.assertEqual( m.count_ready_states(), 1)
+        #take the snap
+        m.take_snapshot()
+        self.assertEqual( m.count_ready_states(), 1)
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual( m.count_ready_states(), 2)
+        self.assertEqual( m.count_terminated_states(), 2)
+        m.goto_snapshot() #return to have only 1 ready state. (The terminated states remain)
+
+        self.assertEqual( m.count_ready_states(), 1)
+        self.assertEqual( m.count_terminated_states(), 2)
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual( m.count_ready_states(), 2)
+
+        m.clear_snapshot()
+        #Can not go to unexistant snapshot
+        self.assertRaises(Exception, m.goto_snapshot)
+
+        m.clear_snapshot()  #We can double clear it
 
 if __name__ == "__main__":
     unittest.main()

@@ -394,7 +394,8 @@ class ManticoreBase(Eventful):
     def goto_snapshot(self):
         ''' REMOVE current ready states and replace them with the saved states
         in a snapshot '''
-
+        if not self._snapshot:
+            raise Exception("No snapshot to go to")
         for state_id in tuple(self._ready_states):
             self._ready_states.remove(state_id)
         for state_id in self._snapshot:
