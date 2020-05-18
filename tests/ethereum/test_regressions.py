@@ -353,6 +353,40 @@ class IntegrationTest(unittest.TestCase):
         # 0x8000000000000000000000000000000000000000000000000000000082000011
         self.assertEqual(Z3Solver.instance().get_all_values(constraints, result), [2423129])
 
+    def test_related_to(self):
+        import gzip
+        from manticore import config
+        from manticore.core.smtlib.visitors import translate_to_smtlib
+        from manticore.core.smtlib import ConstraintSet, Z3Solver, Operators, BitVecConstant
+        import pickle, sys
+        filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
+
+        constraints, constraint = pickle.loads(gzip.open(filename,'rb').read())
+
+        consts = config.get_group("smt")
+        consts.related_constraints = False
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        ground_truth = Z3Solver.instance().can_be_true(constraints, constraint)
+        self.assertEqual(ground_truth, False)
+
+        consts.related_constraints = True
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, constraint))
+
+        #Replace 
+        new_constraint = Operators.UGE( Operators.SEXTEND(BitVecConstant(256,0x1a),256,512) * BitVecConstant(512,1), 0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000 )
+        self.assertEqual(translate_to_smtlib(constraint), translate_to_smtlib(new_constraint))
+
+        consts.related_constraints = False
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
+ 
+        consts.related_constraints = True
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
+
+
 
 if __name__ == "__main__":
     unittest.main()
