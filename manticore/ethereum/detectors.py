@@ -171,6 +171,7 @@ class DetectExternalCallAndLeak(Detector):
     CONFIDENCE = DetectorClassification.HIGH
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+
         if instruction.semantics == "CALL":
             dest_address = arguments[1]
             sent_value = arguments[2]
@@ -203,7 +204,7 @@ class DetectExternalCallAndLeak(Detector):
                         )
             else:
                 if msg_sender == dest_address:
-                    self.add_finding_here(state, f"Reachable {msg} to sender")
+                    self.add_finding_here(state, f"Reachable {msg} to sender", True)
 
 
 class DetectInvalid(Detector):
@@ -329,7 +330,7 @@ class DetectReentrancyAdvanced(Detector):
             # Check is the tx was successful
             if tx.result:
                 # Check if gas was enough for a reentrancy attack
-                if tx.gas > 2300:
+                if state.can_be_true(Operators.UGE(tx.gas, 2300)):
                     # Check if target address is attaker controlled
                     if (
                         self._addresses is None
@@ -525,6 +526,8 @@ class DetectIntegerOverflow(Detector):
             iou = self._unsigned_sub_overflow(state, *arguments)
         elif mnemonic == "SSTORE":
             # If an overflowded value is stored in the storage then it is a finding
+            # Todo: save this in a stack and only do the check if this does not
+            #  revert/rollback
             where, what = arguments
             self._check_finding(state, what)
         elif mnemonic == "RETURN":
@@ -537,18 +540,18 @@ class DetectIntegerOverflow(Detector):
 
         if mnemonic in ("SLT", "SGT", "SDIV", "SMOD"):
             result = taint_with(result, "SIGNED")
-            vm.change_last_result(result)
-        if state.can_be_true(ios):
+        if mnemonic in ("ADD", "SUB", "MUL"):
             id_val = self._save_current_location(
                 state, "Signed integer overflow at %s instruction" % mnemonic, ios
             )
             result = taint_with(result, "IOS_{:s}".format(id_val))
-            vm.change_last_result(result)
-        if state.can_be_true(iou):
+
             id_val = self._save_current_location(
                 state, "Unsigned integer overflow at %s instruction" % mnemonic, iou
             )
             result = taint_with(result, "IOU_{:s}".format(id_val))
+
+        if mnemonic in ("SLT", "SGT", "SDIV", "SMOD", "ADD", "SUB", "MUL"):
             vm.change_last_result(result)
 
 
@@ -627,6 +630,11 @@ class DetectDelegatecall(Detector):
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
+    def _to_constant(self, expression):
+        if isinstance(expression, Constant):
+            return expression.value
+        return expression
+
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         world = state.platform
         mnemonic = instruction.semantics
@@ -643,6 +651,8 @@ class DetectDelegatecall(Detector):
                 if len(possible_addresses) > 1:
                     self.add_finding_here(state, "Delegatecall to user controlled address")
 
+            in_offset = self._to_constant(in_offset)
+            in_size = self._to_constant(in_size)
             calldata = world.current_vm.read_buffer(in_offset, in_size)
             func_id = calldata[:4]
             if issymbolic(func_id):
@@ -667,8 +677,8 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
             if current_contract == known_contract:
-                for offset_i in range(offset, offset + size):
-                    cbu = Operators.AND(cbu, offset_i != known_offset)
+                for offset_i in range(size):
+                    cbu = Operators.AND(cbu, (offset + offset_i) != known_offset)
         if state.can_be_true(cbu):
             self.add_finding_here(
                 state,
@@ -680,9 +690,9 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        for offset_i in range(offset, offset + size):
+        for offset_i in range(size):
             state.context.setdefault("{:s}.initialized_memory".format(self.name), set()).add(
-                (current_contract, offset)
+                (current_contract, offset + offset_i)
             )
 
 
@@ -809,7 +819,7 @@ class DetectRaceCondition(Detector):
         world = state.platform
         curr_tx = world.current_transaction
 
-        if curr_tx.sort != "CREATE":
+        if curr_tx.sort != "CREATE" and curr_tx.address in self.manticore.metadata:
             metadata = self.manticore.metadata[curr_tx.address]
             curr_func = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
 

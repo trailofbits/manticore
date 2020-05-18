@@ -1423,15 +1423,19 @@ class MemoryTest(unittest.TestCase):
         sol = solver.get_value(cs, x)
         # it should comply...
         self.assertTrue(sol >= addr and sol <= addr + 0x2000)
-        # print map(hex,sorted(solver.get_all_values(cs, x, 0x100000))),  map(hex,solver.minmax(cs, x)), mem[x]
 
-        # No Access Reading <4160741376>
-        # self.assertRaisesRegexp(MemoryException, r"No access reading.*", mem.__getitem__, x)
-        with self.assertRaisesRegex(
-            InvalidSymbolicMemoryAccess, r"Invalid symbolic memory access \(mode:r\)"
-        ):
-            _ = mem[x]
-            # mem[addr] = 'a'
+
+        #this could crash OR not
+        native_config = config.get_group("native")
+        with native_config.temp_vals():
+            native_config.fast_crash = True
+            # No Access Reading <4160741376>
+            # self.assertRaisesRegexp(MemoryException, r"No access reading.*", mem.__getitem__, x)
+            with self.assertRaisesRegex(
+                InvalidSymbolicMemoryAccess, r"Invalid symbolic memory access \(mode:r\)"
+            ):
+                _ = mem[x]
+                # mem[addr] = 'a'
 
     def testmprotectFailWriting(self):
         mem = Memory32()

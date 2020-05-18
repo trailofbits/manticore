@@ -13,7 +13,8 @@ class FilterFunctions(Plugin):
         self, regexp=r".*", mutability="both", depth="both", fallback=False, include=True, **kwargs
     ):
         """
-            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+            Constrain input based on function metadata. Include or avoid functions
+            selected by the specified criteria.
 
             Examples:
             #Do not explore any human transactions that end up calling a constant function

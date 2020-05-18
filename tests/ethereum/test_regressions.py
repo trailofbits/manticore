@@ -273,7 +273,7 @@ class IntegrationTest(unittest.TestCase):
         caller = 0x42424242424242424242
         value = 0
         bytecode = ""
-        vm = evm.EVM(constraints, address, data, caller, value, bytecode)
+        vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=23000)
 
         self.assertEqual(vm.ADDMOD(12323, 2343, 20), 6)
         self.assertEqual(vm.ADDMOD(12323, 2343, 0), 0)
@@ -330,7 +330,7 @@ class IntegrationTest(unittest.TestCase):
         caller = 0x42424242424242424242
         value = 0
         bytecode = ""
-        vm = evm.EVM(constraints, address, data, caller, value, bytecode)
+        vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=23000)
 
         self.assertEqual(vm.MULMOD(12323, 2343, 20), 9)
         self.assertEqual(vm.MULMOD(12323, 2343, 0), 0)
