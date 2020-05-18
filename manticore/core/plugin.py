@@ -52,15 +52,6 @@ class Plugin(metaclass=DecorateAllMeta):
         with self.manticore.locked_context() as context:
             return context.get(self._enabled_key, True)
 
-    @staticmethod
-    def _if_enabled(f):
-        """ decorator used to guard callbacks """
-        @wraps(f)
-        def g(self, *args, **kwargs):
-            if self.is_enabled():
-                return f(self, *args, **kwargs)
-        return g
-
     @property
     def name(self):
         return str(self.__class__)
