@@ -88,7 +88,8 @@ jobs:
             coverage run -m manticore . --contract MetaCoin --workspace output
             # Truffle smoke test. We test if manticore is able to generate states
             # from a truffle project.
-            if [ "$(ls output/*tx -l | wc -l)" != "34" ]; then
+            count=$(find output/ -name '*tx' -type f | wc -l)
+            if [ "$count" -ne 34 ]; then
                 echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
                 return 1
             fi
