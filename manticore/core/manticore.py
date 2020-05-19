@@ -303,10 +303,11 @@ class ManticoreBase(Eventful):
         """
         super().__init__()
         random.seed(consts.seed)
-        {consts.mprocessing.single: self._manticore_single,
-         consts.mprocessing.threading: self._manticore_threading,
-         consts.mprocessing.multiprocessing: self._manticore_multiprocessing
-         }[consts.mprocessing]()
+        {
+            consts.mprocessing.single: self._manticore_single,
+            consts.mprocessing.threading: self._manticore_threading,
+            consts.mprocessing.multiprocessing: self._manticore_multiprocessing,
+        }[consts.mprocessing]()
 
         if any(
             not hasattr(self, x)
@@ -894,7 +895,6 @@ class ManticoreBase(Eventful):
         :type value_type: list or dict or set
         """
         with self._lock:
-
             if key is None:
                 # If no key is provided we yield the raw shared context under a lock
                 yield self._shared_context
