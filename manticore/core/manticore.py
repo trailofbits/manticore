@@ -90,17 +90,65 @@ consts.add(
 
 
 class ManticoreBase(Eventful):
-    def __new__(cls, *args, **kwargs):
-        if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
-            raise ManticoreError("Should not instantiate this")
+    def _manticore_single(self):
+        self._worker_type = WorkerSingle
 
-        cl = consts.mprocessing.to_class()
-        # change ManticoreBase for the more specific class
-        bases = {cl if issubclass(base, ManticoreBase) else base for base in cls.__bases__}
-        cls.__bases__ = tuple(bases)
+        class FakeLock:
+            def _nothing(self, *args, **kwargs):
+                pass
 
-        random.seed(consts.seed)
-        return super().__new__(cls)
+            acquire = _nothing
+            release = _nothing
+            __enter__ = _nothing
+            __exit__ = _nothing
+            notify_all = _nothing
+            wait = _nothing
+
+            def wait_for(self, condition, *args, **kwargs):
+                if not condition():
+                    raise Exception("Deadlock: Waiting for CTRL+C")
+
+        self._lock = FakeLock()
+        self._killed = ctypes.c_bool(False)
+        self._running = ctypes.c_bool(False)
+        self._ready_states = []
+        self._terminated_states = []
+        self._busy_states = []
+        self._killed_states = []
+        self._shared_context = {}
+
+    def _manticore_threading(self):
+        self._worker_type = WorkerThread
+        self._lock = threading.Condition()
+        self._killed = ctypes.c_bool(False)
+        self._running = ctypes.c_bool(False)
+        self._ready_states = []
+        self._terminated_states = []
+        self._busy_states = []
+        self._killed_states = []
+        self._shared_context = {}
+
+    def _manticore_multiprocessing(self):
+        def raise_signal():
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+        self._worker_type = WorkerProcess
+        # This is the global manager that will handle all shared memory access
+        # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
+        self._manager = SyncManager()
+        self._manager.start(raise_signal)
+        # The main manticore lock. Acquire this for accessing shared objects
+        # THINKME: we use the same lock to access states lists and shared contexts
+        self._lock = self._manager.Condition()
+        self._killed = self._manager.Value(bool, False)
+        self._running = self._manager.Value(bool, False)
+        # List of state ids of States on storage
+        self._ready_states = self._manager.list()
+        self._terminated_states = self._manager.list()
+        self._busy_states = self._manager.list()
+        self._killed_states = self._manager.list()
+        self._shared_context = self._manager.dict()
+        self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
 
     # Decorators added first for convenience.
     def sync(func: Callable) -> Callable:  # type: ignore
@@ -257,9 +305,9 @@ class ManticoreBase(Eventful):
         *State list: KILLED*
 
         KILLED contains all the READY and BUSY states found at a cancel event.
-        Manticore supports interactive analysis and has a prominetnt event system
-        A useror ui can stop or cancel the exploration at any time. The unfinnished
-        states cought at this situation are simply moved to its own list for
+        Manticore supports interactive analysis and has a prominent event system.
+        A user can stop or cancel the exploration at any time. The unfinished
+        states caught in this situation are simply moved to their own list for
         further user action. This is a final list.
 
 
@@ -271,6 +319,11 @@ class ManticoreBase(Eventful):
         self.config = cfg
         self.config.freeze()
         super().__init__()
+        random.seed(consts.seed)
+        {consts.mprocessing.single: self._manticore_single,
+         consts.mprocessing.threading: self._manticore_threading,
+         consts.mprocessing.multiprocessing: self._manticore_multiprocessing
+         }[consts.mprocessing]()
 
         if any(
             not hasattr(self, x)
@@ -411,7 +464,7 @@ class ManticoreBase(Eventful):
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
     def verbosity(level):
-        """ Sets global vervosity level.
+        """ Sets global verbosity level.
             This will activate different logging profiles globally depending
             on the provided numeric value
         """
@@ -1022,82 +1075,3 @@ class ManticoreBase(Eventful):
             self.config.save(f)
 
         logger.info("Results in %s", self._output.store.uri)
-
-
-class ManticoreSingle(ManticoreBase):
-    _worker_type = WorkerSingle
-
-    def __init__(self, *args, **kwargs):
-        class FakeLock:
-            def _nothing(self, *args, **kwargs):
-                pass
-
-            acquire = _nothing
-            release = _nothing
-            __enter__ = _nothing
-            __exit__ = _nothing
-            notify_all = _nothing
-            wait = _nothing
-
-            def wait_for(self, condition, *args, **kwargs):
-                if not condition():
-                    raise Exception("Deadlock: Waiting for CTRL+C")
-
-        self._lock = FakeLock()
-        self._killed = ctypes.c_bool(False)
-        self._running = ctypes.c_bool(False)
-
-        self._ready_states = []
-        self._terminated_states = []
-        self._busy_states = []
-        self._killed_states = []
-
-        self._shared_context = {}
-        super().__init__(*args, **kwargs)
-
-
-class ManticoreThreading(ManticoreBase):
-    _worker_type = WorkerThread
-
-    def __init__(self, *args, **kwargs):
-        self._lock = threading.Condition()
-        self._killed = ctypes.c_bool(False)
-        self._running = ctypes.c_bool(False)
-
-        self._ready_states = []
-        self._terminated_states = []
-        self._busy_states = []
-        self._killed_states = []
-
-        self._shared_context = {}
-
-        super().__init__(*args, **kwargs)
-
-
-def raise_signal():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-
-class ManticoreMultiprocessing(ManticoreBase):
-    _worker_type = WorkerProcess
-
-    def __init__(self, *args, **kwargs):
-        # This is the global manager that will handle all shared memory access
-        # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
-        self._manager = SyncManager()
-        self._manager.start(raise_signal)
-        # The main manticore lock. Acquire this for accessing shared objects
-        # THINKME: we use the same lock to access states lists and shared contexts
-        self._lock = self._manager.Condition()
-        self._killed = self._manager.Value(bool, False)
-        self._running = self._manager.Value(bool, False)
-
-        # List of state ids of States on storage
-        self._ready_states = self._manager.list()
-        self._terminated_states = self._manager.list()
-        self._busy_states = self._manager.list()
-        self._killed_states = self._manager.list()
-        self._shared_context = self._manager.dict()
-        self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
-
-        super().__init__(*args, **kwargs)
