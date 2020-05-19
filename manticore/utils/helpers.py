@@ -1,5 +1,6 @@
 import logging
 import pickle
+import string
 import sys
 from collections import OrderedDict
 from gzip import GzipFile
@@ -29,6 +30,10 @@ def interval_intersection(min1, max1, min2, max2):
     if left < right:
         return left, right
     return None
+
+
+def printable_bytes(bytes: bytes):
+    return "".join([c for c in map(chr, bytes) if c in string.printable])
 
 
 class CacheDict(OrderedDict):

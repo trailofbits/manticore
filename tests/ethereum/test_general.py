@@ -472,7 +472,7 @@ class EthTests(unittest.TestCase):
         self.assertEqual(str(e.exception), expected_exception)
 
     def test_solidity_create_contract_with_payable_constructor_and_balance_owner_insufficient_founds(
-        self
+        self,
     ):
         source_code = "contract A { constructor() public payable {} }"
         owner = self.mevm.create_account(balance=1)
@@ -1307,6 +1307,44 @@ class EthTests(unittest.TestCase):
         self.assertListEqual(sorted(results), ["STOP"] * 2 + ["TXERROR"])
 
 
+    def test_plugins_enable(self):
+        #test enable/disable plugin and sync vs contextmanager
+        source_code = """
+        contract C {
+            constructor() public payable {}
+            function f1(uint a) public payable {}
+        }
+        """
+        class examplePlugin(Plugin):
+            def will_evm_execute_instruction_callback(self, state, i, *args, **kwargs):
+                with self.locked_context() as ctx:
+                    if 'xcount' in ctx:
+                        ctx['xcount'] = ctx['xcount'] + 1
+                    else:
+                        ctx['xcount'] = 1
+
+        aplug = examplePlugin()
+
+        m: ManticoreEVM = ManticoreEVM()
+        m.register_plugin(aplug)
+
+        creator_account = m.create_account(balance=10000000000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+        self.assertEqual( aplug.context.get('xcount',0), 10)  #22 if revert?
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        with  aplug.locked_context() as ctx:
+            self.assertEqual(ctx.get('xcount',0), 63)
+        aplug.disable()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual( aplug.context.get('xcount',0), 63)
+        aplug.enable()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual( aplug.context.get('xcount',0), 112)
+
+
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)
@@ -1686,6 +1724,23 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             result = str(e)
         self.assertEqual(result, "SELFDESTRUCT")
 
+    def test_selfdestruct(self):
+        with disposable_mevm() as m:
+            asm_acc = """  PUSH1 0x0
+                           SELFDESTRUCT
+                      """
+            m.create_account(
+                address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
+            )
+            m.create_account(address=0x222222222222222222222222222222222222222)
+            symbolic_data = m.make_symbolic_buffer(320)
+            m.transaction(
+                caller=0x222222222222222222222222222222222222222,
+                address=0x111111111111111111111111111111111111111,
+                data=symbolic_data,
+                value=0,
+            )
+            self.assertEqual(m.count_ready_states(), 1)
 
 class EthPluginTests(unittest.TestCase):
     def test_FilterFunctions_fallback_function_matching(self):

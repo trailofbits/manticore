@@ -17,9 +17,15 @@ from .expression import (
     Constant,
 )
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from ...utils import config
 import logging
 
 logger = logging.getLogger(__name__)
+
+consts = config.get_group("smt")
+consts.add(
+    "related_constraints", default=False, description="Try slicing the current path constraint to contain only related items"
+)
 
 
 class ConstraintException(SmtlibError):
@@ -56,6 +62,9 @@ class ConstraintSet:
             },
         )
 
+    def __hash__(self):
+        return hash(self.constraints)
+
     def __enter__(self) -> "ConstraintSet":
         assert self._child is None
         self._child = self.__class__()
@@ -73,13 +82,11 @@ class ConstraintSet:
             return len(self._constraints) + len(self._parent)
         return len(self._constraints)
 
-    def add(self, constraint, check=False):
+    def add(self, constraint) -> None:
         """
         Add a constraint to the set
 
         :param constraint: The constraint to add to the set.
-        :param check: Currently unused.
-        :return:
         """
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
@@ -98,14 +105,7 @@ class ConstraintSet:
                 self._constraints = [constraint]
             else:
                 return
-
         self._constraints.append(constraint)
-
-        if check:
-            from ...core.smtlib import solver
-
-            if not solver.check(self):
-                raise ValueError("Added an impossible constraint")
 
     def _get_sid(self) -> int:
         """ Returns a unique id. """
@@ -114,7 +114,20 @@ class ConstraintSet:
         return self._sid
 
     def __get_related(self, related_to=None):
-        if related_to is not None:
+        # sam.moelius: There is a flaw in how __get_related works: when called on certain
+        # unsatisfiable sets, it can return a satisfiable one. The flaw arises when:
+        #   * self consists of a single constraint C
+        #   * C is the value of the related_to parameter
+        #   * C contains no variables
+        #   * C is unsatisfiable
+        # Since C contains no variables, it is not considered "related to" itself and is thrown out
+        # by __get_related. Since C was the sole element of self, __get_related returns the empty
+        # set. Thus, __get_related was called on an unsatisfiable set, {C}, but it returned a
+        # satisfiable one, {}.
+        #   In light of the above, the core __get_related logic is currently disabled.
+        # if related_to is not None:
+        # feliam: This assumes the previous constraints are already SAT (normal SE forking)
+        if consts.related_constraints and related_to is not None:
             number_of_constraints = len(self.constraints)
             remaining_constraints = set(self.constraints)
             related_variables = get_variables(related_to)

@@ -11,7 +11,7 @@ else
   cp "$(command -v wast2json)" .
 fi
 
-wget -nc -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/v1.1.zip
+wget -nc -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/opam-1.1.zip
 
 unzip -q -j spec.zip 'spec-*/test/core/*' -d .
 rm run.py README.md 

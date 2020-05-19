@@ -18,9 +18,13 @@ instead.
 
 ## Questions
 
-Questions can be submitted to the issue tracker, but you may get a faster
+Questions can be submitted to the [discussion page](https://github.com/trailofbits/manticore/discussions), but you may get a faster
 response if you ask in our [chat room](https://empireslacking.herokuapp.com/)
 (in the #manticore channel).
+
+## Legal
+For legal reasons, we require contributors to sign our [Contributor License Agreement](https://cla-assistant.io/trailofbits/manticore).
+This will be automatically checked as part of our CI. 
 
 ## Code
 

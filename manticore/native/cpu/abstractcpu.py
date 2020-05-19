@@ -23,10 +23,16 @@ from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
 from capstone.arm import ARM_REG_ENDING
 
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f"{__name__}.registers")
+
+
+def _sig_is_varargs(sig: inspect.Signature) -> bool:
+    VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
+    return any(p.kind == VAR_POSITIONAL for p in sig.parameters.values())
+
 
 ###################################################################################
 # Exceptions
@@ -83,7 +89,9 @@ class ConcretizeRegister(CpuException):
     Raised when a symbolic register needs to be concretized.
     """
 
-    def __init__(self, cpu, reg_name, message=None, policy="MINMAX"):
+    def __init__(
+        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
+    ):
         self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
@@ -309,26 +317,21 @@ class Abi:
             yield base
             base += word_bytes
 
-    def get_argument_values(self, model, prefix_args):
+    def get_argument_values(self, model: Callable, prefix_args: Tuple) -> Tuple:
         """
         Extract arguments for model from the environment and return as a tuple that
         is ready to be passed to the model.
 
-        :param callable model: Python model of the function
-        :param tuple prefix_args: Parameters to pass to model before actual ones
+        :param model: Python model of the function
+        :param prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
-        :rtype: tuple
         """
-        spec = inspect.getfullargspec(model)
+        sig = inspect.signature(model)
+        if _sig_is_varargs(sig):
+            model_name = getattr(model, "__qualname__", "<no name>")
+            logger.warning("ABI: %s: a vararg model must be a unary function.", model_name)
 
-        if spec.varargs:
-            logger.warning("ABI: A vararg model must be a unary function.")
-
-        nargs = len(spec.args) - len(prefix_args)
-
-        # If the model is a method, we need to account for `self`
-        if inspect.ismethod(model):
-            nargs -= 1
+        nargs = len(sig.parameters) - len(prefix_args)
 
         def resolve_argument(arg):
             if isinstance(arg, str):
@@ -343,11 +346,9 @@ class Abi:
         from ..models import isvariadic  # prevent circular imports
 
         if isvariadic(model):
-            arguments = prefix_args + (argument_iter,)
+            return prefix_args + (argument_iter,)
         else:
-            arguments = prefix_args + tuple(islice(argument_iter, nargs))
-
-        return arguments
+            return prefix_args + tuple(islice(argument_iter, nargs))
 
     def invoke(self, model, prefix_args=None):
         """
@@ -733,7 +734,6 @@ class Cpu(Eventful):
 
         :param where: address to write to
         :param data: data to write
-        :type data: str or list
         :param force: whether to ignore memory permissions
         """
 
@@ -822,7 +822,7 @@ class Cpu(Eventful):
             where += 1
         return s.getvalue().decode()
 
-    def push_bytes(self, data: str, force: bool = False):
+    def push_bytes(self, data, force: bool = False):
         """
         Write `data` to the stack and decrement the stack pointer accordingly.
 

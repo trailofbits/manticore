@@ -1,16 +1,42 @@
+import logging
 import random
 import struct
 import socket
 import tempfile
+import time
 import unittest
 
 import os
 import errno
+import re
+from glob import glob
 
-from manticore.core.smtlib import *
+from manticore.native import Manticore
+
 from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.linux import SymbolicSocket
-from manticore.platforms.platform import SyscallNotImplemented
+from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
+
+
+def test_symbolic_syscall_arg() -> None:
+    BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
+    tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
+    m = Manticore(BIN_PATH, argv=["+"], workspace_url=str(tmp_dir.name))
+
+    m.run()
+    m.finalize()
+
+    found_win_msg = False
+    win_msg = "WIN: Read more than zero data"
+    outs_glob = f"{str(m.workspace)}/test_*.stdout"
+    # Search all output messages
+    for output_p in glob(outs_glob):
+        with open(output_p) as f:
+            if win_msg in f.read():
+                found_win_msg = True
+                break
+
+    assert found_win_msg, f'Did not find win message in {outs_glob}: "{win_msg}"'
 
 
 class LinuxTest(unittest.TestCase):
@@ -22,9 +48,8 @@ class LinuxTest(unittest.TestCase):
         self.linux = linux.SLinux(self.BIN_PATH)
 
     def tearDown(self):
-        for f in self.linux.files:
-            if isinstance(f, linux.File):
-                f.close()
+        for entry in self.linux.fd_table.entries():
+            entry.fdlike.close()
         self.tmp_dir.cleanup()
 
     def get_path(self, basename: str) -> str:
@@ -160,7 +185,7 @@ class LinuxTest(unittest.TestCase):
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 
-        sock_obj = self.linux.files[conn_fd]
+        sock_obj = self.linux.fd_table.get_fdlike(conn_fd)
         # Any socket that comes from an accept should probably be symbolic for now
         assert isinstance(sock_obj, SymbolicSocket)
 
@@ -207,7 +232,7 @@ class LinuxTest(unittest.TestCase):
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 
-        sock_obj = self.linux.files[conn_fd]
+        sock_obj = self.linux.fd_table.get_fdlike(conn_fd)
         # Any socket that comes from an accept should probably be symbolic for now
         assert isinstance(sock_obj, SymbolicSocket)
 
@@ -374,27 +399,31 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_write(fd, 0x1200, len(buf))
 
         # FIXME: currently broken -- raises a Python OSError invalid argument exception!
+        resultp = 0x1900
         res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
         self.assertTrue(res < 0)
 
-    def test_unimplemented(self):
+    def test_unimplemented_stubs(self) -> None:
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
 
-        if hasattr(stubs, "sys_bpf"):
+        with self.assertLogs(platform_logger, logging.WARNING) as cm:
             self.assertRaises(SyscallNotImplemented, stubs.sys_bpf, 0, 0, 0)
+        # make sure that log message contains expected info
+        pat = re.compile(r"Unimplemented system call: .+: .+\(.+\)", re.MULTILINE)
+        self.assertRegex("\n".join(cm.output), pat)
 
-            self.linux.stubs.default_to_fail = False
-            self.linux.current.RAX = 321  # SYS_BPF
-            self.assertRaises(SyscallNotImplemented, self.linux.syscall)
+        self.linux.stubs.default_to_fail = False
+        self.linux.current.RAX = 321  # SYS_BPF
+        self.assertRaises(SyscallNotImplemented, self.linux.syscall)
 
-            self.linux.stubs.default_to_fail = True
-            self.linux.current.RAX = 321
-            self.linux.syscall()
-            self.assertEqual(0xFFFFFFFFFFFFFFFF, self.linux.current.RAX)
-        else:
-            import warnings
+        self.linux.stubs.default_to_fail = True
+        self.linux.current.RAX = 321
+        self.linux.syscall()
+        self.assertEqual(0xFFFFFFFFFFFFFFFF, self.linux.current.RAX)
 
-            warnings.warn(
-                "Couldn't find sys_bpf in the stubs file. "
-                + "If you've implemented it, you need to fix test_syscalls:LinuxTest.test_unimplemented"
-            )
+    def test_unimplemented_linux(self) -> None:
+        with self.assertLogs(platform_logger, logging.WARNING) as cm:
+            self.linux.sys_futex(0, 0, 0, 0, 0, 0)
+        # make sure that log message contains expected info
+        pat = re.compile(r"Unimplemented system call: .+: .+\(.+\)", re.MULTILINE)
+        self.assertRegex("\n".join(cm.output), pat)

@@ -18,7 +18,8 @@ import threading
 import collections
 import shlex
 import time
-from typing import Dict, Tuple, Union
+from functools import lru_cache
+from typing import Dict, Tuple
 from subprocess import PIPE, Popen
 import re
 from . import operators as Operators
@@ -164,6 +165,11 @@ class Z3Solver(Solver):
             "(set-logic QF_AUFBV)",
             # The declarations and definitions will be scoped
             "(set-option :global-decls false)",
+            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
+            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
+            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
+            # in test_consensys_benchmark.py.
+            "(set-option :tactic.solve_eqs.context_solve false)",
         ]
 
         self._get_value_fmt = (RE_GET_EXPR_VALUE_FMT, 16)
@@ -276,7 +282,7 @@ class Z3Solver(Solver):
         except Exception as e:
             logger.error(str(e))
 
-    def _reset(self, constraints=None):
+    def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
         if self._proc is None:
             self._start_proc()
@@ -416,6 +422,7 @@ class Z3Solver(Solver):
         """Recall the last pushed constraint store and state."""
         self._send("(pop 1)")
 
+    @lru_cache(maxsize=32)
     def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
@@ -423,7 +430,7 @@ class Z3Solver(Solver):
                 return expression
             else:
                 # if True check if constraints are feasible
-                self._reset(constraints)
+                self._reset(constraints.to_string())
                 return self._is_sat()
         assert isinstance(expression, Bool)
 
@@ -433,6 +440,7 @@ class Z3Solver(Solver):
             return self._is_sat()
 
     # get-all-values min max minmax
+    @lru_cache(maxsize=32)
     def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
         """Returns a list with all the possible values for the symbol x"""
         if not isinstance(expression, Expression):
@@ -537,7 +545,7 @@ class Z3Solver(Solver):
                             raise SolverError("Could not match objective value regex")
                 finally:
                     self._pop()
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     self._send(aux.declaration)
 
             operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
@@ -622,7 +630,7 @@ class Z3Solver(Solver):
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
 
-                    self._reset(temp_cs)
+                    self._reset(temp_cs.to_string())
                     if not self._is_sat():
                         raise SolverError(
                             "Solver could not find a value for expression under current constraint set"
@@ -643,7 +651,7 @@ class Z3Solver(Solver):
 
                 temp_cs.add(var == expression)
 
-                self._reset(temp_cs)
+                self._reset(temp_cs.to_string())
 
                 if not self._is_sat():
                     raise SolverError(
