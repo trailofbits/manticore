@@ -147,7 +147,6 @@ class ManticoreBase(Eventful):
         def newFunction(self, *args, **kw):
             with self._lock:
                 return func(self, *args, **kw)
-
         return newFunction
 
     def at_running(func: Callable) -> Callable:  # type: ignore
@@ -895,7 +894,6 @@ class ManticoreBase(Eventful):
         :param value_type: type of value associated with key
         :type value_type: list or dict or set
         """
-
         with self._lock:
             if key is None:
                 # If no key is provided we yield the raw shared context under a lock

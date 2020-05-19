@@ -87,10 +87,11 @@ class FilterFunctions(Plugin):
                 state.constrain(constraint)
             else:
                 # Avoid all not selected hashes
+                constraint = True
                 for func_hsh in md.function_selectors:
                     if func_hsh in selected_functions:
-                        constraint = tx.data[:4] != func_hsh
-                        state.constrain(constraint)
+                        constraint = Operators.AND(tx.data[:4] != func_hsh, constraint)
+                state.constrain(constraint)
 
 
 class LoopDepthLimiter(Plugin):
