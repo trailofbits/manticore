@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        type: ["ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
+        type: ["ethereum_truffle", "ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.6
@@ -24,7 +24,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: '13.x'
-    - name: Install dependencies (Linux)
+    - name: Install dependencies
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
@@ -40,7 +40,6 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
-
         make_vmtests(){
             DIR=`pwd`
             if  [ ! -f ethereum_vm/.done ]; then
@@ -82,30 +81,29 @@ jobs:
         }
 
         run_truffle_tests(){
+            COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
             mkdir truffle_tests
             cd truffle_tests
             truffle unbox metacoin
-            manticore . --contract MetaCoin --workspace output
-            ### The original comment says we should get 41 states, but after implementing the shift
-            ### insructions, we get 31. Was the original comment a typo?
-
-            # The correct answer should be 41
-            # but Manticore fails to explore the paths due to the lack of the 0x1f opcode support
-            # see https://github.com/trailofbits/manticore/issues/1166
-            # if [ "$(ls -l output/*tx | wc -l)" != "41" ]; then
-            count=$(find output/ -name '*tx' -type f | wc -l)
-            if [ "$count" -ne 34 ]; then
-                echo "Truffle test failed! $count != 34"
+            coverage run -m manticore . --contract MetaCoin --workspace output
+            # Truffle smoke test. We test if manticore is able to generate states
+            # from a truffle project.
+            if [ "$(ls output/*tx -l | wc -l)" != "34" ]; then
+                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
                 return 1
             fi
             echo "Truffle test succeded"
+            coverage xml
             cd ..
+            cp truffle_tests/coverage.xml .
             return 0
         }
 
         run_tests_from_dir() {
             DIR=$1
-            pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+            COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
+            echo "Running only the tests from 'tests/$DIR' directory"
+            pytest --durations=100 --cov=manticore --cov-config=$GITHUB_WORKSPACE/.coveragerc -n auto "tests/$DIR"
             coverage xml
         }
 
@@ -113,29 +111,23 @@ jobs:
         case $TEST_TYPE in
             ethereum_vm)
                 make_vmtests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
-                RV=$?
-
+                ;;
+            ethereum_truffle)
                 echo "Running truffle test"
                 install_truffle
                 run_truffle_tests
-                RV=$(($RV + $?))
                 ;;
             wasm)
                 make_wasm_tests
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
-                RV=$?
                 ;;
             wasm_sym)
-                make_wasm_sym_tests ;&
+                make_wasm_sym_tests ;&  # Fallthrough
             ethereum)               ;&  # Fallthrough
             ethereum_bench)         ;&  # Fallthrough
             other)
-                echo "Running only the tests from 'tests/$TEST_TYPE' directory"
                 run_tests_from_dir $TEST_TYPE
-                RV=$?
                 ;;
             *)
                 echo "Unknown TEST_TYPE: '$TEST_TYPE'"
