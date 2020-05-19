@@ -79,8 +79,8 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     the two
 
     :param State state: Current program state
-    :param int s1: Address of string 1
-    :param int s2: Address of string 2
+    :param s1: Address of string 1
+    :param s2: Address of string 2
     :return: Symbolic strcmp result
     :rtype: Expression or int
     """
@@ -123,7 +123,7 @@ def strlen(state: State, s: Union[int, BitVec]):
     Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
 
     :param State state: current program state
-    :param int s: Address of string
+    :param s: Address of string
     :return: Symbolic strlen result
     :rtype: Expression or int
     """
@@ -234,16 +234,19 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
             # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
             src_val = ITEBV(8, src_val != 0, src_val, 0)
             _build_ITE(zeros, cpu, src, dst, offset, src_val)
+            cpu.write_int(dst + offset, src_val, 8)
             zeros.appendleft(offset)
         else:
             # If it can't be NULL just build the ITE
             _build_ITE(zeros, cpu, src, dst, offset, src_val)
+            cpu.write_int(dst + offset, src_val, 8)
         offset += 1
         src_val = cpu.read_int(src + offset, 8)
 
     # Build ITE Tree for NULL byte
     src_val = 0
     _build_ITE(zeros, cpu, src, dst, offset, src_val)
+    cpu.write_int(dst + offset, src_val, 8)
 
     return ret
 
@@ -255,7 +258,7 @@ def _build_ITE(
     dst: Union[int, BitVec],
     offset: int,
     src_val: Union[int, BitVec],
-) -> None:
+    ) -> Union[int, BitVec]:
     """
     Builds ITE tree for each symbolic dst byte
     """
@@ -263,4 +266,4 @@ def _build_ITE(
     for zero in zeros:
         c = cpu.read_int(src + zero, 8)
         src_val = ITEBV(8, c != 0, src_val, dst_val)
-    cpu.write_int(dst + offset, src_val, 8)
+    return src_val
