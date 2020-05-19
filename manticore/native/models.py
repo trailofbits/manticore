@@ -258,7 +258,7 @@ def _build_ITE(
     dst: Union[int, BitVec],
     offset: int,
     src_val: Union[int, BitVec],
-    ) -> Union[int, BitVec]:
+) -> Union[int, BitVec]:
     """
     Builds ITE tree for each symbolic dst byte
     """
