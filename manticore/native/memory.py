@@ -1327,7 +1327,7 @@ class SMemory(Memory):
             if not self.access_ok(slice(base, base + size), access, force):
                 crashing_condition = Operators.OR(address == base, crashing_condition)
 
-        crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=2, silent=True)
+        crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=3)
 
         if not consts.fast_crash and len(crash_or_not) == 2:
             from ..core.state import Concretize
