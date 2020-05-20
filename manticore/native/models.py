@@ -155,7 +155,7 @@ def is_definitely_NULL(byte, constrs) -> bool:
     :return: whether a given byte is NULL or constrained to NULL
     """
     if issymbolic(byte):
-        return not Z3Solver.instance().must_be_true(constrs, byte != 0)
+        return Z3Solver.instance().must_be_true(constrs, byte == 0)
     else:
         return byte == 0
 
@@ -169,7 +169,7 @@ def cant_be_NULL(byte, constrs) -> bool:
     :return: whether a given byte is not NULL or cannot be NULL
     """
     if issymbolic(byte):
-        return not Z3Solver.instance().can_be_true(constrs, byte == 0)
+        return Z3Solver.instance().must_be_true(constrs, byte != 0)
     else:
         return byte != 0
 
@@ -230,22 +230,21 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     zeros: Deque[int] = deque([])
     src_val = cpu.read_int(src, 8)
     while not is_definitely_NULL(src_val, constrs):
-        if can_be_NULL(c, constrs):
+        if can_be_NULL(src_val, constrs):
             # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
             src_val = ITEBV(8, src_val != 0, src_val, 0)
-            _build_ITE(zeros, cpu, src, dst, offset, src_val)
+            src_val = _build_ITE(zeros, cpu, src, dst, offset, src_val)
             cpu.write_int(dst + offset, src_val, 8)
             zeros.appendleft(offset)
         else:
             # If it can't be NULL just build the ITE
-            _build_ITE(zeros, cpu, src, dst, offset, src_val)
+            src_val = _build_ITE(zeros, cpu, src, dst, offset, src_val)
             cpu.write_int(dst + offset, src_val, 8)
         offset += 1
         src_val = cpu.read_int(src + offset, 8)
 
     # Build ITE Tree for NULL byte
-    src_val = 0
-    _build_ITE(zeros, cpu, src, dst, offset, src_val)
+    src_val = _build_ITE(zeros, cpu, src, dst, offset, 0)
     cpu.write_int(dst + offset, src_val, 8)
 
     return ret
