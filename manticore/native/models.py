@@ -231,11 +231,11 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     dst_val = cpu.read_int(dst, 8)
     cond = True
     while not is_definitely_NULL(src_val, constrs):
-        print(f"{offset}: {src} -> {dst}") # Debugging print to be removed later
+        print(f"{offset}: {src} -> {dst}")  # Debugging print to be removed later
         if can_be_NULL(src_val, constrs):
             # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
             new_cond = AND(cond, src_val != 0)
-            src_val = ITEBV(8, src_val != 0, src_val, 0) # add an ITE just for the NULL
+            src_val = ITEBV(8, src_val != 0, src_val, 0)  # add an ITE just for the NULL
             src_val = ITEBV(8, cond, src_val, dst_val)
             cpu.write_int(dst + offset, src_val, 8)
             cond = new_cond
