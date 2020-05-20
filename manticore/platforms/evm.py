@@ -982,7 +982,7 @@ class EVM(Eventful):
         for pc_i in range(pc, len(bytecode)):
             yield simplify(bytecode[pc_i]).value
         while True:
-            yield 0
+            yield 0  # STOP opcode
 
     @property
     def instruction(self):
