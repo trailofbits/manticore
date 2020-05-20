@@ -6,7 +6,7 @@ from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
 from ..core.smtlib import issymbolic, BitVec
 from ..core.smtlib.solver import Z3Solver
-from ..core.smtlib.operators import ITEBV, ZEXTEND
+from ..core.smtlib.operators import AND, ITEBV, ZEXTEND
 from typing import Union, Deque
 from collections import deque
 
@@ -227,42 +227,28 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
         return ret
 
     offset = 0
-    zeros: Deque[int] = deque([])
     src_val = cpu.read_int(src, 8)
+    dst_val = cpu.read_int(dst, 8)
+    cond = True
     while not is_definitely_NULL(src_val, constrs):
+        print(f"{offset}: {src} -> {dst}") # Debugging print to be removed later
         if can_be_NULL(src_val, constrs):
             # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
-            src_val = ITEBV(8, src_val != 0, src_val, 0)
-            src_val = _build_ITE(zeros, cpu, src, dst, offset, src_val)
+            new_cond = AND(cond, src_val != 0)
+            src_val = ITEBV(8, src_val != 0, src_val, 0) # add an ITE just for the NULL
+            src_val = ITEBV(8, cond, src_val, dst_val)
             cpu.write_int(dst + offset, src_val, 8)
-            zeros.appendleft(offset)
+            cond = new_cond
         else:
             # If it can't be NULL just build the ITE
-            src_val = _build_ITE(zeros, cpu, src, dst, offset, src_val)
+            src_val = ITEBV(8, cond, src_val, dst_val)
             cpu.write_int(dst + offset, src_val, 8)
         offset += 1
         src_val = cpu.read_int(src + offset, 8)
+        dst_val = cpu.read_int(dst + offset, 8)
 
     # Build ITE Tree for NULL byte
-    src_val = _build_ITE(zeros, cpu, src, dst, offset, 0)
+    src_val = ITEBV(8, cond, 0, dst_val)
     cpu.write_int(dst + offset, src_val, 8)
 
     return ret
-
-
-def _build_ITE(
-    zeros: Deque[int],
-    cpu: Cpu,
-    src: Union[int, BitVec],
-    dst: Union[int, BitVec],
-    offset: int,
-    src_val: Union[int, BitVec],
-) -> Union[int, BitVec]:
-    """
-    Builds ITE tree for each symbolic dst byte
-    """
-    dst_val = cpu.read_int(dst + offset, 8)
-    for zero in zeros:
-        c = cpu.read_int(src + zero, 8)
-        src_val = ITEBV(8, c != 0, src_val, dst_val)
-    return src_val
