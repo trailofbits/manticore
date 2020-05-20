@@ -393,8 +393,7 @@ class ManticoreEVM(ManticoreBase):
     def __init__(self, plugins=None, **kwargs):
         """
         A Manticore EVM manager
-        :param workspace_url: workspace folder name
-        :param policy: scheduling priority
+        :param plugins: the plugins to register in this manticore manager
         """
         # Make the constraint store
         constraints = ConstraintSet()
