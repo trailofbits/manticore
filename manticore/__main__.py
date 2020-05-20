@@ -1,11 +1,9 @@
 """
 This is the Manticore's CLI `manticore` script.
 """
-import argparse
 import logging
 import sys
 
-import pkg_resources
 
 from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity

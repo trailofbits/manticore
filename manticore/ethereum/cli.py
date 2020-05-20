@@ -164,7 +164,7 @@ def ethereum_main():
         type=str,
         nargs="*",
         default=[],
-        help="Path to program, and arguments ('+' in arguments indicates symbolic byte).",
+        help="Path to contract source code.",
     )
 
     # Parse the actual commandline

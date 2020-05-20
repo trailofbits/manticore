@@ -1,24 +1,21 @@
+import sys
+import pkg_resources
 import logging
+import argparse
+from ..utils import config
 from .manticore import Manticore
 from ..core.plugin import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
 
 logger = logging.getLogger("manticoreNative.main")
 
 
-def parse_arguments():
+def add_native_args_arguments(parser):
     def positive(value):
         ivalue = int(value)
         if ivalue <= 0:
             raise argparse.ArgumentTypeError("Argument must be positive")
         return ivalue
 
-    parser = argparse.ArgumentParser(
-        description="Symbolic execution tool",
-        prog="manticore",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-
-    parser = config.prepare_argument_parser(parser)
 
     parser.add_argument("--context", type=str, default=None, help=argparse.SUPPRESS)
     parser.add_argument(
@@ -42,12 +39,6 @@ def parse_arguments():
         version=f"Manticore {current_version}",
         help="Show program version information",
     )
-    parser.add_argument(
-        "--config",
-        type=str,
-        help="Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)",
-    )
-
     bin_flags = parser.add_argument_group("Binary flags")
     bin_flags.add_argument("--entrysymbol", type=str, default=None, help="Symbol as entry point")
     bin_flags.add_argument("--assertions", type=str, default=None, help=argparse.SUPPRESS)
@@ -78,26 +69,32 @@ def parse_arguments():
         "--pure-symbolic", action="store_true", help="Treat all writable memory as symbolic"
     )
 
-    config_flags = parser.add_argument_group("Constants")
-    config.add_config_vars_to_argparse(config_flags)
+    #config_flags = parser.add_argument_group("Constants")
+    #config.add_config_vars_to_argparse(config_flags)
 
-    parsed = parser.parse_args(sys.argv[1:])
-    config.process_config_values(parser, parsed)
+    return parser
 
-    if not parsed.argv:
+def native_main():
+
+    # Gets the default config constants/variables from their declarations
+    cfg = config.get_default_config()
+    # Build an argument parser out of the declared configuration
+    # So user of CLI can override ALL config variables
+    parser = cfg.prepare_argument_parser()
+    # Add non conflicting application specific items: argv
+    parser = add_native_args_arguments(parser)
+
+    # Parse the actual commandline
+    args = parser.parse_args(sys.argv[1:])
+    # Procces and ingest the overwrided values
+    cfg.process_config_values(parser, args)
+
+    if not args.argv:
         print(parser.format_usage() + "error: the following arguments are required: argv")
         sys.exit(1)
 
-    if parsed.policy.startswith("min"):
-        parsed.policy = "-" + parsed.policy[3:]
-    elif parsed.policy.startswith("max"):
-        parsed.policy = "+" + parsed.policy[3:]
 
-    return config
-
-
-def native_main():
-    args = parse_arguments()
+    #args = parse_arguments()
     env = {key: val for key, val in [env[0].split("=") for env in args.env]}
 
     m = Manticore(
@@ -106,7 +103,7 @@ def native_main():
         env=env,
         entry_symbol=args.entrysymbol,
         workspace_url=args.workspace,
-        policy=args.policy,
+        policy=None,
         concrete_start=args.data,
         pure_symbolic=args.pure_symbolic,
     )
