@@ -400,7 +400,7 @@ class SymbolicFile(File):
         path: str = "sfile",
         flags: int = os.O_RDWR,
         max_size: int = 100,
-        wildcard: str = "+",
+        wildcard: bytes = b"+",
     ):
         """
         Builds a symbolic file
@@ -426,7 +426,7 @@ class SymbolicFile(File):
 
         symbols_cnt = 0
         for i in range(size):
-            if data[i] != wildcard:
+            if data[i] != wildcard[0]:
                 self.array[i] = data[i]
             else:
                 symbols_cnt += 1
