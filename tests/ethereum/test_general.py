@@ -1075,7 +1075,7 @@ class EthTests(unittest.TestCase):
 
         contract Lib {
            function isSeven(uint a) public pure returns (bool) {
-               if (a == 0x414243444546) {
+               if (a == 7) {
                    return true;
                } else {
                    return false;
