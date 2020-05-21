@@ -12,7 +12,7 @@ from manticore.core.smtlib import (
     constant_folder,
     replace,
 )
-from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.smtlib.solver import Z3Solver, YicesSolver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
 
@@ -1001,6 +1001,9 @@ class ExpressionTest(unittest.TestCase):
             for attr in attrs:
                 self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
 
+class ExpressionTestYices(ExpressionTest):
+    def setUp(self):
+        self.solver = YicesSolver.instance()
 
 if __name__ == "__main__":
     unittest.main()
