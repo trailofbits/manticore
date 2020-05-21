@@ -142,6 +142,7 @@ class Solver(SingletonMixin):
 
 Version = collections.namedtuple("Version", "major minor patch")
 
+
 class SMTLIBSolver(Solver):
     def __init__(self, command, init):
         """
@@ -161,7 +162,6 @@ class SMTLIBSolver(Solver):
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = True
-
 
     def _start_proc(self):
         """Spawns z3 solver process"""
@@ -253,8 +253,8 @@ class SMTLIBSolver(Solver):
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         if self.debug:
-            logger.debug('>%s', cmd)
-            print (">", cmd)
+            logger.debug(">%s", cmd)
+            print(">", cmd)
         try:
             if self._proc.stdout:
                 self._proc.stdout.flush()
@@ -283,8 +283,8 @@ class SMTLIBSolver(Solver):
         buf = "".join(bufl).strip()
 
         if self.debug:
-            logger.debug('<%s', buf)
-            print ("<", buf)
+            logger.debug("<%s", buf)
+            print("<", buf)
 
         if "(error" in bufl[0]:
             raise SolverException(f"Error in smtlib: {bufl[0]}")
@@ -655,8 +655,7 @@ class Z3Solver(SMTLIBSolver):
             "(set-option :tactic.solve_eqs.context_solve false)",
         ]
         command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
-        super().__init__(command=command,
-                       init=init,)
+        super().__init__(command=command, init=init)
         # To cache what get-info returned; can be directly set when writing tests
         self._received_version = None
         self.version = self._solver_version()
@@ -693,20 +692,16 @@ class Z3Solver(SMTLIBSolver):
             parsed_version = Version(float("inf"), float("inf"), float("inf"))
         return parsed_version
 
+
 class YicesSolver(SMTLIBSolver):
     def __init__(self):
-        init = [
-            "(set-logic QF_AUFBV)",
-        ]
+        init = ["(set-logic QF_AUFBV)"]
         command = f"yices-smt2 --timeout={consts.timeout * 1000}  --incremental"
-        super().__init__(command=command,
-                       init=init,)
+        super().__init__(command=command, init=init)
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = False
-        self.debug=False
-        RE_GET_EXPR_VALUE_FMT_B = re.compile(
-            r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
+        self.debug = False
+        RE_GET_EXPR_VALUE_FMT_B = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
 
         self._get_value_fmt = (RE_GET_EXPR_VALUE_FMT_B, 2)
-
