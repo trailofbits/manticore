@@ -351,7 +351,11 @@ class SMTLIBSolver(Solver):
                 expression_str = translate_to_smtlib(c)
                 self._send("(get-value (%s))" % expression_str)
                 response = self._recv()
-                result.append(int("0x{:s}".format(response.split(expression_str)[1][3:-2]), 16))
+                response.split(expression_str)[1].strip(")")
+                pattern, base = self._get_value_fmt
+                m = pattern.match(response)
+                expr, value = m.group("expr"), m.group("value")
+                result.append(int(value, base)) #int("0x{:s}".format(response.split(expression_str)[1][3:-2]), 16))
             return bytes(result)
         else:
             self._send("(get-value (%s))" % expression.name)
