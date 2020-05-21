@@ -125,6 +125,7 @@ jobs:
                 ;;
             wasm_sym)
                 make_wasm_sym_tests ;&  # Fallthrough
+            native)                 ;&  # Fallthrough
             ethereum)               ;&  # Fallthrough
             ethereum_bench)         ;&  # Fallthrough
             other)
