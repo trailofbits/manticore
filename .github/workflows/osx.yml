@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        type: ["ethereum_truffle", "ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
+        type: ["ethereum_truffle", "native", "ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.6
