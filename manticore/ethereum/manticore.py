@@ -25,7 +25,7 @@ from ..core.smtlib import (
     Expression,
     issymbolic,
     simplify,
-    Z3Solver,
+    YicesSolver,
 )
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
@@ -585,7 +585,7 @@ class ManticoreEVM(ManticoreBase):
 
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
-                    if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
+                    if not YicesSolver.instance().can_be_true(self.constraints, balance == 0):
                         # balance always != 0
                         if not md.constructor_abi["payable"]:
                             raise EthereumError(
@@ -596,7 +596,7 @@ class ManticoreEVM(ManticoreBase):
                     for state in self.ready_states:
                         world = state.platform
 
-                        if not Z3Solver.instance().can_be_true(
+                        if not YicesSolver.instance().can_be_true(
                             self.constraints,
                             Operators.UGE(world.get_balance(owner.address), balance),
                         ):

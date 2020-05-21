@@ -142,78 +142,26 @@ class Solver(SingletonMixin):
 
 Version = collections.namedtuple("Version", "major minor patch")
 
-
-class Z3Solver(Solver):
-    def __init__(self):
+class SMTLIBSolver(Solver):
+    def __init__(self, command, init):
         """
-        Build a Z3 solver instance.
-        This is implemented using an external z3 solver (via a subprocess).
-        See https://github.com/Z3Prover/z3
+        Build a smtlib solver instance.
+        This is implemented using an external solver (via a subprocess).
         """
         super().__init__()
         self._proc: Popen = None
 
-        self._command = (
-            f"{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in"
-        )
+        self._command = command
 
-        # Commands used to initialize z3
-        self._init = [
-            # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
-            # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
-            # free sort and function symbols.
-            "(set-logic QF_AUFBV)",
-            # The declarations and definitions will be scoped
-            "(set-option :global-decls false)",
-            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
-            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
-            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
-            # in test_consensys_benchmark.py.
-            "(set-option :tactic.solve_eqs.context_solve false)",
-        ]
-
+        # Commands used to initialize smtlib
+        self._init = init
         self._get_value_fmt = (RE_GET_EXPR_VALUE_FMT, 16)
 
         self.debug = False
-        # To cache what get-info returned; can be directly set when writing tests
-        self._received_version = None
-        self.version = self._solver_version()
-
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = True
-        logger.debug("Z3 version: %s", self.version)
 
-        if self.version >= Version(4, 5, 0):
-            self.support_maximize = False
-            self.support_minimize = False
-            self.support_reset = False
-        elif self.version >= Version(4, 4, 1):
-            self.support_maximize = True
-            self.support_minimize = True
-            self.support_reset = False
-        else:
-            logger.debug(" Please install Z3 4.4.1 or newer to get optimization support")
-
-    def _solver_version(self) -> Version:
-        """
-        If we fail to parse the version, we assume z3's output has changed, meaning it's a newer
-        version than what's used now, and therefore ok.
-
-        Anticipated version_cmd_output format: 'Z3 version 4.4.2'
-                                               'Z3 version 4.4.5 - 64 bit - build hashcode $Z3GITHASH'
-        """
-        self._reset()
-        if self._received_version is None:
-            self._send("(get-info :version)")
-            self._received_version = self._recv()
-        key, version = shlex.split(self._received_version[1:-1])
-        try:
-            parsed_version = Version(*map(int, version.split(" ", 1)[0].split(".")))
-        except (ValueError, TypeError) as e:
-            logger.warning(f"Could not parse Z3 version: '{version}'. Assuming compatibility.")
-            parsed_version = Version(float("inf"), float("inf"), float("inf"))
-        return parsed_version
 
     def _start_proc(self):
         """Spawns z3 solver process"""
@@ -304,7 +252,9 @@ class Z3Solver(Solver):
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        # logger.debug('>%s', cmd)
+        if self.debug:
+            logger.debug('>%s', cmd)
+            print (">", cmd)
         try:
             if self._proc.stdout:
                 self._proc.stdout.flush()
@@ -331,6 +281,11 @@ class Z3Solver(Solver):
                 raise SolverException(f"Error in smtlib: {bufl[0]}")
 
         buf = "".join(bufl).strip()
+
+        if self.debug:
+            logger.debug('<%s', buf)
+            print ("<", buf)
+
         if "(error" in bufl[0]:
             raise SolverException(f"Error in smtlib: {bufl[0]}")
 
@@ -677,3 +632,81 @@ class Z3Solver(Solver):
             return values[0]
         else:
             return values
+
+
+class Z3Solver(SMTLIBSolver):
+    def __init__(self):
+        """
+        Build a Z3 solver instance.
+        This is implemented using an external z3 solver (via a subprocess).
+        See https://github.com/Z3Prover/z3
+        """
+        init = [
+            # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
+            # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
+            # free sort and function symbols.
+            "(set-logic QF_AUFBV)",
+            # The declarations and definitions will be scoped
+            "(set-option :global-decls false)",
+            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
+            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
+            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
+            # in test_consensys_benchmark.py.
+            "(set-option :tactic.solve_eqs.context_solve false)",
+        ]
+        command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+        super().__init__(command=command,
+                       init=init,)
+        # To cache what get-info returned; can be directly set when writing tests
+        self._received_version = None
+        self.version = self._solver_version()
+        logger.debug("Z3 version: %s", self.version)
+
+        if self.version >= Version(4, 5, 0):
+            self.support_maximize = False
+            self.support_minimize = False
+            self.support_reset = False
+        elif self.version >= Version(4, 4, 1):
+            self.support_maximize = True
+            self.support_minimize = True
+            self.support_reset = False
+        else:
+            logger.debug(" Please install Z3 4.4.1 or newer to get optimization support")
+
+    def _solver_version(self) -> Version:
+        """
+        If we fail to parse the version, we assume z3's output has changed, meaning it's a newer
+        version than what's used now, and therefore ok.
+
+        Anticipated version_cmd_output format: 'Z3 version 4.4.2'
+                                               'Z3 version 4.4.5 - 64 bit - build hashcode $Z3GITHASH'
+        """
+        self._reset()
+        if self._received_version is None:
+            self._send("(get-info :version)")
+            self._received_version = self._recv()
+        key, version = shlex.split(self._received_version[1:-1])
+        try:
+            parsed_version = Version(*map(int, version.split(" ", 1)[0].split(".")))
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Could not parse Z3 version: '{version}'. Assuming compatibility.")
+            parsed_version = Version(float("inf"), float("inf"), float("inf"))
+        return parsed_version
+
+class YicesSolver(SMTLIBSolver):
+    def __init__(self):
+        init = [
+            "(set-logic QF_AUFBV)",
+        ]
+        command = f"yices-smt2 --timeout={consts.timeout * 1000}  --incremental"
+        super().__init__(command=command,
+                       init=init,)
+        self.support_maximize = False
+        self.support_minimize = False
+        self.support_reset = False
+        self.debug=False
+        RE_GET_EXPR_VALUE_FMT_B = re.compile(
+            r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
+
+        self._get_value_fmt = (RE_GET_EXPR_VALUE_FMT_B, 2)
+

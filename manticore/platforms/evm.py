@@ -9,7 +9,7 @@ from functools import wraps
 from typing import List, Set, Tuple, Union
 from ..platforms.platform import *
 from ..core.smtlib import (
-    Z3Solver,
+    YicesSolver,
     BitVec,
     Array,
     ArrayProxy,
@@ -991,7 +991,7 @@ class EVM(Eventful):
             reps, m = getattr(self, "_mgas", (0, None))
             reps += 1
             if m is None and reps > 10:
-                m = Z3Solver.instance().min(self.constraints, self._gas)
+                m = YicesSolver.instance().min(self.constraints, self._gas)
             self._mgas = reps, m
 
             if m is not None and fee < m:
@@ -1012,7 +1012,7 @@ class EVM(Eventful):
                 elif isinstance(constraint, bool):
                     enough_gas_solutions = (constraint,)  # (self._gas - fee >= 0,)
                 else:
-                    enough_gas_solutions = Z3Solver.instance().get_all_values(
+                    enough_gas_solutions = YicesSolver.instance().get_all_values(
                         self.constraints, constraint
                     )
 
@@ -1042,7 +1042,7 @@ class EVM(Eventful):
             # Try not to OOG. If it may be enough gas we ignore the OOG case.
             # A constraint is added to assert the gas is enough and the OOG state is ignored.
             # explore only when there is enough gas if possible
-            if Z3Solver.instance().can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
+            if YicesSolver.instance().can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
                 self.constraints.add(Operators.UGT(self.gas, fee))
             else:
                 logger.debug(
@@ -1053,7 +1053,7 @@ class EVM(Eventful):
             # OOG soon. If it may NOT be enough gas we ignore the normal case.
             # A constraint is added to assert the gas is NOT enough and the other state is ignored.
             # explore only when there is enough gas if possible
-            if Z3Solver.instance().can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
+            if YicesSolver.instance().can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
                 self.constraints.add(Operators.ULE(self.gas, fee))
                 raise NotEnoughGas()
         else:
@@ -1187,7 +1187,7 @@ class EVM(Eventful):
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
-            should_check_jumpdest_solutions = Z3Solver.instance().get_all_values(
+            should_check_jumpdest_solutions = YicesSolver.instance().get_all_values(
                 self.constraints, should_check_jumpdest
             )
             if len(should_check_jumpdest_solutions) != 1:
@@ -1571,7 +1571,7 @@ class EVM(Eventful):
                 concrete_data.append(simplified.value)
             else:
                 # simplify by solving. probably means that we need to improve simplification
-                solutions = Z3Solver.instance().get_all_values(
+                solutions = YicesSolver.instance().get_all_values(
                     self.constraints, simplified, 2, silent=True
                 )
                 if len(solutions) != 1:
@@ -1691,7 +1691,7 @@ class EVM(Eventful):
         if consts.oog == "complete":
             # gas reduced
             cond = Operators.ULT(self.gas, self._checkpoint_data[1])
-            if not Z3Solver.instance().can_be_true(self.constraints, cond):
+            if not YicesSolver.instance().can_be_true(self.constraints, cond):
                 raise NotEnoughGas()
             self.constraints.add(cond)
 
@@ -1700,7 +1700,7 @@ class EVM(Eventful):
 
         max_size = size
         if issymbolic(max_size):
-            max_size = Z3Solver.instance().max(self.constraints, size)
+            max_size = YicesSolver.instance().max(self.constraints, size)
 
         if calldata_overflow is not None:
             cap = len(self.data) + calldata_overflow
@@ -1748,7 +1748,7 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
-            max_size = Z3Solver.instance().max(self.constraints, size)
+            max_size = YicesSolver.instance().max(self.constraints, size)
         else:
             max_size = size
 
@@ -2154,7 +2154,7 @@ class EVM(Eventful):
         # FIXME for on the known addresses
         if issymbolic(recipient):
             logger.info("Symbolic recipient on self destruct")
-            recipient = Z3Solver.instance().get_value(self.constraints, recipient)
+            recipient = YicesSolver.instance().get_value(self.constraints, recipient)
 
         if recipient not in self.world:
             self.world.create_account(address=recipient)
@@ -2336,7 +2336,7 @@ class EVMWorld(Platform):
                 concrete_data.append(simplified.value)
             else:
                 # simplify by solving. probably means that we need to improve simplification
-                solutions = Z3Solver.instance().get_all_values(
+                solutions = YicesSolver.instance().get_all_values(
                     self.constraints, simplified, 2, silent=True
                 )
                 if len(solutions) != 1:
@@ -2361,7 +2361,7 @@ class EVMWorld(Platform):
             return result[0]
         except Exception as e:
             logger.info("Error! %r", e)
-            data_c = Z3Solver.instance().get_value(self.constraints, data)
+            data_c = YicesSolver.instance().get_value(self.constraints, data)
             return int(sha3.keccak_256(data_c).hexdigest(), 16)
 
     @property
@@ -3021,7 +3021,7 @@ class EVMWorld(Platform):
         if not failed:
             src_balance = self.get_balance(caller)
             enough_balance = Operators.UGE(src_balance, value)
-            enough_balance_solutions = Z3Solver.instance().get_all_values(
+            enough_balance_solutions = YicesSolver.instance().get_all_values(
                 self._constraints, enough_balance
             )
 
@@ -3112,7 +3112,7 @@ class EVMWorld(Platform):
                     # temp_cs.add(storage.get(index) != 0)
                     temp_cs.add(storage.is_known(index))
                     # Query the solver to get all storage indexes with used slots
-                    all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
+                    all_used_indexes = YicesSolver.instance().get_all_values(temp_cs, index)
 
                 if all_used_indexes:
                     stream.write("Storage:\n")

@@ -306,9 +306,9 @@ class StateBase(Eventful):
 
     @property
     def _solver(self):
-        from .smtlib import Z3Solver
+        from .smtlib import YicesSolver
 
-        return Z3Solver.instance()  # solver
+        return YicesSolver.instance()  # solver
 
     def migrate_expression(self, expression):
         if not issymbolic(expression):
