@@ -12,13 +12,41 @@ from manticore.core.smtlib import (
     constant_folder,
     replace,
 )
-from manticore.core.smtlib.solver import Z3Solver, YicesSolver
+from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
 
 # logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
+
+
+class Z3Specific(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
+    def setUp(self):
+        self.solver = Z3Solver.instance()
+
+
+    def test_check_solver_min(self):
+        self.solver._received_version = '(:version "4.4.1")'
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
+
+    def test_check_solver_newer(self):
+        self.solver._received_version = '(:version "4.5.0")'
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+
+    def test_check_solver_long_format(self):
+        self.solver._received_version = '(:version "4.8.6 - build hashcode 78ed71b8de7d")'
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=8, patch=6))
+
+    def test_check_solver_undefined(self):
+        self.solver._received_version = '(:version "78ed71b8de7d")'
+        self.assertTrue(
+            self.solver._solver_version()
+            == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
+        )
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 
 
 class ExpressionTest(unittest.TestCase):
@@ -959,26 +987,6 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(False)))
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(a == b)))
 
-    def test_check_solver_min(self):
-        self.solver._received_version = '(:version "4.4.1")'
-        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
-
-    def test_check_solver_newer(self):
-        self.solver._received_version = '(:version "4.5.0")'
-        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
-
-    def test_check_solver_long_format(self):
-        self.solver._received_version = '(:version "4.8.6 - build hashcode 78ed71b8de7d")'
-        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=8, patch=6))
-
-    def test_check_solver_undefined(self):
-        self.solver._received_version = '(:version "78ed71b8de7d")'
-        self.assertTrue(
-            self.solver._solver_version()
-            == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
-        )
-        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
-
     def test_API(self):
         """
         As we've split up the Constant, Variable, and Operation classes to avoid using multiple inheritance,
@@ -1004,6 +1012,15 @@ class ExpressionTest(unittest.TestCase):
 class ExpressionTestYices(ExpressionTest):
     def setUp(self):
         self.solver = YicesSolver.instance()
+
+class ExpressionTestCVC4(ExpressionTest):
+    def setUp(self):
+        self.solver = CVC4Solver.instance()
+
+
+class ExpressionTestRace(ExpressionTest):
+    def setUp(self):
+        self.solver = RaceSolver.instance()
 
 if __name__ == "__main__":
     unittest.main()

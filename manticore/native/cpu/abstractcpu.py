@@ -13,7 +13,7 @@ from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory, Memory
 from ...core.smtlib import Operators, Constant, issymbolic
 from ...core.smtlib import visitors
-from ...core.smtlib.solver import YicesSolver
+from ...core.smtlib.solver import SelectedSolver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
@@ -908,7 +908,7 @@ class Cpu(Eventful):
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
                         c = struct.pack(
-                            "B", YicesSolver.instance().get_value(self.memory.constraints, c)
+                            "B", SelectedSolver.instance().get_value(self.memory.constraints, c)
                         )
                 elif isinstance(c, Constant):
                     c = bytes([c.value])

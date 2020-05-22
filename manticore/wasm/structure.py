@@ -65,9 +65,9 @@ from wasm.wasmtypes import (
     SEC_UNK,
 )
 
-from ..core.smtlib.solver import YicesSolver
+from ..core.smtlib.solver import SelectedSolver
 
-solver = YicesSolver.instance()
+solver = SelectedSolver.instance()
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
