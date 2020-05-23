@@ -47,13 +47,17 @@ consts.add(
     "optimize", default=True, description="Use smtlib command optimize to find min/max if available"
 )
 
-consts.add("solver", default="cvc4", description="Choose default smtlib2 solver (z3, yices, cvc4, race)")
+consts.add(
+    "solver", default="cvc4", description="Choose default smtlib2 solver (z3, yices, cvc4, race)"
+)
 
 # Regular expressions used by the solver
 RE_GET_EXPR_VALUE_FMT_BIN = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
-RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r'\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)')
+RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r"\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)")
 RE_GET_EXPR_VALUE_FMT_HEX = re.compile(r"\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
-RE_OBJECTIVES_EXPR_VALUE = re.compile(r"\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*", re.MULTILINE | re.DOTALL)
+RE_OBJECTIVES_EXPR_VALUE = re.compile(
+    r"\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*", re.MULTILINE | re.DOTALL
+)
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
 
@@ -73,6 +77,7 @@ class SolverException(SmtlibError):
     """
     Solver exception
     """
+
     pass
 
 
@@ -146,7 +151,7 @@ Version = collections.namedtuple("Version", "major minor patch")
 
 
 class SmtlibProc:
-    def __init__(self, command:str, debug:bool=False):
+    def __init__(self, command: str, debug: bool = False):
         """ Single smtlib interactive process
 
         :param command: the shell command to execute
@@ -177,7 +182,7 @@ class SmtlibProc:
         """
         if self._proc is None:
             return
-        #if it did not finished already
+        # if it did not finished already
         if self._proc.returncode is None:
             self._proc.stdin.close()
             self._proc.stdout.close()
@@ -188,9 +193,9 @@ class SmtlibProc:
         self._proc: Popen = None
 
     def __readline_and_count(self) -> Tuple[str, int, int]:
-        buf = self._proc.stdout.readline() #No timeout enforced here
-        #lparen, rparen = buf.count("("), buf.count(")")
-        lparen, rparen = map(sum, zip( * ((c == '(', c == ')') for c in buf) ))
+        buf = self._proc.stdout.readline()  # No timeout enforced here
+        # lparen, rparen = buf.count("("), buf.count(")")
+        lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
         return buf, lparen, rparen
 
     def send(self, cmd: str) -> None:
@@ -204,7 +209,6 @@ class SmtlibProc:
             print(">", cmd)
         self._proc.stdout.flush()
         self._proc.stdin.write(f"{cmd}\n")
-
 
     def recv(self) -> str:
         """Reads the response from the smtlib solver"""
@@ -234,14 +238,16 @@ class SmtlibProc:
 
 
 class SMTLIBSolver(Solver):
-    def __init__(self,
-                 command:str,
-                 init:List[str]=None,
-                 value_fmt:int=16,
-                 support_reset:bool=False,
-                 support_minmax:bool=False,
-                 support_pushpop:bool=False,
-                 debug:bool=False):
+    def __init__(
+        self,
+        command: str,
+        init: List[str] = None,
+        value_fmt: int = 16,
+        support_reset: bool = False,
+        support_minmax: bool = False,
+        support_pushpop: bool = False,
+        debug: bool = False,
+    ):
 
         """
         Build a smtlib solver instance.
@@ -252,10 +258,14 @@ class SMTLIBSolver(Solver):
 
         # Commands used to initialize smtlib
         self._init = init
-        self._get_value_fmt = ({ 2: RE_GET_EXPR_VALUE_FMT_BIN,
-                                10: RE_GET_EXPR_VALUE_FMT_DEC,
-                                16: RE_GET_EXPR_VALUE_FMT_HEX}[value_fmt],
-                               value_fmt)
+        self._get_value_fmt = (
+            {
+                2: RE_GET_EXPR_VALUE_FMT_BIN,
+                10: RE_GET_EXPR_VALUE_FMT_DEC,
+                16: RE_GET_EXPR_VALUE_FMT_HEX,
+            }[value_fmt],
+            value_fmt,
+        )
 
         self._support_minmax = support_minmax
         self._support_reset = support_reset
@@ -274,7 +284,6 @@ class SMTLIBSolver(Solver):
         for cfg in self._init:
             self._smtlib.send(cfg)
 
-
     def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
         if self._support_reset:
@@ -289,7 +298,6 @@ class SMTLIBSolver(Solver):
 
         if constraints is not None:
             self._smtlib.send(constraints)
-
 
     # UTILS: check-sat get-value
     def _is_sat(self) -> bool:
@@ -317,7 +325,7 @@ class SMTLIBSolver(Solver):
         smtlib = translate_to_smtlib(expression)
         self._smtlib.send(f"(assert {smtlib})")
 
-    #Union[Variable, int, bool, bytes]
+    # Union[Variable, int, bool, bytes]
     def _getvalue(self, expression) -> Union[int, bool, bytes]:
         """
         Ask the solver for one possible assignment for given expression using current set of constraints.
@@ -427,7 +435,7 @@ class SMTLIBSolver(Solver):
                 if time.time() - start > consts.timeout:
                     raise SolverError("Timeout")
 
-            #reset to before the dichotomic search
+            # reset to before the dichotomic search
             self._reset(temp_cs.to_string(related_to=X))
 
             # At this point we know aux is inside [m,M]
@@ -452,7 +460,9 @@ class SMTLIBSolver(Solver):
             raise SolverError("Optimizing error, unsat or unknown core")
 
     @lru_cache(maxsize=32)
-    def get_all_values(self, constraints:ConstraintSet, expression, maxcnt:bool=None, silent:bool=False):
+    def get_all_values(
+        self, constraints: ConstraintSet, expression, maxcnt: bool = None, silent: bool = False
+    ):
         """Returns a list with all the possible values for the symbol x"""
         if not isinstance(expression, Expression):
             return [expression]
@@ -555,7 +565,6 @@ class SMTLIBSolver(Solver):
                 self._reset(temp_cs.to_string())
                 self._smtlib.send(aux.declaration)
 
-
     def get_value(self, constraints: ConstraintSet, *expressions):
         """
         Ask the solver for one possible result of given expressions using
@@ -652,7 +661,15 @@ class Z3Solver(SMTLIBSolver):
         command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
 
         support_minmax, support_reset = self.__autoconfig()
-        super().__init__(command=command, init=init, value_fmt=16, support_minmax=False, support_reset=True, support_pushpop=True, debug=False)
+        super().__init__(
+            command=command,
+            init=init,
+            value_fmt=16,
+            support_minmax=False,
+            support_reset=True,
+            support_pushpop=True,
+            debug=False,
+        )
 
     def __autoconfig(self):
         # To cache what get-info returned; can be directly set when writing tests
@@ -678,12 +695,15 @@ class Z3Solver(SMTLIBSolver):
         try:
             received_version = check_output([f"{consts.z3_bin}", "--version"])
             Z3VERSION = re.compile(
-                r".*(?P<major>([0-9]+))\.(?P<minor>([0-9]+))\.(?P<patch>([0-9]+)).*")
-            m = Z3VERSION.match(received_version.decode('utf-8'))
+                r".*(?P<major>([0-9]+))\.(?P<minor>([0-9]+))\.(?P<patch>([0-9]+)).*"
+            )
+            m = Z3VERSION.match(received_version.decode("utf-8"))
             major, minor, patch = map(int, (m.group("major"), m.group("minor"), m.group("patch")))
             parsed_version = Version(major, minor, patch)
         except (ValueError, TypeError) as e:
-            logger.warning(f"Could not parse Z3 version: '{received_version}'. Assuming compatibility.")
+            logger.warning(
+                f"Could not parse Z3 version: '{received_version}'. Assuming compatibility."
+            )
             parsed_version = Version(float("inf"), float("inf"), float("inf"))
         return parsed_version
 
@@ -692,19 +712,22 @@ class YicesSolver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)"]
         command = f"yices-smt2 --timeout={consts.timeout * 1000}  --incremental"
-        super().__init__(command=command,
-                         init=init,
-                         value_fmt=2,
-                         debug=False,
-                         support_minmax=False,
-                         support_reset=False)
+        super().__init__(
+            command=command,
+            init=init,
+            value_fmt=2,
+            debug=False,
+            support_minmax=False,
+            support_reset=False,
+        )
 
 
 class CVC4Solver(SMTLIBSolver):
     def __init__(self):
-        init = ["(set-logic QF_AUFBV)", '(set-option :produce-models true)']
+        init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"cvc4 --lang=smt2 --incremental"
         super().__init__(command=command, value_fmt=10, init=init)
+
 
 class ddRaceSolver(SMTLIBSolver):
     def __init__(self, *solvers):
@@ -714,16 +737,17 @@ class ddRaceSolver(SMTLIBSolver):
 
     def _race(self, function_name, *args, **kwargs):
         q = Queue()
-        solver_instances = [ x() for x in self._solvers ]
+        solver_instances = [x() for x in self._solvers]
+
         def thread(solver):
             try:
                 x = getattr(solver, function_name)(*args, **kwargs)
                 q.put(x)
             except Exception as e:
-                print (e)
+                print(e)
                 pass
 
-        threads = [ threading.Thread(target=thread, args=(x,)) for x in solver_instances ]
+        threads = [threading.Thread(target=thread, args=(x,)) for x in solver_instances]
         for t in threads:
             t.start()
         result = q.get(block=True, timeout=consts.timeout)
@@ -731,13 +755,10 @@ class ddRaceSolver(SMTLIBSolver):
             try:
                 instance._proc.kill()
             except:
-                pass # already died
+                pass  # already died
         for t in threads:
             t.join()
         return result
 
 
-SelectedSolver = {'cvc4':CVC4Solver,
-                  'yices':YicesSolver,
-                  'z3': Z3Solver,
-                  }[consts.solver]
+SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[consts.solver]
