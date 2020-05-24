@@ -5,7 +5,15 @@ from io import TextIOBase
 from typing import Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import ParseResult, urlparse
 from web3 import Web3
-from ..core.smtlib import Array, ArrayVariable, BitVec, BitVecConstant, BitVecITE, BitVecZeroExtend, ConstraintSet
+from ..core.smtlib import (
+    Array,
+    ArrayVariable,
+    BitVec,
+    BitVecConstant,
+    BitVecITE,
+    BitVecZeroExtend,
+    ConstraintSet,
+)
 from ..ethereum.state import State
 from ..exceptions import EthereumError
 
@@ -69,6 +77,12 @@ class WorldState:
     def new_storage(
         self, constraints: ConstraintSet, address: int, items: Optional[Dict[int, int]] = None
     ) -> Storage:
+        """
+        Private auxiliary function to consruct a new storage object
+        :param constraints: the ConstraintSet with which this Storage object is associated
+        :param address: the address that owns this storageq
+        :param items: optional items to populate the storage with
+        """
         storage = Storage(constraints, address)
         if items is not None:
             for key, value in items.items():
