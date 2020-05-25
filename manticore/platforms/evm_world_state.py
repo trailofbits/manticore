@@ -52,12 +52,7 @@ class Storage:
         self._data[offset] = value
 
     def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
-        items = []
-        array = self._data.array
-        while not isinstance(array, ArrayVariable):
-            items.append((array.index, array.value))
-            array = array.array
-        return items
+        return self._data.get_items()
 
     def dump(self, stream: TextIOBase, state: State):
         concrete_indexes = set()
