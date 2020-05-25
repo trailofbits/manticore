@@ -1,5 +1,13 @@
+from collections import namedtuple
+from typing import Any, NamedTuple
+
 from ..core.state import StateBase, Concretize, TerminateState
 from ..native.memory import ConcretizeMemory, MemoryException
+
+
+class CheckpointData(NamedTuple):
+    pc: Any
+    last_pc: Any
 
 
 class State(StateBase):
@@ -17,6 +25,14 @@ class State(StateBase):
         """
         return self._platform.current.memory
 
+    def _rollback(self, checkpoint_data: CheckpointData) -> None:
+        """
+        Rollback state to previous values in checkpoint_data
+        """
+        # Keep in this form to make sure we don't miss restoring any newly added
+        # data. Make sure the order is correct
+        self.cpu.PC, self.cpu._last_pc = checkpoint_data
+
     def execute(self):
         """
         Perform a single step on the current state
@@ -25,28 +41,36 @@ class State(StateBase):
             ConcretizeRegister,
         )  # must be here, otherwise we get circular imports
 
+        checkpoint_data = CheckpointData(pc=self.cpu.PC, last_pc=self.cpu._last_pc)
         try:
             result = self._platform.execute()
 
         # Instead of State importing SymbolicRegisterException and SymbolicMemoryException
         # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ??
         # We are forcing State to have abstractcpu
-        except ConcretizeRegister as e:
+        except ConcretizeRegister as exc:
+            # Need to define local variable to use in closure
+            e = exc
             expression = self.cpu.read_register(e.reg_name)
 
-            def setstate(state, value):
-                state.cpu.write_register(setstate.e.reg_name, value)
+            def setstate(state: State, value):
+                state.cpu.write_register(e.reg_name, value)
 
-            setstate.e = e
+            self._rollback(checkpoint_data)
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
-        except ConcretizeMemory as e:
+        except ConcretizeMemory as exc:
+            # Need to define local variable to use in closure
+            e = exc
             expression = self.cpu.read_int(e.address, e.size)
 
-            def setstate(state, value):
-                state.cpu.write_int(setstate.e.address, value, setstate.e.size)
+            def setstate(state: State, value):
+                state.cpu.write_int(e.address, value, e.size)
 
-            setstate.e = e
+            self._rollback(checkpoint_data)
             raise Concretize(str(e), expression=expression, setstate=setstate, policy=e.policy)
+        except Concretize as e:
+            self._rollback(checkpoint_data)
+            raise e
         except MemoryException as e:
             raise TerminateState(str(e), testcase=True)
 

@@ -89,7 +89,9 @@ class ConcretizeRegister(CpuException):
     Raised when a symbolic register needs to be concretized.
     """
 
-    def __init__(self, cpu, reg_name, message=None, policy="MINMAX"):
+    def __init__(
+        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
+    ):
         self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
