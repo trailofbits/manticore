@@ -15,6 +15,7 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
 import os
+import shutil
 import threading
 from queue import Queue
 import collections
@@ -791,19 +792,18 @@ class SelectedSolver:
     def instance(cls):
         if consts.solver == consts.solver.auto:
             if cls.choice is None:
-                if os.path.exists(consts.yices_bin):
+                if shutil.which(consts.yices_bin):
                     cls.choice = consts.solver.yices
-                elif os.path.exists(consts.z3_bin):
+                elif shutil.which(consts.z3_bin):
                     cls.choice = consts.solver.z3
-                elif os.path.exists(consts.cvc4_bin):
+                elif shutil.which(consts.cvc4_bin):
                     cls.choice = consts.solver.cvc4
                 else:
-                    raise SolverException(f"No Solver not found. Install one ({const.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}).")
+                    raise SolverException(f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}).")
         else:
             cls.choice = consts.solver
 
         SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
-        print ("Using", SelectedSolver)
         return SelectedSolver.instance()
 
 
