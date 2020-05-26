@@ -21,7 +21,7 @@ import collections
 import shlex
 import time
 from functools import lru_cache
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Sequence
 from subprocess import PIPE, Popen, check_output
 import re
 from . import operators as Operators
@@ -157,7 +157,7 @@ class SmtlibProc:
         :param command: the shell command to execute
         :param debug: log all messaging
         """
-        self._proc = None
+        self._proc: Optional[Popen] = None
         self._command = command
         self._debug = debug
 
@@ -190,9 +190,11 @@ class SmtlibProc:
             self._proc.kill()
             # Wait for termination, to avoid zombies.
             self._proc.wait()
-        self._proc: Popen = None
+        self._proc = None
 
-    def __readline_and_count(self) -> Tuple[str, int, int]:
+    def __readline_and_count(self):
+        assert self._proc
+        assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # lparen, rparen = buf.count("("), buf.count(")")
         lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
@@ -204,6 +206,9 @@ class SmtlibProc:
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
+        assert self._proc
+        assert self._proc.stdout
+        assert self._proc.stdin
         if self._debug:
             logger.debug(">%s", cmd)
             print(">", cmd)
@@ -230,8 +235,8 @@ class SmtlibProc:
 
     def _restart(self) -> None:
         """Auxiliary to start or restart the external solver"""
-        self._stop()
-        self._start()
+        self.stop()
+        self.start()
 
     def is_started(self):
         return self._proc != None
@@ -241,7 +246,7 @@ class SMTLIBSolver(Solver):
     def __init__(
         self,
         command: str,
-        init: List[str] = None,
+        init: Sequence[str] = None,
         value_fmt: int = 16,
         support_reset: bool = False,
         support_minmax: bool = False,
@@ -257,6 +262,8 @@ class SMTLIBSolver(Solver):
         self._smtlib: SmtlibProc = SmtlibProc(command, debug)
 
         # Commands used to initialize smtlib
+        if init is None:
+            init = tuple()
         self._init = init
         self._get_value_fmt = (
             {
@@ -272,12 +279,13 @@ class SMTLIBSolver(Solver):
         self._support_pushpop = support_pushpop
 
         if not self._support_pushpop:
-            self._push = self._pop = None
+            setattr(self, "_push", None)
+            setattr(self, "_pop", None)
 
         if self._support_minmax and consts.optimize:
-            self.optimize = self._optimize_fancy
+            setattr(self, "optimize", self._optimize_fancy)
         else:
-            self.optimize = self._optimize_generic
+            setattr(self, "optimize", self._optimize_generic)
 
         self._smtlib.start()
         # run solver specific initializations
@@ -326,6 +334,18 @@ class SMTLIBSolver(Solver):
         self._smtlib.send(f"(assert {smtlib})")
 
     # Union[Variable, int, bool, bytes]
+    def __getvalue_bv(self, expression_str):
+        self._smtlib.send(f"(get-value ({expression_str}))")
+        pattern, base = self._get_value_fmt
+        m = pattern.match(self._smtlib.recv())
+        expr, value = m.group("expr"), m.group("value")
+        return int(value, base)
+
+    def __getvalue_bool(self, expression_str):
+        self._smtlib.send(f"(get-value ({expression_str}))")
+        ret = self._smtlib.recv()
+        return {"true": True, "false": False}[ret[2:-2].split(" ")[1]]
+
     def _getvalue(self, expression) -> Union[int, bool, bytes]:
         """
         Ask the solver for one possible assignment for given expression using current set of constraints.
@@ -340,23 +360,19 @@ class SMTLIBSolver(Solver):
             result = bytearray()
             for c in expression:
                 expression_str = translate_to_smtlib(c)
-                self._smtlib.send(f"(get-value ({expression_str}))")
-                response = self._recv().split(expression_str)[1].strip(")")
-                pattern, base = self._get_value_fmt
-                m = pattern.match(response)
-                expr, value = m.group("expr"), m.group("value")
-                result.append(int(value, base))
+                # self._smtlib.send(f"(get-value ({expression_str}))")
+                # response = self._smtlib.recv().split(expression_str)[1].strip(")")
+                # pattern, base = self._get_value_fmt
+                # m = pattern.match(response)
+                # expr, value = m.group("expr"), m.group("value")
+                # result.append(int(value, base))
+                result.append(self.__getvalue_bv(expression_str))
             return bytes(result)
         else:
-            self._smtlib.send(f"(get-value ({expression.name}))")
-            ret = self._smtlib.recv()
-            if isinstance(expression, Bool):
-                return {"true": True, "false": False}[ret[2:-2].split(" ")[1]]
-            elif isinstance(expression, BitVec):
-                pattern, base = self._get_value_fmt
-                m = pattern.match(ret)
-                expr, value = m.group("expr"), m.group("value")
-                return int(value, base)
+            if isinstance(expression, BoolVariable):
+                return self.__getvalue_bool(expression.name)
+            elif isinstance(expression, BitVecVariable):
+                return self.__getvalue_bv(expression.name)
 
         raise NotImplementedError("_getvalue only implemented for Bool, BitVec and Array")
 
@@ -398,6 +414,8 @@ class SMTLIBSolver(Solver):
         # TODO: consider adding a mode to return best known value on timeout
         assert goal in ("maximize", "minimize")
         operation = {"maximize": Operators.UGE, "minimize": Operators.ULE}[goal]
+
+        last_value: Optional[Union[int, bool, bytes]] = None
 
         start = time.time()
         with constraints as temp_cs:
@@ -540,7 +558,7 @@ class SMTLIBSolver(Solver):
                 if _status not in ("sat", "unsat", "unknown"):
                     # Minimize (or Maximize) sometimes prints the objective before the status
                     # This will be a line like NAME |-> VALUE
-                    maybe_sat = self._recv()
+                    maybe_sat = self._smtlib.recv()
                     if maybe_sat == "sat":
                         match = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
                         if match:
@@ -597,12 +615,13 @@ class SMTLIBSolver(Solver):
                         )
 
                     for i in range(expression.index_max):
-                        self._smtlib.send("(get-value (%s))" % var[i].name)
-                        ret = self._smtlib.recv()
-                        pattern, base = self._get_value_fmt
-                        m = pattern.match(ret)
-                        expr, value = m.group("expr"), m.group("value")
-                        result.append(int(value, base))
+                        # self._smtlib.send("(get-value (%s))" % var[i].name)
+                        # ret = self._smtlib.recv()
+                        # pattern, base = self._get_value_fmt
+                        # m = pattern.match(ret)
+                        # expr, value = m.group("expr"), m.group("value")
+                        # result.append(int(value, base))
+                        result.append(self.__getvalue_bv(var[i].name))
                     values.append(bytes(result))
                     if time.time() - start > consts.timeout:
                         raise SolverError("Timeout")
@@ -617,18 +636,10 @@ class SMTLIBSolver(Solver):
                         "Solver could not find a value for expression under current constraint set"
                     )
 
-                self._smtlib.send("(get-value (%s))" % var.name)
-                ret = self._smtlib.recv()
-                if not (ret.startswith("((") and ret.endswith("))")):
-                    raise SolverError("SMTLIB error parsing response: %s" % ret)
-
                 if isinstance(expression, Bool):
-                    values.append({"true": True, "false": False}[ret[2:-2].split(" ")[1]])
+                    values.append(self.__getvalue_bool(var.name))
                 if isinstance(expression, BitVec):
-                    pattern, base = self._get_value_fmt
-                    m = pattern.match(ret)
-                    expr, value = m.group("expr"), m.group("value")
-                    values.append(int(value, base))
+                    values.append(self.__getvalue_bv(var.name))
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
 
@@ -698,11 +709,13 @@ class Z3Solver(SMTLIBSolver):
                 r".*(?P<major>([0-9]+))\.(?P<minor>([0-9]+))\.(?P<patch>([0-9]+)).*"
             )
             m = Z3VERSION.match(received_version.decode("utf-8"))
-            major, minor, patch = map(int, (m.group("major"), m.group("minor"), m.group("patch")))
+            major, minor, patch = map(
+                int, (m.group("major"), m.group("minor"), m.group("patch"))  # type: ignore
+            )
             parsed_version = Version(major, minor, patch)
         except (ValueError, TypeError) as e:
             logger.warning(
-                f"Could not parse Z3 version: '{received_version}'. Assuming compatibility."
+                f"Could not parse Z3 version: '{str(received_version)}'. Assuming compatibility."
             )
             parsed_version = Version(float("inf"), float("inf"), float("inf"))
         return parsed_version
@@ -716,7 +729,7 @@ class YicesSolver(SMTLIBSolver):
             command=command,
             init=init,
             value_fmt=2,
-            debug=False,
+            debug=True,
             support_minmax=False,
             support_reset=False,
         )

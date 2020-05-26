@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch, mock_open
 
 from manticore.core.smtlib import (
     ConstraintSet,
@@ -21,6 +22,7 @@ from manticore.utils.helpers import pickle_dumps
 #                level = logging.DEBUG)
 
 
+'''
 class Z3Specific(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -28,8 +30,14 @@ class Z3Specific(unittest.TestCase):
         self.solver = Z3Solver.instance()
 
 
-    def test_check_solver_min(self):
-        self.solver._received_version = '(:version "4.4.1")'
+    @patch('subprocess.check_output', mock_open())
+    def test_check_solver_min(self, mock_check_output):
+        mock_check_output.return_value = ("output", "Error")
+        #mock_check_output.return_value='(:version "4.4.1")'
+        #mock_function = create_autospec(function, return_value='(:version "4.4.1")')
+        #with patch.object(subprocess, 'check_output' , return_value='(:version "4.4.1")'):
+        #test_patch.return_value = '(:version "4.4.1")'
+        print (self.solver._solver_version())
         self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
 
     def test_check_solver_newer(self):
@@ -43,11 +51,12 @@ class Z3Specific(unittest.TestCase):
     def test_check_solver_undefined(self):
         self.solver._received_version = '(:version "78ed71b8de7d")'
         self.assertTrue(
+
             self.solver._solver_version()
             == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
         )
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
-
+'''
 
 class ExpressionTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -1009,18 +1018,16 @@ class ExpressionTest(unittest.TestCase):
             for attr in attrs:
                 self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
 
+
 class ExpressionTestYices(ExpressionTest):
     def setUp(self):
         self.solver = YicesSolver.instance()
+
 
 class ExpressionTestCVC4(ExpressionTest):
     def setUp(self):
         self.solver = CVC4Solver.instance()
 
-
-class ExpressionTestRace(ExpressionTest):
-    def setUp(self):
-        self.solver = RaceSolver.instance()
 
 if __name__ == "__main__":
     unittest.main()
