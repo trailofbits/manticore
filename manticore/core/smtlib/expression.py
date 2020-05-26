@@ -18,8 +18,8 @@ class ExpressionException(SmtlibError):
 class Expression(object):
     """ Abstract taintable Expression. """
 
-    __slots__:Tuple[str, ...] = ()
-    xslots:Tuple[str, ...] = ("_taint",)
+    __slots__: Tuple[str, ...] = ()
+    xslots: Tuple[str, ...] = ("_taint",)
 
     def __init__(self, taint: Union[tuple, frozenset] = (), **kwargs):
         assert not kwargs
@@ -111,6 +111,7 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 
     return arg
 
+
 class Variable(Expression):
     __slots__ = ()
     xslots: Tuple[str, ...] = ("_name",)
@@ -152,7 +153,7 @@ class Constant(Expression):
 
 class Operation(Expression):
     __slots__ = ()
-    xslots:Tuple[str, ...] = ("_operands",)
+    xslots: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, operands: Tuple[Expression, ...], taint=None, **kwargs):
         # assert len(operands) > 0
@@ -224,13 +225,16 @@ class BoolVariable(Bool, Variable):
     def declaration(self):
         return f"(declare-fun {self.name} () Bool)"
 
+
 class BoolConstant(Bool, Constant):
     __slots__ = Bool.xslots + Constant.xslots
+
     def __init__(self, value, **kwargs):
         super().__init__(value=value, **kwargs)
 
     def __bool__(self):
         return self._value
+
 
 class BoolOperation(Operation, Bool):
     __slots__ = ()
@@ -239,24 +243,28 @@ class BoolOperation(Operation, Bool):
 
 class BoolNot(BoolOperation):
     __slots__ = BoolOperation.xslots
+
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
 
 class BoolAnd(BoolOperation):
     __slots__ = BoolOperation.xslots
+
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
 
 class BoolOr(BoolOperation):
     __slots__ = BoolOperation.xslots
+
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
 
 class BoolXor(BoolOperation):
     __slots__ = BoolOperation.xslots
+
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
@@ -665,7 +673,7 @@ class BoolEqual(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
         if isinstance(a, BitVec) or isinstance(b, BitVec):
             assert a.size == b.size
-        super().__init__(operands=(a,b), **kwargs)
+        super().__init__(operands=(a, b), **kwargs)
 
 
 class GreaterThan(BoolOperation):
@@ -686,7 +694,7 @@ class GreaterOrEqual(BoolOperation):
 class UnsignedLessThan(BoolOperation):
     __slots__ = BitVecOperation.xslots
 
-    def __init__(self, a, b,  **kwargs):
+    def __init__(self, a, b, **kwargs):
         super().__init__(operands=(a, b), **kwargs)
 
 
@@ -992,7 +1000,7 @@ class ArrayStore(ArrayOperation):
 
 
 class ArraySlice(Array):
-    __slots__ = Array.xslots+("_array", "_slice_offset", "_slice_size")
+    __slots__ = Array.xslots + ("_array", "_slice_offset", "_slice_size")
 
     def __init__(
         self, array: Union["Array", "ArrayProxy"], offset: int, size: int, *args, **kwargs
@@ -1358,12 +1366,13 @@ class BitVecSignExtend(BitVecOperation):
 
     def __init__(self, operand: "BitVec", size_dest: int, *args, **kwargs):
         assert size_dest >= operand.size
-        super().__init__(size=size_dest, operands=(operand,),  **kwargs)
+        super().__init__(size=size_dest, operands=(operand,), **kwargs)
         self.extend = size_dest - operand.size
 
 
 class BitVecZeroExtend(BitVecOperation):
     __slots__ = BitVecOperation.xslots + ("extend",)
+
     def __init__(self, size_dest: int, operand: "BitVec", *args, **kwargs):
         assert size_dest >= operand.size
         super().__init__(size=size_dest, operands=(operand,), **kwargs)
@@ -1372,6 +1381,7 @@ class BitVecZeroExtend(BitVecOperation):
 
 class BitVecExtract(BitVecOperation):
     __slots__ = BitVecOperation.xslots + ("_begining", "_end")
+
     def __init__(self, operand: "BitVec", offset: int, size: int, *args, **kwargs):
         assert offset >= 0 and offset + size <= operand.size
         super().__init__(size=size, operands=(operand,), **kwargs)
@@ -1416,6 +1426,6 @@ class BitVecITE(BitVecOperation):
         super().__init__(size=size, operands=(condition, true_value, false_value), **kwargs)
 
 
-#Constant = (BitVecConstant, BoolConstant)
-#Variable = (BitVecVariable, BoolVariable, ArrayVariable)
-#Operation = (BitVecOperation, BoolOperation, ArrayOperation, ArraySelect)
+# Constant = (BitVecConstant, BoolConstant)
+# Variable = (BitVecVariable, BoolVariable, ArrayVariable)
+# Operation = (BitVecOperation, BoolOperation, ArrayOperation, ArraySelect)
