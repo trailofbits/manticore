@@ -6,7 +6,8 @@ from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
 from ..core.smtlib import issymbolic, BitVec
 from ..core.smtlib.solver import Z3Solver
-from ..core.smtlib.operators import AND, ITEBV, ZEXTEND
+from ..core.smtlib.operators import AND, OR, ITEBV, ZEXTEND, NOT
+from ..core.state import Concretize
 from typing import Union, Deque
 from collections import deque
 
@@ -229,26 +230,52 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     offset = 0
     src_val = cpu.read_int(src, 8)
     dst_val = cpu.read_int(dst, 8)
-    cond = True
-    while not is_definitely_NULL(src_val, constrs):
-        print(f"{offset}: {src} -> {dst}")  # Debugging print to be removed later
-        if can_be_NULL(src_val, constrs):
-            # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
-            new_cond = AND(cond, src_val != 0)
-            src_val = ITEBV(8, src_val != 0, src_val, 0)  # add an ITE just for the NULL
-            src_val = ITEBV(8, cond, src_val, dst_val)
-            cpu.write_int(dst + offset, src_val, 8)
-            cond = new_cond
-        else:
-            # If it can't be NULL just build the ITE
-            src_val = ITEBV(8, cond, src_val, dst_val)
-            cpu.write_int(dst + offset, src_val, 8)
-        offset += 1
-        src_val = cpu.read_int(src + offset, 8)
-        dst_val = cpu.read_int(dst + offset, 8)
+    cond = False  # True
+    crash = False
+    write_list = []
+    if "strcpy" not in state.context:
+        while not is_definitely_NULL(src_val, constrs):
+            print(f"{offset}: {src} -> {dst}")  # Debugging print to be removed later
+            if can_be_NULL(src_val, constrs):
+                # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
+                new_cond = OR(cond, src_val == 0)  # AND(cond, src_val != 0)
+                src_val = ITEBV(8, src_val != 0, src_val, 0)  # add an ITE just for the NULL
+                src_val = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val)
+                # cpu.write_int(dst + offset, src_val, 8)
+                write_list.append(src_val)
+                cond = new_cond
+            else:
+                # If it can't be NULL just build the ITE
+                src_val = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val)
+                # cpu.write_int(dst + offset, src_val, 8)
+                write_list.append(src_val)
+            offset += 1
 
-    # Build ITE Tree for NULL byte
-    src_val = ITEBV(8, cond, 0, dst_val)
-    cpu.write_int(dst + offset, src_val, 8)
+            # Read next byte and crash if src or dst is unreadable/writeable
+            if not state.mem.access_ok(src + offset, "r", True) or not state.mem.access_ok(
+                dst + offset, "rw", True
+            ):
+                crash = True and issymbolic(src_val)
+                break
+            else:
+                src_val = cpu.read_int(src + offset, 8)
+                dst_val = cpu.read_int(dst + offset, 8)
+        state.context["strcpy"] = (crash, write_list)
 
+    crash, write_list = state.context["strcpy"]
+    if crash:
+
+        def setstate(state, solution):
+            crash, write_list = state.context["strcpy"]
+            state.context["strcpy"] = solution, write_list
+
+        raise Concretize("Forking on crash strcpy", expression=cond, policy="ALL")
+    else:
+        # Build ITE Tree for NULL byte
+        null = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, 0, dst_val)
+        for offset, write_byte in enumerate(write_list):
+            cpu.write_int(dst + offset, write_byte, 8)
+        cpu.write_int(dst + offset, null, 8)
+
+    del state.context["strcpy"]
     return ret
