@@ -1811,7 +1811,6 @@ class EthPluginTests(unittest.TestCase):
         class X(Plugin):
             def will_evm_execute_instruction_callback(self, state, instruction, args):
                 is_main = self.manticore.is_main()
-                is_running = self.manticore.is_running
                 with self.locked_context() as ctx:
                     ctx['is_main'] = ctx.get('is_main', False) or is_main
 
