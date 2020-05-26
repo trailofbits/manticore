@@ -729,7 +729,7 @@ class YicesSolver(SMTLIBSolver):
             command=command,
             init=init,
             value_fmt=2,
-            debug=True,
+            debug=False,
             support_minmax=False,
             support_reset=False,
         )
