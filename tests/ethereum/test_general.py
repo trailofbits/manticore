@@ -1811,8 +1811,9 @@ class EthPluginTests(unittest.TestCase):
         class X(Plugin):
             def will_evm_execute_instruction_callback(self, state, instruction, args):
                 is_main = self.manticore.is_main()
+                is_running = self.manticore.is_running()
                 with self.locked_context() as ctx:
-                    ctx['is_main'] = ctx.get('is_main', False) or is_main
+                    ctx['is_main'] = ctx.get('is_main', False) or (is_main and not is_running)
 
         from manticore.utils import config
         consts = config.get_group("core")
@@ -1826,9 +1827,9 @@ class EthPluginTests(unittest.TestCase):
             creator_account = m.create_account(balance=10000000000)
             contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
 
-            self.assertTrue(m.is_main())
+            self.assertTrue(m.is_main() and not m.is_running())
             #From the plugin callback is never main
-            self.assertFalse(x.context.get('is_main', True))
+            self.assertFalse(x.context.get('is_main', False))
 
 
 
