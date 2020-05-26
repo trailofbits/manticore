@@ -239,7 +239,7 @@ class SmtlibProc:
         self.start()
 
     def is_started(self):
-        return self._proc != None
+        return self._proc is not None
 
 
 class SMTLIBSolver(Solver):
@@ -767,7 +767,7 @@ class ddRaceSolver(SMTLIBSolver):
         for instance in solver_instances:
             try:
                 instance._proc.kill()
-            except:
+            except Exception:
                 pass  # already died
         for t in threads:
             t.join()
