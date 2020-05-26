@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 class ConfigError(Exception):
     pass
 
+
 class ConfigEnum(Enum):
     """Used as configuration constant for choosing flavors"""
 

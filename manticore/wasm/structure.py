@@ -68,7 +68,6 @@ from wasm.wasmtypes import (
 from ..core.smtlib.solver import SelectedSolver
 
 
-
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 

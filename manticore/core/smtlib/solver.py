@@ -33,12 +33,15 @@ from ...utils import config
 from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
+
 class SolverType(config.ConfigEnum):
     """Used as configuration constant for choosing solver flavor"""
+
     z3 = "z3"
     cvc4 = "cvc4"
     yices = "yices"
     auto = "auto"
+
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -60,7 +63,9 @@ consts.add(
 )
 
 consts.add(
-    "solver", default=SolverType.auto, description="Choose default smtlib2 solver (z3, yices, cvc4, race)"
+    "solver",
+    default=SolverType.auto,
+    description="Choose default smtlib2 solver (z3, yices, cvc4, race)",
 )
 
 # Regular expressions used by the solver
@@ -785,6 +790,7 @@ class ddRaceSolver(SMTLIBSolver):
             t.join()
         return result
 
+
 class SelectedSolver:
     choice = None
 
@@ -799,11 +805,11 @@ class SelectedSolver:
                 elif shutil.which(consts.cvc4_bin):
                     cls.choice = consts.solver.cvc4
                 else:
-                    raise SolverException(f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}).")
+                    raise SolverException(
+                        f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin})."
+                    )
         else:
             cls.choice = consts.solver
 
         SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
         return SelectedSolver.instance()
-
-
