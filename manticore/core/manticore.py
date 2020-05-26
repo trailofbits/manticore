@@ -375,8 +375,6 @@ class ManticoreBase(Eventful):
         self._main_id = (consts.mprocessing, os.getpid(), threading.current_thread().ident)
 
     def is_main(self):
-        if self._main_id[0].value == 'single' and self.is_running():
-            return False
         return tuple(self._main_id[1:]) == (os.getpid(), threading.current_thread().ident)
 
     @sync
