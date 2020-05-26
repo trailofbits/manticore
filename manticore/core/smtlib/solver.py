@@ -48,7 +48,7 @@ consts.add(
 )
 
 consts.add(
-    "solver", default="cvc4", description="Choose default smtlib2 solver (z3, yices, cvc4, race)"
+    "solver", default="yices", description="Choose default smtlib2 solver (z3, yices, cvc4, race)"
 )
 
 # Regular expressions used by the solver
