@@ -18,10 +18,11 @@ class ExpressionException(SmtlibError):
 class Expression(object):
     """ Abstract taintable Expression. """
 
-    __slots__ = ()
-    xslots = ("_taint",)
+    __slots__:Tuple[str, ...] = ()
+    xslots:Tuple[str, ...] = ("_taint",)
 
-    def __init__(self, taint: Union[tuple, frozenset] = ()):
+    def __init__(self, taint: Union[tuple, frozenset] = (), **kwargs):
+        assert not kwargs
         super().__init__()
         self._taint = frozenset(taint)
 
@@ -112,7 +113,7 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 
 class Variable(Expression):
     __slots__ = ()
-    xslots = ("_name",)
+    xslots: Tuple[str, ...] = ("_name",)
 
     def __init__(self, name: str, **kwargs):
         super().__init__(**kwargs)
@@ -138,7 +139,7 @@ class Variable(Expression):
 
 class Constant(Expression):
     __slots__ = ()
-    xslots = ("_value",)
+    xslots: Tuple[str, ...] = ("_value",)
 
     def __init__(self, value: Union[bool, int], **kwargs):
         super().__init__(**kwargs)
@@ -151,9 +152,9 @@ class Constant(Expression):
 
 class Operation(Expression):
     __slots__ = ()
-    xslots = ("_operands",)
+    xslots:Tuple[str, ...] = ("_operands",)
 
-    def __init__(self, operands: Tuple[Expression], taint=None, **kwargs):
+    def __init__(self, operands: Tuple[Expression, ...], taint=None, **kwargs):
         # assert len(operands) > 0
         # assert all(isinstance(x, Expression) for x in operands)
         self._operands = operands
@@ -172,7 +173,7 @@ class Operation(Expression):
 ###############################################################################
 # Booleans
 class Bool(Expression):
-    __slots__:Tuple[str] = tuple()
+    __slots__: Tuple[str, ...] = tuple()
 
     def cast(self, value: Union["Bool", int, bool], **kwargs) -> Union["BoolConstant", "Bool"]:
         if isinstance(value, Bool):
@@ -269,7 +270,7 @@ class BoolITE(BoolOperation):
 
 class BitVec(Expression):
     __slots__ = ()
-    xslots = Expression.xslots + ("size",)
+    xslots: Tuple[str, ...] = Expression.xslots + ("size",)
     """ This adds a bitsize to the Expression class """
 
     def __init__(self, size=None, **kwargs):
@@ -517,9 +518,6 @@ class BitVecConstant(BitVec, Constant):
     def value(self):
         return self._value
 
-
-class BitVecOperation(BitVec):
-    __slots__ = ["_operands"]
 
 class BitVecOperation(BitVec, Operation):
     xslots = BitVec.xslots + Operation.xslots
