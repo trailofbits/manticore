@@ -26,6 +26,16 @@ logger = logging.getLogger(__name__)
 class ConfigError(Exception):
     pass
 
+class ConfigEnum(Enum):
+    """Used as configuration constant for choosing flavors"""
+
+    def title(self):
+        return self._name_.title()
+
+    @classmethod
+    def from_string(cls, name):
+        return cls.__members__[name]
+
 
 class _Var:
     def __init__(self, name: str = "", default=None, description: str = None, defined: bool = True):

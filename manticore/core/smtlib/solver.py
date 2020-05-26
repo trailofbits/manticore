@@ -32,6 +32,13 @@ from ...utils import config
 from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
+class SolverType(config.ConfigEnum):
+    """Used as configuration constant for choosing solver flavor"""
+    z3 = "z3"
+    cvc4 = "cvc4"
+    yices = "yices"
+    auto = "auto"
+
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
 consts.add("timeout", default=240, description="Timeout, in seconds, for each Z3 invocation")
@@ -41,14 +48,18 @@ consts.add(
     default=10000,
     description="Maximum solutions to provide when solving for all values",
 )
-consts.add("z3_bin", default="z3", description="Z3 binary to use")
+consts.add("z3_bin", default="z3", description="Z3 solver binary to use")
+consts.add("cvc4_bin", default="cvc4", description="CVC4 solver binary to use")
+consts.add("yices_bin", default="yices-smt2", description="Yices solver binary to use")
+
+
 consts.add("defaultunsat", default=True, description="Consider solver timeouts as unsat core")
 consts.add(
     "optimize", default=True, description="Use smtlib command optimize to find min/max if available"
 )
 
 consts.add(
-    "solver", default="yices", description="Choose default smtlib2 solver (z3, yices, cvc4, race)"
+    "solver", default=SolverType.auto, description="Choose default smtlib2 solver (z3, yices, cvc4, race)"
 )
 
 # Regular expressions used by the solver
@@ -724,7 +735,7 @@ class Z3Solver(SMTLIBSolver):
 class YicesSolver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)"]
-        command = f"yices-smt2 --timeout={consts.timeout * 1000}  --incremental"
+        command = f"{consts.yices_bin} --timeout={consts.timeout * 1000}  --incremental"
         super().__init__(
             command=command,
             init=init,
@@ -738,7 +749,7 @@ class YicesSolver(SMTLIBSolver):
 class CVC4Solver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"cvc4 --lang=smt2 --incremental"
+        command = f"{consts.cvc4_bin} --lang=smt2 --incremental"
         super().__init__(command=command, value_fmt=10, init=init)
 
 
@@ -773,5 +784,26 @@ class ddRaceSolver(SMTLIBSolver):
             t.join()
         return result
 
+class SelectedSolver:
+    choice = None
 
-SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[consts.solver]
+    @classmethod
+    def instance(cls):
+        if consts.solver == consts.solver.auto:
+            if cls.choice is None:
+                if os.path.exists(consts.yices_bin):
+                    cls.choice = consts.solver.yices
+                elif os.path.exists(consts.z3_bin):
+                    cls.choice = consts.solver.z3
+                elif os.path.exists(consts.cvc4_bin):
+                    cls.choice = consts.solver.cvc4
+                else:
+                    raise SolverException(f"No Solver not found. Install one ({const.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}).")
+        else:
+            cls.choice = consts.solver
+
+        SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
+        print ("Using", SelectedSolver)
+        return SelectedSolver.instance()
+
+

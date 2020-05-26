@@ -67,7 +67,7 @@ from wasm.wasmtypes import (
 
 from ..core.smtlib.solver import SelectedSolver
 
-solver = SelectedSolver.instance()
+
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
@@ -732,6 +732,7 @@ class Store:
 
 def _eval_maybe_symbolic(constraints, expression) -> bool:
     if issymbolic(expression):
+        solver = SelectedSolver.instance()
         return solver.must_be_true(constraints, expression)
     return True if expression else False
 
