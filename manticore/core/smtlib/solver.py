@@ -377,12 +377,6 @@ class SMTLIBSolver(Solver):
             result = bytearray()
             for c in expression:
                 expression_str = translate_to_smtlib(c)
-                # self._smtlib.send(f"(get-value ({expression_str}))")
-                # response = self._smtlib.recv().split(expression_str)[1].strip(")")
-                # pattern, base = self._get_value_fmt
-                # m = pattern.match(response)
-                # expr, value = m.group("expr"), m.group("value")
-                # result.append(int(value, base))
                 result.append(self.__getvalue_bv(expression_str))
             return bytes(result)
         else:
