@@ -62,6 +62,7 @@ setup(
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
-    entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
+    entry_points={"console_scripts": ["manticore = manticore.__main__:main",
+                                      "manticore_verifier = manticore.ethereum.verifier.__main__:main"]},
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
 )
