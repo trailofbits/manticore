@@ -13,7 +13,7 @@ import tempfile
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib import Z3Solver
-from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib.expression import BitVecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import (
@@ -125,7 +125,7 @@ class EthAbiTests(unittest.TestCase):
     def test_dyn_bytes(self):
         d = [
             b"AAAA",  # function hash
-            self._pack_int_to_32(32),  # offset to data start
+            self._pack_int_to_32(32),  # offset to data start1350
             self._pack_int_to_32(30),  # data start; # of elements
             b"Z" * 30,
             b"\x00" * 2,
@@ -1347,7 +1347,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = BitVec(256)
+        self.bv = BitVecVariable(size=256, name='bv')
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"

@@ -783,6 +783,8 @@ def to_constant(expression):
         Iff the expression can be simplified to a Constant get the actual concrete value.
         This discards/ignore any taint
     """
+    if isinstance(expression , ArrayProxy):
+        expression = expression.array
     value = simplify(expression)
     if isinstance(value, Expression) and value.taint:
         raise ValueError("Can not simplify tainted values to constant")
@@ -933,6 +935,8 @@ class TranslatorSmtlib(Translator):
 
 
 def translate_to_smtlib(expression, **kwargs):
+    if isinstance(expression, ArrayProxy):
+        expression = expression.array
     translator = TranslatorSmtlib(**kwargs)
     translator.visit(expression)
     return translator.result
@@ -960,6 +964,9 @@ class Replace(Visitor):
 def replace(expression, bindings):
     if not bindings:
         return expression
+    if isinstance(expression, ArrayProxy):
+        expression = expression.array
+
     visitor = Replace(bindings)
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result
@@ -991,6 +998,8 @@ def simplify_array_select(array_exp):
 
 
 def get_variables(expression):
+    if isinstance(expression, ArrayProxy):
+        expression = expression.array
     visitor = GetDeclarations()
     visitor.visit(expression)
     return visitor.result

@@ -285,7 +285,7 @@ class LinuxTest(unittest.TestCase):
     def test_armv7_syscall_openat_symbolic(self) -> None:
         platform, temp_dir = self._armv7_create_openat_state()
         try:
-            platform.current.R0 = BitVecVariable(32, "fd")
+            platform.current.R0 = BitVecVariable(size=32, name="fd")
 
             with self.assertRaises(ConcretizeRegister) as cm:
                 platform.syscall()

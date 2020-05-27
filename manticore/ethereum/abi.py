@@ -11,7 +11,6 @@ from ..core.smtlib import (
     Operators,
     BitVec,
     ArrayVariable,
-    ArrayProxy,
     to_constant,
     issymbolic,
 )
@@ -110,8 +109,8 @@ class ABI:
         if dyn_offset is None:
             dyn_offset = ABI._type_size(ty)
 
-        result = bytearray()
-        dyn_result = bytearray()
+        result = bytes()
+        dyn_result = bytes()
 
         if ty[0] == "int":
             result += ABI._serialize_int(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
@@ -158,8 +157,8 @@ class ABI:
 
     @staticmethod
     def _serialize_tuple(types, value, dyn_offset=None):
-        result = bytearray()
-        dyn_result = bytearray()
+        result = bytes()
+        dyn_result = bytes()
         if len(types) != len(value):
             raise ValueError(
                 f"The number of values to serialize is {'less' if len(value) < len(types) else 'greater'} than the number of types"
@@ -206,10 +205,10 @@ class ABI:
     def deserialize(type_spec, data):
         try:
             if isinstance(data, str):
-                data = bytearray(data.encode())
+                data = bytes(data.encode())
             elif isinstance(data, bytes):
-                data = bytearray(data)
-            assert isinstance(data, (bytearray, Array))
+                data = bytes(data)
+            assert isinstance(data, (bytes, Array))
 
             m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
             if m and m.group("name"):
@@ -229,7 +228,7 @@ class ABI:
 
     @staticmethod
     def _deserialize(ty, buf: typing.Union[bytearray, bytes, Array], offset=0):
-        assert isinstance(buf, (bytearray, bytes, Array))
+        assert isinstance(buf, ( bytes, Array))
         result = None
         if ty[0] == "int":
             result = ABI._deserialize_int(buf[offset : offset + 32], nbytes=ty[1] // 8)
@@ -320,7 +319,7 @@ class ABI:
                 index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
             )
             value = Operators.SEXTEND(value, value.size, size * 8)
-            return ArrayProxy(buf.write_BE(padding, value, size))
+            return buf.write_BE(padding, value, size)
         else:
             buf_arr = bytearray()
             for _ in range(padding):
@@ -359,7 +358,7 @@ class ABI:
 
     @staticmethod
     def _deserialize_uint(
-        data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0, offset=0
+        data: typing.Union[bytes, Array], nbytes=32, padding=0, offset=0
     ):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
@@ -368,13 +367,13 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytearray, bytes, Array))
+        assert isinstance(data, (bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True, offset=offset)
         value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
     @staticmethod
-    def _deserialize_int(data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0):
+    def _deserialize_int(data: typing.Union[bytes, Array], nbytes=32, padding=0):
         """
         Read a `nbytes` bytes long big endian signed integer from `data` starting at `offset`
 
@@ -382,7 +381,7 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytearray, bytes, Array))
+        assert isinstance(data, (bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):

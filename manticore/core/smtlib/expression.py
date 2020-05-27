@@ -900,7 +900,7 @@ class Array(Expression):
         return array
 
     def __add__(self, other):
-        if not isinstance(other, (Array, bytearray)):
+        if not isinstance(other, (Array, bytes)):
             raise TypeError("can't concat Array to {}".format(type(other)))
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
@@ -909,22 +909,21 @@ class Array(Expression):
         from .visitors import simplify
 
         # FIXME This should be related to a constrainSet
-        new_arr = ArrayProxy(
-            ArrayVariable(
+        new_arr = ArrayVariable(
                 self.index_bits,
                 self.index_max + len(other),
                 self.value_bits,
                 "concatenation{}".format(uuid.uuid1()),
             )
-        )
+
         for index in range(self.index_max):
-            new_arr[index] = simplify(self[index])
+            new_arr = new_arr.store(index, simplify(self[index]))
         for index in range(len(other)):
-            new_arr[index + self.index_max] = simplify(other[index])
+            new_arr = new_arr.store(index + self.index_max, simplify(other[index]))
         return new_arr
 
     def __radd__(self, other):
-        if not isinstance(other, (Array, bytearray, bytes)):
+        if not isinstance(other, (Array, bytes)):
             raise TypeError("can't concat Array to {}".format(type(other)))
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
@@ -933,20 +932,17 @@ class Array(Expression):
         from .visitors import simplify
 
         # FIXME This should be related to a constrainSet
-        new_arr = ArrayProxy(
-            ArrayVariable(
+        new_arr = ArrayVariable(
                 self.index_bits,
                 self.index_max + len(other),
                 self.value_bits,
                 "concatenation{}".format(uuid.uuid1()),
             )
-        )
+
         for index in range(len(other)):
-            new_arr[index] = simplify(other[index])
-        _concrete_cache = new_arr._concrete_cache
+            new_arr = new_arr.store(index, simplify(other[index]))
         for index in range(self.index_max):
-            new_arr[index + len(other)] = simplify(self[index])
-        new_arr._concrete_cache.update(_concrete_cache)
+            new_arr = new_arr.store(index + len(other), simplify(self[index]))
         return new_arr
 
 
