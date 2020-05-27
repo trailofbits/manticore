@@ -1307,6 +1307,44 @@ class EthTests(unittest.TestCase):
         self.assertListEqual(sorted(results), ["STOP"] * 2 + ["TXERROR"])
 
 
+    def test_plugins_enable(self):
+        #test enable/disable plugin and sync vs contextmanager
+        source_code = """
+        contract C {
+            constructor() public payable {}
+            function f1(uint a) public payable {}
+        }
+        """
+        class examplePlugin(Plugin):
+            def will_evm_execute_instruction_callback(self, state, i, *args, **kwargs):
+                with self.locked_context() as ctx:
+                    if 'xcount' in ctx:
+                        ctx['xcount'] = ctx['xcount'] + 1
+                    else:
+                        ctx['xcount'] = 1
+
+        aplug = examplePlugin()
+
+        m: ManticoreEVM = ManticoreEVM()
+        m.register_plugin(aplug)
+
+        creator_account = m.create_account(balance=10000000000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+        self.assertEqual( aplug.context.get('xcount',0), 10)  #22 if revert?
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        with  aplug.locked_context() as ctx:
+            self.assertEqual(ctx.get('xcount',0), 63)
+        aplug.disable()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual( aplug.context.get('xcount',0), 63)
+        aplug.enable()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual( aplug.context.get('xcount',0), 112)
+
+
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)
