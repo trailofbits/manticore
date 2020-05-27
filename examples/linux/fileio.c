@@ -25,7 +25,7 @@ int main(int argc, const char **argv) {
         return 3;
     }
 
-    if (strcmp("my voice is my passport verify me", line) == 0) {
+    if (strcmp("open sesame", line) == 0) {
         fprintf(stdout, "Welcome!\n");
         return 0;
     } else {

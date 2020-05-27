@@ -3,15 +3,54 @@ from contextlib import contextmanager
 import cProfile
 import pstats
 import threading
+from functools import wraps
 
 from .smtlib import issymbolic
 
 logger = logging.getLogger(__name__)
 
 
-class Plugin:
+class DecorateAllMeta(type):
+    @staticmethod
+    def _if_enabled(f):
+        """ decorator used to guard callbacks """
+        @wraps(f)
+        def g(self, *args, **kwargs):
+            if self.is_enabled():
+                return f(self, *args, **kwargs)
+        return g
+
+    def __new__(cls, name, bases, local):
+        for attr in local:
+            value = local[attr]
+            if attr.endswith("_callback") and callable(value):
+                local[attr] = cls._if_enabled(value)
+        return type.__new__(cls, name, bases, local)
+
+
+class Plugin(metaclass=DecorateAllMeta):
+    __slots__ = ("manticore", "_enabled_key", "_plugin_context_name")
+
     def __init__(self):
         self.manticore = None
+        classname = str(type(self)).split("'")[1]
+        self._enabled_key = f"{classname}_enabled_{hex(hash(self))}"
+        self._plugin_context_name = f"{classname}_context_{hex(hash(self))}"
+
+    def enable(self):
+        """ Enable all callbacks """
+        with self.manticore.locked_context() as context:
+            context[self._enabled_key] = True
+
+    def disable(self):
+        """ Disable all callbacks """
+        with self.manticore.locked_context() as context:
+            context[self._enabled_key] = False
+
+    def is_enabled(self):
+        """ True if callbacks are enabled """
+        with self.manticore.locked_context() as context:
+            return context.get(self._enabled_key, True)
 
     @property
     def name(self):
@@ -25,7 +64,7 @@ class Plugin:
         when parallel analysis is activated. Code within the `with` block is executed
         atomically, so access of shared variables should occur within.
         """
-        plugin_context_name = str(type(self))
+        plugin_context_name = self._plugin_context_name
         with self.manticore.locked_context(plugin_context_name, dict) as context:
             if key is None:
                 yield context
@@ -37,7 +76,7 @@ class Plugin:
     @property
     def context(self):
         """ Convenient access to shared context """
-        plugin_context_name = str(type(self))
+        plugin_context_name = self._plugin_context_name
         if plugin_context_name not in self.manticore.context:
             self.manticore.context[plugin_context_name] = {}
         return self.manticore.context[plugin_context_name]
@@ -112,19 +151,13 @@ class ExtendedTracer(Plugin):
         if self.current_pc == where:
             return
 
-        # print(f'will_read_memory {where:x} {size!r}, current_pc {self.current_pc:x}')
-
     def did_read_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
 
-        # print(f'did_read_memory {where:x} {value!r} {size!r}, current_pc {self.current_pc:x}')
-
     def will_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
-
-        # print(f'will_write_memory {where:x} {value!r} {size!r}, current_pc {self.current_pc:x}')
 
     def did_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:

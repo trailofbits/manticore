@@ -3,20 +3,22 @@ CFLAGS=-O3 -static
 NOSTDLIBFLAGS=-fno-builtin -static -nostdlib -fomit-frame-pointer -fno-stack-protector
 PYTHON=python3
 
-EXAMPLES=      \
-  arguments    \
-  basic        \
-  crackme      \
-  fclose       \
-  fileio       \
-  helloworld   \
-  ibranch      \
-  indexhell    \
-  sendmail     \
-  simpleassert \
-  simple_copy  \
-  sindex       \
-  strncmp      \
+EXAMPLES=        \
+  arguments      \
+  basic          \
+  crackme        \
+  fclose         \
+  fileio         \
+  helloworld     \
+  ibranch        \
+  indexhell      \
+  ioctl_bogus    \
+  ioctl_socket   \
+  sendmail       \
+  simpleassert   \
+  simple_copy    \
+  sindex         \
+  strncmp        \
 
 OTHER_EXAMPLES=nostdlib
 

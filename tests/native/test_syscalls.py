@@ -9,10 +9,34 @@ import unittest
 import os
 import errno
 import re
+from glob import glob
+
+from manticore.native import Manticore
 
 from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.linux import SymbolicSocket
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
+
+
+def test_symbolic_syscall_arg() -> None:
+    BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
+    tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
+    m = Manticore(BIN_PATH, argv=["+"], workspace_url=str(tmp_dir.name))
+
+    m.run()
+    m.finalize()
+
+    found_win_msg = False
+    win_msg = "WIN: Read more than zero data"
+    outs_glob = f"{str(m.workspace)}/test_*.stdout"
+    # Search all output messages
+    for output_p in glob(outs_glob):
+        with open(output_p) as f:
+            if win_msg in f.read():
+                found_win_msg = True
+                break
+
+    assert found_win_msg, f'Did not find win message in {outs_glob}: "{win_msg}"'
 
 
 class LinuxTest(unittest.TestCase):
@@ -24,9 +48,8 @@ class LinuxTest(unittest.TestCase):
         self.linux = linux.SLinux(self.BIN_PATH)
 
     def tearDown(self):
-        for f in self.linux.files:
-            if isinstance(f, linux.File):
-                f.close()
+        for entry in self.linux.fd_table.entries():
+            entry.fdlike.close()
         self.tmp_dir.cleanup()
 
     def get_path(self, basename: str) -> str:
@@ -162,7 +185,7 @@ class LinuxTest(unittest.TestCase):
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 
-        sock_obj = self.linux.files[conn_fd]
+        sock_obj = self.linux.fd_table.get_fdlike(conn_fd)
         # Any socket that comes from an accept should probably be symbolic for now
         assert isinstance(sock_obj, SymbolicSocket)
 
@@ -209,7 +232,7 @@ class LinuxTest(unittest.TestCase):
         conn_fd = self.linux.sys_accept(sock_fd, None, 0)
         self.assertEqual(conn_fd, 4)
 
-        sock_obj = self.linux.files[conn_fd]
+        sock_obj = self.linux.fd_table.get_fdlike(conn_fd)
         # Any socket that comes from an accept should probably be symbolic for now
         assert isinstance(sock_obj, SymbolicSocket)
 

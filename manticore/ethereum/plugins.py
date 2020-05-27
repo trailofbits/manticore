@@ -1,12 +1,13 @@
 import sys
 
 from functools import reduce
-
 import re
+import logging
 
 from ..core.plugin import Plugin
 from ..core.smtlib import Operators, to_constant
 import pyevmasm as EVMAsm
+logger = logging.getLogger(__name__)
 
 
 class FilterFunctions(Plugin):
@@ -79,15 +80,18 @@ class FilterFunctions(Plugin):
                 selected_functions.append(md.fallback_function_selector)
 
             if self._include:
+                if not selected_functions:
+                    logger.warning("No functions selected, adding False to path constraint.")
                 # constrain the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, (tx.data[:4] == x for x in selected_functions))
+                constraint = reduce(Operators.OR, (tx.data[:4] == x for x in selected_functions), False)
                 state.constrain(constraint)
             else:
                 # Avoid all not selected hashes
+                constraint = True
                 for func_hsh in md.function_selectors:
                     if func_hsh in selected_functions:
-                        constraint = tx.data[:4] != func_hsh
-                        state.constrain(constraint)
+                        constraint = Operators.AND(tx.data[:4] != func_hsh, constraint)
+                state.constrain(constraint)
 
 
 class LoopDepthLimiter(Plugin):
