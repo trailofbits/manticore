@@ -281,7 +281,7 @@ class BitVec(Expression):
     xslots: Tuple[str, ...] = Expression.xslots + ("size",)
     """ This adds a bitsize to the Expression class """
 
-    def __init__(self, size=None, **kwargs):
+    def __init__(self, size:int, **kwargs):
         super().__init__(**kwargs)
         self.size = size
 
