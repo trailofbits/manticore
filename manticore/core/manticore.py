@@ -369,7 +369,6 @@ class ManticoreBase(Eventful):
         self._put_state(initial_state)
 
         # Workers will use manticore __dict__ So lets spawn them last
-        self._is_main = None
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
         self._snapshot = None
         self._main_id = (consts.mprocessing, os.getpid(), threading.current_thread().ident)
