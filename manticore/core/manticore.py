@@ -148,6 +148,7 @@ class ManticoreBase(Eventful):
         def newFunction(self, *args, **kw):
             with self._lock:
                 return func(self, *args, **kw)
+
         return newFunction
 
     def at_running(func: Callable) -> Callable:  # type: ignore
@@ -374,16 +375,16 @@ class ManticoreBase(Eventful):
         self._main_id = os.getpid(), threading.current_thread().ident
 
     def is_main(self):
-        ''' True if called from the main process/script
-        Note: in "single" mode this is _most likely_ True '''
+        """ True if called from the main process/script
+        Note: in "single" mode this is _most likely_ True """
         return self._main_id == (os.getpid(), threading.current_thread().ident)
 
     @sync
     @only_from_main_script
     def take_snapshot(self):
-        ''' Copy/Duplicate/backup all ready states and save it in a snapshot.
+        """ Copy/Duplicate/backup all ready states and save it in a snapshot.
         If there is a snapshot already saved it will be overrwritten
-        '''
+        """
         if self._snapshot is not None:
             logger.info("Overwriting a snapshot of the ready states")
         snapshot = []
@@ -396,8 +397,8 @@ class ManticoreBase(Eventful):
     @sync
     @only_from_main_script
     def goto_snapshot(self):
-        ''' REMOVE current ready states and replace them with the saved states
-        in a snapshot '''
+        """ REMOVE current ready states and replace them with the saved states
+        in a snapshot """
         if not self._snapshot:
             raise ManticoreError("No snapshot to go to")
         for state_id in tuple(self._ready_states):
@@ -409,7 +410,7 @@ class ManticoreBase(Eventful):
     @sync
     @only_from_main_script
     def clear_snapshot(self):
-        ''' Remove any saved states '''
+        """ Remove any saved states """
         if self._snapshot:
             for state_id in self._snapshot:
                 self._remove(state_id)
@@ -418,7 +419,7 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def clear_terminated_states(self):
-        ''' Simply remove all states from terminated list '''
+        """ Simply remove all states from terminated list """
         terminated_states_ids = tuple(self._terminated_states)
         for state_id in terminated_states_ids:
             self._terminated_states.remove(state_id)
