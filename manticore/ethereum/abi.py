@@ -6,14 +6,7 @@ import re
 import sha3
 
 from . import abitypes
-from ..core.smtlib import (
-    Array,
-    Operators,
-    BitVec,
-    ArrayVariable,
-    to_constant,
-    issymbolic,
-)
+from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, to_constant, issymbolic
 from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)
@@ -228,7 +221,7 @@ class ABI:
 
     @staticmethod
     def _deserialize(ty, buf: typing.Union[bytearray, bytes, Array], offset=0):
-        assert isinstance(buf, ( bytes, Array))
+        assert isinstance(buf, (bytes, Array))
         result = None
         if ty[0] == "int":
             result = ABI._deserialize_int(buf[offset : offset + 32], nbytes=ty[1] // 8)
@@ -357,9 +350,7 @@ class ABI:
         return Operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
-    def _deserialize_uint(
-        data: typing.Union[bytes, Array], nbytes=32, padding=0, offset=0
-    ):
+    def _deserialize_uint(data: typing.Union[bytes, Array], nbytes=32, padding=0, offset=0):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 

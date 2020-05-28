@@ -275,7 +275,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertFalse(self.solver.check(cs))
 
     def testBasicArrayConcatSlice(self):
-        hw = bytearray(b"Hello world!")
+        hw = b"Hello world!"
         cs = ConstraintSet()
         # make array of 32->8 bits
         array = cs.new_array(32, index_max=12)
@@ -287,18 +287,18 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertTrue(self.solver.must_be_true(cs, array.read(6, 6) == hw[6:12]))
 
-        self.assertTrue(self.solver.must_be_true(cs, bytearray(b"Hello ") + array.read(6, 6) == hw))
+        self.assertTrue(self.solver.must_be_true(cs, b"Hello " + array.read(6, 6) == hw))
 
         self.assertTrue(
             self.solver.must_be_true(
-                cs, bytearray(b"Hello ") + array.read(6, 5) + bytearray(b"!") == hw
+                cs, b"Hello " + array.read(6, 5) + b"!" == hw
             )
         )
 
         self.assertTrue(
             self.solver.must_be_true(
                 cs,
-                array.read(0, 1) + bytearray(b"ello ") + array.read(6, 5) + bytearray(b"!") == hw,
+                array.read(0, 1) + b"ello " + array.read(6, 5) + b"!" == hw,
             )
         )
 
@@ -312,7 +312,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(len(results) == 5)
 
     def testBasicArraySlice(self):
-        hw = bytearray(b"Hello world!")
+        hw = b"Hello world!"
         cs = ConstraintSet()
         # make array of 32->8 bits
         array = cs.new_array(32, index_max=12)

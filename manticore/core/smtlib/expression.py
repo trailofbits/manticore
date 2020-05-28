@@ -281,7 +281,7 @@ class BitVec(Expression):
     xslots: Tuple[str, ...] = Expression.xslots + ("size",)
     """ This adds a bitsize to the Expression class """
 
-    def __init__(self, size:int, **kwargs):
+    def __init__(self, size: int, **kwargs):
         super().__init__(**kwargs)
         self.size = size
 
@@ -910,11 +910,11 @@ class Array(Expression):
 
         # FIXME This should be related to a constrainSet
         new_arr = ArrayVariable(
-                self.index_bits,
-                self.index_max + len(other),
-                self.value_bits,
-                "concatenation{}".format(uuid.uuid1()),
-            )
+            self.index_bits,
+            self.index_max + len(other),
+            self.value_bits,
+            "concatenation{}".format(uuid.uuid1()),
+        )
 
         for index in range(self.index_max):
             new_arr = new_arr.store(index, simplify(self[index]))
@@ -933,11 +933,11 @@ class Array(Expression):
 
         # FIXME This should be related to a constrainSet
         new_arr = ArrayVariable(
-                self.index_bits,
-                self.index_max + len(other),
-                self.value_bits,
-                "concatenation{}".format(uuid.uuid1()),
-            )
+            self.index_bits,
+            self.index_max + len(other),
+            self.value_bits,
+            "concatenation{}".format(uuid.uuid1()),
+        )
 
         for index in range(len(other)):
             new_arr = new_arr.store(index, simplify(other[index]))
@@ -1256,8 +1256,8 @@ class ArrayProxy:
         return BitVecConcat(size * self.value_bits, *bytes)
 
     def write(self, offset, buf):
-        if not isinstance(buf, (Array, bytearray)):
-            raise TypeError("Array or bytearray expected got {:s}".format(type(buf)))
+        if not isinstance(buf, (Array, bytes)):
+            raise TypeError("Array or bytes expected got {:s}".format(type(buf)))
         arr = self
         for i, val in enumerate(buf):
             arr = arr.store(offset + i, val)
