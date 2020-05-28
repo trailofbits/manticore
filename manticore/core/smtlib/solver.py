@@ -22,7 +22,7 @@ import collections
 import shlex
 import time
 from functools import lru_cache
-from typing import Dict, Tuple, Sequence
+from typing import Dict, Tuple, Sequence, Optional
 from subprocess import PIPE, Popen, check_output
 import re
 from . import operators as Operators
@@ -489,7 +489,7 @@ class SMTLIBSolver(Solver):
 
     @lru_cache(maxsize=32)
     def get_all_values(
-        self, constraints: ConstraintSet, expression, maxcnt: bool = None, silent: bool = False
+        self, constraints: ConstraintSet, expression, maxcnt: Optional[bool] = None, silent: bool = False
     ):
         """Returns a list with all the possible values for the symbol x"""
         if not isinstance(expression, Expression):
