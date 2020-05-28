@@ -26,7 +26,7 @@ jobs:
       run: |
         pip install -e .[lint]
         black --version
-        git fetch --depth=1 origin $BASE_SHA...
+        git fetch --depth=1 origin $BASE_SHA
         echo "Files Changed:"
         git diff --name-only $BASE_SHA... | tee .diff_names.txt
         cat .diff_names.txt | python scripts/pyfile_exists.py | xargs black --diff --check
