@@ -9,7 +9,7 @@ from functools import wraps
 from typing import List, Set, Tuple, Union
 from ..platforms.platform import *
 from ..core.smtlib import (
-    Z3Solver,
+    SelectedSolver,
     BitVec,
     Array,
     ArrayProxy,
@@ -1233,7 +1233,7 @@ class EVM(Eventful):
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
-            should_check_jumpdest_solutions = Z3Solver.instance().get_all_values(
+            should_check_jumpdest_solutions = SelectedSolver.instance().get_all_values(
                 self.constraints, should_check_jumpdest
             )
             if len(should_check_jumpdest_solutions) != 1:
@@ -1719,7 +1719,7 @@ class EVM(Eventful):
         if consts.oog == "complete":
             # gas reduced #??
             cond = Operators.ULT(self.gas, self._checkpoint_data[1])
-            if not Z3Solver.instance().can_be_true(self.constraints, cond):
+            if not SelectedSolver.instance().can_be_true(self.constraints, cond):
                 raise NotEnoughGas()
             self.constraints.add(cond)
 
@@ -1728,7 +1728,7 @@ class EVM(Eventful):
 
         max_size = size
         if issymbolic(max_size):
-            max_size = Z3Solver.instance().max(self.constraints, size)
+            max_size = SelectedSolver.instance().max(self.constraints, size)
 
         if calldata_overflow is not None:
             cap = len(self.data) + calldata_overflow
@@ -1776,7 +1776,7 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
-            max_size = Z3Solver.instance().max(self.constraints, size)
+            max_size = SelectedSolver.instance().max(self.constraints, size)
         else:
             max_size = size
 
@@ -2442,7 +2442,7 @@ class EVMWorld(Platform):
                 concrete_data.append(simplified.value)
             else:
                 # simplify by solving. probably means that we need to improve simplification
-                solutions = Z3Solver.instance().get_all_values(
+                solutions = SelectedSolver.instance().get_all_values(
                     self.constraints, simplified, 2, silent=True
                 )
                 if len(solutions) != 1:
@@ -2467,7 +2467,7 @@ class EVMWorld(Platform):
             return result[0]
         except Exception as e:
             logger.info("Error! %r", e)
-            data_c = Z3Solver.instance().get_value(self.constraints, data)
+            data_c = SelectedSolver.instance().get_value(self.constraints, data)
             return int(sha3.keccak_256(data_c).hexdigest(), 16)
 
     @property
@@ -3407,7 +3407,7 @@ class EVMWorld(Platform):
                     # temp_cs.add(storage.get(index) != 0)
                     temp_cs.add(storage.is_known(index))
                     # Query the solver to get all storage indexes with used slots
-                    all_used_indexes = Z3Solver.instance().get_all_values(temp_cs, index)
+                    all_used_indexes = SelectedSolver.instance().get_all_values(temp_cs, index)
 
                 if all_used_indexes:
                     stream.write("Storage:\n")
