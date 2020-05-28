@@ -65,7 +65,7 @@ consts.add(
 consts.add(
     "solver",
     default=SolverType.yices,
-    description="Choose default smtlib2 solver (z3, yices, cvc4, race)",
+    description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
 )
 
 # Regular expressions used by the solver
@@ -744,38 +744,6 @@ class CVC4Solver(SMTLIBSolver):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.cvc4_bin} --lang=smt2 --incremental"
         super().__init__(command=command, value_fmt=10, init=init)
-
-
-class ddRaceSolver(SMTLIBSolver):
-    def __init__(self, *solvers):
-        if not solvers:
-            solvers = (Z3Solver, YicesSolver, CVC4Solver)
-        self._solvers = solvers
-
-    def _race(self, function_name, *args, **kwargs):
-        q = Queue()
-        solver_instances = [x() for x in self._solvers]
-
-        def thread(solver):
-            try:
-                x = getattr(solver, function_name)(*args, **kwargs)
-                q.put(x)
-            except Exception as e:
-                print(e)
-                pass
-
-        threads = [threading.Thread(target=thread, args=(x,)) for x in solver_instances]
-        for t in threads:
-            t.start()
-        result = q.get(block=True, timeout=consts.timeout)
-        for instance in solver_instances:
-            try:
-                instance._proc.kill()
-            except Exception:
-                pass  # already died
-        for t in threads:
-            t.join()
-        return result
 
 
 class SelectedSolver:
