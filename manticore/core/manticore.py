@@ -371,10 +371,12 @@ class ManticoreBase(Eventful):
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
         self._snapshot = None
-        self._main_id = (consts.mprocessing, os.getpid(), threading.current_thread().ident)
+        self._main_id = os.getpid(), threading.current_thread().ident
 
     def is_main(self):
-        return tuple(self._main_id[1:]) == (os.getpid(), threading.current_thread().ident)
+        ''' True if called from the main process/script
+        Note: in "single" mode this is _most likelly_ True '''
+        return self._main_id == (os.getpid(), threading.current_thread().ident)
 
     @sync
     @only_from_main_script
