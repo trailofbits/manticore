@@ -423,6 +423,16 @@ class ManticoreBase(Eventful):
             self._remove(state_id)
         assert self.count_terminated_states() == 0
 
+    @sync
+    @at_not_running
+    def clear_ready_states(self):
+        ''' Simply remove all states from ready list '''
+        terminated_states_ids = tuple(self._terminated_states)
+        for state_id in terminated_states_ids:
+            self._terminated_states.remove(state_id)
+            self._remove(state_id)
+        assert self.count_terminated_states() == 0
+
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
 

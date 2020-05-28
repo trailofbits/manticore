@@ -185,7 +185,6 @@ def main():
 
     m.clear_terminated_states()
     m.clear_snapshot()
-
         
     x = PrettyTable()
     x.field_names = ["Property Named", "Status"] 
@@ -196,6 +195,7 @@ def main():
         x.add_row((name, result))
     print (x)
 
+    m.clear_ready_states()
     print (f"Checkout testcases here:{m.workspace}")
 
 
