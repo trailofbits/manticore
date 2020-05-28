@@ -350,11 +350,11 @@ class SMTLIBSolver(Solver):
         smtlib = translate_to_smtlib(expression)
         self._smtlib.send(f"(assert {smtlib})")
 
-    def __getvalue_bv(self, expression_str: Union[Variable, int, bool, bytes]) -> int:
+    def __getvalue_bv(self, expression_str: str) -> int:
         self._smtlib.send(f"(get-value ({expression_str}))")
         pattern, base = self._get_value_fmt
         m = pattern.match(self._smtlib.recv())
-        expr, value = m.group("expr"), m.group("value")
+        expr, value = m.group("expr"), m.group("value")  # type: ignore
         return int(value, base)
 
     def __getvalue_bool(self, expression_str):
