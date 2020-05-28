@@ -384,7 +384,7 @@ class SMTLIBSolver(Solver):
             elif isinstance(expression, BitVecVariable):
                 return self.__getvalue_bv(expression.name)
 
-        raise NotImplementedError("_getvalue only implemented for Bool, BitVec and Array")
+        raise NotImplementedError(f"_getvalue only implemented for Bool, BitVec and Array. Got {type(expression)}")
 
     # push pop
     def _push(self):
