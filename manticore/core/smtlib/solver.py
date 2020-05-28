@@ -384,7 +384,7 @@ class SMTLIBSolver(Solver):
             elif isinstance(expression, BitVecVariable):
                 return self.__getvalue_bv(expression.name)
 
-        raise NotImplementedError("_getvalue only implemented for Bool, BitVec and Array")
+        raise NotImplementedError(f"_getvalue only implemented for Bool, BitVec and Array. Got {type(expression)}")
 
     # push pop
     def _push(self):
@@ -580,7 +580,7 @@ class SMTLIBSolver(Solver):
                 elif _status == "sat":
                     ret = self._smtlib.recv()
                     if not (ret.startswith("(") and ret.endswith(")")):
-                        raise SolverError("bad output on max, z3 may have been killed")
+                        raise SolverError("bad output on max, solver may have been killed")
 
                     match = RE_OBJECTIVES_EXPR_VALUE.match(ret)
                     if match:
