@@ -14,11 +14,27 @@ from prettytable import PrettyTable
 from manticore.utils import config
 
 
-def manticore_verifier(source_code, contract_name):
-    # Property STEM
-    PROPRE = r"crytic_test_.*"
+def manticore_verifier(source_code, contract_name, propre=r"crytic_test_.*"):
+    ''' Verify solidity properties
+    The results are dumped to stdout and to the workspace folder.
 
-    ## Termination condition
+        $manticore_verifier tests/ethereum/contracts/prop_verifier.sol TestToken
+        Transaction 0. Ready: 1, Terminated: 0
+        Transaction 1. Ready: 4, Terminated: 0
+        +---------------------+------------+
+        |    Property Named   |   Status   |
+        +---------------------+------------+
+        | crytic_test_balance | failed (0) |
+        +---------------------+------------+
+        Checkout testcases here:./mcore_ca_gjpqw
+
+    :param source_code: A filename or source code
+    :param contract_name: The target contract name defined in the source code
+    :param propre: A regular expression for selecting properties
+    :return:
+    '''
+
+    # Termination condition
     # Exploration will stop when some of the following happens:
     # * MAXTX human transaction sent
     # * Code coverage is greater than MAXCOV meassured on target contract
@@ -47,12 +63,12 @@ def manticore_verifier(source_code, contract_name):
     filter_out_human_constants.disable()
 
     # Avoid automatically exploring property
-    filter_no_crytic = FilterFunctions(regexp=PROPRE, include=False)
+    filter_no_crytic = FilterFunctions(regexp=propre, include=False)
     m.register_plugin(filter_no_crytic)
     filter_no_crytic.disable()
 
     # Only explore properties (at human level)
-    filter_only_crytic = FilterFunctions(regexp=PROPRE, depth="human", fallback=False, include=True)
+    filter_only_crytic = FilterFunctions(regexp=propre, depth="human", fallback=False, include=True)
     m.register_plugin(filter_only_crytic)
     filter_only_crytic.disable()
 
@@ -73,7 +89,7 @@ def manticore_verifier(source_code, contract_name):
     md = m.get_metadata(contract_account)
     for func_hsh in md.function_selectors:
         func_name = md.get_abi(func_hsh)["name"]
-        if re.match(PROPRE, func_name):
+        if re.match(propre, func_name):
             properties[func_name] = []
     MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
 
@@ -205,7 +221,6 @@ def manticore_verifier(source_code, contract_name):
 
 
 def main():
-    ################ Script #######################
     if len(sys.argv) != 3:
         print("Usage:")
         print("  ", sys.argv[0], "contract.sol", "ContractName")
@@ -213,6 +228,7 @@ def main():
     source_code = sys.argv[1]
     contract_name = sys.argv[2]
     return manticore_verifier(source_code, contract_name)
+
 
 if __name__ == "__main__":
     main()
