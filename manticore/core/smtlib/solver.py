@@ -631,12 +631,6 @@ class SMTLIBSolver(Solver):
                         )
 
                     for i in range(expression.index_max):
-                        # self._smtlib.send("(get-value (%s))" % var[i].name)
-                        # ret = self._smtlib.recv()
-                        # pattern, base = self._get_value_fmt
-                        # m = pattern.match(ret)
-                        # expr, value = m.group("expr"), m.group("value")
-                        # result.append(int(value, base))
                         result.append(self.__getvalue_bv(var[i].name))
                     values.append(bytes(result))
                     if time.time() - start > consts.timeout:
