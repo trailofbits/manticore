@@ -44,11 +44,11 @@ class _Var:
         return self._value
 
     @value.setter
-    def value(self, val):
-        if isinstance(self.default, Enum) and isinstance(val, str):
-            self._value = self.default.from_string(val)
-        else:
-            self._value = val
+    def value(self, value):
+        #Forgiveness/Enums support from_string
+        if isinstance(self.default, Enum) and isinstance(value, str):
+            value = self.default.from_string(value)
+        self._value = value
 
 
 class _Group:

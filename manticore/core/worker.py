@@ -67,7 +67,6 @@ class Worker:
         )
 
         m = self.manticore
-        m._is_main = False  # This will mark our copy of manticore
         current_state = None
         m._publish("will_start_worker", self.id)
 
