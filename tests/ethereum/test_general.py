@@ -1809,7 +1809,7 @@ class EthPluginTests(unittest.TestCase):
         contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
 
         #Can not go to unexistant snapshot
-        self.assertRaises(Exception, m.goto_snapshot)
+        self.assertRaises(ManticoreError, m.goto_snapshot)
         self.assertEqual( m.count_ready_states(), 1)
         #take the snap
         m.take_snapshot()
