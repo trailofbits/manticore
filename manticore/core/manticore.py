@@ -375,7 +375,7 @@ class ManticoreBase(Eventful):
 
     def is_main(self):
         ''' True if called from the main process/script
-        Note: in "single" mode this is _most likelly_ True '''
+        Note: in "single" mode this is _most likely_ True '''
         return self._main_id == (os.getpid(), threading.current_thread().ident)
 
     @sync
