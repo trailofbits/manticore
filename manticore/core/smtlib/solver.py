@@ -350,8 +350,7 @@ class SMTLIBSolver(Solver):
         smtlib = translate_to_smtlib(expression)
         self._smtlib.send(f"(assert {smtlib})")
 
-    # Union[Variable, int, bool, bytes]
-    def __getvalue_bv(self, expression_str):
+    def __getvalue_bv(self, expression_str: Union[Variable, int, bool, bytes]) -> int:
         self._smtlib.send(f"(get-value ({expression_str}))")
         pattern, base = self._get_value_fmt
         m = pattern.match(self._smtlib.recv())
@@ -626,12 +625,6 @@ class SMTLIBSolver(Solver):
                         )
 
                     for i in range(expression.index_max):
-                        # self._smtlib.send("(get-value (%s))" % var[i].name)
-                        # ret = self._smtlib.recv()
-                        # pattern, base = self._get_value_fmt
-                        # m = pattern.match(ret)
-                        # expr, value = m.group("expr"), m.group("value")
-                        # result.append(int(value, base))
                         result.append(self.__getvalue_bv(var[i].name))
                     values.append(bytes(result))
                     if time.time() - start > consts.timeout:
