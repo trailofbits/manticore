@@ -11,7 +11,7 @@ from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity
 from .ethereum.cli import ethereum_main
 from .wasm.cli import wasm_main
-from .utils import config, log, install_helper, resources
+from .utils import config, log, install_helper
 
 consts = config.get_group("main")
 consts.add("recursionlimit", default=10000, description="Value to set for Python recursion limit")
@@ -37,9 +37,6 @@ def main() -> None:
     sys.setrecursionlimit(consts.recursionlimit)
 
     set_verbosity(args.v)
-
-    resources.check_disk_usage()
-    resources.check_memory_usage()
 
     if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
         ethereum_main(args, logger)
