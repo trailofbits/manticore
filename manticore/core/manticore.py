@@ -31,6 +31,17 @@ import ctypes
 import signal
 from enum import Enum
 
+consts = config.get_group("core")
+consts.add(
+    "workspace",
+    default="",
+    description="A folder name for temporaries and results." "(default mcore_?????)",
+)
+consts.add(
+    "outputspace",
+    default="",
+    description="Folder to place final output. Defaults to workspace (default: use the worspace)",
+)
 
 class MProcessingType(Enum):
     """Used as configuration constant for choosing multiprocessing flavor"""
@@ -190,9 +201,12 @@ class ManticoreBase(Eventful):
         "terminate_execution",
     }
 
-    def __init__(self, initial_state, workspace_url=None, outputspace_url=None, **kwargs):
+    def __init__(self, initial_state, cfg: config.Config = None, **kwargs):
         """
-        Manticore symbolically explores program states.
+        :param initial_state: State to start from.
+        :param cfg: The configuration constants
+
+               Manticore symbolically explores program states.
 
 
         **Manticore phases**
@@ -298,10 +312,12 @@ class ManticoreBase(Eventful):
 
 
         :param initial_state: the initial root `State` object to start from
-        :param workspace_url: workspace folder name
-        :param outputspace_url: Folder to place final output. Defaults to workspace
         :param kwargs: other kwargs, e.g.
         """
+        if cfg is None:
+            cfg = config.get_default_config()
+        self.config = cfg
+        self.config.freeze()
         super().__init__()
         random.seed(consts.seed)
         {
@@ -331,15 +347,15 @@ class ManticoreBase(Eventful):
         # Manticore will use the output to save the final reports.
         # By default the output folder and the workspace folder are the same.
         # Check type, default to fs:
-        if isinstance(workspace_url, str):
-            if ":" not in workspace_url:
-                workspace_url = f"fs:{workspace_url}"
-        else:
-            if workspace_url is not None:
-                raise TypeError(f"Invalid workspace type: {type(workspace_url).__name__}")
+        workspace_url = cfg["core"].workspace
+        outputspace_url = cfg["core"].outputspace
+        if not isinstance(workspace_url, str):
+            raise TypeError(f"Invalid workspace type: {type(workspace).__name__}")
+        if ":" not in workspace_url:
+            workspace_url = f"fs:{workspace_url}"
         self._workspace = Workspace(workspace_url)
         # reuse the same workspace if not specified
-        if outputspace_url is None:
+        if not outputspace_url:
             outputspace_url = f"fs:{self._workspace.uri}"
         self._output = ManticoreOutput(outputspace_url)
 
@@ -963,19 +979,17 @@ class ManticoreBase(Eventful):
 
         # Run forever is timeout is negative
         if timeout <= 0:
+            yield
+        else:
+
+            # THINKME kill grabs the lock. Is npt this a deadlock hazard?
+            timer = threading.Timer(timeout, self.kill)
+            timer.start()
+
             try:
                 yield
             finally:
-                return
-
-        # THINKME kill grabs the lock. Is npt this a deadlock hazard?
-        timer = threading.Timer(timeout, self.kill)
-        timer.start()
-
-        try:
-            yield
-        finally:
-            timer.cancel()
+                timer.cancel()
 
     @at_not_running
     def run(self):
@@ -1058,6 +1072,6 @@ class ManticoreBase(Eventful):
             f.write(" ".join(map(shlex.quote, sys.argv)))
 
         with self._output.save_stream("manticore.yml") as f:
-            config.save(f)
+            self.config.save(f)
 
         logger.info("Results in %s", self._output.store.uri)
