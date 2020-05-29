@@ -45,7 +45,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.3",
+    version="0.3.4",
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
