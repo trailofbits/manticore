@@ -64,7 +64,7 @@ consts.add(
 
 consts.add(
     "solver",
-    default=SolverType.yices,
+    default=SolverType.z3,
     description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
 )
 
