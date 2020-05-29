@@ -10,6 +10,7 @@ import shutil
 import struct
 import tempfile
 
+from manticore import ManticoreError
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib import Z3Solver
@@ -25,7 +26,7 @@ from manticore.ethereum import (
     NoAliveStates,
     ABI,
     EthereumError,
-    EVMContract,
+    EVMContract
 )
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
