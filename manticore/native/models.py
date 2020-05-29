@@ -4,7 +4,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 
 from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
-from ..core.smtlib import issymbolic, BitVec
+from ..core.smtlib import issymbolic, BitVec, Expression
 from ..core.smtlib.solver import Z3Solver
 from ..core.smtlib.operators import AND, OR, ITEBV, ZEXTEND, NOT
 from ..core.state import Concretize
@@ -61,7 +61,7 @@ def _find_zero(cpu, constrs, ptr):
     return offset
 
 
-def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
+def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strcmp symbolic model.
 
@@ -117,7 +117,7 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     return ret
 
 
-def strlen(state: State, s: Union[int, BitVec]):
+def strlen(state: State, s: Union[int, BitVec]) -> Union[int, BitVec] :
     """
     strlen symbolic model.
 
@@ -208,7 +208,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
         raise ConcretizeArgument(state.cpu, 1)
 
     if issymbolic(dst):
-        raise ConcretizeArgument(state.cpu, 2)
+        raise ConcretizeArgument(state.cpu, 0)
 
     cpu = state.cpu
     constrs = state.constraints
@@ -230,52 +230,63 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     offset = 0
     src_val = cpu.read_int(src, 8)
     dst_val = cpu.read_int(dst, 8)
-    cond = False  # True
+    cond = False  # True # FIXME
     crash = False
-    write_list = []
     if "strcpy" not in state.context:
+        print(f"{offset}: {src_val} -> {dst_val}")
         while not is_definitely_NULL(src_val, constrs):
             print(f"{offset}: {src} -> {dst}")  # Debugging print to be removed later
             if can_be_NULL(src_val, constrs):
                 # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
-                new_cond = OR(cond, src_val == 0)  # AND(cond, src_val != 0)
+                new_cond = OR(cond, src_val == 0)  # AND(cond, src_val != 0) #FIXME
                 src_val = ITEBV(8, src_val != 0, src_val, 0)  # add an ITE just for the NULL
-                src_val = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val)
-                # cpu.write_int(dst + offset, src_val, 8)
-                write_list.append(src_val)
+                new_dst = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val) # FIXME
+                
+                cpu.write_int(dst + offset, new_dst, 8)
                 cond = new_cond
             else:
                 # If it can't be NULL just build the ITE
-                src_val = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val)
-                # cpu.write_int(dst + offset, src_val, 8)
-                write_list.append(src_val)
+                new_dst = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val) # FIXME
+                cpu.write_int(dst + offset, new_dst, 8)
             offset += 1
 
             # Read next byte and crash if src or dst is unreadable/writeable
-            if not state.mem.access_ok(src + offset, "r", True) or not state.mem.access_ok(
-                dst + offset, "rw", True
-            ):
-                crash = True and issymbolic(src_val)
+            if not state.mem.access_ok(src + offset, "r", True) or not state.mem.access_ok(dst + offset, "r", True) or not state.mem.access_ok(dst + offset, "w", True):
+                print('Crash')
+                crash = True
+                #cond = NOT(cond)
                 break
             else:
+                print(f"{offset}: {src_val} -> {dst_val}")
                 src_val = cpu.read_int(src + offset, 8)
                 dst_val = cpu.read_int(dst + offset, 8)
-        state.context["strcpy"] = (crash, write_list)
+        if not crash:
+            # Build ITE Tree for NULL byte
+            null = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, 0, dst_val) #FIXME
+            cpu.write_int(dst + offset, null, 8)
+        state.context["strcpy"] = (crash, cond)
 
-    crash, write_list = state.context["strcpy"]
-    if crash:
+    crash, cond = state.context["strcpy"]
+    if crash and issymbolic(cond):
+        print('Concreteize')
+        for declaration in state.constraints.declarations:
+            res = state.constraints.get_variable(declaration.name)
+            print('Crash:', crash)
+            conc = state.solve_one(res)
+            print(f" [{state.id}] \t{declaration.name}:\n [{state.id}] {conc}")
+            #symb_smt = state.constraints.to_string()
+            #print(f" [{state.id}] \t{declaration.name}:\n [{state.id}] {symb_smt}")
+            #state.context["strcpy"] = (False, cond)
 
         def setstate(state, solution):
-            crash, write_list = state.context["strcpy"]
-            state.context["strcpy"] = solution, write_list
-
-        raise Concretize("Forking on crash strcpy", expression=cond, policy="ALL")
+            crash, cond = state.context["strcpy"]
+            print(cond.constraints.to_string())
+            state.context["strcpy"] = (crash, solution)
+            print('SET STATE')
+            print(state.context["strcpy"])
+        raise Concretize("Forking on crash strcpy", expression=cond, setstate=setstate, policy="ONE")
     else:
-        # Build ITE Tree for NULL byte
-        null = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, 0, dst_val)
-        for offset, write_byte in enumerate(write_list):
-            cpu.write_int(dst + offset, write_byte, 8)
-        cpu.write_int(dst + offset, null, 8)
+        print('Write bytes')
 
     del state.context["strcpy"]
     return ret
