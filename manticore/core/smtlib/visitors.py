@@ -783,7 +783,7 @@ def to_constant(expression):
         Iff the expression can be simplified to a Constant get the actual concrete value.
         This discards/ignore any taint
     """
-    if isinstance(expression , ArrayProxy):
+    if isinstance(expression, ArrayProxy):
         expression = expression.array
     value = simplify(expression)
     if isinstance(value, Expression) and value.taint:
