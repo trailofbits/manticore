@@ -996,6 +996,9 @@ class ArrayStore(ArrayOperation):
 
 
 class ArraySlice(Array):
+    ''' Provides a projection of an underlying array.
+        Lets you slice an array without copying it
+    '''
     __slots__ = Array.xslots + ("_array", "_slice_offset", "_slice_size")
 
     def __init__(
@@ -1047,6 +1050,16 @@ class ArraySlice(Array):
 
 
 class ArrayProxy:
+    '''
+    Arrayproxy is a layer on top of an array that provides mutability and some
+    simple optimizations for concrete indexes.
+
+    It is not hasheable.
+    Think:
+        bytearray <-> ArrayProxy  ::: not hasheable, mutable
+        bytes <-> Array (ArraySlice, ArrayVariable, ArrayStore) ::: hasheable, notmutable
+
+    '''
     def __init__(self, array: Array, default: Optional[int] = None):
         self._default = default
         self._concrete_cache: Dict[int, int] = {}

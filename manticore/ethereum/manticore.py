@@ -1180,6 +1180,8 @@ class ManticoreEVM(ManticoreBase):
         name = func.__name__
         value = func(data)  # If func returns None then result should considered unknown/symbolic
 
+        if isinstance(data, ArrayProxy):
+            data = data.array
         # Value is known. Let's add it to our concrete database
         if value is not None:
             with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1207,7 +1209,7 @@ class ManticoreEVM(ManticoreBase):
 
             data_var = state.new_symbolic_buffer(len(data))  # FIXME: generalize to bitvec
             state.constrain(data_var == data)
-            data = data_var
+            data = data_var.array
 
             # symbolic_pairs list of symbolic applications of func in sate
             symbolic_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
@@ -1230,6 +1232,7 @@ class ManticoreEVM(ManticoreBase):
                     else:
                         constraint = y != value
                     state.constrain(constraint)
+                print (type(data), type(value))
                 symbolic_pairs.append((data, value))
             state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
 

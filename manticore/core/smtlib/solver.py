@@ -162,7 +162,7 @@ class Z3Solver(Solver):
             # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
             # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
             # free sort and function symbols.
-            "(set-logic QF_AUFBV)",
+            "(set-logic QF_ABV)",
             # The declarations and definitions will be scoped
             "(set-option :global-decls false)",
             # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:

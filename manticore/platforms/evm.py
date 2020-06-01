@@ -1335,7 +1335,7 @@ class EVM(Eventful):
         if size == 0:
             return b""
         self._allocate(offset, size)
-        return self.memory[offset : offset + size]
+        return self.memory[offset : offset + size].array
 
     def write_buffer(self, offset, data):
         self._allocate(offset, len(data))
