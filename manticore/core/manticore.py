@@ -147,6 +147,7 @@ class ManticoreBase(Eventful):
         def newFunction(self, *args, **kw):
             with self._lock:
                 return func(self, *args, **kw)
+
         return newFunction
 
     def at_running(func: Callable) -> Callable:  # type: ignore
