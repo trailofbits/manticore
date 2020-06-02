@@ -161,7 +161,9 @@ class ManticoreWASM(ManticoreBase):
                         inner.append(
                             list(
                                 I32(a)  # TODO - eventually we'll need to support floats as well.
-                                for a in SelectedSolver.instance().get_all_values(state.constraints, ret)
+                                for a in SelectedSolver.instance().get_all_values(
+                                    state.constraints, ret
+                                )
                             )
                         )
                     elif ret.size == 64:
@@ -170,7 +172,9 @@ class ManticoreWASM(ManticoreBase):
                                 I64(
                                     a
                                 )  # TODO - that'll probably require us to subclass bitvecs into IxxBV and FxxBV
-                                for a in SelectedSolver.instance().get_all_values(state.constraints, ret)
+                                for a in SelectedSolver.instance().get_all_values(
+                                    state.constraints, ret
+                                )
                             )
                         )
                 else:

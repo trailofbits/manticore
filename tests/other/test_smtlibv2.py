@@ -22,7 +22,7 @@ from manticore.utils.helpers import pickle_dumps
 #                level = logging.DEBUG)
 
 
-'''
+"""
 class Z3Specific(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -56,7 +56,8 @@ class Z3Specific(unittest.TestCase):
             == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
         )
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
-'''
+"""
+
 
 class ExpressionTest(unittest.TestCase):
     _multiprocess_can_split_ = True

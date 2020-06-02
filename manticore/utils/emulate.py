@@ -351,7 +351,9 @@ class ConcreteUnicornEmulator:
                 concrete_data = []
                 for c in data:
                     if issymbolic(c):
-                        c = chr(SelectedSolver.instance().get_value(self._cpu.memory.constraints, c))
+                        c = chr(
+                            SelectedSolver.instance().get_value(self._cpu.memory.constraints, c)
+                        )
                     concrete_data.append(c)
                 data = concrete_data
             else:

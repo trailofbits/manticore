@@ -1042,7 +1042,9 @@ class EVM(Eventful):
             # Try not to OOG. If it may be enough gas we ignore the OOG case.
             # A constraint is added to assert the gas is enough and the OOG state is ignored.
             # explore only when there is enough gas if possible
-            if SelectedSolver.instance().can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
+            if SelectedSolver.instance().can_be_true(
+                self.constraints, Operators.UGT(self.gas, fee)
+            ):
                 self.constraints.add(Operators.UGT(self.gas, fee))
             else:
                 logger.debug(
@@ -1053,7 +1055,9 @@ class EVM(Eventful):
             # OOG soon. If it may NOT be enough gas we ignore the normal case.
             # A constraint is added to assert the gas is NOT enough and the other state is ignored.
             # explore only when there is enough gas if possible
-            if SelectedSolver.instance().can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
+            if SelectedSolver.instance().can_be_true(
+                self.constraints, Operators.ULE(self.gas, fee)
+            ):
                 self.constraints.add(Operators.ULE(self.gas, fee))
                 raise NotEnoughGas()
         else:

@@ -384,7 +384,9 @@ class SMTLIBSolver(Solver):
             elif isinstance(expression, BitVecVariable):
                 return self.__getvalue_bv(expression.name)
 
-        raise NotImplementedError(f"_getvalue only implemented for Bool, BitVec and Array. Got {type(expression)}")
+        raise NotImplementedError(
+            f"_getvalue only implemented for Bool, BitVec and Array. Got {type(expression)}"
+        )
 
     # push pop
     def _push(self):
@@ -489,7 +491,11 @@ class SMTLIBSolver(Solver):
 
     @lru_cache(maxsize=32)
     def get_all_values(
-        self, constraints: ConstraintSet, expression, maxcnt: Optional[bool] = None, silent: bool = False
+        self,
+        constraints: ConstraintSet,
+        expression,
+        maxcnt: Optional[bool] = None,
+        silent: bool = False,
     ):
         """Returns a list with all the possible values for the symbol x"""
         if not isinstance(expression, Expression):
