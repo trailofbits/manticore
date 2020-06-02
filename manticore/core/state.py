@@ -304,7 +304,7 @@ class StateBase(Eventful):
                 #We assume the path constraint was feasible to begin with
                 vals = (False,)
         elif policy == "PESSIMISTIC":
-            logger.info("Pesimistic case when forking")
+            logger.info("Pessimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic == False):
                 vals = (False,)
             else:
