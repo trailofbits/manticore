@@ -565,39 +565,13 @@ class SMTLIBSolver(Solver):
             self._reset(temp_cs.to_string(related_to=X))
             self._smtlib.send(aux.declaration)
 
-            start = time.time()
-            try:
-                self._assert(operation(X, aux))
-                self._smtlib.send("(%s %s)" % (goal, aux.name))
-                self._smtlib.send("(check-sat)")
-                _status = self._smtlib.recv()
-                if _status not in ("sat", "unsat", "unknown"):
-                    # Minimize (or Maximize) sometimes prints the objective before the status
-                    # This will be a line like NAME |-> VALUE
-                    maybe_sat = self._smtlib.recv()
-                    if maybe_sat == "sat":
-                        match = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
-                        if match:
-                            expr, value = match.group("expr"), match.group("value")
-                            assert expr == aux.name
-                            return int(value)
-                        else:
-                            raise SolverError("Could not match MinMax objective value regex")
-                elif _status == "sat":
-                    ret = self._smtlib.recv()
-                    if not (ret.startswith("(") and ret.endswith(")")):
-                        raise SolverError("bad output on max, solver may have been killed")
-
-                    match = RE_OBJECTIVES_EXPR_VALUE.match(ret)
-                    if match:
-                        expr, value = match.group("expr"), match.group("value")
-                        assert expr == aux.name
-                        return int(value)
-                    else:
-                        raise SolverError("Could not match objective value regex")
-            finally:
-                self._reset(temp_cs.to_string())
-                self._smtlib.send(aux.declaration)
+            self._assert(operation(X, aux))
+            self._smtlib.send("(%s %s)" % (goal, aux.name))
+            self._smtlib.send("(check-sat)")
+            _status = self._smtlib.recv()
+            if _status == "sat":
+                return self._getvalue(aux)
+            raise SolverError("Optimize failed")
 
     def get_value(self, constraints: ConstraintSet, *expressions):
         """
@@ -686,7 +660,7 @@ class Z3Solver(SMTLIBSolver):
             command=command,
             init=init,
             value_fmt=16,
-            support_minmax=False,
+            support_minmax=True,
             support_reset=True,
             support_pushpop=True,
             debug=False,
