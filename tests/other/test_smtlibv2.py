@@ -1,4 +1,5 @@
 import unittest
+import os
 
 from manticore.core.smtlib import (
     ConstraintSet,
@@ -11,14 +12,49 @@ from manticore.core.smtlib import (
     arithmetic_simplify,
     constant_folder,
     replace,
+    BitVecConstant,
 )
 from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
+from manticore import config
 
 # logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
+
+DIRPATH = os.path.dirname(__file__)
+
+class RegressionTest(unittest.TestCase):
+    def test_related_to(self):
+        import gzip
+        import pickle, sys
+        filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
+
+        constraints, constraint = pickle.loads(gzip.open(filename,'rb').read())
+
+        consts = config.get_group("smt")
+        consts.related_constraints = False
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        ground_truth = Z3Solver.instance().can_be_true(constraints, constraint)
+        self.assertEqual(ground_truth, False)
+
+        consts.related_constraints = True
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, constraint))
+
+        #Replace 
+        new_constraint = Operators.UGE( Operators.SEXTEND(BitVecConstant(256,0x1a),256,512) * BitVecConstant(512,1), 0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000 )
+        self.assertEqual(translate_to_smtlib(constraint), translate_to_smtlib(new_constraint))
+
+        consts.related_constraints = False
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
+ 
+        consts.related_constraints = True
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
 
 
 class ExpressionTest(unittest.TestCase):
