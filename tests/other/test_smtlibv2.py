@@ -25,13 +25,15 @@ from manticore import config
 
 DIRPATH = os.path.dirname(__file__)
 
+
 class RegressionTest(unittest.TestCase):
     def test_related_to(self):
         import gzip
         import pickle, sys
+
         filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
 
-        constraints, constraint = pickle.loads(gzip.open(filename,'rb').read())
+        constraints, constraint = pickle.loads(gzip.open(filename, "rb").read())
 
         consts = config.get_group("smt")
         consts.related_constraints = False
@@ -44,14 +46,17 @@ class RegressionTest(unittest.TestCase):
         Z3Solver.instance().can_be_true.cache_clear()
         self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, constraint))
 
-        #Replace 
-        new_constraint = Operators.UGE( Operators.SEXTEND(BitVecConstant(256,0x1a),256,512) * BitVecConstant(512,1), 0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000 )
+        # Replace
+        new_constraint = Operators.UGE(
+            Operators.SEXTEND(BitVecConstant(256, 0x1A), 256, 512) * BitVecConstant(512, 1),
+            0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000,
+        )
         self.assertEqual(translate_to_smtlib(constraint), translate_to_smtlib(new_constraint))
 
         consts.related_constraints = False
         Z3Solver.instance().can_be_true.cache_clear()
         self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
- 
+
         consts.related_constraints = True
         Z3Solver.instance().can_be_true.cache_clear()
         self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
