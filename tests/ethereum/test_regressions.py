@@ -354,6 +354,5 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(Z3Solver.instance().get_all_values(constraints, result), [2423129])
 
 
-
 if __name__ == "__main__":
     unittest.main()
