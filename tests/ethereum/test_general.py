@@ -10,6 +10,7 @@ import shutil
 import struct
 import tempfile
 
+from manticore import ManticoreError
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib import Z3Solver
@@ -1306,22 +1307,22 @@ class EthTests(unittest.TestCase):
         # The TXERROR indicates a state where the sent value is greater than the senders budget.
         self.assertListEqual(sorted(results), ["STOP"] * 2 + ["TXERROR"])
 
-
     def test_plugins_enable(self):
-        #test enable/disable plugin and sync vs contextmanager
+        # test enable/disable plugin and sync vs contextmanager
         source_code = """
         contract C {
             constructor() public payable {}
             function f1(uint a) public payable {}
         }
         """
+
         class examplePlugin(Plugin):
             def will_evm_execute_instruction_callback(self, state, i, *args, **kwargs):
                 with self.locked_context() as ctx:
-                    if 'xcount' in ctx:
-                        ctx['xcount'] = ctx['xcount'] + 1
+                    if "xcount" in ctx:
+                        ctx["xcount"] = ctx["xcount"] + 1
                     else:
-                        ctx['xcount'] = 1
+                        ctx["xcount"] = 1
 
         aplug = examplePlugin()
 
@@ -1330,19 +1331,19 @@ class EthTests(unittest.TestCase):
 
         creator_account = m.create_account(balance=10000000000)
         contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
-        self.assertEqual( aplug.context.get('xcount',0), 10)  #22 if revert?
+        self.assertEqual(aplug.context.get("xcount", 0), 10)  # 22 if revert?
 
         data = m.make_symbolic_buffer(320)
         value = m.make_symbolic_value()
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
-        with  aplug.locked_context() as ctx:
-            self.assertEqual(ctx.get('xcount',0), 63)
+        with aplug.locked_context() as ctx:
+            self.assertEqual(ctx.get("xcount", 0), 63)
         aplug.disable()
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
-        self.assertEqual( aplug.context.get('xcount',0), 63)
+        self.assertEqual(aplug.context.get("xcount", 0), 63)
         aplug.enable()
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
-        self.assertEqual( aplug.context.get('xcount',0), 112)
+        self.assertEqual(aplug.context.get("xcount", 0), 112)
 
 
 class EthHelpersTest(unittest.TestCase):
@@ -1742,6 +1743,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             )
             self.assertEqual(m.count_ready_states(), 1)
 
+
 class EthPluginTests(unittest.TestCase):
     def test_FilterFunctions_fallback_function_matching(self):
         """
@@ -1792,6 +1794,88 @@ class EthPluginTests(unittest.TestCase):
             self.assertEqual(
                 ABI.deserialize("uint", to_constant(m.world.transactions[-1].return_data)), 456
             )
+
+    def test_checkpoint(self):
+        # test enable/disable plugin and sync vs contextmanager
+        source_code = """
+        contract C {
+            constructor() public payable {}
+            function f1(uint a) public payable {}
+            function f2(uint a) public payable {}
+        }
+        """
+
+        m: ManticoreEVM = ManticoreEVM()
+
+        creator_account = m.create_account(balance=10000000000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+
+        # Can not go to unexistant snapshot
+        self.assertRaises(ManticoreError, m.goto_snapshot)
+        self.assertEqual(m.count_ready_states(), 1)
+        # take the snap
+        m.take_snapshot()
+        self.assertEqual(m.count_ready_states(), 1)
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual(m.count_ready_states(), 2)
+        self.assertEqual(m.count_terminated_states(), 2)
+        m.goto_snapshot()  # return to have only 1 ready state. (The terminated states remain)
+
+        self.assertEqual(m.count_ready_states(), 1)
+        self.assertEqual(m.count_terminated_states(), 2)
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+        self.assertEqual(m.count_ready_states(), 2)
+
+        m.clear_snapshot()
+        # Can not go to unexistant snapshot
+        self.assertRaises(Exception, m.goto_snapshot)
+        self.assertEqual(m.count_terminated_states(), 4)
+        m.clear_terminated_states()
+        self.assertEqual(m.count_terminated_states(), 0)
+
+        m.clear_snapshot()  # We can double clear it
+
+    def test_is_main(self):
+        # test enable/disable plugin and sync vs contextmanager
+        source_code = """
+        contract C {
+            constructor() public payable {}
+            function f1(uint a) public payable {}
+            function f2(uint a) public payable {}
+        }
+        """
+
+        class X(Plugin):
+            def will_evm_execute_instruction_callback(self, state, instruction, args):
+                is_main = self.manticore.is_main()
+                is_running = self.manticore.is_running()
+                with self.locked_context() as ctx:
+                    ctx["is_main"] = ctx.get("is_main", False) or (is_main and not is_running)
+
+        from manticore.utils import config
+
+        consts = config.get_group("core")
+        for ty in ("multiprocessing", "threading", "single"):
+            consts.mprocessing = ty
+            m: ManticoreEVM = ManticoreEVM()
+            x = X()
+            m.register_plugin(x)
+            self.assertTrue(m.is_main())
+
+            creator_account = m.create_account(balance=10000000000)
+            contract_account = m.solidity_create_contract(
+                source_code, owner=creator_account, balance=0
+            )
+
+            self.assertTrue(m.is_main() and not m.is_running())
+            # From the plugin callback is never main
+            self.assertFalse(x.context.get("is_main", False))
 
 
 if __name__ == "__main__":
