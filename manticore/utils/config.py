@@ -45,7 +45,7 @@ class _Var:
 
     @value.setter
     def value(self, value):
-        #Forgiveness/Enums support from_string
+        # Forgiveness/Enums support from_string
         if isinstance(self.default, Enum) and isinstance(value, str):
             value = self.default.from_string(value)
         self._value = value
