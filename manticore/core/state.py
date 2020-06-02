@@ -296,14 +296,14 @@ class StateBase(Eventful):
                 )
         elif policy == "ONE":
             vals = [self._solver.get_value(self._constraints, symbolic)]
-        elif policy == "OPTI":
+        elif policy == "OPTIMISTIC":
             logger.info("Optimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic):
                 vals = (True,)
             else:
                 #We assume the path constraint was feasible to begin with
                 vals = (False,)
-        elif policy == "PESI":
+        elif policy == "PESSIMISTIC":
             logger.info("Pesimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic == False):
                 vals = (False,)

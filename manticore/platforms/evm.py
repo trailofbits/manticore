@@ -3286,7 +3286,7 @@ class EVMWorld(Platform):
 
         if issymbolic(failed):
             #optimistic/pesimistic is inverted as the expresion represents fail
-            policy = {"optimistic": "PESI", "pesimistic": "OPTI"}.get(
+            policy = {"optimistic": "PESSIMISTIC", "pessimistic": "OPTIMISTIC"}.get(
                 consts.txfail, "ALL"
             )
 
