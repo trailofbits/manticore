@@ -3285,7 +3285,7 @@ class EVMWorld(Platform):
             self._pending_transaction = sort, address, price, data, caller, value, gas, failed
 
         if issymbolic(failed):
-            #optimistic/pesimistic is inverted as the expresion represents fail
+            # optimistic/pesimistic is inverted as the expresion represents fail
             policy = {"optimistic": "PESSIMISTIC", "pessimistic": "OPTIMISTIC"}.get(
                 consts.txfail, "ALL"
             )

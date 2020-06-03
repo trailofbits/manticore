@@ -47,7 +47,7 @@ class ExpressionTest(unittest.TestCase):
         """
         Tests if higher bits are masked out
         """
-        x = BitVecConstant(32, 0xff00000000)
+        x = BitVecConstant(32, 0xFF00000000)
         self.assertTrue(x.value == 0)
 
     def testBasicAST_001(self):
