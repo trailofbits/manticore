@@ -935,8 +935,10 @@ def translate_to_smtlib(expression, **kwargs):
         expression = expression.array
     translator = TranslatorSmtlib(**kwargs)
     if isinstance(expression, ArrayProxy):
-        print (expression)
-        import pdb; pdb.set_trace()
+        print(expression)
+        import pdb
+
+        pdb.set_trace()
     translator.visit(expression)
     return translator.result
 

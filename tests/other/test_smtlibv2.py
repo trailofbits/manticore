@@ -277,7 +277,6 @@ class ExpressionTest(unittest.TestCase):
         key = cs.new_bitvec(32, name="key")
         self.assertTrue(self.solver.must_be_true(cs, array[key] == 0))
 
-
     def testBasicArrayDefault2(self):
         cs = ConstraintSet()
         array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
@@ -309,16 +308,11 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertTrue(self.solver.must_be_true(cs, b"Hello " + array.read(6, 6) == hw))
 
-        self.assertTrue(
-            self.solver.must_be_true(
-                cs, b"Hello " + array.read(6, 5) + b"!" == hw
-            )
-        )
+        self.assertTrue(self.solver.must_be_true(cs, b"Hello " + array.read(6, 5) + b"!" == hw))
 
         self.assertTrue(
             self.solver.must_be_true(
-                cs,
-                array.read(0, 1) + b"ello " + array.read(6, 5) + b"!" == hw,
+                cs, array.read(0, 1) + b"ello " + array.read(6, 5) + b"!" == hw
             )
         )
 
@@ -1022,6 +1016,7 @@ class ExpressionTest(unittest.TestCase):
             for attr in attrs:
                 self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
     '''
+
 
 if __name__ == "__main__":
     unittest.main()

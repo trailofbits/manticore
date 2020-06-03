@@ -1109,12 +1109,7 @@ class ArraySlice(ArrayOperation):
     __slots__ = ArrayOperation.__xslots__ + ("_slice_offset", "_slice_size")
 
     def __init__(
-        self,
-        array: "Array",
-        offset: int,
-        size: int,
-        default: Optional[int] = None,
-        **kwargs,
+        self, array: "Array", offset: int, size: int, default: Optional[int] = None, **kwargs
     ):
         assert size
         if not isinstance(array, Array):
@@ -1171,6 +1166,7 @@ class ArrayProxy:
         bytes <-> Array (ArraySlice, ArrayVariable, ArrayStore) ::: hasheable, notmutable
 
     """
+
     def __hash__(self):
         return hash(self.array)
 
@@ -1251,7 +1247,7 @@ class ArrayProxy:
         return self
 
     def read(self, offset, size):
-        return ArrayProxy(self._array[offset:offset+size])
+        return ArrayProxy(self._array[offset : offset + size])
 
     def __eq__(self, other):
         return other == self.array

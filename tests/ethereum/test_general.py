@@ -446,7 +446,7 @@ class EthTests(unittest.TestCase):
     def tearDown(self):
         workspace = self.mevm.workspace
         del self.mevm
-        #shutil.rmtree(workspace)
+        # shutil.rmtree(workspace)
 
     def test_solidity_create_contract_no_args(self):
         source_code = "contract A { constructor() {} }"
@@ -1347,7 +1347,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = BitVecVariable(size=256, name='bv')
+        self.bv = BitVecVariable(size=256, name="bv")
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"
