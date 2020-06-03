@@ -13,6 +13,7 @@ from .detectors import (
     DetectRaceCondition,
     DetectorClassification,
     DetectManipulableBalance,
+    DetectTransactionDisplacement,
 )
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
@@ -55,6 +56,7 @@ def get_detectors_classes():
         DetectExternalCallAndLeak,
         DetectEnvInstruction,
         DetectManipulableBalance,
+        DetectTransactionDisplacement,
         # The RaceCondition detector has been disabled for now as it seems to collide with IntegerOverflow detector
         # DetectRaceCondition
     ]

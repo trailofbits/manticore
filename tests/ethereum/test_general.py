@@ -22,6 +22,7 @@ from manticore.ethereum import (
     State,
     DetectExternalCallAndLeak,
     DetectIntegerOverflow,
+    DetectTransactionDisplacement,
     Detector,
     NoAliveStates,
     ABI,
@@ -32,6 +33,7 @@ from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
+from manticore.utils import config, log
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 
 solver = Z3Solver.instance()
@@ -60,6 +62,45 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn("Unsigned integer overflow at SUB instruction", all_findings)
         self.assertIn("Unsigned integer overflow at ADD instruction", all_findings)
         self.assertIn("Unsigned integer overflow at MUL instruction", all_findings)
+
+
+class EthDetectorsTransactionDisplacement(unittest.TestCase):
+    def test_transaction_displacement_basic(self):
+        # log.set_verbosity(5)
+        consts = config.get_group("evm")
+        consts.sha3 = consts.sha3.concretize
+        mevm = ManticoreEVM()
+        mevm.register_detector(DetectTransactionDisplacement())
+        filename = os.path.join(THIS_DIR, "contracts/basic.sol")
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.finalize()
+        self.assertEqual(len(mevm.global_findings), 1)
+        all_findings = "".join([x[2] for x in mevm.global_findings])
+        self.assertIn("REVERT caused by transaction displacement", all_findings)
+
+    def test_transaction_displacement_sqrt(self):
+        # log.set_verbosity(5)
+        consts = config.get_group("evm")
+        consts.sha3 = consts.sha3.concretize
+        mevm = ManticoreEVM()
+        mevm.register_detector(DetectTransactionDisplacement())
+        filename = os.path.join(THIS_DIR, "contracts/sqrt.sol")
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.finalize()
+        self.assertEqual(len(mevm.global_findings), 1)
+        all_findings = "".join([x[2] for x in mevm.global_findings])
+        self.assertIn("REVERT caused by transaction displacement", all_findings)
+
+    def test_transaction_displacement_sqrt_better(self):
+        # log.set_verbosity(5)
+        consts = config.get_group("evm")
+        consts.sha3 = consts.sha3.concretize
+        mevm = ManticoreEVM()
+        mevm.register_detector(DetectTransactionDisplacement())
+        filename = os.path.join(THIS_DIR, "contracts/sqrt_better.sol")
+        mevm.multi_tx_analysis(filename, tx_limit=2)
+        mevm.finalize()
+        self.assertEqual(len(mevm.global_findings), 0)
 
 
 class EthAbiTests(unittest.TestCase):

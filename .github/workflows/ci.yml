@@ -157,7 +157,7 @@ jobs:
             mkdir truffle_tests
             cd truffle_tests
             truffle unbox metacoin
-            coverage run -m manticore . --contract MetaCoin --workspace output
+            coverage run -m manticore . --exclude-all --contract MetaCoin --workspace output
             # Truffle smoke test. We test if manticore is able to generate states
             # from a truffle project. 
             if [ "$(ls output/*tx -l | wc -l)" != "34" ]; then
