@@ -1442,7 +1442,7 @@ class ManticoreEVM(ManticoreBase):
             logger.info(
                 "Manticore exception: state should be terminated only at the end of the human transaction"
             )
-        s"""
+        """
         # Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROW; it actually changes the balance and nonce? of some accounts
