@@ -103,18 +103,15 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
             raise ValueError("type not supported")
 
     else:
-        if isinstance(arg, BitVecVariable):
-            arg = arg + BitVecConstant(value_bits, 0, taint=tainted_fset)
-        else:
-            arg = copy.copy(arg)
-            arg._taint |= tainted_fset
+        arg = copy.copy(arg)
+        arg._taint |= tainted_fset
 
     return arg
 
 
 class Variable(Expression):
     __slots__ = ()
-    xslots: Tuple[str, ...] = ("_name",)
+    __xslots__: Tuple[str, ...] = ("_name",)
 
     def __init__(self, name: str, **kwargs):
         super().__init__(**kwargs)
@@ -140,7 +137,7 @@ class Variable(Expression):
 
 class Constant(Expression):
     __slots__ = ()
-    xslots: Tuple[str, ...] = ("_value",)
+    __xslots__: Tuple[str, ...] = ("_value",)
 
     def __init__(self, value: Union[bool, int], **kwargs):
         super().__init__(**kwargs)
@@ -219,7 +216,7 @@ class Bool(Expression):
 
 
 class BoolVariable(Bool, Variable):
-    __slots__ = Bool.__xslots__ + Variable.xslots
+    __slots__ = Bool.__xslots__ + Variable.__xslots__
 
     @property
     def declaration(self):
@@ -227,7 +224,7 @@ class BoolVariable(Bool, Variable):
 
 
 class BoolConstant(Bool, Constant):
-    __slots__ = Bool.__xslots__ + Constant.xslots
+    __slots__ = Bool.__xslots__ + Constant.__xslots__
 
     def __init__(self, value, **kwargs):
         super().__init__(value=value, **kwargs)
@@ -238,39 +235,39 @@ class BoolConstant(Bool, Constant):
 
 class BoolOperation(Operation, Bool):
     __slots__ = ()
-    xslots = Operation.__xslots__ + Bool.__xslots__
+    __xslots__ = Operation.__xslots__ + Bool.__xslots__
 
 
 class BoolNot(BoolOperation):
-    __slots__ = BoolOperation.xslots
+    __slots__ = BoolOperation.__xslots__
 
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
 
 class BoolAnd(BoolOperation):
-    __slots__ = BoolOperation.xslots
+    __slots__ = BoolOperation.__xslots__
 
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
 
 class BoolOr(BoolOperation):
-    __slots__ = BoolOperation.xslots
+    __slots__ = BoolOperation.__xslots__
 
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
 
 class BoolXor(BoolOperation):
-    __slots__ = BoolOperation.xslots
+    __slots__ = BoolOperation.__xslots__
 
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
 
 
 class BoolITE(BoolOperation):
-    __slots__ = BoolOperation.xslots
+    __slots__ = BoolOperation.__xslots__
 
     def __init__(self, cond: "Bool", true: "Bool", false: "Bool", **kwargs):
         super().__init__(operands=(cond, true, false), **kwargs)
@@ -278,7 +275,7 @@ class BoolITE(BoolOperation):
 
 class BitVec(Expression):
     __slots__ = ()
-    xslots: Tuple[str, ...] = Expression.__xslots__ + ("size",)
+    __xslots__: Tuple[str, ...] = Expression.__xslots__ + ("size",)
     """ This adds a bitsize to the Expression class """
 
     def __init__(self, size: int, **kwargs):
@@ -482,7 +479,7 @@ class BitVec(Expression):
 
 
 class BitVecVariable(BitVec, Variable):
-    __slots__ = BitVec.xslots + Variable.xslots
+    __slots__ = BitVec.__xslots__ + Variable.__xslots__
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -506,7 +503,7 @@ class BitVecVariable(BitVec, Variable):
 
 
 class BitVecConstant(BitVec, Constant):
-    __slots__ = BitVec.xslots + Constant.xslots
+    __slots__ = BitVec.__xslots__ + Constant.__xslots__
 
     def __init__(self, size: int, value: int, **kwargs):
         super().__init__(size=size, value=value, **kwargs)
@@ -528,103 +525,103 @@ class BitVecConstant(BitVec, Constant):
 
 
 class BitVecOperation(BitVec, Operation):
-    xslots = BitVec.xslots + Operation.__xslots__
+    __xslots__ = BitVec.__xslots__ + Operation.__xslots__
     __slots__ = ()
 
 
 class BitVecAdd(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecSub(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecMul(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecDiv(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecUnsignedDiv(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecMod(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecRem(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecUnsignedRem(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecShiftLeft(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecShiftRight(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecArithmeticShiftLeft(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecArithmeticShiftRight(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecAnd(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecOr(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a: BitVec, b: BitVec, *args, **kwargs):
         assert a.size == b.size
@@ -632,21 +629,21 @@ class BitVecOr(BitVecOperation):
 
 
 class BitVecXor(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(size=a.size, operands=(a, b), **kwargs)
 
 
 class BitVecNot(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, **kwargs):
         super().__init__(size=a.size, operands=(a,), **kwargs)
 
 
 class BitVecNeg(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, **kwargs):
         super().__init__(size=a.size, operands=(a,), **kwargs)
@@ -654,21 +651,21 @@ class BitVecNeg(BitVecOperation):
 
 # Comparing two bitvectors results in a Bool
 class LessThan(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(operands=(a, b), **kwargs)
 
 
 class LessOrEqual(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(operands=(a, b), **kwargs)
 
 
 class BoolEqual(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, *args, **kwargs):
         if isinstance(a, BitVec) or isinstance(b, BitVec):
@@ -677,14 +674,14 @@ class BoolEqual(BoolOperation):
 
 
 class GreaterThan(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(operands=(a, b), **kwargs)
 
 
 class GreaterOrEqual(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
@@ -692,14 +689,14 @@ class GreaterOrEqual(BoolOperation):
 
 
 class UnsignedLessThan(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super().__init__(operands=(a, b), **kwargs)
 
 
 class UnsignedLessOrEqual(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         assert a.size == b.size
@@ -707,7 +704,7 @@ class UnsignedLessOrEqual(BoolOperation):
 
 
 class UnsignedGreaterThan(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
@@ -715,7 +712,7 @@ class UnsignedGreaterThan(BoolOperation):
 
 
 class UnsignedGreaterOrEqual(BoolOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, a, b, **kwargs):
         super(UnsignedGreaterOrEqual, self).__init__(operands=(a, b), **kwargs)
@@ -1056,7 +1053,7 @@ class Array(Expression):
 
 
 class ArrayVariable(Array, Variable):
-    __slots__ = Array.__xslots__ + Variable.xslots
+    __slots__ = Array.__xslots__ + Variable.__xslots__
 
     @property
     def declaration(self):
@@ -1305,7 +1302,7 @@ class ArrayProxy:
 
 
 class ArraySelect(BitVec, Operation):
-    __slots__ = BitVec.xslots + Operation.__xslots__
+    __slots__ = BitVec.__xslots__ + Operation.__xslots__
 
     def __init__(self, array: "Array", index: "BitVec", *args, **kwargs):
         assert index.size == array.index_bits
@@ -1328,7 +1325,7 @@ class ArraySelect(BitVec, Operation):
 
 
 class BitVecSignExtend(BitVecOperation):
-    __slots__ = BitVecOperation.xslots + ("extend",)
+    __slots__ = BitVecOperation.__xslots__ + ("extend",)
 
     def __init__(self, operand: "BitVec", size_dest: int, *args, **kwargs):
         assert size_dest >= operand.size
@@ -1337,7 +1334,7 @@ class BitVecSignExtend(BitVecOperation):
 
 
 class BitVecZeroExtend(BitVecOperation):
-    __slots__ = BitVecOperation.xslots + ("extend",)
+    __slots__ = BitVecOperation.__xslots__ + ("extend",)
 
     def __init__(self, size_dest: int, operand: "BitVec", *args, **kwargs):
         assert size_dest >= operand.size
@@ -1346,7 +1343,7 @@ class BitVecZeroExtend(BitVecOperation):
 
 
 class BitVecExtract(BitVecOperation):
-    __slots__ = BitVecOperation.xslots + ("_begining", "_end")
+    __slots__ = BitVecOperation.__xslots__ + ("_begining", "_end")
 
     def __init__(self, operand: "BitVec", offset: int, size: int, *args, **kwargs):
         assert offset >= 0 and offset + size <= operand.size
@@ -1368,7 +1365,7 @@ class BitVecExtract(BitVecOperation):
 
 
 class BitVecConcat(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(self, size_dest: int, *operands, **kwargs):
         assert all(isinstance(x, BitVec) for x in operands)
@@ -1377,7 +1374,7 @@ class BitVecConcat(BitVecOperation):
 
 
 class BitVecITE(BitVecOperation):
-    __slots__ = BitVecOperation.xslots
+    __slots__ = BitVecOperation.__xslots__
 
     def __init__(
         self,
