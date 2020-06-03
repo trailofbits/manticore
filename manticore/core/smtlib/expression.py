@@ -1175,6 +1175,10 @@ class ArrayProxy:
         return self._array.underlying_variable
 
     @property
+    def name(self):
+        return self._array.name
+
+    @property
     def array(self):
         return self._array
 
@@ -1387,8 +1391,3 @@ class BitVecITE(BitVecOperation):
         assert true_value.size == size
         assert false_value.size == size
         super().__init__(size=size, operands=(condition, true_value, false_value), **kwargs)
-
-
-# Constant = (BitVecConstant, BoolConstant)
-# Variable = (BitVecVariable, BoolVariable, ArrayVariable)
-# Operation = (BitVecOperation, BoolOperation, ArrayOperation, ArraySelect)
