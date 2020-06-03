@@ -1936,21 +1936,21 @@ class EVM(Eventful):
     def SSTORE_gas(self, offset, value):
         storage_address = self.address
         SSSTORESENTRYGAS = (
-            2300
-        )  # Minimum gas required to be present for an SSTORE call, not consumed
+            2300  # Minimum gas required to be present for an SSTORE call, not consumed
+        )
         SSTORENOOP = 800  # Once per SSTORE operation if the value doesn't change.
         SSTOREDIRTYGAS = 800  # Once per SSTORE operation if a dirty value is changed.
         SSTOREINITGAS = 20000  # Once per SSTORE operation from clean zero to non-zero
         SstoreInitRefund = (
-            19200
-        )  # Once per SSTORE operation for resetting to the original zero value
+            19200  # Once per SSTORE operation for resetting to the original zero value
+        )
         SSTORECLEANGAS = 5000  # Once per SSTORE operation from clean non-zero to something else
         SstoreCleanRefund = (
-            4200
-        )  # Once per SSTORE operation for resetting to the original non-zero value
+            4200  # Once per SSTORE operation for resetting to the original non-zero value
+        )
         SstoreClearRefund = (
-            15000
-        )  # Once per SSTORE operation for clearing an originally existing storage slot
+            15000  # Once per SSTORE operation for clearing an originally existing storage slot
+        )
 
         self.fail_if(Operators.ULT(self.gas, SSSTORESENTRYGAS))
 
@@ -2511,8 +2511,8 @@ class EVMWorld(Platform):
 
     def _transaction_fee(self, sort, address, price, bytecode_or_data, caller, value):
         GTXCREATE = (
-            32000
-        )  # Paid by all contract creating transactions after the Homestead transition.
+            32000  # Paid by all contract creating transactions after the Homestead transition.
+        )
         GTXDATAZERO = 4  # Paid for every zero byte of data or code for a transaction.
         GTXDATANONZERO = 16  # Paid for every non - zero byte of data or code for a transaction.
         GTRANSACTION = 21000  # Paid for every transaction
