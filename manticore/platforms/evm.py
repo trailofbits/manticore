@@ -87,7 +87,7 @@ consts.add(
     description=(
         "Default behavior for transaction failing because not enough funds."
         "optimistic: Assume there is always enough funds to pay for value and gas. Wont fork"
-        "pesimistic: Assume the balance is never enough for paying fo a transaction. Wont fork"
+        "pessimistic: Assume the balance is never enough for paying fo a transaction. Wont fork"
         "both: Will fork for both options if possible."
     ),
 )
