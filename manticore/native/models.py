@@ -193,8 +193,8 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     """
     strcpy symbolic model
 
-    Algorithm: Copy every byte from src to dst until finding a byte that is NULL or is 
-    constrained to only the NULL value. Every time a byte is fouund that can be NULL but 
+    Algorithm: Copy every byte from src to dst until finding a byte that is NULL or is
+    constrained to only the NULL value. Every time a byte is fouund that can be NULL but
     is not definetly NULL concretize and fork states.
 
     :param state: current program state
