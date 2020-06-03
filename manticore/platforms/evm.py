@@ -1098,7 +1098,7 @@ class EVM(Eventful):
             if self.is_failed():
                 raise NotEnoughGas()
 
-        elif consts.oog == "pesimistic":
+        elif consts.oog == "pessimistic":
             # OOG soon. If it may NOT be enough gas we ignore the normal case.
             # A constraint is added to assert the gas is NOT enough and the other state is ignored.
             # explore only when there is enough gas if possible
