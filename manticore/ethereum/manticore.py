@@ -619,7 +619,6 @@ class ManticoreEVM(ManticoreBase):
                     )
                 if contract_account is None:
                     return None
-                    raise EthereumError("Failed to build contract %s" % contract_name_i)
 
                 self.metadata[int(contract_account)] = md
 
