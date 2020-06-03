@@ -922,10 +922,6 @@ class TranslatorSmtlib(Translator):
     visit_BitVecOperation = _visit_operation
 
     @property
-    def results(self):
-        raise SmtlibError("NOOO")
-
-    @property
     def result(self):
         output = super().result
         if self.use_bindings:
