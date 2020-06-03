@@ -1825,21 +1825,22 @@ class EthPluginTests(unittest.TestCase):
         value = m.make_symbolic_value()
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
         self.assertEqual(m.count_ready_states(), 2)
-        self.assertEqual(m.count_terminated_states(), 2)
+        self.assertEqual(m.count_terminated_states(), 1)
         m.goto_snapshot()  # return to have only 1 ready state. (The terminated states remain)
 
         self.assertEqual(m.count_ready_states(), 1)
-        self.assertEqual(m.count_terminated_states(), 2)
+        self.assertEqual(m.count_terminated_states(), 1)
 
         data = m.make_symbolic_buffer(320)
         value = m.make_symbolic_value()
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
         self.assertEqual(m.count_ready_states(), 2)
+        self.assertEqual(m.count_terminated_states(), 2)
 
         m.clear_snapshot()
         # Can not go to unexistant snapshot
         self.assertRaises(Exception, m.goto_snapshot)
-        self.assertEqual(m.count_terminated_states(), 4)
+        self.assertEqual(m.count_terminated_states(), 2)
         m.clear_terminated_states()
         self.assertEqual(m.count_terminated_states(), 0)
 
