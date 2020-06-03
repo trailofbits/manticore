@@ -1335,7 +1335,7 @@ class EVM(Eventful):
         if size == 0:
             return b""
         self._allocate(offset, size)
-        return self.memory[offset : offset + size].array
+        return self.memory[offset : offset + size]
 
     def write_buffer(self, offset, data):
         self._allocate(offset, len(data))
@@ -1343,7 +1343,10 @@ class EVM(Eventful):
             self._store(offset + i, Operators.ORD(c))
 
     def _load(self, offset, size=1):
-        value = self.memory.read_BE(offset, size)
+        if size == 1:
+            value = self.memory[offset]
+        else:
+            value = self.memory.read_BE(offset, size)
         try:
             value = simplify(value)
             if not value.taint:

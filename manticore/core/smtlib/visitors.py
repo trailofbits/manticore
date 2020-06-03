@@ -730,6 +730,7 @@ class ArithmeticSimplifier(Visitor):
         """ ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
                 -> v0
         """
+        return self._visit_operation(expression, *operands)
         arr, index = operands
         if isinstance(arr, ArrayVariable):
             return self._visit_operation(expression, *operands)
@@ -893,18 +894,13 @@ class TranslatorSmtlib(Translator):
     def visit_BoolConstant(self, expression):
         return expression.value and "true" or "false"
 
-    def _visit_variable(self, expression):
+    def visit_Variable(self, expression):
         return expression.name
-
-    visit_ArrayVariable = _visit_variable
-    visit_BitVecVariable = _visit_variable
-    visit_BoolVariable = _visit_variable
 
     def visit_ArraySelect(self, expression, *operands):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
-
         return "(select %s %s)" % (array_smt, index_smt)
 
     def _visit_operation(self, expression, *operands):
@@ -938,6 +934,9 @@ def translate_to_smtlib(expression, **kwargs):
     if isinstance(expression, ArrayProxy):
         expression = expression.array
     translator = TranslatorSmtlib(**kwargs)
+    if isinstance(expression, ArrayProxy):
+        print (expression)
+        import pdb; pdb.set_trace()
     translator.visit(expression)
     return translator.result
 

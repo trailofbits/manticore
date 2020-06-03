@@ -443,10 +443,10 @@ class Z3Solver(Solver):
     @lru_cache(maxsize=32)
     def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
         """Returns a list with all the possible values for the symbol x"""
-        if not isinstance(expression, Expression):
+        if not issymbolic(expression):
             return [expression]
-        assert isinstance(constraints, ConstraintSet)
-        assert isinstance(expression, Expression)
+        #assert isinstance(constraints, ConstraintSet)
+        #assert isinstance(expression, Expression)
         expression = simplify(expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
@@ -456,7 +456,7 @@ class Z3Solver(Solver):
                 var = temp_cs.new_bool()
             elif isinstance(expression, BitVec):
                 var = temp_cs.new_bitvec(expression.size)
-            elif isinstance(expression, Array):
+            elif isinstance(expression, (Array, ArrayProxy)):
                 var = temp_cs.new_array(
                     index_max=expression.index_max,
                     value_bits=expression.value_bits,

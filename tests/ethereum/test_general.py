@@ -446,7 +446,7 @@ class EthTests(unittest.TestCase):
     def tearDown(self):
         workspace = self.mevm.workspace
         del self.mevm
-        shutil.rmtree(workspace)
+        #shutil.rmtree(workspace)
 
     def test_solidity_create_contract_no_args(self):
         source_code = "contract A { constructor() {} }"
@@ -1014,7 +1014,7 @@ class EthTests(unittest.TestCase):
         filename = os.path.join(THIS_DIR, "contracts/int_overflow.sol")
 
         mevm.multi_tx_analysis(filename, tx_limit=1)
-        mevm.finalize()
+        mevm.finalize(only_alive_states=True)
 
         worksp = mevm.workspace
         listdir = os.listdir(worksp)

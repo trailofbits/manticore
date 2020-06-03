@@ -1694,7 +1694,7 @@ class ManticoreEVM(ManticoreBase):
             if self.fix_unsound_symbolication(st):
                 last_tx = st.platform.last_transaction
                 # Do not generate killed state if only_alive_states is True
-                if only_alive_states and last_tx.result in {"REVERT", "THROW", "TXERROR"}:
+                if not last_tx or only_alive_states and last_tx.result in {"REVERT", "THROW", "TXERROR"}:
                     return
                 logger.debug("Generating testcase for state_id %d", state_id)
                 message = last_tx.result if last_tx else "NO STATE RESULT (?)"

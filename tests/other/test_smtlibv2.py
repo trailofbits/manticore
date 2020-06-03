@@ -228,9 +228,6 @@ class ExpressionTest(unittest.TestCase):
         # 1001 position of array can be 'B'
         self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == ord("B")))
 
-        # name is correctly proxied
-        self.assertEqual(array.name, name)
-
         with cs as temp_cs:
             # but if it is 'B' ...
             temp_cs.add(array.select(1001) == ord("B"))
@@ -274,6 +271,30 @@ class ExpressionTest(unittest.TestCase):
         # It should not be another solution for index
         self.assertFalse(self.solver.check(cs))
 
+    def testBasicArrayDefault(self):
+        cs = ConstraintSet()
+        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
+        key = cs.new_bitvec(32, name="key")
+        self.assertTrue(self.solver.must_be_true(cs, array[key] == 0))
+
+
+    def testBasicArrayDefault2(self):
+        cs = ConstraintSet()
+        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
+        index1 = cs.new_bitvec(32)
+        index2 = cs.new_bitvec(32)
+        value = cs.new_bitvec(32)
+        array[index2] = value
+        cs.add(index1 != index2)
+        cs.add(value != 0)
+        self.assertTrue(self.solver.must_be_true(cs, array[index1] == 0))
+
+    def testBasicArrayIndexConcrete(self):
+        cs = ConstraintSet()
+        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
+        array[0] = 100
+        self.assertTrue(array[0] == 100)
+
     def testBasicArrayConcatSlice(self):
         hw = b"Hello world!"
         cs = ConstraintSet()
@@ -284,7 +305,6 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(self.solver.must_be_true(cs, array == hw))
 
         self.assertTrue(self.solver.must_be_true(cs, array.read(0, 12) == hw))
-
         self.assertTrue(self.solver.must_be_true(cs, array.read(6, 6) == hw[6:12]))
 
         self.assertTrue(self.solver.must_be_true(cs, b"Hello " + array.read(6, 6) == hw))
@@ -335,7 +355,7 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArrayProxySymbIdx(self):
         cs = ConstraintSet()
-        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name="array"), default=0)
+        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name="array", default=0))
         key = cs.new_bitvec(32, name="key")
         index = cs.new_bitvec(32, name="index")
 

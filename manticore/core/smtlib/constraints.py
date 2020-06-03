@@ -417,5 +417,9 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
-        return ArrayProxy(var, default=default)
+        var = self._declare(
+            ArrayVariable(
+                index_bits, index_max, value_bits, name=name, taint=taint, default=default
+            )
+        )
+        return ArrayProxy(var)
