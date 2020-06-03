@@ -23,11 +23,13 @@ jobs:
       if: github.event_name == 'pull_request'
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         pip install -e .[lint]
         black --version
-        git diff --name-only $BASE_SHA..$HEAD_SHA | python scripts/pyfile_exists.py | xargs black --diff --check
+        git fetch --depth=1 origin $BASE_SHA
+        echo "Files Changed:"
+        git diff --name-only $BASE_SHA... | tee .diff_names.txt
+        cat .diff_names.txt | python scripts/pyfile_exists.py | xargs black --diff --check
         mypy --version
         mypy
   tests:
