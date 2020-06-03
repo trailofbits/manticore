@@ -211,7 +211,12 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     cpu = state.cpu
     constrs = state.constraints
     ret = dst
-    offset = 0
+
+    # Initialize offset based on whether state has been forked in strcpy
+    if "strcpy" not in state.context:
+        offset = 0
+    else:
+        offset = state.context["strcpy"]
 
     # Copy until a src_byte is symbolic and constrained to '\000', or is concrete and '\000'
     src_val = cpu.read_int(src + offset, 8)
@@ -220,6 +225,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
 
         # If a byte can be NULL set the src_val for concretize and fork states
         if can_be_NULL(src_val, constrs):
+            state.context["strcpy"] = offset
             raise Concretize("Forking on NULL strcpy", expression=(src_val == 0), policy="ALL")
         offset += 1
 
@@ -228,4 +234,6 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     # Write concrete null for end of string in current state
     cpu.write_int(dst + offset, 0, 8)
 
+    if "strcpy" in state.context:
+        del state.context["strcpy"]
     return ret
