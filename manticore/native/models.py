@@ -117,7 +117,7 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]) -> Unio
     return ret
 
 
-def strlen(state: State, s: Union[int, BitVec]) -> Union[int, BitVec] :
+def strlen(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model.
 
@@ -193,11 +193,9 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     """
     strcpy symbolic model
 
-    Algorithm: Copy every byte from the src to dst until finding a byte that can be or is NULL.
-    If the byte is NULL or is constrained to only the NULL value, append the NULL value to dst
-    and return. If the value can be NULL or another value write an `Expression` for every following
-    byte that sets a value to the src or dst byte according to the preceding bytes until a NULL
-    byte or effectively NULL byte is found.
+    Algorithm: Copy every byte from src to dst until finding a byte that is NULL or is 
+    constrained to only the NULL value. Every time a byte is fouund that can be NULL but 
+    is not definetly NULL concretize and fork states.
 
     :param state: current program state
     :param dst: destination string address
@@ -213,80 +211,21 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     cpu = state.cpu
     constrs = state.constraints
     ret = dst
-
-    # Copy until '\000' is reached or symbolic memory that can be '\000'
-    c = cpu.read_int(src, 8)
-    while cant_be_NULL(c, constrs):
-        cpu.write_int(dst, c, 8)
-        src += 1
-        dst += 1
-        c = cpu.read_int(src, 8)
-
-    # If the byte is symbolic and constrained to '\000', or is concrete and '\000', write concrete val and return
-    if is_definitely_NULL(c, constrs):
-        cpu.write_int(dst, 0, 8)
-        return ret
-
     offset = 0
-    src_val = cpu.read_int(src, 8)
-    dst_val = cpu.read_int(dst, 8)
-    cond = False  # True # FIXME
-    crash = False
-    if "strcpy" not in state.context:
-        print(f"{offset}: {src_val} -> {dst_val}")
-        while not is_definitely_NULL(src_val, constrs):
-            print(f"{offset}: {src} -> {dst}")  # Debugging print to be removed later
-            if can_be_NULL(src_val, constrs):
-                # If a byte can be NULL set the src_val for NULL, build the ITE, & add to the list of nulls
-                new_cond = OR(cond, src_val == 0)  # AND(cond, src_val != 0) #FIXME
-                src_val = ITEBV(8, src_val != 0, src_val, 0)  # add an ITE just for the NULL
-                new_dst = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val) # FIXME
-                
-                cpu.write_int(dst + offset, new_dst, 8)
-                cond = new_cond
-            else:
-                # If it can't be NULL just build the ITE
-                new_dst = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, src_val, dst_val) # FIXME
-                cpu.write_int(dst + offset, new_dst, 8)
-            offset += 1
 
-            # Read next byte and crash if src or dst is unreadable/writeable
-            if not state.mem.access_ok(src + offset, "r", True) or not state.mem.access_ok(dst + offset, "r", True) or not state.mem.access_ok(dst + offset, "w", True):
-                print('Crash')
-                crash = True
-                #cond = NOT(cond)
-                break
-            else:
-                print(f"{offset}: {src_val} -> {dst_val}")
-                src_val = cpu.read_int(src + offset, 8)
-                dst_val = cpu.read_int(dst + offset, 8)
-        if not crash:
-            # Build ITE Tree for NULL byte
-            null = ITEBV(8, cond, dst_val, src_val)  # ITEBV(8, cond, 0, dst_val) #FIXME
-            cpu.write_int(dst + offset, null, 8)
-        state.context["strcpy"] = (crash, cond)
+    # Copy until a src_byte is symbolic and constrained to '\000', or is concrete and '\000'
+    src_val = cpu.read_int(src + offset, 8)
+    while not is_definitely_NULL(src_val, constrs):
+        cpu.write_int(dst + offset, src_val, 8)
 
-    crash, cond = state.context["strcpy"]
-    if crash and issymbolic(cond):
-        print('Concreteize')
-        for declaration in state.constraints.declarations:
-            res = state.constraints.get_variable(declaration.name)
-            print('Crash:', crash)
-            conc = state.solve_one(res)
-            print(f" [{state.id}] \t{declaration.name}:\n [{state.id}] {conc}")
-            #symb_smt = state.constraints.to_string()
-            #print(f" [{state.id}] \t{declaration.name}:\n [{state.id}] {symb_smt}")
-            #state.context["strcpy"] = (False, cond)
+        # If a byte can be NULL set the src_val for concretize and fork states
+        if can_be_NULL(src_val, constrs):
+            raise Concretize("Forking on NULL strcpy", expression=(src_val == 0), policy="ALL")
+        offset += 1
 
-        def setstate(state, solution):
-            crash, cond = state.context["strcpy"]
-            print(cond.constraints.to_string())
-            state.context["strcpy"] = (crash, solution)
-            print('SET STATE')
-            print(state.context["strcpy"])
-        raise Concretize("Forking on crash strcpy", expression=cond, setstate=setstate, policy="ONE")
-    else:
-        print('Write bytes')
+        src_val = cpu.read_int(src + offset, 8)
 
-    del state.context["strcpy"]
+    # Write concrete null for end of string in current state
+    cpu.write_int(dst + offset, 0, 8)
+
     return ret
