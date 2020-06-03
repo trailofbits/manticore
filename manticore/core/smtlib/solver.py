@@ -445,8 +445,8 @@ class Z3Solver(Solver):
         """Returns a list with all the possible values for the symbol x"""
         if not issymbolic(expression):
             return [expression]
-        #assert isinstance(constraints, ConstraintSet)
-        #assert isinstance(expression, Expression)
+        # assert isinstance(constraints, ConstraintSet)
+        # assert isinstance(expression, Expression)
         expression = simplify(expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
