@@ -113,12 +113,7 @@ class EVMContract(EVMAccount):
         if name in self.__hashes:
 
             def f(
-                *args,
-                signature: Optional[str] = None,
-                caller=None,
-                value=0,
-                gas=210000,
-                **kwargs,
+                *args, signature: Optional[str] = None, caller=None, value=0, gas=210000, **kwargs
             ):
                 try:
                     if signature:

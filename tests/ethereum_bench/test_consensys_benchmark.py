@@ -15,8 +15,10 @@ from manticore.ethereum import (
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 from manticore.utils import config
+
 config.get_group("evm").oog = "ignore"
 config.get_group("core").mprocessing = "single"
+
 
 class EthBenchmark(unittest.TestCase):
     """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """

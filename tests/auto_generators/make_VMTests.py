@@ -23,37 +23,43 @@ import pyevmasm as EVMAsm
 from binascii import unhexlify
 
 
-
 total_count = 0
 DEFAULT_FORK = "Istanbul"
 
-real_open=open
-def fake_open(filename, mode='r', *args, **kwargs):
-    ''' Replace normal global open with this for a wuick dry run '''
+real_open = open
+
+
+def fake_open(filename, mode="r", *args, **kwargs):
+    """ Replace normal global open with this for a wuick dry run """
     from io import StringIO
-    logging.info("Fake openning %r", (filename, mode)+args)
+
+    logging.info("Fake openning %r", (filename, mode) + args)
     if os.path.exists(filename):
-        return StringIO(real_open(filename, 'r').read())    
-    return StringIO()    
+        return StringIO(real_open(filename, "r").read())
+    return StringIO()
+
 
 def get_caller(nonce, price, gas, address, value, calldata, v, r, s):
     if address is None:
-        to = b''
+        to = b""
     else:
-        to = unhexlify("%040x"%address)
+        to = unhexlify("%040x" % address)
     # pip install py-evm
     from eth.vm.forks.frontier.transactions import FrontierTransaction
-    t = FrontierTransaction(nonce=nonce,
-                    gas_price=price,
-                    gas=gas,
-                    to=to, # Can be the empty string.
-                    value=value,
-                    data=calldata,
-                    v=v,
-                    r=r,
-                    s=s
-                   )
+
+    t = FrontierTransaction(
+        nonce=nonce,
+        gas_price=price,
+        gas=gas,
+        to=to,  # Can be the empty string.
+        value=value,
+        data=calldata,
+        v=v,
+        r=r,
+        s=s,
+    )
     return int.from_bytes(t.sender, "big")
+
 
 def gen_header(testcases):
     header = f'''"""DO NOT MODIFY: Tests generated from `tests/` with {sys.argv[0]}"""
@@ -63,8 +69,8 @@ from manticore import ManticoreEVM, Plugin
 from manticore.utils import config
 '''
 
-    if any('logs' in testcase for testcase in testcases.values()):
-        body += '''
+    if any("logs" in testcase for testcase in testcases.values()):
+        body += """
 import sha3
 import rlp
 from rlp.sedes import (
@@ -78,9 +84,9 @@ class Log(rlp.Serializable):
         ('topics', CountableList(BigEndianInt(32))),
         ('data', Binary())
     ]
-'''
+"""
 
-    header += '''consts = config.get_group('core')
+    header += """consts = config.get_group('core')
 consts.mprocessing = consts.mprocessing.single
 consts = config.get_group('evm')
 consts.oog = 'pedantic'
@@ -91,16 +97,17 @@ class EVMTest(unittest.TestCase):
     # https://docs.python.org/3.7/library/unittest.html#unittest.TestCase.maxDiff
     maxDiff = None
 
-'''
+"""
     return header
 
 
 def gen_footer(testcase):
-    footer = '''
+    footer = """
 
 if __name__ == '__main__':
-    unittest.main()'''
+    unittest.main()"""
     return footer
+
 
 def gen_body(name, testcase):
     body = f'''
@@ -134,7 +141,12 @@ def gen_body(name, testcase):
         account_balance = int(account["balance"], 0)
 
         disassembly = EVMAsm.disassemble(unhexlify(account_code), fork=DEFAULT_FORK.lower())
-        disassembly = '\n        """' + "\n            " + "\n            ".join(disassembly.split("\n")) + '\n        """'
+        disassembly = (
+            '\n        """'
+            + "\n            "
+            + "\n            ".join(disassembly.split("\n"))
+            + '\n        """'
+        )
         body += f"""
         {disassembly if account_code else ''}
         m.create_account(address={hex(account_address)},
@@ -153,8 +165,8 @@ def gen_body(name, testcase):
 
     coinbases = set()
     for block in testcase["blocks"]:
-        blockheader = block['blockHeader']
-        coinbases.add(blockheader['coinbase'])
+        blockheader = block["blockHeader"]
+        coinbases.add(blockheader["coinbase"])
     for coinbase in coinbases:
         body += f"""
         #coinbase
@@ -165,9 +177,9 @@ def gen_body(name, testcase):
         """
 
     for block in testcase["blocks"]:
-        blockheader = block['blockHeader']
-        
-        body +=  f'''
+        blockheader = block["blockHeader"]
+
+        body += f"""
         # Start a block
         self.assertEqual(m.count_all_states(), 1)
         m.start_block(blocknumber={blockheader['number']},
@@ -177,9 +189,9 @@ def gen_body(name, testcase):
                       gaslimit={hex(int(blockheader['gasLimit'],0))})
 
         #VMtest Transaction
-'''
+"""
 
-        for transaction in block['transactions']:
+        for transaction in block["transactions"]:
             address = None if transaction["to"] == "" else int(transaction["to"], 16)
             calldata = unhexlify(transaction["data"][2:])
             gas = int(transaction["gasLimit"], 0)
@@ -190,32 +202,29 @@ def gen_body(name, testcase):
             s = int(transaction["s"], 0)
             v = int(transaction["v"], 0)
             caller = get_caller(nonce, price, gas, address, value, calldata, v, r, s)
-            body += f'''
+            body += f"""
 
         m.transaction(caller={hex(caller)},
                       address={hex(address)},
                       value={value},
                       data={calldata},
                       gas={gas},
-                      price={price})'''
+                      price={price})"""
 
-
-
-    body +=f'''
+    body += f"""
         for state in m.all_states:
             world = state.platform
             self.assertEqual(used_gas_plugin.used_gas, {blockheader['gasUsed']})
             
-            world.end_block()'''
+            world.end_block()"""
 
-    for account_address, account in testcase['postState'].items():
+    for account_address, account in testcase["postState"].items():
         body += f"""
             # Add post checks for account {account_address}
             # check nonce, balance, code and storage values
             self.assertEqual(world.get_nonce({account_address}), {account['nonce']})
             self.assertEqual(world.get_balance({account_address}), {account['balance']})
             self.assertEqual(world.get_code({account_address}), {"unhexlify('"+account['code'][2:]+"')" if account['code'][2:] else "b''"})"""
-
 
         if account["storage"]:
             body += """
@@ -225,9 +234,8 @@ def gen_body(name, testcase):
                 body += f"""
             self.assertEqual(world.get_storage_data({account_address}, {key}), {value})"""
 
-
     if "logs" in testcase:
-        print (testcase['logs'])
+        print(testcase["logs"])
         body += f"""
             # check logs
             logs = [Log(unhexlify('{'{'}:040x{'}'}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
@@ -236,12 +244,15 @@ def gen_body(name, testcase):
 
     return body
 
+
 def gen_testfile(testcases, fork):
     global total_count
     output = gen_header(testcases)
     for name, testcase in testcases.items():
-        if testcase['network'] != fork:
-            logging.warning(f"Skipping testcase {name}. Wrong fork: {testcase['network']} != {fork}")
+        if testcase["network"] != fork:
+            logging.warning(
+                f"Skipping testcase {name}. Wrong fork: {testcase['network']} != {fork}"
+            )
             continue
         total_count += 1
         output += gen_body(name.replace("-", "_"), testcase)
@@ -249,81 +260,106 @@ def gen_testfile(testcases, fork):
     return output
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Manticore test generator for Ethereum BlockchainTests")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Manticore test generator for Ethereum BlockchainTests"
+    )
     parser.add_argument(
         "-v", action="count", default=0, help="Specify verbosity level from -v to -vvvv"
     )
-    parser.add_argument('-f', '--fork', '--flavor', default=DEFAULT_FORK, type=str,
-                        help='Fork, default: byzantium. Possible: Byzantium, Constantinople, EIP150, EIP158, Frontier, Homestead, Istanbul.'
-                             'Also an unsigned block number is accepted to select the fork.')
+    parser.add_argument(
+        "-f",
+        "--fork",
+        "--flavor",
+        default=DEFAULT_FORK,
+        type=str,
+        help="Fork, default: byzantium. Possible: Byzantium, Constantinople, EIP150, EIP158, Frontier, Homestead, Istanbul."
+        "Also an unsigned block number is accepted to select the fork.",
+    )
 
-    parser.add_argument('-d', '--dry-run', default=False, action='store_true', help='Do not generate any file')
+    parser.add_argument(
+        "-d", "--dry-run", default=False, action="store_true", help="Do not generate any file"
+    )
 
-    parser.add_argument('-i', '--input-path', nargs='?', help='Path to Ethereum tests', required=True)
-    parser.add_argument('-r', '--filter-regex', type=str, help='Filter by regex')
-    parser.add_argument('-o', '--output-path', nargs='?', default='!inplace', help='Output path, by default this generates a .py file in the same folder as the json input')
-    parser.add_argument('-x', '--force', default=False, action='store_true', help='Overwrite any existing file')
+    parser.add_argument(
+        "-i", "--input-path", nargs="?", help="Path to Ethereum tests", required=True
+    )
+    parser.add_argument("-r", "--filter-regex", type=str, help="Filter by regex")
+    parser.add_argument(
+        "-o",
+        "--output-path",
+        nargs="?",
+        default="!inplace",
+        help="Output path, by default this generates a .py file in the same folder as the json input",
+    )
+    parser.add_argument(
+        "-x", "--force", default=False, action="store_true", help="Overwrite any existing file"
+    )
     args = parser.parse_args(sys.argv[1:])
 
     # logging
     loglevel = (logging.CRITICAL, logging.ERROR, logging.INFO, logging.DEBUG)
     logging.basicConfig(level=loglevel[min(args.v, 3)], format="%(message)s")
 
-    
     # Forks
-    accepted_forks = ['Byzantium', 'Constantinople', 'EIP150', 'EIP158', 'Frontier', 'Homestead', 'Istanbul']
+    accepted_forks = [
+        "Byzantium",
+        "Constantinople",
+        "EIP150",
+        "EIP158",
+        "Frontier",
+        "Homestead",
+        "Istanbul",
+    ]
     args.fork = args.fork.title()
 
     if args.fork not in accepted_forks:
-        logging.error('Wrong fork name. Please provide one of %s.\n' % accepted_forks)
+        logging.error("Wrong fork name. Please provide one of %s.\n" % accepted_forks)
         sys.exit(1)
 
     # Dry run
     if args.dry_run:
         open = fake_open
-    
+
     # input path
     if not os.path.isfile(args.input_path):
-        logging.error('Wrong json test file (%s). Please provide one.\n'% args.input_path)
+        logging.error("Wrong json test file (%s). Please provide one.\n" % args.input_path)
         sys.exit(1)
 
-
     with open(args.input_path) as fp:
-        if not os.path.isfile(args.input_path) or not args.input_path.endswith('.json'):
-            logging.debug('Input file args.input_path looks odd. Expecting a .json file.')
+        if not os.path.isfile(args.input_path) or not args.input_path.endswith(".json"):
+            logging.debug("Input file args.input_path looks odd. Expecting a .json file.")
         testcases = dict(json.loads(fp.read()))
 
     logging.info(f"Loaded {len(testcases)} testcases from {args.input_path}")
-    
-    #output path
-    if args.output_path == '!inplace':
+
+    # output path
+    if args.output_path == "!inplace":
         # /xxx/yyy/testfile.json -> ./testfile.py
         stem, ext = os.path.splitext(args.input_path)
-        args.output_path = stem + '.py'
+        args.output_path = stem + ".py"
     elif os.path.isdir(args.output_path):
         # /xxx/yyy/testfile.json -> $output_path/yyy_testfile.py
         stem, ext = os.path.splitext(os.path.basename(args.input_path))
-        output_path = os.path.join(args.output_path, f'test_{stem}.py')
-        #If output pats collides add the containing folder to the name
+        output_path = os.path.join(args.output_path, f"test_{stem}.py")
+        # If output pats collides add the containing folder to the name
         if os.path.exists(output_path):
             folders = args.input_path.split(os.sep)
             if len(folders) >= 2:
                 output_path = os.path.join(args.output_path, f"test_{folders[-2]}_{stem}.py")
         args.output_path = output_path
-    #or else /xxx/yyy/testfile.json -> $whatever
+    # or else /xxx/yyy/testfile.json -> $whatever
 
     if os.path.exists(args.output_path):
         if not args.force:
-            logging.error(f'File {args.output_path} already exists. Consider adding --force')
+            logging.error(f"File {args.output_path} already exists. Consider adding --force")
             if not args.dry_run:
                 sys.exit(1)
-            logging.error(f'Continuing because it is a dry run. ')
+            logging.error(f"Continuing because it is a dry run. ")
         else:
-            logging.info(f'File {args.output_path} already exists. Overwritting.')
+            logging.info(f"File {args.output_path} already exists. Overwritting.")
 
     with open(args.output_path, "w") as fp:
         fp.write(gen_testfile(testcases, args.fork))
 
     logging.info(f"{total_count} unittests generated in {args.output_path}")
-

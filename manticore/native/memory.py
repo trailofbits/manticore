@@ -1328,7 +1328,9 @@ class SMemory(Memory):
         """
         assert issymbolic(address)
         solver = Z3Solver.instance()
-        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions, silent=True)
+        solutions = solver.get_all_values(
+            self.constraints, address, maxcnt=max_solutions, silent=True
+        )
 
         crashing_condition = False
         for base in solutions:

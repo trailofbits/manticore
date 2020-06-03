@@ -38,6 +38,7 @@ solver = Z3Solver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 @contextmanager
 def disposable_mevm(*args, **kwargs):
     mevm = ManticoreEVM(*args, **kwargs)
@@ -449,7 +450,7 @@ class EthTests(unittest.TestCase):
 
     def test_solidity_create_contract_no_args(self):
         source_code = "contract A { constructor() {} }"
-        owner = self.mevm.create_account(balance=10**10)
+        owner = self.mevm.create_account(balance=10 ** 10)
 
         # The default `args=()` makes it pass no arguments
         contract1 = self.mevm.solidity_create_contract(source_code, owner=owner)
@@ -487,7 +488,7 @@ class EthTests(unittest.TestCase):
 
     def test_solidity_create_contract_with_payable_constructor(self):
         source_code = "contract A { constructor() public payable {} }"
-        owner = self.mevm.create_account(balance=10**10)
+        owner = self.mevm.create_account(balance=10 ** 10)
 
         contract = self.mevm.solidity_create_contract(source_code, owner=owner, balance=100)
 
@@ -575,7 +576,7 @@ class EthTests(unittest.TestCase):
 
         }
         """
-        user_account = self.mevm.create_account(balance=10**10)
+        user_account = self.mevm.create_account(balance=10 ** 10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         with self.assertRaises(EthereumError) as ctx:
             contract_account.ret(self.mevm.make_symbolic_value(), signature="(uint8)")
@@ -636,7 +637,7 @@ class EthTests(unittest.TestCase):
         """
         Tests issue 1325.
         """
-        owner = self.mevm.create_account(balance=10**10)
+        owner = self.mevm.create_account(balance=10 ** 10)
         A = self.mevm.solidity_create_contract(
             "contract A { function foo() { revert(); } }", owner=owner
         )
@@ -715,7 +716,7 @@ class EthTests(unittest.TestCase):
             }
         }
         """
-        user_account = self.mevm.create_account(balance=10**10)
+        user_account = self.mevm.create_account(balance=10 ** 10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         input_sym = self.mevm.make_symbolic_value()
         contract_account.f(input_sym)
@@ -773,7 +774,7 @@ class EthTests(unittest.TestCase):
             }
         }
         """
-        user_account = self.mevm.create_account(balance=10**10)
+        user_account = self.mevm.create_account(balance=10 ** 10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         contract_account.ret(
             self.mevm.make_symbolic_value(),
@@ -798,8 +799,8 @@ class EthTests(unittest.TestCase):
         }
         """
 
-        owner_account = m.create_account(balance=10**10)
-        attacker_account = m.create_account(balance=10**10)
+        owner_account = m.create_account(balance=10 ** 10)
+        attacker_account = m.create_account(balance=10 ** 10)
         contract_account = m.solidity_create_contract(contract_src, owner=owner_account, balance=0)
 
         # Some global expression `sym_add1`
@@ -846,7 +847,7 @@ class EthTests(unittest.TestCase):
 
     def test_regression_internal_tx(self):
         m = self.mevm
-        owner_account = m.create_account(balance=10**10)
+        owner_account = m.create_account(balance=10 ** 10)
         c = """
         contract C1 {
           function g() returns (uint) {
@@ -1104,7 +1105,11 @@ class EthTests(unittest.TestCase):
 
         owner = m.create_account(name="owner", balance=30000000000000000)
         wallet = m.solidity_create_contract(
-            source_code, name="wallet", contract_name="Wallet", owner=owner, balance=10000000000000000
+            source_code,
+            name="wallet",
+            contract_name="Wallet",
+            owner=owner,
+            balance=10000000000000000,
         )
         attacker = m.create_account(name="attacker", balance=30000000000000000)
         wallet.luckyNumber(m.make_symbolic_value(), caller=attacker, gas=2312312312222)
@@ -1129,7 +1134,7 @@ class EthTests(unittest.TestCase):
         """
 
         # Initiate the accounts
-        user_account = m.create_account(balance=10**10)
+        user_account = m.create_account(balance=10 ** 10)
         contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
 
         contract_account.f(1)  # it works
@@ -1291,7 +1296,7 @@ class EthTests(unittest.TestCase):
         """
         m: ManticoreEVM = self.mevm
 
-        creator_account = m.create_account(balance=10**10)
+        creator_account = m.create_account(balance=10 ** 10)
         contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
 
         data = m.make_symbolic_buffer(320)
@@ -1302,7 +1307,7 @@ class EthTests(unittest.TestCase):
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
 
         results = [state.platform.all_transactions[-1].result for state in m.all_states]
-        self.assertListEqual(sorted(results), ['STOP', 'STOP'])
+        self.assertListEqual(sorted(results), ["STOP", "STOP"])
 
     def test_plugins_enable(self):
         # test enable/disable plugin and sync vs contextmanager
@@ -1709,7 +1714,9 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         world.create_account(
             address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
         )
-        world.create_account(address=0x222222222222222222222222222222222222222, balance=10000000000000)
+        world.create_account(
+            address=0x222222222222222222222222222222222222222, balance=10000000000000
+        )
         world.transaction(
             0x111111111111111111111111111111111111111,
             caller=0x222222222222222222222222222222222222222,
@@ -1730,13 +1737,15 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             m.create_account(
                 address=0x111111111111111111111111111111111111111, code=EVMAsm.assemble(asm_acc)
             )
-            m.create_account(address=0x222222222222222222222222222222222222222, balance=1000000000000000000) #Needs eth to pay for the gas.
+            m.create_account(
+                address=0x222222222222222222222222222222222222222, balance=1000000000000000000
+            )  # Needs eth to pay for the gas.
             symbolic_data = m.make_symbolic_buffer(320)
             m.transaction(
                 caller=0x222222222222222222222222222222222222222,
                 address=0x111111111111111111111111111111111111111,
                 data=symbolic_data,
-                value=0
+                value=0,
             )
             self.assertEqual(m.count_ready_states(), 1)
 
@@ -1766,7 +1775,9 @@ class EthPluginTests(unittest.TestCase):
             m.register_plugin(plugin)
 
             creator_account = m.create_account(balance=10000000000000)
-            contract_account = m.solidity_create_contract(source_code, owner=creator_account, gas=2134322)
+            contract_account = m.solidity_create_contract(
+                source_code, owner=creator_account, gas=2134322
+            )
 
             symbolic_data = m.make_symbolic_buffer(320)
             m.transaction(
@@ -1783,7 +1794,9 @@ class EthPluginTests(unittest.TestCase):
             for st in m.ready_states:
                 world = st.platform
                 self.assertEqual(len(st.platform.all_transactions), 2)
-                self.assertTrue(st.must_be_true(world.get_storage_data(contract_account, 0) == 124)) #123 + 1
+                self.assertTrue(
+                    st.must_be_true(world.get_storage_data(contract_account, 0) == 124)
+                )  # 123 + 1
                 self.assertTrue(st.must_be_true(world.get_storage_data(contract_account, 1) == 456))
 
     def test_checkpoint(self):

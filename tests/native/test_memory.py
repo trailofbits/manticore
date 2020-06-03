@@ -1424,8 +1424,7 @@ class MemoryTest(unittest.TestCase):
         # it should comply...
         self.assertTrue(sol >= addr and sol <= addr + 0x2000)
 
-
-        #this could crash OR not
+        # this could crash OR not
         native_config = config.get_group("native")
         with native_config.temp_vals():
             native_config.fast_crash = True

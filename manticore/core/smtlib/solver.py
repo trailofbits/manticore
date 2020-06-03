@@ -450,7 +450,7 @@ class Z3Solver(Solver):
         if maxcnt is None:
             maxcnt = consts.maxsolutions
             if isinstance(expression, Bool) and consts.maxsolutions > 1:
-                #We know there is max 2 solutions when Bool
+                # We know there is max 2 solutions when Bool
                 maxcnt = 2
                 silent = True
 
@@ -492,10 +492,10 @@ class Z3Solver(Solver):
                         logger.info("Timeout searching for all solutions")
                         return result
                     raise SolverError("Timeout")
-                #Sometimes adding a new contraint after a check-sat eats all the mem
+                # Sometimes adding a new contraint after a check-sat eats all the mem
                 temp_cs.add(var != value)
                 self._reset(temp_cs.to_string(related_to=var))
-                #self._assert(var != value)
+                # self._assert(var != value)
             return list(result)
 
     def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
