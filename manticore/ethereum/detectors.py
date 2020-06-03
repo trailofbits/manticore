@@ -884,15 +884,15 @@ IN_DID_RUN_CALLBACK = "in_did_run_callback"
 REPLAYING = "replaying"
 
 
-class DetectTransactionReordering(Detector):
+class DetectTransactionDisplacement(Detector):
     """
     Detects cases where:
     * transaction Y returns successfully
     * for some transaction X from a different account, when X precedes Y, Y reverts
     """
 
-    ARGUMENT = "transaction-reordering"
-    HELP = "Susceptible to transaction reordering attacks"
+    ARGUMENT = "transaction-displacement"
+    HELP = "Susceptible to transaction displacement attacks"
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
@@ -920,7 +920,7 @@ class DetectTransactionReordering(Detector):
                 consts = config.get_group("evm")
                 if consts.sha3 is consts.sha3.symbolicate:
                     logger.warn(
-                        "Unsound symbolication can cause the transaction reordering attack"
+                        "Unsound symbolication can cause the transaction displacement attack"
                         + " detector to produce false positives"
                     )
                 context[WARNED] = True
@@ -928,8 +928,7 @@ class DetectTransactionReordering(Detector):
             if not context.get(TROUBLEMAKER):
                 # sam.moelius: Use same initial balance as in ManticoreEVM.multi_tx_analysis.
                 troublemaker = self.manticore.create_account(
-                    balance=10000000000000000000,
-                    name="troublemaker",
+                    balance=10000000000000000000, name="troublemaker",
                 )
                 context[TROUBLEMAKER] = troublemaker.address
                 self.debug("troublemaker = %s", hex(troublemaker.address))
@@ -987,7 +986,7 @@ class DetectTransactionReordering(Detector):
                             state,
                             tx.address,
                             0,
-                            f"{tx.result} following transaction reordering",
+                            f"{tx.result} caused by transaction displacement",
                             False,
                         )
 
