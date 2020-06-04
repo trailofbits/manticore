@@ -996,7 +996,7 @@ class EVM(Eventful):
         #    raise InvalidOpcode('Opcode inside a PUSH immediate')
         try:
             _decoding_cache = getattr(self, "_decoding_cache")
-        except Exception as e:
+        except Exception:
             self._decoding_cache = {}
             _decoding_cache = self._decoding_cache
 
