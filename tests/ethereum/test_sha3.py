@@ -47,8 +47,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         symbolic_input = m.make_symbolic_value()
@@ -77,8 +77,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -108,8 +108,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -143,8 +143,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -180,8 +180,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -216,8 +216,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -253,8 +253,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -290,8 +290,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -326,8 +326,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_buffer(3)
@@ -360,8 +360,8 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_buffer(3)
@@ -397,8 +397,8 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
 
         m = self.ManticoreEVM()
         m.register_plugin(KeepOnlyIfStorageChanges())
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x1 = m.make_symbolic_value()
@@ -449,8 +449,8 @@ class EthSha3TestConcrete(unittest.TestCase):
         }
         """
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
@@ -504,8 +504,8 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
 
         m = self.ManticoreEVM()
         m.register_plugin(KeepOnlyIfStorageChanges())
-        owner = m.create_account(balance=1000, name="owner")
-        attacker = m.create_account(balance=1000, name="attacker")
+        owner = m.create_account(balance=10000000, name="owner")
+        attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x1 = m.make_symbolic_value()

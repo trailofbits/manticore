@@ -45,8 +45,8 @@ class SolverType(config.ConfigEnum):
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
-consts.add("timeout", default=240, description="Timeout, in seconds, for each Z3 invocation")
-consts.add("memory", default=16384, description="Max memory for Z3 to use (in Megabytes)")
+consts.add("timeout", default=120, description="Timeout, in seconds, for each Z3 invocation")
+consts.add("memory", default=1024 * 8, description="Max memory for Z3 to use (in Megabytes)")
 consts.add(
     "maxsolutions",
     default=10000,
@@ -213,6 +213,8 @@ class SmtlibProc:
         assert self._proc
         assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
+        if "(error" in buf:
+            raise SolverException(f"Error in smtlib: {buf}")
         # lparen, rparen = buf.count("("), buf.count(")")
         lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
         return buf, lparen, rparen
@@ -504,6 +506,10 @@ class SMTLIBSolver(Solver):
         expression = simplify(expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
+            if isinstance(expression, Bool) and consts.maxsolutions > 1:
+                # We know there is max 2 solutions when Bool
+                maxcnt = 2
+                silent = True
 
         with constraints as temp_cs:
             if isinstance(expression, Bool):
@@ -524,12 +530,10 @@ class SMTLIBSolver(Solver):
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
             result = []
-
             start = time.time()
             while self._is_sat():
                 value = self._getvalue(var)
                 result.append(value)
-                self._assert(var != value)
 
                 if len(result) >= maxcnt:
                     if silent:
@@ -541,8 +545,15 @@ class SMTLIBSolver(Solver):
                     else:
                         raise TooManySolutions(result)
                 if time.time() - start > consts.timeout:
+                    if silent:
+                        logger.info("Timeout searching for all solutions")
+                        return result
                     raise SolverError("Timeout")
-            return result
+                # Sometimes adding a new contraint after a check-sat eats all the mem
+                temp_cs.add(var != value)
+                self._reset(temp_cs.to_string(related_to=var))
+                # self._assert(var != value)
+            return list(result)
 
     def _optimize_fancy(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
         """
