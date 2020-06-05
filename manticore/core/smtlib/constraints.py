@@ -173,7 +173,7 @@ class ConstraintSet:
             cs.add(constraint)
         return cs
 
-    def to_string(self, replace_constants=True):
+    def to_string(self, replace_constants: bool =True) -> str:
         variables, constraints = self.get_declared_variables(), self.constraints
 
         if replace_constants:
