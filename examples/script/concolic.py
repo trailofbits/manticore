@@ -22,6 +22,8 @@ from manticore.native import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
 from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.smtlib.visitors import GetDeclarations
+
 from manticore.utils import config
 
 import copy
@@ -136,8 +138,18 @@ def perm(lst, func):
 
 
 def constraints_to_constraintset(constupl):
+    # originally those constraints belonged to a different ConstraintSet
+    # This is a hack
     x = ConstraintSet()
-    x._constraints = list(constupl)
+
+    declarations = GetDeclarations()
+    for a in constupl:
+        declarations.visit(a)
+        x.add(a)
+    for d in declarations.result:
+        x._declare(d)
+
+
     return x
 
 
