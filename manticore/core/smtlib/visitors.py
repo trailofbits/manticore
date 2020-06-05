@@ -285,7 +285,6 @@ class ConstantFolderSimplifier(Visitor):
         BitVecAdd: operator.__add__,
         BitVecSub: operator.__sub__,
         BitVecMul: operator.__mul__,
-        BitVecDiv: operator.__floordiv__,
         BitVecShiftLeft: operator.__lshift__,
         BitVecShiftRight: operator.__rshift__,
         BitVecAnd: operator.__and__,
@@ -307,6 +306,19 @@ class ConstantFolderSimplifier(Visitor):
         UnsignedGreaterThan: lambda x, y: (x & UNSIGN_MASK) > (y & UNSIGN_MASK),
         UnsignedGreaterOrEqual: lambda x, y: (x & UNSIGN_MASK) >= (y & UNSIGN_MASK),
     }
+
+    def visit_BitVecDiv(self, expression, *operands):
+        if all(isinstance(o, Constant) for o in operands):
+            signmask=operands[0].signmask
+            mask=operands[0].mask
+            numeral = operands[0].value
+            dividend = operands[1].value
+            if numeral & signmask:
+                numeral = -(mask - numeral -1)
+            if dividend & signmask:
+                dividend = -(mask - dividend -1)
+            result = int(numeral / dividend)
+            return BitVecConstant(expression.size, result, taint=expression.taint)
 
     def visit_BitVecConcat(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):

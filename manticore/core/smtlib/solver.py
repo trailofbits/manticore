@@ -435,7 +435,7 @@ class Z3Solver(Solver):
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-            self._reset(temp_cs.to_string(related_to=expression))
+            self._reset(temp_cs.to_string())
             return self._is_sat()
 
     # get-all-values min max minmax
@@ -454,7 +454,7 @@ class Z3Solver(Solver):
                 maxcnt = 2
                 silent = True
 
-        with constraints as temp_cs:
+        with constraints.related_to(expression) as temp_cs:
             if isinstance(expression, Bool):
                 var = temp_cs.new_bool()
             elif isinstance(expression, BitVec):
@@ -471,7 +471,7 @@ class Z3Solver(Solver):
                 )
 
             temp_cs.add(var == expression)
-            self._reset(temp_cs.to_string(related_to=var))
+            self._reset(temp_cs.related_to(var).to_string())
             result = []
             start = time.time()
             while self._is_sat():
@@ -490,11 +490,11 @@ class Z3Solver(Solver):
                 if time.time() - start > consts.timeout:
                     if silent:
                         logger.info("Timeout searching for all solutions")
-                        return result
+                        return result/home/felipe/Projects/manticore/tests/other/test_smtlibv2.py
                     raise SolverError("Timeout")
                 # Sometimes adding a new contraint after a check-sat eats all the mem
                 temp_cs.add(var != value)
-                self._reset(temp_cs.to_string(related_to=var))
+                self._reset(temp_cs.to_string())
                 # self._assert(var != value)
             return list(result)
 
@@ -516,8 +516,8 @@ class Z3Solver(Solver):
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name="optimized_")
-            self._reset(temp_cs.to_string(related_to=X))
-            self._send(aux.declaration)
+            self._reset(temp_cs.to_string())
+            #self._send(aux.declaration)
 
             start = time.time()
             if consts.optimize and getattr(self, f"support_{goal}", False):
