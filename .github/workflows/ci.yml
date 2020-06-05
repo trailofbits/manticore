@@ -23,11 +23,13 @@ jobs:
       if: github.event_name == 'pull_request'
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         pip install -e .[lint]
         black --version
-        git diff --name-only $BASE_SHA..$HEAD_SHA | python scripts/pyfile_exists.py | xargs black --diff --check
+        git fetch --depth=1 origin $BASE_SHA
+        echo "Files Changed:"
+        git diff --name-only $BASE_SHA... | tee .diff_names.txt
+        cat .diff_names.txt | python scripts/pyfile_exists.py | xargs black --diff --check
         mypy --version
         mypy
   tests:
@@ -116,8 +118,8 @@ jobs:
                 echo "Automaking VMTests" `pwd`
                 cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
                 rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
-                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
-                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+                for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -o ethereum_vm/VMTests_concrete; done
+                rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
                 rm -rf ./vmtests
                 touch ethereum_vm/.done
             fi
@@ -155,11 +157,11 @@ jobs:
             mkdir truffle_tests
             cd truffle_tests
             truffle unbox metacoin
-            coverage run -m manticore . --contract MetaCoin --workspace output
+            coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic
             # Truffle smoke test. We test if manticore is able to generate states
             # from a truffle project. 
-            if [ "$(ls output/*tx -l | wc -l)" != "34" ]; then
-                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
+            if [ "$(ls output/*tx -l | wc -l)" != "26" ]; then
+                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 26"
                 return 1
             fi
             echo "Truffle test succeded"
