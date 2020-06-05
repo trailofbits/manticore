@@ -1035,24 +1035,23 @@ class ExpressionTest(unittest.TestCase):
         cs.add(Operators.OR(aa1, aa2))
         cs.add(Operators.OR(bb1, bb2))
         self.assertTrue(self.solver.check(cs))
-        #No BB variables related to AA
+        # No BB variables related to AA
         self.assertNotIn("BB", cs.related_to(aa1).to_string())
         self.assertNotIn("BB", cs.related_to(aa2).to_string())
         self.assertNotIn("BB", cs.related_to(aa1 == aa2).to_string())
         self.assertNotIn("BB", cs.related_to(aa1 == False).to_string())
-        #No AA variables related to BB
+        # No AA variables related to BB
         self.assertNotIn("AA", cs.related_to(bb1).to_string())
         self.assertNotIn("AA", cs.related_to(bb2).to_string())
         self.assertNotIn("AA", cs.related_to(bb1 == bb2).to_string())
         self.assertNotIn("AA", cs.related_to(bb1 == False).to_string())
 
-        #Nothing is related to tautologies?
-        self.assertEqual('', cs.related_to(simplify(bb1 == bb1)).to_string())
+        # Nothing is related to tautologies?
+        self.assertEqual("", cs.related_to(simplify(bb1 == bb1)).to_string())
 
-        #But if the tautollogy can not get simplified we have to ask the solver
-        #and send in all the other stuff
+        # But if the tautollogy can not get simplified we have to ask the solver
+        # and send in all the other stuff
         self.assertNotIn("AA", cs.related_to(bb1 == bb1).to_string())
-
 
     def test_API(self):
         """
