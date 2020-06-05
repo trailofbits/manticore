@@ -496,7 +496,7 @@ class SMTLIBSolver(Solver):
         self,
         constraints: ConstraintSet,
         expression,
-        maxcnt: Optional[bool] = None,
+        maxcnt: Optional[int] = None,
         silent: bool = False,
     ):
         """Returns a list with all the possible values for the symbol x"""
