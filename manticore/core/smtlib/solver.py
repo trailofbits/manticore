@@ -490,16 +490,7 @@ class Z3Solver(Solver):
                 if time.time() - start > consts.timeout:
                     if silent:
                         logger.info("Timeout searching for all solutions")
-                        return (
-                            result
-                            / home
-                            / felipe
-                            / Projects
-                            / manticore
-                            / tests
-                            / other
-                            / test_smtlibv2.py
-                        )
+                        return list(result)
                     raise SolverError("Timeout")
                 # Sometimes adding a new contraint after a check-sat eats all the mem
                 temp_cs.add(var != value)
