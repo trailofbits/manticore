@@ -495,7 +495,6 @@ class Z3Solver(Solver):
                 # Sometimes adding a new contraint after a check-sat eats all the mem
                 temp_cs.add(var != value)
                 self._reset(temp_cs.to_string())
-                # self._assert(var != value)
             return list(result)
 
     def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
