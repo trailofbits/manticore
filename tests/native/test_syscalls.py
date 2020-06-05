@@ -9,10 +9,34 @@ import unittest
 import os
 import errno
 import re
+from glob import glob
+
+from manticore.native import Manticore
 
 from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.linux import SymbolicSocket
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
+
+
+def test_symbolic_syscall_arg() -> None:
+    BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
+    tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
+    m = Manticore(BIN_PATH, argv=["+"], workspace_url=str(tmp_dir.name))
+
+    m.run()
+    m.finalize()
+
+    found_win_msg = False
+    win_msg = "WIN: Read more than zero data"
+    outs_glob = f"{str(m.workspace)}/test_*.stdout"
+    # Search all output messages
+    for output_p in glob(outs_glob):
+        with open(output_p) as f:
+            if win_msg in f.read():
+                found_win_msg = True
+                break
+
+    assert found_win_msg, f'Did not find win message in {outs_glob}: "{win_msg}"'
 
 
 class LinuxTest(unittest.TestCase):

@@ -14,6 +14,11 @@ from manticore.ethereum import (
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+from manticore.utils import config
+
+config.get_group("evm").oog = "ignore"
+config.get_group("core").mprocessing = "single"
+
 
 class EthBenchmark(unittest.TestCase):
     """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
@@ -168,3 +173,7 @@ class EthBenchmark(unittest.TestCase):
     def test_eth_tx_order_dependence_multitx_1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
+
+
+if __name__ == "__main__":
+    unittest.main()

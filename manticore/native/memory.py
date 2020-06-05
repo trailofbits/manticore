@@ -11,6 +11,7 @@ from ..core.smtlib import (
     BitVecConstant,
     expression,
     issymbolic,
+    Expression,
 )
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
@@ -19,7 +20,7 @@ from ..utils import config
 import functools
 import logging
 
-from typing import Dict, Generator, Iterable, List, MutableMapping, Optional, Set
+from typing import Dict, Generator, Iterable, List, MutableMapping, Optional, Set, Union
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,14 @@ class ConcretizeMemory(MemoryException):
     Raised when a symbolic memory cell needs to be concretized.
     """
 
-    def __init__(self, mem, address, size, message=None, policy="MINMAX"):
+    def __init__(
+        self,
+        mem: "Memory",
+        address: Union[int, Expression],
+        size: int,
+        message: Optional[str] = None,
+        policy: str = "MINMAX",
+    ):
         if message is None:
             self.message = f"Concretizing memory address {address} size {size}"
         else:
@@ -1320,7 +1328,9 @@ class SMemory(Memory):
         """
         assert issymbolic(address)
         solver = Z3Solver.instance()
-        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
+        solutions = solver.get_all_values(
+            self.constraints, address, maxcnt=max_solutions, silent=True
+        )
 
         crashing_condition = False
         for base in solutions:

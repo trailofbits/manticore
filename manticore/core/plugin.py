@@ -10,20 +10,34 @@ from .smtlib import issymbolic
 logger = logging.getLogger(__name__)
 
 
-class Plugin:
+class DecorateAllMeta(type):
+    @staticmethod
+    def _if_enabled(f):
+        """ decorator used to guard callbacks """
+
+        @wraps(f)
+        def g(self, *args, **kwargs):
+            if self.is_enabled():
+                return f(self, *args, **kwargs)
+
+        return g
+
+    def __new__(cls, name, bases, local):
+        for attr in local:
+            value = local[attr]
+            if attr.endswith("_callback") and callable(value):
+                local[attr] = cls._if_enabled(value)
+        return type.__new__(cls, name, bases, local)
+
+
+class Plugin(metaclass=DecorateAllMeta):
+    __slots__ = ("manticore", "_enabled_key", "_plugin_context_name")
 
     def __init__(self):
         self.manticore = None
-        self._enabled_key = f"{str(type(self))}_enabled_{hash(self)}"
-        self._plugin_context_name = f"{str(type(self))}_context_{hash(self)}"
-        self.__decorate_callbacks()
-
-    def __decorate_callbacks(self):
-        for attr in self.__dict__:
-            if attr.endswith('_callback'):
-                method = getattr(self, attr)
-                if callable(method):
-                    setattr(self, attr, self._if_enabled(method))
+        classname = str(type(self)).split("'")[1]
+        self._enabled_key = f"{classname}_enabled_{hex(hash(self))}"
+        self._plugin_context_name = f"{classname}_context_{hex(hash(self))}"
 
     def enable(self):
         """ Enable all callbacks """
@@ -39,15 +53,6 @@ class Plugin:
         """ True if callbacks are enabled """
         with self.manticore.locked_context() as context:
             return context.get(self._enabled_key, True)
-
-    @staticmethod
-    def _if_enabled(f):
-        """ decorator used to guard callbacks """
-        @wraps(f)
-        def g(self, *args, **kwargs):
-            if self.is_enabled():
-                return f(self, *args, **kwargs)
-        return g
 
     @property
     def name(self):
@@ -148,19 +153,13 @@ class ExtendedTracer(Plugin):
         if self.current_pc == where:
             return
 
-        # print(f'will_read_memory {where:x} {size!r}, current_pc {self.current_pc:x}')
-
     def did_read_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
 
-        # print(f'did_read_memory {where:x} {value!r} {size!r}, current_pc {self.current_pc:x}')
-
     def will_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
-
-        # print(f'will_write_memory {where:x} {value!r} {size!r}, current_pc {self.current_pc:x}')
 
     def did_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:

@@ -84,6 +84,13 @@ class ExpressionTest(unittest.TestCase):
         cs = ConstraintSet()
         self.assertFalse(self.solver.can_be_true(cs, x == False))
 
+    def test_constant_bitvec(self):
+        """
+        Tests if higher bits are masked out
+        """
+        x = BitVecConstant(32, 0xFF00000000)
+        self.assertTrue(x.value == 0)
+
     def testBasicAST_001(self):
         """ Can't build abstract classes """
         a = BitVecConstant(32, 100)
@@ -939,9 +946,8 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86)  # -122
         cs.add(c == 0x11)  # 17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b / c)
+        cs.add(d == (b // c))
         cs.add(a == d)
-
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7 & 0xFF)
 
@@ -1019,6 +1025,34 @@ class ExpressionTest(unittest.TestCase):
             == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
         )
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+
+    def testRelated(self):
+        cs = ConstraintSet()
+        aa1 = cs.new_bool(name="AA1")
+        aa2 = cs.new_bool(name="AA2")
+        bb1 = cs.new_bool(name="BB1")
+        bb2 = cs.new_bool(name="BB2")
+        cs.add(Operators.OR(aa1, aa2))
+        cs.add(Operators.OR(bb1, bb2))
+        self.assertTrue(self.solver.check(cs))
+        #No BB variables related to AA
+        self.assertNotIn("BB", cs.related_to(aa1).to_string())
+        self.assertNotIn("BB", cs.related_to(aa2).to_string())
+        self.assertNotIn("BB", cs.related_to(aa1 == aa2).to_string())
+        self.assertNotIn("BB", cs.related_to(aa1 == False).to_string())
+        #No AA variables related to BB
+        self.assertNotIn("AA", cs.related_to(bb1).to_string())
+        self.assertNotIn("AA", cs.related_to(bb2).to_string())
+        self.assertNotIn("AA", cs.related_to(bb1 == bb2).to_string())
+        self.assertNotIn("AA", cs.related_to(bb1 == False).to_string())
+
+        #Nothing is related to tautologies?
+        self.assertEqual('', cs.related_to(simplify(bb1 == bb1)).to_string())
+
+        #But if the tautollogy can not get simplified we have to ask the solver
+        #and send in all the other stuff
+        self.assertNotIn("AA", cs.related_to(bb1 == bb1).to_string())
+
 
     def test_API(self):
         """
