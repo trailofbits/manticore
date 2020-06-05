@@ -116,7 +116,7 @@ class ConstraintSet:
         self._sid += 1
         return self._sid
 
-    def related_to(self, related_to: Optional[Expression] = None):
+    def related_to(self, related_to: Optional[Expression] = None) -> ConstraintSet:
         # sam.moelius: There is a flaw in how __get_related works: when called on certain
         # unsatisfiable sets, it can return a satisfiable one. The flaw arises when:
         #   * self consists of a single constraint C
