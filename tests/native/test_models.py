@@ -1,6 +1,9 @@
 import unittest
 import os
 import random
+import tempfile
+from glob import glob
+import re
 
 from manticore.core.smtlib import (
     ConstraintSet,
@@ -12,7 +15,7 @@ from manticore.core.smtlib import (
 )
 from manticore.native.state import State
 from manticore.platforms import linux
-
+from manticore.native import Manticore
 from manticore.native.models import (
     variadic,
     isvariadic,
@@ -20,8 +23,7 @@ from manticore.native.models import (
     strlen,
     strcpy,
     is_definitely_NULL,
-    can_be_NULL,
-    cant_be_NULL
+    cant_be_NULL,
 )
 
 
@@ -228,15 +230,7 @@ class StrlenTest(ModelTest):
 
 
 class StrcpyTest(ModelTest):
-    def _check_BitVecITE(self, dst, dst_val):
-        # Iterate and check the nested ITE tree for a symbolic byte
-        self.assertTrue(issymbolic(dst))
-        while type(dst.true_value) is BitVecITE:  # check each if/else in dst
-            self.assertEqual(dst.false_value, dst_val)  # dst = false_val
-            dst = dst.true_value
-        return dst
-
-    def _assert_start(self, s, d):
+    def _assert_concrete(self, s, d):
         # Checks all characters are copied until the 1st that could be NULL
         cpu = self.state.cpu
         src = cpu.read_int(s, 8)
@@ -248,49 +242,11 @@ class StrcpyTest(ModelTest):
             offset += 1
             src = cpu.read_int(s + offset, 8)
             dst = cpu.read_int(d + offset, 8)
+
+        # Assert final NULL byte
+        self.assertTrue(is_definitely_NULL(src, self.state.constraints))
+        self.assertEqual(0, dst)
         return offset
-
-    def _assert_end(self, s, d, offset, org_dest_val):
-        cpu = self.state.cpu
-        src = cpu.read_int(s + offset, 8)
-        dst = cpu.read_int(d + offset, 8)
-
-        # src string was entirely symbolic
-        if not issymbolic(dst):
-            print(offset, src, dst)
-            self.assertTrue(is_definitely_NULL(src, self.state.constraints))
-            self.assertEqual(0, dst)
-
-        # Check each symbolic byte in the dst
-        else:
-            # Loop till src must be NULL or assumed dst space allowed is gone
-            while not is_definitely_NULL(src, self.state.constraints) and offset < len(
-                org_dest_val
-            ):
-                # Check ITE tree in symbolic dst
-                dst = self._check_BitVecITE(dst, org_dest_val[offset])
-
-                # Check that true value is src
-                if type(dst.true_value) is ArraySelect:
-                    self.assertEqual(type(src), ArraySelect)
-                    self.assertEqual(src.index, dst.true_value.index)
-                    self.assertTrue(src.array is dst.true_value.array)
-                else:
-                    self.assertTrue(Operators.ITE(dst.true_value == src, True, False))
-
-                # Check the false value is dst or offset
-                if issymbolic(src) and can_be_NULL(src, self.state.constraints):
-                    self.assertEqual(dst.false_value, 0)
-                else:
-                    self.assertEqual(dst.false_value, org_dest_val[offset])  # dst = false_val
-
-                offset += 1
-                src = cpu.read_int(s + offset, 8)
-                dst = cpu.read_int(d + offset, 8)
-
-            # Check last sym dst byte
-            dst = self._check_BitVecITE(dst, org_dest_val[offset])
-            self.assertEqual(dst.true_value, 0)
 
     """
     This method creates memory for a given src and dst string pointers,
@@ -319,9 +275,7 @@ class StrcpyTest(ModelTest):
         # addresses should match
         self.assertEqual(ret, d)
         # assert everything is copied up to the 1st possible 0 is copied
-        offset = self._assert_start(s, d)
-        # check all symbolic values created until a value that must be 0 is found
-        #self._assert_end(s, d, offset, dst_vals)
+        offset = self._assert_concrete(s, d)
 
         # Delete stack space created
         self._pop_string_space(dst_len + len(string))
@@ -336,27 +290,63 @@ class StrcpyTest(ModelTest):
         self._test_strcpy("\0")
         self._test_strcpy("\0", dst_len=10)
 
-    """
-    def test_symbolic_mixed(self):
-        src = self.state.symbolicate_buffer("++\0")
-        self._test_strcpy(src, dst_len=4)
+    def test_symbolic(self):
+        BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "sym_strcpy_test")
+        print("\nBinary Path:")
+        print(BIN_PATH)
+        tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
+        m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
 
-        src = self.state.symbolicate_buffer("xy++\0")
-        self._test_strcpy(src, dst_len=6)
+        addr_of_strcpy = 0x400418
 
-        src = self.state.symbolicate_buffer("iv+++")
-        self.state.constraints.add(src[-1] == 0)
-        self._test_strcpy(src, dst_len=6)
+        @m.hook(addr_of_strcpy)
+        def strlen_model(state):
+            state.invoke_model(strcpy)
 
-        src = self.state.symbolicate_buffer("+++jl\0")
-        self._test_strcpy(src, dst_len=6)
+        m.run()
+        m.finalize()
 
-        src = self.state.symbolicate_buffer("+++df+++")
-        self.state.constraints.add(src[-1] == 0)
-        self._test_strcpy(src, dst_len=12)
+        # Approximate regexes for expected testcase output
+        # Example Match above each regex
+        # Manticore varies the hex output slightly per run
+        expected = [
+            # STDIN: b'\x00AAAAAAAAA'
+            "STDIN: b\\'\\\x00A.{8,32}\\'",
+            # STDIN: b'\xffA\x00\xff\xff\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))[0-9a-f]{2}))A\\\\x00(\\\\x([0-9a-f]{2})){7}\\'",
+            # STDIN: b'\xffA\xff\x00\xff\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))[0-9a-f]{2}))A(\\\\x((?!(00))[0-9a-f]{2}))\\\\x00(\\\\x([0-9a-f]{2})){6}\\'",
+            # STDIN: b'\xffA\xff\xff\x00\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))[0-9a-f]{2}))A(\\\\x((?!(00))[0-9a-f]{2})){2}\\\\x00(\\\\x([0-9a-f]{2})){5}\\'",
+            # STDIN: b'\x00\xbe\xbe\xbe\xbe\xbe\xbe\xbe\xbe\xbe'
+            "STDIN: b\\'\\\\x00(\\\\x([0-9a-f]{2})){9}\\'",
+            # STDIN: b'\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){1}\\\\x00(\\\\x([0-9a-f]{2})){8}\\'",
+            # STDIN: b'\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){2}\\\\x00(\\\\x([0-9a-f]{2})){7}\\'",
+            # STDIN: b'\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){3}\\\\x00(\\\\x([0-9a-f]{2})){6}\\'",
+            # STDIN: b'\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){4}\\\\x00(\\\\x([0-9a-f]{2})){5}\\'",
+            # STDIN: b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
+            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){10}\\'",
+        ]
 
-    def test_only_symbolic(self):
-        src = self.state.symbolicate_buffer("++++++++++++")
-        self.state.constraints.add(src[-1] == 0)
-        self._test_strcpy(src, dst_len=15)
-    """
+        inputs = f"{str(m.workspace)}/test_*.input"
+
+        # Make a list of the generated input states
+        stdins = []
+        for inpt in glob(inputs):
+            with open(inpt) as f:
+                stdins.append(f.read())
+
+        # Check the number of input states matches the number of regexes
+        self.assertEqual(len(stdins), len(expected))
+
+        # Assert that every regex has a matching input
+        for e in expected:
+            match = False
+            for s in stdins:
+                if re.fullmatch(e, s) == None:
+                    match = True
+            self.assertTrue(match)
