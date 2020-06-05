@@ -309,7 +309,7 @@ class ConstantFolderSimplifier(Visitor):
         UnsignedGreaterOrEqual: lambda x, y: (x & UNSIGN_MASK) >= (y & UNSIGN_MASK),
     }
 
-    def visit_BitVecDiv(self, expression, *operands):
+    def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
         if all(isinstance(o, Constant) for o in operands):
             signmask = operands[0].signmask
             mask = operands[0].mask
