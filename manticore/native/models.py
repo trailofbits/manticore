@@ -61,7 +61,7 @@ def _find_zero(cpu, constrs, ptr):
     return offset
 
 
-def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]) -> Union[int, BitVec]:
+def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     """
     strcmp symbolic model.
 
