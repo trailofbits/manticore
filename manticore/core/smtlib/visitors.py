@@ -300,7 +300,7 @@ class ConstantFolderSimplifier(Visitor):
         BoolAnd: operator.__and__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
-        BitVecUnsignedDiv: lambda x, y: (x & UNSIGN_MASK) // (y & UNSIGN_MASK),
+        BitVecUnsignedDiv: lambda x, y: 0 if (y & UNSIGN_MASK) == 0 else (x & UNSIGN_MASK) // (y & UNSIGN_MASK),
         UnsignedLessThan: lambda x, y: (x & UNSIGN_MASK) < (y & UNSIGN_MASK),
         UnsignedLessOrEqual: lambda x, y: (x & UNSIGN_MASK) <= (y & UNSIGN_MASK),
         UnsignedGreaterThan: lambda x, y: (x & UNSIGN_MASK) > (y & UNSIGN_MASK),
@@ -317,7 +317,10 @@ class ConstantFolderSimplifier(Visitor):
                 numeral = -(mask - numeral - 1)
             if dividend & signmask:
                 dividend = -(mask - dividend - 1)
-            result = int(numeral / dividend)
+            if dividend == 0:
+                result = 0
+            else:
+                result = int(numeral / dividend)
             return BitVecConstant(expression.size, result, taint=expression.taint)
 
     def visit_BitVecConcat(self, expression, *operands):
