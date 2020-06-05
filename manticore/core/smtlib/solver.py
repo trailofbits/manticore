@@ -526,7 +526,6 @@ class Z3Solver(Solver):
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name="optimized_")
             self._reset(temp_cs.to_string())
-            # self._send(aux.declaration)
 
             start = time.time()
             if consts.optimize and getattr(self, f"support_{goal}", False):
