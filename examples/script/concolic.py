@@ -149,7 +149,6 @@ def constraints_to_constraintset(constupl):
     for d in declarations.result:
         x._declare(d)
 
-
     return x
 
 

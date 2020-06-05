@@ -490,7 +490,16 @@ class Z3Solver(Solver):
                 if time.time() - start > consts.timeout:
                     if silent:
                         logger.info("Timeout searching for all solutions")
-                        return result/home/felipe/Projects/manticore/tests/other/test_smtlibv2.py
+                        return (
+                            result
+                            / home
+                            / felipe
+                            / Projects
+                            / manticore
+                            / tests
+                            / other
+                            / test_smtlibv2.py
+                        )
                     raise SolverError("Timeout")
                 # Sometimes adding a new contraint after a check-sat eats all the mem
                 temp_cs.add(var != value)
@@ -517,7 +526,7 @@ class Z3Solver(Solver):
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name="optimized_")
             self._reset(temp_cs.to_string())
-            #self._send(aux.declaration)
+            # self._send(aux.declaration)
 
             start = time.time()
             if consts.optimize and getattr(self, f"support_{goal}", False):
