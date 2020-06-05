@@ -43,6 +43,13 @@ class ExpressionTest(unittest.TestCase):
         cs = ConstraintSet()
         self.assertFalse(self.solver.can_be_true(cs, x == False))
 
+    def test_constant_bitvec(self):
+        """
+        Tests if higher bits are masked out
+        """
+        x = BitVecConstant(32, 0xFF00000000)
+        self.assertTrue(x.value == 0)
+
     def testBasicAST_001(self):
         """ Can't build abstract classes """
         a = BitVecConstant(32, 100)

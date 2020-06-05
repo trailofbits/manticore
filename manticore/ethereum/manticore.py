@@ -283,7 +283,7 @@ class ManticoreEVM(ManticoreBase):
             if not contract_name:
                 if len(crytic_compile.contracts_names_without_libraries) > 1:
                     raise EthereumError(
-                        f"Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {', '.join(crytic_compile.contracts_names)}"
+                        f"Solidity file must contain exactly one contract or you must select one. Contracts found: {', '.join(crytic_compile.contracts_names)}"
                     )
                 contract_name = list(crytic_compile.contracts_names_without_libraries)[0]
 
@@ -390,18 +390,20 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, workspace_url: str = None, policy: str = "random"):
+    def __init__(self, plugins=None, **kwargs):
         """
         A Manticore EVM manager
-        :param workspace_url: workspace folder name
-        :param policy: scheduling priority
+        :param plugins: the plugins to register in this manticore manager
         """
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
+        super().__init__(initial_state, **kwargs)
+        if plugins is not None:
+            for p in plugins:
+                self.register_plugin(p)
         self.subscribe("will_terminate_state", self._terminate_state_callback)
         self.subscribe("did_evm_execute_instruction", self._did_evm_execute_instruction_callback)
         if consts.sha3 is consts.sha3.concretize:
@@ -555,7 +557,6 @@ class ManticoreEVM(ManticoreBase):
             :type gas: int
             :rtype: EVMAccount
         """
-
         if compile_args is None:
             compile_args = dict()
 
@@ -582,7 +583,6 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = ABI.serialize(constructor_types, *args)
                     else:
                         constructor_data = b""
-
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     if not Z3Solver.instance().can_be_true(self.constraints, balance == 0):
@@ -615,11 +615,11 @@ class ManticoreEVM(ManticoreBase):
                     )
                 else:
                     contract_account = self.create_contract(
-                        owner=owner, init=md._init_bytecode, balance=balance
+                        owner=owner, init=md._init_bytecode, balance=0, gas=gas
                     )
-
                 if contract_account is None:
-                    raise EthereumError("Failed to build contract %s" % contract_name_i)
+                    return None
+
                 self.metadata[int(contract_account)] = md
 
                 deps[contract_name_i] = int(contract_account)
@@ -629,11 +629,7 @@ class ManticoreEVM(ManticoreBase):
                     if lib_name not in deps:
                         contract_names.append(lib_name)
             except EthereumError as e:
-                logger.error(e)
-                self.kill()
-                raise
-            except Exception as e:
-                logger.info("Failed to compile contract", str(e))
+                logger.info(f"Failed to build contract {contract_name_i} {str(e)}")
                 self.kill()
                 raise
 
@@ -641,8 +637,8 @@ class ManticoreEVM(ManticoreBase):
         for state in self.ready_states:
             if state.platform.get_code(int(contract_account)):
                 return contract_account
+
         logger.info("Failed to compile contract %r", contract_names)
-        return None
 
     def get_nonce(self, address):
         # type forgiveness:
@@ -699,11 +695,11 @@ class ManticoreEVM(ManticoreBase):
 
         self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
-
-        self._accounts[name] = EVMContract(
-            address=address, manticore=self, default_caller=owner, name=name
-        )
-        return self.accounts[name]
+        if self.count_ready_states():
+            self._accounts[name] = EVMContract(
+                address=address, manticore=self, default_caller=owner, name=name
+            )
+            return self.accounts[name]
 
     def _get_uniq_name(self, stem):
         count = 0
@@ -731,6 +727,24 @@ class ManticoreEVM(ManticoreBase):
             new_address = random.randint(100, pow(2, 160))
             if new_address not in all_addresses:
                 return new_address
+
+    def start_block(
+        self, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=None
+    ):
+        for state in self.ready_states:
+            world = state.platform
+            world.start_block(
+                blocknumber=blocknumber,
+                timestamp=timestamp,
+                difficulty=difficulty,
+                gaslimit=gaslimit,
+                coinbase=coinbase,
+            )
+
+    def end_block(self):
+        for state in self.ready_states:
+            world = state.platform
+            world.end_block()
 
     def transaction(self, caller, address, value, data, gas=None, price=1):
         """ Issue a symbolic transaction in all running states
@@ -815,7 +829,7 @@ class ManticoreEVM(ManticoreBase):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
-    def _migrate_tx_expressions(self, state, caller, address, value, data):
+    def _migrate_tx_expressions(self, state, caller, address, value, data, gas, price):
         # Copy global constraints into each state.
         # We should somehow remember what has been copied to each state
         # In a second transaction we should only add new constraints.
@@ -844,12 +858,18 @@ class ManticoreEVM(ManticoreBase):
             if isinstance(data, Array):
                 data = ArrayProxy(data)
 
+        if issymbolic(gas):
+            gas = state.migrate_expression(gas)
+
+        if issymbolic(price):
+            gas = state.migrate_expression(price)
+
         for c in global_constraints:
             state.constrain(c)
 
-        return caller, address, value, data
+        return caller, address, value, data, gas, price
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, gas=21000, price=1):
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gas=None, price=1):
         """ Initiates a transaction
 
             :param caller: caller account
@@ -930,7 +950,9 @@ class ManticoreEVM(ManticoreBase):
                 address_migrated,
                 value_migrated,
                 data_migrated,
-            ) = self._migrate_tx_expressions(state, caller, address, value, data)
+                gas_migrated,
+                price_migrated,
+            ) = self._migrate_tx_expressions(state, caller, address, value, data, gas, price)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -946,17 +968,16 @@ class ManticoreEVM(ManticoreBase):
             state.platform.start_transaction(
                 sort=sort,
                 address=address_migrated,
-                price=price,
+                price=price_migrated,
                 data=data_migrated,
                 caller=caller_migrated,
                 value=value_migrated,
-                gas=gas,
+                gas=gas_migrated,
             )
 
         # run over potentially several states and
         # generating potentially several others
         self.run()
-
         return address
 
     def preconstraint_for_call_transaction(
@@ -1019,8 +1040,8 @@ class ManticoreEVM(ManticoreBase):
         args=None,
         compile_args=None,
     ):
-        owner_account = self.create_account(balance=10000000000000000000, name="owner")
-        attacker_account = self.create_account(balance=10000000000000000000, name="attacker")
+        owner_account = self.create_account(balance=10 ** 10, name="owner")
+        attacker_account = self.create_account(balance=10 ** 10, name="attacker")
         # Pretty print
         logger.info("Starting symbolic create contract")
 
@@ -1028,6 +1049,7 @@ class ManticoreEVM(ManticoreBase):
             create_value = self.make_symbolic_value()
         else:
             create_value = 0
+
         contract_account = self.solidity_create_contract(
             solidity_filename,
             contract_name=contract_name,
@@ -1035,6 +1057,7 @@ class ManticoreEVM(ManticoreBase):
             args=args,
             compile_args=compile_args,
             balance=create_value,
+            gas=230000,
         )
 
         if tx_account == "attacker":
@@ -1077,6 +1100,7 @@ class ManticoreEVM(ManticoreBase):
                     address=contract_account,
                     data=symbolic_data,
                     value=value,
+                    gas=230000,
                 )
 
                 logger.info(
@@ -1414,6 +1438,7 @@ class ManticoreEVM(ManticoreBase):
 
         # we initiated the Tx; we need process the outcome for now.
         # Fixme incomplete.
+        """
         if tx.is_human:
             if tx.sort == "CREATE":
                 if tx.result == "RETURN":
@@ -1424,7 +1449,7 @@ class ManticoreEVM(ManticoreBase):
             logger.info(
                 "Manticore exception: state should be terminated only at the end of the human transaction"
             )
-
+        """
         # Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROW; it actually changes the balance and nonce? of some accounts

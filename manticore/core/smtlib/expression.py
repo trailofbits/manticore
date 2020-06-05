@@ -212,6 +212,12 @@ class Bool(Expression):
         return BoolXor(self.cast(other), self)
 
     def __bool__(self):
+        # try to be forgiving. Allow user to use Bool in an IF sometimes
+        from .visitors import simplify
+
+        x = simplify(self)
+        if isinstance(x, Constant):
+            return x.value
         raise NotImplementedError("__bool__ for Bool")
 
 
@@ -506,6 +512,7 @@ class BitVecConstant(BitVec, Constant):
     __slots__ = BitVec.__xslots__ + Constant.__xslots__
 
     def __init__(self, size: int, value: int, **kwargs):
+        value &= (1 << size) - 1
         super().__init__(size=size, value=value, **kwargs)
 
     def __bool__(self):
@@ -721,14 +728,14 @@ class UnsignedGreaterOrEqual(BoolOperation):
 ###############################################################################
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
-    __slots__ = [
+    __slots__ = (
         "_index_bits",
         "_index_max",
         "_value_bits",
         "_default",
         "_written",
         "_concrete_cache",
-    ]
+    )
 
     def __init__(
         self,
@@ -969,6 +976,7 @@ class Array(Expression):
         return array
 
     def read_BE(self, address, size):
+        address = self.cast_index(address)
         bytes = []
         for offset in range(size):
             bytes.append(self.get(address + offset, self._default))
@@ -1262,7 +1270,6 @@ class ArrayProxy:
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
                 raise ValueError("Array sizes do not match for concatenation")
-
         from .visitors import simplify
 
         # FIXME This should be related to a constrainSet
