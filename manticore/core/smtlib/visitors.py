@@ -324,6 +324,7 @@ class ConstantFolderSimplifier(Visitor):
             else:
                 result = int(numeral / dividend)
             return BitVecConstant(expression.size, result, taint=expression.taint)
+        return None
 
     def visit_BitVecConcat(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
