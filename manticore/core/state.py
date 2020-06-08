@@ -40,7 +40,7 @@ class Concretize(StateException):
 
     """
 
-    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE"]
+    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE", "PESSIMISTIC", "OPTIMISTIC"]
 
     def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
         if policy is None:
@@ -296,6 +296,20 @@ class StateBase(Eventful):
                 )
         elif policy == "ONE":
             vals = [self._solver.get_value(self._constraints, symbolic)]
+        elif policy == "OPTIMISTIC":
+            logger.info("Optimistic case when forking")
+            if self._solver.can_be_true(self._constraints, symbolic):
+                vals = (True,)
+            else:
+                # We assume the path constraint was feasible to begin with
+                vals = (False,)
+        elif policy == "PESSIMISTIC":
+            logger.info("Pessimistic case when forking")
+            if self._solver.can_be_true(self._constraints, symbolic == False):
+                vals = (False,)
+            else:
+                # We assume the path constraint was feasible to begin with
+                vals = (True,)
         else:
             assert policy == "ALL"
             vals = self._solver.get_all_values(

@@ -43,14 +43,6 @@ class SyscallNotImplemented(OSException):
         super().__init__(msg)
 
 
-class ConcretizeSyscallArgument(OSException):
-    def __init__(self, reg_num, message="Concretizing syscall argument", policy="SAMPLED"):
-        self.reg_num = reg_num
-        self.message = message
-        self.policy = policy
-        super().__init__(message)
-
-
 class Platform(Eventful):
     """
     Base class for all platforms e.g. operating systems or virtual machines.
