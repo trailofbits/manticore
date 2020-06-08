@@ -627,7 +627,9 @@ class Z3Solver(Solver):
 
                     self._reset(temp_cs.to_string())
                     if not self._is_sat():
-                        raise SolverError("Model is not available")
+                        raise SolverError(
+                            "Solver could not find a value for expression under current constraint set"
+                        )
 
                     for i in range(expression.index_max):
                         self._send("(get-value (%s))" % var[i].name)
@@ -647,7 +649,9 @@ class Z3Solver(Solver):
                 self._reset(temp_cs.to_string())
 
                 if not self._is_sat():
-                    raise SolverError("Model is not available")
+                    raise SolverError(
+                        "Solver could not find a value for expression under current constraint set"
+                    )
 
                 self._send("(get-value (%s))" % var.name)
                 ret = self._recv()
