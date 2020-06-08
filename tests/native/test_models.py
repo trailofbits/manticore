@@ -249,11 +249,10 @@ class StrcpyTest(ModelTest):
         return offset
 
     """
-    This method creates memory for a given src and dst string pointers,
-    asserts that everything is copied from src to dst until the first possible NULL byte,
-    asserts that after that an appropriate ITE tree is written into the 
-    dst based on the preceding possible NULLS until a definite NULL is reached, 
-    and the memory address returned by strcpy is equal to the given dst address.
+    This method creates memory for a given src (with no possible NULL bytes but and a
+    final NULL byte) and dst string pointers, asserts that everything is copied from src
+    to dst until the NULL byte, and asserts the memory address returned by strcpy is
+    equal to the given dst address.
     """
 
     def _test_strcpy(self, string, dst_len=None):
@@ -292,8 +291,6 @@ class StrcpyTest(ModelTest):
 
     def test_symbolic(self):
         BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "sym_strcpy_test")
-        print("\nBinary Path:")
-        print(BIN_PATH)
         tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
         m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
 
