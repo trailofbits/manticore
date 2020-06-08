@@ -33,6 +33,7 @@ class RegressionTest(unittest.TestCase):
 
         filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
 
+        # A constraint set and a contraint caught in the act of making related_to fail
         constraints, constraint = pickle.loads(gzip.open(filename, "rb").read())
 
         consts = config.get_group("smt")
