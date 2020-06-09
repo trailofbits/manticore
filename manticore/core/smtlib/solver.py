@@ -205,16 +205,18 @@ class SmtlibProc:
             self._proc.stdout.close()
             # Kill the process
             self._proc.kill()
-            # Wait for termination, to avoid zombies.
-            self._proc.wait()
+            # No need to wait for termination, zombies avoided.
         self._proc = None
 
     def __readline_and_count(self):
         assert self._proc
         assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
-        if "(error" in buf:
-            raise SolverException(f"Error in smtlib: {buf}")
+        # If debug is enabled check if the solver reports a syntax error
+        # Error messages may contain an unbalanced parenthesis situation
+        if self._debug:
+            if "(error" in buf:
+                raise SolverException(f"Error in smtlib: {buf}")
         # lparen, rparen = buf.count("("), buf.count(")")
         lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
         return buf, lparen, rparen
@@ -225,14 +227,11 @@ class SmtlibProc:
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        assert self._proc
-        assert self._proc.stdout
-        assert self._proc.stdin
         if self._debug:
             logger.debug(">%s", cmd)
             print(">", cmd)
-        self._proc.stdout.flush()
-        self._proc.stdin.write(f"{cmd}\n")
+        self._proc.stdout.flush()  # type: ignore
+        self._proc.stdin.write(f"{cmd}\n")  # type: ignore
 
     def recv(self) -> str:
         """Reads the response from the smtlib solver"""
