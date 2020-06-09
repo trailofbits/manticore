@@ -1014,58 +1014,83 @@ class DetectTransactionDisplacement(Detector):
             while context_queue:
                 queue.append(context_queue.pop())
 
-        self.info("injecting symbolic transaction (%d queued states)", len(queue))
+        self.info("injecting transactions (%d queued states)", len(queue))
 
         for state_id, tx in queue:
-            # sam.moelius: Manticore deletes states in the ready queue.  But this state_id may have
-            # been queued with multiple txs.  So make a copy of this state.
-            state = self.manticore._load(state_id)
-            with state as new_state:
-                state_id = self.manticore._save(new_state)
-            self.debug("copied state %r to state %r", state.id, state_id)
+            # sam.moelius: This is an optimization.  In the first iteration, the troublemaker's
+            # transaction has the same data as the original transaction.  If the replayed original
+            # transaction then reverts, no symbolic exploration is performed.
+            for copy_tx in True, False:
+                # sam.moelius: Manticore deletes states in the ready queue.  But this state_id may
+                # have been queued with multiple txs.  So make a copy of this state.
+                state = self.manticore._load(state_id)
+                with state as new_state:
+                    new_state_id = self.manticore._save(new_state)
+                self.debug("copied state %r to state %r", state.id, new_state_id)
 
-            assert not self.manticore._ready_states
-            self.manticore._ready_states.append(state_id)
+                assert not self.manticore._ready_states
+                self.manticore._ready_states.append(new_state_id)
 
-            if not DEBUG_REPLAY:
-                troublemaker = None
-                with self.locked_context(value_type=dict) as context:
-                    troublemaker = context[TROUBLEMAKER]
-                    context[REPLAYING] = False
+                if not DEBUG_REPLAY:
+                    troublemaker = None
+                    with self.locked_context(value_type=dict) as context:
+                        troublemaker = context[TROUBLEMAKER]
+                        context[REPLAYING] = False
 
-                symbolic_address = self.manticore.make_symbolic_value()
-                symbolic_data = self.manticore.make_symbolic_buffer(320)
-                symbolic_value = self.manticore.make_symbolic_value()
+                    symbolic_address = self.manticore.make_symbolic_value()
+                    symbolic_data = self.manticore.make_symbolic_buffer(
+                        320 if not copy_tx else len(tx.data)
+                    )
+                    symbolic_value = self.manticore.make_symbolic_value()
 
-                self.manticore.transaction(
-                    caller=troublemaker,
-                    address=symbolic_address,
-                    data=symbolic_data,
-                    value=symbolic_value,
+                    if copy_tx:
+                        self.manticore.constrain(symbolic_data == tx.data)
+
+                    self.manticore.transaction(
+                        caller=troublemaker,
+                        address=symbolic_address,
+                        data=symbolic_data,
+                        value=symbolic_value,
+                    )
+
+                self.info(
+                    "replaying original transaction (%d alive states)",
+                    self.manticore.count_ready_states(),
                 )
 
-            self.info(
-                "replaying original transaction (%d alive states)",
-                self.manticore.count_ready_states(),
-            )
+                with self.locked_context(value_type=dict) as context:
+                    context[REPLAYING] = True
 
-            with self.locked_context(value_type=dict) as context:
-                context[REPLAYING] = True
+                terminated_state_count = self.manticore.count_terminated_states()
 
-            self.manticore.transaction(
-                caller=tx.caller,
-                data=tx.data,
-                address=tx.address,
-                value=tx.value,
-                gas=tx.gas,
-                price=tx.price,
-            )
+                self.manticore.transaction(
+                    caller=tx.caller,
+                    data=tx.data,
+                    address=tx.address,
+                    value=tx.value,
+                    gas=tx.gas,
+                    price=tx.price,
+                )
 
-            # sam.moelius: Move ready states to the terminated list so that test cases are generated
-            # for them.
-            while self.manticore._ready_states:
-                state_id = self.manticore._ready_states.pop()
-                self.manticore._terminated_states.append(state_id)
+                # sam.moelius: Move ready states to the terminated list so that test cases are
+                # generated for them.
+                while self.manticore._ready_states:
+                    state_id = self.manticore._ready_states.pop()
+                    self.manticore._terminated_states.append(state_id)
+
+                # sam.moelius: This check could not be done in the loop just above, because states
+                # may have been added to the terminated list when the original transaction was
+                # replayed.
+                exit_early = False
+                for i in range(terminated_state_count, self.manticore.count_terminated_states()):
+                    state_id = self.manticore._terminated_states[i]
+                    state = self.manticore._load(state_id)
+                    if self.get_findings(state):
+                        exit_early = True
+                        self.debug("exiting early")
+                        break
+                if exit_early:
+                    break
 
         with self.manticore.locked_context("ethereum.saved_states", list) as context_saved_states:
             assert not context_saved_states
