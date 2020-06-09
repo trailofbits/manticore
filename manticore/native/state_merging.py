@@ -1,4 +1,4 @@
-from ..core.smtlib import Z3Solver, ConstraintSet, Operators, issymbolic, BitVec
+from ..core.smtlib import SelectedSolver, ConstraintSet, Operators, issymbolic, BitVec
 
 
 def compare_sockets(cs, socket1, socket2):
@@ -7,7 +7,7 @@ def compare_sockets(cs, socket1, socket2):
     It uses `compare_buffers` for checking buffer attributes for equality.
     It calls itself for comparing peer Socket objects.
     Returns True if the Socket objects are equal, false otherwise.
-    :param cs: ConstraintSet to be used for checking Socket.buffer for semantic equality using `Z3Solver.instance().must_be_true()`
+    :param cs: ConstraintSet to be used for checking Socket.buffer for semantic equality using `SelectedSolver.instance().must_be_true()`
     :param socket1: one of two Socket objects to be compared for equality against socket2
     :param socket2: one of two Socket objects to be compared for equality against socket1
     :return: True, if the Socket objects are found to be equal, False otherwise
@@ -23,8 +23,8 @@ def compare_sockets(cs, socket1, socket2):
 
 def compare_buffers(cs, buffer1, buffer2):
     """
-    This method compares the two List objects for equality using the `Z3Solver.instance().must_be_true()` call.
-    :param cs: ConstraintSet to be used for checking buffer1 for semantic equality with buffer2 using `Z3Solver.instance().must_be_true()`
+    This method compares the two List objects for equality using the `SelectedSolver.instance().must_be_true()` call.
+    :param cs: ConstraintSet to be used for checking buffer1 for semantic equality with buffer2 using `SelectedSolver.instance().must_be_true()`
     :param buffer1: one of two List objects to be compared for equality against buffer2
     :param buffer2: one of two List objects to be compared for equality against buffer1
     :return: True, if the List objects are equal, False otherwise
@@ -32,7 +32,7 @@ def compare_buffers(cs, buffer1, buffer2):
     if len(buffer1) != len(buffer2):
         return False
     for b1, b2 in zip(buffer1, buffer2):
-        if not Z3Solver.instance().must_be_true(cs, b1 == b2):
+        if not SelectedSolver.instance().must_be_true(cs, b1 == b2):
             return False
     return True
 
@@ -62,7 +62,7 @@ def compare_byte_vals(mem1, mem2, addr, merged_constraint):
     :param mem1: first of two memory objects we want to use for comparison
     :param mem2: second of two memory objects we want to use for comparison
     :param addr: address at which bytes values are to be compared
-    :param merged_constraint: ConstraintSet to be used when using the call to `Z3Solver.instance().must_be_true()`
+    :param merged_constraint: ConstraintSet to be used when using the call to `SelectedSolver.instance().must_be_true()`
     :return: returns True if 1 byte values at address `addr` in `mem1` and `mem2` are semantically equal, False otherwise
     """
     val1 = mem1.read(addr, 1)
@@ -70,7 +70,7 @@ def compare_byte_vals(mem1, mem2, addr, merged_constraint):
     # since we only read a single byte value, these lists should only have one entry in them
     assert len(val1) == 1 and len(val2) == 1
     cond_to_check = val1[0] == val2[0]
-    if not Z3Solver.instance().must_be_true(merged_constraint, cond_to_check):
+    if not SelectedSolver.instance().must_be_true(merged_constraint, cond_to_check):
         return False
     else:
         return True
@@ -85,7 +85,7 @@ def compare_mem(mem1, mem2, merged_constraint):
     type SMemory.
     :param mem1: one of two memory objects to be compared
     :param mem2: second of two memory objects to be compared
-    :param merged_constraint: ConstraintSet object that is to be used with `Z3Solver.instance().must_be_true()` calls to check the
+    :param merged_constraint: ConstraintSet object that is to be used with `SelectedSolver.instance().must_be_true()` calls to check the
     memory objects for semantic equality
     :return: True, if the memory objects are equal, False otherwise
     """
@@ -180,7 +180,7 @@ def merge_cpu(cpu1, cpu2, state, exp1, merged_constraint):
     :param exp1: the expression that if satisfiable will cause the CPU registers to take corresponding values from
     `cpu1`, else they will take corresponding values from `cpu2`
     :param merged_constraint: ConstraintSet under which we would want inequality between CPU register values to be
-    satisfiable as checked using `Z3Solver.instance().must_be_true()`
+    satisfiable as checked using `SelectedSolver.instance().must_be_true()`
     :return: List of registers that were merged
     """
     merged_regs = []
@@ -190,7 +190,7 @@ def merge_cpu(cpu1, cpu2, state, exp1, merged_constraint):
         if isinstance(val1, BitVec) and isinstance(val2, BitVec):
             assert val1.size == val2.size
         if issymbolic(val1) or issymbolic(val2) or val1 != val2:
-            if Z3Solver.instance().must_be_true(merged_constraint, val1 != val2):
+            if SelectedSolver.instance().must_be_true(merged_constraint, val1 != val2):
                 merged_regs.append(reg)
                 if cpu1.regfile.sizeof(reg) == 1:
                     state.cpu.write_register(reg, Operators.ITE(exp1, val1, val2))

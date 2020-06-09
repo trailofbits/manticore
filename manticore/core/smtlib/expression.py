@@ -777,6 +777,10 @@ class Array(Expression):
                     raise IndexError
         return self.select(self.cast_index(index))
 
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
     def __eq__(self, other):
         # FIXME taint
         def compare_buffers(a, b):

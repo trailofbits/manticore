@@ -29,7 +29,7 @@ import errno
 import threading
 from ..utils import config
 from ..utils.helpers import StateSerializer, PickleSerializer
-from .smtlib.solver import Z3Solver
+from .smtlib.solver import SelectedSolver
 from .state import StateBase
 from ..exceptions import ManticoreError
 
@@ -658,5 +658,5 @@ class ManticoreOutput:
     def save_input_symbols(testcase, state: StateBase):
         with testcase.open_stream("input") as f:
             for symbol in state.input_symbols:
-                buf = Z3Solver.instance().get_value(state.constraints, symbol)
+                buf = SelectedSolver.instance().get_value(state.constraints, symbol)
                 f.write(f"{symbol.name}: {buf!r}\n")
