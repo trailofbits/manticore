@@ -248,14 +248,14 @@ class StrcpyTest(ModelTest):
         self.assertEqual(0, dst)
         return offset
 
-    """
-    This method creates memory for a given src (with no possible NULL bytes but and a
-    final NULL byte) and dst string pointers, asserts that everything is copied from src
-    to dst until the NULL byte, and asserts the memory address returned by strcpy is
-    equal to the given dst address.
-    """
 
     def _test_strcpy(self, string, dst_len=None):
+        """
+        This method creates memory for a given src (with no possible NULL bytes but and a
+        final NULL byte) and dst string pointers, asserts that everything is copied from src
+        to dst until the NULL byte, and asserts the memory address returned by strcpy is
+        equal to the given dst address.
+        """
         # Create src and dsty strings
         if dst_len is None:
             dst_len = len(string)
