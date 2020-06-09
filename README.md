@@ -216,6 +216,23 @@ for idx, val_list in enumerate(m.collect_returns()):
 * We're still in the process of implementing full support for the EVM Istanbul instruction semantics, so certain opcodes may not be supported.
 In a pinch, you can try compiling with Solidity 0.4.x to avoid generating those instructions. 
 
+## Using a different solverr (Z3, Yices, CVC4)
+Manticore relies on an external solver supporting smtlib2. Curently Z3, Yices and CVC4 are supported and can be selected via commandline or configuration settings.
+By default Manticore will use Z3. Once you installed a different solver you can choose a different solver like this:
+```manticore --smt.solver yices```
+### Installing CVC4
+For more details go to https://cvc4.github.io/. Otherwise just get the binary and use it.
+
+        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
+        sudo chmod +x /usr/bin/cvc4
+
+### Installing Yices
+Yices is incredibly fast. More details here https://yices.csl.sri.com/
+
+        sudo add-apt-repository ppa:sri-csl/formal-methods
+        sudo apt-get update
+        sudo apt-get install yices2
+
 ## Getting Help
 
 Feel free to stop by our #manticore slack channel in [Empire Hacking](https://empireslacking.herokuapp.com/) for help using or extending Manticore.
