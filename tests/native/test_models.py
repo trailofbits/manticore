@@ -309,25 +309,25 @@ class StrcpyTest(ModelTest):
         # Manticore varies the hex output slightly per run
         expected = [
             # STDIN: b'\x00AAAAAAAAA'
-            "STDIN: b\\'\\\x00A.{8,32}\\'",
+            r"STDIN: b\'\\x00A.{8,32}\'",
             # STDIN: b'\xffA\x00\xff\xff\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))[0-9a-f]{2}))A\\\\x00(\\\\x([0-9a-f]{2})){7}\\'",
+            r"STDIN: b\'(\\x((?!(00))[0-9a-f]{2}))A\\x00(\\x([0-9a-f]{2})){7}\'",
             # STDIN: b'\xffA\xff\x00\xff\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))[0-9a-f]{2}))A(\\\\x((?!(00))[0-9a-f]{2}))\\\\x00(\\\\x([0-9a-f]{2})){6}\\'",
+            r"STDIN: b\'(\\x((?!(00))[0-9a-f]{2}))A(\\x((?!(00))[0-9a-f]{2}))\\x00(\\x([0-9a-f]{2})){6}\'",
             # STDIN: b'\xffA\xff\xff\x00\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))[0-9a-f]{2}))A(\\\\x((?!(00))[0-9a-f]{2})){2}\\\\x00(\\\\x([0-9a-f]{2})){5}\\'",
+            r"STDIN: b\'(\\x((?!(00))[0-9a-f]{2}))A(\\x((?!(00))[0-9a-f]{2})){2}\\x00(\\x([0-9a-f]{2})){5}\'",
             # STDIN: b'\x00\xbe\xbe\xbe\xbe\xbe\xbe\xbe\xbe\xbe'
-            "STDIN: b\\'\\\\x00(\\\\x([0-9a-f]{2})){9}\\'",
+            r"STDIN: b\'\\x00(\\x([0-9a-f]{2})){9}\'",
             # STDIN: b'\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){1}\\\\x00(\\\\x([0-9a-f]{2})){8}\\'",
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){1}\\x00(\\x([0-9a-f]{2})){8}\'",
             # STDIN: b'\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){2}\\\\x00(\\\\x([0-9a-f]{2})){7}\\'",
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){2}\\x00(\\x([0-9a-f]{2})){7}\'",
             # STDIN: b'\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){3}\\\\x00(\\\\x([0-9a-f]{2})){6}\\'",
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){3}\\x00(\\x([0-9a-f]{2})){6}\'",
             # STDIN: b'\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){4}\\\\x00(\\\\x([0-9a-f]{2})){5}\\'",
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){4}\\x00(\\x([0-9a-f]{2})){5}\'",
             # STDIN: b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
-            "STDIN: b\\'(\\\\x((?!(00))([0-9a-f]{2}))){10}\\'",
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){10}\'",
         ]
 
         inputs = f"{str(m.workspace)}/test_*.input"
