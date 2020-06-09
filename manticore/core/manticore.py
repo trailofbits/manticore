@@ -354,6 +354,8 @@ class ManticoreBase(Eventful):
         self._workspace = Workspace(workspace_url)
         # reuse the same workspace if not specified
         if outputspace_url is None:
+            outputspace_url = workspace_url
+        if outputspace_url is None:
             outputspace_url = f"fs:{self._workspace.uri}"
         self._output = ManticoreOutput(outputspace_url)
 
