@@ -421,7 +421,7 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def clear_terminated_states(self):
-        ''' Simply remove all states from terminated list '''
+        """ Simply remove all states from terminated list """
         terminated_states_ids = tuple(self._terminated_states)
         for state_id in terminated_states_ids:
             self._terminated_states.remove(state_id)

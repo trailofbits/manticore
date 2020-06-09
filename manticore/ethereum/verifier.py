@@ -15,7 +15,7 @@ from manticore.utils import config
 
 
 def manticore_verifier(source_code, contract_name, propre=r"crytic_test_.*"):
-    ''' Verify solidity properties
+    """ Verify solidity properties
     The results are dumped to stdout and to the workspace folder.
 
         $manticore_verifier tests/ethereum/contracts/prop_verifier.sol TestToken
@@ -32,7 +32,7 @@ def manticore_verifier(source_code, contract_name, propre=r"crytic_test_.*"):
     :param contract_name: The target contract name defined in the source code
     :param propre: A regular expression for selecting properties
     :return:
-    '''
+    """
 
     # Termination condition
     # Exploration will stop when some of the following happens:
