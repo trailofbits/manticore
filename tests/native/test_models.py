@@ -23,7 +23,7 @@ from manticore.native.models import (
     strlen,
     strcpy,
     is_definitely_NULL,
-    cannot_be_NULL,
+    cannot_be_NULL
 )
 
 
@@ -346,4 +346,5 @@ class StrcpyTest(ModelTest):
             for s in stdins:
                 if re.fullmatch(e, s) == None:
                     match = True
+                    break
             self.assertTrue(match)
