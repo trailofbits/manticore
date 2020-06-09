@@ -23,7 +23,7 @@ from manticore.native.models import (
     strlen,
     strcpy,
     is_definitely_NULL,
-    cant_be_NULL,
+    cannot_be_NULL,
 )
 
 
@@ -236,7 +236,7 @@ class StrcpyTest(ModelTest):
         src = cpu.read_int(s, 8)
         dst = cpu.read_int(d, 8)
         offset = 0
-        while cant_be_NULL(src, self.state.constraints):
+        while cannot_be_NULL(src, self.state.constraints):
             self.assertTrue(not issymbolic(dst))
             self.assertEqual(src, dst)
             offset += 1

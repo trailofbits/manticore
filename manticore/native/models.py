@@ -161,7 +161,7 @@ def is_definitely_NULL(byte, constrs) -> bool:
         return byte == 0
 
 
-def cant_be_NULL(byte, constrs) -> bool:
+def cannot_be_NULL(byte, constrs) -> bool:
     """
     Checks if a given byte read from memory is not NULL or cannot be NULL
 
