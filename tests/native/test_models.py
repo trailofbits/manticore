@@ -23,7 +23,7 @@ from manticore.native.models import (
     strlen,
     strcpy,
     is_definitely_NULL,
-    cannot_be_NULL
+    cannot_be_NULL,
 )
 
 
@@ -248,7 +248,6 @@ class StrcpyTest(ModelTest):
         self.assertEqual(0, dst)
         return offset
 
-
     def _test_strcpy(self, string, dst_len=None):
         """
         This method creates memory for a given src (with no possible NULL bytes but and a
@@ -290,6 +289,8 @@ class StrcpyTest(ModelTest):
         self._test_strcpy("\0", dst_len=10)
 
     def test_symbolic(self):
+        # This binary is compiled using gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
+        # with flags: -g -static -fno-builtin
         BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "sym_strcpy_test")
         tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
         m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
