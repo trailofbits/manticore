@@ -4,12 +4,11 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 
 from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
-from ..core.smtlib import issymbolic, BitVec, Expression
-from ..core.smtlib.solver import Z3Solver
-from ..core.smtlib.operators import AND, OR, ITEBV, ZEXTEND, NOT
+from ..core.smtlib import issymbolic, BitVec
+from ..core.smtlib.solver import SelectedSolver
+from ..core.smtlib.operators import ITEBV, ZEXTEND
 from ..core.state import Concretize
-from typing import Union, Deque
-from collections import deque
+from typing import Union
 
 VARIADIC_FUNC_ATTR = "_variadic"
 
@@ -50,7 +49,7 @@ def _find_zero(cpu, constrs, ptr):
         byt = cpu.read_int(ptr + offset, 8)
 
         if issymbolic(byt):
-            if not Z3Solver.instance().can_be_true(constrs, byt != 0):
+            if not SelectedSolver.instance().can_be_true(constrs, byt != 0):
                 break
         else:
             if byt == 0:
@@ -156,7 +155,7 @@ def is_definitely_NULL(byte, constrs) -> bool:
     :return: whether a given byte is NULL or constrained to NULL
     """
     if issymbolic(byte):
-        return Z3Solver.instance().must_be_true(constrs, byte == 0)
+        return SelectedSolver.instance().must_be_true(constrs, byte == 0)
     else:
         return byte == 0
 
@@ -170,7 +169,7 @@ def cannot_be_NULL(byte, constrs) -> bool:
     :return: whether a given byte is not NULL or cannot be NULL
     """
     if issymbolic(byte):
-        return Z3Solver.instance().must_be_true(constrs, byte != 0)
+        return SelectedSolver.instance().must_be_true(constrs, byte != 0)
     else:
         return byte != 0
 
@@ -184,7 +183,7 @@ def can_be_NULL(byte, constrs) -> bool:
     :return: whether a given byte is NULL or can be NULL
     """
     if issymbolic(byte):
-        return Z3Solver.instance().can_be_true(constrs, byte == 0)
+        return SelectedSolver.instance().can_be_true(constrs, byte == 0)
     else:
         return byte == 0
 
