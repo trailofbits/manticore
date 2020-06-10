@@ -1293,6 +1293,7 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
+            #print (self)
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
@@ -3278,7 +3279,8 @@ class EVMWorld(Platform):
                     aux_gas = Operators.ZEXTEND(gas, 512)
                     aux_fee = aux_price * aux_gas
                     # Iff a human tx debit the fee
-                    enough_balance = Operators.AND(
+                    enough_balance = True
+                    Operators.AND(
                         enough_balance, Operators.UGE(aux_src_balance - aux_value, aux_fee)
                     )
                 failed = Operators.NOT(enough_balance)

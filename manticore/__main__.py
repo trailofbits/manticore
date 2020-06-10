@@ -214,7 +214,7 @@ def parse_arguments() -> argparse.Namespace:
     eth_flags.add_argument(
         "--limit-loops",
         action="store_true",
-        help="Avoid exploring constant functions for human transactions",
+        help="Limit loops depth",
     )
 
     eth_flags.add_argument(
