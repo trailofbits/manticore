@@ -307,7 +307,7 @@ class ConstantFolderSimplifier(Visitor):
             if a == 0:
                 ret = 0
             else:
-                ret = int(x / y)
+                ret = int(a / b)
             return BitVecConstant(ret, taint=expression.taint)
 
     def visit_LessThan(self, expression, *operands) -> Optional[BoolConstant]:
@@ -315,24 +315,28 @@ class ConstantFolderSimplifier(Visitor):
             a = operands[0].signed_value
             b = operands[1].signed_value
             return BoolConstant(a < b, taint=expression.taint)
+        return None
 
     def visit_LessOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
             return BoolConstant(a <= b, taint=expression.taint)
+        return None
 
     def visit_GreaterThan(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
             return BoolConstant(a > b, taint=expression.taint)
+        return None
 
     def visit_GreaterOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
             return BoolConstant(a >= b, taint=expression.taint)
+        return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
         if all(isinstance(o, Constant) for o in operands):
