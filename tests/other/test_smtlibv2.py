@@ -1101,8 +1101,6 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x80000000)
         lt = b < a
         ult = b.ult(a)
-        print ("lt", translate_to_smtlib(lt))
-        print ("ult",translate_to_smtlib(ult))
         self.assertFalse(self.solver.can_be_true(cs, ult))
         self.assertTrue(self.solver.must_be_true(cs, lt))
 

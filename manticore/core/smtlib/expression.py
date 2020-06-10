@@ -504,6 +504,13 @@ class BitVecConstant(BitVec):
     def value(self):
         return self._value
 
+    @property
+    def signed_value(self):
+        if self._value & self.signmask:
+            return self._value - (1<<self.size)
+        else:
+            return self._value
+
 
 class BitVecOperation(BitVec):
     __slots__ = ["_operands"]

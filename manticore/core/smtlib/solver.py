@@ -214,7 +214,6 @@ class SmtlibProc:
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
-        print (buf)
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
@@ -230,7 +229,6 @@ class SmtlibProc:
         """
         if self._debug:
             logger.debug(">%s", cmd)
-        print(">", cmd)
         self._proc.stdout.flush()  # type: ignore
         self._proc.stdin.write(f"{cmd}\n")  # type: ignore
 
