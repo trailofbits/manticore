@@ -743,7 +743,7 @@ class EVM(Eventful):
         # This is a very cornered corner case in which code is actually symbolic
         # We should simply not allow to jump to unconstrained(*) symbolic code.
         # (*) bytecode that could take more than a single value
-        self._check_jumpdest = False
+        self._need_check_jumpdest = False
         self._valid_jumpdests = set()
 
         # Compile the list of valid jumpdests via linear dissassembly
@@ -805,7 +805,7 @@ class EVM(Eventful):
 
         # Used calldata size
         self._used_calldata_size = 0
-        self._valid_jumpdests = set()
+        self._valid_jmpdests = set()
         self._sha3 = {}
         self._refund = 0
         self._temp_call_gas = None
@@ -876,7 +876,7 @@ class EVM(Eventful):
         state["_published_pre_instruction_events"] = self._published_pre_instruction_events
         state["_used_calldata_size"] = self._used_calldata_size
         state["_valid_jumpdests"] = self._valid_jumpdests
-        state["_check_jumpdest"] = self._check_jumpdest
+        state["_need_check_jumpdest"] = self._need_check_jumpdest
         state["_return_data"] = self._return_data
         state["evmfork"] = self.evmfork
         state["_refund"] = self._refund
@@ -905,7 +905,7 @@ class EVM(Eventful):
         self.suicides = state["suicides"]
         self._used_calldata_size = state["_used_calldata_size"]
         self._valid_jumpdests = state["_valid_jumpdests"]
-        self._check_jumpdest = state["_check_jumpdest"]
+        self._need_check_jumpdest = state["_need_check_jumpdest"]
         self._return_data = state["_return_data"]
         self.evmfork = state["evmfork"]
         self._refund = state["_refund"]
@@ -1206,30 +1206,30 @@ class EVM(Eventful):
         self._allocated = allocated
         self._checkpoint_data = None
 
-    def _set_check_jumpdest(self, flag=True):
+    def _set_check_jmpdest(self, flag=True):
         """
         Next instruction must be a JUMPDEST iff `flag` holds.
 
         Note that at this point `flag` can be the conditional from a JUMPI
         instruction hence potentially a symbolic value.
         """
-        self._check_jumpdest = flag
+        self._need_check_jumpdest = flag
 
-    def _check_jumpdest(self):
+    def _check_jmpdest(self):
         """
         If the previous instruction was a JUMP/JUMPI and the conditional was
         True, this checks that the current instruction must be a JUMPDEST.
 
-        Here, if symbolic, the conditional `self._check_jumpdest` would be
+        Here, if symbolic, the conditional `self._need_check_jumpdest` would be
         already constrained to a single concrete value.
         """
         # If pc is already pointing to a JUMPDEST thre is no need to check.
         pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
         if pc in self._valid_jumpdests:
-            self._check_jumpdest = False
+            self._need_check_jumpdest = False
             return
 
-        should_check_jumpdest = simplify(self._check_jumpdest)
+        should_check_jumpdest = simplify(self._need_check_jumpdest)
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
@@ -1242,7 +1242,7 @@ class EVM(Eventful):
 
         # If it can be solved only to False just set it False. If it can be solved
         # only to True, process it and also set it to False
-        self._check_jumpdest = False
+        self._need_check_jumpdest = False
 
         if should_check_jumpdest:
             if pc not in self._valid_jumpdests:
@@ -1293,7 +1293,7 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
-            self._check_jumpdest()
+            self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
@@ -2048,7 +2048,7 @@ class EVM(Eventful):
         """Alter the program counter"""
         self.pc = dest
         # This set ups a check for JMPDEST in the next instruction
-        self._set_check_jumpdest()
+        self._set_check_jmpdest()
 
     def JUMPI(self, dest, cond):
         """Conditionally alter the program counter"""
@@ -2057,7 +2057,7 @@ class EVM(Eventful):
 
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         # This set ups a check for JMPDEST in the next instruction if cond != 0
-        self._set_check_jumpdest(cond != 0)
+        self._set_check_jmpdest(cond != 0)
 
     def GETPC(self):
         """Get the value of the program counter prior to the increment"""

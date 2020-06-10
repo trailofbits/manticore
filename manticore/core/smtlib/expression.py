@@ -998,7 +998,7 @@ class ArraySlice(ArrayOperation):
 
     def store(self, index, value):
         return ArraySlice(
-            self._array.store(index + self._slice_offset, value),
+            self.array.store(index + self._slice_offset, value),
             self._slice_offset,
             self._slice_size,
         )

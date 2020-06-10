@@ -110,7 +110,7 @@ class EthAbiTests(unittest.TestCase):
             }
         }
         """
-        user_account = m.create_account(balance=1000000, name="user_account")
+        user_account = m.create_account(balance=10 ** 10, name="user_account")
         contract_account = m.solidity_create_contract(
             source_code, owner=user_account, name="contract_account", gas=36225
         )
@@ -701,7 +701,7 @@ class EthTests(unittest.TestCase):
     def test_check_jumpdest_symbolic_pc(self):
         """
         In Manticore 0.2.4 (up to 6804661) when run with DetectIntegerOverflow,
-        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._check_jumpdest:
+        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._need_check_jumpdest:
             self.pc in self._valid_jumpdests
         failed (because we checked if the object is in a list of integers...).
 
@@ -1010,20 +1010,16 @@ class EthTests(unittest.TestCase):
             """
 
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-                try:
-                    world = state.platform
-                    if world.current_transaction.sort == "CREATE":
-                        name = "init"
-                    else:
-                        name = "rt"
+                world = state.platform
+                if world.current_transaction.sort == "CREATE":
+                    name = "init"
+                else:
+                    name = "rt"
 
-                    # collect all end instructions based on whether they are in init or rt
-                    if instruction.is_endtx:
-                        with self.locked_context(name) as d:
-                            d.append(instruction.pc)
-                except Exception as e:
-                    print(e)
-                    raise
+                # collect all end instructions based on whether they are in init or rt
+                if instruction.is_endtx:
+                    with self.locked_context(name) as d:
+                        d.append(instruction.pc)
 
         mevm = self.mevm
         p = TestPlugin()
@@ -1860,81 +1856,6 @@ class EthPluginTests(unittest.TestCase):
         self.assertEqual(m.count_terminated_states(), 2)
         m.clear_terminated_states()
         self.assertEqual(m.count_terminated_states(), 0)
-
-        m.clear_snapshot()  # We can double clear it
-
-    def test_is_main(self):
-        # test enable/disable plugin and sync vs contextmanager
-        source_code = """
-        contract C {
-            constructor() public payable {}
-            function f1(uint a) public payable {}
-            function f2(uint a) public payable {}
-        }
-        """
-
-        class X(Plugin):
-            def will_evm_execute_instruction_callback(self, state, instruction, args):
-                is_main = self.manticore.is_main()
-                is_running = self.manticore.is_running()
-                with self.locked_context() as ctx:
-                    ctx["is_main"] = ctx.get("is_main", False) or (is_main and not is_running)
-
-        from manticore.utils import config
-
-        consts = config.get_group("core")
-        for ty in ("multiprocessing", "threading", "single"):
-            consts.mprocessing = ty
-            m: ManticoreEVM = ManticoreEVM()
-            x = X()
-            m.register_plugin(x)
-            self.assertTrue(m.is_main())
-
-            creator_account = m.create_account(balance=10000000000)
-            contract_account = m.solidity_create_contract(
-                source_code, owner=creator_account, balance=0
-            )
-
-    def test_checkpoint(self):
-        # test enable/disable plugin and sync vs contextmanager
-        source_code = """
-        contract C {
-            constructor() public payable {}
-            function f1(uint a) public payable {}
-            function f2(uint a) public payable {}
-        }
-        """
-
-        m: ManticoreEVM = ManticoreEVM()
-
-        creator_account = m.create_account(balance=10000000000)
-        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
-
-        # Can not go to unexistant snapshot
-        self.assertRaises(Exception, m.goto_snapshot)
-        self.assertEqual(m.count_ready_states(), 1)
-        # take the snap
-        m.take_snapshot()
-        self.assertEqual(m.count_ready_states(), 1)
-
-        data = m.make_symbolic_buffer(320)
-        value = m.make_symbolic_value()
-        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
-        self.assertEqual(m.count_ready_states(), 2)
-        self.assertEqual(m.count_terminated_states(), 2)
-        m.goto_snapshot()  # return to have only 1 ready state. (The terminated states remain)
-
-        self.assertEqual(m.count_ready_states(), 1)
-        self.assertEqual(m.count_terminated_states(), 2)
-
-        data = m.make_symbolic_buffer(320)
-        value = m.make_symbolic_value()
-        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
-        self.assertEqual(m.count_ready_states(), 2)
-
-        m.clear_snapshot()
-        # Can not go to unexistant snapshot
-        self.assertRaises(Exception, m.goto_snapshot)
 
         m.clear_snapshot()  # We can double clear it
 
