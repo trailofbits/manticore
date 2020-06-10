@@ -7,7 +7,6 @@ import logging
 import operator
 
 logger = logging.getLogger(__name__)
-UNSIGN_MASK = (1 << 256) - 1
 
 
 class Visitor:
@@ -293,22 +292,53 @@ class ConstantFolderSimplifier(Visitor):
         BitVecXor: operator.__xor__,
         BitVecNot: operator.__not__,
         BitVecNeg: operator.__invert__,
-        LessThan: operator.__lt__,
-        LessOrEqual: operator.__le__,
-        BoolEqual: operator.__eq__,
-        GreaterThan: operator.__gt__,
-        GreaterOrEqual: operator.__ge__,
         BoolAnd: operator.__and__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
-        BitVecUnsignedDiv: lambda x, y: 0
-        if (y & UNSIGN_MASK) == 0
-        else (x & UNSIGN_MASK) // (y & UNSIGN_MASK),
-        UnsignedLessThan: lambda x, y: (x & UNSIGN_MASK) < (y & UNSIGN_MASK),
-        UnsignedLessOrEqual: lambda x, y: (x & UNSIGN_MASK) <= (y & UNSIGN_MASK),
-        UnsignedGreaterThan: lambda x, y: (x & UNSIGN_MASK) > (y & UNSIGN_MASK),
-        UnsignedGreaterOrEqual: lambda x, y: (x & UNSIGN_MASK) >= (y & UNSIGN_MASK),
+        UnsignedLessThan: operator.__lt__,
+        UnsignedLessOrEqual: operator.__le__,
+        UnsignedGreaterThan: operator.__gt__,
+        UnsignedGreaterOrEqual: operator.__ge__,
     }
+
+    def visit_BitVecUnsignedDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].value
+            b = operands[1].value
+            if a == 0:
+                ret = 0
+            else:
+                ret = int(a / b)
+            return BitVecConstant(expression.size, ret, taint=expression.taint)
+        return None
+
+    def visit_LessThan(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a < b, taint=expression.taint)
+        return None
+
+    def visit_LessOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a <= b, taint=expression.taint)
+        return None
+
+    def visit_GreaterThan(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a > b, taint=expression.taint)
+        return None
+
+    def visit_GreaterOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a >= b, taint=expression.taint)
+        return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
         if all(isinstance(o, Constant) for o in operands):

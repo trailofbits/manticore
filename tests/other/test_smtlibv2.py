@@ -1102,6 +1102,39 @@ class ExpressionTest(unittest.TestCase):
             for attr in attrs:
                 self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
 
+    def test_signed_unsigned_LT_simple(self):
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32)
+        b = cs.new_bitvec(32)
+
+        cs.add(a == 0x1)
+        cs.add(b == 0x80000000)
+
+        lt = b < a
+        ult = b.ult(a)
+
+        self.assertFalse(self.solver.can_be_true(cs, ult))
+        self.assertTrue(self.solver.must_be_true(cs, lt))
+
+    def test_signed_unsigned_LT_complex(self):
+        mask = (1 << 32) - 1
+
+        cs = ConstraintSet()
+        _a = cs.new_bitvec(32)
+        _b = cs.new_bitvec(32)
+
+        cs.add(_a == 0x1)
+        cs.add(_b == (0x80000000 - 1))
+
+        a = _a & mask
+        b = (_b + 1) & mask
+
+        lt = b < a
+        ult = b.ult(a)
+
+        self.assertFalse(self.solver.can_be_true(cs, ult))
+        self.assertTrue(self.solver.must_be_true(cs, lt))
+
 
 class ExpressionTestYices(ExpressionTest):
     def setUp(self):

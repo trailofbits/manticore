@@ -1381,6 +1381,8 @@ class EVM(Eventful):
     def read_buffer(self, offset, size):
         if issymbolic(size) and not isinstance(size, Constant):
             raise EVMException("Symbolic size not supported")
+        if isinstance(size, Constant):
+            size = size.value
         if size == 0:
             return b""
         self._allocate(offset, size)
