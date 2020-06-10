@@ -297,7 +297,7 @@ class ConstantFolderSimplifier(Visitor):
         UnsignedLessThan: operator.__lt__,
         UnsignedLessOrEqual: operator.__le__,
         UnsignedGreaterThan: operator.__gt__,
-        UnsignedGreaterOrEqual: operator.__le__,
+        UnsignedGreaterOrEqual: operator.__ge__,
     }
 
     def visit_BitVecUnsignedDiv(self, expression, *operands) -> Optional[BitVecConstant]:
