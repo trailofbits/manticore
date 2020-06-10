@@ -309,14 +309,14 @@ class ConstantFolderSimplifier(Visitor):
 
     def visit_BitVecDiv(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
-            signmask=operands[0].signmask
-            mask=operands[0].mask
+            signmask = operands[0].signmask
+            mask = operands[0].mask
             numeral = operands[0].value
             dividend = operands[1].value
             if numeral & signmask:
-                numeral = -(mask - numeral -1)
+                numeral = -(mask - numeral - 1)
             if dividend & signmask:
-                dividend = -(mask - dividend -1)
+                dividend = -(mask - dividend - 1)
             result = int(numeral / dividend)
             return BitVecConstant(expression.size, result, taint=expression.taint)
 

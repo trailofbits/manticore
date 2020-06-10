@@ -4,7 +4,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 
 from .cpu.abstractcpu import ConcretizeArgument
 from ..core.smtlib import issymbolic
-from ..core.smtlib.solver import Z3Solver
+from ..core.smtlib.solver import SelectedSolver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 
 VARIADIC_FUNC_ATTR = "_variadic"
@@ -46,7 +46,7 @@ def _find_zero(cpu, constrs, ptr):
         byt = cpu.read_int(ptr + offset, 8)
 
         if issymbolic(byt):
-            if not Z3Solver.instance().can_be_true(constrs, byt != 0):
+            if not SelectedSolver.instance().can_be_true(constrs, byt != 0):
                 break
         else:
             if byt == 0:
