@@ -5,6 +5,8 @@ from functools import lru_cache
 import copy
 import logging
 import operator
+import math
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
@@ -307,7 +309,7 @@ class ConstantFolderSimplifier(Visitor):
             if a == 0:
                 ret = 0
             else:
-                ret = int(a / b)
+                ret = math.trunc(Decimal(a) / Decimal(b))
             return BitVecConstant(expression.size, ret, taint=expression.taint)
         return None
 
@@ -340,6 +342,7 @@ class ConstantFolderSimplifier(Visitor):
         return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        print("HOO BABY VISITING A BITVECDIV")
         if all(isinstance(o, Constant) for o in operands):
             signmask = operands[0].signmask
             mask = operands[0].mask
@@ -352,7 +355,7 @@ class ConstantFolderSimplifier(Visitor):
             if dividend == 0:
                 result = 0
             else:
-                result = int(numeral / dividend)
+                result = math.trunc(Decimal(numeral) / Decimal(dividend))
             return BitVecConstant(expression.size, result, taint=expression.taint)
         return None
 
