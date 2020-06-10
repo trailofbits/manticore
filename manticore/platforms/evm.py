@@ -805,7 +805,7 @@ class EVM(Eventful):
 
         # Used calldata size
         self._used_calldata_size = 0
-        self._valid_jmpdests = set()
+        self._valid_jumpdests = set()
         self._sha3 = {}
         self._refund = 0
         self._temp_call_gas = None
@@ -1206,7 +1206,7 @@ class EVM(Eventful):
         self._allocated = allocated
         self._checkpoint_data = None
 
-    def _set_check_jmpdest(self, flag=True):
+    def _set_check_jumpdest(self, flag=True):
         """
         Next instruction must be a JUMPDEST iff `flag` holds.
 
@@ -1215,7 +1215,7 @@ class EVM(Eventful):
         """
         self._check_jumpdest = flag
 
-    def _check_jmpdest(self):
+    def _check_jumpdest(self):
         """
         If the previous instruction was a JUMP/JUMPI and the conditional was
         True, this checks that the current instruction must be a JUMPDEST.
@@ -1293,8 +1293,7 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
-            #print (self)
-            self._check_jmpdest()
+            self._check_jumpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
@@ -2049,7 +2048,7 @@ class EVM(Eventful):
         """Alter the program counter"""
         self.pc = dest
         # This set ups a check for JMPDEST in the next instruction
-        self._set_check_jmpdest()
+        self._set_check_jumpdest()
 
     def JUMPI(self, dest, cond):
         """Conditionally alter the program counter"""
@@ -2058,7 +2057,7 @@ class EVM(Eventful):
 
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         # This set ups a check for JMPDEST in the next instruction if cond != 0
-        self._set_check_jmpdest(cond != 0)
+        self._set_check_jumpdest(cond != 0)
 
     def GETPC(self):
         """Get the value of the program counter prior to the increment"""

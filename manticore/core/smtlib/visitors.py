@@ -73,7 +73,7 @@ class Visitor:
         :type use_fixed_point: Bool
         """
         if isinstance(node, ArrayProxy):
-            node=node.array
+            node = node.array
         cache = self._cache
         visited = set()
         stack = []

@@ -19,12 +19,23 @@ from manticore.utils.nointerrupt import WithKeyboardInterruptAs
 
 consts = config.get_group("cli")
 consts.add(
-    "config",
-    default="config.yaml",
-    description="Configure user for solidity property verif",
+    "config", default="config.yaml", description="Configure user for solidity property verif",
 )
 
-def manticore_verifier(source_code, contract_name, maxfail=None, maxt=3, maxcov=100, deployer=None, senders=(None,), psender=None, propre=r"crytic_test_.*", compile_args=None, outputspace_url=None):
+
+def manticore_verifier(
+    source_code,
+    contract_name,
+    maxfail=None,
+    maxt=3,
+    maxcov=100,
+    deployer=None,
+    senders=(None,),
+    psender=None,
+    propre=r"crytic_test_.*",
+    compile_args=None,
+    outputspace_url=None,
+):
     """ Verify solidity properties
     The results are dumped to stdout and to the workspace folder.
 
@@ -69,13 +80,15 @@ def manticore_verifier(source_code, contract_name, maxfail=None, maxt=3, maxcov=
     config.get_group("smt").optimize = False
     config.get_group("evm").oog = "ignore"
 
-    print (f"""
+    print(
+        f"""
 # Exploration will stop when some of the following happens:
 # * {MAXTX} human transaction sent
 # * Code coverage is greater than {MAXCOV}% meassured on target contract
 # * No more coverage was gained in the last transaction
 # * At least {MAXFAIL} different properties where found to be breakable. (1 for fail fast)
-""")
+"""
+    )
     # Main manticore manager object
     m = ManticoreEVM()
     # avoid all human level tx that are marked as constant (have no effect on the storage)
@@ -106,8 +119,7 @@ def manticore_verifier(source_code, contract_name, maxfail=None, maxt=3, maxcov=
     owner_account = m.create_account(balance=10 ** 10, address=deployer)
     # the target contract account
     contract_account = m.solidity_create_contract(
-        source_code, owner=owner_account, contract_name=contract_name,
-        compile_args=compile_args,
+        source_code, owner=owner_account, contract_name=contract_name, compile_args=compile_args,
     )
     # the address used for checking porperties
     checker_account = m.create_account(balance=10 ** 10, address=psender)
@@ -131,30 +143,34 @@ def manticore_verifier(source_code, contract_name, maxfail=None, maxt=3, maxcov=
             # check if we found a way to break more than MAXFAIL properties
             broken_properties = sum(int(len(x) != 0) for x in properties.values())
             if broken_properties >= MAXFAIL:
-                print (f"Found {broken_properties}/{len(properties)} failing properties. Stopping exploraiton.")
+                print(
+                    f"Found {broken_properties}/{len(properties)} failing properties. Stopping exploraiton."
+                )
                 break
 
             # check if we sent more than MAXTX transaction
             if tx_num >= MAXTX:
-                print ("Max numbr of transactions reached({tx_num})")
+                print("Max numbr of transactions reached({tx_num})")
                 break
             tx_num += 1
 
             # check if we got enough coverage
             new_coverage = m.global_coverage(contract_account)
             if new_coverage >= MAXCOV:
-                print ("Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploraiton.")
+                print(
+                    "Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploraiton."
+                )
                 break
 
             # check if we have made coverage progress in the last transaction
             if current_coverage == new_coverage:
-                print (f"No coverage progress. Stalled at {new_coverage}%. Stopping exploraiton.")
+                print(f"No coverage progress. Stalled at {new_coverage}%. Stopping exploraiton.")
                 break
             current_coverage = new_coverage
 
             # check if timeout was requested
             if m.is_killed():
-                print ("Cancelled or timeout.")
+                print("Cancelled or timeout.")
                 break
 
             # Explore all methods but the "crytic_" properties
@@ -241,7 +257,7 @@ def manticore_verifier(source_code, contract_name, maxfail=None, maxt=3, maxcov=
     m.clear_snapshot()
 
     if m.is_killed():
-        print ("Exploration ended by CTRL+C or timeout")
+        print("Exploration ended by CTRL+C or timeout")
 
     print(f"{m.global_coverage(contract_account):3.2f}% EVM code covered ")
 
@@ -256,7 +272,9 @@ def manticore_verifier(source_code, contract_name, maxfail=None, maxt=3, maxcov=
 
     m.clear_ready_states()
     print(f"Checkout testcases here:{m.workspace}")
-'''
+
+
+"""
 config.yaml
 deployer: "0x.."
 sender: ["0x.."]
@@ -264,7 +282,9 @@ psender: "0x..."
 deployer: who deploys the contract
 sender: who calls the transactions (potentially can be multiple users)
 psender: who calls the property
-'''
+"""
+
+
 def main():
     from crytic_compile import is_supported, cryticparser
 
@@ -279,11 +299,7 @@ def main():
     cryticparser.init(parser)
 
     parser.add_argument(
-        "source_code",
-        type=str,
-        nargs="*",
-        default=[],
-        help="Contract source code",
+        "source_code", type=str, nargs="*", default=[], help="Contract source code",
     )
     parser.add_argument(
         "-v", action="count", default=0, help="Specify verbosity level from -v to -vvvv"
@@ -304,9 +320,7 @@ def main():
         help="Show program version information",
     )
     parser.add_argument(
-        "--config",
-        type=str,
-        help="Solisity property accounts config file (.yml)",
+        "--config", type=str, help="Solisity property accounts config file (.yml)",
     )
     eth_flags = parser.add_argument_group("Ethereum flags")
 
@@ -325,16 +339,29 @@ def main():
     eth_flags.add_argument(
         "--contract_name", type=str, help="The target contract name defined in the source code"
     )
-    eth_flags.add_argument("--maxfail", type=int, help="stop after maxfail properties are failing. All if None")
-    eth_flags.add_argument("--maxcov", type=int, default=100, help=" Stop after maxcov % coverage is obtained in the main contract")
+    eth_flags.add_argument(
+        "--maxfail", type=int, help="stop after maxfail properties are failing. All if None"
+    )
+    eth_flags.add_argument(
+        "--maxcov",
+        type=int,
+        default=100,
+        help=" Stop after maxcov % coverage is obtained in the main contract",
+    )
     eth_flags.add_argument("--maxt", type=int, default=3, help="Max transaction count to explore")
-    eth_flags.add_argument("--deployer", type=str, help="(optional) address of account used to deploy the contract")
-    eth_flags.add_argument("--senders", type=str, help="(optional) a list of calles addresses for the exploration")
-    eth_flags.add_argument("--checker", type=str, help="(optional) address from where the property is tested")
-    eth_flags.add_argument("--propre", type=str, help="A regular expression for selecting properties")
+    eth_flags.add_argument(
+        "--deployer", type=str, help="(optional) address of account used to deploy the contract"
+    )
+    eth_flags.add_argument(
+        "--senders", type=str, help="(optional) a list of calles addresses for the exploration"
+    )
+    eth_flags.add_argument(
+        "--checker", type=str, help="(optional) address from where the property is tested"
+    )
+    eth_flags.add_argument(
+        "--propre", type=str, help="A regular expression for selecting properties"
+    )
     eth_flags.add_argument("--outputspace_url", type=str, help="where to put the extended result")
-
-
 
     config_flags = parser.add_argument_group("Constants")
     config.add_config_vars_to_argparse(config_flags)
@@ -345,7 +372,7 @@ def main():
     if not parsed.source_code:
         print(parser.format_usage() + "error: the following arguments are required: contract")
         sys.exit(1)
-    args=parsed
+    args = parsed
     set_verbosity(args.v)
     logger = logging.getLogger("manticore.main")
 
