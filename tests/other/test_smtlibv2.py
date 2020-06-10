@@ -1044,7 +1044,6 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(False)))
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(a == b)))
 
-
     def testRelated(self):
         cs = ConstraintSet()
         aa1 = cs.new_bool(name="AA1")
