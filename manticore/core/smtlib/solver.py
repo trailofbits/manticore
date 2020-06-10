@@ -477,9 +477,9 @@ class SMTLIBSolver(Solver):
         last_value = None
         i = 0
         while self._is_sat():
-            last_value = self._getvalue(X)
+            last_value = self._getvalue(x)
             self._assert(operation(x, last_value))
-            self._assert(X != last_value)
+            self._assert(x != last_value)
             i = i + 1
             if i > max_iter:
                 raise SolverError("Optimizing error, maximum number of iterations was reached")
