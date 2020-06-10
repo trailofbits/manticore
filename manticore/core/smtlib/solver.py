@@ -431,18 +431,20 @@ class SMTLIBSolver(Solver):
 
         start = time.time()
         temp_cs = constraints.related_to(x)
+        X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
+        temp_cs.add(X==x)
         self._reset(temp_cs.to_string())
 
         # Find one value and use it as currently known min/Max
         if not self._is_sat():
             raise SolverException("UNSAT")
-        last_value = self._getvalue(x)
-        self._assert(operation(x, last_value))
+        last_value = self._getvalue(X)
+        self._assert(operation(X, last_value))
 
         # This uses a binary search to find a suitable range for aux
         # Use known solution as min or max depending on the goal
         if goal == "maximize":
-            m, M = last_value, (1 << x.size) - 1
+            m, M = last_value, (1 << X.size) - 1
         else:
             m, M = 0, last_value
 
@@ -450,7 +452,7 @@ class SMTLIBSolver(Solver):
         L = None
         while L not in (M, m):
             L = (m + M) // 2
-            self._assert(operation(x, L))
+            self._assert(operation(X, L))
             sat = self._is_sat()
 
             # depending on the goal move one of the extremes
@@ -464,20 +466,22 @@ class SMTLIBSolver(Solver):
 
         # reset to before the dichotomic search
         temp_cs = constraints.related_to(x)
+        X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
+        temp_cs.add(X==x)
         self._reset(temp_cs.to_string())
 
         # At this point we know aux is inside [m,M]
         # Lets constrain it to that range
-        self._assert(Operators.UGE(x, m))
-        self._assert(Operators.ULE(x, M))
+        self._assert(Operators.UGE(X, m))
+        self._assert(Operators.ULE(X, M))
 
         # And now check all remaining possible extremes
         last_value = None
         i = 0
         while self._is_sat():
-            last_value = self._getvalue(x)
-            self._assert(operation(x, last_value))
-            self._assert(x != last_value)
+            last_value = self._getvalue(X)
+            self._assert(operation(X, last_value))
+            self._assert(X != last_value)
             i = i + 1
             if i > max_iter:
                 raise SolverError("Optimizing error, maximum number of iterations was reached")

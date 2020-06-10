@@ -3280,8 +3280,7 @@ class EVMWorld(Platform):
                     aux_gas = Operators.ZEXTEND(gas, 512)
                     aux_fee = aux_price * aux_gas
                     # Iff a human tx debit the fee
-                    enough_balance = True
-                    Operators.AND(
+                    enough_balance = Operators.AND(
                         enough_balance, Operators.UGE(aux_src_balance - aux_value, aux_fee)
                     )
                 failed = Operators.NOT(enough_balance)
