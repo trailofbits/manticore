@@ -308,7 +308,7 @@ class ConstantFolderSimplifier(Visitor):
                 ret = 0
             else:
                 ret = int(x / y)
-            return BitVecConstant(ret,  taint=expression.taint)
+            return BitVecConstant(ret, taint=expression.taint)
 
     def visit_LessThan(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):

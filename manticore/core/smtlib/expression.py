@@ -507,7 +507,7 @@ class BitVecConstant(BitVec):
     @property
     def signed_value(self):
         if self._value & self.signmask:
-            return self._value - (1<<self.size)
+            return self._value - (1 << self.size)
         else:
             return self._value
 
