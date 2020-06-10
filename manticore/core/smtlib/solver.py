@@ -432,64 +432,62 @@ class SMTLIBSolver(Solver):
         last_value: Optional[Union[int, bool, bytes]] = None
 
         start = time.time()
-        with constraints as temp_cs:
-            X = temp_cs.new_bitvec(x.size)
-            temp_cs.add(X == x)
-            aux = temp_cs.new_bitvec(X.size, name="optimized_")
-            self._reset(temp_cs.to_string(related_to=X))
+        temp_cs = constraints.related_to(x)
+        self._reset(temp_cs.to_string())
 
-            # Find one value and use it as currently known min/Max
-            if not self._is_sat():
-                raise SolverException("UNSAT")
-            last_value = self._getvalue(X)
-            self._assert(operation(X, last_value))
+        # Find one value and use it as currently known min/Max
+        if not self._is_sat():
+            raise SolverException("UNSAT")
+        last_value = self._getvalue(x)
+        self._assert(operation(x, last_value))
 
-            # This uses a binary search to find a suitable range for aux
-            # Use known solution as min or max depending on the goal
-            if goal == "maximize":
-                m, M = last_value, (1 << x.size) - 1
+        # This uses a binary search to find a suitable range for aux
+        # Use known solution as min or max depending on the goal
+        if goal == "maximize":
+            m, M = last_value, (1 << x.size) - 1
+        else:
+            m, M = 0, last_value
+
+        # Iteratively divide the range
+        L = None
+        while L not in (M, m):
+            L = (m + M) // 2
+            self._assert(operation(x, L))
+            sat = self._is_sat()
+
+            # depending on the goal move one of the extremes
+            if goal == "maximize" and sat or goal == "minimize" and not sat:
+                m = L
             else:
-                m, M = 0, last_value
+                M = L
 
-            # Iteratively divide the range
-            L = None
-            while L not in (M, m):
-                L = (m + M) // 2
-                self._assert(operation(X, L))
-                sat = self._is_sat()
+            if time.time() - start > consts.timeout:
+                raise SolverError("Timeout")
 
-                # depending on the goal move one of the extremes
-                if goal == "maximize" and sat or goal == "minimize" and not sat:
-                    m = L
-                else:
-                    M = L
+        # reset to before the dichotomic search
+        temp_cs = constraints.related_to(x)
+        self._reset(temp_cs.to_string())
 
-                if time.time() - start > consts.timeout:
-                    raise SolverError("Timeout")
+        # At this point we know aux is inside [m,M]
+        # Lets constrain it to that range
+        self._assert(Operators.UGE(x, m))
+        self._assert(Operators.ULE(x, M))
 
-            # reset to before the dichotomic search
-            self._reset(temp_cs.to_string(related_to=X))
-
-            # At this point we know aux is inside [m,M]
-            # Lets constrain it to that range
-            self._assert(Operators.UGE(X, m))
-            self._assert(Operators.ULE(X, M))
-
-            # And now check all remaining possible extremes
-            last_value = None
-            i = 0
-            while self._is_sat():
-                last_value = self._getvalue(X)
-                self._assert(operation(X, last_value))
-                self._assert(X != last_value)
-                i = i + 1
-                if i > max_iter:
-                    raise SolverError("Optimizing error, maximum number of iterations was reached")
-                if time.time() - start > consts.timeout:
-                    raise SolverError("Timeout")
-            if last_value is not None:
-                return last_value
-            raise SolverError("Optimizing error, unsat or unknown core")
+        # And now check all remaining possible extremes
+        last_value = None
+        i = 0
+        while self._is_sat():
+            last_value = self._getvalue(X)
+            self._assert(operation(x, last_value))
+            self._assert(X != last_value)
+            i = i + 1
+            if i > max_iter:
+                raise SolverError("Optimizing error, maximum number of iterations was reached")
+            if time.time() - start > consts.timeout:
+                raise SolverError("Timeout")
+        if last_value is not None:
+            return last_value
+        raise SolverError("Optimizing error, unsat or unknown core")
 
     @lru_cache(maxsize=32)
     def get_all_values(
