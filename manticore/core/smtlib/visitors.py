@@ -50,7 +50,7 @@ class Visitor:
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        for cls in expression.__class__.__mro__:
+        for cls in expression.__class__.__mro__[:-1]:
             sort = cls.__name__
             methodname = "visit_%s" % sort
             if hasattr(self, methodname):
@@ -71,7 +71,8 @@ class Visitor:
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         """
-
+        if isinstance(node, ArrayProxy):
+            node = node.array
         cache = self._cache
         visited = set()
         stack = []
@@ -292,6 +293,7 @@ class ConstantFolderSimplifier(Visitor):
         BitVecNot: operator.__not__,
         BitVecNeg: operator.__invert__,
         BoolAnd: operator.__and__,
+        BoolEqual: operator.__eq__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
         UnsignedLessThan: operator.__lt__,
@@ -1037,6 +1039,9 @@ def simplify_array_select(array_exp):
 
 
 def get_variables(expression):
+    if isinstance(expression, ArrayProxy):
+        expression = expression.array
+
     visitor = GetDeclarations()
     visitor.visit(expression)
     return visitor.result

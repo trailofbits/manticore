@@ -1,5 +1,6 @@
 import itertools
 import sys
+import copy
 from typing import Optional
 from ...utils.helpers import PickleSerializer
 from ...exceptions import SmtlibError
@@ -17,7 +18,14 @@ from .expression import (
     Variable,
     Constant,
 )
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from .visitors import (
+    GetDeclarations,
+    TranslatorSmtlib,
+    get_variables,
+    simplify,
+    replace,
+    pretty_print,
+)
 from ...utils import config
 import logging
 
@@ -116,7 +124,7 @@ class ConstraintSet:
         self._sid += 1
         return self._sid
 
-    def related_to(self, related_to: Optional[Expression] = None) -> "ConstraintSet":
+    def related_to(self, *related_to) -> "ConstraintSet":
         # sam.moelius: There is a flaw in how __get_related works: when called on certain
         # unsatisfiable sets, it can return a satisfiable one. The flaw arises when:
         #   * self consists of a single constraint C
@@ -137,11 +145,14 @@ class ConstraintSet:
         :param related_to: An expression
         :return:
         """
-        if related_to is None:
-            return self
+
+        if not related_to:
+            return copy.copy(self)
         number_of_constraints = len(self.constraints)
         remaining_constraints = set(self.constraints)
-        related_variables = get_variables(related_to)
+        related_variables = set()
+        for expression in related_to:
+            related_variables |= get_variables(expression)
         related_constraints = set()
 
         added = True
@@ -164,7 +175,6 @@ class ConstraintSet:
                     added = True
 
         logger.debug("Reduced %d constraints!!", number_of_constraints - len(related_constraints))
-
         # related_variables, related_constraints
         cs = ConstraintSet()
         for var in related_variables:
@@ -173,7 +183,7 @@ class ConstraintSet:
             cs.add(constraint)
         return cs
 
-    def to_string(self, replace_constants: bool = True) -> str:
+    def to_string(self, replace_constants: bool = False) -> str:
         variables, constraints = self.get_declared_variables(), self.constraints
 
         if replace_constants:
