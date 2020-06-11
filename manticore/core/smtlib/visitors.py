@@ -342,7 +342,6 @@ class ConstantFolderSimplifier(Visitor):
         return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
-        print("HOO BABY VISITING A BITVECDIV")
         if all(isinstance(o, Constant) for o in operands):
             signmask = operands[0].signmask
             mask = operands[0].mask
