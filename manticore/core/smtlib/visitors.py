@@ -293,6 +293,7 @@ class ConstantFolderSimplifier(Visitor):
         BitVecNot: operator.__not__,
         BitVecNeg: operator.__invert__,
         BoolAnd: operator.__and__,
+        BoolEqual: operator.__eq__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
         UnsignedLessThan: operator.__lt__,

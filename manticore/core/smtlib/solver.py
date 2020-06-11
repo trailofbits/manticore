@@ -217,7 +217,6 @@ class SmtlibProc:
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
-        # lparen, rparen = buf.count("("), buf.count(")")
         lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
         return buf, lparen, rparen
 
@@ -589,7 +588,7 @@ class SMTLIBSolver(Solver):
         """
         values = []
         start = time.time()
-        with constraints as temp_cs:
+        with constraints.related_to(expressions) as temp_cs:
             for expression in expressions:
                 if not issymbolic(expression):
                     values.append(expression)
@@ -606,7 +605,6 @@ class SMTLIBSolver(Solver):
                         subvar = temp_cs.new_bitvec(expression.value_bits)
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
-
                     self._reset(temp_cs.to_string())
                     if not self._is_sat():
                         raise SolverError(
