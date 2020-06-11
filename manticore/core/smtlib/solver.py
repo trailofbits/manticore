@@ -432,7 +432,7 @@ class SMTLIBSolver(Solver):
         start = time.time()
         temp_cs = constraints.related_to(x)
         X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
-        temp_cs.add(X==x)
+        temp_cs.add(X == x)
         self._reset(temp_cs.to_string())
 
         # Find one value and use it as currently known min/Max
@@ -467,7 +467,7 @@ class SMTLIBSolver(Solver):
         # reset to before the dichotomic search
         temp_cs = constraints.related_to(x)
         X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
-        temp_cs.add(X==x)
+        temp_cs.add(X == x)
         self._reset(temp_cs.to_string())
 
         # At this point we know aux is inside [m,M]
