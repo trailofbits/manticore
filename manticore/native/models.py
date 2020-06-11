@@ -78,7 +78,7 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     been tracking and just replace it with the symbolic subtraction of
     the two
 
-    :param State state: Current program state
+    :param state: Current program state
     :param s1: Address of string 1
     :param s2: Address of string 2
     :return: Symbolic strcmp result
@@ -116,33 +116,41 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     return ret
 
 
-def strlen(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
+def strlen(state: State, addr: Union[int, BitVec]) -> Union[int, BitVec]:
     """
-    strlen symbolic model.
+    strlen symbolic model
 
-    Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
+    Algorithm: Counts the number of characters in a string forking every time a symbolic byte 
+    is found that can be NULL but is not constrained to NULL.
 
-    :param State state: current program state
+    :param state: current program state
     :param s: Address of string
     :return: Symbolic strlen result
-    :rtype: Expression or int
     """
 
+    if issymbolic(addr):
+        raise ConcretizeArgument(state.cpu, 0)
+
     cpu = state.cpu
+    constrs = state.constraints
 
-    if issymbolic(s):
-        raise ConcretizeArgument(state.cpu, 1)
+    # Initialize offset based on whether state has been forked in strlen
+    if "strlen" not in state.context:
+        offset = 0
+    else:
+        offset = state.context["strlen"]
 
-    zero_idx = _find_zero(cpu, state.constraints, s)
+    c = cpu.read_int(addr + offset, 8)
+    while not is_definitely_NULL(c, constrs):
+        # If the byte can be NULL concretize and fork states
+        if can_be_NULL(c, constrs):
+            state.context["strlen"] = offset
+            raise Concretize("Forking on possible NULL strlen", expression=(c == 0), policy="ALL")
 
-    ret = zero_idx
+        offset += 1
+        c = cpu.read_int(addr + offset, 8)
 
-    for offset in range(zero_idx - 1, -1, -1):
-        byt = cpu.read_int(s + offset, 8)
-        if issymbolic(byt):
-            ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
-
-    return ret
+    return offset
 
 
 def is_definitely_NULL(byte, constrs) -> bool:
@@ -222,7 +230,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     while not is_definitely_NULL(src_val, constrs):
         cpu.write_int(dst + offset, src_val, 8)
 
-        # If a byte can be NULL set the src_val for concretize and fork states
+        # If a src byte can be NULL concretize and fork states
         if can_be_NULL(src_val, constrs):
             state.context["strcpy"] = offset
             raise Concretize("Forking on NULL strcpy", expression=(src_val == 0), policy="ALL")
