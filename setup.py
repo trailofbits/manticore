@@ -18,11 +18,14 @@ native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc2"]
 
 lint_deps = ["black==19.10b0", "mypy==0.770"]
 
+auto_test_deps = ["py-evm"]
+
 # Development dependencies without keystone
 dev_noks = (
     native_deps
     + ["coverage", "Sphinx", "pytest==5.3.0", "pytest-xdist==1.30.0", "pytest-cov==2.8.1", "jinja2"]
     + lint_deps
+    + auto_test_deps
 )
 
 extra_require = {
@@ -52,8 +55,8 @@ setup(
         "pyyaml",
         "pysha3",
         "prettytable",
-        "rlp",
         "ply",
+        "rlp",
         "crytic-compile>=0.1.1",
         "wasm",
         "web3",

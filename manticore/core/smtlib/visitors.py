@@ -285,7 +285,7 @@ class ConstantFolderSimplifier(Visitor):
         BitVecAdd: operator.__add__,
         BitVecSub: operator.__sub__,
         BitVecMul: operator.__mul__,
-        BitVecDiv: operator.__truediv__,
+        BitVecDiv: operator.__floordiv__,
         BitVecShiftLeft: operator.__lshift__,
         BitVecShiftRight: operator.__rshift__,
         BitVecAnd: operator.__and__,
@@ -325,12 +325,12 @@ class ConstantFolderSimplifier(Visitor):
             return operands[0]
 
     def visit_BitVecExtract(self, expression, *operands):
-        if all(isinstance(o, Constant) for o in expression.operands):
-            value = expression.operands[0].value
+        if all(isinstance(o, Constant) for o in operands):
+            value = operands[0].value
             begining = expression.begining
             end = expression.end
             value = value >> begining
-            mask = 2 ** (end - begining + 1) - 1
+            mask = (1 << (end - begining)) - 1
             value = value & mask
             return BitVecConstant(expression.size, value, taint=expression.taint)
 
@@ -618,6 +618,8 @@ class ArithmeticSimplifier(Visitor):
                             new_operands.append(BitVecExtract(item, begining, item.size - begining))
                             size -= item.size - begining
                             begining = 0
+        elif isinstance(op, BitVecConstant):
+            return BitVecConstant(size, (op.value >> begining) & ~(1 << size))
 
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
@@ -767,7 +769,7 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
+arithmetic_simplifier_cache = CacheDict(max_size=250000, flush_perc=25)
 
 
 @lru_cache(maxsize=128, typed=True)
@@ -918,10 +920,6 @@ class TranslatorSmtlib(Translator):
     visit_ArrayOperation = _visit_operation
     visit_BoolOperation = _visit_operation
     visit_BitVecOperation = _visit_operation
-
-    @property
-    def results(self):
-        raise SmtlibError("NOOO")
 
     @property
     def result(self):

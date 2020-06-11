@@ -14,10 +14,12 @@ class DecorateAllMeta(type):
     @staticmethod
     def _if_enabled(f):
         """ decorator used to guard callbacks """
+
         @wraps(f)
         def g(self, *args, **kwargs):
             if self.is_enabled():
                 return f(self, *args, **kwargs)
+
         return g
 
     def __new__(cls, name, bases, local):

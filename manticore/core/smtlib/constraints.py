@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 consts = config.get_group("smt")
 consts.add(
-    "related_constraints", default=False, description="Try slicing the current path constraint to contain only related items"
+    "related_constraints",
+    default=False,
+    description="Try slicing the current path constraint to contain only related items",
 )
 
 
@@ -146,7 +148,7 @@ class ConstraintSet:
                             break
 
                     variables = get_variables(constraint)
-                    if related_variables & variables:
+                    if related_variables & variables or not (variables):
                         remaining_constraints.remove(constraint)
                         related_constraints.add(constraint)
                         related_variables |= variables

@@ -23,11 +23,13 @@ jobs:
       if: github.event_name == 'pull_request'
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
         pip install -e .[lint]
         black --version
-        git diff --name-only $BASE_SHA..$HEAD_SHA | python scripts/pyfile_exists.py | xargs black --diff --check
+        git fetch --depth=1 origin $BASE_SHA
+        echo "Files Changed:"
+        git diff --name-only $BASE_SHA... | tee .diff_names.txt
+        cat .diff_names.txt | python scripts/pyfile_exists.py | xargs black --diff --check
         mypy --version
         mypy
   tests:
@@ -49,6 +51,13 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
+        #install cvc4
+        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
+        sudo chmod +x /usr/bin/cvc4
+        #install yices
+        sudo add-apt-repository ppa:sri-csl/formal-methods
+        sudo apt-get update
+        sudo apt-get install yices2
         # Install solc unconditionally because it only takes a second or two
         sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
         sudo chmod +x /usr/bin/solc
@@ -116,8 +125,8 @@ jobs:
                 echo "Automaking VMTests" `pwd`
                 cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
                 rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
-                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
-                for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+                for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -o ethereum_vm/VMTests_concrete; done
+                rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
                 rm -rf ./vmtests
                 touch ethereum_vm/.done
             fi
@@ -157,9 +166,9 @@ jobs:
             if [ "$1" = "deploy" ]; then
                 ADDRESS="$(truffle deploy | grep '> contract address:.*' | tail -n 1 | grep -o '0x.*$')"
                 ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txtarget $ADDRESS"
-                EXPECTED_TX=31
+                EXPECTED_TX=26
             fi
-            coverage run -p -m manticore --contract MetaCoin --workspace output $ADDITIONAL_ARGS
+            coverage run -p -m manticore --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic $ADDITIONAL_ARGS
             # Truffle smoke test. We test if manticore is able to generate states
             # from a truffle project. 
             ACTUAL_TX="$(ls output/*tx -l | wc -l)"
