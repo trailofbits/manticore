@@ -2406,25 +2406,25 @@ class EVMWorld(Platform):
 
     def __getstate__(self):
         state = super().__getstate__()
-        state["pending_transaction"] = self._pending_transaction
-        state["logs"] = self._logs
-        state["world_state"] = self._world_state
-        state["constraints"] = self._constraints
-        state["callstack"] = self._callstack
-        state["deleted_accounts"] = self._deleted_accounts
-        state["transactions"] = self._transactions
+        state["_pending_transaction"] = self._pending_transaction
+        state["_logs"] = self._logs
+        state["_world_state"] = self._world_state
+        state["_constraints"] = self._constraints
+        state["_callstack"] = self._callstack
+        state["_deleted_accounts"] = self._deleted_accounts
+        state["_transactions"] = self._transactions
         state["_fork"] = self._fork
         return state
 
     def __setstate__(self, state):
         super().__setstate__(state)
-        self._constraints = state["constraints"]
-        self._pending_transaction = state["pending_transaction"]
-        self._world_state = state["world_state"]
-        self._deleted_accounts = state["deleted_accounts"]
-        self._logs = state["logs"]
-        self._callstack = state["callstack"]
-        self._transactions = state["transactions"]
+        self._constraints = state["_constraints"]
+        self._pending_transaction = state["_pending_transaction"]
+        self._world_state = state["_world_state"]
+        self._deleted_accounts = state["_deleted_accounts"]
+        self._logs = state["_logs"]
+        self._callstack = state["_callstack"]
+        self._transactions = state["_transactions"]
         self._fork = state["_fork"]
 
         for _, _, _, _, vm in self._callstack:
