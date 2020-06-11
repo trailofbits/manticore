@@ -2651,7 +2651,7 @@ class EVMWorld(Platform):
         if data is not None and self.current_vm is not None:
             self.current_vm._return_data = data
         if rollback:
-            self._world_state.set_storage(vm.address, account_storage)
+            self._set_storage(vm.address, account_storage)
             self._logs = logs
             # Return the transaction value
             self.send_funds(tx.address, tx.caller, tx.value)
