@@ -2901,10 +2901,14 @@ class EVMWorld(Platform):
         return self._world_state.get_balance(address)
 
     def add_to_balance(self, address: int, value: Union[int, BitVec]):
+        if isinstance(value, BitVec):
+            value = Operators.ZEXTEND(value, 512)
         new_balance = self.get_balance(address) + value
         self.set_balance(address, new_balance)
 
     def sub_from_balance(self, address: int, value: Union[int, BitVec]):
+        if isinstance(value, BitVec):
+            value = Operators.ZEXTEND(value, 512)
         new_balance = self.get_balance(address) - value
         self.set_balance(address, new_balance)
 
