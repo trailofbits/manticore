@@ -144,7 +144,9 @@ def ethereum_main(args, logger):
                 if args.txtarget is not None:
                     contract_account = int(args.txtarget, base=0)
                     if world_state is not None and not world_state.get_code(contract_account):
-                        raise EthereumError("Could not get code for target account: " + args.txtarget)
+                        raise EthereumError(
+                            "Could not get code for target account: " + args.txtarget
+                        )
 
                 m.multi_tx_analysis(
                     args.argv[0],

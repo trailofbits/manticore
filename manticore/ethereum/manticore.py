@@ -391,9 +391,7 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(
-        self, world_state: Optional[WorldState] = None, plugins=None, **kwargs
-    ):
+    def __init__(self, world_state: Optional[WorldState] = None, plugins=None, **kwargs):
         """
         A Manticore EVM manager
         :param plugins: the plugins to register in this manticore manager

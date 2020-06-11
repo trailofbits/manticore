@@ -12,12 +12,17 @@ from manticore.core.smtlib import (
 )
 from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.smtlib.expression import *
-from manticore.platforms.evm_world_state import DefaultWorldState, DefaultWorldState, OverlayWorldState
+from manticore.platforms.evm_world_state import (
+    DefaultWorldState,
+    DefaultWorldState,
+    OverlayWorldState,
+)
 from manticore.utils.helpers import pickle_dumps
 
 ADDRESS = 0x111111111111111111111111111111111111111
 
 # sam.moelius: These tests were shamelessly copied from test_smtlibv2.py.
+
 
 class StorageTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -88,30 +93,45 @@ class StorageTest(unittest.TestCase):
         world_state.set_storage_data(cs, ADDRESS, other_key, other_value)
 
         # assert that the storage is 111...111 at key position
-        cs.add(world_state.get_storage_data(cs, ADDRESS, key) == 11111111111111111111111111111111111111111111)
+        cs.add(
+            world_state.get_storage_data(cs, ADDRESS, key)
+            == 11111111111111111111111111111111111111111111
+        )
         # let's restrict key to be greater than 1000
         cs.add(key.ugt(1000))
 
         with cs as temp_cs:
             # 1001 position of storage can be 111...111
-            temp_cs.add(world_state.get_storage_data(cs, ADDRESS, 1001) == 11111111111111111111111111111111111111111111)
+            temp_cs.add(
+                world_state.get_storage_data(cs, ADDRESS, 1001)
+                == 11111111111111111111111111111111111111111111
+            )
             self.assertTrue(self.solver.check(temp_cs))
 
         with cs as temp_cs:
             # 1001 position of storage can also be 222...222
-            temp_cs.add(world_state.get_storage_data(cs, ADDRESS, 1001) == 22222222222222222222222222222222222222222222)
+            temp_cs.add(
+                world_state.get_storage_data(cs, ADDRESS, 1001)
+                == 22222222222222222222222222222222222222222222
+            )
             self.assertTrue(self.solver.check(temp_cs))
 
         with cs as temp_cs:
             # but if it is 222...222 ...
-            temp_cs.add(world_state.get_storage_data(cs, ADDRESS, 1001) == 22222222222222222222222222222222222222222222)
+            temp_cs.add(
+                world_state.get_storage_data(cs, ADDRESS, 1001)
+                == 22222222222222222222222222222222222222222222
+            )
             # then key can not be 1001
             temp_cs.add(key == 1001)
             self.assertFalse(self.solver.check(temp_cs))
 
         with cs as temp_cs:
             # If 1001 position is 222...222 ...
-            temp_cs.add(world_state.get_storage_data(cs, ADDRESS, 1001) == 22222222222222222222222222222222222222222222)
+            temp_cs.add(
+                world_state.get_storage_data(cs, ADDRESS, 1001)
+                == 22222222222222222222222222222222222222222222
+            )
             # then key can be 1002 for ex..
             temp_cs.add(key == 1002)
             self.assertTrue(self.solver.check(temp_cs))
@@ -135,10 +155,14 @@ class StorageTest(unittest.TestCase):
         cs.add(key.ugt(1000))
 
         # 1001 position of storage can be 'A'
-        self.assertTrue(self.solver.can_be_true(cs, world_state.get_storage_data(cs, ADDRESS, 1001) == ord("A")))
+        self.assertTrue(
+            self.solver.can_be_true(cs, world_state.get_storage_data(cs, ADDRESS, 1001) == ord("A"))
+        )
 
         # 1001 position of storage can be 'B'
-        self.assertTrue(self.solver.can_be_true(cs, world_state.get_storage_data(cs, ADDRESS, 1001) == ord("B")))
+        self.assertTrue(
+            self.solver.can_be_true(cs, world_state.get_storage_data(cs, ADDRESS, 1001) == ord("B"))
+        )
 
         with cs as temp_cs:
             # but if it is 'B' ...
@@ -189,7 +213,9 @@ class StorageTest(unittest.TestCase):
 
         world_state.set_storage_data(cs, ADDRESS, key, 1)  # Write 1 to a single location
 
-        cs.add(world_state.get_storage_data(cs, ADDRESS, index) != 0)  # Constrain index so it selects that location
+        cs.add(
+            world_state.get_storage_data(cs, ADDRESS, index) != 0
+        )  # Constrain index so it selects that location
 
         cs.add(index != key)
         # key and index are the same there is only one slot in 1
@@ -202,9 +228,13 @@ class StorageTest(unittest.TestCase):
         index = cs.new_bitvec(256, name="index")
 
         world_state.set_storage_data(cs, ADDRESS, key, 1)  # Write 1 to a single location
-        cs.add(world_state.get_storage_data(cs, ADDRESS, index) != 0)  # Constrain index so it selects that location
+        cs.add(
+            world_state.get_storage_data(cs, ADDRESS, index) != 0
+        )  # Constrain index so it selects that location
         a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
-        cs.add(world_state.get_storage_data(cs, ADDRESS, a_index) != 0)  # now storage must have something at that location
+        cs.add(
+            world_state.get_storage_data(cs, ADDRESS, a_index) != 0
+        )  # now storage must have something at that location
         cs.add(a_index != index)  # remove it from the solutions
 
         # It should not be another solution for index
@@ -217,9 +247,13 @@ class StorageTest(unittest.TestCase):
         index = cs.new_bitvec(256, name="index")
 
         world_state.set_storage_data(cs, ADDRESS, 0, 1)  # Write 1 to first location
-        world_state.set_storage_data(cs, ADDRESS, key, 2)  # Write 2 to a symbolic (potentially any (potentially 0))location
+        world_state.set_storage_data(
+            cs, ADDRESS, key, 2
+        )  # Write 2 to a symbolic (potentially any (potentially 0))location
 
-        solutions = self.solver.get_all_values(cs, world_state.get_storage_data(cs, ADDRESS, 0))  # get a concrete solution for index
+        solutions = self.solver.get_all_values(
+            cs, world_state.get_storage_data(cs, ADDRESS, 0)
+        )  # get a concrete solution for index
         self.assertItemsEqual(solutions, (1, 2))
 
         solutions = self.solver.get_all_values(

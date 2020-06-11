@@ -173,7 +173,8 @@ class EthTruffleTests(unittest.TestCase):
                         require(Predeployed(%s).y() == _y, "y != _y");
                     }
                 }
-            """ % (address, address),
+            """
+            % (address, address),
         ]
         subprocess.check_call(cmd)
 
