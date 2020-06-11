@@ -20,10 +20,6 @@ from ..exceptions import EthereumError
 logger = logging.getLogger(__name__)
 
 
-# sam.moelius: map records which (symbolic) offsets have been written to.  data holds the values
-# written.
-
-
 class Storage:
     def __init__(self, constraints: ConstraintSet, address: int):
         """
@@ -33,7 +29,7 @@ class Storage:
         self._data = constraints.new_array(
             index_bits=256,
             value_bits=256,
-            name=f"STORAGE_DATA_{address:x}",
+            name=f"STORAGE_{address:x}",
             avoid_collisions=True,
             # sam.moelius: The use of default here creates unnecessary if-then-elses.  See
             # ArrayProxy.get in expression.py.
