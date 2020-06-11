@@ -35,6 +35,7 @@ def manticore_verifier(
     propre=r"crytic_test_.*",
     compile_args=None,
     outputspace_url=None,
+    timeout=100
 ):
     """ Verify solidity properties
     The results are dumped to stdout and to the workspace folder.
@@ -59,6 +60,7 @@ def manticore_verifier(
     :param contract_name: The target contract name defined in the source code
     :param propre: A regular expression for selecting properties
     :param outputspace_url: where to put the extended result
+    :param timeout: timeout in seconds
     :return:
     """
     # Termination condition
@@ -80,15 +82,6 @@ def manticore_verifier(
     config.get_group("smt").optimize = False
     config.get_group("evm").oog = "ignore"
 
-    print(
-        f"""
-# Exploration will stop when some of the following happens:
-# * {MAXTX} human transaction sent
-# * Code coverage is greater than {MAXCOV}% meassured on target contract
-# * No more coverage was gained in the last transaction
-# * At least {MAXFAIL} different properties where found to be breakable. (1 for fail fast)
-"""
-    )
     # Main manticore manager object
     m = ManticoreEVM()
     # avoid all human level tx that are marked as constant (have no effect on the storage)
@@ -113,21 +106,25 @@ def manticore_verifier(
     # User accounts. Transactions trying to break the property are send from one
     # of this
     senders = (None,) if senders is None else senders
-    print(
-        hex(deployer), senders, hex(psender),
-    )
 
     user_accounts = []
-    for address_i in senders:
-        user_accounts.append(m.create_account(balance=10 ** 10, address=address_i))
+    for n, address_i in enumerate(senders):
+        user_accounts.append(m.create_account(balance=10 ** 10, address=address_i, name=f"sender_{n}"))
     # the address used for deployment
-    owner_account = m.create_account(balance=10 ** 10, address=deployer)
+    owner_account = m.create_account(balance=10 ** 10, address=deployer, name="deployer")
     # the target contract account
     contract_account = m.solidity_create_contract(
         source_code, owner=owner_account, contract_name=contract_name, compile_args=compile_args,
     )
     # the address used for checking porperties
-    checker_account = m.create_account(balance=10 ** 10, address=psender)
+    checker_account = m.create_account(balance=10 ** 10, address=psender, name="psender")
+
+    print (f"# Owner account: 0x{int(owner_account):x}")
+    print (f"# Contract account: 0x{int(contract_account):x}")
+    for n, user_account in enumerate(user_accounts):
+        print (f"# Sender_{n} account: 0x{int(checker_account):x}")
+    print (f"# PSender account: 0x{int(checker_account):x}")
+
 
     properties = {}
     md = m.get_metadata(contract_account)
@@ -135,15 +132,28 @@ def manticore_verifier(
         func_name = md.get_abi(func_hsh)["name"]
         if re.match(propre, func_name):
             properties[func_name] = []
-    MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
 
+    print (f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
+
+    MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
     tx_num = 0  # transactions count
     current_coverage = None  # obtained coverge %
 
     print(
-        f"Transaction {tx_num}. Ready: {m.count_ready_states()}, Terminated: {m.count_terminated_states()}"
+        f"""# Exploration will stop when some of the following happens:
+# * {MAXTX} human transaction sent
+# * Code coverage is greater than {MAXCOV}% meassured on target contract
+# * No more coverage was gained in the last transaction
+# * At least {MAXFAIL} different properties where found to be breakable. (1 for fail fast)
+# * {timeout} seconds pass"""
     )
-    with m.kill_timeout(timeout=100):
+    print ("# Starting exploration...")
+    print(
+        f"Transaction {tx_num}. States: {m.count_ready_states()}, RT Coverage: {0.00}%"
+        f"Failing properties: 0/{len(properties)}"
+
+    )
+    with m.kill_timeout(timeout=timeout):
         while True:
             # check if we found a way to break more than MAXFAIL properties
             broken_properties = sum(int(len(x) != 0) for x in properties.values())
@@ -202,7 +212,10 @@ def manticore_verifier(
             m.clear_terminated_states()  # no interest in reverted states
             m.take_snapshot()  # make a copy of all ready states
             print(
-                f"Transaction {tx_num}. Ready: {m.count_ready_states()}, Terminated: {m.count_terminated_states()}"
+                f"Transaction {tx_num}. States: {m.count_ready_states()}, "
+                f"RT Coverage: {m.global_coverage(contract_account):3.2f}%, "
+                f"Failing properties: {broken_properties}/{len(properties)}"
+
             )
 
             # And now explore all properties (and only the properties)
@@ -319,12 +332,6 @@ def main():
     eth_flags = parser.add_argument_group("Ethereum flags")
 
     eth_flags.add_argument(
-        "--txlimit",
-        type=int,
-        help="Maximum number of symbolic transactions to run (positive integer)",
-    )
-
-    eth_flags.add_argument(
         "--quick-mode",
         action="store_true",
         help="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
@@ -356,6 +363,9 @@ def main():
     )
     eth_flags.add_argument(
         "--propre", type=str, help="A regular expression for selecting properties"
+    )
+    eth_flags.add_argument(
+        "--timeout", default=240, type=int, help="Exploration timeout in seconds"
     )
     eth_flags.add_argument("--outputspace_url", type=str, help="where to put the extended result")
 
@@ -422,4 +432,5 @@ def main():
         senders=senders,
         deployer=deployer,
         psender=psender,
+        timeout=args.timeout
     )

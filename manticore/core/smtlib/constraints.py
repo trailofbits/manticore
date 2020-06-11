@@ -18,7 +18,7 @@ from .expression import (
     Variable,
     Constant,
 )
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, pretty_print
 from ...utils import config
 import logging
 
@@ -138,7 +138,7 @@ class ConstraintSet:
         :param related_to: An expression
         :return:
         """
-        return copy.copy(self)
+
         if not related_to:
             return copy.copy(self)
         number_of_constraints = len(self.constraints)
@@ -176,7 +176,7 @@ class ConstraintSet:
             cs.add(constraint)
         return cs
 
-    def to_string(self, replace_constants: bool = True) -> str:
+    def to_string(self, replace_constants: bool = False) -> str:
         variables, constraints = self.get_declared_variables(), self.constraints
 
         if replace_constants:
