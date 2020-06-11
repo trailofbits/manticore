@@ -113,7 +113,9 @@ def manticore_verifier(
     # User accounts. Transactions trying to break the property are send from one
     # of this
     senders = (None,) if senders is None else senders
-    print (hex(deployer), senders, hex(psender), )
+    print(
+        hex(deployer), senders, hex(psender),
+    )
 
     user_accounts = []
     for address_i in senders:
@@ -277,14 +279,13 @@ def manticore_verifier(
     print(f"Checkout testcases here:{m.workspace}")
 
 
-
 def main():
     from crytic_compile import is_supported, cryticparser
 
     parser = argparse.ArgumentParser(
         description="Solidity property verifier",
         prog="manticore_verifier",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        # formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     # Add crytic compile arguments
@@ -339,14 +340,16 @@ def main():
         "--maxcov",
         type=int,
         default=100,
-        help=" Stop after maxcov % coverage is obtained in the main contract",
+        help=" Stop after maxcov %% coverage is obtained in the main contract",
     )
     eth_flags.add_argument("--maxt", type=int, default=3, help="Max transaction count to explore")
     eth_flags.add_argument(
         "--deployer", type=str, help="(optional) address of account used to deploy the contract"
     )
     eth_flags.add_argument(
-        "--senders", type=str, help="(optional) a comma separated list of sender addresses. The properties are going to be tested sending transactions from these addresses."
+        "--senders",
+        type=str,
+        help="(optional) a comma separated list of sender addresses. The properties are going to be tested sending transactions from these addresses.",
     )
     eth_flags.add_argument(
         "--psender", type=str, help="(optional) address from where the property is tested"
@@ -380,6 +383,7 @@ def main():
         psender: "0x616161616161616161" #who calls the property
         """
         import yaml
+
         with open(args.propconfig) as f:
             c = yaml.safe_load(f)
             deployer = c.get("deployer")
@@ -388,26 +392,34 @@ def main():
 
             senders = c.get("sender")
             if senders is not None:
-                senders = [int(sender,0) for sender in senders]
+                senders = [int(sender, 0) for sender in senders]
 
             psender = c.get("psender")
             if psender is not None:
                 psender = int(psender, 0)
 
-    #override with commandline args
+    # override with commandline args
     if args.deployer is not None:
         deployer = int(args.deployer, 0)
 
     if args.senders is not None:
-        senders = [int(sender, 0) for sender in args.senders.split(",") ]
+        senders = [int(sender, 0) for sender in args.senders.split(",")]
 
     if args.psender is not None:
         psender = int(args.psender, 0)
-
 
     source_code = args.source_code[0]
     contract_name = args.contract_name
     maxfail = args.maxfail
     maxt = args.maxt
     maxcov = args.maxcov
-    return manticore_verifier(source_code, contract_name, maxfail=maxfail, maxt=maxt, maxcov=100, senders=senders, deployer=deployer, psender=psender)
+    return manticore_verifier(
+        source_code,
+        contract_name,
+        maxfail=maxfail,
+        maxt=maxt,
+        maxcov=100,
+        senders=senders,
+        deployer=deployer,
+        psender=psender,
+    )
