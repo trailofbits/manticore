@@ -1956,7 +1956,7 @@ class EVM(Eventful):
         # Get the storage from the snapshot took before this call
         try:
             original_value = self.world._callstack[-1][-2].get(offset, 0)
-        except IndexError:
+        except AttributeError:
             original_value = 0
 
         current_value = self.world.get_storage_data(storage_address, offset)
