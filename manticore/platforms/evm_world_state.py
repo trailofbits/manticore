@@ -290,7 +290,7 @@ class RemoteWorldState(WorldState):
         return self._web3().eth.getBlock("latest")["gasLimit"]
 
     def get_coinbase(self) -> int:
-        return int(self._web3().eth.coinbase)
+        return int(self._web3().eth.coinbase, 16)
 
 
 ####################################################################################################
