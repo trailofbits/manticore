@@ -2414,6 +2414,7 @@ class EVMWorld(Platform):
         state["_deleted_accounts"] = self._deleted_accounts
         state["_transactions"] = self._transactions
         state["_fork"] = self._fork
+
         return state
 
     def __setstate__(self, state):
@@ -2633,13 +2634,7 @@ class EVMWorld(Platform):
         vm = self._make_vm_for_tx(tx)
 
         self._callstack.append(
-            (
-                tx,
-                self.logs,
-                self.deleted_accounts,
-                copy.copy(self._world_state.get_storage(address)),
-                vm,
-            )
+            (tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm,)
         )
         self.forward_events_from(vm)
         self._publish("did_open_transaction", tx)
