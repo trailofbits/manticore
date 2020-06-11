@@ -2954,6 +2954,12 @@ class EVMWorld(Platform):
             logger.info("Coinbase account does not exists")
             self.create_account(coinbase)
 
+        self._world_state.set_blocknumber(blocknumber)
+        self._world_state.set_timestamp(timestamp)
+        self._world_state.set_difficulty(difficulty)
+        self._world_state.set_gaslimit(gaslimit)
+        self._world_state.set_coinbase(coinbase)
+
     def end_block(self, block_reward=None):
         coinbase = self.block_coinbase()
         if coinbase not in self:
