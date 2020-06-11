@@ -81,6 +81,7 @@ def choose_detectors(args):
                         f"{e} is not a detector name, must be one of {arguments}. See also `--list-detectors`."
                     )
 
+        # sam.moelius: Do not enable uninitialized storage detector when using RPC.  It generates too much noise.
         if args.url is not None:
             exclude.append(DetectUninitializedStorage.ARGUMENT)
 
