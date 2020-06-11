@@ -35,7 +35,7 @@ def manticore_verifier(
     propre=r"crytic_test_.*",
     compile_args=None,
     outputspace_url=None,
-    timeout=100
+    timeout=100,
 ):
     """ Verify solidity properties
     The results are dumped to stdout and to the workspace folder.
@@ -109,7 +109,9 @@ def manticore_verifier(
 
     user_accounts = []
     for n, address_i in enumerate(senders):
-        user_accounts.append(m.create_account(balance=10 ** 10, address=address_i, name=f"sender_{n}"))
+        user_accounts.append(
+            m.create_account(balance=10 ** 10, address=address_i, name=f"sender_{n}")
+        )
     # the address used for deployment
     owner_account = m.create_account(balance=10 ** 10, address=deployer, name="deployer")
     # the target contract account
@@ -119,12 +121,11 @@ def manticore_verifier(
     # the address used for checking porperties
     checker_account = m.create_account(balance=10 ** 10, address=psender, name="psender")
 
-    print (f"# Owner account: 0x{int(owner_account):x}")
-    print (f"# Contract account: 0x{int(contract_account):x}")
+    print(f"# Owner account: 0x{int(owner_account):x}")
+    print(f"# Contract account: 0x{int(contract_account):x}")
     for n, user_account in enumerate(user_accounts):
-        print (f"# Sender_{n} account: 0x{int(checker_account):x}")
-    print (f"# PSender account: 0x{int(checker_account):x}")
-
+        print(f"# Sender_{n} account: 0x{int(checker_account):x}")
+    print(f"# PSender account: 0x{int(checker_account):x}")
 
     properties = {}
     md = m.get_metadata(contract_account)
@@ -133,7 +134,7 @@ def manticore_verifier(
         if re.match(propre, func_name):
             properties[func_name] = []
 
-    print (f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
+    print(f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
 
     MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
     tx_num = 0  # transactions count
@@ -147,11 +148,10 @@ def manticore_verifier(
 # * At least {MAXFAIL} different properties where found to be breakable. (1 for fail fast)
 # * {timeout} seconds pass"""
     )
-    print ("# Starting exploration...")
+    print("# Starting exploration...")
     print(
         f"Transaction {tx_num}. States: {m.count_ready_states()}, RT Coverage: {0.00}%"
         f"Failing properties: 0/{len(properties)}"
-
     )
     with m.kill_timeout(timeout=timeout):
         while True:
@@ -215,7 +215,6 @@ def manticore_verifier(
                 f"Transaction {tx_num}. States: {m.count_ready_states()}, "
                 f"RT Coverage: {m.global_coverage(contract_account):3.2f}%, "
                 f"Failing properties: {broken_properties}/{len(properties)}"
-
             )
 
             # And now explore all properties (and only the properties)
@@ -432,5 +431,5 @@ def main():
         senders=senders,
         deployer=deployer,
         psender=psender,
-        timeout=args.timeout
+        timeout=args.timeout,
     )

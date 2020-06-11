@@ -18,7 +18,14 @@ from .expression import (
     Variable,
     Constant,
 )
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, pretty_print
+from .visitors import (
+    GetDeclarations,
+    TranslatorSmtlib,
+    get_variables,
+    simplify,
+    replace,
+    pretty_print,
+)
 from ...utils import config
 import logging
 
