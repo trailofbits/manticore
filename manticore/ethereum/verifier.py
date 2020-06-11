@@ -30,7 +30,7 @@ def manticore_verifier(
     maxt=3,
     maxcov=100,
     deployer=None,
-    senders=(None,),
+    senders=None,
     psender=None,
     propre=r"crytic_test_.*",
     compile_args=None,
@@ -112,6 +112,9 @@ def manticore_verifier(
 
     # User accounts. Transactions trying to break the property are send from one
     # of this
+    senders = (None,) if senders is None else senders
+    print (hex(deployer), senders, hex(psender), )
+
     user_accounts = []
     for address_i in senders:
         user_accounts.append(m.create_account(balance=10 ** 10, address=address_i))
@@ -274,16 +277,6 @@ def manticore_verifier(
     print(f"Checkout testcases here:{m.workspace}")
 
 
-"""
-config.yaml
-deployer: "0x.."
-sender: ["0x.."]
-psender: "0x..."
-deployer: who deploys the contract
-sender: who calls the transactions (potentially can be multiple users)
-psender: who calls the property
-"""
-
 
 def main():
     from crytic_compile import is_supported, cryticparser
@@ -320,7 +313,7 @@ def main():
         help="Show program version information",
     )
     parser.add_argument(
-        "--config", type=str, help="Solisity property accounts config file (.yml)",
+        "--propconfig", type=str, help="Solidity property accounts config file (.yml)",
     )
     eth_flags = parser.add_argument_group("Ethereum flags")
 
@@ -353,10 +346,10 @@ def main():
         "--deployer", type=str, help="(optional) address of account used to deploy the contract"
     )
     eth_flags.add_argument(
-        "--senders", type=str, help="(optional) a list of calles addresses for the exploration"
+        "--senders", type=str, help="(optional) a comma separated list of sender addresses. The properties are going to be tested sending transactions from these addresses."
     )
     eth_flags.add_argument(
-        "--checker", type=str, help="(optional) address from where the property is tested"
+        "--psender", type=str, help="(optional) address from where the property is tested"
     )
     eth_flags.add_argument(
         "--propre", type=str, help="A regular expression for selecting properties"
@@ -376,9 +369,45 @@ def main():
     set_verbosity(args.v)
     logger = logging.getLogger("manticore.main")
 
+    # read yaml config file
+    deployer = None
+    senders = None
+    psenders = None
+    if args.propconfig:
+        """
+        deployer: "0x41414141414141414141"  #who deploys the contract
+        sender: ["0x51515151515151515151", "0x52525252525252525252"] #who calls the transactions (potentially can be multiple users)
+        psender: "0x616161616161616161" #who calls the property
+        """
+        import yaml
+        with open(args.propconfig) as f:
+            c = yaml.safe_load(f)
+            deployer = c.get("deployer")
+            if deployer is not None:
+                deployer = int(deployer, 0)
+
+            senders = c.get("sender")
+            if senders is not None:
+                senders = [int(sender,0) for sender in senders]
+
+            psender = c.get("psender")
+            if psender is not None:
+                psender = int(psender, 0)
+
+    #override with commandline args
+    if args.deployer is not None:
+        deployer = int(args.deployer, 0)
+
+    if args.senders is not None:
+        senders = [int(sender, 0) for sender in args.senders.split(",") ]
+
+    if args.psender is not None:
+        psender = int(args.psender, 0)
+
+
     source_code = args.source_code[0]
     contract_name = args.contract_name
     maxfail = args.maxfail
     maxt = args.maxt
     maxcov = args.maxcov
-    return manticore_verifier(source_code, contract_name, maxfail=maxfail, maxt=maxt, maxcov=100)
+    return manticore_verifier(source_code, contract_name, maxfail=maxfail, maxt=maxt, maxcov=100, senders=senders, deployer=deployer, psender=psender)
