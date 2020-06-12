@@ -1,5 +1,5 @@
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from eth_typing import ChecksumAddress, URI
 from io import TextIOBase
 from typing import Dict, List, Optional, Set, Tuple, Union
@@ -7,11 +7,8 @@ from urllib.parse import ParseResult, urlparse
 from web3 import Web3
 from ..core.smtlib import (
     Array,
-    ArrayVariable,
     BitVec,
     BitVecConstant,
-    BitVecITE,
-    BitVecZeroExtend,
     ConstraintSet,
 )
 from ..ethereum.state import State
