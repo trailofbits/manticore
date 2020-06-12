@@ -120,7 +120,7 @@ def strlen(state: State, addr: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model
 
-    Algorithm: Counts the number of characters in a string forking every time a symbolic byte 
+    Algorithm: Counts the number of characters in a string forking every time a symbolic byte
     is found that can be NULL but is not constrained to NULL.
 
     :param state: current program state
