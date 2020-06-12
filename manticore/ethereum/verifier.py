@@ -17,11 +17,6 @@ from prettytable import PrettyTable
 from manticore.utils import config
 from manticore.utils.nointerrupt import WithKeyboardInterruptAs
 
-consts = config.get_group("cli")
-consts.add(
-    "config", default="config.yaml", description="Configure user for solidity property verif",
-)
-
 
 def manticore_verifier(
     source_code,
@@ -150,7 +145,7 @@ def manticore_verifier(
     )
     print("# Starting exploration...")
     print(
-        f"Transaction {tx_num}. States: {m.count_ready_states()}, RT Coverage: {0.00}%"
+        f"Transaction {tx_num}. States: {m.count_ready_states()}, RT Coverage: {0.00}%, "
         f"Failing properties: 0/{len(properties)}"
     )
     with m.kill_timeout(timeout=timeout):
@@ -201,7 +196,8 @@ def manticore_verifier(
             symbolic_value = m.make_symbolic_value()
             caller_account = m.make_symbolic_value(160)
             args = tuple((caller_account == address_i for address_i in user_accounts))
-            m.constrain(OR(*args, True))
+
+            m.constrain(OR(*args, False))
             m.transaction(
                 caller=caller_account,
                 address=contract_account,
@@ -408,12 +404,15 @@ def main():
                 psender = int(psender, 0)
 
     # override with commandline args
+    deployer = None
     if args.deployer is not None:
         deployer = int(args.deployer, 0)
 
+    senders = None
     if args.senders is not None:
         senders = [int(sender, 0) for sender in args.senders.split(",")]
 
+    psender = None
     if args.psender is not None:
         psender = int(args.psender, 0)
 
