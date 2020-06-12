@@ -236,9 +236,6 @@ class StrlenTest(ModelTest):
             with open(out) as f:
                 stdouts.add(f.read())
 
-        # Check the number of output states is the number of expected stdouts
-        self.assertEqual(len(stdouts), len(expected))
-
         # Assert that every expected stdout has a matching output
         self.assertEqual(expected, stdouts)
 
