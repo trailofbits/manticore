@@ -16,8 +16,6 @@ from ..core.smtlib import (
     ArrayProxy,
     Operators,
     Constant,
-    ArrayVariable,
-    ArrayStore,
     BitVecConstant,
     ConstraintSet,
     translate_to_smtlib,
@@ -2402,7 +2400,7 @@ class EVMWorld(Platform):
         self._pending_transaction = None
         self._transactions: List[Transaction] = list()
         self._fork = fork
-        self.start_block()
+        self.start_block(**kwargs)
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -2671,8 +2669,7 @@ class EVMWorld(Platform):
 
         if tx.is_human:
             for deleted_account in self._deleted_accounts:
-                if deleted_account in self._world_state:
-                    del self._world_state[deleted_account]
+                self._world_state.delete_account(self.constraints, deleted_account)
             unused_fee = unused_gas * tx.price
             used_fee = used_gas * tx.price
             self.add_to_balance(tx.caller, unused_fee)

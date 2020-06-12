@@ -1352,7 +1352,8 @@ class EthTests(unittest.TestCase):
 
 class EthWorldStateTests(unittest.TestCase):
     class CustomWorldState(WorldState):
-        pass
+        def accounts(self):
+            raise NotImplementedError
 
     def test_custom_world_state(self):
         world_state = EthWorldStateTests.CustomWorldState()
@@ -1375,13 +1376,15 @@ class EthWorldStateTests(unittest.TestCase):
 
     def test_init_difficulty(self):
         constraints = ConstraintSet()
-        self.assertEqual(evm.EVMWorld(constraints).block_difficulty(), 0)
-        self.assertEqual(evm.EVMWorld(constraints, difficulty=1).block_difficulty(), 1)
+        self.assertEqual(evm.EVMWorld(constraints).block_difficulty(), 0x200)
+        self.assertEqual(evm.EVMWorld(constraints, difficulty=0x201).block_difficulty(), 0x201)
 
     def test_init_gaslimit(self):
         constraints = ConstraintSet()
-        self.assertEqual(evm.EVMWorld(constraints).block_gaslimit(), 0)
-        self.assertEqual(evm.EVMWorld(constraints, gaslimit=1).block_gaslimit(), 1)
+        self.assertEqual(evm.EVMWorld(constraints).block_gaslimit(), 0x7FFFFFFF)
+        self.assertEqual(
+            evm.EVMWorld(constraints, gaslimit=0x80000000).block_gaslimit(), 0x80000000
+        )
 
     def test_init_coinbase(self):
         constraints = ConstraintSet()
