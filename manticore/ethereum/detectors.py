@@ -182,12 +182,12 @@ class DetectExternalCallAndLeak(Detector):
                 self.add_finding_here(
                     state,
                     f"Reachable ether leak to sender via argument",
-                    constraint=AND(msg_sender == dest_address, sent_value != 0)
+                    constraint=AND(msg_sender == dest_address, sent_value != 0),
                 )
                 self.add_finding_here(
                     state,
                     f"Reachable external call to sender via argument",
-                    constraint=AND(msg_sender == dest_address, sent_value == 0)
+                    constraint=AND(msg_sender == dest_address, sent_value == 0),
                 )
 
                 # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
@@ -202,27 +202,21 @@ class DetectExternalCallAndLeak(Detector):
                     self.add_finding_here(
                         state,
                         f"Reachable ether leak to user controlled address via argument",
-                        constraint=AND(msg_sender != dest_address,
-                                       sent_value != 0)
+                        constraint=AND(msg_sender != dest_address, sent_value != 0),
                     )
                     self.add_finding_here(
                         state,
                         f"Reachable external call to user controlled address via argument",
-                        constraint=AND(msg_sender != dest_address,
-                                       sent_value == 0)
+                        constraint=AND(msg_sender != dest_address, sent_value == 0),
                     )
 
             else:
                 if msg_sender == dest_address:
                     self.add_finding_here(
-                        state,
-                        f"Reachable ether leak to sender",
-                        constraint=sent_value != 0
+                        state, f"Reachable ether leak to sender", constraint=sent_value != 0
                     )
                     self.add_finding_here(
-                        state,
-                        f"Reachable external call to sender",
-                        constraint=sent_value == 0
+                        state, f"Reachable external call to sender", constraint=sent_value == 0
                     )
 
 
