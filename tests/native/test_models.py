@@ -220,33 +220,27 @@ class StrlenTest(ModelTest):
         m.finalize()
 
         # Expected stdout outputs
-        expected = [
+        expected = {
             "Length of string is: 0",
             "Length of string is: 1",
             "Length of string is: 2",
             "Length of string is: 3",
             "Length of string is: 4",
             "Length of string is: 5",
-        ]
+        }
 
         # Make a list of the generated output states
         outputs = f"{str(m.workspace)}/test_*.stdout"
-        stdouts = []
+        stdouts = set()
         for out in glob(outputs):
             with open(out) as f:
-                stdouts.append(f.read())
+                stdouts.add(f.read())
 
         # Check the number of output states is the number of expected stdouts
         self.assertEqual(len(stdouts), len(expected))
 
         # Assert that every expected stdout has a matching output
-        for e in expected:
-            match = False
-            for s in stdouts:
-                if e == s:
-                    match = True
-                    break
-            self.assertTrue(match)
+        self.assertEqual(expected, stdouts)
 
     def test_symbolic_mixed(self):
         sy = self.state.symbolicate_buffer("a+b+\0")
