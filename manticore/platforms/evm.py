@@ -2895,18 +2895,18 @@ class EVMWorld(Platform):
         self._world_state.set_balance(address, value)
 
     def get_balance(self, address: int) -> Union[int, BitVec]:
-        return self._world_state.get_balance(address)
+        return Operators.EXTRACT(self._world_state.get_balance(address), 0, 256)
 
     def add_to_balance(self, address: int, value: Union[int, BitVec]):
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
-        new_balance = self.get_balance(address) + value
+        new_balance = self._world_state.get_balance(address) + value
         self.set_balance(address, new_balance)
 
     def sub_from_balance(self, address: int, value: Union[int, BitVec]):
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
-        new_balance = self.get_balance(address) - value
+        new_balance = self._world_state.get_balance(address) - value
         self.set_balance(address, new_balance)
 
     def send_funds(self, sender: int, recipient: int, value: Union[int, BitVec]):
