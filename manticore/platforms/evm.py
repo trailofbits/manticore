@@ -1526,6 +1526,8 @@ class EVM(Eventful):
         :param exponent: exponent value, concretized with sampled values
         :return: BitVec* EXP result
         """
+        if isinstance(exponent, Constant):
+            exponent = exponent.value
         if exponent == 0:
             return 1
 
