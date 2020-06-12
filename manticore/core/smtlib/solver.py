@@ -205,6 +205,8 @@ class SmtlibProc:
             self._proc.stdout.close()
             # Kill the process
             self._proc.kill()
+            self._proc.wait()
+
             # No need to wait for termination, zombies avoided.
         self._proc = None
 
@@ -304,8 +306,6 @@ class SMTLIBSolver(Solver):
 
         self._smtlib.start()
         # run solver specific initializations
-        for cfg in self._init:
-            self._smtlib.send(cfg)
 
     def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
@@ -429,66 +429,66 @@ class SMTLIBSolver(Solver):
         last_value: Optional[Union[int, bool, bytes]] = None
 
         start = time.time()
-        temp_cs = constraints.related_to(x)
-        X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
-        temp_cs.add(X == x)
-        self._reset(temp_cs.to_string())
+        with constraints as temp_cs:
+            X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
+            temp_cs.add(X == x)
+            self._reset(temp_cs.to_string())
 
-        # Find one value and use it as currently known min/Max
-        if not self._is_sat():
-            raise SolverException("UNSAT")
-        last_value = self._getvalue(X)
-        self._assert(operation(X, last_value))
-
-        # This uses a binary search to find a suitable range for aux
-        # Use known solution as min or max depending on the goal
-        if goal == "maximize":
-            m, M = last_value, (1 << X.size) - 1
-        else:
-            m, M = 0, last_value
-
-        # Iteratively divide the range
-        L = None
-        while L not in (M, m):
-            L = (m + M) // 2
-            self._assert(operation(X, L))
-            sat = self._is_sat()
-
-            # depending on the goal move one of the extremes
-            if goal == "maximize" and sat or goal == "minimize" and not sat:
-                m = L
-            else:
-                M = L
-
-            if time.time() - start > consts.timeout:
-                raise SolverError("Timeout")
-
-        # reset to before the dichotomic search
-        temp_cs = constraints.related_to(x)
-        X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
-        temp_cs.add(X == x)
-        self._reset(temp_cs.to_string())
-
-        # At this point we know aux is inside [m,M]
-        # Lets constrain it to that range
-        self._assert(Operators.UGE(X, m))
-        self._assert(Operators.ULE(X, M))
-
-        # And now check all remaining possible extremes
-        last_value = None
-        i = 0
-        while self._is_sat():
+            # Find one value and use it as currently known min/Max
+            if not self._is_sat():
+                raise SolverException("UNSAT")
             last_value = self._getvalue(X)
             self._assert(operation(X, last_value))
-            self._assert(X != last_value)
-            i = i + 1
-            if i > max_iter:
-                raise SolverError("Optimizing error, maximum number of iterations was reached")
-            if time.time() - start > consts.timeout:
-                raise SolverError("Timeout")
-        if last_value is not None:
-            return last_value
-        raise SolverError("Optimizing error, unsat or unknown core")
+
+            # This uses a binary search to find a suitable range for aux
+            # Use known solution as min or max depending on the goal
+            if goal == "maximize":
+                m, M = last_value, (1 << X.size) - 1
+            else:
+                m, M = 0, last_value
+
+            # Iteratively divide the range
+            L = None
+            while L not in (M, m):
+                L = (m + M) // 2
+                self._assert(operation(X, L))
+                sat = self._is_sat()
+
+                # depending on the goal move one of the extremes
+                if goal == "maximize" and sat or goal == "minimize" and not sat:
+                    m = L
+                else:
+                    M = L
+
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
+
+        # reset to before the dichotomic search
+        with constraints as temp_cs:
+            X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
+            temp_cs.add(X == x)
+            self._reset(temp_cs.to_string())
+
+            # At this point we know aux is inside [m,M]
+            # Lets constrain it to that range
+            self._assert(Operators.UGE(X, m))
+            self._assert(Operators.ULE(X, M))
+
+            # And now check all remaining possible extremes
+            last_value = None
+            i = 0
+            while self._is_sat():
+                last_value = self._getvalue(X)
+                self._assert(operation(X, last_value))
+                self._assert(X != last_value)
+                i = i + 1
+                if i > max_iter:
+                    raise SolverError("Optimizing error, maximum number of iterations was reached")
+                if time.time() - start > consts.timeout:
+                    raise SolverError("Timeout")
+            if last_value is not None:
+                return last_value
+            raise SolverError("Optimizing error, unsat or unknown core")
 
     @lru_cache(maxsize=32)
     def get_all_values(
@@ -510,7 +510,7 @@ class SMTLIBSolver(Solver):
                 maxcnt = 2
                 silent = True
 
-        with constraints.related_to(expression) as temp_cs:
+        with constraints as temp_cs:
             if isinstance(expression, Bool):
                 var = temp_cs.new_bool()
             elif isinstance(expression, BitVec):
@@ -549,8 +549,9 @@ class SMTLIBSolver(Solver):
                         return list(result)
                     raise SolverError("Timeout")
                 # Sometimes adding a new contraint after a check-sat eats all the mem
-                temp_cs.add(var != value)
-                self._reset(temp_cs.to_string())
+                #temp_cs.add(var != value)
+                #self._reset(temp_cs.to_string())
+                self._smtlib.send(f"(assert {translate_to_smtlib(var != value)})")
             return list(result)
 
     def _optimize_fancy(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
@@ -588,7 +589,7 @@ class SMTLIBSolver(Solver):
         """
         values = []
         start = time.time()
-        with constraints.related_to(*expressions) as temp_cs:
+        with constraints as temp_cs:
             for expression in expressions:
                 if not issymbolic(expression):
                     values.append(expression)
@@ -667,10 +668,10 @@ class Z3Solver(SMTLIBSolver):
             command=command,
             init=init,
             value_fmt=16,
-            support_minmax=True,
-            support_reset=True,
+            support_minmax=support_minmax,
+            support_reset=support_reset,
             support_pushpop=True,
-            debug=False,
+            debug=True
         )
 
     def __autoconfig(self):
