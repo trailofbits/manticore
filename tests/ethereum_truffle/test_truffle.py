@@ -228,6 +228,7 @@ class EthTruffleTests(unittest.TestCase):
             "--txtarget",
             address,
             "--txnocoverage",
+            "--exclude-all",
         ]
         mcore = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
