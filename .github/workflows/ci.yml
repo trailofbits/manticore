@@ -162,10 +162,11 @@ jobs:
         run_metacoin_tests(){
             COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
             ADDITIONAL_ARGS=.
-            EXPECTED_TX=26
+            EXPECTED_TX=27
             if [ "$1" = "deploy" ]; then
                 ADDRESS="$(truffle deploy | grep '> contract address:.*' | tail -n 1 | grep -o '0x.*$')"
                 ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txtarget $ADDRESS"
+                EXPECTED_TX=26
             fi
             coverage run -p -m manticore --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic $ADDITIONAL_ARGS
             # Truffle smoke test. We test if manticore is able to generate states
