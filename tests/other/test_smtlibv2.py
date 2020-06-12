@@ -36,13 +36,15 @@ class RegressionTest(unittest.TestCase):
         # A constraint set and a contraint caught in the act of making related_to fail
         constraints, constraint = pickle.loads(gzip.open(filename, "rb").read())
 
-
         Z3Solver.instance().can_be_true.cache_clear()
         ground_truth = Z3Solver.instance().can_be_true(constraints, constraint)
         self.assertEqual(ground_truth, False)
 
         Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints.related_to(constraints), constraint))
+        self.assertEqual(
+            ground_truth,
+            Z3Solver.instance().can_be_true(constraints.related_to(constraints), constraint),
+        )
 
         # Replace
         new_constraint = Operators.UGE(
@@ -55,7 +57,10 @@ class RegressionTest(unittest.TestCase):
         self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
 
         Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints.related_to(new_constraint), new_constraint))
+        self.assertEqual(
+            ground_truth,
+            Z3Solver.instance().can_be_true(constraints.related_to(new_constraint), new_constraint),
+        )
 
 
 """
