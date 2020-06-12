@@ -671,7 +671,7 @@ class Z3Solver(SMTLIBSolver):
             support_minmax=support_minmax,
             support_reset=support_reset,
             support_pushpop=True,
-            debug=True,
+            debug=False,
         )
 
     def __autoconfig(self):
