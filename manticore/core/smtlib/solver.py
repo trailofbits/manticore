@@ -549,8 +549,8 @@ class SMTLIBSolver(Solver):
                         return list(result)
                     raise SolverError("Timeout")
                 # Sometimes adding a new contraint after a check-sat eats all the mem
-                #temp_cs.add(var != value)
-                #self._reset(temp_cs.to_string())
+                # temp_cs.add(var != value)
+                # self._reset(temp_cs.to_string())
                 self._smtlib.send(f"(assert {translate_to_smtlib(var != value)})")
             return list(result)
 
@@ -671,7 +671,7 @@ class Z3Solver(SMTLIBSolver):
             support_minmax=support_minmax,
             support_reset=support_reset,
             support_pushpop=True,
-            debug=True
+            debug=True,
         )
 
     def __autoconfig(self):
