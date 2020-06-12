@@ -87,7 +87,7 @@ consts.add(
     description=(
         "Default behavior for transaction failing because not enough funds."
         "optimistic: Assume there is always enough funds to pay for value and gas. Wont fork"
-        "pessimistic: Assume the balance is never enough for paying fo a transaction. Wont fork"
+        "pessimistic: Assume the balance is never enough for paying for a transaction. Wont fork"
         "both: Will fork for both options if possible."
     ),
 )
@@ -2604,7 +2604,7 @@ class EVMWorld(Platform):
                     f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}"
                 )
 
-        if address not in self.accounts:
+        if not self._world_state.is_remote() and address not in self.accounts:
             logger.info("Address does not exists creating it.")
             # Creating an unaccessible account
             self.create_account(address=address, nonce=int(sort != "CREATE"))
@@ -2621,7 +2621,7 @@ class EVMWorld(Platform):
             self.sub_from_balance(caller, aux_price * aux_gas)
         self.send_funds(tx.caller, tx.address, tx.value)
 
-        if tx.address not in self.accounts:
+        if not self._world_state.is_remote() and tx.address not in self.accounts:
             self.create_account(tx.address)
 
         # If not a human tx, reset returndata
@@ -2942,7 +2942,7 @@ class EVMWorld(Platform):
         gaslimit=0x7FFFFFFF,
         coinbase=0,
     ):
-        if coinbase not in self.accounts and coinbase != 0:
+        if not self._world_state.is_remote() and coinbase not in self.accounts and coinbase != 0:
             logger.info("Coinbase account does not exists")
             self.create_account(coinbase)
 
