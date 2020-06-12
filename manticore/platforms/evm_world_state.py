@@ -1,4 +1,5 @@
 import logging
+import copy
 from abc import abstractmethod
 from eth_typing import ChecksumAddress, URI
 from io import TextIOBase
@@ -32,6 +33,11 @@ class Storage:
             # ArrayProxy.get in expression.py.
             # default=0,
         )
+
+    def __copy__(self):
+        other = Storage.__new__(Storage)
+        other._data = copy.copy(self._data)
+        return other
 
     def __getitem__(self, offset: Union[int, BitVec]) -> Union[int, BitVec]:
         return self.get(offset, 0)

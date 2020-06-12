@@ -1954,10 +1954,13 @@ class EVM(Eventful):
         self.fail_if(Operators.ULT(self.gas, SSSTORESENTRYGAS))
 
         # Get the storage from the snapshot took before this call
+        original_value = 0
         try:
-            original_value = self.world._callstack[-1][-2].get(offset, 0)
-        except AttributeError:
-            original_value = 0
+            storage = self.world._callstack[-1][-2]
+            if storage is not None:
+                original_value = storage.get(offset, 0)
+        except IndexError:
+            pass
 
         current_value = self.world.get_storage_data(storage_address, offset)
 
@@ -2634,7 +2637,7 @@ class EVMWorld(Platform):
         vm = self._make_vm_for_tx(tx)
 
         self._callstack.append(
-            (tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm,)
+            (tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm)
         )
         self.forward_events_from(vm)
         self._publish("did_open_transaction", tx)
