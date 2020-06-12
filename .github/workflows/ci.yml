@@ -168,7 +168,7 @@ jobs:
                 ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txtarget $ADDRESS"
                 EXPECTED_TX=26
             fi
-            coverage run -p -m manticore --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic $ADDITIONAL_ARGS
+            coverage run -p -m manticore --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic --smt.timeout 600 $ADDITIONAL_ARGS
             # Truffle smoke test. We test if manticore is able to generate states
             # from a truffle project. 
             ACTUAL_TX="$(ls output/*tx -l | wc -l)"
