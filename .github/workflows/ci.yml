@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        type: ["ethereum_bench", "examples", "ethereum", "ethereum_truffle", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
+        type: ["ethereum_bench", "examples", "ethereum", "ethereum_metacoin", "ethereum_truffle", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
@@ -162,11 +162,10 @@ jobs:
         run_metacoin_tests(){
             COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
             ADDITIONAL_ARGS=.
-            EXPECTED_TX=34
+            EXPECTED_TX=26
             if [ "$1" = "deploy" ]; then
                 ADDRESS="$(truffle deploy | grep '> contract address:.*' | tail -n 1 | grep -o '0x.*$')"
                 ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txtarget $ADDRESS"
-                EXPECTED_TX=26
             fi
             coverage run -p -m manticore --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic $ADDITIONAL_ARGS
             # Truffle smoke test. We test if manticore is able to generate states
@@ -174,10 +173,10 @@ jobs:
             ACTUAL_TX="$(ls output/*tx -l | wc -l)"
             rm -rf output
             if [ "$ACTUAL_TX" != "$EXPECTED_TX" ]; then
-                echo "Truffle test failed: $ACTUAL_TX != $EXPECTED_TX"
+                echo "MetaCoin test failed: $ACTUAL_TX != $EXPECTED_TX"
                 return 1
             fi
-            echo "Truffle test succeded"
+            echo "MetaCoin test succeded"
             return 0
         }
 
@@ -213,12 +212,11 @@ jobs:
 
         # Test type
         case $TEST_TYPE in
-            ethereum_truffle)
-                echo "Running truffle tests"
+            ethereum_metacoin)
+                echo "Running metacoin tests"
                 install_node_packages
                 ganache-cli -p 7545 -i 5777 &
-                run_tests_from_dir $TEST_TYPE \
-                    && mkdir metacoin_tests \
+                mkdir metacoin_tests \
                     && cd metacoin_tests \
                     && truffle unbox metacoin \
                     && run_metacoin_tests \
@@ -227,6 +225,12 @@ jobs:
                     && coverage xml \
                     && cd .. \
                     && cp metacoin_tests/coverage.xml .
+                ;;
+            ethereum_truffle)
+                echo "Running truffle tests"
+                install_node_packages
+                ganache-cli -p 7545 -i 5777 &
+                run_tests_from_dir $TEST_TYPE
                 ;;
             ethereum_vm)
                 make_vmtests
