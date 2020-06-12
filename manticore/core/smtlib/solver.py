@@ -268,6 +268,7 @@ class SMTLIBSolver(Solver):
         support_reset: bool = False,
         support_minmax: bool = False,
         support_pushpop: bool = False,
+        multiple_check: bool = True,
         debug: bool = False,
     ):
 
@@ -294,6 +295,7 @@ class SMTLIBSolver(Solver):
         self._support_minmax = support_minmax
         self._support_reset = support_reset
         self._support_pushpop = support_pushpop
+        self._multiple_check = multiple_check
 
         if not self._support_pushpop:
             setattr(self, "_push", None)
@@ -549,9 +551,11 @@ class SMTLIBSolver(Solver):
                         return list(result)
                     raise SolverError("Timeout")
                 # Sometimes adding a new contraint after a check-sat eats all the mem
-                # temp_cs.add(var != value)
-                # self._reset(temp_cs.to_string())
-                self._smtlib.send(f"(assert {translate_to_smtlib(var != value)})")
+                if self._multiple_check:
+                    self._smtlib.send(f"(assert {translate_to_smtlib(var != value)})")
+                else:
+                    temp_cs.add(var != value)
+                    self._reset(temp_cs.to_string())
             return list(result)
 
     def _optimize_fancy(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
@@ -663,15 +667,16 @@ class Z3Solver(SMTLIBSolver):
         ]
         command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
 
-        support_minmax, support_reset = self.__autoconfig()
+        support_minmax, support_reset, multiple_check = self.__autoconfig()
         super().__init__(
             command=command,
             init=init,
             value_fmt=16,
             support_minmax=support_minmax,
             support_reset=support_reset,
+            multiple_check=multiple_check,
             support_pushpop=True,
-            debug=True,
+            debug=False,
         )
 
     def __autoconfig(self):
@@ -685,7 +690,11 @@ class Z3Solver(SMTLIBSolver):
             support_reset = False
         else:
             logger.debug(" Please install Z3 4.4.1 or newer to get optimization support")
-        return support_minmax, support_reset
+
+        # Certain version of Z3 fails to handle multiple check-sat
+        # https://gist.github.com/feliam/0f125c00cb99ef05a6939a08c4578902
+        multiple_check = self.version < Version(4, 8, 7)
+        return support_minmax, support_reset, multiple_check
 
     def _solver_version(self) -> Version:
         """
