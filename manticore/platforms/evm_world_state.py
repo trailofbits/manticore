@@ -37,8 +37,6 @@ class Storage:
         return self.get(offset, 0)
 
     def get(self, offset: Union[int, BitVec], default: Union[int, BitVec]) -> Union[int, BitVec]:
-        if not isinstance(default, BitVec):
-            default = BitVecConstant(256, default)
         return self._data.get(offset, default)
 
     def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]):
