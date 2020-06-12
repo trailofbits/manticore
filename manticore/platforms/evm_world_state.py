@@ -19,10 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 class Storage:
-    def __init__(self, constraints: ConstraintSet, address: int):
+    def __init__(
+        self, constraints: ConstraintSet, address: int, items: Optional[Dict[int, int]] = None
+    ):
         """
         :param constraints: the ConstraintSet with which this Storage object is associated
         :param address: the address that owns this storage
+        :param items: optional items to populate the storage with
         """
         self._data = constraints.new_array(
             index_bits=256,
@@ -33,6 +36,9 @@ class Storage:
             # ArrayProxy.get in expression.py.
             # default=0,
         )
+        if items is not None:
+            for key, value in items.items():
+                self.set(key, value)
 
     def __copy__(self):
         other = Storage.__new__(Storage)
@@ -66,21 +72,6 @@ class Storage:
 
 
 class WorldState:
-    def new_storage(
-        self, constraints: ConstraintSet, address: int, items: Optional[Dict[int, int]] = None
-    ) -> Storage:
-        """
-        Private auxiliary function to consruct a new storage object
-        :param constraints: the ConstraintSet with which this Storage object is associated
-        :param address: the address that owns this storageq
-        :param items: optional items to populate the storage with
-        """
-        storage = Storage(constraints, address)
-        if items is not None:
-            for key, value in items.items():
-                storage.set(key, value)
-        return storage
-
     @abstractmethod
     def is_remote(self) -> bool:
         pass
@@ -426,7 +417,7 @@ class OverlayWorldState(WorldState):
         default_world_state = DefaultWorldState()
         self._nonce[address] = default_world_state.get_nonce(address)
         self._balance[address] = default_world_state.get_balance(address)
-        self._storage[address] = self.new_storage(constraints, address)
+        self._storage[address] = Storage(constraints, address)
         self._code[address] = default_world_state.get_code(address)
         self._deleted_accounts.add(address)
 
@@ -451,7 +442,7 @@ class OverlayWorldState(WorldState):
     ):
         storage = self._storage.get(address)
         if storage is None:
-            storage = self.new_storage(constraints, address)
+            storage = Storage(constraints, address)
             self._storage[address] = storage
         storage.set(offset, value)
 
