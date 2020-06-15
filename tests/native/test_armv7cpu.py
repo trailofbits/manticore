@@ -1568,7 +1568,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R2=0x01010101")
     def test_uqsub8_sym(self):
-        op1 = BitVecVariable(size=32, name="op1")
+        op1 = self.cpu.memory.constraints.new_bitvec(32, "op1")
         self.cpu.memory.constraints.add(op1 >= 0x04030201)
         self.cpu.memory.constraints.add(op1 < 0x04030204)
         self.cpu.R1 = op1
@@ -2416,7 +2416,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("blx  r1")
     def test_blx_reg_sym(self):
-        dest = BitVecVariable(size=32, name="dest")
+        dest = self.cpu.memory.constraints.new_bitvec(32, "dest")
         self.cpu.memory.constraints.add(dest >= 0x1000)
         self.cpu.memory.constraints.add(dest <= 0x1001)
         self.cpu.R1 = dest
@@ -2462,7 +2462,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         self._setupCpu(asm, mode=CS_MODE_THUMB)  # code starts at 0x1004
 
         # Set R0 as a symbolic value
-        self.cpu.R0 = BitVecVariable(size=32, name="val")
+        self.cpu.R0 = self.cpu.memory.constraints.new_bitvec(32, "val")
         self.cpu.execute()  # tst r0, r0
         self.cpu.execute()  # beq label
 

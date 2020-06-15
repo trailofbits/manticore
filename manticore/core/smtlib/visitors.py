@@ -5,9 +5,10 @@ from functools import lru_cache
 import copy
 import logging
 import operator
+import math
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
-UNSIGN_MASK = (1 << 256) - 1
 
 
 class Visitor:
@@ -51,7 +52,7 @@ class Visitor:
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        for cls in expression.__class__.__mro__:
+        for cls in expression.__class__.__mro__[:-1]:
             sort = cls.__name__
             methodname = "visit_%s" % sort
             if hasattr(self, methodname):
@@ -72,7 +73,8 @@ class Visitor:
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         """
-
+        if isinstance(node, ArrayProxy):
+            node = node.array
         cache = self._cache
         visited = set()
         stack = []
@@ -285,7 +287,6 @@ class ConstantFolderSimplifier(Visitor):
         BitVecAdd: operator.__add__,
         BitVecSub: operator.__sub__,
         BitVecMul: operator.__mul__,
-        BitVecDiv: operator.__floordiv__,
         BitVecShiftLeft: operator.__lshift__,
         BitVecShiftRight: operator.__rshift__,
         BitVecAnd: operator.__and__,
@@ -293,20 +294,71 @@ class ConstantFolderSimplifier(Visitor):
         BitVecXor: operator.__xor__,
         BitVecNot: operator.__not__,
         BitVecNeg: operator.__invert__,
-        LessThan: operator.__lt__,
-        LessOrEqual: operator.__le__,
-        BoolEqual: operator.__eq__,
-        GreaterThan: operator.__gt__,
-        GreaterOrEqual: operator.__ge__,
         BoolAnd: operator.__and__,
+        BoolEqual: operator.__eq__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
-        BitVecUnsignedDiv: lambda x, y: (x & UNSIGN_MASK) // (y & UNSIGN_MASK),
-        UnsignedLessThan: lambda x, y: (x & UNSIGN_MASK) < (y & UNSIGN_MASK),
-        UnsignedLessOrEqual: lambda x, y: (x & UNSIGN_MASK) <= (y & UNSIGN_MASK),
-        UnsignedGreaterThan: lambda x, y: (x & UNSIGN_MASK) > (y & UNSIGN_MASK),
-        UnsignedGreaterOrEqual: lambda x, y: (x & UNSIGN_MASK) >= (y & UNSIGN_MASK),
+        UnsignedLessThan: operator.__lt__,
+        UnsignedLessOrEqual: operator.__le__,
+        UnsignedGreaterThan: operator.__gt__,
+        UnsignedGreaterOrEqual: operator.__ge__,
     }
+
+    def visit_BitVecUnsignedDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].value
+            b = operands[1].value
+            if a == 0:
+                ret = 0
+            else:
+                ret = math.trunc(Decimal(a) / Decimal(b))
+            return BitVecConstant(expression.size, ret, taint=expression.taint)
+        return None
+
+    def visit_LessThan(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a < b, taint=expression.taint)
+        return None
+
+    def visit_LessOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a <= b, taint=expression.taint)
+        return None
+
+    def visit_GreaterThan(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a > b, taint=expression.taint)
+        return None
+
+    def visit_GreaterOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a >= b, taint=expression.taint)
+        return None
+
+    def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            signmask = operands[0].signmask
+            mask = operands[0].mask
+            numeral = operands[0].value
+            dividend = operands[1].value
+            if numeral & signmask:
+                numeral = -(mask - numeral - 1)
+            if dividend & signmask:
+                dividend = -(mask - dividend - 1)
+            if dividend == 0:
+                result = 0
+            else:
+                result = math.trunc(Decimal(numeral) / Decimal(dividend))
+            return BitVecConstant(expression.size, result, taint=expression.taint)
+        return None
 
     def visit_BitVecConcat(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):

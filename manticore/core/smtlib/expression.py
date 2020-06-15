@@ -530,6 +530,13 @@ class BitVecConstant(BitVec, Constant):
     def value(self):
         return self._value
 
+    @property
+    def signed_value(self):
+        if self._value & self.signmask:
+            return self._value - (1 << self.size)
+        else:
+            return self._value
+
 
 class BitVecOperation(BitVec, Operation):
     __xslots__ = BitVec.__xslots__ + Operation.__xslots__
@@ -948,6 +955,10 @@ class Array(Expression):
                     raise IndexError
         return self.get(index, self._default)
 
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
     def __eq__(self, other):
         # FIXME taint
         def compare_buffers(a, b):
@@ -1119,27 +1130,24 @@ class ArraySlice(ArrayOperation):
         assert size
         if not isinstance(array, Array):
             raise ValueError("Array expected")
-        default = default if default is not None else array.default
-
-        super().__init__(
-            index_bits=array.index_bits,
-            value_bits=array.value_bits,
-            index_max=size,
-            operands=(array,),
-            default=default,
-            **kwargs,
-        )
+        if isinstance(array, ArrayProxy):
+            array = array._array
+        super().__init__(array, **kwargs)
 
         self._slice_offset = offset
         self._slice_size = size
+
+    @property
+    def array(self):
+        return self.operands[0]
 
     @property
     def underlying_variable(self):
         return self.array.underlying_variable
 
     @property
-    def array(self):
-        return self.operands[0]
+    def index_bits(self):
+        return self.array.index_bits
 
     @property
     def slice_offset(self):
@@ -1192,7 +1200,7 @@ class ArrayProxy:
 
     @property
     def operands(self):
-        return self._array.operands
+        return (self._array,)
 
     @property
     def index_bits(self):
@@ -1251,9 +1259,7 @@ class ArrayProxy:
         return self._array.read_BE(address, size)
 
     def write(self, offset, buf):
-        for i, val in enumerate(buf):
-            self[offset + i] = val
-        return self
+        self._array = self._array.write(address, buf)
 
     def read(self, offset, size):
         return ArrayProxy(self._array[offset : offset + size])
