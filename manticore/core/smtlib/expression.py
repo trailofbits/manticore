@@ -1404,3 +1404,16 @@ class BitVecITE(BitVecOperation):
         assert true_value.size == size
         assert false_value.size == size
         super().__init__(size=size, operands=(condition, true_value, false_value), **kwargs)
+
+    @property
+    def condition(self):
+        return self.operands[0]
+
+    @property
+    def true_value(self):
+        return self.operands[1]
+
+    @property
+    def false_value(self):
+        return self.operands[2]
+
