@@ -535,7 +535,7 @@ class ManticoreBase(Eventful):
         set_verbosity(level)
 
     # State storage
-    @Eventful.will_did("save_state")
+    @Eventful.will_did("save_state", can_raise=False)
     def _save(self, state, state_id=None):
         """ Store or update a state in secondary storage under state_id.
             Use a fresh id is None is provided.
@@ -548,7 +548,7 @@ class ManticoreBase(Eventful):
         state._id = self._workspace.save_state(state, state_id=state_id)
         return state.id
 
-    @Eventful.will_did("load_state")
+    @Eventful.will_did("load_state", can_raise=False)
     def _load(self, state_id):
         """ Load the state from the secondary storage
 
@@ -567,7 +567,7 @@ class ManticoreBase(Eventful):
         self.stcache[state_id] = state
         return state
 
-    @Eventful.will_did("remove_state")
+    @Eventful.will_did("remove_state", can_raise=False)
     def _remove(self, state_id):
         """ Remove a state from secondary storage
 
