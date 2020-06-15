@@ -32,7 +32,8 @@ def compare_buffers(cs, buffer1, buffer2):
     if len(buffer1) != len(buffer2):
         return False
     for b1, b2 in zip(buffer1, buffer2):
-        if not SelectedSolver.instance().must_be_true(cs, b1 == b2):
+        cond = cs.migrate(b1 == b2)
+        if not SelectedSolver.instance().must_be_true(cs, cond):
             return False
     return True
 
@@ -69,7 +70,7 @@ def compare_byte_vals(mem1, mem2, addr, merged_constraint):
     val2 = mem2.read(addr, 1)
     # since we only read a single byte value, these lists should only have one entry in them
     assert len(val1) == 1 and len(val2) == 1
-    cond_to_check = val1[0] == val2[0]
+    cond_to_check = merged_constraint.migrate(val1[0] == val2[0])
     if not SelectedSolver.instance().must_be_true(merged_constraint, cond_to_check):
         return False
     else:
@@ -190,13 +191,15 @@ def merge_cpu(cpu1, cpu2, state, exp1, merged_constraint):
         if isinstance(val1, BitVec) and isinstance(val2, BitVec):
             assert val1.size == val2.size
         if issymbolic(val1) or issymbolic(val2) or val1 != val2:
-            if SelectedSolver.instance().must_be_true(merged_constraint, val1 != val2):
+            val1_migrated = merged_constraint.migrate(val1)
+            val2_migrated = merged_constraint.migrate(val2)
+            if SelectedSolver.instance().must_be_true(merged_constraint, val1_migrated != val2_migrated):
                 merged_regs.append(reg)
                 if cpu1.regfile.sizeof(reg) == 1:
-                    state.cpu.write_register(reg, Operators.ITE(exp1, val1, val2))
+                    state.cpu.write_register(reg, Operators.ITE(exp1, val1_migrated, val2_migrated))
                 else:
                     state.cpu.write_register(
-                        reg, Operators.ITEBV(cpu1.regfile.sizeof(reg), exp1, val1, val2)
+                        reg, Operators.ITEBV(cpu1.regfile.sizeof(reg), exp1, val1_migrated, val2_migrated)
                     )
     return merged_regs
 
