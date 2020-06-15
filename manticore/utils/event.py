@@ -139,7 +139,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # Wrapper for _publish_impl that also makes sure the event is published from
     # a class that supports it.
     # The underscore _name is to avoid naming collisions with callback params
-    def _publish(self, _name, *args, can_raise=False, **kwargs):
+    def _publish(self, _name, *args, can_raise=True, **kwargs):
         # only publish if there is at least one subscriber
         try:
             if _name in self.__sub_events__:
