@@ -193,13 +193,18 @@ def merge_cpu(cpu1, cpu2, state, exp1, merged_constraint):
         if issymbolic(val1) or issymbolic(val2) or val1 != val2:
             val1_migrated = merged_constraint.migrate(val1)
             val2_migrated = merged_constraint.migrate(val2)
-            if SelectedSolver.instance().must_be_true(merged_constraint, val1_migrated != val2_migrated):
+            if SelectedSolver.instance().must_be_true(
+                merged_constraint, val1_migrated != val2_migrated
+            ):
                 merged_regs.append(reg)
                 if cpu1.regfile.sizeof(reg) == 1:
                     state.cpu.write_register(reg, Operators.ITE(exp1, val1_migrated, val2_migrated))
                 else:
                     state.cpu.write_register(
-                        reg, Operators.ITEBV(cpu1.regfile.sizeof(reg), exp1, val1_migrated, val2_migrated)
+                        reg,
+                        Operators.ITEBV(
+                            cpu1.regfile.sizeof(reg), exp1, val1_migrated, val2_migrated
+                        ),
                     )
     return merged_regs
 
