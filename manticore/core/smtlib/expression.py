@@ -1416,4 +1416,3 @@ class BitVecITE(BitVecOperation):
     @property
     def false_value(self):
         return self.operands[2]
-
