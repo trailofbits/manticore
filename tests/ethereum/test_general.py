@@ -34,6 +34,7 @@ from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
+from manticore.utils import config
 import io
 import contextlib
 
@@ -68,15 +69,20 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 
 class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
-        filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            verifier.manticore_verifier(filename, "TestToken")
-        self.assertIsNotNone(
-            re.compile(r".*crytic_test_balance\s*\|\s*failed\s*\([0-9a-f]+\).*", re.DOTALL).match(
-                f.getvalue()
+        smtcfg = config.get_group("smt")
+        smtcfg.solver = smtcfg.solver.yices
+        with smtcfg.temp_vals():
+            smtcfg.solver = smtcfg.solver.yices
+
+            filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
+            f = io.StringIO()
+            with contextlib.redirect_stdout(f):
+                verifier.manticore_verifier(filename, "TestToken")
+            self.assertIsNotNone(
+                re.compile(r".*crytic_test_balance\s*\|\s*failed\s*\([0-9a-f]+\).*", re.DOTALL).match(
+                    f.getvalue()
+                )
             )
-        )
 
 
 class EthAbiTests(unittest.TestCase):

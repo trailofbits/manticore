@@ -3371,11 +3371,12 @@ class EVMWorld(Platform):
                     stream.write("\n")
 
         # Accounts summary
+        assert state.can_be_true(True)
         is_something_symbolic = False
         stream.write("%d accounts.\n" % len(blockchain.accounts))
         for account_address in blockchain.accounts:
             is_account_address_symbolic = issymbolic(account_address)
-            account_address = state.solve_one(account_address)
+            account_address = state.solve_one(account_address, constrain=True)
 
             stream.write("* %s::\n" % mevm.account_name(account_address))
             stream.write(
@@ -3420,8 +3421,8 @@ class EVMWorld(Platform):
                         stream.write(
                             "storage[%x] = %x %s\n"
                             % (
-                                state.solve_one(i),
-                                state.solve_one(value),
+                                state.solve_one(i, constrain=True),
+                                state.solve_one(value, constrain=True),
                                 flagged(is_storage_symbolic),
                             )
                         )
