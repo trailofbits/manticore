@@ -685,8 +685,7 @@ class Z3Solver(SMTLIBSolver):
             #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
             # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
             # in test_consensys_benchmark.py.
-            init.append(
-            "(set-option :tactic.solve_eqs.context_solve false)")
+            init.append("(set-option :tactic.solve_eqs.context_solve false)")
 
         support_minmax = self.version >= Version(4, 4, 1)
 
