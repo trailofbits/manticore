@@ -79,9 +79,9 @@ class EthVerifierIntegrationTest(unittest.TestCase):
             with contextlib.redirect_stdout(f):
                 verifier.manticore_verifier(filename, "TestToken")
             self.assertIsNotNone(
-                re.compile(r".*crytic_test_balance\s*\|\s*failed\s*\([0-9a-f]+\).*", re.DOTALL).match(
-                    f.getvalue()
-                )
+                re.compile(
+                    r".*crytic_test_balance\s*\|\s*failed\s*\([0-9a-f]+\).*", re.DOTALL
+                ).match(f.getvalue())
             )
 
 
