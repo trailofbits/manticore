@@ -652,22 +652,9 @@ class Z3Solver(SMTLIBSolver):
         This is implemented using an external z3 solver (via a subprocess).
         See https://github.com/Z3Prover/z3
         """
-        init = [
-            # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
-            # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
-            # free sort and function symbols.
-            "(set-logic QF_AUFBV)",
-            # The declarations and definitions will be scoped
-            "(set-option :global-decls false)",
-            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
-            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
-            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
-            # in test_consensys_benchmark.py.
-            "(set-option :tactic.solve_eqs.context_solve false)",
-        ]
         command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
 
-        support_minmax, support_reset, multiple_check = self.__autoconfig()
+        init, support_minmax, support_reset, multiple_check = self.__autoconfig()
         super().__init__(
             command=command,
             init=init,
@@ -680,21 +667,32 @@ class Z3Solver(SMTLIBSolver):
         )
 
     def __autoconfig(self):
+        init = [
+            # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
+            # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
+            # free sort and function symbols.
+            "(set-logic QF_AUFBV)",
+            # The declarations and definitions will be scoped
+            "(set-option :global-decls false)",
+        ]
+
         # To cache what get-info returned; can be directly set when writing tests
         self.version = self._solver_version()
-        if self.version >= Version(4, 5, 0):
-            support_minmax = False
-            support_reset = False
-        elif self.version >= Version(4, 4, 1):
-            support_minmax = True
-            support_reset = False
-        else:
-            logger.debug(" Please install Z3 4.4.1 or newer to get optimization support")
+        support_reset = True
+
+        if self.version > Version(4, 8, 4):
+            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
+            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
+            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
+            # in test_consensys_benchmark.py.
+            init.append("(set-option :tactic.solve_eqs.context_solve false)")
+
+        support_minmax = self.version >= Version(4, 4, 1)
 
         # Certain version of Z3 fails to handle multiple check-sat
         # https://gist.github.com/feliam/0f125c00cb99ef05a6939a08c4578902
         multiple_check = self.version < Version(4, 8, 7)
-        return support_minmax, support_reset, multiple_check
+        return init, support_minmax, support_reset, multiple_check
 
     def _solver_version(self) -> Version:
         """
