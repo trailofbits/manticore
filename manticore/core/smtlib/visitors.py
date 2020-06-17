@@ -111,7 +111,7 @@ class Visitor:
     @staticmethod
     def _rebuild(expression, operands):
         if isinstance(expression, Operation):
-            if any(x is not y for x, y in zip(expression.operands, operands)):
+            if not expression.operands is operands:
                 aux = copy.copy(expression)
                 aux._operands = operands
                 return aux
@@ -877,6 +877,8 @@ class TranslatorSmtlib(Translator):
         self.use_bindings = use_bindings
         self._bindings_cache = {}
         self._bindings = []
+        self._variables = set()
+
 
     def _add_binding(self, expression, smtlib):
         if not self.use_bindings or len(smtlib) <= 10:
@@ -949,6 +951,7 @@ class TranslatorSmtlib(Translator):
         return expression.value and "true" or "false"
 
     def visit_Variable(self, expression):
+        self._variables.add(expression)
         return expression.name
 
     def visit_ArraySelect(self, expression, *operands):
@@ -979,16 +982,31 @@ class TranslatorSmtlib(Translator):
                 output = "( let ((%s %s)) %s )" % (name, smtlib, output)
         return output
 
+    def declarations(self):
+        result = ''
+        for exp in self._variables:
+            if isinstance(exp, BitVec):
+                result += f"(declare-fun {exp.name} () (_ BitVec {exp.size}))\n"
+            elif isinstance(exp, Bool):
+                result += f"(declare-fun {exp.name} () Bool)\n"
+            elif isinstance(exp, Array):
+                result += f"(declare-fun {exp.name} () (Array (_ BitVec {exp.index_bits}) (_ BitVec {exp.value_bits})))\n"
+            else:
+                raise ConstraintException(f"Type not supported {exp!r}")
+        return result
+
+    def smtlib(self):
+        result = self.declarations()
+        for constraint_str in self._stack:
+            if constraint_str != "true":
+                result += f"(assert {constraint_str})\n"
+        return result
+
 
 def translate_to_smtlib(expression, **kwargs):
     if isinstance(expression, ArrayProxy):
         expression = expression.array
     translator = TranslatorSmtlib(**kwargs)
-    if isinstance(expression, ArrayProxy):
-        print(expression)
-        import pdb
-
-        pdb.set_trace()
     translator.visit(expression)
     return translator.result
 
@@ -1051,6 +1069,7 @@ def simplify_array_select(array_exp):
 def get_variables(expression):
     if isinstance(expression, ArrayProxy):
         expression = expression.array
+
     visitor = GetDeclarations()
     visitor.visit(expression)
     return visitor.result

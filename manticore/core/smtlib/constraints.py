@@ -191,45 +191,22 @@ class ConstraintSet:
 
         tmp = set()
         result = ""
-        for var in variables:
-            # FIXME
-            # band aid hack around the fact that we are double declaring stuff :( :(
-            if var.declaration in tmp:
-                logger.warning("Variable '%s' was copied twice somewhere", var.name)
-                continue
-            tmp.add(var.declaration)
-            result += var.declaration + "\n"
 
-        translator = TranslatorSmtlib(use_bindings=True)
+        translator = TranslatorSmtlib(use_bindings=False)
         for constraint in constraints:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
                 # if no variables then it is a constant
                 if isinstance(constraint, Constant) and constraint.value == True:
                     continue
-
+            #Translate one constraint
             translator.visit(constraint)
+
         if replace_constants:
             for k, v in constant_bindings.items():
                 translator.visit(k == v)
 
-        for name, exp, smtlib in translator.bindings:
-            if isinstance(exp, BitVec):
-                result += f"(declare-fun {name} () (_ BitVec {exp.size}))"
-            elif isinstance(exp, Bool):
-                result += f"(declare-fun {name} () Bool)"
-            elif isinstance(exp, Array):
-                result += f"(declare-fun {name} () (Array (_ BitVec {exp.index_bits}) (_ BitVec {exp.value_bits})))"
-            else:
-                raise ConstraintException(f"Type not supported {exp!r}")
-            result += f"(assert (= {name} {smtlib}))\n"
-
-        constraint_str = translator.pop()
-        while constraint_str is not None:
-            if constraint_str != "true":
-                result += f"(assert {constraint_str})\n"
-            constraint_str = translator.pop()
-        return result
+        return translator.smtlib()
 
     def _declare(self, var):
         """ Declare the variable `var` """

@@ -21,8 +21,11 @@ class Expression(object):
     __slots__: Tuple[str, ...] = ()
     __xslots__: Tuple[str, ...] = ("_taint",)
 
-    def __init__(self, taint: Union[tuple, frozenset] = (), **kwargs):
-        assert not kwargs
+    def __init__(self, taint: Union[tuple, frozenset] = ()):
+        """
+        An abstrac Unmutable Taintable Expression
+        :param taint: A frozenzset
+        """
         super().__init__()
         self._taint = frozenset(taint)
 
@@ -36,7 +39,6 @@ class Expression(object):
     @property
     def taint(self):
         return self._taint
-
 
 def issymbolic(value) -> bool:
     """
@@ -93,7 +95,6 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
     """
-
     tainted_fset = frozenset(tuple(taints))
     if not issymbolic(arg):
         if isinstance(arg, int):
@@ -110,10 +111,14 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 
 
 class Variable(Expression):
+    """ Variable is an Expression that has a name """
     __slots__ = ()
-    __xslots__: Tuple[str, ...] = ("_name",)
+    __xslots__: Tuple[str, ...] = Expression.__xslots__ + ("_name",)
 
     def __init__(self, name: str, **kwargs):
+        """ Variable is an Expression that has a name
+        :param name: The Variable name
+        """
         super().__init__(**kwargs)
         self._name = name
 
@@ -125,21 +130,19 @@ class Variable(Expression):
     def name(self):
         return self._name
 
-    def __copy__(self, memo):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __deepcopy__(self, memo):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
     def __repr__(self):
         return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
 
 
 class Constant(Expression):
     __slots__ = ()
-    __xslots__: Tuple[str, ...] = ("_value",)
+    __xslots__: Tuple[str, ...] = Expression.__xslots__ + ("_value",)
 
-    def __init__(self, value: Union[bool, int], **kwargs):
+    def __init__(self, value, **kwargs):
+        """ A constant expression has a value
+
+        :param value: The constant value
+        """
         super().__init__(**kwargs)
         self._value = value
 
@@ -150,11 +153,13 @@ class Constant(Expression):
 
 class Operation(Expression):
     __slots__ = ()
-    __xslots__: Tuple[str, ...] = ("_operands",)
+    __xslots__: Tuple[str, ...] = Expression.__xslots__ + ("_operands",)
 
     def __init__(self, operands: Tuple[Expression, ...], taint=None, **kwargs):
-        # assert len(operands) > 0
-        # assert all(isinstance(x, Expression) for x in operands)
+        """ An operation has operands
+
+        :param operands: A tuple of expression operands
+        """
         self._operands = operands
 
         # If taint was not forced by a keyword argument, calculate default
@@ -223,11 +228,12 @@ class Bool(Expression):
 
 class BoolVariable(Bool, Variable):
     __slots__ = Bool.__xslots__ + Variable.__xslots__
-
+    __xslots__ = Bool.__xslots__ + Variable.__xslots__
+'''
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () Bool)"
-
+'''
 
 class BoolConstant(Bool, Constant):
     __slots__ = Bool.__xslots__ + Constant.__xslots__
@@ -246,20 +252,23 @@ class BoolOperation(Operation, Bool):
 
 class BoolNot(BoolOperation):
     __slots__ = BoolOperation.__xslots__
+    __xslots__ = BoolOperation.__xslots__
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(operands=args, **kwargs)
+    def __init__(self, *operands, **kwargs):
+        super().__init__(operands=operands, **kwargs)
 
 
 class BoolAnd(BoolOperation):
     __slots__ = BoolOperation.__xslots__
+    __xslots__ = BoolOperation.__xslots__
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(operands=args, **kwargs)
+    def __init__(self, *operands, **kwargs):
+        super().__init__(operands=operands, **kwargs)
 
 
 class BoolOr(BoolOperation):
     __slots__ = BoolOperation.__xslots__
+    __xslots__ = BoolOperation.__xslots__
 
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
@@ -267,6 +276,7 @@ class BoolOr(BoolOperation):
 
 class BoolXor(BoolOperation):
     __slots__ = BoolOperation.__xslots__
+    __xslots__ = BoolOperation.__xslots__
 
     def __init__(self, *args, **kwargs):
         super().__init__(operands=args, **kwargs)
@@ -274,6 +284,8 @@ class BoolXor(BoolOperation):
 
 class BoolITE(BoolOperation):
     __slots__ = BoolOperation.__xslots__
+    __xslots__ = BoolOperation.__xslots__
+
 
     def __init__(self, cond: "Bool", true: "Bool", false: "Bool", **kwargs):
         super().__init__(operands=(cond, true, false), **kwargs)
@@ -281,12 +293,19 @@ class BoolITE(BoolOperation):
 
 class BitVec(Expression):
     __slots__ = ()
-    __xslots__: Tuple[str, ...] = Expression.__xslots__ + ("size",)
-    """ This adds a bitsize to the Expression class """
+    __xslots__: Tuple[str, ...] = Expression.__xslots__ + ("_size",)
 
     def __init__(self, size: int, **kwargs):
+        """  This is bit vector expression
+
+        :param size: number of buts used
+        """
         super().__init__(**kwargs)
-        self.size = size
+        self._size = size
+
+    @property
+    def size(self):
+        return self._size
 
     @property
     def mask(self):
@@ -493,12 +512,6 @@ class BitVecVariable(BitVec, Variable):
     @property
     def name(self):
         return self._name
-
-    def __copy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __deepcopy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
 
     def __repr__(self):
         return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
@@ -735,14 +748,15 @@ class UnsignedGreaterOrEqual(BoolOperation):
 ###############################################################################
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
-    __slots__ = (
+    __slots__ = ()
+    __xslots__ = (
         "_index_bits",
         "_index_max",
         "_value_bits",
         "_default",
         "_written",
         "_concrete_cache",
-    )
+    ) + Expression.__xslots__
 
     def __init__(
         self,
@@ -1127,12 +1141,17 @@ class ArraySlice(ArrayOperation):
     def __init__(
         self, array: "Array", offset: int, size: int, default: Optional[int] = None, **kwargs
     ):
+        print (self.__slots__)
         assert size
         if not isinstance(array, Array):
             raise ValueError("Array expected")
-        if isinstance(array, ArrayProxy):
-            array = array._array
-        super().__init__(array, **kwargs)
+        super().__init__(
+            index_bits=array.index_bits,
+            value_bits=array.value_bits,
+            index_max=size,
+            operands=(array,),
+            **kwargs,
+        )
 
         self._slice_offset = offset
         self._slice_size = size
@@ -1146,16 +1165,8 @@ class ArraySlice(ArrayOperation):
         return self.array.underlying_variable
 
     @property
-    def index_bits(self):
-        return self.array.index_bits
-
-    @property
     def slice_offset(self):
         return self._slice_offset
-
-    @property
-    def value_bits(self):
-        return self.array.value_bits
 
     def get(self, index, default):
         return self.array.get(index + self._slice_offset, default)
@@ -1246,7 +1257,8 @@ class ArrayProxy:
         else:
             self._array = self._array.store(index, value)
 
-    def __copy__(self):
+    def __copy__(self, memo=None):
+        print ("AAAA")
         return ArrayProxy(self.array)
 
     def get(self, index, default=None):
@@ -1254,12 +1266,14 @@ class ArrayProxy:
 
     def write_BE(self, address, value, size):
         self._array = self._array.write_BE(address, value, size)
+        return self
 
     def read_BE(self, address, size):
         return self._array.read_BE(address, size)
 
     def write(self, offset, buf):
-        self._array = self._array.write(address, buf)
+        self._array = self._array.write(offset, buf)
+        return self
 
     def read(self, offset, size):
         return ArrayProxy(self._array[offset : offset + size])
