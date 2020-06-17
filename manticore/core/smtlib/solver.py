@@ -205,6 +205,8 @@ class SmtlibProc:
             self._proc.stdout.close()
             # Kill the process
             self._proc.kill()
+            self._proc.wait()
+
             # No need to wait for termination, zombies avoided.
         self._proc = None
 
@@ -217,7 +219,6 @@ class SmtlibProc:
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
-        # lparen, rparen = buf.count("("), buf.count(")")
         lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
         return buf, lparen, rparen
 
@@ -229,7 +230,6 @@ class SmtlibProc:
         """
         if self._debug:
             logger.debug(">%s", cmd)
-            print(">", cmd)
         self._proc.stdout.flush()  # type: ignore
         self._proc.stdin.write(f"{cmd}\n")  # type: ignore
 
@@ -247,7 +247,6 @@ class SmtlibProc:
 
         if self._debug:
             logger.debug("<%s", buf)
-            print("<", buf)
 
         return buf
 
@@ -269,6 +268,7 @@ class SMTLIBSolver(Solver):
         support_reset: bool = False,
         support_minmax: bool = False,
         support_pushpop: bool = False,
+        multiple_check: bool = True,
         debug: bool = False,
     ):
 
@@ -295,6 +295,7 @@ class SMTLIBSolver(Solver):
         self._support_minmax = support_minmax
         self._support_reset = support_reset
         self._support_pushpop = support_pushpop
+        self._multiple_check = multiple_check
 
         if not self._support_pushpop:
             setattr(self, "_push", None)
@@ -307,8 +308,6 @@ class SMTLIBSolver(Solver):
 
         self._smtlib.start()
         # run solver specific initializations
-        for cfg in self._init:
-            self._smtlib.send(cfg)
 
     def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
@@ -411,7 +410,8 @@ class SMTLIBSolver(Solver):
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-            return self.can_be_true(temp_cs)
+            self._reset(temp_cs.to_string())
+            return self._is_sat()
 
     # get-all-values min max minmax
     def _optimize_generic(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
@@ -432,10 +432,9 @@ class SMTLIBSolver(Solver):
 
         start = time.time()
         with constraints as temp_cs:
-            X = temp_cs.new_bitvec(x.size)
+            X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
             temp_cs.add(X == x)
-            aux = temp_cs.new_bitvec(X.size, name="optimized_")
-            self._reset(temp_cs.to_string(related_to=X))
+            self._reset(temp_cs.to_string())
 
             # Find one value and use it as currently known min/Max
             if not self._is_sat():
@@ -446,7 +445,7 @@ class SMTLIBSolver(Solver):
             # This uses a binary search to find a suitable range for aux
             # Use known solution as min or max depending on the goal
             if goal == "maximize":
-                m, M = last_value, (1 << x.size) - 1
+                m, M = last_value, (1 << X.size) - 1
             else:
                 m, M = 0, last_value
 
@@ -466,8 +465,11 @@ class SMTLIBSolver(Solver):
                 if time.time() - start > consts.timeout:
                     raise SolverError("Timeout")
 
-            # reset to before the dichotomic search
-            self._reset(temp_cs.to_string(related_to=X))
+        # reset to before the dichotomic search
+        with constraints as temp_cs:
+            X = temp_cs.new_bitvec(x.size)  # _getvalue needs a Variable
+            temp_cs.add(X == x)
+            self._reset(temp_cs.to_string())
 
             # At this point we know aux is inside [m,M]
             # Lets constrain it to that range
@@ -527,7 +529,7 @@ class SMTLIBSolver(Solver):
                 )
 
             temp_cs.add(var == expression)
-            self._reset(temp_cs.to_string(related_to=var))
+            self._reset(temp_cs.to_string())
             result = []
             start = time.time()
             while self._is_sat():
@@ -546,12 +548,14 @@ class SMTLIBSolver(Solver):
                 if time.time() - start > consts.timeout:
                     if silent:
                         logger.info("Timeout searching for all solutions")
-                        return result
+                        return list(result)
                     raise SolverError("Timeout")
                 # Sometimes adding a new contraint after a check-sat eats all the mem
-                temp_cs.add(var != value)
-                self._reset(temp_cs.to_string(related_to=var))
-                # self._assert(var != value)
+                if self._multiple_check:
+                    self._smtlib.send(f"(assert {translate_to_smtlib(var != value)})")
+                else:
+                    temp_cs.add(var != value)
+                    self._reset(temp_cs.to_string())
             return list(result)
 
     def _optimize_fancy(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
@@ -572,8 +576,7 @@ class SMTLIBSolver(Solver):
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name="optimized_")
-            self._reset(temp_cs.to_string(related_to=X))
-            self._smtlib.send(aux.declaration)
+            self._reset(temp_cs.to_string())
 
             self._assert(operation(X, aux))
             self._smtlib.send("(%s %s)" % (goal, aux.name))
@@ -607,7 +610,6 @@ class SMTLIBSolver(Solver):
                         subvar = temp_cs.new_bitvec(expression.value_bits)
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
-
                     self._reset(temp_cs.to_string())
                     if not self._is_sat():
                         raise SolverError(
@@ -650,6 +652,21 @@ class Z3Solver(SMTLIBSolver):
         This is implemented using an external z3 solver (via a subprocess).
         See https://github.com/Z3Prover/z3
         """
+        command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+
+        init, support_minmax, support_reset, multiple_check = self.__autoconfig()
+        super().__init__(
+            command=command,
+            init=init,
+            value_fmt=16,
+            support_minmax=support_minmax,
+            support_reset=support_reset,
+            multiple_check=multiple_check,
+            support_pushpop=True,
+            debug=False,
+        )
+
+    def __autoconfig(self):
         init = [
             # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
             # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
@@ -657,37 +674,25 @@ class Z3Solver(SMTLIBSolver):
             "(set-logic QF_AUFBV)",
             # The declarations and definitions will be scoped
             "(set-option :global-decls false)",
+        ]
+
+        # To cache what get-info returned; can be directly set when writing tests
+        self.version = self._solver_version()
+        support_reset = True
+
+        if self.version > Version(4, 8, 4):
             # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
             #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
             # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
             # in test_consensys_benchmark.py.
-            "(set-option :tactic.solve_eqs.context_solve false)",
-        ]
-        command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+            init.append("(set-option :tactic.solve_eqs.context_solve false)")
 
-        support_minmax, support_reset = self.__autoconfig()
-        super().__init__(
-            command=command,
-            init=init,
-            value_fmt=16,
-            support_minmax=True,
-            support_reset=True,
-            support_pushpop=True,
-            debug=False,
-        )
+        support_minmax = self.version >= Version(4, 4, 1)
 
-    def __autoconfig(self):
-        # To cache what get-info returned; can be directly set when writing tests
-        self.version = self._solver_version()
-        if self.version >= Version(4, 5, 0):
-            support_minmax = False
-            support_reset = False
-        elif self.version >= Version(4, 4, 1):
-            support_minmax = True
-            support_reset = False
-        else:
-            logger.debug(" Please install Z3 4.4.1 or newer to get optimization support")
-        return support_minmax, support_reset
+        # Certain version of Z3 fails to handle multiple check-sat
+        # https://gist.github.com/feliam/0f125c00cb99ef05a6939a08c4578902
+        multiple_check = self.version < Version(4, 8, 7)
+        return init, support_minmax, support_reset, multiple_check
 
     def _solver_version(self) -> Version:
         """

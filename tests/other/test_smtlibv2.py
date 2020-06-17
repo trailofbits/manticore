@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, mock_open
+import os
 
 from manticore.core.smtlib import (
     ConstraintSet,
@@ -12,14 +12,55 @@ from manticore.core.smtlib import (
     arithmetic_simplify,
     constant_folder,
     replace,
+    BitVecConstant,
 )
 from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
+from manticore import config
 
 # logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
+
+DIRPATH = os.path.dirname(__file__)
+
+
+class RegressionTest(unittest.TestCase):
+    def test_related_to(self):
+        import gzip
+        import pickle, sys
+
+        filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
+
+        # A constraint set and a contraint caught in the act of making related_to fail
+        constraints, constraint = pickle.loads(gzip.open(filename, "rb").read())
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        ground_truth = Z3Solver.instance().can_be_true(constraints, constraint)
+        self.assertEqual(ground_truth, False)
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(
+            ground_truth,
+            Z3Solver.instance().can_be_true(constraints.related_to(constraints), constraint),
+        )
+
+        # Replace
+        new_constraint = Operators.UGE(
+            Operators.SEXTEND(BitVecConstant(256, 0x1A), 256, 512) * BitVecConstant(512, 1),
+            0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000,
+        )
+        self.assertEqual(translate_to_smtlib(constraint), translate_to_smtlib(new_constraint))
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(
+            ground_truth,
+            Z3Solver.instance().can_be_true(constraints.related_to(new_constraint), new_constraint),
+        )
 
 
 """
@@ -943,9 +984,8 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86)  # -122
         cs.add(c == 0x11)  # 17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b / c)
+        cs.add(d == (b // c))
         cs.add(a == d)
-
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7 & 0xFF)
 
@@ -1004,6 +1044,33 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(False)))
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(a == b)))
 
+    def testRelated(self):
+        cs = ConstraintSet()
+        aa1 = cs.new_bool(name="AA1")
+        aa2 = cs.new_bool(name="AA2")
+        bb1 = cs.new_bool(name="BB1")
+        bb2 = cs.new_bool(name="BB2")
+        cs.add(Operators.OR(aa1, aa2))
+        cs.add(Operators.OR(bb1, bb2))
+        self.assertTrue(self.solver.check(cs))
+        # No BB variables related to AA
+        self.assertNotIn("BB", cs.related_to(aa1).to_string())
+        self.assertNotIn("BB", cs.related_to(aa2).to_string())
+        self.assertNotIn("BB", cs.related_to(aa1 == aa2).to_string())
+        self.assertNotIn("BB", cs.related_to(aa1 == False).to_string())
+        # No AA variables related to BB
+        self.assertNotIn("AA", cs.related_to(bb1).to_string())
+        self.assertNotIn("AA", cs.related_to(bb2).to_string())
+        self.assertNotIn("AA", cs.related_to(bb1 == bb2).to_string())
+        self.assertNotIn("AA", cs.related_to(bb1 == False).to_string())
+
+        # Nothing is related to tautologies?
+        self.assertEqual("", cs.related_to(simplify(bb1 == bb1)).to_string())
+
+        # But if the tautollogy can not get simplified we have to ask the solver
+        # and send in all the other stuff
+        self.assertNotIn("AA", cs.related_to(bb1 == bb1).to_string())
+
     def test_API(self):
         """
         As we've split up the Constant, Variable, and Operation classes to avoid using multiple inheritance,
@@ -1025,6 +1092,39 @@ class ExpressionTest(unittest.TestCase):
             attrs = ["operands"]
             for attr in attrs:
                 self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
+
+    def test_signed_unsigned_LT_simple(self):
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32)
+        b = cs.new_bitvec(32)
+
+        cs.add(a == 0x1)
+        cs.add(b == 0x80000000)
+
+        lt = b < a
+        ult = b.ult(a)
+
+        self.assertFalse(self.solver.can_be_true(cs, ult))
+        self.assertTrue(self.solver.must_be_true(cs, lt))
+
+    def test_signed_unsigned_LT_complex(self):
+        mask = (1 << 32) - 1
+
+        cs = ConstraintSet()
+        _a = cs.new_bitvec(32)
+        _b = cs.new_bitvec(32)
+
+        cs.add(_a == 0x1)
+        cs.add(_b == (0x80000000 - 1))
+
+        a = _a & mask
+        b = (_b + 1) & mask
+
+        lt = b < a
+        ult = b.ult(a)
+
+        self.assertFalse(self.solver.can_be_true(cs, ult))
+        self.assertTrue(self.solver.must_be_true(cs, lt))
 
 
 class ExpressionTestYices(ExpressionTest):
