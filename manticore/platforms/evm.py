@@ -102,6 +102,13 @@ consts.add(
     default=-1,
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
+consts.add(
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
+)
+
+
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -3383,10 +3390,12 @@ class EVMWorld(Platform):
                 "Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic))
             )
             balance = blockchain.get_balance(account_address)
-            is_balance_symbolic = issymbolic(balance)
-            is_something_symbolic = is_something_symbolic or is_balance_symbolic
-            balance = state.solve_one(balance, constrain=True)
-            stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+
+            if not consts.ignore_balance:
+                is_balance_symbolic = issymbolic(balance)
+                is_something_symbolic = is_something_symbolic or is_balance_symbolic
+                balance = state.solve_one(balance, constrain=True)
+                stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain.get_storage(account_address)
             concrete_indexes = set()

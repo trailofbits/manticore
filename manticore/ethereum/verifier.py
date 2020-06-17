@@ -74,7 +74,7 @@ def manticore_verifier(
 
     config.get_group("smt").timeout = 120
     config.get_group("smt").memory = 16384
-    config.get_group("smt").optimize = False
+    config.get_group("evm").ignore_balance = True
     config.get_group("evm").oog = "ignore"
 
     # Main manticore manager object
