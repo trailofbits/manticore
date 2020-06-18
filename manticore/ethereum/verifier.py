@@ -1,6 +1,7 @@
 """
 $python manticore-verifier.py property.sol TestToken
 """
+import os
 import re
 import sys
 import argparse
@@ -285,7 +286,9 @@ def manticore_verifier(
     print(x)
 
     m.clear_ready_states()
-    print(f"Checkout testcases here:{m.workspace}")
+
+    workspace = os.path.abspath(m.workspace)[len(os.getcwd())+1:]
+    print(f"Checkout testcases here:./{workspace}")
 
 
 def main():

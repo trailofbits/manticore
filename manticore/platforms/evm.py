@@ -255,6 +255,8 @@ class Transaction:
         stream.write("Gas used: %d %s\n" % (conc_tx.gas, flagged(issymbolic(self.gas))))
 
         tx_data = conc_tx.data
+        if len(tx_data) > 80:
+            tx_data = tx_data.rstrip(conc_tx.data[-3:-1])
 
         stream.write(
             "Data: 0x{} {}\n".format(
@@ -266,9 +268,9 @@ class Transaction:
             return_data = conc_tx.return_data
 
             stream.write(
-                "Return_data: 0x{} ({}) {}\n".format(
+                "Return_data: 0x{} {} {}\n".format(
                     binascii.hexlify(return_data).decode(),
-                    printable_bytes(return_data),
+                    f"({printable_bytes(return_data)})" if conc_tx.sort != "CREATE" else "",
                     flagged(issymbolic(self.return_data)),
                 )
             )
