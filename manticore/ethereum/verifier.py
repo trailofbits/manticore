@@ -287,7 +287,7 @@ def manticore_verifier(
 
     m.clear_ready_states()
 
-    workspace = os.path.abspath(m.workspace)[len(os.getcwd())+1:]
+    workspace = os.path.abspath(m.workspace)[len(os.getcwd()) + 1 :]
     print(f"Checkout testcases here:./{workspace}")
 
 
