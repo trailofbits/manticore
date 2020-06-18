@@ -371,7 +371,7 @@ def main():
     config.process_config_values(parser, parsed)
 
     if not parsed.source_code:
-        print(parser.format_usage() + "error: the following arguments are required: contract")
+        print(parser.format_usage() + "error: You need to provide a contract source code.")
         sys.exit(1)
     args = parsed
     set_verbosity(args.v)

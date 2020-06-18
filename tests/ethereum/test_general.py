@@ -1,5 +1,7 @@
 import binascii
 import unittest
+import subprocess
+import pkg_resources
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -68,6 +70,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 
 
 class EthVerifierIntegrationTest(unittest.TestCase):
+
     def test_propverif(self):
         smtcfg = config.get_group("smt")
         smtcfg.solver = smtcfg.solver.yices
@@ -84,6 +87,10 @@ class EthVerifierIntegrationTest(unittest.TestCase):
                 ).match(f.getvalue())
             )
 
+    def test_propverif_external(self) -> None:
+        cli_version = subprocess.check_output(("manticore-verifier","--version")).decode('utf-8')
+        py_version = f"Manticore {pkg_resources.get_distribution('manticore').version}\n"
+        self.assertEqual(cli_version, py_version)
 
 class EthAbiTests(unittest.TestCase):
     _multiprocess_can_split = True

@@ -68,7 +68,7 @@ setup(
     entry_points={
         "console_scripts": [
             "manticore = manticore.__main__:main",
-            "manticore_verifier = manticore.ethereum.verifier:main",
+            "manticore-verifier = manticore.ethereum.verifier:main",
         ]
     },
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
