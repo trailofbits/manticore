@@ -267,6 +267,7 @@ def manticore_verifier(
             m.goto_snapshot()
 
     m.clear_terminated_states()
+    m.clear_ready_states()
     m.clear_snapshot()
 
     if m.is_killed():

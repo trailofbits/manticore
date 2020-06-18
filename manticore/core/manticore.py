@@ -403,8 +403,7 @@ class ManticoreBase(Eventful):
         in a snapshot """
         if not self._snapshot:
             raise ManticoreError("No snapshot to go to")
-        for state_id in tuple(self._ready_states):
-            self._ready_states.remove(state_id)
+        self.clear_ready_states()
         for state_id in self._snapshot:
             self._ready_states.append(state_id)
         self._snapshot = None
