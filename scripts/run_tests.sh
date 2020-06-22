@@ -1,4 +1,3 @@
-#!/bin/bash
 # Launches all examples; this assumes PWD is examples/script
 launch_examples() {
     COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc

@@ -40,4 +40,4 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: ./scripts/run_tests.sh
-        working-directory: $GITHUB_WORKSPACE
+      working-directory: $GITHUB_WORKSPACE
