@@ -15,6 +15,7 @@ from .detectors import (
     DetectManipulableBalance,
 )
 from ..core.plugin import Profiler
+from ..exceptions import EthereumError
 from .manticore import ManticoreEVM
 from .plugins import (
     FilterFunctions,
@@ -23,6 +24,7 @@ from .plugins import (
     KeepOnlyIfStorageChanges,
     SkipRevertBasicBlocks,
 )
+from ..platforms.evm_world_state import RemoteWorldState
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils import config
 
@@ -79,6 +81,10 @@ def choose_detectors(args):
                         f"{e} is not a detector name, must be one of {arguments}. See also `--list-detectors`."
                     )
 
+        # sam.moelius: Do not enable uninitialized storage detector when using RPC.  It generates too much noise.
+        if args.url is not None:
+            exclude.append(DetectUninitializedStorage.ARGUMENT)
+
         for arg, detector_cls in detectors.items():
             if arg not in exclude:
                 detectors_to_run.append(detector_cls)
@@ -87,7 +93,11 @@ def choose_detectors(args):
 
 
 def ethereum_main(args, logger):
-    m = ManticoreEVM(workspace_url=args.workspace)
+    world_state = None
+    if args.url is not None:
+        world_state = RemoteWorldState(args.url)
+
+    m = ManticoreEVM(workspace_url=args.workspace, world_state=world_state)
 
     if args.quick_mode:
         args.avoid_constant = True
@@ -130,16 +140,28 @@ def ethereum_main(args, logger):
         logger.info("Beginning analysis")
 
         with m.kill_timeout():
-            m.multi_tx_analysis(
-                args.argv[0],
-                contract_name=args.contract,
-                tx_limit=args.txlimit,
-                tx_use_coverage=not args.txnocoverage,
-                tx_send_ether=not args.txnoether,
-                tx_account=args.txaccount,
-                tx_preconstrain=args.txpreconstrain,
-                compile_args=vars(args),  # FIXME
-            )
+            try:
+                contract_account = None
+                if args.txtarget is not None:
+                    contract_account = int(args.txtarget, base=0)
+                    if world_state is not None and not world_state.get_code(contract_account):
+                        raise EthereumError(
+                            "Could not get code for target account: " + args.txtarget
+                        )
+
+                m.multi_tx_analysis(
+                    args.argv[0],
+                    contract_name=args.contract,
+                    tx_limit=args.txlimit,
+                    tx_use_coverage=not args.txnocoverage,
+                    tx_send_ether=not args.txnoether,
+                    contract_account=contract_account,
+                    tx_account=args.txaccount,
+                    tx_preconstrain=args.txpreconstrain,
+                    compile_args=vars(args),  # FIXME
+                )
+            except EthereumError as e:
+                logger.error("%r", e.args[0])
 
         if not args.no_testcases:
             m.finalize(only_alive_states=args.only_alive_testcases)

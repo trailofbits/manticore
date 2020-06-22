@@ -34,6 +34,7 @@ from .solidity import SolidityMetadata
 from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
+from ..platforms.evm_world_state import WorldState
 from ..utils import config, log
 from ..utils.deprecated import deprecated
 from ..utils.helpers import PickleSerializer, printable_bytes
@@ -390,7 +391,7 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, plugins=None, **kwargs):
+    def __init__(self, world_state: Optional[WorldState] = None, plugins=None, **kwargs):
         """
         A Manticore EVM manager
         :param plugins: the plugins to register in this manticore manager
@@ -398,7 +399,7 @@ class ManticoreEVM(ManticoreBase):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints)
+        world = evm.EVMWorld(constraints, world_state=world_state)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
         if plugins is not None:
@@ -1035,6 +1036,7 @@ class ManticoreEVM(ManticoreBase):
         tx_limit=None,
         tx_use_coverage=True,
         tx_send_ether=True,
+        contract_account: Optional[int] = None,
         tx_account="attacker",
         tx_preconstrain=False,
         args=None,
@@ -1042,23 +1044,27 @@ class ManticoreEVM(ManticoreBase):
     ):
         owner_account = self.create_account(balance=10 ** 10, name="owner")
         attacker_account = self.create_account(balance=10 ** 10, name="attacker")
-        # Pretty print
-        logger.info("Starting symbolic create contract")
 
-        if tx_send_ether:
-            create_value = self.make_symbolic_value()
-        else:
-            create_value = 0
+        if contract_account is None:
+            # Pretty print
+            logger.info("Starting symbolic create contract")
 
-        contract_account = self.solidity_create_contract(
-            solidity_filename,
-            contract_name=contract_name,
-            owner=owner_account,
-            args=args,
-            compile_args=compile_args,
-            balance=create_value,
-            gas=230000,
-        )
+            if tx_send_ether:
+                create_value = self.make_symbolic_value()
+            else:
+                create_value = 0
+
+            contract_account = self.solidity_create_contract(
+                solidity_filename,
+                contract_name=contract_name,
+                owner=owner_account,
+                args=args,
+                compile_args=compile_args,
+                balance=create_value,
+                gas=230000,
+            )
+        elif solidity_filename is not None:
+            raise EthereumError("A target contract and a Solidty filename cannot both be specified")
 
         if tx_account == "attacker":
             tx_account = [attacker_account]

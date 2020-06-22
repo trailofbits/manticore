@@ -59,6 +59,7 @@ setup(
         "rlp",
         "crytic-compile>=0.1.1",
         "wasm",
+        "web3",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
         "psutil",

@@ -8,10 +8,10 @@ cd manticore/tests/ && mkdir -p  ethereum_vm/VMTests_concrete
 git clone https://github.com/ethereum/tests --depth=1
 
 ## Get help
-python make_VMTest.py --help 
+python make_VMTests.py --help 
 
 ## Generate concrete tests:
-for i in  tests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python make_VMTest.py -i $i --fork Istanbul -o ethereum_vm/VMTests_concrete; done
+for i in tests/BlockchainTests/ValidBlocks/VMTests/*/*.json; do python make_VMTests.py -i $i --fork Istanbul -o ethereum_vm/VMTests_concrete; done
 
 """
 import argparse
@@ -66,6 +66,7 @@ def gen_header(testcases):
 import unittest
 from binascii import unhexlify
 from manticore import ManticoreEVM, Plugin
+from manticore.core.smtlib import to_constant
 from manticore.utils import config
 '''
 
@@ -214,7 +215,7 @@ def gen_body(name, testcase):
     body += f"""
         for state in m.all_states:
             world = state.platform
-            self.assertEqual(used_gas_plugin.used_gas, {blockheader['gasUsed']})
+            self.assertEqual(to_constant(used_gas_plugin.used_gas), {blockheader['gasUsed']})
             
             world.end_block()"""
 

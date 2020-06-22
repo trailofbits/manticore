@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
+        type: ["ethereum_bench", "examples", "ethereum", "ethereum_metacoin", "ethereum_truffle", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
@@ -155,26 +155,29 @@ jobs:
             cd $DIR
         }
 
-        install_truffle(){
-            npm install -g truffle
+        install_node_packages(){
+            npm install -g ganache-cli truffle
         }
 
-        run_truffle_tests(){
+        run_metacoin_tests(){
             COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
-            mkdir truffle_tests
-            cd truffle_tests
-            truffle unbox metacoin
-            coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic
+            ADDITIONAL_ARGS=.
+            EXPECTED_TX=27
+            if [ "$1" = "deploy" ]; then
+                ADDRESS="$(truffle deploy | grep '> contract address:.*' | tail -n 1 | grep -o '0x.*$')"
+                ADDITIONAL_ARGS="--rpc 127.0.0.1:7545 --txtarget $ADDRESS"
+                EXPECTED_TX=26
+            fi
+            coverage run -p -m manticore --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic --smt.timeout 600 $ADDITIONAL_ARGS
             # Truffle smoke test. We test if manticore is able to generate states
             # from a truffle project. 
-            if [ "$(ls output/*tx -l | wc -l)" != "26" ]; then
-                echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 26"
+            ACTUAL_TX="$(ls output/*tx -l | wc -l)"
+            rm -rf output
+            if [ "$ACTUAL_TX" != "$EXPECTED_TX" ]; then
+                echo "MetaCoin test failed: $ACTUAL_TX != $EXPECTED_TX"
                 return 1
             fi
-            echo "Truffle test succeded"
-            coverage xml
-            cd ..
-            cp truffle_tests/coverage.xml .
+            echo "MetaCoin test succeded"
             return 0
         }
 
@@ -183,6 +186,9 @@ jobs:
             COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
             echo "Running only the tests from 'tests/$DIR' directory"
             pytest --durations=100 --cov=manticore --cov-config=$GITHUB_WORKSPACE/.coveragerc -n auto "tests/$DIR"
+            if [ $? -ne 0 ]; then
+                return 1
+            fi
             coverage xml
         }
 
@@ -207,14 +213,29 @@ jobs:
 
         # Test type
         case $TEST_TYPE in
+            ethereum_metacoin)
+                echo "Running metacoin tests"
+                install_node_packages
+                ganache-cli -p 7545 -i 5777 &
+                mkdir metacoin_tests \
+                    && cd metacoin_tests \
+                    && truffle unbox metacoin \
+                    && run_metacoin_tests \
+                    && run_metacoin_tests deploy \
+                    && coverage combine \
+                    && coverage xml \
+                    && cd .. \
+                    && cp metacoin_tests/coverage.xml .
+                ;;
+            ethereum_truffle)
+                echo "Running truffle tests"
+                install_node_packages
+                ganache-cli -p 7545 -i 5777 &
+                run_tests_from_dir $TEST_TYPE
+                ;;
             ethereum_vm)
                 make_vmtests
                 run_tests_from_dir $TEST_TYPE
-                ;;
-            ethereum_truffle)
-                echo "Running truffle test"
-                install_truffle
-                run_truffle_tests
                 ;;
             wasm)
                 make_wasm_tests

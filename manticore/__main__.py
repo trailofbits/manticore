@@ -41,7 +41,12 @@ def main() -> None:
     resources.check_disk_usage()
     resources.check_memory_usage()
 
-    if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
+    if (
+        args.url is not None
+        or args.txtarget is not None
+        or args.argv[0].endswith(".sol")
+        or is_supported(args.argv[0])
+    ):
         ethereum_main(args, logger)
     elif args.argv[0].endswith(".wasm") or args.argv[0].endswith(".wat"):
         wasm_main(args, logger)
@@ -165,6 +170,8 @@ def parse_arguments() -> argparse.Namespace:
         "--txnoether", action="store_true", help="Do not attempt to send ether to contract"
     )
 
+    eth_flags.add_argument("--txtarget", type=str, help="Address of a deployed contract to target")
+
     eth_flags.add_argument(
         "--txaccount",
         type=str,
@@ -181,6 +188,13 @@ def parse_arguments() -> argparse.Namespace:
 
     eth_flags.add_argument(
         "--contract", type=str, help="Contract name to analyze in case of multiple contracts"
+    )
+
+    eth_flags.add_argument(
+        "--rpc",
+        type=str,
+        dest="url",
+        help="URL of an Ethereum node to connect to. Must be of the form 'IP:PORT'",
     )
 
     eth_detectors = parser.add_argument_group("Ethereum detectors")
@@ -241,6 +255,9 @@ def parse_arguments() -> argparse.Namespace:
 
     parsed = parser.parse_args(sys.argv[1:])
     config.process_config_values(parser, parsed)
+
+    if parsed.txtarget is not None and not parsed.argv:
+        parsed.argv = [None]
 
     if not parsed.argv:
         print(parser.format_usage() + "error: the following arguments are required: argv")

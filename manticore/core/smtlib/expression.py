@@ -4,7 +4,7 @@ import uuid
 
 import re
 import copy
-from typing import Union, Optional, Dict, List
+from typing import Union, Optional, Dict, List, Tuple
 
 
 class ExpressionException(SmtlibError):
@@ -677,7 +677,7 @@ class Array(Expression):
         self, index_bits: int, index_max: Optional[int], value_bits: int, *operands, **kwargs
     ):
         assert index_bits in (32, 64, 256)
-        assert value_bits in (8, 16, 32, 64, 256)
+        assert value_bits in (1, 8, 16, 32, 64, 256)
         assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
         self._index_max = index_max
@@ -1206,6 +1206,14 @@ class ArrayProxy(Array):
 
         value = self._array.select(index)
         return BitVecITE(self._array.value_bits, is_known, value, default)
+
+    def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
+        items = []
+        array = self.array
+        while not isinstance(array, ArrayVariable):
+            items.append((array.index, array.value))
+            array = array.array
+        return items
 
 
 class ArraySelect(BitVec):
