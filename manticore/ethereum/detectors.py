@@ -177,34 +177,47 @@ class DetectExternalCallAndLeak(Detector):
             sent_value = arguments[2]
             msg_sender = state.platform.current_vm.caller
 
-            msg = "ether leak" if state.can_be_true(sent_value != 0) else "external call"
-
             if issymbolic(dest_address):
                 # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
-                if state.can_be_true(msg_sender == dest_address):
+                self.add_finding_here(
+                    state,
+                    f"Reachable ether leak to sender via argument",
+                    constraint=AND(msg_sender == dest_address, sent_value != 0),
+                )
+                self.add_finding_here(
+                    state,
+                    f"Reachable external call to sender via argument",
+                    constraint=AND(msg_sender == dest_address, sent_value == 0),
+                )
+
+                # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
+                # we report nothing if it can't go to > 1 other addresses since that means the code constrained
+                # to a specific address at some point, and that was probably intentional. attacker has basically
+                # no control.
+
+                possible_destinations = state.solve_n(dest_address, 2)
+                if len(possible_destinations) > 1:
+                    # This might be a false positive if the dest_address can't actually be solved to anything
+                    # useful/exploitable, even though it can be solved to more than 1 thing
                     self.add_finding_here(
                         state,
-                        f"Reachable {msg} to sender via argument",
-                        constraint=msg_sender == dest_address,
+                        f"Reachable ether leak to user controlled address via argument",
+                        constraint=AND(msg_sender != dest_address, sent_value != 0),
                     )
-                else:
-                    # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
-                    # we report nothing if it can't go to > 1 other addresses since that means the code constrained
-                    # to a specific address at some point, and that was probably intentional. attacker has basically
-                    # no control.
+                    self.add_finding_here(
+                        state,
+                        f"Reachable external call to user controlled address via argument",
+                        constraint=AND(msg_sender != dest_address, sent_value == 0),
+                    )
 
-                    possible_destinations = state.solve_n(dest_address, 2)
-                    if len(possible_destinations) > 1:
-                        # This might be a false positive if the dest_address can't actually be solved to anything
-                        # useful/exploitable, even though it can be solved to more than 1 thing
-                        self.add_finding_here(
-                            state,
-                            f"Reachable {msg} to user controlled address via argument",
-                            constraint=msg_sender != dest_address,
-                        )
             else:
                 if msg_sender == dest_address:
-                    self.add_finding_here(state, f"Reachable {msg} to sender", True)
+                    self.add_finding_here(
+                        state, f"Reachable ether leak to sender", constraint=sent_value != 0
+                    )
+                    self.add_finding_here(
+                        state, f"Reachable external call to sender", constraint=sent_value == 0
+                    )
 
 
 class DetectInvalid(Detector):
