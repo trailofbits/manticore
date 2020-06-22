@@ -66,6 +66,7 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: ./scripts/run_tests.sh
+        working-directory: $GITHUB_WORKSPACE
     - name: Coverage Upload
       uses: codecov/codecov-action@v1
       with:
