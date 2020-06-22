@@ -7,6 +7,7 @@ import logging
 from ..core.plugin import Plugin
 from ..core.smtlib import Operators, to_constant
 import pyevmasm as EVMAsm
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,7 +16,8 @@ class FilterFunctions(Plugin):
         self, regexp=r".*", mutability="both", depth="both", fallback=False, include=True, **kwargs
     ):
         """
-            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+            Constrain input based on function metadata. Include or avoid functions
+            selected by the specified criteria.
 
             Examples:
             #Do not explore any human transactions that end up calling a constant function
@@ -83,7 +85,9 @@ class FilterFunctions(Plugin):
                 if not selected_functions:
                     logger.warning("No functions selected, adding False to path constraint.")
                 # constrain the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, (tx.data[:4] == x for x in selected_functions), False)
+                constraint = reduce(
+                    Operators.OR, (tx.data[:4] == x for x in selected_functions), False
+                )
                 state.constrain(constraint)
             else:
                 # Avoid all not selected hashes

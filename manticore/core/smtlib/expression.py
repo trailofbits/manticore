@@ -159,6 +159,12 @@ class Bool(Expression):
         return BoolXor(self.cast(other), self)
 
     def __bool__(self):
+        # try to be forgiving. Allow user to use Bool in an IF sometimes
+        from .visitors import simplify
+
+        x = simplify(self)
+        if isinstance(x, Constant):
+            return x.value
         raise NotImplementedError("__bool__ for Bool")
 
 
@@ -479,7 +485,8 @@ class BitVecConstant(BitVec):
     __slots__ = ["_value"]
 
     def __init__(self, size: int, value: int, *args, **kwargs):
-        self._value = value
+        MASK = (1 << size) - 1
+        self._value = value & MASK
         super().__init__(size, *args, **kwargs)
 
     def __bool__(self):
@@ -496,6 +503,13 @@ class BitVecConstant(BitVec):
     @property
     def value(self):
         return self._value
+
+    @property
+    def signed_value(self):
+        if self._value & self.signmask:
+            return self._value - (1 << self.size)
+        else:
+            return self._value
 
 
 class BitVecOperation(BitVec):
@@ -770,6 +784,10 @@ class Array(Expression):
                     raise IndexError
         return self.select(self.cast_index(index))
 
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
     def __eq__(self, other):
         # FIXME taint
         def compare_buffers(a, b):
@@ -798,6 +816,7 @@ class Array(Expression):
         return array
 
     def read_BE(self, address, size):
+        address = self.cast_index(address)
         bytes = []
         for offset in range(size):
             bytes.append(self.get(address + offset, 0))
@@ -948,7 +967,7 @@ class ArrayStore(ArrayOperation):
         return self.operands[2]
 
 
-class ArraySlice(Array):
+class ArraySlice(ArrayOperation):
     def __init__(
         self, array: Union["Array", "ArrayProxy"], offset: int, size: int, *args, **kwargs
     ):
@@ -956,23 +975,22 @@ class ArraySlice(Array):
             raise ValueError("Array expected")
         if isinstance(array, ArrayProxy):
             array = array._array
-        super().__init__(array.index_bits, array.index_max, array.value_bits, *args, **kwargs)
+        super().__init__(array, **kwargs)
 
-        self._array = array
         self._slice_offset = offset
         self._slice_size = size
 
     @property
-    def underlying_variable(self):
-        return self._array.underlying_variable
+    def array(self):
+        return self.operands[0]
 
     @property
-    def operands(self):
-        return self._array.operands
+    def underlying_variable(self):
+        return self.array.underlying_variable
 
     @property
     def index_bits(self):
-        return self._array.index_bits
+        return self.array.index_bits
 
     @property
     def index_max(self):
@@ -980,18 +998,14 @@ class ArraySlice(Array):
 
     @property
     def value_bits(self):
-        return self._array.value_bits
-
-    @property
-    def taint(self):
-        return self._array.taint
+        return self.array.value_bits
 
     def select(self, index):
-        return self._array.select(index + self._slice_offset)
+        return self.array.select(index + self._slice_offset)
 
     def store(self, index, value):
         return ArraySlice(
-            self._array.store(index + self._slice_offset, value),
+            self.array.store(index + self._slice_offset, value),
             self._slice_offset,
             self._slice_size,
         )
@@ -1036,7 +1050,7 @@ class ArrayProxy(Array):
 
     @property
     def operands(self):
-        return self._array.operands
+        return (self._array,)
 
     @property
     def index_bits(self):
@@ -1072,6 +1086,7 @@ class ArrayProxy(Array):
             self._concrete_cache = {}
 
         # potentially generate and update .written set
+        # if index is symbolic it may overwrite other previous indexes
         self.written.add(index)
         self._array = self._array.store(index, value)
         return self
@@ -1132,13 +1147,13 @@ class ArrayProxy(Array):
             # take out Proxy sleve
             array = self._array
             offset = 0
-            while isinstance(array, ArraySlice):
-                # if it is a proxy over a slice take out the slice too
-                offset += array._slice_offset
-                array = array._array
             while not isinstance(array, ArrayVariable):
-                # The index written to underlaying Array are displaced when sliced
-                written.add(array.index - offset)
+                if isinstance(array, ArraySlice):
+                    # if it is a proxy over a slice take out the slice too
+                    offset += array._slice_offset
+                else:
+                    # The index written to underlaying Array are displaced when sliced
+                    written.add(array.index - offset)
                 array = array.array
             assert isinstance(array, ArrayVariable)
             self._written = written
@@ -1150,11 +1165,21 @@ class ArrayProxy(Array):
 
         is_known_index = BoolConstant(False)
         written = self.written
-        for known_index in written:
-            if isinstance(index, Constant) and isinstance(known_index, Constant):
-                if known_index.value == index.value:
+        if isinstance(index, Constant):
+            for i in written:
+                # check if the concrete index is explicitly in written
+                if isinstance(i, Constant) and index.value == i.value:
                     return BoolConstant(True)
+
+                # Build an expression to check if our concrete index could be the
+                # solution for anyof the used symbolic indexes
+                is_known_index = BoolOr(is_known_index.cast(index == i), is_known_index)
+            return is_known_index
+
+        # The index is symbolic we need to compare it agains it all
+        for known_index in written:
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
+
         return is_known_index
 
     def get(self, index, default=None):
@@ -1171,12 +1196,15 @@ class ArrayProxy(Array):
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
 
-        value = self._array.select(index)
-        if default is None:
-            return value
+        if default is not None:
+            default = self.cast_value(default)
+            is_known = self.is_known(index)
+            if isinstance(is_known, Constant) and is_known.value == False:
+                return default
+        else:
+            return self._array.select(index)
 
-        is_known = self.is_known(index)
-        default = self.cast_value(default)
+        value = self._array.select(index)
         return BitVecITE(self._array.value_bits, is_known, value, default)
 
 
@@ -1262,6 +1290,18 @@ class BitVecITE(BitVecOperation):
         assert true_value.size == size
         assert false_value.size == size
         super().__init__(size, condition, true_value, false_value, *args, **kwargs)
+
+    @property
+    def condition(self):
+        return self.operands[0]
+
+    @property
+    def true_value(self):
+        return self.operands[1]
+
+    @property
+    def false_value(self):
+        return self.operands[2]
 
 
 Constant = (BitVecConstant, BoolConstant)

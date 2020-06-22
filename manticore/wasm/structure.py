@@ -65,9 +65,8 @@ from wasm.wasmtypes import (
     SEC_UNK,
 )
 
-from ..core.smtlib.solver import Z3Solver
+from ..core.smtlib.solver import SelectedSolver
 
-solver = Z3Solver.instance()
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
@@ -732,6 +731,7 @@ class Store:
 
 def _eval_maybe_symbolic(constraints, expression) -> bool:
     if issymbolic(expression):
+        solver = SelectedSolver.instance()
         return solver.must_be_true(constraints, expression)
     return True if expression else False
 
