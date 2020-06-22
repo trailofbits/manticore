@@ -101,8 +101,8 @@ run_truffle_tests(){
     # Truffle smoke test. We test if manticore is able to generate states
     # from a truffle project.
     count=$(find output/ -name '*tx' -type f | wc -l)
-    if [ "$count" -ne 34 ]; then
-        echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 34"
+    if [ "$count" -ne 26 ]; then
+        echo "Truffle test failed" `ls output/*tx -l | wc -l` "!= 26"
         return 1
     fi
     echo "Truffle test succeded"
