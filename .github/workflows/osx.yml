@@ -1,0 +1,45 @@
+name: MacOS Tests
+
+on:
+  schedule:
+    # Run every day at 11 PM.
+    - cron:  '0 23 * * *'
+
+jobs:
+  tests:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        type: ["ethereum_truffle", "ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install NPM
+      uses: actions/setup-node@v1
+      with:
+        node-version: '13.x'
+    - name: Install dependencies
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+        EXTRAS="dev-noks"
+        pip install -e .[$EXTRAS]
+    - name: Install Mac Dependencies
+      run: |
+        brew install bash
+        brew tap ethereum/ethereum
+        brew install solidity@4
+        brew install wabt
+        brew install SRI-CSL/sri-csl/yices2
+        brew tap cvc4/cvc4
+        brew install cvc4/cvc4/cvc4
+    - name: Run Tests
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+        cp scripts/run_tests.sh .
+        ./run_tests.sh
