@@ -129,7 +129,7 @@ def strlen(state: State, addr: Union[int, BitVec]) -> Union[int, BitVec]:
     """
 
     if issymbolic(addr):
-        raise ConcretizeArgument(state.cpu, 0)
+        raise ConcretizeArgument(state.cpu, 1)
 
     cpu = state.cpu
     constrs = state.constraints
@@ -210,10 +210,10 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     :return: pointer to the dst
     """
     if issymbolic(src):
-        raise ConcretizeArgument(state.cpu, 1)
+        raise ConcretizeArgument(state.cpu, 2)
 
     if issymbolic(dst):
-        raise ConcretizeArgument(state.cpu, 0)
+        raise ConcretizeArgument(state.cpu, 1)
 
     cpu = state.cpu
     constrs = state.constraints
