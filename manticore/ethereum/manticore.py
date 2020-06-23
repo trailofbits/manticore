@@ -13,7 +13,8 @@ import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
 
-from ..core.manticore import ManticoreBase
+from ..core.manticore import ManticoreBase, Testcase, ManticoreError
+
 from ..core.smtlib import (
     ConstraintSet,
     Array,
@@ -1566,7 +1567,8 @@ class ManticoreEVM(ManticoreBase):
         :param message: Accompanying message
         """
         if not self.fix_unsound_symbolication(state):
-            return False
+            raise ManticoreError(
+                "Trying to generate a testcase out of an unsound state path")
 
         if only_if is not None:
             with state as temp_state:
@@ -1574,7 +1576,7 @@ class ManticoreEVM(ManticoreBase):
                 if temp_state.is_feasible():
                     return self.generate_testcase(temp_state, message, only_if=None, name=name)
                 else:
-                    return False
+                    raise ManticoreError("Trying to make a testcase out of an unfeasible path")
 
         blockchain = state.platform
 

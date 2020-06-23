@@ -33,8 +33,12 @@ contract TestToken is Token {
     constructor() public{
         balances[msg.sender] = 10000;
     }
-    // the property
+    // the properties
     function crytic_test_balance() view public returns(bool){
         return balances[msg.sender] <= 10000;
-    }   
+    }
+	function crytic_test_must_revert() view public returns(bool){
+		require(false);
+	}
+
 }

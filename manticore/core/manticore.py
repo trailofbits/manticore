@@ -23,7 +23,7 @@ from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
-from .workspace import Workspace
+from .workspace import Workspace, Testcase
 from .worker import WorkerSingle, WorkerThread, WorkerProcess
 
 from multiprocessing.managers import SyncManager
@@ -842,7 +842,7 @@ class ManticoreBase(Eventful):
         """ Terminated states count """
         return len(self._terminated_states)
 
-    def generate_testcase(self, state, message: str = "test", name: str = "test"):
+    def generate_testcase(self, state, message: str = "test", name: str = "test") -> Testcase:
         if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
             message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)

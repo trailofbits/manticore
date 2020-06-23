@@ -11,13 +11,37 @@ from itertools import chain
 from manticore.ethereum import ManticoreEVM
 from manticore.ethereum.detectors import DetectIntegerOverflow
 from manticore.ethereum.plugins import FilterFunctions, VerboseTrace, KeepOnlyIfStorageChanges
-from manticore.core.smtlib.operators import OR
+from manticore.core.smtlib.operators import OR, NOT
 from manticore.ethereum.abi import ABI
 from manticore.utils.log import set_verbosity
 from prettytable import PrettyTable
 from manticore.utils import config
 from manticore.utils.nointerrupt import WithKeyboardInterruptAs
 
+def constrain_to_known_func_ids(state):
+    world = state.platform
+    tx = world.human_transactions[-1]
+    md = state.manticore.get_metadata(tx.address)
+
+    N = 0
+    is_normal = False
+    func_id = tx.data[:4]
+    for func_hsh in md.function_selectors:
+        N += 1
+        is_normal = OR(func_hsh == func_id, is_normal)
+    is_fallback = NOT(is_normal)
+    is_known_func_id = is_normal
+
+    chosen_fallback_func_is = None
+    if state.can_be_true(is_fallback):
+        with state as temp_state:
+            temp_state.constraint(is_fallback)
+            chosen_fallback_func_id = bytes(state.solve_one(tx.data[:4]))
+            is_known_func_id = OR(is_known_func_id,
+                                  chosen_fallback_func_id == func_id)
+            N += 1
+    state.constrain(is_known_func_id)
+    return N
 
 def manticore_verifier(
     source_code,
@@ -36,15 +60,32 @@ def manticore_verifier(
     """ Verify solidity properties
     The results are dumped to stdout and to the workspace folder.
 
-        $manticore_verifier tests/ethereum/contracts/prop_verifier.sol TestToken
-        Transaction 0. Ready: 1, Terminated: 0
-        Transaction 1. Ready: 4, Terminated: 0
-        +---------------------+------------+
-        |    Property Named   |   Status   |
-        +---------------------+------------+
-        | crytic_test_balance | failed (0) |
-        +---------------------+------------+
-        Checkout testcases here:./mcore_ca_gjpqw
+        $manticore-verifier property.sol  --contract TestToken --smt.solver yices --maxt 4
+        # Owner account: 0xf3c67ffb8ab4cdd4d3243ad247d0641cd24af939
+        # Contract account: 0x6f4b51ac2eb017600e9263085cfa06f831132c72
+        # Sender_0 account: 0x97528a0c7c6592772231fd581e5b42125c1a2ff4
+        # PSender account: 0x97528a0c7c6592772231fd581e5b42125c1a2ff4
+        # Found 2 properties: crytic_test_must_revert, crytic_test_balance
+        # Exploration will stop when some of the following happens:
+        # * 4 human transaction sent
+        # * Code coverage is greater than 100% meassured on target contract
+        # * No more coverage was gained in the last transaction
+        # * At least 2 different properties where found to be breakable. (1 for fail fast)
+        # * 240 seconds pass
+        # Starting exploration...
+        Transactions done: 0. States: 1, RT Coverage: 0.0%, Failing properties: 0/2
+        Transactions done: 1. States: 2, RT Coverage: 55.43%, Failing properties: 0/2
+        Transactions done: 2. States: 8, RT Coverage: 80.48%, Failing properties: 1/2
+        Transactions done: 3. States: 30, RT Coverage: 80.48%, Failing properties: 1/2
+        No coverage progress. Stopping exploraiton.
+        Coverage obtained 80.48%. (RT + prop)
+        +-------------------------+------------+
+        |      Property Named     |   Status   |
+        +-------------------------+------------+
+        |   crytic_test_balance   | failed (0) |
+        | crytic_test_must_revert |   passed   |
+        +-------------------------+------------+
+        Checkout testcases here:./mcore_6jdil7nh
 
     :param maxfail: stop after maxfail properties are failing. All if None
     :param maxcov: Stop after maxcov % coverage is obtained in the main contract
@@ -113,6 +154,7 @@ def manticore_verifier(
     # the target contract account
     contract_account = m.solidity_create_contract(
         source_code, owner=owner_account, contract_name=contract_name, compile_args=compile_args,
+        name="contract_account"
     )
     # the address used for checking porperties
     checker_account = m.create_account(balance=10 ** 10, address=psender, name="psender")
@@ -130,11 +172,13 @@ def manticore_verifier(
         if re.match(propre, func_name):
             properties[func_name] = []
 
+
     print(f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
 
     MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
     tx_num = 0  # transactions count
     current_coverage = None  # obtained coverge %
+    new_coverage = 0.0
 
     print(
         f"""# Exploration will stop when some of the following happens:
@@ -146,7 +190,7 @@ def manticore_verifier(
     )
     print("# Starting exploration...")
     print(
-        f"Transaction {tx_num}. States: {m.count_ready_states()}, RT Coverage: {0.00}%, "
+        f"Transactions done: {tx_num}. States: {m.count_ready_states()}, RT Coverage: {0.00}%, "
         f"Failing properties: 0/{len(properties)}"
     )
     with m.kill_timeout(timeout=timeout):
@@ -175,7 +219,7 @@ def manticore_verifier(
 
             # check if we have made coverage progress in the last transaction
             if current_coverage == new_coverage:
-                print(f"No coverage progress. Stalled at {new_coverage}%. Stopping exploraiton.")
+                print(f"No coverage progress. Stopping exploraiton.")
                 break
             current_coverage = new_coverage
 
@@ -209,7 +253,7 @@ def manticore_verifier(
             m.clear_terminated_states()  # no interest in reverted states
             m.take_snapshot()  # make a copy of all ready states
             print(
-                f"Transaction {tx_num}. States: {m.count_ready_states()}, "
+                f"Transactions done: {tx_num}. States: {m.count_ready_states()}, "
                 f"RT Coverage: {m.global_coverage(contract_account):3.2f}%, "
                 f"Failing properties: {broken_properties}/{len(properties)}"
             )
@@ -227,8 +271,17 @@ def manticore_verifier(
                 world = state.platform
                 tx = world.human_transactions[-1]
                 md = m.get_metadata(tx.address)
-
-                for func_id in map(bytes, state.solve_n(tx.data[:4], nsolves=100)):
+                """
+                A is _broken_ if:
+                     * is normal property
+                     * RETURN False
+                   OR:
+                     * property name ends witth 'revert'
+                     * does not REVERT
+                Property is considered to _pass_ otherwise
+                """
+                N = constrain_to_known_func_ids(state)
+                for func_id in map(bytes, state.solve_n(tx.data[:4], nsolves=N)):
                     func_name = md.get_abi(func_id)["name"]
                     if not func_name.endswith("revert"):
                         # Property does not ends in "revert"
@@ -238,6 +291,8 @@ def manticore_verifier(
                             return_data = ABI.deserialize("bool", tx.return_data)
                             if state.can_be_true(return_data == 0):
                                 with state as temp_state:
+                                    if not m.fix_unsound_symbolication(temp_state):
+                                        continue
                                     temp_state.constrain(tx.data[:4] == func_id)
                                     temp_state.constrain(return_data == 0)
                                     testcase = m.generate_testcase(
@@ -245,24 +300,17 @@ def manticore_verifier(
                                         f"property {md.get_func_name(func_id)} is broken",
                                     )
                                     properties[func_name].append(testcase.num)
-                            else:
-                                pass  # property passed
-                        else:
-                            # this kind of property must not REVERT
-                            testcase = m.generate_testcase(
-                                temp_state, f"Some property is broken (REVERTED)"
-                            )
-                            properties[func_name].append(testcase.num)
                     else:
                         # property name ends in "revert" so it MUST revert
                         if tx.result != "REVERT":
-                            testcase = m.generate_testcase(
-                                temp_state,
-                                f"Some property is broken did not reverted.(MUST REVERTED)",
-                            )
-                            properties[func_name].append(testcase.num)
-                        else:
-                            pass  # property pass
+                            with state as temp_state:
+                                if not m.fix_unsound_symbolication(temp_state):
+                                    continue
+                                testcase = m.generate_testcase(
+                                    temp_state,
+                                    f"Some property is broken did not reverted.(MUST REVERTED)",
+                                )
+                                properties[func_name].append(testcase.num)
 
             m.clear_terminated_states()  # no interest in reverted states for now!
             m.goto_snapshot()
@@ -274,7 +322,7 @@ def manticore_verifier(
     if m.is_killed():
         print("Exploration ended by CTRL+C or timeout")
 
-    print(f"{m.global_coverage(contract_account):3.2f}% EVM code covered ")
+    print(f"Coverage obtained {new_coverage:3.2f}%. (RT + prop)")
 
     x = PrettyTable()
     x.field_names = ["Property Named", "Status"]
