@@ -39,5 +39,6 @@ jobs:
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
-      run: $GITHUB_WORKSPACE/manticore/scripts/run_tests.sh
-      working-directory: $GITHUB_WORKSPACE/manticore/
+      run: |
+        cp scripts/run_tests.sh .
+        ./run_tests.sh
