@@ -1,8 +1,6 @@
 name: MacOS Tests
 
 on:
-  # Delete the following line before merging:
-  pull_request:
   schedule:
     # Run every day at 11 PM.
     - cron:  '0 23 * * *'
