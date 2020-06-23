@@ -87,9 +87,7 @@ class EthVerifierIntegrationTest(unittest.TestCase):
                 ).match(output)
             )
             self.assertIsNotNone(
-                re.compile(
-                    r".*crytic_test_must_revert\s*\|\s*passed.*", re.DOTALL
-                ).match(output)
+                re.compile(r".*crytic_test_must_revert\s*\|\s*passed.*", re.DOTALL).match(output)
             )
 
     def test_propverif_external(self) -> None:

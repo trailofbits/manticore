@@ -1567,8 +1567,7 @@ class ManticoreEVM(ManticoreBase):
         :param message: Accompanying message
         """
         if not self.fix_unsound_symbolication(state):
-            raise ManticoreError(
-                "Trying to generate a testcase out of an unsound state path")
+            raise ManticoreError("Trying to generate a testcase out of an unsound state path")
 
         if only_if is not None:
             with state as temp_state:

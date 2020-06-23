@@ -18,6 +18,7 @@ from prettytable import PrettyTable
 from manticore.utils import config
 from manticore.utils.nointerrupt import WithKeyboardInterruptAs
 
+
 def constrain_to_known_func_ids(state):
     world = state.platform
     tx = world.human_transactions[-1]
@@ -37,11 +38,11 @@ def constrain_to_known_func_ids(state):
         with state as temp_state:
             temp_state.constraint(is_fallback)
             chosen_fallback_func_id = bytes(state.solve_one(tx.data[:4]))
-            is_known_func_id = OR(is_known_func_id,
-                                  chosen_fallback_func_id == func_id)
+            is_known_func_id = OR(is_known_func_id, chosen_fallback_func_id == func_id)
             N += 1
     state.constrain(is_known_func_id)
     return N
+
 
 def manticore_verifier(
     source_code,
@@ -153,8 +154,11 @@ def manticore_verifier(
     owner_account = m.create_account(balance=10 ** 10, address=deployer, name="deployer")
     # the target contract account
     contract_account = m.solidity_create_contract(
-        source_code, owner=owner_account, contract_name=contract_name, compile_args=compile_args,
-        name="contract_account"
+        source_code,
+        owner=owner_account,
+        contract_name=contract_name,
+        compile_args=compile_args,
+        name="contract_account",
     )
     # the address used for checking porperties
     checker_account = m.create_account(balance=10 ** 10, address=psender, name="psender")
@@ -171,7 +175,6 @@ def manticore_verifier(
         func_name = md.get_abi(func_hsh)["name"]
         if re.match(propre, func_name):
             properties[func_name] = []
-
 
     print(f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
 
