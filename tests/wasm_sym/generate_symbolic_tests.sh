@@ -14,7 +14,7 @@ fi
 wget -nc -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/opam-1.1.zip
 
 unzip -q -j spec.zip 'spec-*/test/core/*' -d .
-rm run.py README.md 
+rm run.py README.md
 rm spec.zip
 
 mkdir skipped_tests
