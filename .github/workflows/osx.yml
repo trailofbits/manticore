@@ -39,5 +39,5 @@ jobs:
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
-      run: ./scripts/run_tests.sh
+      run: $GITHUB_WORKSPACE/scripts/run_tests.sh
       working-directory: $GITHUB_WORKSPACE
