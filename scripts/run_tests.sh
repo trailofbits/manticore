@@ -57,8 +57,8 @@ make_vmtests(){
         echo "Automaking VMTests" `pwd`
         cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
         rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
-        for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
-        for i in ./vmtests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
+        for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -o ethereum_vm/VMTests_concrete; done
+        rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
         rm -rf ./vmtests
         touch ethereum_vm/.done
     fi
@@ -96,7 +96,7 @@ run_truffle_tests(){
     mkdir truffle_tests
     cd truffle_tests
     truffle unbox metacoin
-    coverage run -m manticore . --contract MetaCoin --workspace output
+    coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic
     # Truffle smoke test. We test if manticore is able to generate states
     # from a truffle project.
     count=$(find output/ -name '*tx' -type f | wc -l)
