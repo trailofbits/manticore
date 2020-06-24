@@ -11,7 +11,7 @@ from itertools import chain
 from manticore.ethereum import ManticoreEVM
 from manticore.ethereum.detectors import DetectIntegerOverflow
 from manticore.ethereum.plugins import FilterFunctions, VerboseTrace, KeepOnlyIfStorageChanges
-from manticore.core.smtlib.operators import OR, NOT
+from manticore.core.smtlib.operators import OR, NOT, AND
 from manticore.ethereum.abi import ABI
 from manticore.utils.log import set_verbosity
 from prettytable import PrettyTable
@@ -292,27 +292,22 @@ def manticore_verifier(
                         if tx.return_value == 1:
                             # TODO: test when property STOPs
                             return_data = ABI.deserialize("bool", tx.return_data)
-                            if state.can_be_true(return_data == 0):
-                                with state as temp_state:
-                                    if not m.fix_unsound_symbolication(temp_state):
-                                        continue
-                                    temp_state.constrain(tx.data[:4] == func_id)
-                                    temp_state.constrain(return_data == 0)
-                                    testcase = m.generate_testcase(
-                                        temp_state,
-                                        f"property {md.get_func_name(func_id)} is broken",
-                                    )
-                                    properties[func_name].append(testcase.num)
+                            testcase = m.generate_testcase(
+                                state,
+                                f"property {md.get_func_name(func_id)} is broken",
+                                only_if=AND(tx.data[:4] == func_id, return_data == 0),
+                            )
+                            if testcase:
+                                properties[func_name].append(testcase.num)
                     else:
                         # property name ends in "revert" so it MUST revert
                         if tx.result != "REVERT":
-                            with state as temp_state:
-                                if not m.fix_unsound_symbolication(temp_state):
-                                    continue
-                                testcase = m.generate_testcase(
-                                    temp_state,
-                                    f"Some property is broken did not reverted.(MUST REVERTED)",
-                                )
+                            testcase = m.generate_testcase(
+                                state,
+                                f"Some property is broken did not reverted.(MUST REVERTED)",
+                                only_if=tx.data[:4] == func_id,
+                            )
+                            if testcase:
                                 properties[func_name].append(testcase.num)
 
             m.clear_terminated_states()  # no interest in reverted states for now!

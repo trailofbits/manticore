@@ -1537,10 +1537,6 @@ class ManticoreEVM(ManticoreBase):
 
     def generate_testcase(self, state, message="", only_if=None, name="user"):
         """
-        Generate a testcase to the workspace for the given program state. The details of what
-        a testcase is depends on the type of Platform the state is, but involves serializing the state,
-        and generating an input (concretizing symbolic variables) to trigger this state.
-
         The only_if parameter should be a symbolic expression. If this argument is provided, and the expression
         *can be true* in this state, a testcase is generated such that the expression will be true in the state.
         If it *is impossible* for the expression to be true in the state, a testcase is not generated.
@@ -1553,29 +1549,38 @@ class ManticoreEVM(ManticoreBase):
 
             m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0)
             # testcase generated with an input that will violate invariant (make balance == 0)
+        """
+        try:
+            with state as temp_state:
+                if only_if is not None:
+                    temp_state.constrain(only_if)
+                return self.generate_testcase_ex(temp_state, message, name=name)
+        except ManticoreError:
+            return None
+
+    def generate_testcase_ex(self, state, message="", name="user"):
+        """
+        Generate a testcase in the outputspace for the given program state.
+        An exception is raised if the state is unsound or unfeasible
+
+        On return you get a Testcase containing all the informations about the state.
+        A Testcase is a collection of files living at the OutputSpace.
+        Registered plugins and other parts of Manticore add files to the Testcase.
+        User can add more streams to is like this:
+
+        testcase = m.generate_testcase_ex(state)
+        with testcase.open_stream("txt") as descf:
+            descf.write("This testcase is interesting!")
 
         :param manticore.core.state.State state:
         :param str message: longer description of the testcase condition
-        :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
-        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
-        :return: If a testcase was generated
+        :param str name: short string used as the prefix for the outputspace key (e.g. filename prefix for testcase files)
+        :return: a Testcase
         :rtype: bool
         """
-        """
-        Create a serialized description of a given state.
-        :param state: The state to generate information about
-        :param message: Accompanying message
-        """
+        # Refuse to generate a testcase from an unsound state
         if not self.fix_unsound_symbolication(state):
             raise ManticoreError("Trying to generate a testcase out of an unsound state path")
-
-        if only_if is not None:
-            with state as temp_state:
-                temp_state.constrain(only_if)
-                if temp_state.is_feasible():
-                    return self.generate_testcase(temp_state, message, only_if=None, name=name)
-                else:
-                    raise ManticoreError("Trying to make a testcase out of an unfeasible path")
 
         blockchain = state.platform
 
@@ -1585,8 +1590,6 @@ class ManticoreEVM(ManticoreBase):
         testcase = super().generate_testcase(
             state, message + f"({len(blockchain.human_transactions)} txs)", name=name
         )
-        # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
-        #  so this function can be fully ported to EVMWorld.generate_workspace_files.
 
         local_findings = set()
         for detector in self.detectors.values():
