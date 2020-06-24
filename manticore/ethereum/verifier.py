@@ -78,7 +78,7 @@ def manticore_verifier(
         Transactions done: 1. States: 2, RT Coverage: 55.43%, Failing properties: 0/2
         Transactions done: 2. States: 8, RT Coverage: 80.48%, Failing properties: 1/2
         Transactions done: 3. States: 30, RT Coverage: 80.48%, Failing properties: 1/2
-        No coverage progress. Stopping exploraiton.
+        No coverage progress. Stopping exploration.
         Coverage obtained 80.48%. (RT + prop)
         +-------------------------+------------+
         |      Property Named     |   Status   |
@@ -202,7 +202,7 @@ def manticore_verifier(
             broken_properties = sum(int(len(x) != 0) for x in properties.values())
             if broken_properties >= MAXFAIL:
                 print(
-                    f"Found {broken_properties}/{len(properties)} failing properties. Stopping exploraiton."
+                    f"Found {broken_properties}/{len(properties)} failing properties. Stopping exploration."
                 )
                 break
 
@@ -216,13 +216,13 @@ def manticore_verifier(
             new_coverage = m.global_coverage(contract_account)
             if new_coverage >= MAXCOV:
                 print(
-                    "Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploraiton."
+                    "Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploration."
                 )
                 break
 
             # check if we have made coverage progress in the last transaction
             if current_coverage == new_coverage:
-                print(f"No coverage progress. Stopping exploraiton.")
+                print(f"No coverage progress. Stopping exploration.")
                 break
             current_coverage = new_coverage
 

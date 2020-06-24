@@ -1869,8 +1869,8 @@ class ManticoreEVM(ManticoreBase):
         This tries to solve any symbolic imprecision added by unsound_symbolication
         and then iterates over the resultant set.
 
-        This is the recommended to iterate over resultant steas after an exploration
-        that included unsound symbolication
+        This is the recommended way to iterate over the resultant states after
+        an exploration that included unsound symbolication
 
         """
         self.fix_unsound_all()
