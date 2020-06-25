@@ -40,5 +40,9 @@ contract TestToken is Token {
 	function crytic_test_must_revert() view public returns(bool){
 		require(false);
 	}
+	function crytic_failing_test_must_revert() view public returns(bool){
+		require(true);
+	}
+
 
 }
