@@ -120,7 +120,7 @@ def manticore_verifier(
     config.get_group("evm").ignore_balance = True
     config.get_group("evm").oog = "ignore"
 
-    print ("# Welcome to manticore-verifier")
+    print("# Welcome to manticore-verifier")
     # Main manticore manager object
     m = ManticoreEVM()
     # avoid all human level tx that are marked as constant (have no effect on the storage)
@@ -179,8 +179,7 @@ def manticore_verifier(
 
     print(f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
     if not properties:
-        print ("I am sorry I had to run the init bytecode for this.\n"
-               "Good Bye.")
+        print("I am sorry I had to run the init bytecode for this.\n" "Good Bye.")
         return
     MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
     tx_num = 0  # transactions count
