@@ -1,3 +1,4 @@
+import os
 import itertools
 import logging
 import sys
@@ -177,6 +178,19 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
+    def only_from_main_script(func: Callable) -> Callable:  # type: ignore
+        """Allows the decorated method to run only from the main manticore script
+        """
+
+        @functools.wraps(func)
+        def newFunction(self, *args, **kw):
+            if not self.is_main() or self.is_running():
+                logger.error("Calling from worker or forked process not allowed")
+                raise ManticoreError(f"{func.__name__} only allowed from main")
+            return func(self, *args, **kw)
+
+        return newFunction
+
     _published_events = {
         "run",
         "start_worker",
@@ -340,6 +354,8 @@ class ManticoreBase(Eventful):
         self._workspace = Workspace(workspace_url)
         # reuse the same workspace if not specified
         if outputspace_url is None:
+            outputspace_url = workspace_url
+        if outputspace_url is None:
             outputspace_url = f"fs:{self._workspace.uri}"
         self._output = ManticoreOutput(outputspace_url)
 
@@ -357,7 +373,60 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
-        self._is_main = True
+        self._snapshot = None
+        self._main_id = os.getpid(), threading.current_thread().ident
+
+    def is_main(self):
+        """ True if called from the main process/script
+        Note: in "single" mode this is _most likely_ True """
+        return self._main_id == (os.getpid(), threading.current_thread().ident)
+
+    @sync
+    @only_from_main_script
+    def take_snapshot(self):
+        """ Copy/Duplicate/backup all ready states and save it in a snapshot.
+        If there is a snapshot already saved it will be overrwritten
+        """
+        if self._snapshot is not None:
+            logger.info("Overwriting a snapshot of the ready states")
+        snapshot = []
+        for state_id in self._ready_states:
+            state = self._load(state_id)
+            # Re-save the state in case the user changed its data
+            snapshot.append(self._save(state))
+        self._snapshot = snapshot
+
+    @sync
+    @only_from_main_script
+    def goto_snapshot(self):
+        """ REMOVE current ready states and replace them with the saved states
+        in a snapshot """
+        if not self._snapshot:
+            raise ManticoreError("No snapshot to go to")
+        for state_id in tuple(self._ready_states):
+            self._ready_states.remove(state_id)
+        for state_id in self._snapshot:
+            self._ready_states.append(state_id)
+        self._snapshot = None
+
+    @sync
+    @only_from_main_script
+    def clear_snapshot(self):
+        """ Remove any saved states """
+        if self._snapshot:
+            for state_id in self._snapshot:
+                self._remove(state_id)
+        self._snapshot = None
+
+    @sync
+    @at_not_running
+    def clear_terminated_states(self):
+        """ Simply remove all states from terminated list """
+        terminated_states_ids = tuple(self._terminated_states)
+        for state_id in terminated_states_ids:
+            self._terminated_states.remove(state_id)
+            self._remove(state_id)
+        assert self.count_terminated_states() == 0
 
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
@@ -456,7 +525,7 @@ class ManticoreBase(Eventful):
         set_verbosity(level)
 
     # State storage
-    @Eventful.will_did("save_state")
+    @Eventful.will_did("save_state", can_raise=False)
     def _save(self, state, state_id=None):
         """ Store or update a state in secondary storage under state_id.
             Use a fresh id is None is provided.
@@ -469,7 +538,7 @@ class ManticoreBase(Eventful):
         state._id = self._workspace.save_state(state, state_id=state_id)
         return state.id
 
-    @Eventful.will_did("load_state")
+    @Eventful.will_did("load_state", can_raise=False)
     def _load(self, state_id):
         """ Load the state from the secondary storage
 
@@ -488,7 +557,7 @@ class ManticoreBase(Eventful):
         self.stcache[state_id] = state
         return state
 
-    @Eventful.will_did("remove_state")
+    @Eventful.will_did("remove_state", can_raise=False)
     def _remove(self, state_id):
         """ Remove a state from secondary storage
 
