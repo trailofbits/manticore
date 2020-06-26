@@ -593,7 +593,7 @@ class SMTLIBSolver(Solver):
         """
         values = []
         start = time.time()
-        with constraints as temp_cs:
+        with constraints.related_to(*expressions) as temp_cs:
             for expression in expressions:
                 if not issymbolic(expression):
                     values.append(expression)
