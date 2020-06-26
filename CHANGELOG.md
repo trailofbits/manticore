@@ -9,6 +9,8 @@ Thanks to our external contributors!
  - [langston-barrett](https://github.com/trailofbits/manticore/commits?author=langston-barrett)
 
 ### Ethereum
+* Support and test against EVM Istanbul [#1676](https://github.com/trailofbits/manticore/pull/1676)
+* **[Added API]** Added a `manticore-verifier` script for checking properties of smart contracts [#1717](https://github.com/trailofbits/manticore/pull/1717)
 * Fixed RETURNDATASIZE [#1612](https://github.com/trailofbits/manticore/pull/1612)
 * Added strategies for symbolic SHA3 replacement [#1609](https://github.com/trailofbits/manticore/pull/1609)
 * Fixed GAS instruction [#1633](https://github.com/trailofbits/manticore/pull/1633)
@@ -19,6 +21,7 @@ Thanks to our external contributors!
 * Support CHAINID, EXTCODEHASH, and SELFBALANCE instructions [#1644](https://github.com/trailofbits/manticore/pull/1644)
 * **[Changed API]** Renamed several arguments in EVM API, including `gaslimit` --> `gas` [#1652](https://github.com/trailofbits/manticore/pull/1652)
 * Explore states that self-destruct [#1699](https://github.com/trailofbits/manticore/pull/1699)
+* Lazy solving for the Ethereum leak detector [#1727](https://github.com/trailofbits/manticore/pull/1727)
 
 ### Native
 * Support for ARM modified-immediate encodings [#1638](https://github.com/trailofbits/manticore/pull/1638)
@@ -29,11 +32,13 @@ Thanks to our external contributors!
 * Fixes to `open` [#1657](https://github.com/trailofbits/manticore/pull/1657)
 * Overhauled filesystem emulation [#1673](https://github.com/trailofbits/manticore/pull/1673)
 * Fixed system call argument concretization [#1697](https://github.com/trailofbits/manticore/pull/1697)
+* **[Added API]** Add a symbolic model for `strcpy` [#1681](https://github.com/trailofbits/manticore/pull/1681)
 
 ### WASM
 * Delay branch condition concretization for better coverage [#1641](https://github.com/trailofbits/manticore/pull/1641)
 
 ### Other
+* **[Added API]** Added a snapshot system [#1710](https://github.com/trailofbits/manticore/pull/1710)
 * Transparent compression for state files [#1624](https://github.com/trailofbits/manticore/pull/1624)
 * Unify around singleton interface for solver [#1649](https://github.com/trailofbits/manticore/pull/1649)
 * Use `__slots__` to reduce memory usage in expression system [#1635](https://github.com/trailofbits/manticore/pull/1635)
@@ -43,7 +48,9 @@ Thanks to our external contributors!
 * Remove Keystone engine from dependencies [#1684](https://github.com/trailofbits/manticore/pull/1684)
 * Improved error messages [#1632](https://github.com/trailofbits/manticore/pull/1632), [#1704](https://github.com/trailofbits/manticore/pull/1704)
 * Made ConstraintSets hashable [#1703](https://github.com/trailofbits/manticore/pull/1703)
-* Added system to dynamically enable/disable plugins [#1696](https://github.com/trailofbits/manticore/pull/1696)
+* Added system to dynamically enable/disable plugins [#1696](https://github.com/trailofbits/manticore/pull/1696) [#1708](https://github.com/trailofbits/manticore/pull/1708)
+* Re-establish support for alternative SMT solvers [#1714](https://github.com/trailofbits/manticore/pull/1714)
+* Improved constant folding and constraint set slicing [#1706](https://github.com/trailofbits/manticore/pull/1706)
 
 
 ## 0.3.3 - 2020-01
