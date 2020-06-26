@@ -987,6 +987,7 @@ class ArrayStore(ArrayOperation):
         index, value = state["_items"][0]
         self._operands = (array, index, value)
 
+
 class ArraySlice(ArrayOperation):
     def __init__(
         self, array: Union["Array", "ArrayProxy"], offset: int, size: int, *args, **kwargs
@@ -1154,7 +1155,6 @@ class ArrayProxy(Array):
         self._name = state["name"]
         self._concrete_cache = state["_concrete_cache"]
         self._written = None
-
 
     def __copy__(self):
         return ArrayProxy(self)
