@@ -30,7 +30,6 @@ from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
-from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
 
