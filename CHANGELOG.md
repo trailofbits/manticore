@@ -2,7 +2,7 @@
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.4...HEAD)
 
-## 0.3.4 - 2020-06
+## 0.3.4 - 2020-06-26
 
 Thanks to our external contributors!
  - [jimpo](https://github.com/trailofbits/manticore/commits?author=jimpo)
@@ -49,11 +49,11 @@ Thanks to our external contributors!
 * Improved error messages [#1632](https://github.com/trailofbits/manticore/pull/1632), [#1704](https://github.com/trailofbits/manticore/pull/1704)
 * Made ConstraintSets hashable [#1703](https://github.com/trailofbits/manticore/pull/1703)
 * Added system to dynamically enable/disable plugins [#1696](https://github.com/trailofbits/manticore/pull/1696) [#1708](https://github.com/trailofbits/manticore/pull/1708)
-* Re-establish support for alternative SMT solvers [#1714](https://github.com/trailofbits/manticore/pull/1714)
+* Re-establish support for Yices and CVC4 [#1714](https://github.com/trailofbits/manticore/pull/1714)
 * Improved constant folding and constraint set slicing [#1706](https://github.com/trailofbits/manticore/pull/1706)
 
 
-## 0.3.3 - 2020-01
+## 0.3.3 - 2020-01-30
 
 Thanks to our external contributors!
 
