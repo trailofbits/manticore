@@ -75,5 +75,23 @@ jobs:
         file: ./coverage.xml
         yml: ./codecov.yml
 # Disabled this line because Codecov has been extra flaky lately, and having to re-run the entire
-# test suite until every coverage upload step succeeds is more of a hassle than it's worth. 
+# test suite until every coverage upload step succeeds is more of a hassle than it's worth.
 #        fail_ci_if_error: true
+  upload:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    needs: tests
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Build Dist
+      run: python3 setup.py --dev_release sdist bdist_wheel
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_UPLOAD }}
+
+
