@@ -1,8 +1,59 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.3...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.4...HEAD)
 
-## 0.3.3 - 2020-01
+## 0.3.4 - 2020-06-26
+
+Thanks to our external contributors!
+ - [jimpo](https://github.com/trailofbits/manticore/commits?author=jimpo)
+ - [langston-barrett](https://github.com/trailofbits/manticore/commits?author=langston-barrett)
+
+### Ethereum
+* Support and test against EVM Istanbul [#1676](https://github.com/trailofbits/manticore/pull/1676)
+* **[Added API]** Added a `manticore-verifier` script for checking properties of smart contracts [#1717](https://github.com/trailofbits/manticore/pull/1717)
+* Fixed RETURNDATASIZE [#1612](https://github.com/trailofbits/manticore/pull/1612)
+* Added strategies for symbolic SHA3 replacement [#1609](https://github.com/trailofbits/manticore/pull/1609)
+* Fixed GAS instruction [#1633](https://github.com/trailofbits/manticore/pull/1633)
+* Improved balance-related exploration [#1615](https://github.com/trailofbits/manticore/pull/1615)
+* Add `__format__` to EVM accounts [#1613](https://github.com/trailofbits/manticore/pull/1613)
+* Discard basic blocks that unavoidably REVERT [#1630](https://github.com/trailofbits/manticore/pull/1630)
+* Extract printable bytes from return data [#1671](https://github.com/trailofbits/manticore/pull/1671)
+* Support CHAINID, EXTCODEHASH, and SELFBALANCE instructions [#1644](https://github.com/trailofbits/manticore/pull/1644)
+* **[Changed API]** Renamed several arguments in EVM API, including `gaslimit` --> `gas` [#1652](https://github.com/trailofbits/manticore/pull/1652)
+* Explore states that self-destruct [#1699](https://github.com/trailofbits/manticore/pull/1699)
+* Lazy solving for the Ethereum leak detector [#1727](https://github.com/trailofbits/manticore/pull/1727)
+
+### Native
+* Support for ARM modified-immediate encodings [#1638](https://github.com/trailofbits/manticore/pull/1638)
+* Support for `/proc/self/maps` [#1639](https://github.com/trailofbits/manticore/pull/1639)
+* Support for `llseek` [#1640](https://github.com/trailofbits/manticore/pull/1640)
+* Support for `arm_fadvise64_64` [#1648](https://github.com/trailofbits/manticore/pull/1648)
+* Allow symbolic sockets in `accept` [#1618](https://github.com/trailofbits/manticore/pull/1618)
+* Fixes to `open` [#1657](https://github.com/trailofbits/manticore/pull/1657)
+* Overhauled filesystem emulation [#1673](https://github.com/trailofbits/manticore/pull/1673)
+* Fixed system call argument concretization [#1697](https://github.com/trailofbits/manticore/pull/1697)
+* **[Added API]** Add a symbolic model for `strcpy` [#1681](https://github.com/trailofbits/manticore/pull/1681)
+
+### WASM
+* Delay branch condition concretization for better coverage [#1641](https://github.com/trailofbits/manticore/pull/1641)
+
+### Other
+* **[Added API]** Added a snapshot system [#1710](https://github.com/trailofbits/manticore/pull/1710)
+* Transparent compression for state files [#1624](https://github.com/trailofbits/manticore/pull/1624)
+* Unify around singleton interface for solver [#1649](https://github.com/trailofbits/manticore/pull/1649)
+* Use `__slots__` to reduce memory usage in expression system [#1635](https://github.com/trailofbits/manticore/pull/1635)
+* **[Removed API]** Removed `policy` argument from ManticoreBase, added `outputspace_url` to optionally separate working files from output files [#1651](https://github.com/trailofbits/manticore/pull/1651)
+* Disable broken `get_related` logic [#1674](https://github.com/trailofbits/manticore/pull/1674)
+* Disable flaky Z3 tactics [#1691](https://github.com/trailofbits/manticore/pull/1691)
+* Remove Keystone engine from dependencies [#1684](https://github.com/trailofbits/manticore/pull/1684)
+* Improved error messages [#1632](https://github.com/trailofbits/manticore/pull/1632), [#1704](https://github.com/trailofbits/manticore/pull/1704)
+* Made ConstraintSets hashable [#1703](https://github.com/trailofbits/manticore/pull/1703)
+* Added system to dynamically enable/disable plugins [#1696](https://github.com/trailofbits/manticore/pull/1696) [#1708](https://github.com/trailofbits/manticore/pull/1708)
+* Re-establish support for Yices and CVC4 [#1714](https://github.com/trailofbits/manticore/pull/1714)
+* Improved constant folding and constraint set slicing [#1706](https://github.com/trailofbits/manticore/pull/1706)
+
+
+## 0.3.3 - 2020-01-30
 
 Thanks to our external contributors!
 
