@@ -1,6 +1,6 @@
 # Manticore
 <p align="center">
-  <img src="docs/images/manticore.png?raw=true" width="256" title="Manticore">
+  <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
 </p>
 <br />
 
