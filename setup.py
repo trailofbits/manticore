@@ -53,8 +53,8 @@ if "--dev_release" in sys.argv:
 setup(
     name="manticore",
     description="Manticore is a symbolic execution tool for analysis of binaries and smart contracts.",
-    long_description=long_description,
     long_description_content_type="text/markdown",
+    long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
     version="0.3.4" + dev_extension,
