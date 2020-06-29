@@ -88,7 +88,9 @@ jobs:
       with:
         python-version: 3.6
     - name: Build Dist
-      run: python3 setup.py --dev_release sdist bdist_wheel
+      run: |
+      python3 -m pip install wheel
+      python3 setup.py --dev_release sdist bdist_wheel
     - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
