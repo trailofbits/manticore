@@ -46,7 +46,13 @@ Option 2: Installing from PyPI, with extra dependencies needed to execute native
 pip install "manticore[native]"
 ```
 
-Option 3: Installing from the `master` branch:
+Option 3: Installing a nightly development build (fill in the latest version from [the PyPI history](https://pypi.org/project/manticore/#history)):
+
+```bash
+pip install "manticore[native]==0.x.x.devYYMMDD"
+```
+
+Option 4: Installing from the `master` branch:
 
 ```bash
 git clone https://github.com/trailofbits/manticore.git
@@ -54,7 +60,7 @@ cd manticore
 pip install -e ".[native]"
 ```
 
-Option 4: Install via Docker:
+Option 5: Install via Docker:
 
 ```bash
 docker pull trailofbits/manticore
