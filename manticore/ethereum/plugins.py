@@ -68,6 +68,7 @@ class FilterFunctions(Plugin):
 
             for func_hsh in md.function_selectors:
                 abi = md.get_abi(func_hsh)
+                un_selected_functions_names.append(abi["name"])
                 if abi["type"] == "fallback":
                     continue
                 if self._mutability == "constant" and not abi.get("constant", False):

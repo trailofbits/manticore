@@ -293,6 +293,9 @@ class BitVec(Expression):
     def __mod__(self, other):
         return BitVecMod(self, self.cast(other))
 
+    def __pow__(self, other):
+        return BitVecPow(self, self.cast(other))
+
     # object.__divmod__(self, other)
     # object.__pow__(self, other[, modulo])
 
@@ -542,6 +545,9 @@ class BitVecMul(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
         super().__init__(a.size, a, b, *args, **kwargs)
 
+class BitVecPow(BitVecOperation):
+    def __init__(self, a, b, *args, **kwargs):
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 class BitVecDiv(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
@@ -676,7 +682,7 @@ class Array(Expression):
     def __init__(
         self, index_bits: int, index_max: Optional[int], value_bits: int, *operands, **kwargs
     ):
-        assert index_bits in (32, 64, 256)
+        assert index_bits in (8, 32, 64, 256)
         assert value_bits in (8, 16, 32, 64, 256)
         assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits

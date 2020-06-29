@@ -56,6 +56,23 @@ logger = logging.getLogger(__name__)
 consts = config.get_group("evm")
 DEFAULT_FORK = "istanbul"
 
+def globalexp(data):
+    if issymbolic(data):
+        return None
+    base = 0
+    for c in data[:32]:
+        base += base << 8 + c
+    exp = 0
+    for c in data[32:]:
+        exp += exp << 8 + c
+
+    if exp == 0:
+        return 1
+
+    if base == 0:
+        return 0
+
+    return base ** exp
 
 def globalsha3(data):
     if issymbolic(data):
@@ -1293,6 +1310,7 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
+            print (self)
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
@@ -1521,7 +1539,6 @@ class EVM(Eventful):
 
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
-    @concretized_args(base="SAMPLED", exponent="SAMPLED")
     def EXP(self, base, exponent):
         """
         Exponential operation
@@ -1531,13 +1548,18 @@ class EVM(Eventful):
         :param exponent: exponent value, concretized with sampled values
         :return: BitVec* EXP result
         """
-        if exponent == 0:
-            return 1
+        if issymbolic(base) or issymbolic(exponent):
+            data = self.constraints.new_array(index_bits=8, value_bits=8, index_max=64)
+            data = data.write_BE(0, base, 32)
+            data = data.write_BE (32, exponent, 32)
+        else:
+            data = bytearray()
+            for i in reversed(range(256, 8)):
+                b += data.append((base >> i) & 0xff)
+            for i in reversed(range(256, 8)):
+                b += data.append((exponent >> i) & 0xff)
 
-        if base == 0:
-            return 0
-
-        return pow(base, exponent, TT256)
+        return self.world.symbolic_function(globalexp, data)
 
     def SIGNEXTEND(self, size, value):
         """Extend length of two's complement signed integer"""
@@ -2459,6 +2481,7 @@ class EVMWorld(Platform):
         Get an unsound symbolication for function `func`
 
         """
+        #TODO(felipe): Generalize data to a tuple of expresisons
         data = self.try_simplify_to_constant(data)
         try:
             result = []
