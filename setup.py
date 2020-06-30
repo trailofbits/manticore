@@ -1,5 +1,7 @@
 import os
+import sys
 from setuptools import setup, find_packages
+from datetime import date
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
@@ -41,14 +43,21 @@ this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+
+# https://stackoverflow.com/a/4792601 grumble grumble
+dev_extension = ""
+if "--dev_release" in sys.argv:
+    dev_extension = ".dev" + date.today().strftime("%y%m%d")
+    sys.argv.remove("--dev_release")
+
 setup(
     name="manticore",
     description="Manticore is a symbolic execution tool for analysis of binaries and smart contracts.",
-    long_description=long_description,
     long_description_content_type="text/markdown",
+    long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.4",
+    version="0.3.4" + dev_extension,
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
