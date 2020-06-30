@@ -34,7 +34,50 @@ def variadic(func):
     return func
 
 
-def _find_zero(cpu, constrs, ptr):
+def is_definitely_NULL(byte, constrs) -> bool:
+    """
+    Checks if a given byte read from memory is NULL.
+    This supports both concrete & symbolic byte values.
+
+    :param byte: byte read from memory to be examined
+    :param constrs: state constraints
+    :return: whether a given byte is NULL or constrained to NULL
+    """
+    if issymbolic(byte):
+        return SelectedSolver.instance().must_be_true(constrs, byte == 0)
+    else:
+        return byte == 0
+
+
+def cannot_be_NULL(byte, constrs) -> bool:
+    """
+    Checks if a given byte read from memory is not NULL or cannot be NULL
+
+    :param byte: byte read from memory to be examined
+    :param constrs: state constraints
+    :return: whether a given byte is not NULL or cannot be NULL
+    """
+    if issymbolic(byte):
+        return SelectedSolver.instance().must_be_true(constrs, byte != 0)
+    else:
+        return byte != 0
+
+
+def can_be_NULL(byte, constrs) -> bool:
+    """
+    Checks if a given byte read from memory can be NULL
+
+    :param byte: byte read from memory to be examined
+    :param constrs: state constraints
+    :return: whether a given byte is NULL or can be NULL
+    """
+    if issymbolic(byte):
+        return SelectedSolver.instance().can_be_true(constrs, byte == 0)
+    else:
+        return byte == 0
+
+
+def _find_zero(cpu, constrs, ptr: Union[int, BitVec]) -> int:
     """
     Helper for finding the closest NULL or, effectively NULL byte from a starting address.
 
@@ -46,15 +89,9 @@ def _find_zero(cpu, constrs, ptr):
 
     offset = 0
     while True:
-        byt = cpu.read_int(ptr + offset, 8)
-
-        if issymbolic(byt):
-            if not SelectedSolver.instance().can_be_true(constrs, byt != 0):
-                break
-        else:
-            if byt == 0:
-                break
-
+        byte = cpu.read_int(ptr + offset, 8)
+        if is_definitely_NULL(byte, constrs):
+            break
         offset += 1
 
     return offset
@@ -116,9 +153,11 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     return ret
 
 
-def strlen(state: State, addr: Union[int, BitVec]) -> Union[int, BitVec]:
+def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model
+
+    Strategy: produce a state for every symbolic string length for better accuracy
 
     Algorithm: Counts the number of characters in a string forking every time a symbolic byte
     is found that can be NULL but is not constrained to NULL.
@@ -128,7 +167,7 @@ def strlen(state: State, addr: Union[int, BitVec]) -> Union[int, BitVec]:
     :return: Symbolic strlen result
     """
 
-    if issymbolic(addr):
+    if issymbolic(s):
         raise ConcretizeArgument(state.cpu, 1)
 
     cpu = state.cpu
@@ -140,7 +179,7 @@ def strlen(state: State, addr: Union[int, BitVec]) -> Union[int, BitVec]:
     else:
         offset = state.context["strlen"]
 
-    c = cpu.read_int(addr + offset, 8)
+    c = cpu.read_int(s + offset, 8)
     while not is_definitely_NULL(c, constrs):
         # If the byte can be NULL concretize and fork states
         if can_be_NULL(c, constrs):
@@ -148,52 +187,37 @@ def strlen(state: State, addr: Union[int, BitVec]) -> Union[int, BitVec]:
             raise Concretize("Forking on possible NULL strlen", expression=(c == 0), policy="ALL")
 
         offset += 1
-        c = cpu.read_int(addr + offset, 8)
+        c = cpu.read_int(s + offset, 8)
 
     return offset
 
 
-def is_definitely_NULL(byte, constrs) -> bool:
+def strlen_approx(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
-    Checks if a given byte read from memory is NULL.
-    This supports both concrete & symbolic byte values.
+    strlen symbolic model
+    
+    Strategy: build a result tree to limit state explosion results approximate
 
-    :param byte: byte read from memory to be examined
-    :param constrs: state constraints
-    :return: whether a given byte is NULL or constrained to NULL
+    Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
+    :param state: current program state
+    :param s: Address of string
+    :return: Symbolic strlen result
     """
-    if issymbolic(byte):
-        return SelectedSolver.instance().must_be_true(constrs, byte == 0)
-    else:
-        return byte == 0
 
+    if issymbolic(s):
+        raise ConcretizeArgument(state.cpu, 1)
 
-def cannot_be_NULL(byte, constrs) -> bool:
-    """
-    Checks if a given byte read from memory is not NULL or cannot be NULL
+    cpu = state.cpu
+    zero_idx = _find_zero(cpu, state.constraints, s)
 
-    :param byte: byte read from memory to be examined
-    :param constrs: state constraints
-    :return: whether a given byte is not NULL or cannot be NULL
-    """
-    if issymbolic(byte):
-        return SelectedSolver.instance().must_be_true(constrs, byte != 0)
-    else:
-        return byte != 0
+    ret = zero_idx
 
+    for offset in range(zero_idx - 1, -1, -1):
+        byt = cpu.read_int(s + offset, 8)
+        if issymbolic(byt):
+            ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
 
-def can_be_NULL(byte, constrs) -> bool:
-    """
-    Checks if a given byte read from memory can be NULL
-
-    :param byte: byte read from memory to be examined
-    :param constrs: state constraints
-    :return: whether a given byte is NULL or can be NULL
-    """
-    if issymbolic(byte):
-        return SelectedSolver.instance().can_be_true(constrs, byte == 0)
-    else:
-        return byte == 0
+    return ret
 
 
 def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Union[int, BitVec]:

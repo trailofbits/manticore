@@ -20,7 +20,8 @@ from manticore.native.models import (
     variadic,
     isvariadic,
     strcmp,
-    strlen,
+    strlen_exact,
+    strlen_approx,
     strcpy,
     is_definitely_NULL,
     cannot_be_NULL,
@@ -160,47 +161,66 @@ class StrcmpTest(ModelTest):
 class StrlenTest(ModelTest):
     def test_concrete(self):
         s = self._push_string("abc\0")
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertEqual(ret, 3)
+        ret = strlen_approx(self.state, s)
         self.assertEqual(ret, 3)
 
     def test_concrete_empty(self):
         s = self._push_string("\0")
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertEqual(ret, 0)
+        ret = strlen_approx(self.state, s)
         self.assertEqual(ret, 0)
 
     def test_symbolic_effective_null(self):
         sy = self.state.symbolicate_buffer("ab+")
         self.state.constrain(sy[2] == 0)
         s = self._push_string(sy)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertEqual(ret, 2)
+        ret = strlen_approx(self.state, s)
         self.assertEqual(ret, 2)
 
     def test_symbolic_no_fork(self):
         sy = self.state.symbolicate_buffer("+++\0")
         s = self._push_string(sy)
 
+        ret = strlen_approx(self.state, s)
+        self.assertItemsEqual(
+                range(4), Z3Solver.instance().get_all_values(self.state.constraints, ret)
+        )
+
         self.state.constrain(sy[0] == 0)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertTrue(self.state.must_be_true(ret == 0))
+        ret = strlen_approx(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 0))
         self._clear_constraints()
 
         self.state.constrain(sy[0] != 0)
         self.state.constrain(sy[1] == 0)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertTrue(self.state.must_be_true(ret == 1))
+        ret = strlen_approx(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 1))
         self._clear_constraints()
 
         self.state.constrain(sy[0] != 0)
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[2] == 0)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertTrue(self.state.must_be_true(ret == 2))
+        ret = strlen_approx(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 2))
         self._clear_constraints()
 
         self.state.constrain(sy[0] != 0)
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[2] != 0)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertTrue(self.state.must_be_true(ret == 3))
+        ret = strlen_approx(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 3))
 
     def test_symbolic_fork(self):
@@ -214,7 +234,7 @@ class StrlenTest(ModelTest):
 
         @m.hook(addr_of_strlen)
         def strlen_model(state):
-            state.invoke_model(strlen)
+            state.invoke_model(strlen_exact)
 
         m.run()
         m.finalize()
@@ -244,19 +264,25 @@ class StrlenTest(ModelTest):
         s = self._push_string(sy)
 
         self.state.constrain(sy[1] == 0)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertTrue(self.state.must_be_true(ret == 1))
+        ret = strlen_approx(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 1))
         self._clear_constraints()
 
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[3] == 0)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertTrue(self.state.must_be_true(ret == 3))
+        ret = strlen_approx(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 3))
         self._clear_constraints()
 
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[3] != 0)
-        ret = strlen(self.state, s)
+        ret = strlen_exact(self.state, s)
+        self.assertTrue(self.state.must_be_true(ret == 4))
+        ret = strlen_approx(self.state, s)
         self.assertTrue(self.state.must_be_true(ret == 4))
 
 
