@@ -188,7 +188,7 @@ class StrlenTest(ModelTest):
 
         ret = strlen_approx(self.state, s)
         self.assertItemsEqual(
-                range(4), Z3Solver.instance().get_all_values(self.state.constraints, ret)
+            range(4), Z3Solver.instance().get_all_values(self.state.constraints, ret)
         )
 
         self.state.constrain(sy[0] == 0)
