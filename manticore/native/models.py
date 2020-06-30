@@ -195,7 +195,7 @@ def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
 def strlen_approx(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model
-    
+ 
     Strategy: build a result tree to limit state explosion results approximate
 
     Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
