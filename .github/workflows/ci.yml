@@ -79,7 +79,7 @@ jobs:
 #        fail_ci_if_error: true
   upload:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+#    if: github.event_name == 'schedule'
     needs: tests
     steps:
     - uses: actions/checkout@v2
