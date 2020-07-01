@@ -214,7 +214,6 @@ class SmtlibProc:
         assert self._proc
         assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
-        print (">", buf)
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
         if self._debug:
@@ -229,7 +228,6 @@ class SmtlibProc:
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        print (cmd)
         if self._debug:
             logger.debug(">%s", cmd)
         self._proc.stdout.flush()  # type: ignore

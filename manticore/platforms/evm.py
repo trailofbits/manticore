@@ -1310,7 +1310,6 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
-            print (self)
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)

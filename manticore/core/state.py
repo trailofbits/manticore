@@ -294,7 +294,6 @@ class StateBase(Eventful):
                 vals += self._solver.get_all_values(
                     self._constraints, symbolic, maxcnt=maxcount - len(vals), silent=True
                 )
-            print ("Solutions?", vals)
         elif policy == "ONE":
             vals = [self._solver.get_value(self._constraints, symbolic)]
         elif policy == "OPTIMISTIC":
