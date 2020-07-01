@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 /*
 There is a dangerous use of lowlevel instruction delegatecall in the fallback function.
 The address to which the delegatecall tx is sent is controlled by any user of this contract.

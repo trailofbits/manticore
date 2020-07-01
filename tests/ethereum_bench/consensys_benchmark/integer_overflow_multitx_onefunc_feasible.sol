@@ -1,7 +1,7 @@
 //Multi-transactional, single function
 //Arithmetic instruction reachable
 
-pragma solidity ^0.4.19;
+pragma solidity 0.4.19;
 
 contract Benchmark {
     uint256 private initialized = 0;

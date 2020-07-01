@@ -119,7 +119,7 @@ class ManticoreEVM(ManticoreBase):
             m = ManticoreEVM()
             #And now make the contract account to analyze
             source_code = '''
-                pragma solidity ^0.4.15;
+                pragma solidity 0.4.15;
                 contract AnInt {
                     uint private i=0;
                     function set(uint value){

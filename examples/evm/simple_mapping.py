@@ -5,7 +5,7 @@ m.verbosity(2)
 # And now make the contract account to analyze
 # cat  | solc --bin
 source_code = """
-pragma solidity ^0.4.13;
+pragma solidity 0.4.13;
 
 contract Test {
     event Log(string);

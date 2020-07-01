@@ -1,6 +1,6 @@
 //storage key for tuples[i].a calculated as
 //  keccak(bytes32(i) + bytes32(position['tuples']))+offset[a]
-pragma solidity ^0.4.11;
+pragma solidity 0.4.11;
 
 contract Benchmark {
     mapping(uint256 => uint256) tuples;

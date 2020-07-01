@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 /*
 There is a dangerous use of lowlevel instruction delegatecall in the fallback function.
 The target address of the delegatecall hardcoded function selector of the delegate 

@@ -7,7 +7,7 @@ m.verbosity(3)
 # And now make the contract account to analyze
 # https://capturetheether.com/challenges/math/mapping/
 source_code = """
-pragma solidity ^0.4.21;
+pragma solidity 0.4.21;
 
 contract MappingChallenge {
     bool public isComplete;

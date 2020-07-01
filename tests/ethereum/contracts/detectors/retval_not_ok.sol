@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 /*
    Example contract - True Positive
    The return value of a low level call is simply ignored.

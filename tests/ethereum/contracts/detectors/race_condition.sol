@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity 0.4.19;
 /*
     Example contract - True Positive
     There can be a race condition between storing an address with `setStoredAddress`

@@ -8,7 +8,7 @@ m = ManticoreEVM()
 # And now make the contract account to analyze
 # cat  | solc --bin
 source_code = """
-pragma solidity ^0.4;
+pragma solidity 0.4;
 contract C {
     uint c;
     bool enabled;

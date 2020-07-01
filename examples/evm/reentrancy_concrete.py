@@ -6,7 +6,7 @@ m = ManticoreEVM()
 m.verbosity(0)
 # The contract account to analyze
 contract_source_code = """
-pragma solidity ^0.4.15;
+pragma solidity 0.4.15;
 
 contract Reentrance {
     mapping (address => uint) userBalance;
@@ -35,7 +35,7 @@ contract Reentrance {
 """
 
 exploit_source_code = """
-pragma solidity ^0.4.15;
+pragma solidity 0.4.15;
 
 contract GenericReentranceExploit {
     int reentry_reps=10;

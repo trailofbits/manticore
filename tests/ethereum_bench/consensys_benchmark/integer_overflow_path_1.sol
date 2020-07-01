@@ -1,7 +1,7 @@
 //Single transaction overflow
 //Post-transaction effect: overflow never escapes to publicly-readable storage
 
-pragma solidity ^0.4.19;
+pragma solidity 0.4.19;
 
 contract Benchmark {
     uint public count = 1;

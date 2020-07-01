@@ -1,6 +1,6 @@
 //Dynamic storage array with packing
 //
-pragma solidity ^0.4.11;
+pragma solidity 0.4.11;
 
 contract Benchmark {
 

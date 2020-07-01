@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity 0.4.11;
 contract Benchmark {
     uint256[6] private numbers;
 

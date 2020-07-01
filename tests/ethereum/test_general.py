@@ -1103,7 +1103,7 @@ class EthTests(unittest.TestCase):
     def test_event_forwarding_after_state_fork_during_message_call(self):
         # https://github.com/trailofbits/manticore/issues/1255
         source_code = """
-        pragma solidity ^0.4.24;
+        pragma solidity 0.4.24;
 
         contract Lib {
            function isSeven(uint a) public pure returns (bool) {

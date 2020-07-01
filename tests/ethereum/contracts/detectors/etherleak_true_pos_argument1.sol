@@ -9,7 +9,7 @@
    This should report a finding.
 */
 
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 
 contract DetectThis {
 

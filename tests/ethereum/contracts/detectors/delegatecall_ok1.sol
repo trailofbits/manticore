@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 /*
 There is a fair use of lowlevel instruction delegatecall in the fallback function.
 It is effectively a CALL to `default_call` with the full calldata that was given to the fallback function

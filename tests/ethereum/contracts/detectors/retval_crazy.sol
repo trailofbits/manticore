@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 /*
    Example contract - Potential False Positive
    The return value of a low level call IS checked after some manipulation.

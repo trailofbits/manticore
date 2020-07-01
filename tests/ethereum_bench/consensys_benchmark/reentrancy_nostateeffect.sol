@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity 0.4.19;
 
 interface Runner {
     function run(uint256 param) external;

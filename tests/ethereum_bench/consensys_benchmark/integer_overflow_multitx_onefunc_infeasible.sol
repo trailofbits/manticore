@@ -1,7 +1,7 @@
 //Multi-transactional, single function
 //Overflow infeasible because arithmetic instruction not reachable
 
-pragma solidity ^0.4.19;
+pragma solidity 0.4.19;
 
 contract Benchmark {
     uint256 private initialized = 0;

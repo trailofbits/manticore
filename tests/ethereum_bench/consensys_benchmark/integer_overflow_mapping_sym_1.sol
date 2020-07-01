@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity 0.4.11;
 
 contract Benchmark {
     mapping(uint256 => uint256) map;
