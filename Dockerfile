@@ -10,7 +10,7 @@ ENV LANG C.UTF-8
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip git wget
 
 # Install solc 0.4.25 and validate it
-RUN wget https://github.com/ethereum/solidity/releases/download/v0.4.25/solc-static-linux \
+RUN wget https://github.com/ethereum/solidity/releases/download/v0.5.16/solc-static-linux \
  && chmod +x solc-static-linux \
  && mv solc-static-linux /usr/bin/solc
 
