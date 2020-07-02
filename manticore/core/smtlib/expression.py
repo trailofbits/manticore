@@ -972,6 +972,27 @@ class ArrayStore(ArrayOperation):
     def value(self):
         return self.operands[2]
 
+    def __getstate__(self):
+        state = {}
+        array = self
+        items = []
+        while isinstance(array, ArrayStore):
+            items.append((array.index, array.value))
+            array = array.array
+        state["_array"] = array
+        state["_items"] = items
+        return state
+
+    def __setstate__(self, state):
+        array = state["_array"]
+        for index, value in reversed(state["_items"][0:]):
+            array = array.store(index, value)
+        self._index_bits = array.index_bits
+        self._index_max = array.index_max
+        self._value_bits = array.value_bits
+        index, value = state["_items"][0]
+        self._operands = (array, index, value)
+
 
 class ArraySlice(ArrayOperation):
     def __init__(
@@ -1132,7 +1153,6 @@ class ArrayProxy(Array):
         state["_array"] = self._array
         state["name"] = self.name
         state["_concrete_cache"] = self._concrete_cache
-        state["_written"] = self._written
         return state
 
     def __setstate__(self, state):
@@ -1140,7 +1160,7 @@ class ArrayProxy(Array):
         self._array = state["_array"]
         self._name = state["name"]
         self._concrete_cache = state["_concrete_cache"]
-        self._written = state["_written"]
+        self._written = None
 
     def __copy__(self):
         return ArrayProxy(self)

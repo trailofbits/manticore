@@ -319,7 +319,8 @@ def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namesp
     :param args: The value that parser.parse_args returned
     """
     # First, load a local config file, if passed or look for one in pwd if it wasn't.
-    load_overrides(args.config)
+    if hasattr(args, "config"):
+        load_overrides(args.config)
 
     # Get a list of defined config vals. If these are passed on the command line,
     # update them in their correct group, not in the cli group

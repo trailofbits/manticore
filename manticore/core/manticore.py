@@ -23,7 +23,7 @@ from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
-from .workspace import Workspace
+from .workspace import Workspace, Testcase
 from .worker import WorkerSingle, WorkerThread, WorkerProcess
 
 from multiprocessing.managers import SyncManager
@@ -403,8 +403,7 @@ class ManticoreBase(Eventful):
         in a snapshot """
         if not self._snapshot:
             raise ManticoreError("No snapshot to go to")
-        for state_id in tuple(self._ready_states):
-            self._ready_states.remove(state_id)
+        self.clear_ready_states()
         for state_id in self._snapshot:
             self._ready_states.append(state_id)
         self._snapshot = None
@@ -421,12 +420,22 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def clear_terminated_states(self):
-        """ Simply remove all states from terminated list """
+        """ Remove all states from the terminated list """
         terminated_states_ids = tuple(self._terminated_states)
         for state_id in terminated_states_ids:
             self._terminated_states.remove(state_id)
             self._remove(state_id)
         assert self.count_terminated_states() == 0
+
+    @sync
+    @at_not_running
+    def clear_ready_states(self):
+        """ Remove all states from the ready list """
+        ready_states_ids = tuple(self._ready_states)
+        for state_id in ready_states_ids:
+            self._ready_states.remove(state_id)
+            self._remove(state_id)
+        assert self.count_ready_states() == 0
 
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
@@ -833,7 +842,7 @@ class ManticoreBase(Eventful):
         """ Terminated states count """
         return len(self._terminated_states)
 
-    def generate_testcase(self, state, message: str = "test", name: str = "test"):
+    def generate_testcase(self, state, message: str = "test", name: str = "test") -> Testcase:
         if message == "test" and hasattr(state, "_terminated_by") and state._terminated_by:
             message = str(state._terminated_by)
         testcase = self._output.testcase(prefix=name)

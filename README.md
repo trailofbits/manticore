@@ -1,6 +1,6 @@
 # Manticore
 <p align="center">
-  <img src="docs/images/manticore.png?raw=true" width="256" title="Manticore">
+  <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
 </p>
 <br />
 
@@ -46,7 +46,13 @@ Option 2: Installing from PyPI, with extra dependencies needed to execute native
 pip install "manticore[native]"
 ```
 
-Option 3: Installing from the `master` branch:
+Option 3: Installing a nightly development build (fill in the latest version from [the PyPI history](https://pypi.org/project/manticore/#history)):
+
+```bash
+pip install "manticore[native]==0.x.x.devYYMMDD"
+```
+
+Option 4: Installing from the `master` branch:
 
 ```bash
 git clone https://github.com/trailofbits/manticore.git
@@ -54,7 +60,7 @@ cd manticore
 pip install -e ".[native]"
 ```
 
-Option 4: Install via Docker:
+Option 5: Install via Docker:
 
 ```bash
 docker pull trailofbits/manticore
@@ -216,9 +222,9 @@ for idx, val_list in enumerate(m.collect_returns()):
 * We're still in the process of implementing full support for the EVM Istanbul instruction semantics, so certain opcodes may not be supported.
 In a pinch, you can try compiling with Solidity 0.4.x to avoid generating those instructions. 
 
-## Using a different solverr (Z3, Yices, CVC4)
-Manticore relies on an external solver supporting smtlib2. Curently Z3, Yices and CVC4 are supported and can be selected via commandline or configuration settings.
-By default Manticore will use Z3. Once you installed a different solver you can choose a different solver like this:
+## Using a different solver (Z3, Yices, CVC4)
+Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via commandline or configuration settings.
+By default Manticore will use Z3. Once you've installed a different solver, you can choose which one to use like this:
 ```manticore --smt.solver yices```
 ### Installing CVC4
 For more details go to https://cvc4.github.io/. Otherwise just get the binary and use it.

@@ -30,7 +30,6 @@ from .constraints import *
 from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
-from ...utils.resources import check_memory_usage, check_disk_usage
 from . import issymbolic
 
 
@@ -593,7 +592,7 @@ class SMTLIBSolver(Solver):
         """
         values = []
         start = time.time()
-        with constraints as temp_cs:
+        with constraints.related_to(*expressions) as temp_cs:
             for expression in expressions:
                 if not issymbolic(expression):
                     values.append(expression)
