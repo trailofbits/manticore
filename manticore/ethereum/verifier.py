@@ -211,7 +211,7 @@ def manticore_verifier(
 
             # check if we sent more than MAXTX transaction
             if tx_num >= MAXTX:
-                print(f"Max numbr of transactions reached({tx_num})")
+                print(f"Max number of transactions reached ({tx_num})")
                 break
             tx_num += 1
 
@@ -219,7 +219,7 @@ def manticore_verifier(
             new_coverage = m.global_coverage(contract_account)
             if new_coverage >= MAXCOV:
                 print(
-                    f"Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploration."
+                    f"Current coverage({new_coverage}%) is greater than max allowed ({MAXCOV}%). Stopping exploration."
                 )
                 break
 

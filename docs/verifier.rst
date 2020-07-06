@@ -4,8 +4,8 @@ Manticore installs a separated CLI tool to do property based symbolic execution 
 
     $ manticore-verifier your_contract.sol
 
-**manticore-verifier** initializes an emulated blockchain ennvironment with a configurable set of
-acocunts and then sends various symbolic transactions to the target contract containing property methods.
+**manticore-verifier** initializes an emulated blockchain environment with a configurable set of
+accounts and then sends various symbolic transactions to the target contract containing property methods.
 If a way to break a property is found the full transaction trace to reproduce the behaivor is provided.
 A configurable stopping condition bounds the exploration, properties not failing are considered to pass.
 
@@ -35,7 +35,7 @@ Normal properties are property methods that must always return true (or REVERT).
 Reverting properties
 ^^^^^^^^^^^^^^^^^^^^
 Sometimes it is difficult to detect that a revert has happened in an internal transaction. 
-manticor-verifier allows to test for ALWAYS REVERTing property methdos.
+manticore-verifier allows to test for ALWAYS REVERTing property methods.
 Revert properties are property methods that must always REVERT.
 Reverting property are any property method that contains "revert". For example: 
 
@@ -57,15 +57,15 @@ The target contract is the entry point of the exploration. It needs to initilize
 User accounts
 =============
 You can specify what are the accounts used in the exploration.
-Normaly you do not want the owner or deployer of the contract to send the symbolic transaction and to use as eparated unused account to actually check the property methods.
+Normaly you do not want the owner or deployer of the contract to send the symbolic transaction and to use a separate unused account to actually check the property methods.
 There are 3 types of user accounts:
 
     - deployer:  The account used to create the target contract
     - senders: A set of accounts used to send symbolic transactions. Think that  these transactions are the ones trying to put the contract in a state that makes the property fail.
-    - psender: The account used as caller to test tha actual property methos
+    - psender: The account used as caller to test the actual property methods
 
 
-You can specify those via commanline arguments ::
+You can specify those via command line arguments ::
 
     --deployer DEPLOYER   (optional) address of account used to deploy the contract
     --senders SENDERS     (optional) a comma separated list of sender addresses.
@@ -86,9 +86,9 @@ If you do not provide specific accounts **manticore-verifier** will choose them 
 
 Stopping condition
 ==================
-The exploration will continue to sent symbolic transactions until one of the stopping criteria is met.
+The exploration will continue to send symbolic transactions until one of the stopping criteria is met.
 
-Maximun number of trasactions
+Maximum number of transactions
 -----------------------------
 You can be interested only in what could happen under a number of transactions. After a maximun number of transactions is reached the explorations ends. Properties that had not be found to be breakable are considered a pass.
 You can modify the max number of transactions to test vis a command line argument, otherwise it will stop at 3 transactions. ::
@@ -97,7 +97,7 @@ You can modify the max number of transactions to test vis a command line argumen
  
 Maximun coverage % attained
 ---------------------------
-By default if a transaction does not produce new coverage the exploration is stopped. But you can add a further constraining,  if the provided coverage percentage is obtained stop. Not that this is the total % of runtime bytecode covered. By default compilers add dead code and also in this case the rntime contains the code of the propertie methods. So use with care. ::
+By default, if a transaction does not produce new coverage, the exploration is stopped. But you can add a further constraint so that if the provided coverage percentage is obtained, stop. Note that this is the total % of runtime bytecode covered. By default, compilers add dead code, and also in this case the runtime contains the code of the properties methods. So use with care. ::
 
      --maxcov MAXCOV       Stop after maxcov % coverage is obtained in the main
                             contract
