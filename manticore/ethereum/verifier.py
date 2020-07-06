@@ -282,7 +282,7 @@ def manticore_verifier(
                      * is normal property
                      * RETURN False
                    OR:
-                     * property name ends witth 'revert'
+                     * property name ends with 'revert'
                      * does not REVERT
                 Property is considered to _pass_ otherwise
                 """
