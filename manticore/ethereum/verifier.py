@@ -167,7 +167,7 @@ def manticore_verifier(
     print(f"# Owner account: 0x{int(owner_account):x}")
     print(f"# Contract account: 0x{int(contract_account):x}")
     for n, user_account in enumerate(user_accounts):
-        print(f"# Sender_{n} account: 0x{int(checker_account):x}")
+        print(f"# Sender_{n} account: 0x{int(user_account):x}")
     print(f"# PSender account: 0x{int(checker_account):x}")
 
     properties = {}
@@ -211,7 +211,7 @@ def manticore_verifier(
 
             # check if we sent more than MAXTX transaction
             if tx_num >= MAXTX:
-                print("Max numbr of transactions reached({tx_num})")
+                print(f"Max numbr of transactions reached({tx_num})")
                 break
             tx_num += 1
 
@@ -219,7 +219,7 @@ def manticore_verifier(
             new_coverage = m.global_coverage(contract_account)
             if new_coverage >= MAXCOV:
                 print(
-                    "Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploration."
+                    f"Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploration."
                 )
                 break
 
@@ -484,4 +484,5 @@ def main():
         deployer=deployer,
         psender=psender,
         timeout=args.timeout,
+        propre=args.propre,
     )
