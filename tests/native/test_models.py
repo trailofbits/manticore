@@ -23,6 +23,7 @@ from manticore.native.models import (
     strlen_exact,
     strlen_approx,
     strcpy,
+    strncpy,
     is_definitely_NULL,
     cannot_be_NULL,
 )
@@ -294,7 +295,6 @@ class StrcpyTest(ModelTest):
         dst = cpu.read_int(d, 8)
         offset = 0
         while cannot_be_NULL(src, self.state.constraints):
-            self.assertTrue(not issymbolic(dst))
             self.assertEqual(src, dst)
             offset += 1
             src = cpu.read_int(s + offset, 8)
@@ -303,7 +303,6 @@ class StrcpyTest(ModelTest):
         # Assert final NULL byte
         self.assertTrue(is_definitely_NULL(src, self.state.constraints))
         self.assertEqual(0, dst)
-        return offset
 
     def _test_strcpy(self, string, dst_len=None):
         """
@@ -312,7 +311,7 @@ class StrcpyTest(ModelTest):
         to dst until the NULL byte, and asserts the memory address returned by strcpy is
         equal to the given dst address.
         """
-        # Create src and dsty strings
+        # Create src and dst strings
         if dst_len is None:
             dst_len = len(string)
         cpu = self.state.cpu
@@ -330,7 +329,7 @@ class StrcpyTest(ModelTest):
         # addresses should match
         self.assertEqual(ret, d)
         # assert everything is copied up to the 1st possible 0 is copied
-        offset = self._assert_concrete(s, d)
+        self._assert_concrete(s, d)
 
         # Delete stack space created
         self._pop_string_space(dst_len + len(string))
@@ -355,7 +354,7 @@ class StrcpyTest(ModelTest):
         addr_of_strcpy = 0x400418
 
         @m.hook(addr_of_strcpy)
-        def strlen_model(state):
+        def strcpy_model(state):
             state.invoke_model(strcpy)
 
         m.run()
@@ -383,6 +382,121 @@ class StrcpyTest(ModelTest):
             r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){3}\\x00(\\x([0-9a-f]{2})){6}\'",
             # STDIN: b'\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff'
             r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){4}\\x00(\\x([0-9a-f]{2})){5}\'",
+            # STDIN: b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){10}\'",
+        ]
+
+        inputs = f"{str(m.workspace)}/test_*.input"
+
+        # Make a list of the generated input states
+        stdins = []
+        for inpt in glob(inputs):
+            with open(inpt) as f:
+                stdins.append(f.read())
+
+        # Check the number of input states matches the number of regexes
+        self.assertEqual(len(stdins), len(expected))
+
+        # Assert that every regex has a matching input
+        for e in expected:
+            match = False
+            for s in stdins:
+                if re.fullmatch(e, s) == None:
+                    match = True
+                    break
+            self.assertTrue(match)
+
+
+class StrncpyTest(ModelTest):
+    def _assert_concrete(self, s, d, n):
+        # Checks that n characters are copied until a NULL in the src
+        # and that NULL is written for the distance between src and NULL
+        cpu = self.state.cpu
+        src = cpu.read_int(s, 8)
+        dst = cpu.read_int(d, 8)
+        offset = 0
+
+        # Check that min(n, length of src) characters are copied from src to dst
+        while not is_definitely_NULL(src, self.state.constraints) and offset < n:
+            self.assertEqual(src, dst)
+            offset += 1
+            src = cpu.read_int(s + offset, 8)
+            dst = cpu.read_int(d + offset, 8)
+
+        # Check that N - length of src characters are NULL padded
+        while offset < n:
+            self.assertEqual(0, dst)
+            offset += 1
+            dst = cpu.read_int(d + offset, 8)
+
+    def _test_strncpy(self, string, n):
+        """
+        This method creates memory for a given src (with no possible NULL bytes but and a
+        final NULL byte) and dst string pointers, asserts that everything is copied from src
+        to dst until the NULL byte, and asserts the memory address returned by strcpy is
+        equal to the given dst address.
+        """
+        dst_len = n + 1
+        cpu = self.state.cpu
+        s = self._push_string(string)
+        d = self._push_string_space(dst_len)
+        dst_vals = [None] * dst_len
+        for i in range(dst_len):
+            # Set each dst byte to a random char to simplify equal comparisons
+            c = random.randrange(1, 255)
+            cpu.write_int(d + i, c, 8)
+            dst_vals[i] = c
+
+        ret = strncpy(self.state, d, s, n)
+
+        # addresses should match
+        self.assertEqual(ret, d)
+        # assert everything is copied up to the 1st possible 0 is copied
+        self._assert_concrete(s, d, n)
+
+        # Delete stack space created
+        self._pop_string_space(dst_len + len(string))
+
+    def test_concrete(self):
+        self._test_strncpy("abc\0", n=4)
+        self._test_strncpy("abcdefghijklm\0", n=20)
+        self._test_strncpy("a\0", n=10)
+
+    def test_small_n(self):
+        self._test_strncpy("a\0", n=1)
+        self._test_strncpy("abcdefghijklm\0", n=0)
+
+    def test_concrete_empty(self):
+        self._test_strncpy("\0", n=1)
+        self._test_strncpy("\0", n=10)
+
+    def test_symbolic(self):
+        # Create src and dst strings
+        # This binary is compiled using gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
+        # with flags: -g -static -fno-builtin
+        BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "sym_strncpy_test")
+        tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
+        m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
+
+        addr_of_strncpy = 0x0400490
+
+        @m.hook(addr_of_strncpy)
+        def strncpy_model(state):
+            state.invoke_model(strncpy)
+
+        m.run()
+        m.finalize()
+
+        # Approximate regexes for expected testcase output
+        # Example Match above each regex
+        # Manticore varies the hex output slightly per run
+        expected = [
+            # STDIN: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            r"STDIN: b\'\\x00(\\x([0-9a-f]{2})){9}\'",
+            # STDIN: b'\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff'
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){1}\\x00(\\x([0-9a-f]{2})){8}\'",
+            # STDIN: b'\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff'
+            r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){2}\\x00(\\x([0-9a-f]{2})){7}\'",
             # STDIN: b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
             r"STDIN: b\'(\\x((?!(00))([0-9a-f]{2}))){10}\'",
         ]
