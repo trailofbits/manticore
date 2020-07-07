@@ -227,7 +227,9 @@ class StrlenTest(ModelTest):
     def test_symbolic_fork(self):
         # This binary is compiled using gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
         # with flags: -g -static -fno-builtin
-        BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "sym_strlen_test")
+        BIN_PATH = os.path.join(
+            os.path.dirname(__file__), "binaries/str_model_tests", "sym_strlen_test"
+        )
         tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
         m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
 
@@ -347,7 +349,9 @@ class StrcpyTest(ModelTest):
     def test_symbolic(self):
         # This binary is compiled using gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
         # with flags: -g -static -fno-builtin
-        BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "sym_strcpy_test")
+        BIN_PATH = os.path.join(
+            os.path.dirname(__file__), "binaries/str_model_tests", "sym_strcpy_test"
+        )
         tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
         m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
 
@@ -474,7 +478,9 @@ class StrncpyTest(ModelTest):
         # Create src and dst strings
         # This binary is compiled using gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
         # with flags: -g -static -fno-builtin
-        BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "sym_strncpy_test")
+        BIN_PATH = os.path.join(
+            os.path.dirname(__file__), "binaries/str_model_tests", "sym_strncpy_test"
+        )
         tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
         m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
 
