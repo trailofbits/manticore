@@ -156,12 +156,9 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
 def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model
-
     Strategy: produce a state for every symbolic string length for better accuracy
-
     Algorithm: Counts the number of characters in a string forking every time a symbolic byte
     is found that can be NULL but is not constrained to NULL.
-
     :param state: current program state
     :param s: Address of string
     :return: Symbolic strlen result
@@ -195,9 +192,7 @@ def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
 def strlen_approx(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model
-
     Strategy: build a result tree to limit state explosion results approximate
-
     Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
     :param state: current program state
     :param s: Address of string
@@ -308,9 +303,8 @@ def strncpy(
     while offset < n and not is_definitely_NULL(src_val, constrs):
         cpu.write_int(dst + offset, src_val, 8)
 
-        # If a byte can be NULL set the src_val for concretize and fork states
-        if can_be_NULL(src_val, constrs) and offset != n - 1:
-            print(offset)
+        # If a src byte can be NULL concretize and fork states
+        if can_be_NULL(src_val, constrs):
             state.context["strncpy"] = offset
             raise Concretize("Forking on NULL strncpy", expression=(src_val == 0), policy="ALL")
         offset += 1
