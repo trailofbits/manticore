@@ -1184,7 +1184,7 @@ class X86Cpu(Cpu):
         cpu.AL = cpu.AL & 0x0F
 
     @instruction
-    def AAD(cpu, imm=None):
+    def AAD(cpu, imm):
         """
         ASCII adjust AX before division.
 
@@ -1210,12 +1210,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         """
-        if imm is None:
-            imm = 10
-        else:
-            imm = imm.read()
-
-        cpu.AL += cpu.AH * imm
+        cpu.AL += cpu.AH * imm.read()
         cpu.AH = 0
 
         # Defined flags: ...sz.p.
@@ -5493,6 +5488,21 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param arg0: this argument is ignored.
         """
+        pass
+
+    @instruction
+    def ENDBR64(cpu):
+        """
+        The ENDBRANCH is a new instruction that is used to mark valid jump target
+        addresses of indirect calls and jumps in the program. This instruction
+        opcode is selected to be one that is a NOP on legacy machines such that
+        programs compiled with ENDBRANCH new instruction continue to function on
+        old machines without the CET enforcement. On processors that support CET
+        the ENDBRANCH is still a NOP and is primarily used as a marker instruction
+        by the processor pipeline to detect control flow violations.
+        :param cpu: current CPU.
+        """
+        pass
 
     @instruction
     def MOVD(cpu, op0, op1):
