@@ -78,7 +78,8 @@ Manticore has a command line interface which can perform a basic symbolic analys
 Analysis results will be placed into a workspace directory beginning with `mcore_`. For information about the workspace, see the [wiki](https://github.com/trailofbits/manticore/wiki/What's-in-the-workspace%3F).
 
 #### EVM
-Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
+Manticore CLI automatically detects you are trying to test a contract if (for ex.)
+ the contract has a `.sol` or a `.vy` extension. See a [demo](https://asciinema.org/a/154012).
 <details>
   <summary>Click to expand:</summary>
   
@@ -99,6 +100,12 @@ $ manticore examples/evm/umd_example.sol
 ```
 </details>
 
+##### Manticore-verifier
+
+An alternative CLI tool is provided that simplifys contract testing and 
+allows writing properties methods in the same high-level language the contract uses.
+Checkout manticore-verifier [documentation](http://manticore.readthedocs.io/en/latest/verifier.html).
+See a [demo](https://asciinema.org/a/xd0XYe6EqHCibae0RP6c7sJVE)
 
 #### Native
 <details>
