@@ -138,7 +138,7 @@ contract Adder {
 """
 m = ManticoreEVM()
 
-user_account = m.create_account(balance=1000)
+user_account = m.create_account(balance=10000000)
 contract_account = m.solidity_create_contract(contract_src,
                                               owner=user_account,
                                               balance=0)
