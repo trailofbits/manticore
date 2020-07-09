@@ -1,4 +1,5 @@
 import unittest
+import os
 
 from manticore.core.smtlib import (
     ConstraintSet,
@@ -11,14 +12,92 @@ from manticore.core.smtlib import (
     arithmetic_simplify,
     constant_folder,
     replace,
+    BitVecConstant,
 )
-from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
+from manticore import config
 
 # logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
+
+DIRPATH = os.path.dirname(__file__)
+
+
+class RegressionTest(unittest.TestCase):
+    def test_related_to(self):
+        import gzip
+        import pickle, sys
+
+        filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
+
+        # A constraint set and a contraint caught in the act of making related_to fail
+        constraints, constraint = pickle.loads(gzip.open(filename, "rb").read())
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        ground_truth = Z3Solver.instance().can_be_true(constraints, constraint)
+        self.assertEqual(ground_truth, False)
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(
+            ground_truth,
+            Z3Solver.instance().can_be_true(constraints.related_to(constraints), constraint),
+        )
+
+        # Replace
+        new_constraint = Operators.UGE(
+            Operators.SEXTEND(BitVecConstant(256, 0x1A), 256, 512) * BitVecConstant(512, 1),
+            0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000,
+        )
+        self.assertEqual(translate_to_smtlib(constraint), translate_to_smtlib(new_constraint))
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
+
+        Z3Solver.instance().can_be_true.cache_clear()
+        self.assertEqual(
+            ground_truth,
+            Z3Solver.instance().can_be_true(constraints.related_to(new_constraint), new_constraint),
+        )
+
+
+"""
+class Z3Specific(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
+    def setUp(self):
+        self.solver = Z3Solver.instance()
+
+
+    @patch('subprocess.check_output', mock_open())
+    def test_check_solver_min(self, mock_check_output):
+        mock_check_output.return_value = ("output", "Error")
+        #mock_check_output.return_value='(:version "4.4.1")'
+        #mock_function = create_autospec(function, return_value='(:version "4.4.1")')
+        #with patch.object(subprocess, 'check_output' , return_value='(:version "4.4.1")'):
+        #test_patch.return_value = '(:version "4.4.1")'
+        print (self.solver._solver_version())
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
+
+    def test_check_solver_newer(self):
+        self.solver._received_version = '(:version "4.5.0")'
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+
+    def test_check_solver_long_format(self):
+        self.solver._received_version = '(:version "4.8.6 - build hashcode 78ed71b8de7d")'
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=8, patch=6))
+
+    def test_check_solver_undefined(self):
+        self.solver._received_version = '(:version "78ed71b8de7d")'
+        self.assertTrue(
+
+            self.solver._solver_version()
+            == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
+        )
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+"""
 
 
 class ExpressionTest(unittest.TestCase):
@@ -42,6 +121,13 @@ class ExpressionTest(unittest.TestCase):
         x = BitVecConstant(32, 10)
         cs = ConstraintSet()
         self.assertFalse(self.solver.can_be_true(cs, x == False))
+
+    def test_constant_bitvec(self):
+        """
+        Tests if higher bits are masked out
+        """
+        x = BitVecConstant(32, 0xFF00000000)
+        self.assertTrue(x.value == 0)
 
     def testBasicAST_001(self):
         """ Can't build abstract classes """
@@ -602,6 +688,15 @@ class ExpressionTest(unittest.TestCase):
         self.assertItemsEqual(z.taint, ("important", "stuff"))
         self.assertEqual(z.value, 0x7FFFFFFF)
 
+    def test_simplify_OR(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
+        var = cs.new_bool()
+        cs.add(simplify(Operators.OR(var, var)) == var)
+        cs.add(simplify(Operators.OR(var, bt)) == bt)
+        self.assertTrue(self.solver.check(cs))
+
     def testBasicReplace(self):
         """ Add """
         a = BitVecConstant(32, 100)
@@ -898,9 +993,8 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86)  # -122
         cs.add(c == 0x11)  # 17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b / c)
+        cs.add(d == (b // c))
         cs.add(a == d)
-
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7 & 0xFF)
 
@@ -959,25 +1053,32 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(False)))
         self.assertTrue(solver.must_be_true(cs, Operators.NOT(a == b)))
 
-    def test_check_solver_min(self):
-        self.solver._received_version = '(:version "4.4.1")'
-        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
+    def testRelated(self):
+        cs = ConstraintSet()
+        aa1 = cs.new_bool(name="AA1")
+        aa2 = cs.new_bool(name="AA2")
+        bb1 = cs.new_bool(name="BB1")
+        bb2 = cs.new_bool(name="BB2")
+        cs.add(Operators.OR(aa1, aa2))
+        cs.add(Operators.OR(bb1, bb2))
+        self.assertTrue(self.solver.check(cs))
+        # No BB variables related to AA
+        self.assertNotIn("BB", cs.related_to(aa1).to_string())
+        self.assertNotIn("BB", cs.related_to(aa2).to_string())
+        self.assertNotIn("BB", cs.related_to(aa1 == aa2).to_string())
+        self.assertNotIn("BB", cs.related_to(aa1 == False).to_string())
+        # No AA variables related to BB
+        self.assertNotIn("AA", cs.related_to(bb1).to_string())
+        self.assertNotIn("AA", cs.related_to(bb2).to_string())
+        self.assertNotIn("AA", cs.related_to(bb1 == bb2).to_string())
+        self.assertNotIn("AA", cs.related_to(bb1 == False).to_string())
 
-    def test_check_solver_newer(self):
-        self.solver._received_version = '(:version "4.5.0")'
-        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+        # Nothing is related to tautologies?
+        self.assertEqual("", cs.related_to(simplify(bb1 == bb1)).to_string())
 
-    def test_check_solver_long_format(self):
-        self.solver._received_version = '(:version "4.8.6 - build hashcode 78ed71b8de7d")'
-        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=8, patch=6))
-
-    def test_check_solver_undefined(self):
-        self.solver._received_version = '(:version "78ed71b8de7d")'
-        self.assertTrue(
-            self.solver._solver_version()
-            == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
-        )
-        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
+        # But if the tautollogy can not get simplified we have to ask the solver
+        # and send in all the other stuff
+        self.assertNotIn("AA", cs.related_to(bb1 == bb1).to_string())
 
     def test_API(self):
         """
@@ -1000,6 +1101,49 @@ class ExpressionTest(unittest.TestCase):
             attrs = ["operands"]
             for attr in attrs:
                 self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
+
+    def test_signed_unsigned_LT_simple(self):
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32)
+        b = cs.new_bitvec(32)
+
+        cs.add(a == 0x1)
+        cs.add(b == 0x80000000)
+
+        lt = b < a
+        ult = b.ult(a)
+
+        self.assertFalse(self.solver.can_be_true(cs, ult))
+        self.assertTrue(self.solver.must_be_true(cs, lt))
+
+    def test_signed_unsigned_LT_complex(self):
+        mask = (1 << 32) - 1
+
+        cs = ConstraintSet()
+        _a = cs.new_bitvec(32)
+        _b = cs.new_bitvec(32)
+
+        cs.add(_a == 0x1)
+        cs.add(_b == (0x80000000 - 1))
+
+        a = _a & mask
+        b = (_b + 1) & mask
+
+        lt = b < a
+        ult = b.ult(a)
+
+        self.assertFalse(self.solver.can_be_true(cs, ult))
+        self.assertTrue(self.solver.must_be_true(cs, lt))
+
+
+class ExpressionTestYices(ExpressionTest):
+    def setUp(self):
+        self.solver = YicesSolver.instance()
+
+
+class ExpressionTestCVC4(ExpressionTest):
+    def setUp(self):
+        self.solver = CVC4Solver.instance()
 
 
 if __name__ == "__main__":

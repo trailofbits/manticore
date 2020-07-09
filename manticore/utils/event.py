@@ -75,15 +75,15 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         return all_evts
 
     @staticmethod
-    def will_did(name):
+    def will_did(name, can_raise=False):
         """Pre/pos emiting signal"""
 
         def deco(func):
             @functools.wraps(func)
             def newFunction(self, *args, **kw):
-                self._publish(f"will_{name}", *args, **kw)
+                self._publish(f"will_{name}", *args, can_raise=can_raise, **kw)
                 result = func(self, *args, **kw)
-                self._publish(f"did_{name}", result)
+                self._publish(f"did_{name}", result, can_raise=can_raise)
                 return result
 
             return newFunction
@@ -139,11 +139,17 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # Wrapper for _publish_impl that also makes sure the event is published from
     # a class that supports it.
     # The underscore _name is to avoid naming collisions with callback params
-    def _publish(self, _name, *args, **kwargs):
+    def _publish(self, _name, *args, can_raise=True, **kwargs):
         # only publish if there is at least one subscriber
-        if _name in self.__sub_events__:
-            self._check_event(_name)
-            self._publish_impl(_name, *args, **kwargs)
+        try:
+            if _name in self.__sub_events__:
+                self._check_event(_name)
+                self._publish_impl(_name, *args, **kwargs)
+        except Exception as e:
+            if can_raise:
+                raise
+            else:
+                logger.info("Exception raised at a callback %r", e)
 
     # Separate from _publish since the recursive method call to forward an event
     # shouldn't check the event.

@@ -1,6 +1,6 @@
 # Manticore
 <p align="center">
-  <img src="docs/images/manticore.png?raw=true" width="256" title="Manticore">
+  <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
 </p>
 <br />
 
@@ -46,7 +46,13 @@ Option 2: Installing from PyPI, with extra dependencies needed to execute native
 pip install "manticore[native]"
 ```
 
-Option 3: Installing from the `master` branch:
+Option 3: Installing a nightly development build (fill in the latest version from [the PyPI history](https://pypi.org/project/manticore/#history)):
+
+```bash
+pip install "manticore[native]==0.x.x.devYYMMDD"
+```
+
+Option 4: Installing from the `master` branch:
 
 ```bash
 git clone https://github.com/trailofbits/manticore.git
@@ -54,7 +60,7 @@ cd manticore
 pip install -e ".[native]"
 ```
 
-Option 4: Install via Docker:
+Option 5: Install via Docker:
 
 ```bash
 docker pull trailofbits/manticore
@@ -132,7 +138,7 @@ contract Adder {
 """
 m = ManticoreEVM()
 
-user_account = m.create_account(balance=1000)
+user_account = m.create_account(balance=10000000)
 contract_account = m.solidity_create_contract(contract_src,
                                               owner=user_account,
                                               balance=0)
@@ -215,6 +221,23 @@ for idx, val_list in enumerate(m.collect_returns()):
 `crytic-compile` on your code directly to make it easier to identify any issues. 
 * We're still in the process of implementing full support for the EVM Istanbul instruction semantics, so certain opcodes may not be supported.
 In a pinch, you can try compiling with Solidity 0.4.x to avoid generating those instructions. 
+
+## Using a different solver (Z3, Yices, CVC4)
+Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via commandline or configuration settings.
+By default Manticore will use Z3. Once you've installed a different solver, you can choose which one to use like this:
+```manticore --smt.solver yices```
+### Installing CVC4
+For more details go to https://cvc4.github.io/. Otherwise just get the binary and use it.
+
+        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
+        sudo chmod +x /usr/bin/cvc4
+
+### Installing Yices
+Yices is incredibly fast. More details here https://yices.csl.sri.com/
+
+        sudo add-apt-repository ppa:sri-csl/formal-methods
+        sudo apt-get update
+        sudo apt-get install yices2
 
 ## Getting Help
 

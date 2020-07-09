@@ -91,7 +91,13 @@ class IntegrationTest(unittest.TestCase):
         output = subprocess.check_output(cmd)
         end = time.time()
 
-        output = output.splitlines()
+        output = list(
+            filter(
+                lambda l: b"Manticore is only supported on Linux. Proceed at your own risk!"
+                not in l,
+                output.splitlines(),
+            )
+        )
 
         # Because the run will timeout, we don't know the exact line numbers that will appear
         # but this seems as a good default
@@ -273,7 +279,7 @@ class IntegrationTest(unittest.TestCase):
         caller = 0x42424242424242424242
         value = 0
         bytecode = ""
-        vm = evm.EVM(constraints, address, data, caller, value, bytecode)
+        vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=23000)
 
         self.assertEqual(vm.ADDMOD(12323, 2343, 20), 6)
         self.assertEqual(vm.ADDMOD(12323, 2343, 0), 0)
@@ -330,7 +336,7 @@ class IntegrationTest(unittest.TestCase):
         caller = 0x42424242424242424242
         value = 0
         bytecode = ""
-        vm = evm.EVM(constraints, address, data, caller, value, bytecode)
+        vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=23000)
 
         self.assertEqual(vm.MULMOD(12323, 2343, 20), 9)
         self.assertEqual(vm.MULMOD(12323, 2343, 0), 0)
