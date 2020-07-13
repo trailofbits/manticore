@@ -287,10 +287,10 @@ def strncpy(
     :return: pointer to the dst
     """
 
-    if issymbolic(src):
-        raise ConcretizeArgument(state.cpu, 2)
     if issymbolic(dst):
         raise ConcretizeArgument(state.cpu, 1)
+    if issymbolic(src):
+        raise ConcretizeArgument(state.cpu, 2)
     if issymbolic(n):
         raise ConcretizeArgument(state.cpu, 3)
 
