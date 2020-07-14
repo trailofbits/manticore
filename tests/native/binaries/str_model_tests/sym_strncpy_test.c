@@ -5,8 +5,6 @@
 #define LEN 5
 
 int main() {
-	char * A = "src or dst is A";
-	char * NA = "src or dst is not A";
 	char src[LEN];
 	char dst[LEN];
 	read(0, src, LEN);
