@@ -2140,6 +2140,43 @@ class EVM(Eventful):
         tx = self.world.last_transaction  # At this point last and current tx are the same.
         return tx.return_value
 
+    def CREATE2_gas(self, value, offset, size):
+        return self._get_memfee(offset, size)
+
+    @transact
+    def CREATE2(self, endowment, memory_start, memory_length, salt):
+        """Create a new account with associated code"""
+
+        data = self.read_buffer(offset, size)
+        keccak_init = self.world.symbolic_function(globalsha3, data)
+        caller = ArrayProxy(msg.caller).read_BE(0,20)
+        salt = ArrayProxy(salt).read_BE(0, 32)
+        address = self.world.symbolic_function(b"\xff" + caller + salt + keccak_init) & ((1<<0x20)-1)
+
+        self.world.start_transaction(
+            "CREATE",
+            address,
+            data=data,
+            caller=self.address,
+            value=value,
+            gas=self.gas,
+        )
+
+        raise StartTx()
+
+    @CREATE.pos  # type: ignore
+    def CREATE2(self, value, offset, size):
+        """Create a new account with associated code"""
+        tx = self.world.last_transaction  # At this point last and current tx are the same.
+        address = tx.address
+        if tx.result == "RETURN":
+            self.world.set_code(tx.address, tx.return_data)
+        else:
+            self.world.delete_account(address)
+            address = 0
+        return address
+
+
     def CALL_gas(self, wanted_gas, address, value, in_offset, in_size, out_offset, out_size):
         """ Dynamic gas for CALL instruction. _arguably turing complete in itself_   """
         GCALLVALUE = 9000

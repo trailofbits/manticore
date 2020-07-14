@@ -73,8 +73,7 @@ class Visitor:
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         """
-        if isinstance(node, ArrayProxy):
-            node = node.array
+
         cache = self._cache
         visited = set()
         stack = []
@@ -111,7 +110,7 @@ class Visitor:
     @staticmethod
     def _rebuild(expression, operands):
         if isinstance(expression, Operation):
-            if not expression.operands is operands:
+            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
                 aux = copy.copy(expression)
                 aux._operands = operands
                 return aux
@@ -170,13 +169,8 @@ class GetDepth(Translator):
     def visit_Expression(self, expression):
         return 1
 
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         return 1 + max(operands)
-
-    visit_ArraySelect = _visit_operation
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
 
 
 def get_depth(exp):
@@ -220,7 +214,7 @@ class PrettyPrinter(Visitor):
                 return
         return
 
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         self._print(expression.__class__.__name__, expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
@@ -231,10 +225,6 @@ class PrettyPrinter(Visitor):
         self.indent -= 2
         return ""
 
-    visit_ArraySelect = _visit_operation
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecExtract(self, expression):
         self._print(
@@ -392,7 +382,7 @@ class ConstantFolderSimplifier(Visitor):
         if isinstance(b, Constant) and b.value == True:
             return a
 
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
         if operation is not None and all(isinstance(o, Constant) for o in operands):
@@ -403,14 +393,8 @@ class ConstantFolderSimplifier(Visitor):
                 isinstance(expression, Bool)
                 return BoolConstant(value, taint=expression.taint)
         else:
-            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
-                expression = self._rebuild(expression, operands)
+            expression = self._rebuild(expression, operands)
         return expression
-
-    visit_ArraySelect = _visit_operation
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
 
 
 constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
@@ -439,17 +423,12 @@ class ArithmeticSimplifier(Visitor):
         arity = len(operands)
         return any(operands[i] is not expression.operands[i] for i in range(arity))
 
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
+        expression = self._rebuild(expression, operands)
         if all(isinstance(o, Constant) for o in operands):
             expression = constant_folder(expression)
-        if self._changed(expression, operands):
-            expression = self._rebuild(expression, operands)
         return expression
-
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecZeroExtend(self, expression, *operands):
         if self._changed(expression, operands):
@@ -784,10 +763,10 @@ class ArithmeticSimplifier(Visitor):
         """ ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
                 -> v0
         """
-        return self._visit_operation(expression, *operands)
+        return None
         arr, index = operands
         if isinstance(arr, ArrayVariable):
-            return self._visit_operation(expression, *operands)
+            return None
 
         if isinstance(index, BitVecConstant):
             ival = index.value
