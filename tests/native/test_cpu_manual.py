@@ -1302,6 +1302,140 @@ Using the SAR instruction to perform a division operation does not produce the s
 
         self.assertEqual(cpu.EIP, code + 1)
 
+    def test_AAA_0(self):
+        """ASCII Adjust AL after subtraction."""
+
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, "rwx")
+        stack = mem.mmap(0xF000, 0x1000, "rw")
+
+        # 37 AAA
+        mem[code] = BitVecConstant(8, 0x37)
+        cpu.EIP = code
+        AL = 10
+        AH = 0x41
+        AF = False
+        cpu.AL = AL
+        cpu.AH = AH
+        cpu.AF = False
+        cpu.execute()
+
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.AH, AH + 1)
+        self.assertEqual(cpu.AF, True)
+        self.assertEqual(cpu.CF, True)
+
+    def test_AAA_1(self):
+        """ASCII Adjust AL after subtraction."""
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, "rwx")
+        stack = mem.mmap(0xF000, 0x1000, "rw")
+
+        # 37 AAA
+        mem[code] = BitVecConstant(8, 0x37)
+        cpu.EIP = code
+        AL = 18
+        AH = 0x41
+        AF = False
+        cpu.AL = AL
+        cpu.AH = AH
+        cpu.AF = False
+        cpu.execute()
+
+        self.assertEqual(cpu.AL, AL & 0xF)
+        self.assertEqual(cpu.AF, False)
+        self.assertEqual(cpu.CF, False)
+
+    def test_AAS_0(self):
+        """ASCII Adjust AL after subtraction."""
+
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, "rwx")
+        stack = mem.mmap(0xF000, 0x1000, "rw")
+
+        # 3F AAS
+        mem[code] = BitVecConstant(8, 0x3F)
+        cpu.EIP = code
+        AL = 10
+        AH = 0x41
+        AF = False
+        cpu.AL = AL
+        cpu.AH = AH
+        cpu.AF = False
+        cpu.execute()
+
+        self.assertEqual(cpu.AL, (AL - 6) & 0xF)
+        self.assertEqual(cpu.AH, AH - 1)
+        self.assertEqual(cpu.AF, True)
+        self.assertEqual(cpu.CF, True)
+
+    def test_AAS_1(self):
+        """ASCII Adjust AL after subtraction."""
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, "rwx")
+        stack = mem.mmap(0xF000, 0x1000, "rw")
+
+        # 3F AAS
+        mem[code] = BitVecConstant(8, 0x3F)
+        cpu.EIP = code
+        AL = 18
+        AH = 0x41
+        AF = False
+        cpu.AL = AL
+        cpu.AH = AH
+        cpu.AF = False
+        cpu.execute()
+
+        self.assertEqual(cpu.AL, AL & 0xF)
+        self.assertEqual(cpu.AF, False)
+        self.assertEqual(cpu.CF, False)
+
+    def test_DAA_0(self):
+        """Decimal Adjust AL after Addition."""
+
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, "rwx")
+        stack = mem.mmap(0xF000, 0x1000, "rw")
+
+        # 27 DAA
+        mem[code] = BitVecConstant(8, 0x27)
+        cpu.EIP = code
+
+        cpu.AL = 0xAE
+        cpu.BL = 0x35
+        cpu.OF = True
+        cpu.SF = True
+        cpu.ZF = False
+        cpu.AF = False
+        cpu.PF = False
+        cpu.CF = False
+
+        cpu.execute()
+        self.assertEqual(cpu.AL, 0x14)
+        self.assertEqual(cpu.BL, 0x35)
+        self.assertEqual(cpu.SF, False)
+        self.assertEqual(cpu.ZF, False)
+        self.assertEqual(cpu.AF, True)
+        self.assertEqual(cpu.PF, True)
+        self.assertEqual(cpu.CF, True)
+
 
 if __name__ == "__main__":
     unittest.main()

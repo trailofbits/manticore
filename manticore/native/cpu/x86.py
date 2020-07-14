@@ -1095,11 +1095,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         """
-        if dest == src:
-            # if the operands are the same write zero
-            res = dest.write(0)
-        else:
-            res = dest.write(dest.read() ^ src.read())
+        res = dest.write(dest.read() ^ src.read())
         # Defined Flags: szp
         cpu._calculate_logic_flags(dest.size, res)
 
@@ -1154,7 +1150,7 @@ class X86Cpu(Cpu):
         This instruction executes as described in compatibility mode and legacy mode.
         It is not valid in 64-bit mode.
         ::
-                IF ((AL AND 0FH) > 9) Operators.OR(AF  =  1)
+                IF ((AL AND 0FH) > 9) OR (AF  =  1)
                 THEN
                     AL  =  (AL + 6);
                     AH  =  AH + 1;
@@ -1171,16 +1167,6 @@ class X86Cpu(Cpu):
         cpu.CF = cpu.AF
         cpu.AH = Operators.ITEBV(8, cpu.AF, cpu.AH + 1, cpu.AH)
         cpu.AL = Operators.ITEBV(8, cpu.AF, cpu.AL + 6, cpu.AL)
-        """
-        if (cpu.AL & 0x0F > 9) or cpu.AF == 1:
-            cpu.AL = cpu.AL + 6
-            cpu.AH = cpu.AH + 1
-            cpu.AF = True
-            cpu.CF = True
-        else:
-            cpu.AF = False
-            cpu.CF = False
-        """
         cpu.AL = cpu.AL & 0x0F
 
     @instruction
@@ -1240,11 +1226,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         """
-        if imm is None:
-            imm = 10
-        else:
-            imm = imm.read()
-
+        imm = imm.read()
         cpu.AH = Operators.UDIV(cpu.AL, imm)
         cpu.AL = Operators.UREM(cpu.AL, imm)
 
