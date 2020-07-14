@@ -199,6 +199,7 @@ def strlen_approx(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     Strategy: build a result tree to limit state explosion results approximate
 
     Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
+
     :param state: current program state
     :param s: Address of string
     :return: Symbolic strlen result
@@ -267,4 +268,60 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
 
     if "strcpy" in state.context:
         del state.context["strcpy"]
+    return ret
+
+
+def strncpy(
+    state: State, dst: Union[int, BitVec], src: Union[int, BitVec], n: Union[int, BitVec]
+) -> Union[int, BitVec]:
+    """
+    strncpy symbolic model
+
+    Algorithm:  Copy n bytes from src to dst. If the length of the src string is less than n pad the difference
+    with NULL bytes. If a symbolic byte is found that can be NULL but is not definitely NULL fork and concretize states.
+
+    :param state: current program state
+    :param dst: destination string address
+    :param src: source string address
+    :param n: number of bytes to copy
+    :return: pointer to the dst
+    """
+
+    if issymbolic(dst):
+        raise ConcretizeArgument(state.cpu, 1)
+    if issymbolic(src):
+        raise ConcretizeArgument(state.cpu, 2)
+    if issymbolic(n):
+        raise ConcretizeArgument(state.cpu, 3)
+
+    cpu = state.cpu
+    constrs = state.constraints
+    ret = dst
+
+    # Initialize offset based on whether state has been forked in strncpy
+    if "strncpy" not in state.context:
+        offset = 0
+    else:
+        offset = state.context["strncpy"]
+
+    # Copy until a src_byte is symbolic and constrained to '\000', or is concrete and '\000'
+    src_val = cpu.read_int(src + offset, 8)
+    while offset < n and not is_definitely_NULL(src_val, constrs):
+        cpu.write_int(dst + offset, src_val, 8)
+
+        # If a src byte can be NULL concretize and fork states
+        if can_be_NULL(src_val, constrs):
+            state.context["strncpy"] = offset
+            raise Concretize("Forking on NULL strncpy", expression=(src_val == 0), policy="ALL")
+        offset += 1
+
+        src_val = cpu.read_int(src + offset, 8)
+
+    # Pad the distance between length of src and n with NULL bytes
+    while offset < n:
+        cpu.write_int(dst + offset, 0, 8)
+        offset += 1
+
+    if "strncpy" in state.context:
+        del state.context["strncpy"]
     return ret
