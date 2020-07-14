@@ -1436,6 +1436,36 @@ Using the SAR instruction to perform a division operation does not produce the s
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.CF, True)
 
+    def test_DAS_0(self):
+        """Decimal Adjust AL after Subtraction."""
+
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, "rwx")
+        stack = mem.mmap(0xF000, 0x1000, "rw")
+
+        # 2F DAS
+        mem[code] = BitVecConstant(8, 0x2F)
+        cpu.EIP = code
+
+        cpu.AL = 0xAE
+        cpu.OF = True
+        cpu.SF = True
+        cpu.ZF = False
+        cpu.AF = False
+        cpu.PF = False
+        cpu.CF = False
+
+        cpu.execute()
+        self.assertEqual(cpu.AL, 0x48)
+        self.assertEqual(cpu.SF, False)
+        self.assertEqual(cpu.ZF, False)
+        self.assertEqual(cpu.AF, True)
+        self.assertEqual(cpu.PF, True)
+        self.assertEqual(cpu.CF, True)
+
 
 if __name__ == "__main__":
     unittest.main()
