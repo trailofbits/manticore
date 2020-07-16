@@ -1,4 +1,4 @@
-from ...core.smtlib import Operators, BitVec, Bool
+from ...core.smtlib import Operators, Bitvec, Bool
 
 
 class Register:
@@ -20,7 +20,7 @@ class Register:
     def write(self, val):
         if isinstance(val, (Bool, bool)):
             self.value = val
-        elif isinstance(val, BitVec):
+        elif isinstance(val, Bitvec):
             self.value = val.Bool() if self.is_flag() else val
         elif isinstance(val, int):
             self.value = Operators.EXTRACT(val, 0, self.width)

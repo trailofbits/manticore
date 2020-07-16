@@ -1,5 +1,7 @@
 import binascii
 import unittest
+import subprocess
+import pkg_resources
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -14,7 +16,7 @@ from manticore import ManticoreError
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib import Z3Solver
-from manticore.core.smtlib.expression import BitVecVariable
+from manticore.core.smtlib.expression import Bitvec
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import (
@@ -27,12 +29,17 @@ from manticore.ethereum import (
     ABI,
     EthereumError,
     EVMContract,
+    verifier,
 )
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
+from manticore.utils import config
+import io
+import contextlib
+
 
 solver = Z3Solver.instance()
 
@@ -60,6 +67,29 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn("Unsigned integer overflow at SUB instruction", all_findings)
         self.assertIn("Unsigned integer overflow at ADD instruction", all_findings)
         self.assertIn("Unsigned integer overflow at MUL instruction", all_findings)
+
+
+class EthVerifierIntegrationTest(unittest.TestCase):
+    def test_propverif(self):
+        smtcfg = config.get_group("smt")
+        smtcfg.solver = smtcfg.solver.yices
+        with smtcfg.temp_vals():
+            smtcfg.solver = smtcfg.solver.yices
+
+            filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
+            f = io.StringIO()
+            with contextlib.redirect_stdout(f):
+                verifier.manticore_verifier(filename, "TestToken")
+            self.assertIsNotNone(
+                re.compile(
+                    r".*crytic_test_balance\s*\|\s*failed\s*\([0-9a-f]+\).*", re.DOTALL
+                ).match(f.getvalue())
+            )
+
+    def test_propverif_external(self) -> None:
+        cli_version = subprocess.check_output(("manticore-verifier", "--version")).decode("utf-8")
+        py_version = f"Manticore {pkg_resources.get_distribution('manticore').version}\n"
+        self.assertEqual(cli_version, py_version)
 
 
 class EthAbiTests(unittest.TestCase):
@@ -93,7 +123,7 @@ class EthAbiTests(unittest.TestCase):
             }
         }
         """
-        user_account = m.create_account(balance=1000000, name="user_account")
+        user_account = m.create_account(balance=10 ** 10, name="user_account")
         contract_account = m.solidity_create_contract(
             source_code, owner=user_account, name="contract_account", gas=36225
         )
@@ -125,7 +155,7 @@ class EthAbiTests(unittest.TestCase):
     def test_dyn_bytes(self):
         d = [
             b"AAAA",  # function hash
-            self._pack_int_to_32(32),  # offset to data start1350
+            self._pack_int_to_32(32),  # offset to data start
             self._pack_int_to_32(30),  # data start; # of elements
             b"Z" * 30,
             b"\x00" * 2,
@@ -446,7 +476,7 @@ class EthTests(unittest.TestCase):
     def tearDown(self):
         workspace = self.mevm.workspace
         del self.mevm
-        # shutil.rmtree(workspace)
+        shutil.rmtree(workspace)
 
     def test_solidity_create_contract_no_args(self):
         source_code = "contract A { constructor() {} }"
@@ -684,7 +714,7 @@ class EthTests(unittest.TestCase):
     def test_check_jumpdest_symbolic_pc(self):
         """
         In Manticore 0.2.4 (up to 6804661) when run with DetectIntegerOverflow,
-        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._check_jumpdest:
+        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._need_check_jumpdest:
             self.pc in self._valid_jumpdests
         failed (because we checked if the object is in a list of integers...).
 
@@ -993,20 +1023,16 @@ class EthTests(unittest.TestCase):
             """
 
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-                try:
-                    world = state.platform
-                    if world.current_transaction.sort == "CREATE":
-                        name = "init"
-                    else:
-                        name = "rt"
+                world = state.platform
+                if world.current_transaction.sort == "CREATE":
+                    name = "init"
+                else:
+                    name = "rt"
 
-                    # collect all end instructions based on whether they are in init or rt
-                    if instruction.is_endtx:
-                        with self.locked_context(name) as d:
-                            d.append(instruction.pc)
-                except Exception as e:
-                    print(e)
-                    raise
+                # collect all end instructions based on whether they are in init or rt
+                if instruction.is_endtx:
+                    with self.locked_context(name) as d:
+                        d.append(instruction.pc)
 
         mevm = self.mevm
         p = TestPlugin()
@@ -1015,7 +1041,7 @@ class EthTests(unittest.TestCase):
         filename = os.path.join(THIS_DIR, "contracts/int_overflow.sol")
 
         mevm.multi_tx_analysis(filename, tx_limit=1)
-        mevm.finalize(only_alive_states=True)
+        mevm.finalize()
 
         worksp = mevm.workspace
         listdir = os.listdir(worksp)
@@ -1350,7 +1376,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = BitVecVariable(size=256, name="bv")
+        self.bv = Bitvec(256)
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"

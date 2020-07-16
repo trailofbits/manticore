@@ -134,16 +134,16 @@ class Solver(SingletonMixin):
         """Ask the solver for one possible result of given expression using given set of constraints."""
         raise SolverException("Abstract method not implemented")
 
-    def max(self, constraints, X: BitVec, M=10000):
+    def max(self, constraints, X: Bitvec, M=10000):
         """
         Iteratively finds the maximum value for a symbol within given constraints.
         :param X: a symbol or expression
         :param M: maximum number of iterations allowed
         """
-        assert isinstance(X, BitVec)
+        assert isinstance(X, Bitvec)
         return self.optimize(constraints, X, "maximize", M)
 
-    def min(self, constraints, X: BitVec, M=10000):
+    def min(self, constraints, X: Bitvec, M=10000):
         """
         Iteratively finds the minimum value for a symbol within given constraints.
 
@@ -151,7 +151,7 @@ class Solver(SingletonMixin):
         :param X: a symbol or expression
         :param M: maximum number of iterations allowed
         """
-        assert isinstance(X, BitVec)
+        assert isinstance(X, Bitvec)
         return self.optimize(constraints, X, "minimize", M)
 
     def minmax(self, constraints, x, iters=10000):
@@ -216,6 +216,7 @@ class SmtlibProc:
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
+        print (buf)
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
@@ -382,11 +383,11 @@ class SMTLIBSolver(Solver):
         else:
             if isinstance(expression, BoolVariable):
                 return self.__getvalue_bool(expression.name)
-            elif isinstance(expression, BitVecVariable):
+            elif isinstance(expression, BitvecVariable):
                 return self.__getvalue_bv(expression.name)
 
         raise NotImplementedError(
-            f"_getvalue only implemented for Bool, BitVec and Array. Got {type(expression)}"
+            f"_getvalue only implemented for Bool, Bitvec and Array. Got {type(expression)}"
         )
 
     # push pop
@@ -415,7 +416,7 @@ class SMTLIBSolver(Solver):
             return self._is_sat()
 
     # get-all-values min max minmax
-    def _optimize_generic(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
+    def _optimize_generic(self, constraints: ConstraintSet, x: Bitvec, goal: str, max_iter=10000):
         """
         Iteratively finds the maximum or minimum value for the operation
         (Normally Operators.UGT or Operators.ULT)
@@ -502,9 +503,9 @@ class SMTLIBSolver(Solver):
         silent: bool = False,
     ):
         """Returns a list with all the possible values for the symbol x"""
-        if not issymbolic(expression):
+        if not isinstance(expression, Expression):
             return [expression]
-        expression = simplify(expression)
+        assert isinstance(expression, Expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
             if isinstance(expression, Bool) and consts.maxsolutions > 1:
@@ -515,9 +516,9 @@ class SMTLIBSolver(Solver):
         with constraints as temp_cs:
             if isinstance(expression, Bool):
                 var = temp_cs.new_bool()
-            elif isinstance(expression, BitVec):
+            elif isinstance(expression, Bitvec):
                 var = temp_cs.new_bitvec(expression.size)
-            elif isinstance(expression, (Array, ArrayProxy)):
+            elif isinstance(expression, Array):
                 var = temp_cs.new_array(
                     index_max=expression.index_max,
                     value_bits=expression.value_bits,
@@ -558,7 +559,7 @@ class SMTLIBSolver(Solver):
                     self._reset(temp_cs.to_string())
             return list(result)
 
-    def _optimize_fancy(self, constraints: ConstraintSet, x: BitVec, goal: str, max_iter=10000):
+    def _optimize_fancy(self, constraints: ConstraintSet, x: Bitvec, goal: str, max_iter=10000):
         """
         Iteratively finds the maximum or minimum value for the operation
         (Normally Operators.UGT or Operators.ULT)
@@ -576,9 +577,11 @@ class SMTLIBSolver(Solver):
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name="optimized_")
+
+            temp_cs.add(operation(X, aux))
             self._reset(temp_cs.to_string())
 
-            self._assert(operation(X, aux))
+            #self._assert(operation(X, aux))
             self._smtlib.send("(%s %s)" % (goal, aux.name))
             self._smtlib.send("(check-sat)")
             _status = self._smtlib.recv()
@@ -591,19 +594,23 @@ class SMTLIBSolver(Solver):
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
+
+
+
+        ####################33
         values = []
         start = time.time()
-        with constraints as temp_cs:
+        with constraints.related_to(*expressions) as temp_cs:
             for expression in expressions:
                 if not issymbolic(expression):
                     values.append(expression)
                     continue
-                assert isinstance(expression, (Bool, BitVec, Array, ArrayProxy))
+                assert isinstance(expression, (Bool, Bitvec, Array))
                 if isinstance(expression, Bool):
                     var = temp_cs.new_bool()
-                elif isinstance(expression, BitVec):
+                elif isinstance(expression, Bitvec):
                     var = temp_cs.new_bitvec(expression.size)
-                elif isinstance(expression, (Array, ArrayProxy)):
+                elif isinstance(expression, Array):
                     var = []
                     result = []
                     for i in range(expression.index_max):
@@ -634,7 +641,7 @@ class SMTLIBSolver(Solver):
 
                 if isinstance(expression, Bool):
                     values.append(self.__getvalue_bool(var.name))
-                if isinstance(expression, BitVec):
+                if isinstance(expression, Bitvec):
                     values.append(self.__getvalue_bv(var.name))
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")

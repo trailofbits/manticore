@@ -10,7 +10,7 @@ from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallA
 from .abstractcpu import instruction as abstract_instruction
 from .bitwise import *
 from .register import Register
-from ...core.smtlib import Operators, BitVecConstant, issymbolic
+from ...core.smtlib import Operators, BitvecConstant, issymbolic
 
 from typing import NamedTuple
 
@@ -405,7 +405,7 @@ class Armv7RegisterFile(RegisterFile):
         def make_apsr_flag(flag_expr, offset):
             """Helper for constructing an expression for the APSR register"""
             return Operators.ITEBV(
-                32, flag_expr, BitVecConstant(32, 1 << offset), BitVecConstant(32, 0)
+                32, flag_expr, BitvecConstant(32, 1 << offset), BitvecConstant(32, 0)
             )
 
         apsr = 0
@@ -719,7 +719,7 @@ class Armv7Cpu(Cpu):
             nbytes = nbytes or self.address_bit_size // 8
             self.SP -= nbytes
             self.write_int(self.SP, data, nbytes * 8)
-        elif isinstance(data, BitVec):
+        elif isinstance(data, Bitvec):
             self.SP -= data.size // 8
             self.write_int(self.SP, data, data.size)
         elif isinstance(data, str):

@@ -20,7 +20,7 @@ from .abstractcpu import (
 )
 
 
-from ...core.smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors, issymbolic
+from ...core.smtlib import Operators, Bitvec, Bool, BitvecConstant, operator, visitors, issymbolic
 from ..memory import Memory, ConcretizeMemory
 from functools import reduce
 
@@ -585,7 +585,7 @@ class AMD64RegFile(RegisterFile):
             # if (value & ~((1<<size)-1)) != 0 :
             #    raise TypeError('Value bigger than register')
             value &= (1 << size) - 1
-        elif not isinstance(value, BitVec) or value.size != size:
+        elif not isinstance(value, Bitvec) or value.size != size:
             raise TypeError
         if not reset:
             if register_size == size:
@@ -609,9 +609,9 @@ class AMD64RegFile(RegisterFile):
 
     def _set_flag(self, register_id, register_size, offset, size, reset, value):
         assert size == 1
-        if not isinstance(value, (bool, int, BitVec, Bool)):
+        if not isinstance(value, (bool, int, Bitvec, Bool)):
             raise TypeError
-        if isinstance(value, BitVec):
+        if isinstance(value, Bitvec):
             if value.size != 1:
                 raise TypeError
         if not isinstance(value, (bool, Bool)):
@@ -645,8 +645,8 @@ class AMD64RegFile(RegisterFile):
             return Operators.ITEBV(
                 register_size,
                 value,
-                BitVecConstant(register_size, 1 << offset),
-                BitVecConstant(register_size, 0),
+                BitvecConstant(register_size, 1 << offset),
+                BitvecConstant(register_size, 0),
             )
 
         flags = []
@@ -2525,7 +2525,7 @@ class X86Cpu(Cpu):
 
         def make_flag(val, offset):
             if is_expression:
-                return Operators.ITEBV(8, val, BitVecConstant(8, 1 << offset), BitVecConstant(8, 0))
+                return Operators.ITEBV(8, val, BitvecConstant(8, 1 << offset), BitvecConstant(8, 0))
             else:
                 return val << offset
 

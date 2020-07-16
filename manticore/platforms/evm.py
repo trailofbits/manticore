@@ -1,4 +1,5 @@
 """Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf"""
+import time
 import uuid
 import binascii
 import random
@@ -10,14 +11,14 @@ from typing import List, Set, Tuple, Union
 from ..platforms.platform import *
 from ..core.smtlib import (
     SelectedSolver,
-    BitVec,
+    Bitvec,
     Array,
     ArrayProxy,
     Operators,
     Constant,
     ArrayVariable,
     ArrayStore,
-    BitVecConstant,
+    BitvecConstant,
     translate_to_smtlib,
     to_constant,
     simplify,
@@ -102,6 +103,10 @@ consts.add(
     default=-1,
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
+consts.add(
+    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
+)
+
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -123,7 +128,7 @@ BlockHeader = namedtuple(
 
 def ceil32(x):
     size = 256
-    if isinstance(x, BitVec):
+    if isinstance(x, Bitvec):
         size = x.size
     return Operators.ITEBV(size, Operators.UREM(x, 32) == 0, x, x + 32 - Operators.UREM(x, 32))
 
@@ -251,6 +256,8 @@ class Transaction:
         stream.write("Gas used: %d %s\n" % (conc_tx.gas, flagged(issymbolic(self.gas))))
 
         tx_data = conc_tx.data
+        if len(tx_data) > 80:
+            tx_data = tx_data.rstrip(conc_tx.data[-3:-1])
 
         stream.write(
             "Data: 0x{} {}\n".format(
@@ -262,9 +269,9 @@ class Transaction:
             return_data = conc_tx.return_data
 
             stream.write(
-                "Return_data: 0x{} ({}) {}\n".format(
+                "Return_data: 0x{} {} {}\n".format(
                     binascii.hexlify(return_data).decode(),
-                    printable_bytes(return_data),
+                    f"({printable_bytes(return_data)})" if conc_tx.sort != "CREATE" else "",
                     flagged(issymbolic(self.return_data)),
                 )
             )
@@ -375,12 +382,12 @@ class Transaction:
     def set_result(self, result, return_data=None, used_gas=None):
         if getattr(self, "result", None) is not None:
             raise EVMException("Transaction result already set")
-        if not isinstance(used_gas, (int, BitVec, type(None))):
+        if not isinstance(used_gas, (int, Bitvec, type(None))):
             raise EVMException("Invalid used gas in Transaction")
         if result not in {None, "TXERROR", "REVERT", "RETURN", "THROW", "STOP", "SELFDESTRUCT"}:
             raise EVMException("Invalid transaction result")
         if result in {"RETURN", "REVERT"}:
-            if not isinstance(return_data, (bytes, bytearray, Array, ArrayProxy)):
+            if not isinstance(return_data, (bytes, bytearray, Array)):
                 raise EVMException(
                     "Invalid transaction return_data type:", type(return_data).__name__
                 )
@@ -482,7 +489,7 @@ class EndTx(EVMException):
             raise EVMException("Invalid end transaction result")
         if result is None and data is not None:
             raise EVMException("Invalid end transaction result")
-        if not isinstance(data, (type(None), Array, ArrayProxy, bytes)):
+        if not isinstance(data, (type(None), Array, bytes)):
             raise EVMException("Invalid end transaction data type")
         self.result = result
         self.data = data
@@ -743,7 +750,7 @@ class EVM(Eventful):
         # This is a very cornered corner case in which code is actually symbolic
         # We should simply not allow to jump to unconstrained(*) symbolic code.
         # (*) bytecode that could take more than a single value
-        self._check_jumpdest = False
+        self._need_check_jumpdest = False
         self._valid_jumpdests = set()
 
         # Compile the list of valid jumpdests via linear dissassembly
@@ -876,7 +883,7 @@ class EVM(Eventful):
         state["_published_pre_instruction_events"] = self._published_pre_instruction_events
         state["_used_calldata_size"] = self._used_calldata_size
         state["_valid_jumpdests"] = self._valid_jumpdests
-        state["_check_jumpdest"] = self._check_jumpdest
+        state["_need_check_jumpdest"] = self._need_check_jumpdest
         state["_return_data"] = self._return_data
         state["evmfork"] = self.evmfork
         state["_refund"] = self._refund
@@ -905,7 +912,7 @@ class EVM(Eventful):
         self.suicides = state["suicides"]
         self._used_calldata_size = state["_used_calldata_size"]
         self._valid_jumpdests = state["_valid_jumpdests"]
-        self._check_jumpdest = state["_check_jumpdest"]
+        self._need_check_jumpdest = state["_need_check_jumpdest"]
         self._return_data = state["_return_data"]
         self.evmfork = state["evmfork"]
         self._refund = state["_refund"]
@@ -1026,14 +1033,14 @@ class EVM(Eventful):
               ITEM2
         sp->  {empty}
         """
-        assert isinstance(value, int) or isinstance(value, BitVec) and value.size == 256
+        assert isinstance(value, int) or isinstance(value, Bitvec) and value.size == 256
         if len(self.stack) >= 1024:
             raise StackOverflow()
 
         if isinstance(value, int):
             value = value & TT256M1
 
-        value = simplify(value)
+        #value = simplify(value)
         if isinstance(value, Constant) and not value.taint:
             value = value.value
 
@@ -1056,7 +1063,7 @@ class EVM(Eventful):
         if isinstance(fee, int):
             if fee > (1 << 512) - 1:
                 raise ValueError
-        elif isinstance(fee, BitVec):
+        elif isinstance(fee, Bitvec):
             if fee.size != 512:
                 raise ValueError("Fees should be 512 bit long")
         # This configuration variable allows the user to control and perhaps relax the gas calculation
@@ -1158,11 +1165,16 @@ class EVM(Eventful):
             assert result is None
 
     def _calculate_gas(self, *arguments):
-        current = self.instruction
-        implementation = getattr(self, f"{current.semantics}_gas", None)
-        if implementation is None:
-            return current.fee
-        return current.fee + implementation(*arguments)
+        start= time.time()
+        try:
+            current = self.instruction
+            implementation = getattr(self, f"{current.semantics}_gas", None)
+            if implementation is None:
+                return current.fee
+            return current.fee + implementation(*arguments)
+        finally:
+            print (f"calculate gas for {current} took {time.time()-start:0.4f}")
+
 
     def _handler(self, *arguments):
         current = self.instruction
@@ -1213,23 +1225,23 @@ class EVM(Eventful):
         Note that at this point `flag` can be the conditional from a JUMPI
         instruction hence potentially a symbolic value.
         """
-        self._check_jumpdest = flag
+        self._need_check_jumpdest = flag
 
     def _check_jmpdest(self):
         """
         If the previous instruction was a JUMP/JUMPI and the conditional was
         True, this checks that the current instruction must be a JUMPDEST.
 
-        Here, if symbolic, the conditional `self._check_jumpdest` would be
+        Here, if symbolic, the conditional `self._need_check_jumpdest` would be
         already constrained to a single concrete value.
         """
         # If pc is already pointing to a JUMPDEST thre is no need to check.
         pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
         if pc in self._valid_jumpdests:
-            self._check_jumpdest = False
+            self._need_check_jumpdest = False
             return
 
-        should_check_jumpdest = simplify(self._check_jumpdest)
+        should_check_jumpdest = simplify(self._need_check_jumpdest)
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
@@ -1242,7 +1254,7 @@ class EVM(Eventful):
 
         # If it can be solved only to False just set it False. If it can be solved
         # only to True, process it and also set it to False
-        self._check_jumpdest = False
+        self._need_check_jumpdest = False
 
         if should_check_jumpdest:
             if pc not in self._valid_jumpdests:
@@ -1287,16 +1299,26 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 if taints:
-                    state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
+                    state.platform.current_vm.pc = BitvecConstant(256, value, taint=taints)
                 else:
                     state.platform.current_vm.pc = value
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
-            self._check_jmpdest()
-            last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
-            result = self._handler(*arguments)
-            self._advance(result)
+            import time
+            start = time.time()
+            i = self.instruction
+            try:
+                #print (self)
+                self._check_jmpdest()
+                last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
+                result = self._handler(*arguments)
+                self._advance(result)
+            except:
+                print ("Excaption!")
+                raise
+            finally:
+                print (f"Elapsed {i}: {time.time()-start:0.4f}")
         except ConcretizeGas as ex:
 
             def setstate(state, value):
@@ -1395,17 +1417,10 @@ class EVM(Eventful):
             self._store(offset + i, Operators.ORD(c))
 
     def _load(self, offset, size=1):
-        if size == 1:
-            value = self.memory[offset]
-        else:
-            value = self.memory.read_BE(offset, size)
-        try:
-            value = simplify(value)
-            if not value.taint:
-                value = value.value
-        except Exception:
-            pass
-
+        value = self.memory.read_BE(offset, size)
+        #value = simplify(value)
+        if isinstance(value, Constant) and not value.taint:
+            value = value.value
         self._publish("did_evm_read_memory", offset, value, size)
         return value
 
@@ -1536,7 +1551,7 @@ class EVM(Eventful):
 
         :param base: exponential base, concretized with sampled values
         :param exponent: exponent value, concretized with sampled values
-        :return: BitVec* EXP result
+        :return: Bitvec* EXP result
         """
         if exponent == 0:
             return 1
@@ -1778,23 +1793,20 @@ class EVM(Eventful):
     @concretized_args(code_offset="SAMPLED", size="SAMPLED")
     def CODECOPY(self, mem_offset, code_offset, size):
         """Copy code running in current environment to memory"""
-
+        import pdb; pdb.set_trace()
         self._allocate(mem_offset, size)
         GCOPY = 3  # cost to copy one 32 byte word
         copyfee = self.safe_mul(GCOPY, Operators.UDIV(self.safe_add(size, 31), 32))
         self._consume(copyfee)
 
         if issymbolic(size):
-            size = simplify(size)
-            if isinstance(size, Constant):
-                max_size = size.value
-            else:
-                max_size = SelectedSolver.instance().max(self.constraints, size)
+            max_size = SelectedSolver.instance().max(self.constraints, size)
         else:
             max_size = size
 
         for i in range(max_size):
             if issymbolic(i < size):
+                print("SYMBOLICCCCCCCCCCCCCCCCCC"*100)
                 default = Operators.ITEBV(
                     8, i < size, 0, self._load(mem_offset + i, 1)
                 )  # Fixme. unnecessary memory read
@@ -2043,7 +2055,7 @@ class EVM(Eventful):
             SstoreCleanRefund,
             0,
         )
-        self._refund += simplify(refund)
+        self._refund += refund
         return gascost
 
     def SSTORE(self, offset, value):
@@ -2854,22 +2866,24 @@ class EVMWorld(Platform):
 
         :param storage_address: an account address
         :param offset: the storage slot to use.
-        :type offset: int or BitVec
+        :type offset: int or Bitvec
         :return: the value
-        :rtype: int or BitVec
+        :rtype: int or Bitvec
         """
-        value = self._world_state[storage_address]["storage"].get(offset, 0)
-        return simplify(value)
-
+        start = time.time()
+        try:
+            return self._world_state[storage_address]["storage"].get(offset, 0)
+        finally:
+            print (f"Ellapseeeeeeeeeeeeeeeeeeeeeeeeeeeeeed in get_storage_data: {time.time()-start:04f}")
     def set_storage_data(self, storage_address, offset, value):
         """
         Writes a value to a storage slot in specified account
 
         :param storage_address: an account address
         :param offset: the storage slot to use.
-        :type offset: int or BitVec
+        :type offset: int or Bitvec
         :param value: the value to write
-        :type value: int or BitVec
+        :type value: int or Bitvec
         """
         self._world_state[storage_address]["storage"][offset] = value
 
@@ -2930,7 +2944,7 @@ class EVMWorld(Platform):
         return new_nonce
 
     def set_balance(self, address, value):
-        if isinstance(value, BitVec):
+        if isinstance(value, Bitvec):
             value = Operators.ZEXTEND(value, 512)
         self._world_state[int(address)]["balance"] = value
 
@@ -2940,17 +2954,17 @@ class EVMWorld(Platform):
         return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
 
     def add_to_balance(self, address, value):
-        if isinstance(value, BitVec):
+        if isinstance(value, Bitvec):
             value = Operators.ZEXTEND(value, 512)
         self._world_state[address]["balance"] += value
 
     def sub_from_balance(self, address, value):
-        if isinstance(value, BitVec):
+        if isinstance(value, Bitvec):
             value = Operators.ZEXTEND(value, 512)
         self._world_state[address]["balance"] -= value
 
     def send_funds(self, sender, recipient, value):
-        if isinstance(value, BitVec):
+        if isinstance(value, Bitvec):
             value = Operators.ZEXTEND(value, 512)
         self._world_state[sender]["balance"] -= value
         self._world_state[recipient]["balance"] += value
@@ -2961,7 +2975,7 @@ class EVMWorld(Platform):
         return self._world_state[address]["code"]
 
     def set_code(self, address, data):
-        assert data is not None and isinstance(data, (bytes, Array, ArrayProxy))
+        assert data is not None and isinstance(data, (bytes, Array))
         if self._world_state[address]["code"]:
             raise EVMException("Code already set")
         self._world_state[address]["code"] = data
@@ -3419,21 +3433,24 @@ class EVMWorld(Platform):
                     stream.write("\n")
 
         # Accounts summary
+        assert state.can_be_true(True)
         is_something_symbolic = False
         stream.write("%d accounts.\n" % len(blockchain.accounts))
         for account_address in blockchain.accounts:
             is_account_address_symbolic = issymbolic(account_address)
-            account_address = state.solve_one(account_address)
+            account_address = state.solve_one(account_address, constrain=True)
 
             stream.write("* %s::\n" % mevm.account_name(account_address))
             stream.write(
                 "Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic))
             )
             balance = blockchain.get_balance(account_address)
-            is_balance_symbolic = issymbolic(balance)
-            is_something_symbolic = is_something_symbolic or is_balance_symbolic
-            balance = state.solve_one(balance, constrain=True)
-            stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+
+            if not consts.ignore_balance:
+                is_balance_symbolic = issymbolic(balance)
+                is_something_symbolic = is_something_symbolic or is_balance_symbolic
+                balance = state.solve_one(balance, constrain=True)
+                stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain.get_storage(account_address)
             concrete_indexes = set()
@@ -3442,7 +3459,7 @@ class EVMWorld(Platform):
 
             for index in concrete_indexes:
                 stream.write(
-                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}"
+                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}\n"
                 )
             storage = blockchain.get_storage(account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
@@ -3468,8 +3485,8 @@ class EVMWorld(Platform):
                         stream.write(
                             "storage[%x] = %x %s\n"
                             % (
-                                state.solve_one(i),
-                                state.solve_one(value),
+                                state.solve_one(i, constrain=True),
+                                state.solve_one(value, constrain=True),
                                 flagged(is_storage_symbolic),
                             )
                         )

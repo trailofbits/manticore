@@ -5,7 +5,7 @@ import shutil
 import tempfile
 
 from manticore import issymbolic
-from manticore.core.smtlib import BitVecVariable
+from manticore.core.smtlib import BitvecVariable
 from manticore.native import Manticore
 
 
@@ -26,7 +26,7 @@ class ManticoreDriverTest(unittest.TestCase):
         m.log_file = "/dev/null"
 
     def test_issymbolic(self):
-        v = BitVecVariable(size=32, name="sym")
+        v = BitvecVariable(32, "sym")
         self.assertTrue(issymbolic(v))
 
     def test_issymbolic_neg(self):

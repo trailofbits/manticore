@@ -6,12 +6,12 @@ from ...utils.helpers import PickleSerializer
 from ...exceptions import SmtlibError
 from .expression import (
     Expression,
-    BitVecVariable,
+    BitvecVariable,
     BoolVariable,
     ArrayVariable,
     Array,
     Bool,
-    BitVec,
+    Bitvec,
     BoolConstant,
     ArrayProxy,
     BoolEqual,
@@ -185,13 +185,11 @@ class ConstraintSet:
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
-                    and isinstance(expression.operands[1], (*Variable, *Constant))
+                    and not isinstance(expression.operands[1], (Variable, Constant))
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
-        tmp = set()
         result = ""
-
         translator = TranslatorSmtlib(use_bindings=False)
         for constraint in constraints:
             if replace_constants:
@@ -210,6 +208,7 @@ class ConstraintSet:
 
     def _declare(self, var):
         """ Declare the variable `var` """
+        print ("declaring", var)
         if var.name in self._declarations:
             raise ValueError("Variable already declared")
         self._declarations[var.name] = var
@@ -320,7 +319,7 @@ class ConstraintSet:
                 # Create and declare a new variable of given type
                 if isinstance(foreign_var, Bool):
                     new_var = self.new_bool(name=migrated_name)
-                elif isinstance(foreign_var, BitVec):
+                elif isinstance(foreign_var, Bitvec):
                     new_var = self.new_bitvec(foreign_var.size, name=migrated_name)
                 elif isinstance(foreign_var, Array):
                     # Note that we are discarding the ArrayProxy encapsulation
@@ -366,7 +365,7 @@ class ConstraintSet:
             :param name: try to assign name to internal variable representation,
                          if not unique, a numeric nonce will be appended
             :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
-            :return: a fresh BitVecVariable
+            :return: a fresh BitvecVariable
         """
         if size <= 0:
             raise ValueError(f"Bitvec size ({size}) can't be equal to or less than 0")
@@ -377,7 +376,7 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = BitVecVariable(size=size, name=name, taint=taint)
+        var = BitvecVariable(size=size, name=name, taint=taint)
         return self._declare(var)
 
     def new_array(
@@ -409,7 +408,7 @@ class ConstraintSet:
             raise ValueError(f"Name {name} already used")
         var = self._declare(
             ArrayVariable(
-                index_bits, index_max, value_bits, name=name, taint=taint, default=default
+                index_size=index_bits, length=index_max, value_size=value_bits, name=name, taint=taint, default=default
             )
         )
         return ArrayProxy(var)

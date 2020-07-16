@@ -6,7 +6,15 @@ import re
 import sha3
 
 from . import abitypes
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, to_constant, issymbolic
+from ..core.smtlib import (
+    Array,
+    Operators,
+    Bitvec,
+    ArrayVariable,
+    ArrayProxy,
+    to_constant,
+    issymbolic,
+)
 from ..exceptions import EthereumError
 
 logger = logging.getLogger(__name__)
@@ -102,8 +110,8 @@ class ABI:
         if dyn_offset is None:
             dyn_offset = ABI._type_size(ty)
 
-        result = bytes()
-        dyn_result = bytes()
+        result = bytearray()
+        dyn_result = bytearray()
 
         if ty[0] == "int":
             result += ABI._serialize_int(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
@@ -150,8 +158,8 @@ class ABI:
 
     @staticmethod
     def _serialize_tuple(types, value, dyn_offset=None):
-        result = bytes()
-        dyn_result = bytes()
+        result = bytearray()
+        dyn_result = bytearray()
         if len(types) != len(value):
             raise ValueError(
                 f"The number of values to serialize is {'less' if len(value) < len(types) else 'greater'} than the number of types"
@@ -198,10 +206,10 @@ class ABI:
     def deserialize(type_spec, data):
         try:
             if isinstance(data, str):
-                data = bytes(data.encode())
+                data = bytearray(data.encode())
             elif isinstance(data, bytes):
-                data = bytes(data)
-            assert isinstance(data, (bytes, Array))
+                data = bytearray(data)
+            assert isinstance(data, (bytearray, Array))
 
             m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
             if m and m.group("name"):
@@ -221,7 +229,7 @@ class ABI:
 
     @staticmethod
     def _deserialize(ty, buf: typing.Union[bytearray, bytes, Array], offset=0):
-        assert isinstance(buf, (bytes, Array))
+        assert isinstance(buf, (bytearray, bytes, Array))
         result = None
         if ty[0] == "int":
             result = ABI._deserialize_int(buf[offset : offset + 32], nbytes=ty[1] // 8)
@@ -263,26 +271,26 @@ class ABI:
     @staticmethod
     def _serialize_uint(value, size=32, padding=0):
         """
-        Translates a python integral or a BitVec into a 32 byte string, MSB first
+        Translates a python integral or a Bitvec into a 32 byte string, MSB first
         """
         if size <= 0 or size > 32:
             raise ValueError
 
         from .account import EVMAccount  # because of circular import
 
-        if not isinstance(value, (int, BitVec, EVMAccount)):
+        if not isinstance(value, (int, Bitvec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
             # Help mypy out. Can remove this by teaching it how issymbolic works
-            assert isinstance(value, BitVec)
+            assert isinstance(value, Bitvec)
             # FIXME This temporary array variable should be obtained from a specific constraint store
             buffer = ArrayVariable(
-                index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
+                index_bits=256, length=32, value_bits=8, name="temp{}".format(uuid.uuid1())
             )
             if value.size <= size * 8:
                 value = Operators.ZEXTEND(value, size * 8)
             else:
-                # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument (160 bits)
+                # automatically truncate, e.g. if they passed a Bitvec(256) for an `address` argument (160 bits)
                 value = Operators.EXTRACT(value, 0, size * 8)
             buffer = buffer.write_BE(padding, value, size)
         else:
@@ -297,22 +305,22 @@ class ABI:
         return buffer
 
     @staticmethod
-    def _serialize_int(value: typing.Union[int, BitVec], size=32, padding=0):
+    def _serialize_int(value: typing.Union[int, Bitvec], size=32, padding=0):
         """
-        Translates a signed python integral or a BitVec into a 32 byte string, MSB first
+        Translates a signed python integral or a Bitvec into a 32 byte string, MSB first
         """
         if size <= 0 or size > 32:
             raise ValueError
-        if not isinstance(value, (int, BitVec)):
+        if not isinstance(value, (int, Bitvec)):
             raise ValueError
         if issymbolic(value):
             # Help mypy out. Can remove this by teaching it how issymbolic works
-            assert isinstance(value, BitVec)
+            assert isinstance(value, Bitvec)
             buf = ArrayVariable(
-                index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
+                index_bits=256, length=32, value_bits=8, name="temp{}".format(uuid.uuid1())
             )
             value = Operators.SEXTEND(value, value.size, size * 8)
-            return buf.write_BE(padding, value, size)
+            return ArrayProxy(buf.write_BE(padding, value, size))
         else:
             buf_arr = bytearray()
             for _ in range(padding):
@@ -350,7 +358,9 @@ class ABI:
         return Operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
-    def _deserialize_uint(data: typing.Union[bytes, Array], nbytes=32, padding=0, offset=0):
+    def _deserialize_uint(
+        data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0, offset=0
+    ):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
@@ -358,13 +368,13 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytes, Array))
+        assert isinstance(data, (bytearray, bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True, offset=offset)
         value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
     @staticmethod
-    def _deserialize_int(data: typing.Union[bytes, Array], nbytes=32, padding=0):
+    def _deserialize_int(data: typing.Union[bytearray, bytes, Array], nbytes=32, padding=0):
         """
         Read a `nbytes` bytes long big endian signed integer from `data` starting at `offset`
 
@@ -372,7 +382,7 @@ class ABI:
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        assert isinstance(data, (bytes, Array))
+        assert isinstance(data, (bytearray, bytes, Array))
         value = ABI._readBE(data, nbytes, padding=True)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):

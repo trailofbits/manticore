@@ -4,7 +4,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 
 from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
-from ..core.smtlib import issymbolic, BitVec
+from ..core.smtlib import issymbolic, Bitvec
 from ..core.smtlib.solver import SelectedSolver
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 from ..core.state import Concretize
@@ -60,7 +60,7 @@ def _find_zero(cpu, constrs, ptr):
     return offset
 
 
-def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
+def strcmp(state: State, s1: Union[int, Bitvec], s2: Union[int, Bitvec]):
     """
     strcmp symbolic model.
 
@@ -116,7 +116,7 @@ def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     return ret
 
 
-def strlen(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
+def strlen(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
     """
     strlen symbolic model.
 
@@ -188,7 +188,7 @@ def can_be_NULL(byte, constrs) -> bool:
         return byte == 0
 
 
-def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Union[int, BitVec]:
+def strcpy(state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec]) -> Union[int, Bitvec]:
     """
     strcpy symbolic model
 

@@ -21,7 +21,7 @@ from .types import (
     Value_t,
     ZeroDivisionTrap,
 )
-from ..core.smtlib import Operators, BitVec, issymbolic
+from ..core.smtlib import Operators, Bitvec, issymbolic
 from ..utils.event import Eventful
 from decimal import Decimal, InvalidOperation
 
@@ -289,7 +289,7 @@ class Executor(Eventful):
         c = stack.pop()
         v2 = stack.pop()
         v1 = stack.pop()
-        assert isinstance(c, (I32, BitVec)), f"{type(c)} is not I32"
+        assert isinstance(c, (I32, Bitvec)), f"{type(c)} is not I32"
         if not issymbolic(v2) and not issymbolic(v1):
             assert type(v2) == type(v1), f"{type(v2)} is not the same as {type(v1)}"
 

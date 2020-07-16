@@ -7,8 +7,8 @@ from ..core.smtlib import (
     arithmetic_simplify,
     SelectedSolver,
     TooManySolutions,
-    BitVec,
-    BitVecConstant,
+    Bitvec,
+    BitvecConstant,
     expression,
     issymbolic,
     Expression,
@@ -346,7 +346,7 @@ class ArrayMap(Map):
             self._array = backing_array
         else:
             self._array = expression.ArrayProxy(
-                expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name)
+                expression.ArrayVariable(index_bits, length=size, value_bits=8, name=name)
             )
 
     def __reduce__(self):
@@ -1130,7 +1130,7 @@ class SMemory(Memory):
         to their condition and value.
 
         The condition of a symbolic chunk can be concrete (True/False) or symbolic. The value should
-        always be symbolic (e.g. a BitVecVariable).
+        always be symbolic (e.g. a BitvecVariable).
         """
         super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
@@ -1153,11 +1153,11 @@ class SMemory(Memory):
         self._constraints = constraints
 
     def _get_size(self, size):
-        if isinstance(size, BitVec):
+        if isinstance(size, Bitvec):
             size = arithmetic_simplify(size)
         else:
-            size = BitVecConstant(self.memory_bit_size, size)
-        assert isinstance(size, BitVecConstant)
+            size = BitvecConstant(self.memory_bit_size, size)
+        assert isinstance(size, BitvecConstant)
         return size.value
 
     def munmap(self, start, size):

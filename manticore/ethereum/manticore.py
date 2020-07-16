@@ -13,12 +13,13 @@ import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
 
-from ..core.manticore import ManticoreBase
+from ..core.manticore import ManticoreBase, ManticoreError
+
 from ..core.smtlib import (
     ConstraintSet,
     Array,
     ArrayProxy,
-    BitVec,
+    Bitvec,
     Operators,
     BoolConstant,
     BoolOperation,
@@ -189,7 +190,7 @@ class ManticoreEVM(ManticoreBase):
 
         :param name: Name of the symbolic variable. Defaults to 'TXADDR' and later to 'TXADDR_<number>'
         :param select: Whether to select contracts or normal accounts. Not implemented for now.
-        :return: Symbolic address in form of a BitVecVariable.
+        :return: Symbolic address in form of a BitvecVariable.
         """
         if select not in ("both", "normal", "contract"):
             raise EthereumError("Wrong selection type")
@@ -308,7 +309,6 @@ class ManticoreEVM(ManticoreBase):
             filename = crytic_compile.filename_of_contract(name).absolute
             with open(filename) as f:
                 source_code = f.read()
-
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
 
         except InvalidCompilation as e:
@@ -547,7 +547,7 @@ class ManticoreEVM(ManticoreBase):
             :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
             :type contract_name: str
             :param balance: balance to be transferred on creation
-            :type balance: int or BitVecVariable
+            :type balance: int or BitvecVariable
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
@@ -666,7 +666,7 @@ class ManticoreEVM(ManticoreBase):
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
             :param balance: balance to be transferred on creation
-            :type balance: int or BitVecVariable
+            :type balance: int or BitvecVariable
             :param int address: the address for the new contract (optional)
             :param str init: initializing evm bytecode and arguments
             :param str name: a unique name for reference
@@ -754,7 +754,7 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address of the contract to call
             :type address: int or EVMAccount
             :param value: balance to be transfered on creation
-            :type value: int or BitVecVariable
+            :type value: int or BitvecVariable
             :param data: initial data
             :param gas: gas budget
             :param price: gas unit price
@@ -768,7 +768,7 @@ class ManticoreEVM(ManticoreBase):
         """ Low level creates an account. This won't generate a transaction.
 
             :param balance: balance to be set on creation (optional)
-            :type balance: int or BitVecVariable
+            :type balance: int or BitvecVariable
             :param address: the address for the new account (optional)
             :type address: int
             :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
@@ -877,7 +877,7 @@ class ManticoreEVM(ManticoreBase):
             :param int address: the address for the transaction (optional)
             :param value: value to be transferred
             :param price: the price of gas for this transaction.
-            :type value: int or BitVecVariable
+            :type value: int or BitvecVariable
             :param str data: initializing evm bytecode and arguments or transaction call data
             :param gas: gas budget for current transaction
             :rtype: EVMAccount
@@ -894,17 +894,17 @@ class ManticoreEVM(ManticoreBase):
             data = b""
         if isinstance(data, str):
             data = bytes(data)
-        if not isinstance(data, (bytes, Array, ArrayProxy)):
+        if not isinstance(data, (bytes, Array)):
             raise TypeError("code bad type")
 
         # Check types
-        if not isinstance(caller, (int, BitVec)):
+        if not isinstance(caller, (int, Bitvec)):
             raise TypeError("Caller invalid type")
 
-        if not isinstance(value, (int, BitVec)):
+        if not isinstance(value, (int, Bitvec)):
             raise TypeError("Value invalid type")
 
-        if not isinstance(address, (int, BitVec)):
+        if not isinstance(address, (int, Bitvec)):
             raise TypeError("address invalid type")
 
         if not isinstance(price, int):
@@ -1204,8 +1204,6 @@ class ManticoreEVM(ManticoreBase):
         name = func.__name__
         value = func(data)  # If func returns None then result should considered unknown/symbolic
 
-        if isinstance(data, ArrayProxy):
-            data = data.array
         # Value is known. Let's add it to our concrete database
         if value is not None:
             with self.locked_context("ethereum", dict) as ethereum_context:
@@ -1233,7 +1231,7 @@ class ManticoreEVM(ManticoreBase):
 
             data_var = state.new_symbolic_buffer(len(data))  # FIXME: generalize to bitvec
             state.constrain(data_var == data)
-            data = data_var.array
+            data = data_var
 
             # symbolic_pairs list of symbolic applications of func in sate
             symbolic_pairs = state.context.get(f"symbolic_func_sym_{name}", [])
@@ -1256,7 +1254,6 @@ class ManticoreEVM(ManticoreBase):
                     else:
                         constraint = y != value
                     state.constrain(constraint)
-                print(type(data), type(value))
                 symbolic_pairs.append((data, value))
             state.context[f"symbolic_func_sym_{name}"] = symbolic_pairs
 
@@ -1539,10 +1536,6 @@ class ManticoreEVM(ManticoreBase):
 
     def generate_testcase(self, state, message="", only_if=None, name="user"):
         """
-        Generate a testcase to the workspace for the given program state. The details of what
-        a testcase is depends on the type of Platform the state is, but involves serializing the state,
-        and generating an input (concretizing symbolic variables) to trigger this state.
-
         The only_if parameter should be a symbolic expression. If this argument is provided, and the expression
         *can be true* in this state, a testcase is generated such that the expression will be true in the state.
         If it *is impossible* for the expression to be true in the state, a testcase is not generated.
@@ -1555,29 +1548,38 @@ class ManticoreEVM(ManticoreBase):
 
             m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0)
             # testcase generated with an input that will violate invariant (make balance == 0)
+        """
+        try:
+            with state as temp_state:
+                if only_if is not None:
+                    temp_state.constrain(only_if)
+                return self.generate_testcase_ex(temp_state, message, name=name)
+        except ManticoreError:
+            return None
+
+    def generate_testcase_ex(self, state, message="", name="user"):
+        """
+        Generate a testcase in the outputspace for the given program state.
+        An exception is raised if the state is unsound or unfeasible
+
+        On return you get a Testcase containing all the informations about the state.
+        A Testcase is a collection of files living at the OutputSpace.
+        Registered plugins and other parts of Manticore add files to the Testcase.
+        User can add more streams to is like this:
+
+        testcase = m.generate_testcase_ex(state)
+        with testcase.open_stream("txt") as descf:
+            descf.write("This testcase is interesting!")
 
         :param manticore.core.state.State state:
         :param str message: longer description of the testcase condition
-        :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
-        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
-        :return: If a testcase was generated
+        :param str name: short string used as the prefix for the outputspace key (e.g. filename prefix for testcase files)
+        :return: a Testcase
         :rtype: bool
         """
-        """
-        Create a serialized description of a given state.
-        :param state: The state to generate information about
-        :param message: Accompanying message
-        """
+        # Refuse to generate a testcase from an unsound state
         if not self.fix_unsound_symbolication(state):
-            return False
-
-        if only_if is not None:
-            with state as temp_state:
-                temp_state.constrain(only_if)
-                if temp_state.is_feasible():
-                    return self.generate_testcase(temp_state, message, only_if=None, name=name)
-                else:
-                    return False
+            raise ManticoreError("Trying to generate a testcase out of an unsound state path")
 
         blockchain = state.platform
 
@@ -1587,8 +1589,6 @@ class ManticoreEVM(ManticoreBase):
         testcase = super().generate_testcase(
             state, message + f"({len(blockchain.human_transactions)} txs)", name=name
         )
-        # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
-        #  so this function can be fully ported to EVMWorld.generate_workspace_files.
 
         local_findings = set()
         for detector in self.detectors.values():
@@ -1719,11 +1719,7 @@ class ManticoreEVM(ManticoreBase):
             if self.fix_unsound_symbolication(st):
                 last_tx = st.platform.last_transaction
                 # Do not generate killed state if only_alive_states is True
-                if (
-                    not last_tx
-                    or only_alive_states
-                    and last_tx.result in {"REVERT", "THROW", "TXERROR"}
-                ):
+                if only_alive_states and last_tx.result in {"REVERT", "THROW", "TXERROR"}:
                     return
                 logger.debug("Generating testcase for state_id %d", state_id)
                 message = last_tx.result if last_tx else "NO STATE RESULT (?)"
@@ -1872,8 +1868,8 @@ class ManticoreEVM(ManticoreBase):
         This tries to solve any symbolic imprecision added by unsound_symbolication
         and then iterates over the resultant set.
 
-        This is the recommended to iterate over resultant steas after an exploration
-        that included unsound symbolication
+        This is the recommended way to iterate over the resultant states after
+        an exploration that included unsound symbolication
 
         """
         self.fix_unsound_all()

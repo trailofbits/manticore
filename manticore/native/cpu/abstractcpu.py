@@ -655,7 +655,7 @@ class Cpu(Eventful):
 
         :param int where: address to write to
         :param expr: value to write
-        :type expr: int or BitVec
+        :type expr: int or Bitvec
         :param size: bit size of `expr`
         :param force: whether to ignore memory permissions
         """
@@ -713,7 +713,7 @@ class Cpu(Eventful):
         :param int where: address to read from
         :param size: number of bits to read
         :return: the value read
-        :rtype: int or BitVec
+        :rtype: int or Bitvec
         :param force: whether to ignore memory permissions
         """
         if size is None:

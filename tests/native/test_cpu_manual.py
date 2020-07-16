@@ -309,7 +309,7 @@ class SymCPUTest(unittest.TestCase):
         return reduce(operator.or_, (self._flags[f] for f in flags))
 
     def _construct_sym_flag_bitfield(self, flags):
-        return reduce(operator.or_, (BitVecConstant(32, self._flags[f]) for f in flags))
+        return reduce(operator.or_, (BitvecConstant(32, self._flags[f]) for f in flags))
 
     def test_set_eflags(self) -> None:
         cpu = I386Cpu(Memory32())
@@ -371,8 +371,8 @@ class SymCPUTest(unittest.TestCase):
         cpu.CF = 1
         cpu.AF = 1
 
-        a = BitVecConstant(32, 1) != 0
-        b = BitVecConstant(32, 0) != 0
+        a = BitvecConstant(32, 1) != 0
+        b = BitvecConstant(32, 0) != 0
         cpu.ZF = a
         cpu.SF = b
 
@@ -1292,7 +1292,7 @@ Using the SAR instruction to perform a division operation does not produce the s
         code = mem.mmap(0x1000, 0x1000, "rwx")
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
-        mem[code] = BitVecConstant(8, 0x90)
+        mem[code] = BitvecConstant(8, 0x90)
         cpu.EIP = code
         cpu.EAX = 116
         cpu.EBP = stack + 0x700

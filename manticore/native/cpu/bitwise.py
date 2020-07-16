@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from ...core.smtlib import Operators
-from ...core.smtlib.expression import BitVec
+from ...core.smtlib.expression import Bitvec
 
 
 def Mask(width):
@@ -19,7 +19,7 @@ def Bit(value, idx):
     Extract `idx` bit from `value`.
 
     :param value: Source value from which to extract.
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param idx: Bit index
     :return: int or long or BitVex
     """
@@ -31,15 +31,15 @@ def GetNBits(value, nbits):
     Get the first `nbits` from `value`.
 
     :param value: Source value from which to extract
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int nbits: How many bits to extract
     :return: Low `nbits` bits of `value`.
-    :rtype int or long or BitVec
+    :rtype int or long or Bitvec
     """
     # NOP if sizes are the same
     if isinstance(value, int):
         return Operators.EXTRACT(value, 0, nbits)
-    elif isinstance(value, BitVec):
+    elif isinstance(value, Bitvec):
         if value.size < nbits:
             return Operators.ZEXTEND(value, nbits)
         else:
@@ -52,10 +52,10 @@ def SInt(value, width):
     representation.
 
     :param value: The value to convert.
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int width: The width of the bitstring to consider
     :return: The converted value
-    :rtype int or long or BitVec
+    :rtype int or long or Bitvec
     """
     return Operators.ITEBV(
         width,
@@ -70,10 +70,10 @@ def UInt(value, width):
     Return integer value of `value` as a bitstring of `width` width.
 
     :param value: The value to convert.
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int width: The width of the bitstring to consider
     :return: The integer value
-    :rtype int or long or BitVec
+    :rtype int or long or Bitvec
     """
     return GetNBits(value, width)
 
@@ -83,7 +83,7 @@ def LSL_C(value, amount, width, with_carry=True):
     The ARM LSL_C (logical left shift with carry) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to shift it.
     :param int width: Width of the value
     :return: Resultant value and the carry result
@@ -107,11 +107,11 @@ def LSL(value, amount, width):
     The ARM LSL (logical left shift) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to shift it.
     :param int width: Width of the value
     :return: Resultant value
-    :rtype int or BitVec
+    :rtype int or Bitvec
     """
     if isinstance(amount, int) and amount == 0:
         return value
@@ -125,7 +125,7 @@ def LSR_C(value, amount, width, with_carry=True):
     The ARM LSR_C (logical shift right with carry) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to shift it.
     :param int width: Width of the value
     :return: Resultant value and carry result
@@ -146,11 +146,11 @@ def LSR(value, amount, width):
     The ARM LSR (logical shift right) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to shift it.
     :param int width: Width of the value
     :return: Resultant value
-    :rtype int or BitVec
+    :rtype int or Bitvec
     """
     if isinstance(amount, int) and amount == 0:
         return value
@@ -163,7 +163,7 @@ def ASR_C(value, amount, width, with_carry=True):
     The ARM ASR_C (arithmetic shift right with carry) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to shift it.
     :param int width: Width of the value
     :return: Resultant value and carry result
@@ -190,11 +190,11 @@ def ASR(value, amount, width):
     The ARM ASR (arithmetic shift right) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to shift it.
     :param int width: Width of the value
     :return: Resultant value
-    :rtype int or BitVec
+    :rtype int or Bitvec
     """
     if isinstance(amount, int) and amount == 0:
         return value
@@ -208,7 +208,7 @@ def ROR_C(value, amount, width, with_carry=True):
     The ARM ROR_C (rotate right with carry) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to rotate it.
     :param int width: Width of the value
     :return: Resultant value and carry result
@@ -234,11 +234,11 @@ def ROR(value, amount, width):
     The ARM ROR (rotate right) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to rotate it.
     :param int width: Width of the value
     :return: Resultant value
-    :rtype int or BitVec
+    :rtype int or Bitvec
     """
     if isinstance(amount, int) and amount == 0:
         return value
@@ -251,7 +251,7 @@ def RRX_C(value, carry, width, with_carry=True):
     The ARM RRX (rotate right with extend and with carry) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to rotate it.
     :param int width: Width of the value
     :return: Resultant value and carry result
@@ -270,11 +270,11 @@ def RRX(value, carry, width):
     The ARM RRX (rotate right with extend) operation.
 
     :param value: Value to shift
-    :type value: int or long or BitVec
+    :type value: int or long or Bitvec
     :param int amount: How many bits to rotate it.
     :param int width: Width of the value
     :return: Resultant value
-    :rtype int or BitVec
+    :rtype int or Bitvec
     """
     result = RRX_C(value, carry, width, with_carry=False)
     return result

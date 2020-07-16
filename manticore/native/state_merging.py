@@ -1,4 +1,4 @@
-from ..core.smtlib import SelectedSolver, ConstraintSet, Operators, issymbolic, BitVec
+from ..core.smtlib import SelectedSolver, ConstraintSet, Operators, issymbolic, Bitvec
 
 
 def compare_sockets(cs, socket1, socket2):
@@ -188,7 +188,7 @@ def merge_cpu(cpu1, cpu2, state, exp1, merged_constraint):
     for reg in cpu1.canonical_registers:
         val1 = cpu1.read_register(reg)
         val2 = cpu2.read_register(reg)
-        if isinstance(val1, BitVec) and isinstance(val2, BitVec):
+        if isinstance(val1, Bitvec) and isinstance(val2, Bitvec):
             assert val1.size == val2.size
         if issymbolic(val1) or issymbolic(val2) or val1 != val2:
             val1_migrated = merged_constraint.migrate(val1)
