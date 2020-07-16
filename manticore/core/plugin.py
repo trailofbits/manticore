@@ -5,6 +5,8 @@ import pstats
 import threading
 import typing
 from functools import wraps
+from dataclasses import dataclass, field
+from ..utils.enums import StateLists
 
 from .smtlib import issymbolic
 
@@ -405,23 +407,73 @@ class ExamplePlugin(Plugin):
         logger.info("did_write_register %r %r %r", state, register, value)
 
 
+@dataclass
 class StateDescriptor:
-    pass
+    state_id: int
+    state_list: typing.Optional[StateLists] = None
+    children: set = field(default_factory=set)
+
+
+logger.setLevel(logging.INFO)
 
 
 class IntrospectionAPIPlugin(Plugin):
+    def create_state(self, state_id):
+        assert state_id is not None
+        with self.locked_context("manticore_state", dict) as context:
+            context[state_id] = StateDescriptor(state_id=state_id, state_list=StateLists.ready)
+
     def will_run_callback(self, ready_states):
         for state in ready_states:
-            logger.info("running w/ state: %s", state.id)
+            self.create_state(state.id)
 
-    def did_enqueue_state_callback(self, *args):
-        logger.info("did_enqueue_state: %s", args)
+    def did_enqueue_state_callback(self, state_id):
+        logger.info("did_enqueue_state: %s", state_id)
+        self.create_state(state_id)
 
-    def did_transition_state_callback(self, *args):
-        logger.info("did_transition_state: %s", args)
+    def did_transition_state_callback(self, state_id, from_list, to_list):
+        logger.info("did_transition_state %s: %s --> %s", state_id, from_list, to_list)
+        with self.locked_context("manticore_state", dict) as context:
+            if state_id not in context:
+                logger.warning(
+                    "Got a state transition event for %s, but failed to capture its initialization",
+                    state_id,
+                )
+            state = context.setdefault(
+                state_id, StateDescriptor(state_id=state_id, state_list=from_list)
+            )
+            if state.state_list != from_list:
+                logger.warning(
+                    "Callbacks failed to capture state %s transitioning from %s to %s",
+                    state_id,
+                    state.state_list,
+                    from_list,
+                )
+            context[state_id].state_list = to_list
 
-    def did_remove_state_callback(self, *args):
-        logger.info("did_remove_state: %s", args)
+    def did_remove_state_callback(self, state_id):
+        logger.info("did_remove_state: %s", state_id)
+        with self.locked_context("manticore_state", dict) as context:
+            if state_id not in context:
+                logger.warning(
+                    "Removing state %s, but failed to capture its initialization", state_id
+                )
+            else:
+                # Wipe the state list to indicate it's been deleted, but keep it around for record-keeping
+                context[state_id].state_list = None
+
+    def did_fork_state_callback(self, state_id, children):
+        logger.info("did_fork_state: %s --> %s", state_id, children)
+        with self.locked_context("manticore_state", dict) as context:
+            if state_id not in context:
+                logger.warning(
+                    "Forked state %s, but failed to capture its initialization", state_id
+                )
+            context.setdefault(
+                state_id, StateDescriptor(state_id=state_id)
+            ).children.update(children)
 
     def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
-        return {}
+        with self.locked_context("manticore_state", dict) as context:
+            out = context.copy()  # TODO: is this necessary to break out of the lock?
+        return out

@@ -6,7 +6,7 @@ import logging
 
 from ..core.plugin import Plugin
 from ..core.smtlib import Operators, to_constant
-from ..core.manticore import StateLists
+from ..utils.enums import StateLists
 import pyevmasm as EVMAsm
 
 logger = logging.getLogger(__name__)

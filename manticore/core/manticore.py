@@ -19,6 +19,7 @@ from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
 from ..utils import config
 from ..utils.deprecated import deprecated
+from ..utils.enums import StateLists
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils.log import set_verbosity
@@ -31,13 +32,6 @@ import threading
 import ctypes
 import signal
 from enum import Enum
-
-
-class StateLists(Enum):
-    ready = "READY"
-    busy = "BUSY"
-    terminated = "TERMINATED"
-    killed = "KILLED"
 
 
 class MProcessingType(Enum):
@@ -526,15 +520,17 @@ class ManticoreBase(Eventful):
                 # maintain a list of children for logging purpose
                 children.append(new_state_id)
 
+        self._publish("did_fork_state", state.id, children)
+        logger.debug("Forking current state %r into states %r", state.id, children)
+
         with self._lock:
             self._busy_states.remove(state.id)
             self._remove(state.id)
             state._id = None
             self._lock.notify_all()
 
-        self._publish("did_fork_state", new_state, expression, new_value, policy)
 
-        logger.debug("Forking current state %r into states %r", state.id, children)
+
 
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
@@ -1111,8 +1107,6 @@ class ManticoreBase(Eventful):
 
         # self.ready_states needs to be list-ified because multiple will_run callbacks can't share the generator
         self._publish("will_run", list(self.ready_states))
-        print("Ready_states", self.count_ready_states())
-        print("Busy states:", self.count_busy_states())
         self._running.value = True
         # start all the workers!
         for w in self._workers:
