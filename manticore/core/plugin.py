@@ -7,6 +7,7 @@ import typing
 from functools import wraps
 from dataclasses import dataclass, field
 from ..utils.enums import StateLists
+from datetime import datetime
 
 from .smtlib import issymbolic
 
@@ -412,7 +413,12 @@ class StateDescriptor:
     state_id: int
     state_list: typing.Optional[StateLists] = None
     children: set = field(default_factory=set)
+    last_update: datetime = field(default_factory=datetime.now)
 
+    def __setattr__(self, key, value):
+        if key != "last_update":
+            super().__setattr__(key, value)
+        super().__setattr__("last_update", datetime.now())
 
 logger.setLevel(logging.INFO)
 
