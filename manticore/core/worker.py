@@ -229,3 +229,14 @@ class WorkerProcess(Worker):
     def join(self):
         self._p.join()
         self._p = None
+
+
+class DaemonThread(WorkerThread):
+    def start(self, target=None):
+        logger.debug(
+            "Starting Daemon %d. (Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident(),
+        )
+
+        self._t = threading.Thread(target=self.run if target is None else target)
+        self._t.daemon = True
+        self._t.start()
