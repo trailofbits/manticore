@@ -25,7 +25,7 @@ from ..utils.helpers import PickleSerializer
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace, Testcase
-from .worker import WorkerSingle, WorkerThread, WorkerProcess
+from .worker import WorkerSingle, WorkerThread, WorkerProcess, DaemonThread
 
 from multiprocessing.managers import SyncManager
 import threading
@@ -359,6 +359,8 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+        self._daemon_threads = []
+        self._daemon_callbacks = []
         self._snapshot = None
         self._main_id = os.getpid(), threading.current_thread().ident
 
@@ -1089,6 +1091,11 @@ class ManticoreBase(Eventful):
         for w in self._workers:
             w.start()
 
+        for cb in self._daemon_callbacks:
+            dt = DaemonThread()
+            self._daemon_threads.append(dt)
+            dt.start(cb)
+
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
             with self._lock:
@@ -1163,3 +1170,6 @@ class ManticoreBase(Eventful):
         if self._introspector is not None:
             return self._introspector.get_state_descriptors()
         return {}
+
+    def register_daemon(self, callback):
+        self._daemon_callbacks.append(callback)
