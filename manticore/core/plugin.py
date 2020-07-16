@@ -469,9 +469,9 @@ class IntrospectionAPIPlugin(Plugin):
                 logger.warning(
                     "Forked state %s, but failed to capture its initialization", state_id
                 )
-            context.setdefault(
-                state_id, StateDescriptor(state_id=state_id)
-            ).children.update(children)
+            context.setdefault(state_id, StateDescriptor(state_id=state_id)).children.update(
+                children
+            )
 
     def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
         with self.locked_context("manticore_state", dict) as context:
