@@ -2,7 +2,7 @@ import os
 import itertools
 import logging
 import sys
-import time
+import typing
 import random
 import weakref
 from typing import Callable
@@ -12,7 +12,7 @@ from contextlib import contextmanager
 import functools
 import shlex
 
-from ..core.plugin import Plugin
+from ..core.plugin import Plugin, IntrospectionAPIPlugin
 from ..core.smtlib import Expression
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
@@ -31,6 +31,13 @@ import threading
 import ctypes
 import signal
 from enum import Enum
+
+
+class StateLists(Enum):
+    ready = "READY"
+    busy = "BUSY"
+    terminated = "TERMINATED"
+    killed = "KILLED"
 
 
 class MProcessingType(Enum):
@@ -195,9 +202,12 @@ class ManticoreBase(Eventful):
         "run",
         "start_worker",
         "terminate_worker",
+        "transition_state",
         "enqueue_state",
         "fork_state",
         "load_state",
+        "save_state",
+        "remove_state",
         "terminate_state",
         "kill_state",
         "execute_instruction",
@@ -365,6 +375,8 @@ class ManticoreBase(Eventful):
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
         self.plugins = set()
+        self._introspection_plugin: type = IntrospectionAPIPlugin
+        self._introspector: typing.Optional[IntrospectionAPIPlugin] = None
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
@@ -405,7 +417,7 @@ class ManticoreBase(Eventful):
             raise ManticoreError("No snapshot to go to")
         self.clear_ready_states()
         for state_id in self._snapshot:
-            self._ready_states.append(state_id)
+            self._put_state(state_id)
         self._snapshot = None
 
     @sync
@@ -579,8 +591,10 @@ class ManticoreBase(Eventful):
             del self.stcache[state_id]
 
         self._workspace.rm_state(state_id)
+        return state_id
 
     # Internal support for state lists
+    @Eventful.will_did("enqueue_state", can_raise=False)
     def _put_state(self, state):
         """ This enqueues the state for exploration.
 
@@ -630,24 +644,35 @@ class ManticoreBase(Eventful):
             state_id = random.choice(list(self._ready_states))
 
             # Move from READY to BUSY
+            self._publish("will_transition_state", state_id, StateLists.ready, StateLists.busy)
             self._ready_states.remove(state_id)
             self._busy_states.append(state_id)
+            self._publish("did_transition_state", state_id, StateLists.ready, StateLists.busy)
             self._lock.notify_all()
 
         return self._load(state_id)
 
     @sync
     def _revive_state(self, state_id):
-        """ Send a BUSY state back to READY list
+        """ Send a state back to READY list
 
-            +--------+        +------+
-            | READY  +<-------+ BUSY |
-            +---+----+        +------+
+            +--------+        +------------------+
+            | READY  +<-------+ BUSY/TERMINATED |
+            +---+----+        +----------------+
 
         """
-        # Move from BUSY to READY
-        self._busy_states.remove(state_id)
+        # Move from BUSY or TERMINATED to READY
+        src = None
+        if state_id in self._busy_states:
+            src = StateLists.busy
+            self._publish("will_transition_state", state_id, src, StateLists.ready)
+            self._busy_states.remove(state_id)
+        if state_id in self._terminated_states:
+            src = StateLists.terminated
+            self._publish("will_transition_state", state_id, src, StateLists.ready)
+            self._terminated_states.remove(state_id)
         self._ready_states.append(state_id)
+        self._publish("did_transition_state", state_id, src, StateLists.ready)
         self._lock.notify_all()
 
     @sync
@@ -672,13 +697,15 @@ class ManticoreBase(Eventful):
             self._remove(state_id)
         else:
             # add the state_id to the terminated list
+            self._publish("will_transition_state", state_id, StateLists.busy, StateLists.terminated)
             self._terminated_states.append(state_id)
+            self._publish("did_transition_state", state_id, StateLists.busy, StateLists.terminated)
 
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
 
     @sync
-    def _kill_state(self, state_id, delete=False):
+    def _kill_state(self, state_id: int, delete=False):
         """ Send a BUSY state to the KILLED list or trash it if delete is True
 
             +------+        +--------+
@@ -699,35 +726,42 @@ class ManticoreBase(Eventful):
             self._remove(state_id)
         else:
             # add the state_id to the terminated list
+            self._publish("will_transition_state", state_id, StateLists.busy, StateLists.killed)
             self._killed_states.append(state_id)
+            self._publish("did_transition_state", state_id, StateLists.busy, StateLists.killed)
 
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
 
     @sync
-    def kill_state(self, state, delete=False):
+    def kill_state(self, state: typing.Union[StateBase, int], delete: bool = False):
         """ Kill a state.
              A state is moved from any list to the kill list or fully
              removed from secondary storage
 
-            :param state_id: a estate id
-            :type state_id: int
+            :param state: a state
             :param delete: if true remove the state from the secondary storage
-            :type delete: bool
+
         """
-        state_id = state.id
+        state_id = getattr(state, "id", state)
+        src = None
         if state_id in self._busy_states:
+            src = StateLists.busy
             self._busy_states.remove(state_id)
         if state_id in self._terminated_states:
+            src = StateLists.terminated
             self._terminated_states.remove(state_id)
         if state_id in self._ready_states:
+            src = StateLists.ready
             self._ready_states.remove(state_id)
 
         if delete:
             self._remove(state_id)
         else:
             # add the state_id to the terminated list
+            self._publish("will_transition_state", state_id, src, StateLists.killed)
             self._killed_states.append(state_id)
+            self._publish("did_transition_state", state_id, src, StateLists.killed)
 
     @property  # type: ignore
     @sync
@@ -1065,13 +1099,20 @@ class ManticoreBase(Eventful):
         # different process modifies the state
         self.stcache = weakref.WeakValueDictionary()
 
+        if self._introspector is None:
+            self._introspector = self._introspection_plugin()
+            self.register_plugin(self._introspector)
+
         # Lazy process start. At the first run() the workers are not forked.
         # This actually starts the worker procs/threads
         if self.subscribe:
             # User subscription to events is disabled from now on
             self.subscribe = None
 
-        self._publish("will_run", self.ready_states)
+        # self.ready_states needs to be list-ified because multiple will_run callbacks can't share the generator
+        self._publish("will_run", list(self.ready_states))
+        print("Ready_states", self.count_ready_states())
+        print("Busy states:", self.count_busy_states())
         self._running.value = True
         # start all the workers!
         for w in self._workers:
@@ -1094,7 +1135,10 @@ class ManticoreBase(Eventful):
                 logger.debug("Killed. Moving all remaining ready states to killed list")
                 # move all READY to KILLED:
                 while self._ready_states:
+                    id = self._ready_states[-1].id
+                    self._publish("will_transition_state", id, StateLists.ready, StateLists.killed)
                     self._killed_states.append(self._ready_states.pop())
+                    self._publish("did_transition_state", id, StateLists.ready, StateLists.killed)
 
         self._running.value = False
         self._publish("did_run")
@@ -1139,3 +1183,12 @@ class ManticoreBase(Eventful):
             config.save(f)
 
         logger.info("Results in %s", self._output.store.uri)
+
+    def set_instrospection_plugin(self, newPlugin: type):
+        assert issubclass(newPlugin, self._introspection_plugin)
+        self._introspection_plugin = newPlugin
+
+    def introspect(self):
+        if self._introspector is not None:
+            return self._introspector.get_state_descriptors()
+        return {}

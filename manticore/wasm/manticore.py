@@ -87,8 +87,7 @@ class ManticoreWASM(ManticoreBase):
             with self.locked_context("wasm.saved_states", list) as saved_states:
                 while saved_states:
                     state_id = saved_states.pop()
-                    self._terminated_states.remove(state_id)
-                    self._ready_states.append(state_id)
+                    self._revive_state(state_id)
 
             if argv_generator is not None:
                 self.invoke(item, argv_generator)
@@ -205,8 +204,7 @@ class ManticoreWASM(ManticoreBase):
         with self.locked_context("wasm.saved_states", list) as saved_states:
             while saved_states:
                 state_id = saved_states.pop()
-                self._terminated_states.remove(state_id)
-                self._ready_states.append(state_id)
+                self._revive_state(state_id)
 
     def generate_testcase(self, state, message="test", name="test"):
         testcase = super().generate_testcase(state, message)

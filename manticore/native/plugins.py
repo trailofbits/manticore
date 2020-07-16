@@ -30,9 +30,7 @@ class Merger(Plugin):
         :param state_id: state-id for state that is being deleted
         :return: None
         """
-        with self.manticore._lock:
-            self.manticore._ready_states.remove(state_id)
-            self.manticore._remove(state_id)
+        self.manticore.kill_state(state_id, delete=True)
 
     def replace_state(self, state_id, state):
         """

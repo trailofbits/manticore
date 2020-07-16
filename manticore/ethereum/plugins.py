@@ -6,6 +6,7 @@ import logging
 
 from ..core.plugin import Plugin
 from ..core.smtlib import Operators, to_constant
+from ..core.manticore import StateLists
 import pyevmasm as EVMAsm
 
 logger = logging.getLogger(__name__)
@@ -217,8 +218,20 @@ class KeepOnlyIfStorageChanges(Plugin):
                 st = self.manticore._load(state_id)
                 if not st.context["written"][-1]:
                     if st.id in self.manticore._ready_states:
+                        self._publish(
+                            "will_transition_state",
+                            state_id,
+                            StateLists.ready,
+                            StateLists.terminated,
+                        )
                         self.manticore._ready_states.remove(st.id)
                         self.manticore._terminated_states.append(st.id)
+                        self._publish(
+                            "did_transition_state",
+                            state_id,
+                            StateLists.ready,
+                            StateLists.terminated,
+                        )
                     saved_states.remove(st.id)
 
     def generate_testcase(self, state, testcase, message):

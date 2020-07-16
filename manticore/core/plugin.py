@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import cProfile
 import pstats
 import threading
+import typing
 from functools import wraps
 
 from .smtlib import issymbolic
@@ -402,3 +403,25 @@ class ExamplePlugin(Plugin):
 
     def did_write_register_callback(self, state, register, value):
         logger.info("did_write_register %r %r %r", state, register, value)
+
+
+class StateDescriptor:
+    pass
+
+
+class IntrospectionAPIPlugin(Plugin):
+    def will_run_callback(self, ready_states):
+        for state in ready_states:
+            logger.info("running w/ state: %s", state.id)
+
+    def did_enqueue_state_callback(self, *args):
+        logger.info("did_enqueue_state: %s", args)
+
+    def did_transition_state_callback(self, *args):
+        logger.info("did_transition_state: %s", args)
+
+    def did_remove_state_callback(self, *args):
+        logger.info("did_remove_state: %s", args)
+
+    def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
+        return {}

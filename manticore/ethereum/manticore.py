@@ -1165,8 +1165,7 @@ class ManticoreEVM(ManticoreBase):
             while saved_states:
                 state_id = saved_states.pop()
                 if state_id in self._terminated_states:
-                    self._terminated_states.remove(state_id)
-                    self._ready_states.append(state_id)
+                    self._revive_state(state_id)
 
     # Callbacks
     def _on_concretize(self, state, func, data, result):
