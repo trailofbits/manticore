@@ -4,7 +4,6 @@ import logging
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from typing import Dict, Optional, Union
-from enum import Enum
 import io
 import pyevmasm as EVMAsm
 import random
@@ -13,7 +12,7 @@ import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
 
-from ..core.manticore import ManticoreBase, Testcase, ManticoreError
+from ..core.manticore import ManticoreBase, ManticoreError
 
 from ..core.smtlib import (
     ConstraintSet,
@@ -22,41 +21,24 @@ from ..core.smtlib import (
     BitVec,
     Operators,
     BoolConstant,
-    BoolOperation,
     Expression,
     issymbolic,
-    simplify,
     SelectedSolver,
 )
-from ..core.state import TerminateState, AbandonState
+from ..core.state import AbandonState
 from .account import EVMContract, EVMAccount, ABI
 from .detectors import Detector
 from .solidity import SolidityMetadata
 from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
-from ..utils import config, log
+from ..utils import config
 from ..utils.deprecated import deprecated
+from ..utils.enums import Sha3Type
 from ..utils.helpers import PickleSerializer, printable_bytes
 
 logger = logging.getLogger(__name__)
 logging.getLogger("CryticCompile").setLevel(logging.ERROR)
-
-
-class Sha3Type(Enum):
-    """Used as configuration constant for choosing sha3 flavor"""
-
-    concretize = "concretize"
-    symbolicate = "symbolicate"
-    fake = "fake"
-
-    def title(self):
-        return self._name_.title()
-
-    @classmethod
-    def from_string(cls, name):
-        return cls.__members__[name]
-
 
 consts = config.get_group("evm")
 consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")

@@ -19,7 +19,7 @@ from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
 from ..utils import config
 from ..utils.deprecated import deprecated
-from ..utils.enums import StateLists
+from ..utils.enums import StateLists, MProcessingType
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils.log import set_verbosity
@@ -31,26 +31,6 @@ from multiprocessing.managers import SyncManager
 import threading
 import ctypes
 import signal
-from enum import Enum
-
-
-class MProcessingType(Enum):
-    """Used as configuration constant for choosing multiprocessing flavor"""
-
-    multiprocessing = "multiprocessing"
-    single = "single"
-    threading = "threading"
-
-    def title(self):
-        return self._name_.title()
-
-    @classmethod
-    def from_string(cls, name):
-        return cls.__members__[name]
-
-    def to_class(self):
-        return globals()[f"Manticore{self.title()}"]
-
 
 logger = logging.getLogger(__name__)
 
@@ -528,9 +508,6 @@ class ManticoreBase(Eventful):
             self._remove(state.id)
             state._id = None
             self._lock.notify_all()
-
-
-
 
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
