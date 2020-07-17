@@ -420,6 +420,7 @@ class StateDescriptor:
             super().__setattr__(key, value)
         super().__setattr__("last_update", datetime.now())
 
+
 logger.setLevel(logging.INFO)
 
 

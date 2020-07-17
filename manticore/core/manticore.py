@@ -569,7 +569,6 @@ class ManticoreBase(Eventful):
         return state_id
 
     # Internal support for state lists
-    @Eventful.will_did("enqueue_state", can_raise=False)
     def _put_state(self, state):
         """ This enqueues the state for exploration.
 
@@ -581,11 +580,15 @@ class ManticoreBase(Eventful):
                           +-------+
 
         """
+        self._publish("will_enqueue_state", state, can_raise=False)
         state_id = self._save(state, state_id=state.id)
         with self._lock:
             # Enqueue it in the ready state list for processing
             self._ready_states.append(state_id)
             self._lock.notify_all()
+            # The problem with using will_did here is that the lock is released before the event is fired, so typically
+            # a worker has moved the state from READY to BUSY *before* `did_enqueue_state` is published.
+            self._publish("did_enqueue_state", state_id, can_raise=False)
         return state_id
 
     def _get_state(self, wait=False):
