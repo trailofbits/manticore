@@ -8,27 +8,26 @@ from ..core.smtlib import issymbolic, BitVec
 from ..core.smtlib.solver import SelectedSolver, ConstraintSet
 from ..core.smtlib.operators import ITEBV, ZEXTEND, AND
 from ..core.state import Concretize
-from typing import Union
+from typing import Union, Optional, Callable
 
 VARIADIC_FUNC_ATTR = "_variadic"
 
 
-def isvariadic(model):
+def isvariadic(model: Callable) -> bool:
     """
-    :param callable model: Function model
+    :param model: Function model
     :return: Whether `model` models a variadic function
-    :rtype: bool
     """
     return getattr(model, VARIADIC_FUNC_ATTR, False)
 
 
-def variadic(func):
+def variadic(func: Callable) -> Callable:
     """
     A decorator used to mark a function model as variadic. This function should
     take two parameters: a :class:`~manticore.native.state.State` object, and
     a generator object for the arguments.
 
-    :param callable func: Function model
+    :param func: Function model
     """
     setattr(func, VARIADIC_FUNC_ATTR, True)
     return func
@@ -105,7 +104,9 @@ def _find_zero(cpu: Cpu, constrs: ConstraintSet, ptr: Union[int, BitVec]) -> int
     return offset
 
 
-def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]) -> Union[int, BitVec, None]:
+def strcmp(
+    state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]
+) -> Optional[Union[int, BitVec]]:
     """
     strcmp symbolic model.
 
