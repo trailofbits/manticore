@@ -568,7 +568,19 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = b""
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
-                    if not SelectedSolver.instance().can_be_true(self.constraints, balance == 0):
+                    maybe_balance = balance == 0
+                    self._publish("will_solve", self.constraints, maybe_balance, "can_be_true")
+                    must_have_balance = SelectedSolver.instance().can_be_true(
+                        self.constraints, maybe_balance
+                    )
+                    self._publish(
+                        "did_solve",
+                        self.constraints,
+                        maybe_balance,
+                        "can_be_true",
+                        must_have_balance,
+                    )
+                    if not must_have_balance:
                         # balance always != 0
                         if not md.constructor_abi["payable"]:
                             raise EthereumError(
@@ -579,10 +591,14 @@ class ManticoreEVM(ManticoreBase):
                     for state in self.ready_states:
                         world = state.platform
 
-                        if not SelectedSolver.instance().can_be_true(
-                            self.constraints,
-                            Operators.UGE(world.get_balance(owner.address), balance),
-                        ):
+                        expr = Operators.UGE(world.get_balance(owner.address), balance)
+                        self._publish("will_solve", self.constraints, expr, "can_be_true")
+                        sufficient = SelectedSolver.instance().can_be_true(self.constraints, expr,)
+                        self._publish(
+                            "did_solve", self.constraints, expr, "can_be_true", sufficient
+                        )
+
+                        if not sufficient:
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"because the owner account ({owner}) has insufficient balance."

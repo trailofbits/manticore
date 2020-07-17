@@ -61,6 +61,8 @@ consts.add(
 
 
 class ManticoreBase(Eventful):
+    _published_events = {"solve"}
+
     def _manticore_single(self):
         self._worker_type = WorkerSingle
 

@@ -24,7 +24,7 @@ from manticore.native.models import (
     strlen_approx,
     strcpy,
     strncpy,
-    is_definitely_NULL,
+    must_be_NULL,
     cannot_be_NULL,
 )
 
@@ -303,7 +303,7 @@ class StrcpyTest(ModelTest):
             dst = cpu.read_int(d + offset, 8)
 
         # Assert final NULL byte
-        self.assertTrue(is_definitely_NULL(src, self.state.constraints))
+        self.assertTrue(must_be_NULL(src, self.state.constraints))
         self.assertEqual(0, dst)
 
     def _test_strcpy(self, string, dst_len=None):
@@ -421,7 +421,7 @@ class StrncpyTest(ModelTest):
         offset = 0
 
         # Check that min(n, length of src) characters are copied from src to dst
-        while not is_definitely_NULL(src, self.state.constraints) and offset < n:
+        while not must_be_NULL(src, self.state.constraints) and offset < n:
             self.assertEqual(src, dst)
             offset += 1
             src = cpu.read_int(s + offset, 8)

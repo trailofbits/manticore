@@ -155,27 +155,13 @@ class ManticoreWASM(ManticoreBase):
                 ret = None
                 if not p.stack.empty():
                     ret = p.stack.pop()
+                # TODO - eventually we'll need to support floats as well.
+                # That'll probably require us to subclass bitvecs into IxxBV and FxxBV
                 if issymbolic(ret):
                     if ret.size == 32:
-                        inner.append(
-                            list(
-                                I32(a)  # TODO - eventually we'll need to support floats as well.
-                                for a in SelectedSolver.instance().get_all_values(
-                                    state.constraints, ret
-                                )
-                            )
-                        )
+                        inner.append(list(I32(a) for a in state.solve_n(ret, n)))
                     elif ret.size == 64:
-                        inner.append(
-                            list(
-                                I64(
-                                    a
-                                )  # TODO - that'll probably require us to subclass bitvecs into IxxBV and FxxBV
-                                for a in SelectedSolver.instance().get_all_values(
-                                    state.constraints, ret
-                                )
-                            )
-                        )
+                        inner.append(list(I64(a) for a in state.solve_n(ret, n)))
                 else:
                     inner.append([ret])
             outer.append(inner)
