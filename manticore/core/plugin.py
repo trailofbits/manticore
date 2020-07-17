@@ -480,6 +480,9 @@ class IntrospectionAPIPlugin(Plugin):
                 children
             )
 
+    def will_solve_callback(self, state, constraints, expr, solv_func):
+        logger.info("Solving %s for %s in state %s", expr, solv_func, state.id)
+
     def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
         with self.locked_context("manticore_state", dict) as context:
             out = context.copy()  # TODO: is this necessary to break out of the lock?

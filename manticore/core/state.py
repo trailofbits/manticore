@@ -90,6 +90,55 @@ class ForkState(Concretize):
         super().__init__(message, expression, policy="ALL", **kwargs)
 
 
+class EventSolver(Eventful):
+    _published_events = {"solve"}
+
+    @property
+    def _solver(self):
+        from .smtlib import SelectedSolver
+
+        return SelectedSolver.instance()  # solver
+
+    def can_be_true(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "can_be_true")
+        solved = self._solver.can_be_true(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "can_be_true", solved)
+        return solved
+
+    def get_all_values(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "get_all_values")
+        solved = self._solver.get_all_values(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "get_all_values", solved)
+        return solved
+
+    def get_value(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "get_value")
+        solved = self._solver.get_value(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "get_value", solved)
+        return solved
+
+    def max(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "max")
+        solved = self._solver.max(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "max", solved)
+        return solved
+
+    def min(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "min")
+        solved = self._solver.min(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "min", solved)
+        return solved
+
+    def minmax(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "minmax")
+        solved = self._solver.minmax(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "minmax", solved)
+        return solved
+
+    def __getattr__(self, item):
+        return getattr(self._solver, item)
+
+
 class StateBase(Eventful):
     """
     Representation of a unique program state/path.
@@ -108,8 +157,10 @@ class StateBase(Eventful):
         self._child = None
         self._context = dict()
         self._terminated_by = None
+        self._solver = EventSolver()
         # 33
         # Events are lost in serialization and fork !!
+        self.forward_events_from(self._solver)
         self.forward_events_from(platform)
 
     def __getstate__(self):
@@ -130,8 +181,10 @@ class StateBase(Eventful):
         self._child = state["child"]
         self._context = state["context"]
         self._terminated_by = state["terminated_by"]
+        self._solver = EventSolver()
         # 33
         # Events are lost in serialization and fork !!
+        self.forward_events_from(self._solver)
         self.forward_events_from(self._platform)
 
     @property
@@ -317,12 +370,6 @@ class StateBase(Eventful):
             )
 
         return tuple(set(vals))
-
-    @property
-    def _solver(self):
-        from .smtlib import SelectedSolver
-
-        return SelectedSolver.instance()  # solver
 
     def migrate_expression(self, expression):
         if not issymbolic(expression):
