@@ -39,6 +39,8 @@ class ConstraintException(SmtlibError):
 
     pass
 
+class Model():
+    pass
 
 class ConstraintSet:
     """ Constraint Sets
@@ -213,6 +215,10 @@ class ConstraintSet:
             raise ValueError("Variable already declared")
         self._declarations[var.name] = var
         return var
+
+    @property
+    def variables(self):
+        return self._declarations.values()
 
     def get_declared_variables(self):
         """ Returns the variable expressions of this constraint set """

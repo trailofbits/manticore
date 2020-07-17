@@ -61,11 +61,11 @@ class XSlotted(type):
 
 class Expression(object, metaclass=XSlotted, abstract=True):
     """ Abstract taintable Expression. """
-
     __xslots__ : Tuple[str, ...] = ("_taint",)
+
     def __init__(self, taint: Union[tuple, frozenset] = ()):
         """
-        An abstrac Unmutable Taintable Expression
+        An abstract Unmutable Taintable Expression
         :param taint: A frozenzset
         """
         self._taint = frozenset(taint)
@@ -89,20 +89,13 @@ class Expression(object, metaclass=XSlotted, abstract=True):
     def __getstate__(self):
         state = {}
         for attr in self.__slots__:
-            if attr.startswith("__"):
-                continue
             state[attr] = getattr(self, attr)
         return state
 
     def __setstate__(self, state):
         for attr in self.__slots__:
-            if attr.startswith("__"):
-                continue
             setattr(self, attr, state[attr])
 
-
-    def __hash__(self):
-        return object.__hash__(self)
 
 class Variable(Expression, abstract=True):
     """ Variable is an Expression that has a name """
@@ -198,7 +191,6 @@ class Bool(Expression, abstract=True):
     def __eq__(self, other):
         # A class that overrides __eq__() and does not define __hash__()
         # will have its __hash__() implicitly set to None.
-        #import pdb; pdb.set_trace()
         return BoolEqual(self, self.cast(other))
 
     def __hash__(self):
@@ -534,7 +526,6 @@ class BitvecConstant(Bitvec, Constant):
     def __eq__(self, other):
         if self.taint or isinstance(other, Expression) and other.taint:
             return super().__eq__(other)
-        print (self.value, other)
         return self.value == other
 
     def __hash__(self):
@@ -569,31 +560,25 @@ class BitvecUnsignedDiv(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(size=operanda.size, operands=(operanda, operandb), **kwargs)
 
-
 class BitvecMod(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(size=operanda.size, operands=(operanda, operandb), **kwargs)
-
 
 class BitvecRem(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(size=operanda.size, operands=(operanda, operandb), **kwargs)
 
-
 class BitvecUnsignedRem(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(size=operanda.size, operands=(operanda, operandb), **kwargs)
-
 
 class BitvecShiftLeft(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(size=operanda.size, operands=(operanda, operandb), **kwargs)
 
-
 class BitvecShiftRight(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(size=operanda.size, operands=(operanda, operandb), **kwargs)
-
 
 class BitvecArithmeticShiftLeft(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
@@ -603,7 +588,6 @@ class BitvecArithmeticShiftLeft(BitvecOperation):
 class BitvecArithmeticShiftRight(BitvecOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(size=operanda.size, operands=(operanda, operandb), **kwargs)
-
 
 class BitvecAnd(BitvecOperation):
     def __init__(self, operanda, operandb, *args, **kwargs):
@@ -635,11 +619,9 @@ class BoolLessThan(BoolOperation):
     def __init__(self, operanda: Bitvec, operandb: Bitvec, **kwargs):
         super().__init__(operands=(operanda, operandb), **kwargs)
 
-
 class BoolLessOrEqualThan(BoolOperation):
     def __init__(self, operanda: Bitvec, operandb: Bitvec, **kwargs):
         super().__init__(operands=(operanda, operandb), **kwargs)
-
 
 class BoolEqual(BoolOperation):
     def __init__(self, operanda: Bitvec, operandb: Bitvec, **kwargs):
@@ -808,6 +790,27 @@ class Array(Expression, abstract=True):
         return start, stop, size.value
 
 
+    def _concatenate(self, array_a, array_b):
+        # FIXME/Research This should be related to a constrainSet
+        new_arr = ArrayVariable(
+                index_size = self.index_size,
+                length=len(array_a) + len(array_b),
+                value_size = self.value_size,
+                name="concatenation{}".format(uuid.uuid1()),
+            )
+
+        for index in range(len(array_a)):
+            new_arr = new_arr.store(index, simplify(array_a[index]))
+        for index in range(len(array_b)):
+            new_arr = new_arr.store(index + len(array_a), simplify(array_b[index]))
+        return new_arr
+
+    def __add__(self, other):
+        return self._concatenate(self, other)
+
+    def __radd__(self, other):
+        print ("RADD!"*9)
+        return self._concatenate(other, self)
 
 class ArrayConstant(Array, Constant):
     __xslots__: Tuple[str, ...] = (
@@ -869,6 +872,9 @@ class ArrayVariable(Array, Variable):
             "_default",
         )
 
+    @property
+    def index_max(self):
+        return len(self.value)
 
     def __hash__(self):
         return object.__hash__(self)
@@ -900,7 +906,6 @@ class ArrayVariable(Array, Variable):
         self._value_size = value_size
         self._default = default
         super().__init__(**kwargs)
-
 
     @property
     def index_size(self):
@@ -1076,6 +1081,22 @@ class ArrayStore(ArrayOperation):
         "_written",
         "_concrete_cache",
     )
+    def __getstate__(self):
+        #Overload serialization so _written and _concrete_cache are not actually saved
+        state = {}
+        for attr in self.__slots__:
+            if attr in ('_written', '_concrete_cache'):
+                continue
+            state[attr] = getattr(self, attr)
+        return state
+
+    def __setstate__(self, state):
+        #Overload serialization so _written and _concrete_cache are not actually saved
+        for attr in self.__slots__:
+            if attr in ('_written', '_concrete_cache'):
+                continue
+            setattr(self, attr, state[attr])
+
     def __init__(self, array: Array, index: Bitvec, value: Bitvec, **kwargs):
         assert index.size == array.index_size
         assert value.size == array.value_size
@@ -1330,34 +1351,20 @@ class ArrayProxy:
         return ArrayProxy(self._array[offset : offset + size])
 
     def __eq__(self, other):
-        print ("type:"*99, type(self.array ), type(other))
         return self.array == other
 
     def __ne__(self, other):
         return BoolNot(self == other)
 
-    def _concatenate(self, array_a, array_b):
-        from .visitors import simplify
-        # FIXME/Research This should be related to a constrainSet
-        new_arr = ArrayProxy(
-            ArrayVariable(
-                index_size = self.index_size,
-                length=len(array_a) + len(array_b),
-                value_size = self.value_size,
-                name="concatenation{}".format(uuid.uuid1()),
-            )
-        )
-        for index in range(len(array_a)):
-            new_arr[index] = simplify(array_a[index])
-        for index in range(len(array_b)):
-            new_arr[index + len(array_a)] = simplify(array_b[index])
-        return new_arr
-
     def __add__(self, other):
-        return self._concatenate(self, other)
+        if isinstance(other, ArrayProxy):
+            other = other.array
+        return ArrayProxy(self.array + other)
 
     def __radd__(self, other):
-        return self._concatenate(other, self)
+        if isinstance(other, ArrayProxy):
+            other = other.array
+        return ArrayProxy(other+self.array)
 
 class ArraySelect(BitvecOperation):
     __xslots__ = BitvecOperation.__xslots__
@@ -1523,3 +1530,4 @@ def taint_with(arg, *taints, value_size=256, index_size=256):
 
 
 from .visitors import simplify
+

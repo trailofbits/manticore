@@ -216,7 +216,7 @@ class SmtlibProc:
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
-        print (buf)
+        print (">",buf)
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
@@ -229,7 +229,7 @@ class SmtlibProc:
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        print (cmd)
+        print ("<",cmd)
         if self._debug:
             logger.debug(">%s", cmd)
         self._proc.stdout.flush()  # type: ignore
@@ -398,6 +398,30 @@ class SMTLIBSolver(Solver):
     def _pop(self):
         """Recall the last pushed constraint store and state."""
         self._smtlib.send("(pop 1)")
+
+    def get_model(self, constraints: ConstraintSet):
+        self._reset(constraints.to_string())
+        self._smtlib.send("(check-sat)")
+        self._smtlib.recv()
+
+        model = {}
+        for variable in constraints.variables:
+            print (variable)
+            if isinstance(variable, Bool):
+                value = self.__getvalue_bool(variable.name)
+            elif isinstance(variable, Bitvec):
+                value = self.__getvalue_bv(variable.name)
+            else:
+                try:
+                    #Only works if we know the max index of the arrray
+                    value = []
+                    for i in range(len(variable)):
+                        value.append(self.__getvalue_bv(variable[i]))
+                except:
+                    value = None #We failed to get the model from the solver
+
+            model[variable.name] = value
+        return model
 
     @lru_cache(maxsize=32)
     def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
@@ -615,7 +639,7 @@ class SMTLIBSolver(Solver):
                     result = []
                     for i in range(expression.index_max):
                         subvar = temp_cs.new_bitvec(expression.value_bits)
-                        var.append(subvar)
+                        var.append(expression[i]) #subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
                     self._reset(temp_cs.to_string())
                     if not self._is_sat():

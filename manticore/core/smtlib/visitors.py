@@ -139,6 +139,7 @@ class Visitor:
         #  - no operands were modified
         return expression
 
+
 class Translator(Visitor):
     """ Simple visitor to translate an expression into something else
     """

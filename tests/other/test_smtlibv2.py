@@ -88,7 +88,6 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertEqual(translate_to_smtlib(z),
         "(bvsle (bvsdiv (bvadd #x00000001 BV1) BV1) (bvadd (bvsub BV (bvmul #x00000064 #x00000005)) BV2))")
 
-
     def test_ConstantArrayBitvec(self):
         c = ArrayConstant(index_size=32, value_size=8, value=b"ABCDE")
         self.assertEqual(c[0], "A")
@@ -97,7 +96,6 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertEqual(c[3], "D")
         self.assertEqual(c[4], "E")
         self.assertRaises(IndexError, c.get, 5)
-
 
     def test_ConstantArrayBitvec(self):
         c = ArrayProxy(ArrayVariable(index_size=32, value_size=8, length=5, name="ARR"))
@@ -124,7 +122,7 @@ class ExpressionTestNew(unittest.TestCase):
                 "\n  Slotted:",
                 not hasattr(x, "__dict__"),
             )
-            self.assertEqual(len(pickle_dumps(x)), pickle_size)
+            #self.assertEqual(len(pickle_dumps(x)), pickle_size)
             self.assertEqual(sys.getsizeof(x), sizeof)
             self.assertFalse(hasattr(x, "__dict__"))  # slots!
             self.assertTrue(hasattr(x, "_taint"))     # taint!
@@ -148,19 +146,19 @@ class ExpressionTestNew(unittest.TestCase):
             self.assertTrue(ty.__doc__, ty)
             checked.add(ty)
 
-        check(BitvecVariable, size=32, name="name", pickle_size=84, sizeof=64)
-        check(BoolVariable, name="name", pickle_size=80, sizeof=56)
+        check(BitvecVariable, size=32, name="name", pickle_size=111, sizeof=64)
+        check(BoolVariable, name="name", pickle_size=99, sizeof=56)
         check(
             ArrayVariable,
-            index_bits=32,
-            value_bits=8,
-            index_max=100,
+            index_size=32,
+            value_size=8,
+            length=100,
             name="name",
-            pickle_size=92,
-            sizeof=104,
+            pickle_size=156,
+            sizeof=88,
         )
-        check(BitvecConstant, size=32, value=10, pickle_size=79, sizeof=64)
-        check(BoolConstant, value=False, pickle_size=74, sizeof=56)
+        check(BitvecConstant, size=32, value=10, pickle_size=107, sizeof=64)
+        check(BoolConstant, value=False, pickle_size=94, sizeof=56)
 
         # TODO! But you can instantiate an ArraConstant
         """
@@ -174,11 +172,11 @@ class ExpressionTestNew(unittest.TestCase):
         x = BoolVariable(name="x")
         y = BoolVariable(name="y")
         z = BoolVariable(name="z")
-        check(BoolEqual, operanda=x, operandb=y, pickle_size=118, sizeof=56)
-        check(BoolAnd, operanda=x, operandb=y, pickle_size=116, sizeof=56)
-        check(BoolOr, operanda=x, operandb=y, pickle_size=115, sizeof=56)
-        check(BoolXor, operanda=x, operandb=y, pickle_size=116, sizeof=56)
-        check(BoolNot, operand=x, pickle_size=102, sizeof=56)
+        check(BoolEqual, operanda=x, operandb=y, pickle_size=159, sizeof=56)
+        check(BoolAnd, operanda=x, operandb=y, pickle_size=157, sizeof=56)
+        check(BoolOr, operanda=x, operandb=y, pickle_size=156, sizeof=56)
+        check(BoolXor, operanda=x, operandb=y, pickle_size=157, sizeof=56)
+        check(BoolNot, operand=x, pickle_size=137, sizeof=56)
         check(BoolITE, cond=z, true=x, false=y, pickle_size=130, sizeof=56)
 
         bvx = BitvecVariable(size=32, name="bvx")
@@ -221,10 +219,11 @@ class ExpressionTestNew(unittest.TestCase):
         check(BitvecConcat, operands=(bvx, bvy), pickle_size=133, sizeof=64)
         check(BitvecITE, condition=x, true_value=bvx, false_value=bvy, pickle_size=161, sizeof=64)
 
-        a = ArrayVariable(index_bits=32, value_bits=32, length=324, name="name")
-        check(ArraySlice, array=a, offset=0, size=10 , pickle_size=136, sizeof=120)
+        a = ArrayVariable(index_size=32, value_size=32, length=324, name="name")
+        check(ArrayConstant, index_size=32, value_size=8, value=b"A", pickle_size=136, sizeof=72)
+        check(ArraySlice, array=a, offset=0, size=10 , pickle_size=136, sizeof=56)
         check(ArraySelect, array=a, index=bvx, pickle_size=161, sizeof=64)
-        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=188, sizeof=104)
+        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=188, sizeof=72)
 
 
         def all_subclasses(cls):
@@ -281,78 +280,6 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertIn('red', z.taint)
         self.assertIn('blue', z.taint)
 
-class RegressionTest(unittest.TestCase):
-    def test_related_to(self):
-        import gzip
-
-        filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
-
-        # A constraint set and a contraint caught in the act of making related_to fail
-        constraints, constraint = pickle.loads(gzip.open(filename, "rb").read())
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        ground_truth = Z3Solver.instance().can_be_true(constraints, constraint)
-        self.assertEqual(ground_truth, False)
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(
-            ground_truth,
-            Z3Solver.instance().can_be_true(constraints.related_to(constraints), constraint),
-        )
-
-        # Replace
-        new_constraint = Operators.UGE(
-            Operators.SEXTEND(BitvecConstant(256, 0x1A), 256, 512) * BitvecConstant(512, 1),
-            0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000,
-        )
-        self.assertEqual(translate_to_smtlib(constraint), translate_to_smtlib(new_constraint))
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(
-            ground_truth,
-            Z3Solver.instance().can_be_true(constraints.related_to(new_constraint), new_constraint),
-        )
-
-
-"""
-class Z3Specific(unittest.TestCase):
-    _multiprocess_can_split_ = True
-
-    def setUp(self):
-        self.solver = Z3Solver.instance()
-
-
-    @patch('subprocess.check_output', mock_open())
-    def test_check_solver_min(self, mock_check_output):
-        mock_check_output.return_value = ("output", "Error")
-        #mock_check_output.return_value='(:version "4.4.1")'
-        #mock_function = create_autospec(function, return_value='(:version "4.4.1")')
-        #with patch.object(subprocess, 'check_output' , return_value='(:version "4.4.1")'):
-        #test_patch.return_value = '(:version "4.4.1")'
-        print (self.solver._solver_version())
-        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
-
-    def test_check_solver_newer(self):
-        self.solver._received_version = '(:version "4.5.0")'
-        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
-
-    def test_check_solver_long_format(self):
-        self.solver._received_version = '(:version "4.8.6 - build hashcode 78ed71b8de7d")'
-        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=8, patch=6))
-
-    def test_check_solver_undefined(self):
-        self.solver._received_version = '(:version "78ed71b8de7d")'
-        self.assertTrue(
-
-            self.solver._solver_version()
-            == Version(major=float("inf"), minor=float("inf"), patch=float("inf"))
-        )
-        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
-"""
-
 
 class ExpressionTestLoco(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -374,14 +301,17 @@ class ExpressionTestLoco(unittest.TestCase):
         mask = (1 << 32) - 1
 
         cs = ConstraintSet()
-        _a = cs.new_bitvec(32)
-        _b = cs.new_bitvec(32)
+        a = cs.new_bitvec(32)
+        b = cs.new_bitvec(32)
 
-        cs.add(_a == 0x1)
-        cs.add(_b == (0x80000000 - 1))
+        cs.add(a == 0x1)
+        cs.add(b == (0x80000000 - 1))
+
+        lt = b < a
+        ult = b.ult(a)
 
         self.assertFalse(self.solver.can_be_true(cs, ult))
-        self.assertTrue(self.solver.must_be_true(cs, lt))
+        self.assertTrue(self.solver.must_be_true(cs, Operators.NOT(lt)))
 
     def test_signed_unsigned_LT_simple(self):
         cs = ConstraintSet()
@@ -691,7 +621,6 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(self.solver.must_be_true(cs, array.read(0, 12) == hw))
         cs.add(array.read(6, 6) == hw[6:12])
         self.assertTrue(self.solver.must_be_true(cs, array.read(6, 6) == hw[6:12]))
-
         self.assertTrue(self.solver.must_be_true(cs, b"Hello " + array.read(6, 6) == hw))
 
         self.assertTrue(self.solver.must_be_true(cs, b"Hello " + array.read(6, 5) + b"!" == hw))
