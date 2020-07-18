@@ -9,7 +9,7 @@ from ..utils import config
 consts = config.get_group("core")
 consts.add(
     "execs_per_intermittent_cb",
-    default=2000,
+    default=1000,
     description="How often to fire the `exec_intermittent` event",
 )
 
@@ -218,6 +218,7 @@ class StateBase(Eventful):
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
         new_state._id = None
+        new_state._total_exec = self._total_exec
         self.copy_eventful_state(new_state)
 
         self._child = new_state

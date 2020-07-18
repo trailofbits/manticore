@@ -149,6 +149,17 @@ def pickle_dump(obj: Any, fp: IO[bytes]) -> None:
 
 
 def pretty_print_state_descriptors(desc):
+    from datetime import datetime
+
+    now = datetime.now()
     for st in desc.values():
         if st.status != StateStatus.destroyed:
-            print("State", st.state_id, "::", st.state_list.value)
+            print(
+                "State",
+                st.state_id,
+                "::",
+                st.state_list.value,
+                "({} ips)".format(
+                    getattr(st, "total_insts", 0) / (now - st.created_at).total_seconds()
+                ),
+            )

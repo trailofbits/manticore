@@ -97,3 +97,10 @@ class State(StateBase):
         :param model: callable, model to invoke
         """
         self._platform.invoke_model(model, prefix_args=(self,))
+
+    def _update_state_descriptor(self, descriptor, *args, **kwargs):
+        super()._update_state_descriptor(descriptor, *args, **kwargs)
+        descriptor.pc = self.cpu.PC
+        descriptor.total_insts = self._total_exec
+        descriptor.own_insts = self._own_exec
+        print(self.id, ":: Own:", self._own_exec, "Total:", self._total_exec)
