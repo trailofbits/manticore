@@ -495,7 +495,8 @@ class IntrospectionAPIPlugin(Plugin):
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
                 logger.warning(
-                    "Caught solve in state %s, but failed to capture its initialization", state.id
+                    "Caught will_solve in state %s, but failed to capture its initialization",
+                    state.id,
                 )
             desc = context.setdefault(state.id, StateDescriptor(state_id=state.id))
             desc._old_status = desc.status
@@ -505,7 +506,8 @@ class IntrospectionAPIPlugin(Plugin):
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
                 logger.warning(
-                    "Caught solve in state %s, but failed to capture its initialization", state.id
+                    "Caught did_solve in state %s, but failed to capture its initialization",
+                    state.id,
                 )
             desc = context[state.id]
             desc.status = desc._old_status

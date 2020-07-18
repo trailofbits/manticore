@@ -561,6 +561,7 @@ class ManticoreOutput:
 
     @property
     def _last_id(self):
+        filename = ".testcase_id"
         try:
             with self._store.stream(filename, "r") as f:
                 last_id = int(f.read())

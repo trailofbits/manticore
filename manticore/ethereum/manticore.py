@@ -117,6 +117,8 @@ class ManticoreEVM(ManticoreBase):
             m.finalize()
     """
 
+    _published_events = {"solve"}
+
     def make_symbolic_buffer(self, size, name=None, avoid_collisions=False):
         """ Creates a symbolic buffer of size bytes to be used in transactions.
             You can operate on it normally and add constraints to manticore.constraints
@@ -569,7 +571,7 @@ class ManticoreEVM(ManticoreBase):
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     maybe_balance = balance == 0
-                    self._publish("will_solve", self.constraints, maybe_balance, "can_be_true")
+                    self._publish("will_solve", None, self.constraints, maybe_balance, "can_be_true")
                     must_have_balance = SelectedSolver.instance().can_be_true(
                         self.constraints, maybe_balance
                     )
@@ -592,7 +594,7 @@ class ManticoreEVM(ManticoreBase):
                         world = state.platform
 
                         expr = Operators.UGE(world.get_balance(owner.address), balance)
-                        self._publish("will_solve", self.constraints, expr, "can_be_true")
+                        self._publish("will_solve", None, self.constraints, expr, "can_be_true")
                         sufficient = SelectedSolver.instance().can_be_true(self.constraints, expr,)
                         self._publish(
                             "did_solve", self.constraints, expr, "can_be_true", sufficient
@@ -1797,7 +1799,7 @@ class ManticoreEVM(ManticoreBase):
                 for i in EVMAsm.disassemble_all(runtime_bytecode):
                     if (address, i.pc) in seen:
                         count += 1
-                        globalmanticore / ethereum / manticore.py_runtime_asm.write("*")
+                        global_runtime_asm.write("*")
                     else:
                         global_runtime_asm.write(" ")
 
@@ -1894,7 +1896,7 @@ class ManticoreEVM(ManticoreBase):
         """
         self.fix_unsound_all()
         _ready_states = self._ready_states
-        for state_id in _all_states:
+        for state_id in _ready_states:
             state = self._load(state_id)
             if self.fix_unsound_symbolication(state):
                 yield state

@@ -146,10 +146,9 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
                 self._check_event(_name)
                 self._publish_impl(_name, *args, **kwargs)
         except Exception as e:
+            logger.warning("Exception raised in callback: %s", e)
             if can_raise:
                 raise
-            else:
-                logger.info("Exception raised at a callback %r", e)
 
     # Separate from _publish since the recursive method call to forward an event
     # shouldn't check the event.
@@ -157,6 +156,12 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.items():
             for callback in methods:
+                if "will_solve" in _name:
+                    print("Robj:", robj())
+                    print("Args[0]:", args[0])
+                    import traceback
+
+                    traceback.print_stack()
                 callback(robj(), *args, **kwargs)
 
         # The include_source flag indicates to prepend the source of the event in
@@ -172,6 +177,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         assert inspect.ismethod(method), f"{method.__class__.__name__} is not a method"
         obj, callback = method.__self__, method.__func__
         bucket = self._get_signal_bucket(name)
+        print("subscribing", callback, "on", obj)
         robj = ref(obj, self._unref)  # see unref() for explanation
         bucket.setdefault(robj, set()).add(callback)
         self.__sub_events__.add(name)

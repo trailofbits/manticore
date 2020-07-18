@@ -2408,6 +2408,7 @@ class EVMWorld(Platform):
         "open_transaction",
         "close_transaction",
         "symbolic_function",
+        "solve",
     }
 
     def __init__(self, constraints, fork=DEFAULT_FORK, **kwargs):
