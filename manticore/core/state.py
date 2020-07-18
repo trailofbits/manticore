@@ -4,7 +4,14 @@ import logging
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
+from ..utils import config
 
+consts = config.get_group("core")
+consts.add(
+    "execs_per_intermittent_cb",
+    default=2000,
+    description="How often to fire the `exec_intermittent` event",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +155,8 @@ class StateBase(Eventful):
     :ivar dict context: Local context for arbitrary data storage
     """
 
+    _published_events = {"execution_intermittent"}
+
     def __init__(self, constraints, platform, **kwargs):
         super().__init__(**kwargs)
         self._platform = platform
@@ -158,6 +167,8 @@ class StateBase(Eventful):
         self._context = dict()
         self._terminated_by = None
         self._solver = EventSolver()
+        self._total_exec = 0
+        self._own_exec = 0
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._solver)
@@ -171,6 +182,7 @@ class StateBase(Eventful):
         state["child"] = self._child
         state["context"] = self._context
         state["terminated_by"] = self._terminated_by
+        state["exec_counter"] = self._total_exec
         return state
 
     def __setstate__(self, state):
@@ -181,6 +193,8 @@ class StateBase(Eventful):
         self._child = state["child"]
         self._context = state["context"]
         self._terminated_by = state["terminated_by"]
+        self._total_exec = state["exec_counter"]
+        self._own_exec = 0
         self._solver = EventSolver()
         # 33
         # Events are lost in serialization and fork !!
@@ -237,8 +251,15 @@ class StateBase(Eventful):
         self._constraints = constraints
         self.platform.constraints = constraints
 
+    def _update_state_descriptor(self, descriptor, *args, **kwargs):
+        pass
+
     def execute(self):
-        raise NotImplementedError
+        self._total_exec += 1
+        self._own_exec += 1
+
+        if self._total_exec % consts.execs_per_intermittent_cb == 0:
+            self._publish("on_execution_intermittent", self._update_state_descriptor)
 
     def constrain(self, constraint):
         """Constrain state.

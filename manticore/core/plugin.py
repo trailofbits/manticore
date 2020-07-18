@@ -6,7 +6,7 @@ import threading
 import typing
 from functools import wraps
 from dataclasses import dataclass, field
-from ..utils.enums import StateLists
+from ..utils.enums import StateLists, StateStatus
 from datetime import datetime
 
 from .smtlib import issymbolic
@@ -414,6 +414,8 @@ class StateDescriptor:
     state_list: typing.Optional[StateLists] = None
     children: set = field(default_factory=set)
     last_update: datetime = field(default_factory=datetime.now)
+    status: StateStatus = StateStatus.waiting_for_worker
+    _old_status: typing.Optional[StateStatus] = None
 
     def __setattr__(self, key, value):
         if key != "last_update":
@@ -421,7 +423,7 @@ class StateDescriptor:
         super().__setattr__("last_update", datetime.now())
 
 
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 
 class IntrospectionAPIPlugin(Plugin):
@@ -456,7 +458,13 @@ class IntrospectionAPIPlugin(Plugin):
                     state.state_list,
                     from_list,
                 )
-            context[state_id].state_list = to_list
+            state.state_list = to_list
+            if to_list == StateLists.ready:
+                state.status = StateStatus.waiting_for_worker
+            elif to_list == StateLists.busy:
+                state.status = StateStatus.running
+            elif to_list in {StateLists.terminated, StateLists.killed}:
+                state.status = StateStatus.stopped
 
     def did_remove_state_callback(self, state_id):
         logger.info("did_remove_state: %s", state_id)
@@ -467,7 +475,9 @@ class IntrospectionAPIPlugin(Plugin):
                 )
             else:
                 # Wipe the state list to indicate it's been deleted, but keep it around for record-keeping
-                context[state_id].state_list = None
+                desc = context[state_id]
+                desc.state_list = None
+                desc.status = StateStatus.destroyed
 
     def did_fork_state_callback(self, state_id, children):
         logger.info("did_fork_state: %s --> %s", state_id, children)
@@ -481,7 +491,19 @@ class IntrospectionAPIPlugin(Plugin):
             )
 
     def will_solve_callback(self, state, constraints, expr, solv_func):
-        logger.info("Solving %s for %s in state %s", expr, solv_func, state.id)
+        with self.locked_context("manticore_state", dict) as context:
+            desc = context[state.id]
+            desc._old_status = desc.status
+            desc.status = StateStatus.waiting_for_solver
+
+    def did_solve_callback(self, state, constraints, expr, solv_func, solutions):
+        with self.locked_context("manticore_state", dict) as context:
+            desc = context[state.id]
+            desc.status = desc._old_status
+
+    def on_execution_intermittent_callback(self, state, update_cb, *args, **kwargs):
+        with self.locked_context("manticore_state", dict) as context:
+            update_cb(state, context[state.id], *args, **kwargs)
 
     def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
         with self.locked_context("manticore_state", dict) as context:

@@ -237,6 +237,6 @@ class DaemonThread(WorkerThread):
             "Starting Daemon %d. (Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident(),
         )
 
-        self._t = threading.Thread(target=self.run if target is None else target)
+        self._t = threading.Thread(target=self.run if target is None else target, args=(self,))
         self._t.daemon = True
         self._t.start()

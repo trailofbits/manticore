@@ -8,6 +8,14 @@ class StateLists(Enum):
     killed = "KILLED"
 
 
+class StateStatus(Enum):
+    waiting_for_worker = "waiting_for_worker"
+    waiting_for_solver = "waiting_for_solver"
+    running = "running"
+    stopped = "stopped"
+    destroyed = "destroyed"
+
+
 class MProcessingType(Enum):
     """Used as configuration constant for choosing multiprocessing flavor"""
 

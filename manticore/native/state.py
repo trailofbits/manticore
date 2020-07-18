@@ -37,6 +37,7 @@ class State(StateBase):
         """
         Perform a single step on the current state
         """
+        super().execute()
         from .cpu.abstractcpu import (
             ConcretizeRegister,
         )  # must be here, otherwise we get circular imports

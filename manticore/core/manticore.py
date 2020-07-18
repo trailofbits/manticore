@@ -1096,8 +1096,8 @@ class ManticoreBase(Eventful):
         for w in self._workers:
             w.start()
 
-        for cb in self._daemon_callbacks:
-            dt = DaemonThread()
+        for i, cb in enumerate(self._daemon_callbacks):
+            dt = DaemonThread(id=i, manticore=self)
             self._daemon_threads.append(dt)
             dt.start(cb)
 

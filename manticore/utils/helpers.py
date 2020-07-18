@@ -9,6 +9,7 @@ from io import BytesIO
 from typing import Any, IO
 
 from .config import get_group
+from .enums import StateLists, StateStatus
 
 logger = logging.getLogger(__name__)
 
@@ -145,3 +146,9 @@ def pickle_dump(obj: Any, fp: IO[bytes]) -> None:
     Serializes an object as a gzipped pickle to the given file.
     """
     return pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def pretty_print_state_descriptors(desc):
+    for st in desc.values():
+        if st.status != StateStatus.destroyed:
+            print("State", st.state_id, "::", st.state_list.value)
