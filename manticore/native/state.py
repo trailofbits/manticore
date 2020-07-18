@@ -103,4 +103,4 @@ class State(StateBase):
         descriptor.pc = self.cpu.PC
         descriptor.total_insts = self._total_exec
         descriptor.own_insts = self._own_exec
-        print(self.id, ":: Own:", self._own_exec, "Total:", self._total_exec)
+        # print(self.id, ":: Own:", self._own_exec, "Total:", self._total_exec)

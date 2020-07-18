@@ -1118,10 +1118,10 @@ class ManticoreBase(Eventful):
                 logger.debug("Killed. Moving all remaining ready states to killed list")
                 # move all READY to KILLED:
                 while self._ready_states:
-                    id = self._ready_states[-1].id
-                    self._publish("will_transition_state", id, StateLists.ready, StateLists.killed)
+                    state_id = self._ready_states[-1]
+                    self._publish("will_transition_state", state_id, StateLists.ready, StateLists.killed)
                     self._killed_states.append(self._ready_states.pop())
-                    self._publish("did_transition_state", id, StateLists.ready, StateLists.killed)
+                    self._publish("did_transition_state", state_id, StateLists.ready, StateLists.killed)
 
         self._running.value = False
         self._publish("did_run")
