@@ -296,14 +296,14 @@ class StrcpyTest(ModelTest):
         src = cpu.read_int(s, 8)
         dst = cpu.read_int(d, 8)
         offset = 0
-        while cannot_be_NULL(src, self.state.constraints):
+        while cannot_be_NULL(self.state, src):
             self.assertEqual(src, dst)
             offset += 1
             src = cpu.read_int(s + offset, 8)
             dst = cpu.read_int(d + offset, 8)
 
         # Assert final NULL byte
-        self.assertTrue(must_be_NULL(src, self.state.constraints))
+        self.assertTrue(must_be_NULL(self.state, src))
         self.assertEqual(0, dst)
 
     def _test_strcpy(self, string, dst_len=None):
@@ -421,7 +421,7 @@ class StrncpyTest(ModelTest):
         offset = 0
 
         # Check that min(n, length of src) characters are copied from src to dst
-        while not must_be_NULL(src, self.state.constraints) and offset < n:
+        while not must_be_NULL(self.state, src) and offset < n:
             self.assertEqual(src, dst)
             offset += 1
             src = cpu.read_int(s + offset, 8)
