@@ -10,7 +10,7 @@ class Merger(Plugin):
         p = self.manticore._publish
         self.manticore._publish = lambda *args, **kwargs: None
         for state in self.manticore.ready_states:
-            self.did_fork_state_callback(state, None, None, None)
+            self.did_fork_state_callback(state, None, None, None, None)
 
         self.manticore._publish = p
 
