@@ -13,7 +13,7 @@ import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
 
-from ..core.manticore import ManticoreBase, ManticoreError
+from ..core.manticore import ManticoreBase, Testcase, ManticoreError
 
 from ..core.smtlib import (
     ConstraintSet,
@@ -1553,11 +1553,11 @@ class ManticoreEVM(ManticoreBase):
             with state as temp_state:
                 if only_if is not None:
                     temp_state.constrain(only_if)
-                return self.generate_testcase_ex(temp_state, message, name=name)
+                return self._generate_testcase_ex(temp_state, message, name=name)
         except ManticoreError:
             return None
 
-    def generate_testcase_ex(self, state, message="", name="user"):
+    def _generate_testcase_ex(self, state, message="", name="user"):
         """
         Generate a testcase in the outputspace for the given program state.
         An exception is raised if the state is unsound or unfeasible

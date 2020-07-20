@@ -943,6 +943,15 @@ class ExpressionTest(unittest.TestCase):
         self.assertItemsEqual(z.taint, ("important", "stuff"))
         self.assertEqual(z.value, 0x7FFFFFFF)
 
+    def test_simplify_OR(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(False)
+        bt = BoolConstant(True)
+        var = cs.new_bool()
+        cs.add(simplify(Operators.OR(var, var)) == var)
+        cs.add(simplify(Operators.OR(var, bt)) == bt)
+        self.assertTrue(self.solver.check(cs))
+
     def testBasicReplace(self):
         """ Add """
         a = BitvecConstant(size=32, value=100)

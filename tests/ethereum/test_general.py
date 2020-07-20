@@ -80,10 +80,14 @@ class EthVerifierIntegrationTest(unittest.TestCase):
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
                 verifier.manticore_verifier(filename, "TestToken")
+            output = f.getvalue()
             self.assertIsNotNone(
                 re.compile(
                     r".*crytic_test_balance\s*\|\s*failed\s*\([0-9a-f]+\).*", re.DOTALL
-                ).match(f.getvalue())
+                ).match(output)
+            )
+            self.assertIsNotNone(
+                re.compile(r".*crytic_test_must_revert\s*\|\s*passed.*", re.DOTALL).match(output)
             )
 
     def test_propverif_external(self) -> None:
