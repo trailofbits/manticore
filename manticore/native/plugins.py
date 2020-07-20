@@ -41,7 +41,7 @@ class Merger(Plugin):
         """
         return self.manticore._save(state, state_id=state_id)
 
-    def did_fork_state_callback(self, state, expression, new_value, policy):
+    def did_fork_state_callback(self, state, expression, new_value, policy, children):
         state_id = state.id
         """That means no one else has to offer one Message Input
 

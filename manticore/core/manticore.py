@@ -504,7 +504,7 @@ class ManticoreBase(Eventful):
                 # maintain a list of children for logging purpose
                 children.append(new_state_id)
 
-        self._publish("did_fork_state", state.id, children)
+        self._publish("did_fork_state", state, expression, solutions, policy, children)
         logger.debug("Forking current state %r into states %r", state.id, children)
 
         with self._lock:

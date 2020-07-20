@@ -368,8 +368,10 @@ class ExamplePlugin(Plugin):
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
         logger.info("will_fork_state %r %r %r %r", parent_state, expression, solutions, policy)
 
-    def did_fork_state_callback(self, child_state, expression, new_value, policy):
-        logger.info("did_fork_state %r %r %r %r", child_state, expression, new_value, policy)
+    def did_fork_state_callback(self, child_state, expression, new_value, policy, children):
+        logger.info(
+            "did_fork_state %r %r %r %r %r", child_state, expression, new_value, policy, children
+        )
 
     def did_load_state_callback(self, state, state_id):
         logger.info("did_load_state %r %r", state, state_id)
@@ -480,7 +482,8 @@ class IntrospectionAPIPlugin(Plugin):
                 desc.state_list = None
                 desc.status = StateStatus.destroyed
 
-    def did_fork_state_callback(self, state_id, children):
+    def did_fork_state_callback(self, state, expression, solutions, policy, children):
+        state_id = state.id
         logger.info("did_fork_state: %s --> %s", state_id, children)
         with self.locked_context("manticore_state", dict) as context:
             if state_id not in context:
