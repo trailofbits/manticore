@@ -647,6 +647,7 @@ class EVM(Eventful):
         "evm_write_code",
         "decode_instruction",
         "on_unsound_symbolication",
+        "solve",
     }
 
     class transact:
