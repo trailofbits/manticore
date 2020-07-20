@@ -571,12 +571,15 @@ class ManticoreEVM(ManticoreBase):
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
                     maybe_balance = balance == 0
-                    self._publish("will_solve", None, self.constraints, maybe_balance, "can_be_true")
+                    self._publish(
+                        "will_solve", None, self.constraints, maybe_balance, "can_be_true"
+                    )
                     must_have_balance = SelectedSolver.instance().can_be_true(
                         self.constraints, maybe_balance
                     )
                     self._publish(
                         "did_solve",
+                        None,
                         self.constraints,
                         maybe_balance,
                         "can_be_true",
@@ -597,7 +600,7 @@ class ManticoreEVM(ManticoreBase):
                         self._publish("will_solve", None, self.constraints, expr, "can_be_true")
                         sufficient = SelectedSolver.instance().can_be_true(self.constraints, expr,)
                         self._publish(
-                            "did_solve", self.constraints, expr, "can_be_true", sufficient
+                            "did_solve", None, self.constraints, expr, "can_be_true", sufficient
                         )
 
                         if not sufficient:

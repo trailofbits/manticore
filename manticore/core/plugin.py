@@ -492,6 +492,9 @@ class IntrospectionAPIPlugin(Plugin):
             )
 
     def will_solve_callback(self, state, constraints, expr, solv_func):
+        if state is None:
+            logger.info("Solve callback fired outside of a state, dropping...")
+            return
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
                 logger.warning(
@@ -503,6 +506,9 @@ class IntrospectionAPIPlugin(Plugin):
             desc.status = StateStatus.waiting_for_solver
 
     def did_solve_callback(self, state, constraints, expr, solv_func, solutions):
+        if state is None:
+            logger.info("Solve callback fired outside of a state, dropping...")
+            return
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
                 logger.warning(
