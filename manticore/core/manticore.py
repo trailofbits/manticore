@@ -1213,5 +1213,5 @@ class ManticoreBase(Eventful):
         self._daemon_callbacks.append(callback)
 
     def pretty_print_states(self, *_args):
-        """ Signal handler that calls pretty_print_state_descriptors on the current set of state descriptors """
+        """ Calls pretty_print_state_descriptors on the current set of state descriptors """
         pretty_print_state_descriptors(self.introspect())
