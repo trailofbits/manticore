@@ -395,7 +395,9 @@ class ManticoreBase(Eventful):
             raise ManticoreError("No snapshot to go to")
         self.clear_ready_states()
         for state_id in self._snapshot:
-            self._put_state(state_id)
+            self._publish("will_enqueue_state", None, can_raise=False)
+            self._ready_states.append(state_id)
+            self._publish("did_enqueue_state", state_id, can_raise=False)
         self._snapshot = None
 
     @sync
