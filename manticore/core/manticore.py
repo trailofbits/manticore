@@ -12,7 +12,7 @@ from contextlib import contextmanager
 import functools
 import shlex
 
-from ..core.plugin import Plugin, IntrospectionAPIPlugin
+from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
 from ..core.smtlib import Expression
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
@@ -361,8 +361,11 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+
+        # We won't create the daemons until .run() is called
         self._daemon_threads = []
         self._daemon_callbacks = []
+
         self._snapshot = None
         self._main_id = os.getpid(), threading.current_thread().ident
 
@@ -539,7 +542,7 @@ class ManticoreBase(Eventful):
         return state.id
 
     @Eventful.will_did("load_state", can_raise=False)
-    def _load(self, state_id):
+    def _load(self, state_id: int):
         """ Load the state from the secondary storage
 
             :param state_id: a estate id
@@ -558,7 +561,7 @@ class ManticoreBase(Eventful):
         return state
 
     @Eventful.will_did("remove_state", can_raise=False)
-    def _remove(self, state_id):
+    def _remove(self, state_id: int):
         """ Remove a state from secondary storage
 
             :param state_id: a estate id
@@ -635,7 +638,7 @@ class ManticoreBase(Eventful):
         return self._load(state_id)
 
     @sync
-    def _revive_state(self, state_id):
+    def _revive_state(self, state_id: int):
         """ Send a state back to READY list
 
             +--------+        +------------------+
@@ -658,7 +661,7 @@ class ManticoreBase(Eventful):
         self._lock.notify_all()
 
     @sync
-    def _terminate_state(self, state_id, delete=False):
+    def _terminate_state(self, state_id: int, delete=False):
         """ Send a BUSY state to the TERMINATED list or trash it if delete is True
 
             +------+        +------------+
@@ -1091,15 +1094,19 @@ class ManticoreBase(Eventful):
             # User subscription to events is disabled from now on
             self.subscribe = None
 
-        # self.ready_states needs to be list-ified because multiple will_run callbacks can't share the generator
+        # Passing generators to callbacks is a bit hairy because the first callback would drain it if we didn't
+        # clone the iterator in event.py. We're preserving the old API here, but it's something to avoid in the future.
         self._publish("will_run", self.ready_states)
         self._running.value = True
         # start all the workers!
         for w in self._workers:
             w.start()
 
+        # Create each daemon thread and pass it `self`
         for i, cb in enumerate(self._daemon_callbacks):
-            dt = DaemonThread(id=i, manticore=self)
+            dt = DaemonThread(
+                id=i, manticore=self
+            )  # Potentially duplicated ids with workers. Don't mix!
             self._daemon_threads.append(dt)
             dt.start(cb)
 
@@ -1174,15 +1181,32 @@ class ManticoreBase(Eventful):
         logger.info("Results in %s", self._output.store.uri)
 
     @at_not_running
-    def set_instrospection_plugin(self, newPlugin: type):
-        assert issubclass(newPlugin, self._introspection_plugin)
-        self._introspection_plugin = newPlugin
+    def set_instrospection_plugin(self, new_plugin: type):
+        """
+        Allows the user to extend the functionality of the default IntrospectionAPI plugin.
+        Must be called before ManticoreBase.run()
+        :param new_plugin: a subclass of IntrospectionAPIPlugin
+        """
+        assert issubclass(
+            new_plugin, self._introspection_plugin
+        ), "New plugin must be a subclass of IntrospectionAPIPlugin"
+        self._introspection_plugin = new_plugin
 
-    def introspect(self):
+    def introspect(self) -> typing.Dict[int, StateDescriptor]:
+        """
+        Allows callers to view descriptors for each state
+        :return: the latest copy of the State Descriptor dict
+        """
         if self._introspector is not None:
             return self._introspector.get_state_descriptors()
         return {}
 
     @at_not_running
-    def register_daemon(self, callback):
+    def register_daemon(self, callback: typing.Callable):
+        """
+        Allows the user to register a function that will be called at `ManticoreBase.run()` and can run
+        in the background. Infinite loops are acceptable as it will be killed when Manticore exits. The provided
+        function is passed a thread as an argument, with the current Manticore object available as thread.manticore.
+        :param callback: function to be called
+        """
         self._daemon_callbacks.append(callback)
