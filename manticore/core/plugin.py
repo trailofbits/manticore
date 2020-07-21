@@ -416,6 +416,7 @@ class StateDescriptor:
     state_list: typing.Optional[StateLists] = None
     children: set = field(default_factory=set)
     last_update: datetime = field(default_factory=datetime.now)
+    last_intermittent_update: typing.Optional[datetime] = None
     created_at: datetime = field(default_factory=datetime.now)
     status: StateStatus = StateStatus.waiting_for_worker
     _old_status: typing.Optional[StateStatus] = None
@@ -528,6 +529,7 @@ class IntrospectionAPIPlugin(Plugin):
             update_cb(
                 context.setdefault(state.id, StateDescriptor(state_id=state.id)), *args, **kwargs,
             )
+            context[state.id].last_intermittent_update = datetime.now()
 
     def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
         with self.locked_context("manticore_state", dict) as context:
