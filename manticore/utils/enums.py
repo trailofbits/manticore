@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class StateLists(Enum):
+    """
+    The set of StateLists tracked in ManticoreBase
+    """
+
     ready = "READY"
     busy = "BUSY"
     terminated = "TERMINATED"
@@ -9,10 +13,16 @@ class StateLists(Enum):
 
 
 class StateStatus(Enum):
+    """
+    Statuses that a StateDescriptor can have
+    """
+
     waiting_for_worker = "waiting_for_worker"
     waiting_for_solver = "waiting_for_solver"
     running = "running"
+    #: Killed OR Terminated
     stopped = "stopped"
+    #: Removed
     destroyed = "destroyed"
 
 
