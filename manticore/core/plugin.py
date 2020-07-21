@@ -426,9 +426,6 @@ class StateDescriptor:
         super().__setattr__("last_update", datetime.now())
 
 
-# logger.setLevel(logging.INFO)
-
-
 class IntrospectionAPIPlugin(Plugin):
     def create_state(self, state_id):
         assert state_id is not None
