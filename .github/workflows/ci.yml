@@ -73,7 +73,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
-        yml: ./codecov.yml
 # Disabled this line because Codecov has been extra flaky lately, and having to re-run the entire
 # test suite until every coverage upload step succeeds is more of a hassle than it's worth.
 #        fail_ci_if_error: true
@@ -95,5 +94,3 @@ jobs:
       uses: pypa/gh-action-pypi-publish@v1.2.2
       with:
         password: ${{ secrets.PYPI_UPLOAD }}
-
-
