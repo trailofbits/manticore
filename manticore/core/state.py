@@ -5,6 +5,7 @@ from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils import config
+from .plugin import StateDescriptor
 
 consts = config.get_group("core")
 consts.add(
@@ -252,8 +253,15 @@ class StateBase(Eventful):
         self._constraints = constraints
         self.platform.constraints = constraints
 
-    def _update_state_descriptor(self, descriptor, *args, **kwargs):
-        pass
+    def _update_state_descriptor(self, descriptor: StateDescriptor, *args, **kwargs):
+        """
+         Called on execution_intermittent to update the descriptor for this state. This is intended for information
+         like the PC or instruction count, where updating after each instruction would be a waste of cycles.
+         This one updates the execution counts
+         :param descriptor: StateDescriptor for this state
+         """
+        descriptor.total_execs = self._total_exec
+        descriptor.own_execs = self._own_exec
 
     def execute(self):
         self._total_exec += 1
