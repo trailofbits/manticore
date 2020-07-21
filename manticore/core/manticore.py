@@ -1173,6 +1173,7 @@ class ManticoreBase(Eventful):
 
         logger.info("Results in %s", self._output.store.uri)
 
+    @at_not_running
     def set_instrospection_plugin(self, newPlugin: type):
         assert issubclass(newPlugin, self._introspection_plugin)
         self._introspection_plugin = newPlugin
@@ -1182,5 +1183,6 @@ class ManticoreBase(Eventful):
             return self._introspector.get_state_descriptors()
         return {}
 
+    @at_not_running
     def register_daemon(self, callback):
         self._daemon_callbacks.append(callback)
