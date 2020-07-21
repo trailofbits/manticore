@@ -3,8 +3,9 @@ import inspect
 import logging
 import functools
 from typing import Dict, Set
-from itertools import takewhile
+from itertools import takewhile, tee
 from weakref import WeakKeyDictionary, ref
+from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -153,10 +154,24 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # Separate from _publish since the recursive method call to forward an event
     # shouldn't check the event.
     def _publish_impl(self, _name, *args, **kwargs):
-        bucket = self._get_signal_bucket(_name)
-        for robj, methods in bucket.items():
+        bucket_items = self._get_signal_bucket(_name).items()
+        n = sum(len(methods) for _r, methods in bucket_items)
+        clones = {}
+        for i, item in enumerate(args):
+            if isinstance(item, Iterable):
+                clones[i] = tee(item, n)
+
+        i = 0
+        for robj, methods in bucket_items:
             for callback in methods:
-                callback(robj(), *args, **kwargs)
+                # Need to clone any iterable args, otherwise the first usage will drain it
+                # WARNING: THIS IS NOT THREAD SAFE https://docs.python.org/3.8/library/itertools.html#itertools.tee
+                new_args = (
+                    (arg if not isinstance(arg, Iterable) else clones[arg_idx][i])
+                    for arg_idx, arg in enumerate(args)
+                )
+                callback(robj(), *new_args, **kwargs)
+                i += 1
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to

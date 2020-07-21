@@ -1090,7 +1090,7 @@ class ManticoreBase(Eventful):
             self.subscribe = None
 
         # self.ready_states needs to be list-ified because multiple will_run callbacks can't share the generator
-        self._publish("will_run", list(self.ready_states))
+        self._publish("will_run", self.ready_states)
         self._running.value = True
         # start all the workers!
         for w in self._workers:
