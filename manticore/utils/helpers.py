@@ -5,11 +5,13 @@ import sys
 from collections import OrderedDict
 from gzip import GzipFile
 from io import BytesIO
+from prettytable import PrettyTable
+from datetime import datetime
 
-from typing import Any, IO
+from typing import Any, IO, Dict
 
 from .config import get_group
-from .enums import StateLists, StateStatus
+from .enums import StateLists
 
 logger = logging.getLogger(__name__)
 
@@ -148,18 +150,53 @@ def pickle_dump(obj: Any, fp: IO[bytes]) -> None:
     return pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def pretty_print_state_descriptors(desc):
-    from datetime import datetime
+def pretty_print_state_descriptors(desc: Dict):
+    """
+    Given a dict of state descriptors, nicely formats and prints it to stdout.
+    :param desc: Dict mapping state IDs to State Descriptors, like the one returned from MantioreBase.introspect
+    """
 
-    now = datetime.now()
-    for st in desc.values():
-        if st.status != StateStatus.destroyed:
-            print(
-                "State",
-                st.state_id,
-                "::",
-                st.state_list.value,
-                "({} ips)".format(
-                    getattr(st, "total_insts", 0) / (now - st.created_at).total_seconds()
-                ),
-            )
+    descriptors = desc.values()
+    nready, nbusy, nkill, nterm = 0, 0, 0, 0
+    for st in descriptors:
+        nready += 1 if (st.state_list == StateLists.ready) else 0
+        nbusy += 1 if (st.state_list == StateLists.busy) else 0
+        nkill += 1 if (st.state_list == StateLists.busy) else 0
+        nterm += 1 if (st.state_list == StateLists.terminated) else 0
+
+    print(
+        "Ready States:",
+        nready,
+        " | ",
+        "Busy States:",
+        nbusy,
+        " | ",
+        "Terminated States:",
+        nterm,
+        " | ",
+        "Killed States:",
+        nkill,
+    )
+
+    tab = PrettyTable()
+    tab.field_names = ["ID", "Status", "Duration", "Execs", "Execs/Sec"]
+    if nbusy:
+        now = datetime.now()
+        for st in descriptors:
+            if st.state_list == StateLists.busy:
+                duration = (
+                    now - st.field_updated_at["state_list"]
+                )  # Time since this state became Busy
+                execs = st.own_execs if st.own_execs is not None else 0
+                tab.add_row(
+                    [
+                        st.state_id,
+                        st.status.value,
+                        str(duration)[:-4],
+                        execs,
+                        "{:.2f}".format(execs / (now - st.created_at).total_seconds()),
+                    ]
+                )
+
+        print(tab)
+    print()

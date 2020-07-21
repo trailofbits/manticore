@@ -436,6 +436,10 @@ class StateDescriptor:
     total_execs: typing.Optional[int] = None
     #: Number of executions that took place in this state alone, excluding its parents
     own_execs: typing.Optional[int] = None
+    #: Last program counter (if set)
+    pc: typing.Optional[typing.Any] = None
+    #: Dict mapping field names to the time that field was last updated
+    field_updated_at: typing.Dict[str, datetime] = field(default_factory=dict)
 
     def __setattr__(self, key, value):
         """
@@ -443,7 +447,10 @@ class StateDescriptor:
         """
         if key != "last_update":
             super().__setattr__(key, value)
-        super().__setattr__("last_update", datetime.now())
+        now = datetime.now()
+        # This calls setattr on the _dict_, so it doesn't cause an infinite loop
+        getattr(self, "field_updated_at", {})[key] = now
+        super().__setattr__("last_update", now)
 
 
 class IntrospectionAPIPlugin(Plugin):
@@ -530,7 +537,7 @@ class IntrospectionAPIPlugin(Plugin):
                 desc.status = StateStatus.destroyed
 
     def did_fork_state_callback(
-        self, state: "State", expression, solutions, policy, children: typing.List[int]
+        self, state, expression, solutions, policy, children: typing.List[int]
     ):
         """
         Called upon each fork. Sets the children for each state.

@@ -550,7 +550,7 @@ class ManticoreBase(Eventful):
             :returns: the state id used
         """
         if not hasattr(self, "stcache"):
-            self.stcache = weakref.WeakValueDictionary()
+            self.stcache: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
         if state_id in self.stcache:
             return self.stcache[state_id]
         state = self._workspace.load_state(state_id, delete=False)
