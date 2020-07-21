@@ -5,7 +5,7 @@ import functools
 from typing import Dict, Set
 from itertools import takewhile, tee
 from weakref import WeakKeyDictionary, ref
-from collections.abc import Iterable
+from inspect import isgenerator
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +158,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         n = sum(len(methods) for _r, methods in bucket_items)
         clones = {}
         for i, item in enumerate(args):
-            if isinstance(item, Iterable):
+            if isgenerator(item):
                 clones[i] = tee(item, n)
 
         i = 0
@@ -167,7 +167,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
                 # Need to clone any iterable args, otherwise the first usage will drain it
                 # WARNING: THIS IS NOT THREAD SAFE https://docs.python.org/3.8/library/itertools.html#itertools.tee
                 new_args = (
-                    (arg if not isinstance(arg, Iterable) else clones[arg_idx][i])
+                    (arg if not isgenerator(arg) else clones[arg_idx][i])
                     for arg_idx, arg in enumerate(args)
                 )
                 callback(robj(), *new_args, **kwargs)
