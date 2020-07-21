@@ -4,6 +4,7 @@ import logging
 import multiprocessing
 import threading
 import os
+import typing
 
 
 logger = logging.getLogger(__name__)
@@ -232,7 +233,17 @@ class WorkerProcess(Worker):
 
 
 class DaemonThread(WorkerThread):
-    def start(self, target=None):
+    """
+    Special case of WorkerThread that will exit whenever the main Manticore process exits.
+    """
+
+    def start(self, target: typing.Optional[typing.Callable] = None):
+        """
+        Function that starts the thread. Can take an optional callable to be invoked at the start, or can be subclassed,
+        in which case `target` should be None and the the `run` method will be invoked at the start.
+        :param target: an optional callable that will be invoked to start the thread. The callable should accept this
+        thread as an argument.
+        """
         logger.debug(
             "Starting Daemon %d. (Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident(),
         )

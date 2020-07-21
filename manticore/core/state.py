@@ -99,6 +99,17 @@ class ForkState(Concretize):
 
 
 class EventSolver(Eventful):
+    """
+    Wrapper around the solver that raises `will_solve` and `did_solve` around every call. Each call expands to:
+    ```
+    def method_name(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "method_name")
+        solved = SelectedSolver.instance().method_name(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "method_name", solved)
+        return solved
+    ```
+    """
+
     _published_events = {"solve"}
 
     @property
@@ -143,7 +154,12 @@ class EventSolver(Eventful):
         self._publish("did_solve", constraints, expression, "minmax", solved)
         return solved
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str):
+        """
+        Pass through any undefined attribute lookups to the underlying solver
+        :param item: The name of the field to get
+        :return: The item, if present on self._solver
+        """
         return getattr(self._solver, item)
 
 
