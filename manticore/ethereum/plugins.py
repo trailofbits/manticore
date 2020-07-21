@@ -106,7 +106,7 @@ class LoopDepthLimiter(Plugin):
         super().__init__(**kwargs)
         self.loop_count_threshold = loop_count_threshold
 
-    def will_start_run_callback(self, *args):
+    def will_run_callback(self, *args):
         with self.manticore.locked_context("seen_rep", dict) as reps:
             reps.clear()
 
