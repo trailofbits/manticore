@@ -21,7 +21,7 @@ from ..utils import config
 from ..utils.deprecated import deprecated
 from ..utils.enums import StateLists, MProcessingType
 from ..utils.event import Eventful
-from ..utils.helpers import PickleSerializer
+from ..utils.helpers import PickleSerializer, pretty_print_state_descriptors
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace, Testcase
@@ -1103,12 +1103,13 @@ class ManticoreBase(Eventful):
             w.start()
 
         # Create each daemon thread and pass it `self`
-        for i, cb in enumerate(self._daemon_callbacks):
-            dt = DaemonThread(
-                id=i, manticore=self
-            )  # Potentially duplicated ids with workers. Don't mix!
-            self._daemon_threads.append(dt)
-            dt.start(cb)
+        if not self._daemon_threads:  # Don't recreate the threads if we call run multiple times
+            for i, cb in enumerate(self._daemon_callbacks):
+                dt = DaemonThread(
+                    id=i, manticore=self
+                )  # Potentially duplicated ids with workers. Don't mix!
+                self._daemon_threads.append(dt)
+                dt.start(cb)
 
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
@@ -1210,3 +1211,7 @@ class ManticoreBase(Eventful):
         :param callback: function to be called
         """
         self._daemon_callbacks.append(callback)
+
+    def pretty_print_states(self, *_args):
+        """ Signal handler that calls pretty_print_state_descriptors on the current set of state descriptors """
+        pretty_print_state_descriptors(self.introspect())
