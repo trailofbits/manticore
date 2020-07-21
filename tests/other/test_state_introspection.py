@@ -1,5 +1,6 @@
 import unittest
 from manticore.native import Manticore
+from manticore.core.plugin import IntrospectionAPIPlugin, StateDescriptor
 from pathlib import Path
 from time import sleep
 from manticore.utils.enums import StateLists
@@ -23,6 +24,8 @@ class TestDaemonThread(unittest.TestCase):
 
         self.assertTrue(self.fired)
 
+
+class TestIntrospect(unittest.TestCase):
     def introspect_loop(self, thread):
         while True:
             self.history.append(thread.manticore.introspect())
@@ -45,12 +48,38 @@ class TestDaemonThread(unittest.TestCase):
                     sum(1 if (st.state_list == StateLists.terminated) else 0 for st in hist),
                 )
             )
-        self.assertEqual(progression[0][1], 1)  # We start with just one busy state
+        self.assertEqual(
+            progression[0][1] + progression[0][0], 1
+        )  # When fired for the first time, we have one busy state OR one ready state
         self.assertGreater(progression[-1][2], 0)  # Once finished, we have some terminated states
         self.assertEqual(progression[-1][0], 0)  # Once finished, we have no ready states
         # Once finished, we have more terminated than busy states. We may not have completely finished
         # when the callback fires
         self.assertGreater(progression[-1][2], progression[-1][1])
+
+
+class MyIntrospector(IntrospectionAPIPlugin):
+    def on_execution_intermittent_callback(self, state, update_cb, *args, **kwargs):
+        super().on_execution_intermittent_callback(state, update_cb, *args, **kwargs)
+        with self.locked_context("manticore_state", dict) as context:
+            context[state.id].i_am_custom = True
+
+
+class TestCustomIntrospector(unittest.TestCase):
+    def introspect_loop(self, thread):
+        while True:
+            self.history.append(thread.manticore.introspect())
+            sleep(0.5)
+
+    def test_custom_introspector(self):
+        self.history = []
+        m = Manticore(ms_file, stdin_size=17)
+        m.set_instrospection_plugin(MyIntrospector)
+        m.register_daemon(self.introspect_loop)
+        m.run()
+
+        self.assertGreater(len(self.history), 0)
+        self.assertTrue(any(getattr(st, "i_am_custom", False) for st in self.history[-1].values()))
 
 
 if __name__ == "__main__":
