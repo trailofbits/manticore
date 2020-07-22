@@ -37,6 +37,7 @@ class State(StateBase):
         """
         Perform a single step on the current state
         """
+        super().execute()
         from .cpu.abstractcpu import (
             ConcretizeRegister,
         )  # must be here, otherwise we get circular imports
@@ -96,3 +97,12 @@ class State(StateBase):
         :param model: callable, model to invoke
         """
         self._platform.invoke_model(model, prefix_args=(self,))
+
+    def _update_state_descriptor(self, descriptor, *args, **kwargs):
+        """
+        Called on execution_intermittent to update the descriptor for this state.
+        This one should apply any native-specific information to the descriptor. Right now, that's just the PC
+        :param descriptor: StateDescriptor for this state
+        """
+        super()._update_state_descriptor(descriptor, *args, **kwargs)
+        descriptor.pc = self.cpu.PC

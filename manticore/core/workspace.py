@@ -561,6 +561,7 @@ class ManticoreOutput:
 
     @property
     def _last_id(self):
+        filename = ".testcase_id"
         try:
             with self._store.stream(filename, "r") as f:
                 last_id = int(f.read())
@@ -658,5 +659,6 @@ class ManticoreOutput:
     def save_input_symbols(testcase, state: StateBase):
         with testcase.open_stream("input") as f:
             for symbol in state.input_symbols:
-                buf = SelectedSolver.instance().get_value(state.constraints, symbol)
+                # TODO - constrain=False here, so the extra migration shouldn't cause problems, right?
+                buf = state.solve_one(symbol)
                 f.write(f"{symbol.name}: {buf!r}\n")

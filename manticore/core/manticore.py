@@ -4,6 +4,7 @@ import logging
 import sys
 import time
 import queue
+import typing
 import random
 import weakref
 from typing import Callable
@@ -13,44 +14,25 @@ from contextlib import contextmanager
 import functools
 import shlex
 
-from ..core.plugin import Plugin
+from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
 from ..core.smtlib import Expression
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
 from ..utils import config
 from ..utils.deprecated import deprecated
+from ..utils.enums import StateLists, MProcessingType
 from ..utils.event import Eventful
-from ..utils.helpers import PickleSerializer
+from ..utils.helpers import PickleSerializer, pretty_print_state_descriptors
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace, Testcase
-from .worker import WorkerSingle, WorkerThread, WorkerProcess, LogCaptureWorker, StateMonitorWorker
+from .worker import WorkerSingle, WorkerThread, WorkerProcess, DaemonThread, LogCaptureWorker, StateMonitorWorker
 
 from multiprocessing.managers import SyncManager
 import threading
 import ctypes
 import signal
-from enum import Enum
-
-
-class MProcessingType(Enum):
-    """Used as configuration constant for choosing multiprocessing flavor"""
-
-    multiprocessing = "multiprocessing"
-    single = "single"
-    threading = "threading"
-
-    def title(self):
-        return self._name_.title()
-
-    @classmethod
-    def from_string(cls, name):
-        return cls.__members__[name]
-
-    def to_class(self):
-        return globals()[f"Manticore{self.title()}"]
-
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +63,8 @@ consts.add(
 
 
 class ManticoreBase(Eventful):
+    _published_events = {"solve"}
+
     def _manticore_single(self):
         self._worker_type = WorkerSingle
 
@@ -196,9 +180,12 @@ class ManticoreBase(Eventful):
         "run",
         "start_worker",
         "terminate_worker",
+        "transition_state",
         "enqueue_state",
         "fork_state",
         "load_state",
+        "save_state",
+        "remove_state",
         "terminate_state",
         "kill_state",
         "execute_instruction",
@@ -366,6 +353,8 @@ class ManticoreBase(Eventful):
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
         self.plugins = set()
+        self._introspection_plugin: type = IntrospectionAPIPlugin
+        self._introspector: typing.Optional[IntrospectionAPIPlugin] = None
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
@@ -374,8 +363,15 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+
+        # Create log capture and state monitor worker
         self._log_capture = LogCaptureWorker(id=-1, manticore=self)
         self._state_monitor = StateMonitorWorker(id=-2, manticore=self)
+
+        # We won't create the daemons until .run() is called
+        self._daemon_threads = []
+        self._daemon_callbacks = []
+
         self._snapshot = None
         self._main_id = os.getpid(), threading.current_thread().ident
 
@@ -408,7 +404,9 @@ class ManticoreBase(Eventful):
             raise ManticoreError("No snapshot to go to")
         self.clear_ready_states()
         for state_id in self._snapshot:
+            self._publish("will_enqueue_state", None, can_raise=False)
             self._ready_states.append(state_id)
+            self._publish("did_enqueue_state", state_id, can_raise=False)
         self._snapshot = None
 
     @sync
@@ -517,15 +515,14 @@ class ManticoreBase(Eventful):
                 # maintain a list of children for logging purpose
                 children.append(new_state_id)
 
+        self._publish("did_fork_state", state, expression, solutions, policy, children)
+        logger.debug("Forking current state %r into states %r", state.id, children)
+
         with self._lock:
             self._busy_states.remove(state.id)
             self._remove(state.id)
             state._id = None
             self._lock.notify_all()
-
-        self._publish("did_fork_state", new_state, expression, new_value, policy)
-
-        logger.debug("Forking current state %r into states %r", state.id, children)
 
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
@@ -551,7 +548,7 @@ class ManticoreBase(Eventful):
         return state.id
 
     @Eventful.will_did("load_state", can_raise=False)
-    def _load(self, state_id):
+    def _load(self, state_id: int):
         """ Load the state from the secondary storage
 
             :param state_id: a estate id
@@ -559,7 +556,7 @@ class ManticoreBase(Eventful):
             :returns: the state id used
         """
         if not hasattr(self, "stcache"):
-            self.stcache = weakref.WeakValueDictionary()
+            self.stcache: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
         if state_id in self.stcache:
             return self.stcache[state_id]
         state = self._workspace.load_state(state_id, delete=False)
@@ -570,7 +567,7 @@ class ManticoreBase(Eventful):
         return state
 
     @Eventful.will_did("remove_state", can_raise=False)
-    def _remove(self, state_id):
+    def _remove(self, state_id: int):
         """ Remove a state from secondary storage
 
             :param state_id: a estate id
@@ -582,6 +579,7 @@ class ManticoreBase(Eventful):
             del self.stcache[state_id]
 
         self._workspace.rm_state(state_id)
+        return state_id
 
     # Internal support for state lists
     def _put_state(self, state):
@@ -595,11 +593,15 @@ class ManticoreBase(Eventful):
                           +-------+
 
         """
+        self._publish("will_enqueue_state", state, can_raise=False)
         state_id = self._save(state, state_id=state.id)
         with self._lock:
             # Enqueue it in the ready state list for processing
             self._ready_states.append(state_id)
             self._lock.notify_all()
+            # The problem with using will_did here is that the lock is released before the event is fired, so typically
+            # a worker has moved the state from READY to BUSY *before* `did_enqueue_state` is published.
+            self._publish("did_enqueue_state", state_id, can_raise=False)
         return state_id
 
     def _get_state(self, wait=False):
@@ -633,8 +635,10 @@ class ManticoreBase(Eventful):
             state_id = random.choice(list(self._ready_states))
 
             # Move from READY to BUSY
+            self._publish("will_transition_state", state_id, StateLists.ready, StateLists.busy)
             self._ready_states.remove(state_id)
             self._busy_states.append(state_id)
+            self._publish("did_transition_state", state_id, StateLists.ready, StateLists.busy)
             self._lock.notify_all()
 
         return self._load(state_id)
@@ -655,21 +659,30 @@ class ManticoreBase(Eventful):
         return out
 
     @sync
-    def _revive_state(self, state_id):
-        """ Send a BUSY state back to READY list
+    def _revive_state(self, state_id: int):
+        """ Send a state back to READY list
 
-            +--------+        +------+
-            | READY  +<-------+ BUSY |
-            +---+----+        +------+
+            +--------+        +------------------+
+            | READY  +<-------+ BUSY/TERMINATED |
+            +---+----+        +----------------+
 
         """
-        # Move from BUSY to READY
-        self._busy_states.remove(state_id)
+        # Move from BUSY or TERMINATED to READY
+        src = None
+        if state_id in self._busy_states:
+            src = StateLists.busy
+            self._publish("will_transition_state", state_id, src, StateLists.ready)
+            self._busy_states.remove(state_id)
+        if state_id in self._terminated_states:
+            src = StateLists.terminated
+            self._publish("will_transition_state", state_id, src, StateLists.ready)
+            self._terminated_states.remove(state_id)
         self._ready_states.append(state_id)
+        self._publish("did_transition_state", state_id, src, StateLists.ready)
         self._lock.notify_all()
 
     @sync
-    def _terminate_state(self, state_id, delete=False):
+    def _terminate_state(self, state_id: int, delete=False):
         """ Send a BUSY state to the TERMINATED list or trash it if delete is True
 
             +------+        +------------+
@@ -690,13 +703,15 @@ class ManticoreBase(Eventful):
             self._remove(state_id)
         else:
             # add the state_id to the terminated list
+            self._publish("will_transition_state", state_id, StateLists.busy, StateLists.terminated)
             self._terminated_states.append(state_id)
+            self._publish("did_transition_state", state_id, StateLists.busy, StateLists.terminated)
 
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
 
     @sync
-    def _kill_state(self, state_id, delete=False):
+    def _kill_state(self, state_id: int, delete=False):
         """ Send a BUSY state to the KILLED list or trash it if delete is True
 
             +------+        +--------+
@@ -717,35 +732,42 @@ class ManticoreBase(Eventful):
             self._remove(state_id)
         else:
             # add the state_id to the terminated list
+            self._publish("will_transition_state", state_id, StateLists.busy, StateLists.killed)
             self._killed_states.append(state_id)
+            self._publish("did_transition_state", state_id, StateLists.busy, StateLists.killed)
 
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
 
     @sync
-    def kill_state(self, state, delete=False):
+    def kill_state(self, state: typing.Union[StateBase, int], delete: bool = False):
         """ Kill a state.
              A state is moved from any list to the kill list or fully
              removed from secondary storage
 
-            :param state_id: a estate id
-            :type state_id: int
+            :param state: a state
             :param delete: if true remove the state from the secondary storage
-            :type delete: bool
+
         """
-        state_id = state.id
+        state_id = getattr(state, "id", state)
+        src = None
         if state_id in self._busy_states:
+            src = StateLists.busy
             self._busy_states.remove(state_id)
         if state_id in self._terminated_states:
+            src = StateLists.terminated
             self._terminated_states.remove(state_id)
         if state_id in self._ready_states:
+            src = StateLists.ready
             self._ready_states.remove(state_id)
 
         if delete:
             self._remove(state_id)
         else:
             # add the state_id to the terminated list
+            self._publish("will_transition_state", state_id, src, StateLists.killed)
             self._killed_states.append(state_id)
+            self._publish("did_transition_state", state_id, src, StateLists.killed)
 
     @property  # type: ignore
     @sync
@@ -1083,12 +1105,18 @@ class ManticoreBase(Eventful):
         # different process modifies the state
         self.stcache = weakref.WeakValueDictionary()
 
+        if self._introspector is None:
+            self._introspector = self._introspection_plugin()
+            self.register_plugin(self._introspector)
+
         # Lazy process start. At the first run() the workers are not forked.
         # This actually starts the worker procs/threads
         if self.subscribe:
             # User subscription to events is disabled from now on
             self.subscribe = None
 
+        # Passing generators to callbacks is a bit hairy because the first callback would drain it if we didn't
+        # clone the iterator in event.py. We're preserving the old API here, but it's something to avoid in the future.
         self._publish("will_run", self.ready_states)
         self._running.value = True
         self._log_capture.start()
@@ -1097,6 +1125,15 @@ class ManticoreBase(Eventful):
         # start all the workers!
         for w in self._workers:
             w.start()
+
+        # Create each daemon thread and pass it `self`
+        if not self._daemon_threads:  # Don't recreate the threads if we call run multiple times
+            for i, cb in enumerate(self._daemon_callbacks):
+                dt = DaemonThread(
+                    id=i, manticore=self
+                )  # Potentially duplicated ids with workers. Don't mix!
+                self._daemon_threads.append(dt)
+                dt.start(cb)
 
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
@@ -1115,7 +1152,14 @@ class ManticoreBase(Eventful):
                 logger.debug("Killed. Moving all remaining ready states to killed list")
                 # move all READY to KILLED:
                 while self._ready_states:
+                    state_id = self._ready_states[-1]
+                    self._publish(
+                        "will_transition_state", state_id, StateLists.ready, StateLists.killed
+                    )
                     self._killed_states.append(self._ready_states.pop())
+                    self._publish(
+                        "did_transition_state", state_id, StateLists.ready, StateLists.killed
+                    )
 
         self._running.value = False
         self._publish("did_run")
@@ -1172,3 +1216,38 @@ class ManticoreBase(Eventful):
 
         logger.info("Results in %s", self._output.store.uri)
         self.wait_for_log_purge()
+
+    @at_not_running
+    def set_instrospection_plugin(self, new_plugin: type):
+        """
+        Allows the user to extend the functionality of the default IntrospectionAPI plugin.
+        Must be called before ManticoreBase.run()
+        :param new_plugin: a subclass of IntrospectionAPIPlugin
+        """
+        assert issubclass(
+            new_plugin, self._introspection_plugin
+        ), "New plugin must be a subclass of IntrospectionAPIPlugin"
+        self._introspection_plugin = new_plugin
+
+    def introspect(self) -> typing.Dict[int, StateDescriptor]:
+        """
+        Allows callers to view descriptors for each state
+        :return: the latest copy of the State Descriptor dict
+        """
+        if self._introspector is not None:
+            return self._introspector.get_state_descriptors()
+        return {}
+
+    @at_not_running
+    def register_daemon(self, callback: typing.Callable):
+        """
+        Allows the user to register a function that will be called at `ManticoreBase.run()` and can run
+        in the background. Infinite loops are acceptable as it will be killed when Manticore exits. The provided
+        function is passed a thread as an argument, with the current Manticore object available as thread.manticore.
+        :param callback: function to be called
+        """
+        self._daemon_callbacks.append(callback)
+
+    def pretty_print_states(self, *_args):
+        """ Calls pretty_print_state_descriptors on the current set of state descriptors """
+        pretty_print_state_descriptors(self.introspect())

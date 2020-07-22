@@ -48,6 +48,8 @@ class Platform(Eventful):
     Base class for all platforms e.g. operating systems or virtual machines.
     """
 
+    _published_events = {"solve"}
+
     def __init__(self, path, **kwargs):
         super().__init__(**kwargs)
 

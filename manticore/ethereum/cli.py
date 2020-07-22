@@ -11,9 +11,9 @@ from .detectors import (
     DetectExternalCallAndLeak,
     DetectEnvInstruction,
     DetectRaceCondition,
-    DetectorClassification,
     DetectManipulableBalance,
 )
+from ..utils.enums import DetectorClassification
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
 from .plugins import (
