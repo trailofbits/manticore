@@ -1186,6 +1186,7 @@ class ManticoreBase(Eventful):
         """
         Allows the user to extend the functionality of the default IntrospectionAPI plugin.
         Must be called before ManticoreBase.run()
+
         :param new_plugin: a subclass of IntrospectionAPIPlugin
         """
         assert issubclass(
@@ -1196,6 +1197,7 @@ class ManticoreBase(Eventful):
     def introspect(self) -> typing.Dict[int, StateDescriptor]:
         """
         Allows callers to view descriptors for each state
+
         :return: the latest copy of the State Descriptor dict
         """
         if self._introspector is not None:
@@ -1208,6 +1210,7 @@ class ManticoreBase(Eventful):
         Allows the user to register a function that will be called at `ManticoreBase.run()` and can run
         in the background. Infinite loops are acceptable as it will be killed when Manticore exits. The provided
         function is passed a thread as an argument, with the current Manticore object available as thread.manticore.
+
         :param callback: function to be called
         """
         self._daemon_callbacks.append(callback)

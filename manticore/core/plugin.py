@@ -462,6 +462,7 @@ class IntrospectionAPIPlugin(Plugin):
     def create_state(self, state_id):
         """
         Adds a StateDescriptor to the context in the READY state list
+
         :param state_id: ID of the state
         """
         assert state_id is not None
@@ -471,6 +472,7 @@ class IntrospectionAPIPlugin(Plugin):
     def will_run_callback(self, ready_states):
         """
         Called at the beginning of ManticoreBase.run(). Creates a state descriptor for each of the ready states.
+
         :param ready_states: Generator that allows us to iterate over the ready states (and modify them if necessary)
         """
         for state in ready_states:
@@ -479,6 +481,7 @@ class IntrospectionAPIPlugin(Plugin):
     def did_enqueue_state_callback(self, state_id):
         """
         Called whenever a state is added to the ready_states list. Creates a state descriptor.
+
         :param state_id: State ID of the new State
         """
         logger.info("did_enqueue_state: %s", state_id)
@@ -488,6 +491,7 @@ class IntrospectionAPIPlugin(Plugin):
         """
         Called whenever a state moves from one state list to another. Updates the status based on which list the state
         has been moved to.
+
         :param state_id: The ID of the state that was moved
         :param from_list: The list the state used to be in
         :param to_list: The list it's currently in
@@ -522,6 +526,7 @@ class IntrospectionAPIPlugin(Plugin):
         Called whenever a state was removed. As in, not terminated, not killed, but removed. This happens when we fork -
         the parent state is removed and the children are enqueued. It can also be triggered manually if we really don't
         like a state for some reason. Doesn't destroy the state descriptor, but updates its status and list accordingly.
+
         :param state_id: ID of the state that was removed
         """
         logger.info("did_remove_state: %s", state_id)
@@ -541,6 +546,7 @@ class IntrospectionAPIPlugin(Plugin):
     ):
         """
         Called upon each fork. Sets the children for each state.
+
         :param state: The parent state
         :param expression: The expression we forked on
         :param solutions: Possible values of the expression
@@ -561,6 +567,7 @@ class IntrospectionAPIPlugin(Plugin):
     def will_solve_callback(self, state, constraints, expr, solv_func):
         """
         Called when we're about to ask the solver for something. Updates the status of the state accordingly.
+
         :param state: State asking for the solve
         :param constraints: Current constraint set used for solving
         :param expr: Expression to be solved
@@ -582,6 +589,7 @@ class IntrospectionAPIPlugin(Plugin):
     def did_solve_callback(self, state, constraints, expr, solv_func, solutions):
         """
         Called when we've finished solving. Sets the status of the state back to whatever it was.
+
         :param state: State asking for the solve
         :param constraints: Current constraint set used for solving
         :param expr: Expression to be solved
@@ -604,6 +612,7 @@ class IntrospectionAPIPlugin(Plugin):
         """
         Called every n instructions, where n is config.core.execs_per_intermittent_cb. Calls the provided callback
         to update platform-specific information on the descriptor.
+
         :param state: The state that raised the intermittent event
         :param update_cb: Callback provided by the caller that will set some platform-specific fields on the state
         descriptor. This could be PC for native, or something else for EVM
