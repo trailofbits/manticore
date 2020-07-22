@@ -4,6 +4,8 @@ from manticore.core.plugin import IntrospectionAPIPlugin, StateDescriptor
 from pathlib import Path
 from time import sleep
 from manticore.utils.enums import StateLists
+import io
+import contextlib
 
 ms_file = str(
     Path(__file__).parent.parent.parent.joinpath("examples", "linux", "binaries", "multiple-styles")
@@ -37,6 +39,7 @@ class TestIntrospect(unittest.TestCase):
         m.register_daemon(self.introspect_loop)
         m.run()
 
+        sleep(1)  # Leave time for the callback to fire after we've finished
         self.assertGreater(len(self.history), 0)
         progression = []
         for hist in self.history:
@@ -53,9 +56,14 @@ class TestIntrospect(unittest.TestCase):
         )  # When fired for the first time, we have one busy state OR one ready state
         self.assertGreater(progression[-1][2], 0)  # Once finished, we have some terminated states
         self.assertEqual(progression[-1][0], 0)  # Once finished, we have no ready states
-        # Once finished, we have more terminated than busy states. We may not have completely finished
-        # when the callback fires
-        self.assertGreater(progression[-1][2], progression[-1][1])
+        self.assertEqual(progression[-1][1], 0)  # Once finished, we have no ready states
+        # Once finished, we have only terminated states.
+        self.assertGreater(progression[-1][2], 0)
+
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            m.pretty_print_states()
+        self.assertIn("Terminated States: {}".format(progression[-1][2]), f.getvalue())
 
 
 class MyIntrospector(IntrospectionAPIPlugin):
