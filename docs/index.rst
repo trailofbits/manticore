@@ -9,6 +9,7 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
    :maxdepth: 2
    :caption: Contents:
 
+   verifier
    base
    worker
    states
@@ -17,6 +18,7 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
    wasm
    plugins
    gotchas
+   utilities
 
 
 Indices and tables

@@ -27,7 +27,7 @@ from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChange
 
 from manticore.utils import config, log
 
-from typing import Type
+from typing import Tuple, Type
 
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
@@ -55,7 +55,7 @@ class EthDetectorTest(unittest.TestCase):
         self.mevm = None
         shutil.rmtree(self.worksp)
 
-    def _test(self, name, should_find, use_ctor_sym_arg=False):
+    def _test(self, name: str, should_find, use_ctor_sym_arg=False):
         """
         Tests DetectInvalid over the consensys benchmark suit
         """
@@ -65,7 +65,7 @@ class EthDetectorTest(unittest.TestCase):
         filepath = os.path.join(dir, f"{name}.sol")
 
         if use_ctor_sym_arg:
-            ctor_arg = (mevm.make_symbolic_value(),)
+            ctor_arg: Tuple = (mevm.make_symbolic_value(),)
         else:
             ctor_arg = ()
 
@@ -268,10 +268,12 @@ class EthDelegatecall(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
+    @unittest.skip("Too slow for these modern times")
     def test_delegatecall_ok1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
+    @unittest.skip("Too slow for these modern times")
     def test_delegatecall_ok2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())

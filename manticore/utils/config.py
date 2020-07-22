@@ -27,17 +27,40 @@ class ConfigError(Exception):
     pass
 
 
+class ConfigEnum(Enum):
+    """Used as configuration constant for choosing flavors"""
+
+    def title(self):
+        return self._name_.title()
+
+    @classmethod
+    def from_string(cls, name):
+        return cls.__members__[name]
+
+
 class _Var:
     def __init__(self, name: str = "", default=None, description: str = None, defined: bool = True):
         self.name = name
         self.description = description
-        self.value = default
+        self._value = default
         self.default = default
         self.defined = defined
 
     @property
     def was_set(self) -> bool:
         return self.value is not self.default
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        # Forgiveness/Enums support from_string
+        if isinstance(self.default, Enum) and isinstance(val, str):
+            self._value = self.default.from_string(val)
+        else:
+            self._value = val
 
 
 class _Group:
@@ -296,7 +319,8 @@ def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namesp
     :param args: The value that parser.parse_args returned
     """
     # First, load a local config file, if passed or look for one in pwd if it wasn't.
-    load_overrides(args.config)
+    if hasattr(args, "config"):
+        load_overrides(args.config)
 
     # Get a list of defined config vals. If these are passed on the command line,
     # update them in their correct group, not in the cli group

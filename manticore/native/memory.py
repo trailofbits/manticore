@@ -5,21 +5,22 @@ from ..core.smtlib import (
     Operators,
     ConstraintSet,
     arithmetic_simplify,
-    Z3Solver,
+    SelectedSolver,
     TooManySolutions,
     BitVec,
     BitVecConstant,
     expression,
     issymbolic,
+    Expression,
 )
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
 from ..utils import config
 
-from typing import Dict, Optional
-
 import functools
 import logging
+
+from typing import Dict, Generator, Iterable, List, MutableMapping, Optional, Set, Union
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class MemoryException(Exception):
     Memory exceptions
     """
 
-    def __init__(self, message, address=None):
+    def __init__(self, message: str, address=None):
         """
         Builds a memory exception.
 
@@ -58,7 +59,14 @@ class ConcretizeMemory(MemoryException):
     Raised when a symbolic memory cell needs to be concretized.
     """
 
-    def __init__(self, mem, address, size, message=None, policy="MINMAX"):
+    def __init__(
+        self,
+        mem: "Memory",
+        address: Union[int, Expression],
+        size: int,
+        message: Optional[str] = None,
+        policy: str = "MINMAX",
+    ):
         if message is None:
             self.message = f"Concretizing memory address {address} size {size}"
         else:
@@ -73,10 +81,9 @@ class ConcretizeMemory(MemoryException):
 class InvalidMemoryAccess(MemoryException):
     _message = "Invalid memory access"
 
-    def __init__(self, address, mode):
+    def __init__(self, address, mode: str):
         assert mode in "rwx"
-        suffix = f" (mode:{mode})"
-        message = self._message + suffix
+        message = f"{self._message} (mode:{mode})"
         super(InvalidMemoryAccess, self).__init__(message, address)
         self.mode = mode
 
@@ -84,7 +91,7 @@ class InvalidMemoryAccess(MemoryException):
 class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
     _message = "Invalid symbolic memory access"
 
-    def __init__(self, address, mode, size, constraint):
+    def __init__(self, address, mode: str, size, constraint):
         super(InvalidSymbolicMemoryAccess, self).__init__(address, mode)
         # the crashing constraint you need to assert
         self.constraint = constraint
@@ -193,7 +200,7 @@ class Map(object, metaclass=ABCMeta):
         """
         return iter(range(self._start, self._end))
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (
             self.start == other.start
             and self.end == other.end
@@ -211,7 +218,7 @@ class Map(object, metaclass=ABCMeta):
             return self.perms < other.perms
         return self.name < other.name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return object.__hash__(self)
 
     def _in_range(self, index) -> bool:
@@ -577,18 +584,18 @@ class Memory(object, metaclass=ABCMeta):
     This class handles all virtual memory mappings and symbolic chunks.
     """
 
-    def __init__(self, maps=None, cpu=StubCPU()):
+    def __init__(self, maps: Optional[Iterable[Map]] = None, cpu=StubCPU()):
         """
         Builds a memory manager.
         """
         super().__init__()
         if maps is None:
-            self._maps = set()
+            self._maps: Set[Map] = set()
         else:
             self._maps = set(maps)
         self.cpu = cpu
-        self._page2map = WeakValueDictionary()  # {page -> ref{MAP}}
-        self._recording_stack = []
+        self._page2map: MutableMapping[int, Map] = WeakValueDictionary()  # {page -> ref{MAP}}
+        self._recording_stack: List = []
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
                 assert i not in self._page2map
@@ -599,38 +606,37 @@ class Memory(object, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def memory_bit_size(self):
+    def memory_bit_size(self) -> int:
         return 32
 
     @property
     @abstractmethod
-    def page_bit_size(self):
+    def page_bit_size(self) -> int:
         return 12
 
     @property
-    def memory_size(self):
+    def memory_size(self) -> int:
         return 1 << self.memory_bit_size
 
     @property
-    def page_size(self):
+    def page_size(self) -> int:
         return 1 << self.page_bit_size
 
     @property
-    def memory_mask(self):
+    def memory_mask(self) -> int:
         return self.memory_size - 1
 
     @property
-    def page_mask(self):
+    def page_mask(self) -> int:
         return self.page_size - 1
 
     @property
-    def maps(self):
+    def maps(self) -> Set[Map]:
         return self._maps
 
     def _ceil(self, address) -> int:
         """
         Returns the smallest page boundary value not less than the address.
-        :rtype: int
         :param address: the address to calculate its ceil.
         :return: the ceil of C{address}.
         """
@@ -642,7 +648,6 @@ class Memory(object, metaclass=ABCMeta):
 
         :param address: the address to calculate its floor.
         :return: the floor of C{address}.
-        :rtype: int
         """
         return address & ~self.page_mask
 
@@ -652,7 +657,6 @@ class Memory(object, metaclass=ABCMeta):
 
         :param address: the address to calculate its page number.
         :return: the page number of address.
-        :rtype: int
         """
         return address >> self.page_bit_size
 
@@ -665,7 +669,6 @@ class Memory(object, metaclass=ABCMeta):
         :param counter: internal parameter to know if all the memory was already scanned.
         :return: the address of an available space to map C{size} bytes.
         :raises MemoryException: if there is no space available to allocate the desired memory.
-        :rtype: int
 
 
         todo: Document what happens when you try to allocate something that goes round the address 32/64 bit representation.
@@ -811,7 +814,7 @@ class Memory(object, metaclass=ABCMeta):
         # remove m from the maps set
         self._maps.remove(m)
 
-    def map_containing(self, address):
+    def map_containing(self, address: int) -> Map:
         """
         Returns the L{MMap} object containing the address.
 
@@ -843,7 +846,7 @@ class Memory(object, metaclass=ABCMeta):
 
         return sorted(result)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(
             [
                 f'{start:016x}-{end:016x} {p:>4s} {offset:08x} {name or ""}'
@@ -851,7 +854,7 @@ class Memory(object, metaclass=ABCMeta):
             ]
         )
 
-    def proc_self_mappings(self):
+    def proc_self_mappings(self) -> List[ProcSelfMapInfo]:
         """
         Returns a sorted list of all the mappings for this memory for /proc/self/maps.
         Device, inode, and private/shared permissions are unsupported.
@@ -860,7 +863,6 @@ class Memory(object, metaclass=ABCMeta):
         Pathname is substituted by filename
 
         :return: a list of mappings.
-        :rtype: list
         """
         result = []
         # TODO: Device, inode, and private/shared permissions are unsupported
@@ -888,7 +890,7 @@ class Memory(object, metaclass=ABCMeta):
         self.proc_self_mappings()
         return "\n".join([f"{m}" for m in self.proc_self_mappings()])
 
-    def _maps_in_range(self, start, end):
+    def _maps_in_range(self, start: int, end: int) -> Generator[Map, None, None]:
         """
         Generates the list of maps that overlaps with the range [start:end]
         """
@@ -1011,12 +1013,12 @@ class Memory(object, metaclass=ABCMeta):
             return force or m.access_ok(access)
 
     # write and read potentially symbolic bytes at symbolic indexes
-    def read(self, addr, size, force=False):
+    def read(self, addr, size, force: bool = False) -> List[bytes]:
         if not self.access_ok(slice(addr, addr + size), "r", force):
             raise InvalidMemoryAccess(addr, "r")
 
         assert size > 0
-        result = []
+        result: List[bytes] = []
         stop = addr + size
         p = addr
         while p < stop:
@@ -1192,7 +1194,7 @@ class SMemory(Memory):
                 solutions = self._try_get_solutions(address, size, "r", force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
-                solver = Z3Solver.instance()
+                solver = SelectedSolver.instance()
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug(
                     f"Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!"
@@ -1325,8 +1327,10 @@ class SMemory(Memory):
         :rtype: list
         """
         assert issymbolic(address)
-        solver = Z3Solver.instance()
-        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
+        solver = SelectedSolver.instance()
+        solutions = solver.get_all_values(
+            self.constraints, address, maxcnt=max_solutions, silent=True
+        )
 
         crashing_condition = False
         for base in solutions:
@@ -1433,7 +1437,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return address >= mapping.start and address + size < mapping.end
         else:
-            solver = Z3Solver.instance()
+            solver = SelectedSolver.instance()
             constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
             return solver.can_be_true(self.constraints, constraint)
 
@@ -1471,7 +1475,7 @@ class LazySMemory(SMemory):
         return Operators.AND(Operators.UGE(address, map.start), Operators.ULT(address, map.end))
 
     def _reachable_range(self, sym_address, size):
-        solver = Z3Solver.instance()
+        solver = SelectedSolver.instance()
         addr_min, addr_max = solver.minmax(self.constraints, sym_address)
         return addr_min, addr_max + size - 1
 

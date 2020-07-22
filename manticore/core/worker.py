@@ -72,7 +72,6 @@ class Worker:
         )
 
         m = self.manticore
-        m._is_main = False  # This will mark our copy of manticore
         current_state = None
         m._publish("will_start_worker", self.id)
 
@@ -137,7 +136,7 @@ class Worker:
                         assert current_state is None
                     # Handling Forking and terminating exceptions
                     except Concretize as exc:
-                        logger.info("[%r] Debug %r", self.id, exc)
+                        logger.debug("[%r] Performing %r", self.id, exc.message)
                         # The fork() method can decides which state to keep
                         # exploring. For example when the fork results in a
                         # single state it is better to just keep going.

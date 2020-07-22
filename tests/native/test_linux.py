@@ -21,26 +21,24 @@ class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "basic_linux_amd64")
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.linux = linux.Linux(self.BIN_PATH)
         self.symbolic_linux_armv7 = linux.SLinux.empty_platform("armv7")
         self.symbolic_linux_aarch64 = linux.SLinux.empty_platform("aarch64")
 
-    def tearDown(self):
-        for f in (
-            self.linux.files + self.symbolic_linux_armv7.files + self.symbolic_linux_aarch64.files
-        ):
-            if isinstance(f, linux.File):
-                f.close()
+    def tearDown(self) -> None:
+        for p in [self.linux, self.symbolic_linux_armv7, self.symbolic_linux_aarch64]:
+            for entry in p.fd_table.entries():
+                entry.fdlike.close()
 
-    def test_regs_init_state_x86(self):
+    def test_regs_init_state_x86(self) -> None:
         x86_defaults = {"CS": 0x23, "SS": 0x2B, "DS": 0x2B, "ES": 0x2B}
         cpu = self.linux.current
 
         for reg, val in x86_defaults.items():
             self.assertEqual(cpu.regfile.read(reg), val)
 
-    def test_stack_init(self):
+    def test_stack_init(self) -> None:
         argv = ["arg1", "arg2", "arg3"]
         real_argv = [self.BIN_PATH] + argv
         envp = ["env1", "env2", "env3"]
@@ -58,7 +56,7 @@ class LinuxTest(unittest.TestCase):
         for i, env in enumerate(envp):
             self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i * 8)), env)
 
-    def test_load_maps(self):
+    def test_load_maps(self) -> None:
         mappings = self.linux.current.memory.mappings()
 
         # stack should be last
@@ -73,7 +71,7 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(first_map_name, "basic_linux_amd64")
         self.assertEqual(second_map_name, "basic_linux_amd64")
 
-    def test_load_proc_self_maps(self):
+    def test_load_proc_self_maps(self) -> None:
         proc_maps = self.linux.current.memory.proc_self_mappings()
 
         # check that proc self raises error when not being read created as read only
@@ -107,7 +105,7 @@ class LinuxTest(unittest.TestCase):
                 None,
             )
 
-    def test_aarch64_syscall_write(self):
+    def test_aarch64_syscall_write(self) -> None:
         nr_write = 64
 
         # Create a minimal state.
@@ -138,7 +136,7 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(res, s)
 
     @unittest.skip("Stat differs in different test environments")
-    def test_armv7_syscall_fstat(self):
+    def test_armv7_syscall_fstat(self) -> None:
         nr_fstat64 = 197
 
         # Create a minimal state
@@ -162,7 +160,7 @@ class LinuxTest(unittest.TestCase):
             hexlify(b"".join(platform.current.read_bytes(stat, 100))),
         )
 
-    def test_armv7_linux_symbolic_files_workspace_files(self):
+    def test_armv7_linux_symbolic_files_workspace_files(self) -> None:
         fname = "symfile"
         platform = self.symbolic_linux_armv7
 
@@ -192,7 +190,7 @@ class LinuxTest(unittest.TestCase):
         self.assertIn(fname, files)
         self.assertEqual(len(files[fname]), 1)
 
-    def test_armv7_linux_workspace_files(self):
+    def test_armv7_linux_workspace_files(self) -> None:
         platform = self.symbolic_linux_armv7
         platform.argv = ["arg1", "arg2"]
 
@@ -206,7 +204,7 @@ class LinuxTest(unittest.TestCase):
         self.assertIn("stderr", files)
         self.assertIn("net", files)
 
-    def test_armv7_syscall_events(self):
+    def test_armv7_syscall_events(self) -> None:
         nr_fstat64 = 197
 
         class Receiver:
@@ -276,7 +274,7 @@ class LinuxTest(unittest.TestCase):
 
         return platform, dir_path
 
-    def test_armv7_syscall_openat_concrete(self):
+    def test_armv7_syscall_openat_concrete(self) -> None:
         platform, temp_dir = self._armv7_create_openat_state()
         try:
             platform.syscall()
@@ -284,10 +282,10 @@ class LinuxTest(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_armv7_syscall_openat_symbolic(self):
+    def test_armv7_syscall_openat_symbolic(self) -> None:
         platform, temp_dir = self._armv7_create_openat_state()
         try:
-            platform.current.R0 = BitVecVariable(32, "fd")
+            platform.current.R0 = platform.constraints.new_bitvec(32, "fd")
 
             with self.assertRaises(ConcretizeRegister) as cm:
                 platform.syscall()
@@ -297,12 +295,12 @@ class LinuxTest(unittest.TestCase):
             _min, _max = Z3Solver.instance().minmax(
                 platform.constraints, e.cpu.read_register(e.reg_name)
             )
-            self.assertLess(_min, len(platform.files))
-            self.assertGreater(_max, len(platform.files) - 1)
+            self.assertLess(_min, len(platform.fd_table.entries()))
+            self.assertGreater(_max, len(platform.fd_table.entries()) - 1)
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_armv7_chroot(self):
+    def test_armv7_chroot(self) -> None:
         # Create a minimal state
         platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, "rw ")
@@ -320,8 +318,7 @@ class LinuxTest(unittest.TestCase):
         fd = platform.sys_chroot(path)
         self.assertEqual(fd, -errno.EPERM)
 
-    def test_symbolic_argv_envp(self):
-
+    def test_symbolic_argv_envp(self) -> None:
         dirname = os.path.dirname(__file__)
         self.m = Manticore.linux(
             os.path.join(dirname, "binaries", "arguments_linux_amd64"),
@@ -341,7 +338,7 @@ class LinuxTest(unittest.TestCase):
             self.assertEqual(mem[6], b"\0")
             self.assertTrue(issymbolic(mem[5]))
 
-    def test_serialize_state_with_closed_files(self):
+    def test_serialize_state_with_closed_files(self) -> None:
         # regression test: issue 954
 
         platform = self.linux
@@ -350,7 +347,7 @@ class LinuxTest(unittest.TestCase):
         platform.sys_close(fd)
         pickle_dumps(platform)
 
-    def test_thumb_mode_entrypoint(self):
+    def test_thumb_mode_entrypoint(self) -> None:
         # thumb_mode_entrypoint is a binary with only one instruction
         #   0x1000: add.w   r0, r1, r2
         # which is a Thumb instruction, so the entrypoint is set to 0x1001

@@ -1,25 +1,25 @@
 import struct
 from ctypes import c_int32
 from .types import (
-    I32,
-    I64,
-    F32,
-    F64,
-    Value_t,
-    UnreachableInstructionTrap,
     ConcretizeStack,
-    ZeroDivisionTrap,
-    OverflowDivisionTrap,
-    InvalidConversionTrap,
-    OutOfBoundsMemoryTrap,
-    I32ConstImm,
-    I64ConstImm,
-    F32ConstImm,
-    F64ConstImm,
-    LocalVarXsImm,
-    GlobalVarXsImm,
-    MemoryImm,
     CurGrowMemImm,
+    F32,
+    F32ConstImm,
+    F64,
+    F64ConstImm,
+    GlobalVarXsImm,
+    I32,
+    I32ConstImm,
+    I64,
+    I64ConstImm,
+    InvalidConversionTrap,
+    LocalVarXsImm,
+    MemoryImm,
+    OutOfBoundsMemoryTrap,
+    OverflowDivisionTrap,
+    UnreachableInstructionTrap,
+    Value_t,
+    ZeroDivisionTrap,
 )
 from ..core.smtlib import Operators, BitVec, issymbolic
 from ..utils.event import Eventful
@@ -27,6 +27,9 @@ from decimal import Decimal, InvalidOperation
 
 import operator
 import math
+
+MASK_64 = (1 << 64) - 1
+MASK_32 = (1 << 32) - 1
 
 
 class Executor(Eventful):
@@ -450,14 +453,13 @@ class Executor(Eventful):
             )  # TODO - Implement a symbolic memory model
         ea = i + imm.offset
         N = n if n else (32 if ty is I32 else 64)
+        mask = (1 << N) - 1
         if ea not in mem:
             raise OutOfBoundsMemoryTrap(ea)
         if (ea + (N // 8)) - 1 not in mem:
             raise OutOfBoundsMemoryTrap(ea + (N // 8))
         if n:
-            b = [
-                Operators.CHR(Operators.EXTRACT(c % 2 ** N, offset, 8)) for offset in range(0, N, 8)
-            ]
+            b = [Operators.CHR(Operators.EXTRACT(c & mask, offset, 8)) for offset in range(0, N, 8)]
         else:
             b = [Operators.CHR(Operators.EXTRACT(c, offset, 8)) for offset in range(0, N, 8)]
 
@@ -742,6 +744,17 @@ class Executor(Eventful):
         res = Operators.ITEBV(32, flag, res, 32)
         stack.push(I32.cast(res))
 
+        # value = src.read()
+        # flag = Operators.EXTRACT(value, 0, 1) == 1
+        # res = 0
+        # for pos in range(1, src.size):
+        #     res = Operators.ITEBV(dest.size, flag, res, pos)
+        #     flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
+        #
+        # cpu.CF = res == src.size
+        # cpu.ZF = res == 0
+        # dest.write(res)
+
     def i32_ctz(self, store, stack):  # Copied from x86 TZCNT
         stack.has_type_on_top(I32, 1)
         c1 = stack.pop()
@@ -768,19 +781,19 @@ class Executor(Eventful):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast((c2 + c1) % 2 ** 32))
+        stack.push(I32.cast((c2 + c1) & MASK_32))
 
     def i32_sub(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast((c1 - c2 + 2 ** 32) % 2 ** 32))
+        stack.push(I32.cast((c1 - c2 + 2 ** 32) & MASK_32))
 
     def i32_mul(self, store, stack):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast((c2 * c1) % 2 ** 32))
+        stack.push(I32.cast((c2 * c1) & MASK_32))
 
     def i32_div_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
@@ -850,7 +863,7 @@ class Executor(Eventful):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast((c1 << (c2 % 32)) % 2 ** 32))
+        stack.push(I32.cast((c1 << (c2 % 32)) & MASK_32))
 
     def i32_shr_s(self, store, stack):
         stack.has_type_on_top(I32, 2)
@@ -925,19 +938,19 @@ class Executor(Eventful):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast((c2 + c1) % 2 ** 64))
+        stack.push(I64.cast((c2 + c1) & MASK_64))
 
     def i64_sub(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast((c1 - c2 + 2 ** 64) % 2 ** 64))
+        stack.push(I64.cast((c1 - c2 + 2 ** 64) & MASK_64))
 
     def i64_mul(self, store, stack):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast((c2 * c1) % 2 ** 64))
+        stack.push(I64.cast((c2 * c1) & MASK_64))
 
     def i64_div_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
@@ -1014,7 +1027,7 @@ class Executor(Eventful):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast((c1 << (c2 % 64)) % 2 ** 64))
+        stack.push(I64.cast((c1 << (c2 % 64)) & MASK_64))
 
     def i64_shr_s(self, store, stack):
         stack.has_type_on_top(I64, 2)
@@ -1054,7 +1067,7 @@ class Executor(Eventful):
     def i32_wrap_i64(self, store, stack):
         stack.has_type_on_top(I64, 1)
         c1: I64 = stack.pop()
-        c1 %= 2 ** 32
+        c1 &= MASK_32
         c1 = Operators.EXTRACT(c1, 0, 32)
         stack.push(I32.cast(c1))
 

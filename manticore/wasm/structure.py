@@ -7,41 +7,41 @@ from .executor import Executor
 from collections import deque
 from math import ceil
 from .types import (
-    U32,
-    I32,
-    I64,
-    F32,
-    F64,
-    Value,
-    Value_t,
-    ValType,
-    FunctionType,
-    Name,
-    TypeIdx,
-    FuncIdx,
-    TableIdx,
-    MemIdx,
-    GlobalIdx,
-    WASMExpression,
-    Instruction,
-    TableType,
-    MemoryType,
-    GlobalType,
-    LimitType,
-    convert_instructions,
-    debug,
-    Trap,
-    ZeroDivisionTrap,
-    OverflowDivisionTrap,
-    NonExistentFunctionCallTrap,
-    TypeMismatchTrap,
-    OutOfBoundsMemoryTrap,
-    MissingExportException,
-    ConcretizeStack,
     BranchImm,
     BranchTableImm,
     CallImm,
     CallIndirectImm,
+    ConcretizeStack,
+    convert_instructions,
+    debug,
+    F32,
+    F64,
+    FuncIdx,
+    FunctionType,
+    GlobalIdx,
+    GlobalType,
+    I32,
+    I64,
+    Instruction,
+    LimitType,
+    MemIdx,
+    MemoryType,
+    MissingExportException,
+    Name,
+    NonExistentFunctionCallTrap,
+    OutOfBoundsMemoryTrap,
+    OverflowDivisionTrap,
+    TableIdx,
+    TableType,
+    Trap,
+    TypeIdx,
+    TypeMismatchTrap,
+    U32,
+    ValType,
+    Value,
+    Value_t,
+    WASMExpression,
+    ZeroDivisionTrap,
 )
 from .state import State
 from ..core.smtlib import BitVec, Bool, issymbolic, Operators, Expression
@@ -65,9 +65,8 @@ from wasm.wasmtypes import (
     SEC_UNK,
 )
 
-from ..core.smtlib.solver import Z3Solver
+from ..core.smtlib.solver import SelectedSolver
 
-solver = Z3Solver.instance()
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
@@ -732,6 +731,7 @@ class Store:
 
 def _eval_maybe_symbolic(constraints, expression) -> bool:
     if issymbolic(expression):
+        solver = SelectedSolver.instance()
         return solver.must_be_true(constraints, expression)
     return True if expression else False
 
