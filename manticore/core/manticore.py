@@ -27,7 +27,14 @@ from ..utils.helpers import PickleSerializer, pretty_print_state_descriptors
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace, Testcase
-from .worker import WorkerSingle, WorkerThread, WorkerProcess, DaemonThread, LogCaptureWorker, StateMonitorWorker
+from .worker import (
+    WorkerSingle,
+    WorkerThread,
+    WorkerProcess,
+    DaemonThread,
+    LogCaptureWorker,
+    StateMonitorWorker,
+)
 
 from multiprocessing.managers import SyncManager
 import threading
@@ -90,6 +97,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
+        self._log_queue = queue.Queue(5000)
         self._shared_context = {}
 
     def _manticore_threading(self):
@@ -101,6 +109,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
+        self._log_queue = queue.Queue(5000)
         self._shared_context = {}
 
     def _manticore_multiprocessing(self):
@@ -122,6 +131,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = self._manager.list()
         self._busy_states = self._manager.list()
         self._killed_states = self._manager.list()
+        self._log_queue = self._manager.Queue(5000)
         self._shared_context = self._manager.dict()
         self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
 
@@ -642,21 +652,6 @@ class ManticoreBase(Eventful):
             self._lock.notify_all()
 
         return self._load(state_id)
-
-    @sync
-    def render_states(self):
-        from .state_pb2 import State, StateList
-
-        out = StateList()
-        for st in self._ready_states:
-            out.states.append(State(id=st, type=State.READY))
-        for st in self._busy_states:
-            out.states.append(State(id=st, type=State.BUSY))
-        for st in self._terminated_states:
-            out.states.append(State(id=st, type=State.TERMINATED))
-        for st in self._killed_states:
-            out.states.append(State(id=st, type=State.KILLED))
-        return out
 
     @sync
     def _revive_state(self, state_id: int):

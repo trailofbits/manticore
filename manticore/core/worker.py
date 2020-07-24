@@ -1,8 +1,10 @@
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .state import Concretize, TerminateState
-from ..core.plugin import Plugin
+from ..core.plugin import Plugin, StateDescriptor
 from .state_pb2 import StateList, MessageList, State, LogMessage
 from ..utils.log import register_log_callback
+from ..utils.enums import StateStatus, StateLists
+from datetime import datetime
 import logging
 import multiprocessing
 import threading
@@ -312,12 +314,34 @@ class MonitorTCPHandler(socketserver.BaseRequestHandler):
         self.request.sendall(self.server.worker.dump_states())
 
 
+def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
+    out = StateList()
+    for st in desc.values():
+        if st.status != StateStatus.destroyed:
+            now = datetime.now()
+            out.states.append(
+                State(
+                    id=st.state_id,
+                    type={
+                        StateLists.ready: State.READY,
+                        StateLists.busy: State.BUSY,
+                        StateLists.terminated: State.TERMINATED,
+                        StateLists.killed: State.KILLED,
+                    }[st.state_list],
+                    num_executing=st.own_execs,
+                    wait_time=int((now - st.field_updated_at.get("state_list", now)).total_seconds() * 1000),
+                )
+            )
+    return out
+
+
 class StateMonitorWorker(DaemonThread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def dump_states(self):
-        sts = self.manticore.render_states()
+        sts = self.manticore.introspect()
+        sts = render_state_descriptors(sts)
         return sts.SerializeToString()
 
     def run(self, *args):
