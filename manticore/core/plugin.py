@@ -484,7 +484,7 @@ class IntrospectionAPIPlugin(Plugin):
 
         :param state_id: State ID of the new State
         """
-        logger.info("did_enqueue_state: %s", state_id)
+        logger.debug("did_enqueue_state: %s", state_id)
         self.create_state(state_id)
 
     def did_transition_state_callback(self, state_id, from_list: StateLists, to_list: StateLists):
@@ -496,7 +496,7 @@ class IntrospectionAPIPlugin(Plugin):
         :param from_list: The list the state used to be in
         :param to_list: The list it's currently in
         """
-        logger.info("did_transition_state %s: %s --> %s", state_id, from_list, to_list)
+        logger.debug("did_transition_state %s: %s --> %s", state_id, from_list, to_list)
         with self.locked_context("manticore_state", dict) as context:
             if state_id not in context:
                 logger.warning(
@@ -529,7 +529,7 @@ class IntrospectionAPIPlugin(Plugin):
 
         :param state_id: ID of the state that was removed
         """
-        logger.info("did_remove_state: %s", state_id)
+        logger.debug("did_remove_state: %s", state_id)
         with self.locked_context("manticore_state", dict) as context:
             if state_id not in context:
                 logger.warning(
@@ -554,7 +554,7 @@ class IntrospectionAPIPlugin(Plugin):
         :param children: the state IDs of the children
         """
         state_id = state.id
-        logger.info("did_fork_state: %s --> %s", state_id, children)
+        logger.debug("did_fork_state: %s --> %s", state_id, children)
         with self.locked_context("manticore_state", dict) as context:
             if state_id not in context:
                 logger.warning(
@@ -574,7 +574,7 @@ class IntrospectionAPIPlugin(Plugin):
         :param solv_func: Which solver function is being used to find a solution
         """
         if state is None:
-            logger.info("Solve callback fired outside of a state, dropping...")
+            logger.debug("Solve callback fired outside of a state, dropping...")
             return
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
@@ -597,7 +597,7 @@ class IntrospectionAPIPlugin(Plugin):
         :param solutions: the solved values for expr
         """
         if state is None:
-            logger.info("Solve callback fired outside of a state, dropping...")
+            logger.debug("Solve callback fired outside of a state, dropping...")
             return
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
