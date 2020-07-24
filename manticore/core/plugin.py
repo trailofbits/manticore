@@ -578,6 +578,24 @@ class IntrospectionAPIPlugin(Plugin):
                 ex
             )
 
+    def did_kill_state_callback(self, state, ex: Exception):
+        """
+        Capture other state-killing exceptions so we can get the corresponding message
+
+        :param state: State that was killed
+        :param ex: The exception w/ the termination message
+        """
+        state_id = state.id
+        with self.locked_context("manticore_state", dict) as context:
+            if state_id not in context:
+                logger.warning(
+                    "Caught killing of state %s, but failed to capture its initialization",
+                    state_id,
+                )
+            context.setdefault(state_id, StateDescriptor(state_id=state_id)).termination_msg = repr(
+                ex
+            )
+
     def will_solve_callback(self, state, constraints, expr, solv_func):
         """
         Called when we're about to ask the solver for something. Updates the status of the state accordingly.
