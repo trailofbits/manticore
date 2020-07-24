@@ -328,8 +328,11 @@ def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
                         StateLists.terminated: State.TERMINATED,
                         StateLists.killed: State.KILLED,
                     }[st.state_list],
+                    reason=st.termination_msg,
                     num_executing=st.own_execs,
-                    wait_time=int((now - st.field_updated_at.get("state_list", now)).total_seconds() * 1000),
+                    wait_time=int(
+                        (now - st.field_updated_at.get("state_list", now)).total_seconds() * 1000
+                    ),
                 )
             )
     return out
