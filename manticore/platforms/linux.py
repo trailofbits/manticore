@@ -105,6 +105,30 @@ def concreteclass(cls):
     return cls
 
 
+@dataclass
+class StatResult:
+    """
+    Data structure corresponding to result received from stat, fstat, lstat for
+    information about a file.
+
+    See https://man7.org/linux/man-pages/man2/stat.2.html for more info
+    """
+
+    st_mode: int
+    st_ino: int
+    st_dev: int
+    st_nlink: int
+    st_uid: int
+    st_gid: int
+    st_size: int
+    st_atime: int
+    st_mtime: int
+    st_ctime: int
+    st_blksize: int
+    st_blocks: int
+    st_rdev: int
+
+
 class FdLike(ABC):
     """
     An abstract class for different kinds of file descriptors.
@@ -140,6 +164,10 @@ class FdLike(ABC):
 
     @abstractmethod
     def tell(self) -> int:
+        ...
+
+    @abstractmethod
+    def stat(self) -> StatResult:
         ...
 
 
@@ -279,7 +307,7 @@ class File(FdLike):
         try:
             return os.fstat(self.fileno())
         except OSError as e:
-            return -e.errno
+            raise FdError(f"Cannot stat: {e.strerror}", e.errno)
 
     def ioctl(self, request, argp):
         try:
@@ -374,6 +402,12 @@ class Directory(FdLike):
             return os.close(self.fd)
         except OSError as e:
             return -e.errno
+
+    def stat(self):
+        try:
+            return os.fstat(self.fileno())
+        except OSError as e:
+            raise FdError(f"Cannot stat: {e.strerror}", e.errno)
 
     def fileno(self):
         return self.fd
@@ -541,31 +575,17 @@ class SocketDesc(FdLike):
     def tell(self) -> int:
         raise FdError("Invalid tell() operation on SocketDesc", errno.EBADF)
 
+    def stat(self) -> StatResult:
+        # Copied from Socket.stat
+        return StatResult(
+            8592, 11, 9, 1, 1000, 5, 0, 1378673920, 1378673920, 1378653796, 0x400, 0x8808, 0
+        )
+
 
 @concreteclass
 class Socket(FdLike):
     def stat(self):
-        from collections import namedtuple
-
-        stat_result = namedtuple(
-            "stat_result",
-            [
-                "st_mode",
-                "st_ino",
-                "st_dev",
-                "st_nlink",
-                "st_uid",
-                "st_gid",
-                "st_size",
-                "st_atime",
-                "st_mtime",
-                "st_ctime",
-                "st_blksize",
-                "st_blocks",
-                "st_rdev",
-            ],
-        )
-        return stat_result(
+        return StatResult(
             8592, 11, 9, 1, 1000, 5, 0, 1378673920, 1378673920, 1378653796, 0x400, 0x8808, 0
         )
 
@@ -3051,8 +3071,10 @@ class Linux(Platform):
                 # Don't overflow buffer
                 break
 
-            stat = item.stat()
-            print(f"FILE MODE: {item.name} :: {stat.st_mode:o}")
+            try:
+                stat = item.stat()
+            except FdError as e:
+                return -e.err
 
             # https://elixir.bootlin.com/linux/v5.1.15/source/include/linux/fs_types.h#L27
             d_type = (stat.st_mode >> 12) & 15
