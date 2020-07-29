@@ -102,6 +102,7 @@ class State(StateBase):
         """
         Called on execution_intermittent to update the descriptor for this state.
         This one should apply any native-specific information to the descriptor. Right now, that's just the PC
+
         :param descriptor: StateDescriptor for this state
         """
         super()._update_state_descriptor(descriptor, *args, **kwargs)

@@ -274,6 +274,7 @@ class StateBase(Eventful):
          Called on execution_intermittent to update the descriptor for this state. This is intended for information
          like the PC or instruction count, where updating after each instruction would be a waste of cycles.
          This one updates the execution counts
+
          :param descriptor: StateDescriptor for this state
          """
         descriptor.total_execs = self._total_exec

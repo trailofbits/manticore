@@ -11,6 +11,7 @@ class State(StateBase):
         """
         Called on execution_intermittent to update the descriptor for this state.
         This one should apply any EVM-specific information to the descriptor.
+
         :param descriptor: StateDescriptor for this state
         """
         super()._update_state_descriptor(descriptor, *args, **kwargs)
