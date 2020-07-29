@@ -596,7 +596,7 @@ class ManticoreBase(Eventful):
             self._publish("did_enqueue_state", state_id, can_raise=False)
         return state_id
 
-    def _get_state(self, wait=False) -> StateBase:
+    def _get_state(self, wait=False) -> typing.Optional[StateBase]:
         """ Dequeue a state form the READY list and add it to the BUSY list """
         with self._lock:
             # If wait is true do the conditional wait for states
