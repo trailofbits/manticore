@@ -459,7 +459,7 @@ class IntrospectionAPIPlugin(Plugin):
     and stores them in its context, and keeps them up to date whenever a callback registers a change in the State.
     """
 
-    def create_state(self, state_id):
+    def create_state(self, state_id: int):
         """
         Adds a StateDescriptor to the context in the READY state list
 
@@ -469,7 +469,7 @@ class IntrospectionAPIPlugin(Plugin):
         with self.locked_context("manticore_state", dict) as context:
             context[state_id] = StateDescriptor(state_id=state_id, state_list=StateLists.ready)
 
-    def will_run_callback(self, ready_states):
+    def will_run_callback(self, ready_states: typing.Generator):
         """
         Called at the beginning of ManticoreBase.run(). Creates a state descriptor for each of the ready states.
 
@@ -478,7 +478,7 @@ class IntrospectionAPIPlugin(Plugin):
         for state in ready_states:
             self.create_state(state.id)
 
-    def did_enqueue_state_callback(self, state_id):
+    def did_enqueue_state_callback(self, state_id: int):
         """
         Called whenever a state is added to the ready_states list. Creates a state descriptor.
 
@@ -487,7 +487,9 @@ class IntrospectionAPIPlugin(Plugin):
         logger.debug("did_enqueue_state: %s", state_id)
         self.create_state(state_id)
 
-    def did_transition_state_callback(self, state_id, from_list: StateLists, to_list: StateLists):
+    def did_transition_state_callback(
+        self, state_id: int, from_list: StateLists, to_list: StateLists
+    ):
         """
         Called whenever a state moves from one state list to another. Updates the status based on which list the state
         has been moved to.
@@ -521,7 +523,7 @@ class IntrospectionAPIPlugin(Plugin):
             elif to_list in {StateLists.terminated, StateLists.killed}:
                 state.status = StateStatus.stopped
 
-    def did_remove_state_callback(self, state_id):
+    def did_remove_state_callback(self, state_id: int):
         """
         Called whenever a state was removed. As in, not terminated, not killed, but removed. This happens when we fork -
         the parent state is removed and the children are enqueued. It can also be triggered manually if we really don't
@@ -564,7 +566,7 @@ class IntrospectionAPIPlugin(Plugin):
                 children
             )
 
-    def will_solve_callback(self, state, constraints, expr, solv_func):
+    def will_solve_callback(self, state, constraints, expr, solv_func: str):
         """
         Called when we're about to ask the solver for something. Updates the status of the state accordingly.
 
@@ -586,7 +588,7 @@ class IntrospectionAPIPlugin(Plugin):
             desc._old_status = desc.status
             desc.status = StateStatus.waiting_for_solver
 
-    def did_solve_callback(self, state, constraints, expr, solv_func, solutions):
+    def did_solve_callback(self, state, constraints, expr, solv_func: str, solutions):
         """
         Called when we've finished solving. Sets the status of the state back to whatever it was.
 
@@ -608,7 +610,9 @@ class IntrospectionAPIPlugin(Plugin):
             desc = context[state.id]
             desc.status = desc._old_status
 
-    def on_execution_intermittent_callback(self, state, update_cb, *args, **kwargs):
+    def on_execution_intermittent_callback(
+        self, state, update_cb: typing.Callable, *args, **kwargs
+    ):
         """
         Called every n instructions, where n is config.core.execs_per_intermittent_cb. Calls the provided callback
         to update platform-specific information on the descriptor.
