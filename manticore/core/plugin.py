@@ -440,6 +440,8 @@ class StateDescriptor:
     pc: typing.Optional[typing.Any] = None
     #: Dict mapping field names to the time that field was last updated
     field_updated_at: typing.Dict[str, datetime] = field(default_factory=dict)
+    #: Message attached to the TerminateState exception that ended this state
+    termination_msg: typing.Optional[str] = None
 
     def __setattr__(self, key, value):
         """
@@ -633,6 +635,24 @@ class IntrospectionAPIPlugin(Plugin):
                 context.setdefault(state.id, StateDescriptor(state_id=state.id)), *args, **kwargs,
             )
             context[state.id].last_intermittent_update = datetime.now()
+
+    def did_terminate_state_callback(self, state, ex: Exception):
+        """
+        Capture TerminateState exceptions so we can get the messages attached
+
+        :param state: State that was terminated
+        :param ex: The TerminateState exception w/ the termination message
+        """
+        state_id = state.id
+        with self.locked_context("manticore_state", dict) as context:
+            if state_id not in context:
+                logger.warning(
+                    "Caught termination of state %s, but failed to capture its initialization",
+                    state_id,
+                )
+            context.setdefault(state_id, StateDescriptor(state_id=state_id)).termination_msg = str(
+                ex
+            )
 
     def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
         """
