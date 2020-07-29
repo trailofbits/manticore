@@ -305,7 +305,7 @@ class File(FdLike):
 
     def stat(self):
         try:
-            return os.fstat(self.fileno())
+            return os.stat(self.fileno())
         except OSError as e:
             raise FdError(f"Cannot stat: {e.strerror}", e.errno)
 
@@ -405,7 +405,7 @@ class Directory(FdLike):
 
     def stat(self):
         try:
-            return os.fstat(self.fileno())
+            return os.stat(self.fileno())
         except OSError as e:
             raise FdError(f"Cannot stat: {e.strerror}", e.errno)
 
