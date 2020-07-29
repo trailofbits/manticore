@@ -529,7 +529,7 @@ class ManticoreBase(Eventful):
 
     # State storage
     @Eventful.will_did("save_state", can_raise=False)
-    def _save(self, state, state_id=None):
+    def _save(self, state, state_id=None) -> int:
         """ Store or update a state in secondary storage under state_id.
             Use a fresh id is None is provided.
 
@@ -542,12 +542,11 @@ class ManticoreBase(Eventful):
         return state.id
 
     @Eventful.will_did("load_state", can_raise=False)
-    def _load(self, state_id: int):
+    def _load(self, state_id: int) -> StateBase:
         """ Load the state from the secondary storage
 
-            :param state_id: a estate id
-            :type state_id: int
-            :returns: the state id used
+            :param state_id: a state id
+            :returns: the loaded state
         """
         if not hasattr(self, "stcache"):
             self.stcache: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
@@ -561,11 +560,10 @@ class ManticoreBase(Eventful):
         return state
 
     @Eventful.will_did("remove_state", can_raise=False)
-    def _remove(self, state_id: int):
+    def _remove(self, state_id: int) -> int:
         """ Remove a state from secondary storage
 
-            :param state_id: a estate id
-            :type state_id: int
+            :param state_id: a state id
         """
         if not hasattr(self, "stcache"):
             self.stcache = weakref.WeakValueDictionary()
@@ -576,7 +574,7 @@ class ManticoreBase(Eventful):
         return state_id
 
     # Internal support for state lists
-    def _put_state(self, state):
+    def _put_state(self, state) -> int:
         """ This enqueues the state for exploration.
 
             Serialize and store the state with a fresh state_id. Then add it to
@@ -598,7 +596,7 @@ class ManticoreBase(Eventful):
             self._publish("did_enqueue_state", state_id, can_raise=False)
         return state_id
 
-    def _get_state(self, wait=False):
+    def _get_state(self, wait=False) -> StateBase:
         """ Dequeue a state form the READY list and add it to the BUSY list """
         with self._lock:
             # If wait is true do the conditional wait for states
