@@ -92,7 +92,7 @@ class LinuxTest(unittest.TestCase):
         self.assertFalse(os.path.exists(dname))
 
     def test_dir_stat(self):
-        dname = self.get_path("test_stat")
+        dname = self.get_path("test_dir_stat")
         self.assertFalse(os.path.exists(dname))
 
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
@@ -158,7 +158,7 @@ class LinuxTest(unittest.TestCase):
         self.assertLess(res, 0)
 
     def test_file_stat(self):
-        fname = self.get_path("test_stat")
+        fname = self.get_path("test_file_stat")
         self.assertFalse(os.path.exists(fname))
 
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
