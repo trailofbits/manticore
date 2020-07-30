@@ -75,7 +75,7 @@ jobs:
         coveralls
       env:
         COVERALLS_PARALLEL: true
-        COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
   coverage-finish:
     needs: tests
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
     - name: Coveralls Finished
       uses: coverallsapp/github-action@v1.1.1
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
         parallel-finished: true
   upload:
     runs-on: ubuntu-latest
