@@ -83,7 +83,7 @@ jobs:
     - name: Coveralls Finished
       uses: coverallsapp/github-action@v1.1.1
       with:
-        github-token: ${{ secrets.github_token }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
   upload:
     runs-on: ubuntu-latest
