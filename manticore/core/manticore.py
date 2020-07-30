@@ -2,7 +2,7 @@ import os
 import itertools
 import logging
 import sys
-import time
+import typing
 import random
 import weakref
 from typing import Callable
@@ -364,7 +364,7 @@ class ManticoreBase(Eventful):
         # the different type of events occur over an exploration.
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
-        self.plugins = set()
+        self.plugins = {}
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
@@ -850,7 +850,7 @@ class ManticoreBase(Eventful):
             PickleSerializer().serialize(state, statef)
 
         # Let the plugins generate a state based report
-        for p in self.plugins:
+        for p in self.plugins.values():
             p.generate_testcase(state, testcase, message)
 
         logger.info("Generated testcase No. %d - %s", testcase.num, message)
@@ -860,11 +860,11 @@ class ManticoreBase(Eventful):
     def register_plugin(self, plugin: Plugin):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
-        assert plugin not in self.plugins, "Plugin instance already registered"
+        assert plugin.unique_name not in self.plugins, "Plugin instance already registered"
         assert getattr(plugin, "manticore", None) is None, "Plugin instance already owned"
 
         plugin.manticore = self
-        self.plugins.add(plugin)
+        self.plugins[plugin.unique_name] = plugin
 
         events = Eventful.all_events()
         prefix = Eventful.prefixes
@@ -916,13 +916,17 @@ class ManticoreBase(Eventful):
         return plugin
 
     @at_not_running
-    def unregister_plugin(self, plugin):
+    def unregister_plugin(self, plugin: typing.Union[str, Plugin]):
         """ Removes a plugin from manticore.
             No events should be sent to it after
         """
-        assert plugin in self.plugins, "Plugin instance not registered"
+        if type(plugin) is str:  # Passed plugin.unique_name instead of value
+            assert plugin in self.plugins, "Plugin instance not registered"
+            plugin = self.plugins[plugin]
+
+        assert plugin.unique_name in self.plugins, "Plugin instance not registered"
         plugin.on_unregister()
-        self.plugins.remove(plugin)
+        del self.plugins[plugin.unique_name]
         plugin.manticore = None
 
     def subscribe(self, name, callback):
