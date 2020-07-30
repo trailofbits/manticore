@@ -71,7 +71,6 @@ jobs:
         ./run_tests.sh
     - name: Coveralls Parallel
       run: |
-        env
         coveralls
       env:
         COVERALLS_PARALLEL: true
@@ -83,7 +82,7 @@ jobs:
     - name: Coveralls Finished
       uses: coverallsapp/github-action@v1.1.1
       with:
-        github-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
   upload:
     runs-on: ubuntu-latest
