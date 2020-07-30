@@ -190,7 +190,14 @@ class ManticoreBase(Eventful):
         "terminate_execution",
     }
 
-    def __init__(self, initial_state, workspace_url=None, outputspace_url=None, **kwargs):
+    def __init__(
+        self,
+        initial_state,
+        workspace_url=None,
+        outputspace_url=None,
+        introspection_plugin_type: type = IntrospectionAPIPlugin,
+        **kwargs,
+    ):
         """
         Manticore symbolically explores program states.
 
@@ -351,8 +358,11 @@ class ManticoreBase(Eventful):
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
         self.plugins = set()
-        self._introspection_plugin: type = IntrospectionAPIPlugin
-        self._introspector: typing.Optional[IntrospectionAPIPlugin] = None
+        assert issubclass(
+            introspection_plugin_type, IntrospectionAPIPlugin
+        ), "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
+        self._introspector = introspection_plugin_type()
+        self.register_plugin(self._introspector)
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
@@ -1082,10 +1092,6 @@ class ManticoreBase(Eventful):
         # different process modifies the state
         self.stcache = weakref.WeakValueDictionary()
 
-        if self._introspector is None:
-            self._introspector = self._introspection_plugin()
-            self.register_plugin(self._introspector)
-
         # Lazy process start. At the first run() the workers are not forked.
         # This actually starts the worker procs/threads
         if self.subscribe:
@@ -1178,19 +1184,6 @@ class ManticoreBase(Eventful):
             config.save(f)
 
         logger.info("Results in %s", self._output.store.uri)
-
-    @at_not_running
-    def set_instrospection_plugin(self, new_plugin: type):
-        """
-        Allows the user to extend the functionality of the default IntrospectionAPI plugin.
-        Must be called before ManticoreBase.run()
-
-        :param new_plugin: a subclass of IntrospectionAPIPlugin
-        """
-        assert issubclass(
-            new_plugin, self._introspection_plugin
-        ), "New plugin must be a subclass of IntrospectionAPIPlugin"
-        self._introspection_plugin = new_plugin
 
     def introspect(self) -> typing.Dict[int, StateDescriptor]:
         """

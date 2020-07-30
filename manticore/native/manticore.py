@@ -384,6 +384,8 @@ def _make_linux(
     concrete_start="",
     pure_symbolic=False,
     stdin_size=None,
+    *args,
+    **kwargs,
 ) -> State:
     from ..platforms import linux
 

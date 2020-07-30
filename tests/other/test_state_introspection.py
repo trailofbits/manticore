@@ -81,8 +81,7 @@ class TestCustomIntrospector(unittest.TestCase):
 
     def test_custom_introspector(self):
         self.history = []
-        m = Manticore(ms_file, stdin_size=17)
-        m.set_instrospection_plugin(MyIntrospector)
+        m = Manticore(ms_file, introspection_plugin_type=MyIntrospector, stdin_size=17)
         m.register_daemon(self.introspect_loop)
         m.run()
 
