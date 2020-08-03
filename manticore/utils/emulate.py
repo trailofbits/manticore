@@ -308,6 +308,7 @@ class ConcreteUnicornEmulator:
             logger.info("Reached emulation target, switching to Manticore mode")
             self.sync_unicorn_to_manticore()
             self._stop_at = None
+            self.write_backs_disabled = True
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
