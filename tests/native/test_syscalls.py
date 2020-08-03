@@ -41,6 +41,27 @@ def test_symbolic_syscall_arg() -> None:
     assert found_win_msg, f'Did not find win message in {outs_glob}: "{win_msg}"'
 
 
+def test_symbolic_length_recv() -> None:
+    BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_length_recv")
+    tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
+    m = Manticore(BIN_PATH, workspace_url=str(tmp_dir.name))
+
+    m.run()
+    m.finalize()
+
+    found_msg = False
+    less_len_msg = "Received less than BUFFER_SIZE"
+    outs_glob = f"{str(m.workspace)}/test_*.stdout"
+    # Search all output messages
+    for output_p in glob(outs_glob):
+        with open(output_p) as f:
+            if less_len_msg in f.read():
+                found_msg = True
+                break
+
+    assert found_msg, f'Did not find our message in {outs_glob}: "{less_len_msg}"'
+
+
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "basic_linux_amd64")
