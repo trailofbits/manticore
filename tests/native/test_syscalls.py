@@ -11,6 +11,8 @@ import errno
 import re
 from glob import glob
 
+from manticore.core.smtlib import Solver
+from manticore.core.state import Concretize
 from manticore.native import Manticore
 
 from manticore.platforms import linux, linux_syscall_stubs
@@ -195,28 +197,38 @@ class LinuxTest(unittest.TestCase):
 
         # Try to receive 5 symbolic bytes
         BYTES = 5
+        # Need to set this so we don't fork in our tests
+        sock_obj._symb_len = BYTES
         wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertEqual(wrote, BYTES)
 
         # Try to receive into address 0x0
-        wrote = self.linux.sys_read(conn_fd, 0x0, 100)
+        BYTES = 100
+        sock_obj._symb_len = BYTES
+        wrote = self.linux.sys_read(conn_fd, 0x0, BYTES)
         self.assertEqual(wrote, -errno.EFAULT)
 
         # Try to receive all remaining symbolic bytes plus some more
-        recvd_bytes = sock_obj.recv_pos
         remaining_bytes = sock_obj.max_recv_symbolic - sock_obj.recv_pos
         BYTES = remaining_bytes + 10
+        # Needs to be remaining_bytes so that we can simulate overread
+        sock_obj._symb_len = remaining_bytes
         wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertNotEqual(wrote, BYTES)
         self.assertEqual(wrote, remaining_bytes)
 
         # Try to receive 10 more bytes when already at max
-        wrote = self.linux.sys_read(conn_fd, 0x1100, 10)
+        BYTES = 10
+        # Needs to be 0 so that we can simulate overread
+        sock_obj._symb_len = 0
+        wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertEqual(wrote, 0)
 
         # Close and make sure we can't write more stuff
+        BYTES = 10
+        sock_obj._symb_len = BYTES
         self.linux.sys_close(conn_fd)
-        wrote = self.linux.sys_read(conn_fd, 0x1100, 10)
+        wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertEqual(wrote, -errno.EBADF)
 
     def test_recvfrom_symb_socket(self):
@@ -242,6 +254,8 @@ class LinuxTest(unittest.TestCase):
 
         # Try to receive 5 symbolic bytes
         BYTES = 5
+        # Need to set this so we don't fork in our tests
+        sock_obj._symb_len = BYTES
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, BYTES)
 
@@ -250,20 +264,26 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(wrote, -errno.EFAULT)
 
         # Try to receive all remaining symbolic bytes plus some more
-        recvd_bytes = sock_obj.recv_pos
         remaining_bytes = sock_obj.max_recv_symbolic - sock_obj.recv_pos
         BYTES = remaining_bytes + 10
+        # Needs to be remaining_bytes so that we can simulate overread
+        sock_obj._symb_len = remaining_bytes
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertNotEqual(wrote, BYTES)
         self.assertEqual(wrote, remaining_bytes)
 
         # Try to receive 10 more bytes when already at max
-        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
+        BYTES = 10
+        # Needs to be 0 so that we can simulate overread
+        sock_obj._symb_len = 0
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, 0)
 
         # Close and make sure we can't write more stuff
         self.linux.sys_close(conn_fd)
-        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
+        BYTES = 10
+        sock_obj._symb_len = 0
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, -errno.EBADF)
 
     def test_multiple_sockets(self):
