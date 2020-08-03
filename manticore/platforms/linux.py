@@ -2611,7 +2611,7 @@ class Linux(Platform):
         :param impl: The real implementation
         :param args: The arguments to the implementation
         """
-        impl(*args)
+        return impl(*args)
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.warning("sys_clock_time not really implemented")
