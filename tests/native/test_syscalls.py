@@ -1,5 +1,4 @@
 import logging
-import random
 import struct
 import socket
 import tempfile
@@ -12,9 +11,10 @@ import re
 from glob import glob
 
 from manticore.native import Manticore
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
 
 from manticore.platforms import linux, linux_syscall_stubs
-from manticore.platforms.linux import SymbolicSocket
+from manticore.platforms.linux import SymbolicSocket, logger as linux_logger
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
 
 
@@ -402,6 +402,29 @@ class LinuxTest(unittest.TestCase):
         resultp = 0x1900
         res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
         self.assertTrue(res < 0)
+
+    def test_unimplemented_symbolic_syscall(self) -> None:
+        # Load a symbolic argument (address)
+        cpu = self.linux.current
+
+        # Store the address argument value in RDI
+        cpu.RDI = self.linux.constraints.new_bitvec(cpu.address_bit_size, "addr")
+        cpu.RAX = 12  # sys_brk
+
+        # Set logging level to debug so we can match against the message printed
+        # when executing our catch-all model for # functions with symbolic
+        # arguments
+        prev_log_level = linux_logger.getEffectiveLevel()
+        linux_logger.setLevel(logging.DEBUG)
+
+        with self.assertLogs(linux_logger, logging.DEBUG) as cm:
+            with self.assertRaises(ConcretizeRegister):
+                # Call the system call number in RAX
+                self.linux.syscall()
+        dmsg = "Unimplemented symbolic argument to sys_brk. Concretizing argument 0"
+        self.assertIn(dmsg, "\n".join(cm.output))
+
+        linux_logger.setLevel(prev_log_level)
 
     def test_unimplemented_stubs(self) -> None:
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
