@@ -38,7 +38,7 @@ def _is_definitely_NULL(byte: Union[int, BitVec], constrs: ConstraintSet) -> boo
     Checks if a given byte read from memory is NULL.
     This supports both concrete & symbolic byte values.
 
-    Helper for modeling with char* variables 
+    Helper for modeling with char* variables
 
     :param byte: byte read from memory to be examined
     :param constrs: state constraints
@@ -89,8 +89,8 @@ def _are_definitely_equal(
     Checks if two given bytes read from memory are equal
 
     Helper for modeling with char* variables
-    
-    :param byte1: byte read from memory 
+
+    :param byte1: byte read from memory
     :param byte2: byte read from memory
     :param constrs: state constraints
     :return: whether the given bytes are definetly equal
@@ -111,7 +111,7 @@ def _can_be_equal(
 
     :param byte1: byte read from memory
     :param byte2: byte read from memory
-    :re_definitely_equalparam constrs: state constraints 
+    :re_definitely_equalparam constrs: state constraints
     :return: whether the given bytes could be equal
     """
     if issymbolic(byte1) or issymbolic(byte2):
@@ -146,7 +146,7 @@ def strcmp_fork(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]) ->
     """
     strcmp symbolic model.
 
-    Algorithm: 
+    Algorithm:
 
     """
     if issymbolic(s1):
