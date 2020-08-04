@@ -19,7 +19,8 @@ from manticore.native import Manticore
 from manticore.native.models import (
     variadic,
     isvariadic,
-    strcmp,
+    strcmp_fork,
+    strcmp_ITE,
     strlen_fork,
     strlen_ITE,
     strcpy,
@@ -90,13 +91,21 @@ class StrcmpTest(ModelTest):
     def test_concrete_eq(self):
         s = "abc\0"
         strs = self._push2(s, s)
-        ret = strcmp(self.state, *strs)
+
+        ret = strcmp_ITE(self.state, *strs)
+        self.assertEqual(ret, 0)
+
+        ret = strcmp_fork(self.state, *strs)
         self.assertEqual(ret, 0)
 
     def test_concrete_lt(self):
         def _concrete_lt(s1, s2):
             strs = self._push2(s1, s2)
-            ret = strcmp(self.state, *strs)
+
+            ret = strcmp_ITE(self.state, *strs)
+            self.assertTrue(ret < 0)
+
+            ret = strcmp_fork(self.state, *strs)
             self.assertTrue(ret < 0)
 
         _concrete_lt("a\0", "b\0")
@@ -105,7 +114,11 @@ class StrcmpTest(ModelTest):
     def test_concrete_gt(self):
         def _concrete_gt(s1, s2):
             strs = self._push2(s1, s2)
-            ret = strcmp(self.state, *strs)
+
+            ret = strcmp_ITE(self.state, *strs)
+            self.assertTrue(ret > 0)
+
+            ret = strcmp_fork(self.state, *strs)
             self.assertTrue(ret > 0)
 
         _concrete_gt("c\0", "b\0")
@@ -116,7 +129,10 @@ class StrcmpTest(ModelTest):
         s2 = self.state.symbolicate_buffer("d+\0")
         strs = self._push2(s1, s2)
 
-        ret = strcmp(self.state, *strs)
+        ret = strcmp_ITE(self.state, *strs)
+        self.assertTrue(self.state.must_be_true(ret < 0))
+
+        ret = strcmp_fork(self.state, *strs)
         self.assertTrue(self.state.must_be_true(ret < 0))
 
     def test_effective_null(self):
@@ -127,7 +143,10 @@ class StrcmpTest(ModelTest):
         self.state.constrain(s1[1] == 0)
         self.state.constrain(s2[0] == ord("z"))
 
-        ret = strcmp(self.state, *strs)
+        ret = strcmp_ITE(self.state, *strs)
+        self.assertTrue(self.state.must_be_true(ret < 0))
+
+        ret = strcmp_fork(self.state, *strs)
         self.assertTrue(self.state.must_be_true(ret < 0))
 
     def test_symbolic_concrete(self):
@@ -135,27 +154,27 @@ class StrcmpTest(ModelTest):
         s2 = self.state.symbolicate_buffer("+++\0")
         strs = self._push2(s1, s2)
 
-        ret = strcmp(self.state, *strs)
+        ret = strcmp_ITE(self.state, *strs)
         self.assertTrue(Z3Solver.instance().can_be_true(self.state.constraints, ret != 0))
         self.assertTrue(Z3Solver.instance().can_be_true(self.state.constraints, ret == 0))
 
         self.state.constrain(s2[0] == ord("a"))
-        ret = strcmp(self.state, *strs)
+        ret = strcmp_ITE(self.state, *strs)
         self.assertTrue(self.state.must_be_true(ret > 0))
         self._clear_constraints()
 
         self.state.constrain(s2[0] == ord("z"))
-        ret = strcmp(self.state, *strs)
+        ret = strcmp_ITE(self.state, *strs)
         self.assertTrue(self.state.must_be_true(ret < 0))
         self._clear_constraints()
 
         self.state.constrain(s2[0] == ord("h"))
         self.state.constrain(s2[1] == ord("i"))
-        ret = strcmp(self.state, *strs)
+        ret = strcmp_ITE(self.state, *strs)
         self.assertTrue(self.state.must_be_true(ret <= 0))
 
         self.state.constrain(s2[2] == ord("\0"))
-        ret = strcmp(self.state, *strs)
+        ret = strcmp_ITE(self.state, *strs)
         self.assertTrue(self.state.must_be_true(ret == 0))
 
 

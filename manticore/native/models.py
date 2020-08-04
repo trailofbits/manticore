@@ -82,6 +82,44 @@ def _can_be_NULL(byte: Union[int, BitVec], constrs: ConstraintSet) -> bool:
         return byte == 0
 
 
+def _are_definitely_equal(
+    byte1: Union[int, BitVec], byte2: Union[int, BitVec], constrs: ConstraintSet
+) -> bool:
+    """
+    Checks if two given bytes read from memory are equal
+
+    Helper for modeling with char* variables
+    
+    :param byte1: byte read from memory 
+    :param byte2: byte read from memory
+    :param constrs: state constraints
+    :return: whether the given bytes are definetly equal
+    """
+    if issymbolic(byte1) or issymbolic(byte2):
+        return SelectedSolver.instance().must_be_true(constrs, byte1 == byte2)
+    else:
+        return byte1 == byte2
+
+
+def _can_be_equal(
+    byte1: Union[int, BitVec], byte2: Union[int, BitVec], constrs: ConstraintSet
+) -> bool:
+    """
+    Checks if two given bytes can be equal
+
+    Helper for modeling with char* variables
+
+    :param byte1: byte read from memory
+    :param byte2: byte read from memory
+    :re_definitely_equalparam constrs: state constraints 
+    :return: whether the given bytes could be equal
+    """
+    if issymbolic(byte1) or issymbolic(byte2):
+        return SelectedSolver.instance().can_be_true(constrs, byte1 == byte2)
+    else:
+        return byte1 == byte2
+
+
 def _find_zero(cpu: Cpu, constrs: ConstraintSet, ptr: Union[int, BitVec]) -> int:
     """
     Helper for finding the closest NULL or, effectively NULL byte from a starting address.
@@ -104,7 +142,63 @@ def _find_zero(cpu: Cpu, constrs: ConstraintSet, ptr: Union[int, BitVec]) -> int
     return offset
 
 
-def strcmp(
+def strcmp_fork(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]) -> Union[int, BitVec]:
+    """
+    strcmp symbolic model.
+
+    Algorithm: 
+
+    """
+    if issymbolic(s1):
+        raise ConcretizeArgument(state.cpu, 1)
+
+    if issymbolic(s2):
+        raise ConcretizeArgument(state.cpu, 2)
+
+    cpu = state.cpu
+    constrs = state.constraints
+
+    # Initialize offset based on whether state has been forked in strcmp
+    if "strcmp" not in state.context:
+        offset = 0
+    else:
+        offset = state.context["strcmp"]
+
+    # Get load values and cast to unsigned
+    s1_val = ZEXTEND(cpu.read_int(s1 + offset, 8), cpu.address_bit_size)
+    s2_val = ZEXTEND(cpu.read_int(s2 + offset, 8), cpu.address_bit_size)
+
+    # Iterate till 2 unequal bytes are found
+    while _are_definitely_equal(s1_val, s2_val, constrs):
+
+        # Check for NULL and possible NULL
+        if _is_definitely_NULL(s1_val, constrs):
+            return 0
+        elif _can_be_NULL(s1_val, constrs):
+            state.context["strcmp"] = offset
+            raise Concretize(
+                "Forking on possible NULL strcmp", expression=(s1_val == 0), policy="ALL"
+            )
+
+        offset += 1
+        s1_val = ZEXTEND(cpu.read_int(s1 + offset, 8), cpu.address_bit_size)
+        s2_val = ZEXTEND(cpu.read_int(s2 + offset, 8), cpu.address_bit_size)
+
+    # Fork if can be equal
+    if _can_be_equal(s1_val, s2_val, constrs):
+        state.context["strcmp"] = offset
+        raise Concretize(
+            "Forking on possible equal strcmp", expression=(s1_val == s2_val), policy="ALL"
+        )
+
+    # Clean up state context
+    if "strcmp" in state.context:
+        del state.context["strcmp"]
+
+    return s1_val - s2_val
+
+
+def strcmp_ITE(
     state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]
 ) -> Optional[Union[int, BitVec]]:
     """
@@ -128,7 +222,6 @@ def strcmp(
     :param s1: Address of string 1
     :param s2: Address of string 2
     :return: Symbolic strcmp result
-    :rtype: Expression or int
     """
 
     if issymbolic(s1):
@@ -147,6 +240,7 @@ def strcmp(
     ret = None
 
     for offset in range(min_zero_idx, -1, -1):
+        # Zero extends for an unsigned compairison
         s1char = ZEXTEND(cpu.read_int(s1 + offset, 8), cpu.address_bit_size)
         s2char = ZEXTEND(cpu.read_int(s2 + offset, 8), cpu.address_bit_size)
 
@@ -200,6 +294,9 @@ def strlen_fork(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
         offset += 1
         c = cpu.read_int(s + offset, 8)
 
+    if "strlen" in state.context:
+        del state.context["strlen"]
+
     return offset
 
 
@@ -212,8 +309,8 @@ def strlen_ITE(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
 
     :param state: current program state
-    :param s: Address of string
-    :return: Symbolic strlen result
+    :param s: address of string
+    :return: symbolic ITE or integer strlen result
     """
 
     if issymbolic(s):
@@ -246,11 +343,11 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     :return: pointer to the dst
     """
 
-    if issymbolic(src):
+    if issymbolic(dst):
         raise ConcretizeArgument(state.cpu, 1)
 
-    if issymbolic(dst):
-        raise ConcretizeArgument(state.cpu, 0)
+    if issymbolic(src):
+        raise ConcretizeArgument(state.cpu, 2)
 
     cpu = state.cpu
     constrs = state.constraints
