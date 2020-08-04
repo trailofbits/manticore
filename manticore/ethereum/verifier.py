@@ -411,7 +411,7 @@ def main():
     )
     eth_flags.add_argument(
         "--propre",
-        default == r"crytic_.*",
+        default=r"crytic_.*",
         type=str,
         help="A regular expression for selecting properties",
     )
