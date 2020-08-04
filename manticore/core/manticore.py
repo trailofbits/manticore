@@ -357,7 +357,7 @@ class ManticoreBase(Eventful):
         # the different type of events occur over an exploration.
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
-        self.plugins = set()
+        self.plugins: typing.Set[Plugin] = set()
         assert issubclass(
             introspection_plugin_type, IntrospectionAPIPlugin
         ), "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
@@ -373,8 +373,8 @@ class ManticoreBase(Eventful):
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
 
         # We won't create the daemons until .run() is called
-        self._daemon_threads = []
-        self._daemon_callbacks = []
+        self._daemon_threads: typing.List[DaemonThread] = []
+        self._daemon_callbacks: typing.List[typing.Callable] = []
 
         self._snapshot = None
         self._main_id = os.getpid(), threading.current_thread().ident
