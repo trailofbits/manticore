@@ -23,19 +23,19 @@ class State(StateBase):
         self._hooks: Dict[Optional[int], Set[HookCallback]] = {}
         self._after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
         state["hooks"] = self._hooks
         state["after_hooks"] = self._after_hooks
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         super().__setstate__(state)
         self._hooks = state["hooks"]
         self._after_hooks = state["after_hooks"]
         self._resub_hooks()
 
-    def __enter__(self):
+    def __enter__(self) -> "State":
         new_state = super().__enter__()
         new_state._hooks = copy.copy(self._hooks)
         new_state._after_hooks = copy.copy(self._after_hooks)
