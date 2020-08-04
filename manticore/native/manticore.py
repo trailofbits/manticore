@@ -247,6 +247,9 @@ class Manticore(ManticoreBase):
         :param after: Hook after PC executes?
         :param state: Optionally, add hook for this state only, else all states
         """
+        if not (isinstance(pc, int) or pc is None):
+            raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
+
         if state is None:
             # add hook to all states
             hooks, when, hook_callback = (
