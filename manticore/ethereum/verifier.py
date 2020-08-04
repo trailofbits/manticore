@@ -200,7 +200,7 @@ def manticore_verifier(
         f"Failing properties: 0/{len(properties)}"
     )
     with m.kill_timeout(timeout=timeout):
-        while True:
+        while not m.is_killed():
             # check if we found a way to break more than MAXFAIL properties
             broken_properties = sum(int(len(x) != 0) for x in properties.values())
             if broken_properties >= MAXFAIL:
@@ -410,7 +410,10 @@ def main():
         "--psender", type=str, help="(optional) address from where the property is tested"
     )
     eth_flags.add_argument(
-        "--propre", type=str, help="A regular expression for selecting properties"
+        "--propre",
+        default == r"crytic_.*",
+        type=str,
+        help="A regular expression for selecting properties",
     )
     eth_flags.add_argument(
         "--timeout", default=240, type=int, help="Exploration timeout in seconds"
