@@ -78,7 +78,7 @@ class EthVerifierIntegrationTest(unittest.TestCase):
             filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
             f = io.StringIO()
             with contextlib.redirect_stdout(f):
-                verifier.manticore_verifier(filename, "TestToken", timeout=240)
+                verifier.manticore_verifier(filename, "TestToken")
             output = f.getvalue()
             self.assertIsNotNone(
                 re.compile(

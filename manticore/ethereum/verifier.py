@@ -229,7 +229,7 @@ def manticore_verifier(
                 break
             current_coverage = new_coverage
 
-            # check if timeout was requested
+            # Make sure we didn't time out before starting first transaction
             if m.is_killed():
                 print("Cancelled or timeout.")
                 break
@@ -256,6 +256,11 @@ def manticore_verifier(
                 data=symbolic_data,
             )
 
+            # check if timeout was requested during the previous transaction
+            if m.is_killed():
+                print("Cancelled or timeout.")
+                break
+
             m.clear_terminated_states()  # no interest in reverted states
             m.take_snapshot()  # make a copy of all ready states
             print(
@@ -263,6 +268,11 @@ def manticore_verifier(
                 f"RT Coverage: {m.global_coverage(contract_account):3.2f}%, "
                 f"Failing properties: {broken_properties}/{len(properties)}"
             )
+
+            # check if timeout was requested while we were taking the snapshot
+            if m.is_killed():
+                print("Cancelled or timeout.")
+                break
 
             # And now explore all properties (and only the properties)
             filter_no_crytic.disable()  # Allow crytic_porperties
@@ -315,6 +325,8 @@ def manticore_verifier(
 
             m.clear_terminated_states()  # no interest in reverted states for now!
             m.goto_snapshot()
+        else:
+            print("Cancelled or timeout.")
 
     m.clear_terminated_states()
     m.clear_ready_states()
