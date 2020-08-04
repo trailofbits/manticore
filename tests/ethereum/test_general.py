@@ -70,7 +70,6 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 
 
 class EthVerifierIntegrationTest(unittest.TestCase):
-    @unittest.skip("Broken on master")  # TODO: Remove this before merging
     def test_propverif(self):
         smtcfg = config.get_group("smt")
         smtcfg.solver = smtcfg.solver.yices
