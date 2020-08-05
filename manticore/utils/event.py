@@ -3,7 +3,7 @@ import inspect
 import logging
 import functools
 from typing import Dict, Set
-from itertools import takewhile, tee
+from itertools import takewhile
 from weakref import WeakKeyDictionary, ref
 from inspect import isgenerator
 
@@ -155,23 +155,14 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # shouldn't check the event.
     def _publish_impl(self, _name, *args, **kwargs):
         bucket_items = self._get_signal_bucket(_name).items()
-        n = sum(len(methods) for _r, methods in bucket_items)
-        clones = {}
-        for i, item in enumerate(args):
-            if isgenerator(item):
-                clones[i] = tee(item, n)
 
-        i = 0
         for robj, methods in bucket_items:
             for callback in methods:
                 # Need to clone any iterable args, otherwise the first usage will drain it
-                # WARNING: THIS IS NOT THREAD SAFE https://docs.python.org/3.8/library/itertools.html#itertools.tee
                 new_args = (
-                    (arg if not isgenerator(arg) else clones[arg_idx][i])
-                    for arg_idx, arg in enumerate(args)
+                    (arg if not isgenerator(arg) else getattr(self, arg.__name__)) for arg in args
                 )
                 callback(robj(), *new_args, **kwargs)
-                i += 1
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
