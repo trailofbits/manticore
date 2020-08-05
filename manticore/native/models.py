@@ -34,117 +34,6 @@ def variadic(func):
     return func
 
 
-def _find_zero(cpu, constrs, ptr):
-    """
-    Helper for finding the closest NULL or, effectively NULL byte from a starting address.
-
-    :param Cpu cpu:
-    :param ConstraintSet constrs: Constraints for current `State`
-    :param int ptr: Address to start searching for a zero from
-    :return: Offset from `ptr` to first byte that is 0 or an `Expression` that must be zero
-    """
-
-    offset = 0
-    while True:
-        byt = cpu.read_int(ptr + offset, 8)
-
-        if issymbolic(byt):
-            if not SelectedSolver.instance().can_be_true(constrs, byt != 0):
-                break
-        else:
-            if byt == 0:
-                break
-
-        offset += 1
-
-    return offset
-
-
-def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
-    """
-    strcmp symbolic model.
-
-    Algorithm: Walks from end of string (minimum offset to NULL in either string)
-    to beginning building tree of ITEs each time either of the
-    bytes at current offset is symbolic.
-
-    Points of Interest:
-    - We've been building up a symbolic tree but then encounter two
-    concrete bytes that differ. We can throw away the entire symbolic
-    tree!
-    - If we've been encountering concrete bytes that match
-    at the end of the string as we walk forward, and then we encounter
-    a pair where one is symbolic, we can forget about that 0 `ret` we've
-    been tracking and just replace it with the symbolic subtraction of
-    the two
-
-    :param State state: Current program state
-    :param s1: Address of string 1
-    :param s2: Address of string 2
-    :return: Symbolic strcmp result
-    :rtype: Expression or int
-    """
-
-    cpu = state.cpu
-
-    if issymbolic(s1):
-        raise ConcretizeArgument(state.cpu, 1)
-    if issymbolic(s2):
-        raise ConcretizeArgument(state.cpu, 2)
-
-    s1_zero_idx = _find_zero(cpu, state.constraints, s1)
-    s2_zero_idx = _find_zero(cpu, state.constraints, s2)
-    min_zero_idx = min(s1_zero_idx, s2_zero_idx)
-
-    ret = None
-
-    for offset in range(min_zero_idx, -1, -1):
-        s1char = ZEXTEND(cpu.read_int(s1 + offset, 8), cpu.address_bit_size)
-        s2char = ZEXTEND(cpu.read_int(s2 + offset, 8), cpu.address_bit_size)
-
-        if issymbolic(s1char) or issymbolic(s2char):
-            if ret is None or (not issymbolic(ret) and ret == 0):
-                ret = s1char - s2char
-            else:
-                ret = ITEBV(cpu.address_bit_size, s1char != s2char, s1char - s2char, ret)
-        else:
-            if s1char != s2char:
-                ret = s1char - s2char
-            elif ret is None:
-                ret = 0
-
-    return ret
-
-
-def strlen(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
-    """
-    strlen symbolic model.
-
-    Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
-
-    :param State state: current program state
-    :param s: Address of string
-    :return: Symbolic strlen result
-    :rtype: Expression or int
-    """
-
-    cpu = state.cpu
-
-    if issymbolic(s):
-        raise ConcretizeArgument(state.cpu, 1)
-
-    zero_idx = _find_zero(cpu, state.constraints, s)
-
-    ret = zero_idx
-
-    for offset in range(zero_idx - 1, -1, -1):
-        byt = cpu.read_int(s + offset, 8)
-        if issymbolic(byt):
-            ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
-
-    return ret
-
-
 def is_definitely_NULL(byte, constrs) -> bool:
     """
     Checks if a given byte read from memory is NULL.
@@ -188,6 +77,150 @@ def can_be_NULL(byte, constrs) -> bool:
         return byte == 0
 
 
+def _find_zero(cpu, constrs, ptr: Union[int, BitVec]) -> int:
+    """
+    Helper for finding the closest NULL or, effectively NULL byte from a starting address.
+
+    :param Cpu cpu:
+    :param ConstraintSet constrs: Constraints for current `State`
+    :param int ptr: Address to start searching for a zero from
+    :return: Offset from `ptr` to first byte that is 0 or an `Expression` that must be zero
+    """
+
+    offset = 0
+    while True:
+        byte = cpu.read_int(ptr + offset, 8)
+        if is_definitely_NULL(byte, constrs):
+            break
+        offset += 1
+
+    return offset
+
+
+def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
+    """
+    strcmp symbolic model.
+
+    Algorithm: Walks from end of string (minimum offset to NULL in either string)
+    to beginning building tree of ITEs each time either of the
+    bytes at current offset is symbolic.
+
+    Points of Interest:
+    - We've been building up a symbolic tree but then encounter two
+    concrete bytes that differ. We can throw away the entire symbolic
+    tree!
+    - If we've been encountering concrete bytes that match
+    at the end of the string as we walk forward, and then we encounter
+    a pair where one is symbolic, we can forget about that 0 `ret` we've
+    been tracking and just replace it with the symbolic subtraction of
+    the two
+
+    :param state: Current program state
+    :param s1: Address of string 1
+    :param s2: Address of string 2
+    :return: Symbolic strcmp result
+    :rtype: Expression or int
+    """
+
+    cpu = state.cpu
+
+    if issymbolic(s1):
+        raise ConcretizeArgument(state.cpu, 1)
+    if issymbolic(s2):
+        raise ConcretizeArgument(state.cpu, 2)
+
+    s1_zero_idx = _find_zero(cpu, state.constraints, s1)
+    s2_zero_idx = _find_zero(cpu, state.constraints, s2)
+    min_zero_idx = min(s1_zero_idx, s2_zero_idx)
+
+    ret = None
+
+    for offset in range(min_zero_idx, -1, -1):
+        s1char = ZEXTEND(cpu.read_int(s1 + offset, 8), cpu.address_bit_size)
+        s2char = ZEXTEND(cpu.read_int(s2 + offset, 8), cpu.address_bit_size)
+
+        if issymbolic(s1char) or issymbolic(s2char):
+            if ret is None or (not issymbolic(ret) and ret == 0):
+                ret = s1char - s2char
+            else:
+                ret = ITEBV(cpu.address_bit_size, s1char != s2char, s1char - s2char, ret)
+        else:
+            if s1char != s2char:
+                ret = s1char - s2char
+            elif ret is None:
+                ret = 0
+
+    return ret
+
+
+def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
+    """
+    strlen symbolic model
+
+    Strategy: produce a state for every symbolic string length for better accuracy
+
+    Algorithm: Counts the number of characters in a string forking every time a symbolic byte
+    is found that can be NULL but is not constrained to NULL.
+
+    :param state: current program state
+    :param s: Address of string
+    :return: Symbolic strlen result
+    """
+
+    if issymbolic(s):
+        raise ConcretizeArgument(state.cpu, 1)
+
+    cpu = state.cpu
+    constrs = state.constraints
+
+    # Initialize offset based on whether state has been forked in strlen
+    if "strlen" not in state.context:
+        offset = 0
+    else:
+        offset = state.context["strlen"]
+
+    c = cpu.read_int(s + offset, 8)
+    while not is_definitely_NULL(c, constrs):
+        # If the byte can be NULL concretize and fork states
+        if can_be_NULL(c, constrs):
+            state.context["strlen"] = offset
+            raise Concretize("Forking on possible NULL strlen", expression=(c == 0), policy="ALL")
+
+        offset += 1
+        c = cpu.read_int(s + offset, 8)
+
+    return offset
+
+
+def strlen_approx(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
+    """
+    strlen symbolic model
+
+    Strategy: build a result tree to limit state explosion results approximate
+
+    Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
+
+    :param state: current program state
+    :param s: Address of string
+    :return: Symbolic strlen result
+    """
+
+    if issymbolic(s):
+        raise ConcretizeArgument(state.cpu, 1)
+
+    cpu = state.cpu
+    zero_idx = _find_zero(cpu, state.constraints, s)
+
+    ret = zero_idx
+
+    for offset in range(zero_idx - 1, -1, -1):
+        byt = cpu.read_int(s + offset, 8)
+        if issymbolic(byt):
+            ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
+
+    return ret
+
+
 def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strcpy symbolic model
@@ -202,10 +235,10 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     :return: pointer to the dst
     """
     if issymbolic(src):
-        raise ConcretizeArgument(state.cpu, 1)
+        raise ConcretizeArgument(state.cpu, 2)
 
     if issymbolic(dst):
-        raise ConcretizeArgument(state.cpu, 0)
+        raise ConcretizeArgument(state.cpu, 1)
 
     cpu = state.cpu
     constrs = state.constraints
@@ -222,7 +255,7 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
     while not is_definitely_NULL(src_val, constrs):
         cpu.write_int(dst + offset, src_val, 8)
 
-        # If a byte can be NULL set the src_val for concretize and fork states
+        # If a src byte can be NULL concretize and fork states
         if can_be_NULL(src_val, constrs):
             state.context["strcpy"] = offset
             raise Concretize("Forking on NULL strcpy", expression=(src_val == 0), policy="ALL")
@@ -235,4 +268,60 @@ def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Un
 
     if "strcpy" in state.context:
         del state.context["strcpy"]
+    return ret
+
+
+def strncpy(
+    state: State, dst: Union[int, BitVec], src: Union[int, BitVec], n: Union[int, BitVec]
+) -> Union[int, BitVec]:
+    """
+    strncpy symbolic model
+
+    Algorithm:  Copy n bytes from src to dst. If the length of the src string is less than n pad the difference
+    with NULL bytes. If a symbolic byte is found that can be NULL but is not definitely NULL fork and concretize states.
+
+    :param state: current program state
+    :param dst: destination string address
+    :param src: source string address
+    :param n: number of bytes to copy
+    :return: pointer to the dst
+    """
+
+    if issymbolic(dst):
+        raise ConcretizeArgument(state.cpu, 1)
+    if issymbolic(src):
+        raise ConcretizeArgument(state.cpu, 2)
+    if issymbolic(n):
+        raise ConcretizeArgument(state.cpu, 3)
+
+    cpu = state.cpu
+    constrs = state.constraints
+    ret = dst
+
+    # Initialize offset based on whether state has been forked in strncpy
+    if "strncpy" not in state.context:
+        offset = 0
+    else:
+        offset = state.context["strncpy"]
+
+    # Copy until a src_byte is symbolic and constrained to '\000', or is concrete and '\000'
+    src_val = cpu.read_int(src + offset, 8)
+    while offset < n and not is_definitely_NULL(src_val, constrs):
+        cpu.write_int(dst + offset, src_val, 8)
+
+        # If a src byte can be NULL concretize and fork states
+        if can_be_NULL(src_val, constrs):
+            state.context["strncpy"] = offset
+            raise Concretize("Forking on NULL strncpy", expression=(src_val == 0), policy="ALL")
+        offset += 1
+
+        src_val = cpu.read_int(src + offset, 8)
+
+    # Pad the distance between length of src and n with NULL bytes
+    while offset < n:
+        cpu.write_int(dst + offset, 0, 8)
+        offset += 1
+
+    if "strncpy" in state.context:
+        del state.context["strncpy"]
     return ret
