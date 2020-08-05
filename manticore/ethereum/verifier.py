@@ -167,7 +167,7 @@ def manticore_verifier(
     print(f"# Owner account: 0x{int(owner_account):x}")
     print(f"# Contract account: 0x{int(contract_account):x}")
     for n, user_account in enumerate(user_accounts):
-        print(f"# Sender_{n} account: 0x{int(checker_account):x}")
+        print(f"# Sender_{n} account: 0x{int(user_account):x}")
     print(f"# PSender account: 0x{int(checker_account):x}")
 
     properties = {}
@@ -200,7 +200,7 @@ def manticore_verifier(
         f"Failing properties: 0/{len(properties)}"
     )
     with m.kill_timeout(timeout=timeout):
-        while True:
+        while not m.is_killed():
             # check if we found a way to break more than MAXFAIL properties
             broken_properties = sum(int(len(x) != 0) for x in properties.values())
             if broken_properties >= MAXFAIL:
@@ -211,7 +211,7 @@ def manticore_verifier(
 
             # check if we sent more than MAXTX transaction
             if tx_num >= MAXTX:
-                print("Max numbr of transactions reached({tx_num})")
+                print(f"Max number of transactions reached ({tx_num})")
                 break
             tx_num += 1
 
@@ -219,7 +219,7 @@ def manticore_verifier(
             new_coverage = m.global_coverage(contract_account)
             if new_coverage >= MAXCOV:
                 print(
-                    "Current coverage({new_coverage}%) is greater than max allowed({MAXCOV}%).Stopping exploration."
+                    f"Current coverage({new_coverage}%) is greater than max allowed ({MAXCOV}%). Stopping exploration."
                 )
                 break
 
@@ -229,7 +229,7 @@ def manticore_verifier(
                 break
             current_coverage = new_coverage
 
-            # check if timeout was requested
+            # Make sure we didn't time out before starting first transaction
             if m.is_killed():
                 print("Cancelled or timeout.")
                 break
@@ -256,6 +256,11 @@ def manticore_verifier(
                 data=symbolic_data,
             )
 
+            # check if timeout was requested during the previous transaction
+            if m.is_killed():
+                print("Cancelled or timeout.")
+                break
+
             m.clear_terminated_states()  # no interest in reverted states
             m.take_snapshot()  # make a copy of all ready states
             print(
@@ -263,6 +268,11 @@ def manticore_verifier(
                 f"RT Coverage: {m.global_coverage(contract_account):3.2f}%, "
                 f"Failing properties: {broken_properties}/{len(properties)}"
             )
+
+            # check if timeout was requested while we were taking the snapshot
+            if m.is_killed():
+                print("Cancelled or timeout.")
+                break
 
             # And now explore all properties (and only the properties)
             filter_no_crytic.disable()  # Allow crytic_porperties
@@ -315,6 +325,8 @@ def manticore_verifier(
 
             m.clear_terminated_states()  # no interest in reverted states for now!
             m.goto_snapshot()
+        else:
+            print("Cancelled or timeout.")
 
     m.clear_terminated_states()
     m.clear_ready_states()
@@ -410,7 +422,10 @@ def main():
         "--psender", type=str, help="(optional) address from where the property is tested"
     )
     eth_flags.add_argument(
-        "--propre", type=str, help="A regular expression for selecting properties"
+        "--propre",
+        default=r"crytic_.*",
+        type=str,
+        help="A regular expression for selecting properties",
     )
     eth_flags.add_argument(
         "--timeout", default=240, type=int, help="Exploration timeout in seconds"
@@ -484,4 +499,5 @@ def main():
         deployer=deployer,
         psender=psender,
         timeout=args.timeout,
+        propre=args.propre,
     )
