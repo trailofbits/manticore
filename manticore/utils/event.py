@@ -154,13 +154,14 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # Separate from _publish since the recursive method call to forward an event
     # shouldn't check the event.
     def _publish_impl(self, _name, *args, **kwargs):
-        bucket_items = self._get_signal_bucket(_name).items()
-
-        for robj, methods in bucket_items:
+        bucket = self._get_signal_bucket(_name)
+        for robj, methods in bucket.items():
             for callback in methods:
-                # Need to clone any iterable args, otherwise the first usage will drain it
+                # Need to clone any iterable args, otherwise the first usage will drain it.
+                # If the generator isn't available on `self`, give up and return it anyway.
                 new_args = (
-                    (arg if not isgenerator(arg) else getattr(self, arg.__name__)) for arg in args
+                    (arg if not isgenerator(arg) else getattr(self, arg.__name__, arg))
+                    for arg in args
                 )
                 callback(robj(), *new_args, **kwargs)
 
