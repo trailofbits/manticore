@@ -72,7 +72,6 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
         smtcfg = config.get_group("smt")
-        smtcfg.solver = smtcfg.solver.yices
         with smtcfg.temp_vals():
             smtcfg.solver = smtcfg.solver.yices
 
