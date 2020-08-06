@@ -10,6 +10,8 @@ import resource
 import tempfile
 
 from abc import ABC, abstractmethod
+from functools import partial
+
 from dataclasses import dataclass
 from itertools import chain
 
@@ -35,8 +37,7 @@ from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemor
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import cast, Any, Deque, Dict, IO, Iterable, List, Optional, Set, Tuple, Union
-
+from typing import cast, Any, Deque, Dict, IO, Iterable, List, Optional, Set, Tuple, Union, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -2577,13 +2578,22 @@ class Linux(Platform):
         Syscall dispatcher.
         """
 
-        index = self._syscall_abi.syscall_number()
+        index: int = self._syscall_abi.syscall_number()
+        name: Optional[str] = None
 
         try:
             table = getattr(linux_syscalls, self.current.machine)
             name = table.get(index, None)
             if hasattr(self, name):
                 implementation = getattr(self, name)
+                # If this instance does not have an implementation for the system
+                # call, but the parent class does, use a partial function to do
+                # some processing of the unimplemented syscall before using the
+                # parent's implementation
+                # '.' is class separator
+                owner_class = implementation.__qualname__.rsplit(".", 1)[0]
+                if owner_class != self.__class__.__name__:
+                    implementation = partial(self._handle_unimplemented_syscall, implementation)
             else:
                 implementation = getattr(self.stubs, name)
         except (AttributeError, KeyError):
@@ -2593,6 +2603,16 @@ class Linux(Platform):
                 raise EnvironmentError(f"Bad syscall index, {index}")
 
         return self._syscall_abi.invoke(implementation)
+
+    def _handle_unimplemented_syscall(self, impl: Callable, *args):
+        """
+        Handle an unimplemented system call (for this class) in a generic way
+        before calling the implementation passed to this function.
+
+        :param impl: The real implementation
+        :param args: The arguments to the implementation
+        """
+        return impl(*args)
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.warning("sys_clock_time not really implemented")
@@ -3256,6 +3276,27 @@ class SLinux(Linux):
         return super()._transform_write_data(concrete_data)
 
     # Dispatchers...
+
+    def _handle_unimplemented_syscall(self, impl: Callable, *args):
+        """
+        Handle all unimplemented syscalls that could have symbolic arguments.
+
+        If a system call has symbolic argument values and there is no
+        specially implemented function to handle them, then just concretize
+        all symbolic arguments and call impl with args.
+
+        :param name: Name of the system call
+        :param args: Arguments for the system call
+        """
+        for i, arg in enumerate(args):
+            if issymbolic(arg):
+                logger.debug(
+                    f"Unimplemented symbolic argument to {impl.__name__}. Concretizing argument {i}"
+                )
+                raise ConcretizeArgument(self, i)
+
+        # Call the concrete Linux implementation
+        return impl(*args)
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
