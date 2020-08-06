@@ -3365,7 +3365,16 @@ class SLinux(Linux):
 
         return self.sys_recvfrom(sockfd, buf, count, flags, 0, 0, trace_str)
 
-    def sys_recvfrom(self, sockfd: Union[int, BitVec], buf: Union[int, BitVec], count: Union[int, BitVec], flags: Union[int, BitVec], src_addr: Union[int, BitVec], addrlen: Union[int, BitVec], trace_str: str ="_recvfrom"):
+    def sys_recvfrom(
+        self,
+        sockfd: Union[int, Expression],
+        buf: Union[int, Expression],
+        count: Union[int, Expression],
+        flags: Union[int, Expression],
+        src_addr: Union[int, Expression],
+        addrlen: Union[int, Expression],
+        trace_str: str = "_recvfrom",
+    ):
         if issymbolic(sockfd):
             logger.debug("Ask to recvfrom a symbolic file descriptor!!")
             raise ConcretizeArgument(self, 0)
@@ -3389,6 +3398,14 @@ class SLinux(Linux):
         if issymbolic(addrlen):
             logger.debug("Ask to recvfrom with symbolic address length")
             raise ConcretizeArgument(self, 5)
+
+        # mypy doesn't know issymbolic works like `isinstance`
+        assert isinstance(sockfd, int)
+        assert isinstance(buf, int)
+        assert isinstance(count, int)
+        assert isinstance(flags, int)
+        assert isinstance(src_addr, int)
+        assert isinstance(addrlen, int)
 
         return super().sys_recvfrom(sockfd, buf, count, flags, src_addr, addrlen, trace_str)
 
