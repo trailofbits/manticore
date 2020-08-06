@@ -364,7 +364,7 @@ class ManticoreBase(Eventful):
         # the different type of events occur over an exploration.
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
-        self.plugins = {}
+        self.plugins: typing.Dict[str, Plugin] = {}
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
@@ -920,14 +920,16 @@ class ManticoreBase(Eventful):
         """ Removes a plugin from manticore.
             No events should be sent to it after
         """
-        if type(plugin) is str:  # Passed plugin.unique_name instead of value
+        if isinstance(plugin, str):  # Passed plugin.unique_name instead of value
             assert plugin in self.plugins, "Plugin instance not registered"
-            plugin = self.plugins[plugin]
+            plugin_inst: Plugin = self.plugins[plugin]
+        else:
+            plugin_inst = plugin
 
-        assert plugin.unique_name in self.plugins, "Plugin instance not registered"
-        plugin.on_unregister()
-        del self.plugins[plugin.unique_name]
-        plugin.manticore = None
+        assert plugin_inst.unique_name in self.plugins, "Plugin instance not registered"
+        plugin_inst.on_unregister()
+        del self.plugins[plugin_inst.unique_name]
+        plugin_inst.manticore = None
 
     def subscribe(self, name, callback):
         """ Register a callback to an event"""
