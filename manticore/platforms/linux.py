@@ -3365,7 +3365,7 @@ class SLinux(Linux):
 
         return self.sys_recvfrom(sockfd, buf, count, flags, 0, 0, trace_str)
 
-    def sys_recvfrom(self, sockfd, buf, count, flags, src_addr, addrlen, trace_str="_recvfrom"):
+    def sys_recvfrom(self, sockfd: Union[int, BitVec], buf: Union[int, BitVec], count: Union[int, BitVec], flags: Union[int, BitVec], src_addr: Union[int, BitVec], addrlen: Union[int, BitVec], trace_str: str ="_recvfrom"):
         if issymbolic(sockfd):
             logger.debug("Ask to recvfrom a symbolic file descriptor!!")
             raise ConcretizeArgument(self, 0)
