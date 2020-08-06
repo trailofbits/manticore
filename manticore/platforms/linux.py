@@ -2590,7 +2590,8 @@ class Linux(Platform):
                 # call, but the parent class does, use a partial function to do
                 # some processing of the unimplemented syscall before using the
                 # parent's implementation
-                owner_class = implementation.__qualname__[: -len(implementation.__name__) - 1]
+                # '.' is class separator
+                owner_class = implementation.__qualname__.rsplit(".", 1)[0]
                 if owner_class != self.__class__.__name__:
                     implementation = partial(self._handle_unimplemented_syscall, implementation)
             else:
