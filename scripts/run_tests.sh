@@ -108,7 +108,7 @@ run_truffle_tests(){
     coverage json
     coverage report
     cd ..
-    cp truffle_tests/coverage.xml .
+    cp truffle_tests/coverage.json .
     return 0
 }
 
@@ -139,7 +139,7 @@ run_examples() {
     coverage json
     coverage report
     popd
-    cp examples/script/coverage.xml .
+    cp examples/script/coverage.json .
     return $RESULT
 }
 
