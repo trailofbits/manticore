@@ -75,7 +75,6 @@ jobs:
       env:
         COVERALLS_PARALLEL: true
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        COVERALLS_FLAG_NAME: ${{ matrix.type }}
   # Send notification when all tests have finished to combine coverage results
   coverage-finish:
     needs: tests
