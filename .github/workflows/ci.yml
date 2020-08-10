@@ -71,7 +71,8 @@ jobs:
         ./run_tests.sh
     - name: Coveralls Parallel
       run: |
-        coveralls
+        coveralls debug
+        coveralls --merge coverage.xml
       env:
         COVERALLS_PARALLEL: true
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
