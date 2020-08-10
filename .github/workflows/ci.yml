@@ -72,7 +72,7 @@ jobs:
     - name: Coveralls Parallel
       run: |
         coveralls debug
-        coveralls --merge coverage.xml
+        coveralls --merge coverage.json
       env:
         COVERALLS_PARALLEL: true
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
