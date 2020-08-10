@@ -105,10 +105,8 @@ run_truffle_tests(){
         return 1
     fi
     echo "Truffle test succeded"
-    coverage json
-    coverage report
     cd ..
-    cp truffle_tests/coverage.json .
+    cp truffle_tests/.coverage .
     return 0
 }
 
@@ -118,8 +116,6 @@ run_tests_from_dir() {
     echo "Running only the tests from 'tests/$DIR' directory"
     pytest --durations=100 --cov=manticore --cov-config=$GITHUB_WORKSPACE/.coveragerc -n auto "tests/$DIR"
     RESULT=$?
-    coverage json
-    coverage report
     return $RESULT
 }
 
@@ -136,10 +132,8 @@ run_examples() {
     launch_examples
     RESULT=$?
     echo Ran example scripts
-    coverage json
-    coverage report
     popd
-    cp examples/script/coverage.json .
+    cp examples/script/.coverage .
     return $RESULT
 }
 
