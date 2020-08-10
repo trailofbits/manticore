@@ -106,6 +106,7 @@ run_truffle_tests(){
     fi
     echo "Truffle test succeded"
     coverage xml
+    coverage report
     cd ..
     cp truffle_tests/coverage.xml .
     return 0
@@ -118,6 +119,7 @@ run_tests_from_dir() {
     pytest --durations=100 --cov=manticore --cov-config=$GITHUB_WORKSPACE/.coveragerc -n auto "tests/$DIR"
     RESULT=$?
     coverage xml
+    coverage report
     return $RESULT
 }
 
@@ -135,6 +137,7 @@ run_examples() {
     RESULT=$?
     echo Ran example scripts
     coverage xml
+    coverage report
     popd
     cp examples/script/coverage.xml .
     return $RESULT
