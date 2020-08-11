@@ -403,7 +403,7 @@ class Directory(FdLike):
         except OSError as e:
             return -e.errno
 
-    def stat(self):
+    def stat(self) -> os.stat_result:
         try:
             return os.stat(self.fileno())
         except OSError as e:
