@@ -121,9 +121,9 @@ class StatResult:
     st_uid: int
     st_gid: int
     st_size: int
-    st_atime: int
-    st_mtime: int
-    st_ctime: int
+    st_atime: float
+    st_mtime: float
+    st_ctime: float
     st_blksize: int
     st_blocks: int
     st_rdev: int
@@ -138,9 +138,9 @@ def convert_os_stat(stat: os.stat_result) -> StatResult:
         st_uid=stat.st_uid,
         st_gid=stat.st_gid,
         st_size=stat.st_size,
-        st_atime=stat.st_atime_ns,
-        st_mtime=stat.st_mtime_ns,
-        st_ctime=stat.st_ctime_ns,
+        st_atime=stat.st_atime,
+        st_mtime=stat.st_mtime,
+        st_ctime=stat.st_ctime,
         st_blksize=stat.st_blksize,
         st_blocks=stat.st_blocks,
         st_rdev=stat.st_rdev,
