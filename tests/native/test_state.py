@@ -1,5 +1,7 @@
+import io
 import unittest
 import os
+from contextlib import redirect_stdout
 
 from manticore.core.state import StateBase
 from manticore.utils.event import Eventful
@@ -312,7 +314,10 @@ class StateHooks(unittest.TestCase):
         for state in self.m.ready_states:
             self.m.add_hook(None, do_nothing, after=True, state=state)
 
-        self.m.run()
+        f = io.StringIO()
+        with redirect_stdout(f):
+            self.m.run()
+        self.assertIn("Reached fin callback", f.getvalue())
 
 
 class StateMergeTest(unittest.TestCase):
