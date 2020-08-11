@@ -3279,7 +3279,7 @@ class SLinux(Linux):
         for fd_entry in self.fd_table.entries():
             symb_socket_entry = fd_entry.fdlike
             if isinstance(symb_socket_entry, SymbolicSocket):
-                symb_socket_entry._constraints = self._constraints
+                symb_socket_entry._constraints = self.constraints
 
     def _sys_open_get_file(self, filename: str, flags: int) -> FdLike:
         if filename in self.symbolic_files:

@@ -11,6 +11,23 @@ class CheckpointData(NamedTuple):
 
 
 class State(StateBase):
+    def __enter__(self):
+        new_state = super().__enter__()
+
+        # Update constraint pointers in platform objects
+        from ..platforms.linux import SLinux
+
+        if isinstance(new_state.platform, SLinux):
+            from ..platforms.linux import SymbolicSocket
+
+            # Add constraints to symbolic sockets
+            for fd_entry in new_state.platform.fd_table.entries():
+                symb_socket_entry = fd_entry.fdlike
+                if isinstance(symb_socket_entry, SymbolicSocket):
+                    symb_socket_entry._constraints = new_state.constraints
+
+        return new_state
+
     @property
     def cpu(self):
         """
