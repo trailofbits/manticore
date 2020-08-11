@@ -129,6 +129,24 @@ class StatResult:
     st_rdev: int
 
 
+def convert_os_stat(stat: os.stat_result) -> StatResult:
+    return StatResult(
+        st_mode=stat.st_mode,
+        st_ino=stat.st_ino,
+        st_dev=stat.st_dev,
+        st_nlink=stat.st_nlink,
+        st_uid=stat.st_uid,
+        st_gid=stat.st_gid,
+        st_size=stat.st_size,
+        st_atime=stat.st_atime_ns,
+        st_mtime=stat.st_mtime_ns,
+        st_ctime=stat.st_ctime_ns,
+        st_blksize=stat.st_blksize,
+        st_blocks=stat.st_blocks,
+        st_rdev=stat.st_rdev,
+    )
+
+
 class FdLike(ABC):
     """
     An abstract class for different kinds of file descriptors.
@@ -303,9 +321,9 @@ class File(FdLike):
     def closed(self) -> bool:
         return self.file.closed
 
-    def stat(self):
+    def stat(self) -> StatResult:
         try:
-            return os.stat(self.fileno())
+            return convert_os_stat(os.stat(self.fileno()))
         except OSError as e:
             raise FdError(f"Cannot stat: {e.strerror}", e.errno)
 
@@ -403,9 +421,9 @@ class Directory(FdLike):
         except OSError as e:
             return -e.errno
 
-    def stat(self) -> os.stat_result:
+    def stat(self) -> StatResult:
         try:
-            return os.stat(self.fileno())
+            return convert_os_stat(os.stat(self.fileno()))
         except OSError as e:
             raise FdError(f"Cannot stat: {e.strerror}", e.errno)
 
