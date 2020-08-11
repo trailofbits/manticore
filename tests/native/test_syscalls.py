@@ -91,6 +91,180 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_rmdir(0x1100)
         self.assertFalse(os.path.exists(dname))
 
+    def test_dir_stat(self):
+        dname = self.get_path("test_dir_stat")
+        self.assertFalse(os.path.exists(dname))
+
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        self.linux.current.write_string(0x1100, dname)
+
+        # Create it as a dir
+        self.linux.sys_mkdir(0x1100, mode=0o777)
+        fd = self.linux.sys_open(0x1100, flags=os.O_RDONLY | os.O_DIRECTORY, mode=0o777)
+        self.assertTrue(os.path.exists(dname))
+        self.assertGreater(fd, 0)
+
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove from file system on host but not in Manticore
+        os.rmdir(dname)
+        self.assertFalse(os.path.exists(dname))
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        # The file descriptor is still valid even though the directory is gone
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove the directory using Manticore
+        self.linux.sys_rmdir(0x1100)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        # The file descriptor is still valid even though the directory is gone
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the file descriptor to totally remove it
+        self.linux.sys_close(fd)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertLess(res, 0)
+
+    def test_file_stat(self):
+        fname = self.get_path("test_file_stat")
+        self.assertFalse(os.path.exists(fname))
+
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        self.linux.current.write_string(0x1100, fname)
+
+        # Create a file
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+        self.assertTrue(os.path.exists(fname))
+
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove from file system on host but not in Manticore
+        os.remove(fname)
+        self.assertFalse(os.path.exists(fname))
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove the file using Manticore
+        self.linux.sys_unlink(0x1100)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the file descriptor to totally remove it
+        self.linux.sys_close(fd)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertLess(res, 0)
+
+    def test_socketdesc_stat(self):
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+
+        # Create a socket
+        fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the socket
+        self.linux.sys_close(fd)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertLess(res, 0)
+
+    def test_socket_stat(self):
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+
+        # Create a socket
+        sock_fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        self.linux.sys_bind(sock_fd, None, None)
+        self.linux.sys_listen(sock_fd, None)
+        conn_fd = self.linux.sys_accept(sock_fd, None, 0)
+
+        res = self.linux.sys_newfstat(conn_fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(conn_fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(conn_fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the socket
+        self.linux.sys_close(conn_fd)
+        res = self.linux.sys_newfstat(conn_fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(conn_fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(conn_fd, 0x1200)
+        self.assertLess(res, 0)
+
     def test_pipe(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
         self.linux.sys_pipe(0x1100)
