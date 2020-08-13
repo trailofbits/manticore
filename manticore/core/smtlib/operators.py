@@ -124,7 +124,7 @@ def ULE(a, b):
 
 
 def EXTRACT(x, offset, size):
-    if isinstance(x, BitVec):
+    if isinstance(x, BitVec) and not isinstance(offset, BitVec):
         if offset == 0 and size == x.size:
             return x
         return BitVecExtract(x, offset, size)
