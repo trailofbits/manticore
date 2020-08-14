@@ -877,7 +877,7 @@ class TranslatorSmtlib(Translator):
             return self._bindings_cache[smtlib]
 
         with TranslatorSmtlib.unique_lock:
-          TranslatorSmtlib.unique += 1
+            TranslatorSmtlib.unique += 1
         name = "a_%d" % TranslatorSmtlib.unique
 
         self._bindings.append((name, expression, smtlib))
