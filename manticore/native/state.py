@@ -39,6 +39,19 @@ class State(StateBase):
         new_state = super().__enter__()
         new_state._hooks = copy.copy(self._hooks)
         new_state._after_hooks = copy.copy(self._after_hooks)
+
+        # Update constraint pointers in platform objects
+        from ..platforms.linux import SLinux
+
+        if isinstance(new_state.platform, SLinux):
+            from ..platforms.linux import SymbolicSocket
+
+            # Add constraints to symbolic sockets
+            for fd_entry in new_state.platform.fd_table.entries():
+                symb_socket_entry = fd_entry.fdlike
+                if isinstance(symb_socket_entry, SymbolicSocket):
+                    symb_socket_entry._constraints = new_state.constraints
+
         return new_state
 
     def _get_hook_context(
