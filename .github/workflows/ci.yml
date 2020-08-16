@@ -73,7 +73,6 @@ jobs:
       run: |
         coveralls
       env:
-        COVERALLS_FLAG_NAME: ${{ matrix.type }}
         COVERALLS_PARALLEL: true
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # Send notification when all tests have finished to combine coverage results
