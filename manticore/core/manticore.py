@@ -62,7 +62,7 @@ consts.add(
 )
 consts.add("procs", default=10, description="Number of parallel processes to spawn")
 
-proc_type = MProcessingType.single
+proc_type = MProcessingType.threading
 if sys.platform != "linux":
     logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
     proc_type = MProcessingType.threading

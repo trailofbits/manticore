@@ -387,12 +387,9 @@ class ConstantFolderSimplifier(Visitor):
                 return BoolConstant(value, taint=expression.taint)
 
 
-constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
-
 @lru_cache(maxsize=128, typed=True)
 def constant_folder(expression):
-    global constant_folder_simplifier_cache
-    simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
+    simp = ConstantFolderSimplifier()
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
@@ -781,15 +778,11 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-arithmetic_simplifier_cache = CacheDict(max_size=250000, flush_perc=25)
-
-
 @lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
     if not isinstance(expression, Expression):
         return expression
-    global arithmetic_simplifier_cache
-    simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
+    simp = ArithmeticSimplifier()
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 

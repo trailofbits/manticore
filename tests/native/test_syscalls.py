@@ -1,5 +1,4 @@
 import logging
-import random
 import struct
 import socket
 import tempfile
@@ -11,10 +10,13 @@ import errno
 import re
 from glob import glob
 
+from manticore.core.smtlib import Solver
+from manticore.core.state import Concretize
 from manticore.native import Manticore
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
 
 from manticore.platforms import linux, linux_syscall_stubs
-from manticore.platforms.linux import SymbolicSocket
+from manticore.platforms.linux import SymbolicSocket, logger as linux_logger
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
 
 
@@ -37,6 +39,27 @@ def test_symbolic_syscall_arg() -> None:
                 break
 
     assert found_win_msg, f'Did not find win message in {outs_glob}: "{win_msg}"'
+
+
+def test_symbolic_length_recv() -> None:
+    BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_length_recv")
+    tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
+    m = Manticore(BIN_PATH, workspace_url=str(tmp_dir.name))
+
+    m.run()
+    m.finalize()
+
+    found_msg = False
+    less_len_msg = "Received less than BUFFER_SIZE"
+    outs_glob = f"{str(m.workspace)}/test_*.stdout"
+    # Search all output messages
+    for output_p in glob(outs_glob):
+        with open(output_p) as f:
+            if less_len_msg in f.read():
+                found_msg = True
+                break
+
+    assert found_msg, f'Did not find our message in {outs_glob}: "{less_len_msg}"'
 
 
 class LinuxTest(unittest.TestCase):
@@ -90,6 +113,180 @@ class LinuxTest(unittest.TestCase):
         self.assertTrue(os.path.exists(dname))
         self.linux.sys_rmdir(0x1100)
         self.assertFalse(os.path.exists(dname))
+
+    def test_dir_stat(self):
+        dname = self.get_path("test_dir_stat")
+        self.assertFalse(os.path.exists(dname))
+
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        self.linux.current.write_string(0x1100, dname)
+
+        # Create it as a dir
+        self.linux.sys_mkdir(0x1100, mode=0o777)
+        fd = self.linux.sys_open(0x1100, flags=os.O_RDONLY | os.O_DIRECTORY, mode=0o777)
+        self.assertTrue(os.path.exists(dname))
+        self.assertGreater(fd, 0)
+
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove from file system on host but not in Manticore
+        os.rmdir(dname)
+        self.assertFalse(os.path.exists(dname))
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        # The file descriptor is still valid even though the directory is gone
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove the directory using Manticore
+        self.linux.sys_rmdir(0x1100)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        # The file descriptor is still valid even though the directory is gone
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the file descriptor to totally remove it
+        self.linux.sys_close(fd)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertLess(res, 0)
+
+    def test_file_stat(self):
+        fname = self.get_path("test_file_stat")
+        self.assertFalse(os.path.exists(fname))
+
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+        self.linux.current.write_string(0x1100, fname)
+
+        # Create a file
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+        self.assertTrue(os.path.exists(fname))
+
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove from file system on host but not in Manticore
+        os.remove(fname)
+        self.assertFalse(os.path.exists(fname))
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Remove the file using Manticore
+        self.linux.sys_unlink(0x1100)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the file descriptor to totally remove it
+        self.linux.sys_close(fd)
+        res = self.linux.sys_stat32(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_stat64(0x1100, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertLess(res, 0)
+
+    def test_socketdesc_stat(self):
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+
+        # Create a socket
+        fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the socket
+        self.linux.sys_close(fd)
+        res = self.linux.sys_newfstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(fd, 0x1200)
+        self.assertLess(res, 0)
+
+    def test_socket_stat(self):
+        self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
+
+        # Create a socket
+        sock_fd = self.linux.sys_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        self.linux.sys_bind(sock_fd, None, None)
+        self.linux.sys_listen(sock_fd, None)
+        conn_fd = self.linux.sys_accept(sock_fd, None, 0)
+
+        res = self.linux.sys_newfstat(conn_fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat(conn_fd, 0x1200)
+        self.assertEqual(res, 0)
+        res = self.linux.sys_fstat64(conn_fd, 0x1200)
+        self.assertEqual(res, 0)
+
+        # Close the socket
+        self.linux.sys_close(conn_fd)
+        res = self.linux.sys_newfstat(conn_fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat(conn_fd, 0x1200)
+        self.assertLess(res, 0)
+        res = self.linux.sys_fstat64(conn_fd, 0x1200)
+        self.assertLess(res, 0)
 
     def test_pipe(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, "rw")
@@ -195,28 +392,38 @@ class LinuxTest(unittest.TestCase):
 
         # Try to receive 5 symbolic bytes
         BYTES = 5
+        # Need to set this so we don't fork in our tests
+        sock_obj._symb_len = BYTES
         wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertEqual(wrote, BYTES)
 
         # Try to receive into address 0x0
-        wrote = self.linux.sys_read(conn_fd, 0x0, 100)
+        BYTES = 100
+        sock_obj._symb_len = BYTES
+        wrote = self.linux.sys_read(conn_fd, 0x0, BYTES)
         self.assertEqual(wrote, -errno.EFAULT)
 
         # Try to receive all remaining symbolic bytes plus some more
-        recvd_bytes = sock_obj.recv_pos
         remaining_bytes = sock_obj.max_recv_symbolic - sock_obj.recv_pos
         BYTES = remaining_bytes + 10
+        # Needs to be remaining_bytes so that we can simulate overread
+        sock_obj._symb_len = remaining_bytes
         wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertNotEqual(wrote, BYTES)
         self.assertEqual(wrote, remaining_bytes)
 
         # Try to receive 10 more bytes when already at max
-        wrote = self.linux.sys_read(conn_fd, 0x1100, 10)
+        BYTES = 10
+        # Needs to be 0 so that we can simulate overread
+        sock_obj._symb_len = 0
+        wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertEqual(wrote, 0)
 
         # Close and make sure we can't write more stuff
+        BYTES = 10
+        sock_obj._symb_len = BYTES
         self.linux.sys_close(conn_fd)
-        wrote = self.linux.sys_read(conn_fd, 0x1100, 10)
+        wrote = self.linux.sys_read(conn_fd, 0x1100, BYTES)
         self.assertEqual(wrote, -errno.EBADF)
 
     def test_recvfrom_symb_socket(self):
@@ -242,6 +449,8 @@ class LinuxTest(unittest.TestCase):
 
         # Try to receive 5 symbolic bytes
         BYTES = 5
+        # Need to set this so we don't fork in our tests
+        sock_obj._symb_len = BYTES
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, BYTES)
 
@@ -250,20 +459,26 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(wrote, -errno.EFAULT)
 
         # Try to receive all remaining symbolic bytes plus some more
-        recvd_bytes = sock_obj.recv_pos
         remaining_bytes = sock_obj.max_recv_symbolic - sock_obj.recv_pos
         BYTES = remaining_bytes + 10
+        # Needs to be remaining_bytes so that we can simulate overread
+        sock_obj._symb_len = remaining_bytes
         wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertNotEqual(wrote, BYTES)
         self.assertEqual(wrote, remaining_bytes)
 
         # Try to receive 10 more bytes when already at max
-        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
+        BYTES = 10
+        # Needs to be 0 so that we can simulate overread
+        sock_obj._symb_len = 0
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, 0)
 
         # Close and make sure we can't write more stuff
         self.linux.sys_close(conn_fd)
-        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, 10, 0x0, 0x0, 0x0)
+        BYTES = 10
+        sock_obj._symb_len = 0
+        wrote = self.linux.sys_recvfrom(conn_fd, 0x1100, BYTES, 0x0, 0x0, 0x0)
         self.assertEqual(wrote, -errno.EBADF)
 
     def test_multiple_sockets(self):
@@ -402,6 +617,29 @@ class LinuxTest(unittest.TestCase):
         resultp = 0x1900
         res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
         self.assertTrue(res < 0)
+
+    def test_unimplemented_symbolic_syscall(self) -> None:
+        # Load a symbolic argument (address)
+        cpu = self.linux.current
+
+        # Store the address argument value in RDI
+        cpu.RDI = self.linux.constraints.new_bitvec(cpu.address_bit_size, "addr")
+        cpu.RAX = 12  # sys_brk
+
+        # Set logging level to debug so we can match against the message printed
+        # when executing our catch-all model for # functions with symbolic
+        # arguments
+        prev_log_level = linux_logger.getEffectiveLevel()
+        linux_logger.setLevel(logging.DEBUG)
+
+        with self.assertLogs(linux_logger, logging.DEBUG) as cm:
+            with self.assertRaises(ConcretizeRegister):
+                # Call the system call number in RAX
+                self.linux.syscall()
+        dmsg = "Unimplemented symbolic argument to sys_brk. Concretizing argument 0"
+        self.assertIn(dmsg, "\n".join(cm.output))
+
+        linux_logger.setLevel(prev_log_level)
 
     def test_unimplemented_stubs(self) -> None:
         stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
