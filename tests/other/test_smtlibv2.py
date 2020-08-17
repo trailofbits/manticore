@@ -90,11 +90,11 @@ class ExpressionTestNew(unittest.TestCase):
 
     def test_ConstantArrayBitvec(self):
         c = ArrayConstant(index_size=32, value_size=8, value=b"ABCDE")
-        self.assertEqual(c[0], "A")
-        self.assertEqual(c[1], "B")
-        self.assertEqual(c[2], "C")
-        self.assertEqual(c[3], "D")
-        self.assertEqual(c[4], "E")
+        self.assertEqual(c[0], ord("A"))
+        self.assertEqual(c[1], ord("B"))
+        self.assertEqual(c[2], ord("C"))
+        self.assertEqual(c[3], ord("D"))
+        self.assertEqual(c[4], ord("E"))
         self.assertRaises(IndexError, c.get, 5)
 
     def test_ConstantArrayBitvec2(self):
