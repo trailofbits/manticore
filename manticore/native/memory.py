@@ -345,7 +345,7 @@ class ArrayMap(Map):
         if backing_array is not None:
             self._array = backing_array
         else:
-            self._array = expression.ArrayProxy(
+            self._array = expression.MutableArray(
                 expression.ArrayVariable(index_bits, length=size, value_bits=8, name=name)
             )
 
@@ -380,10 +380,10 @@ class ArrayMap(Map):
         left_size, right_size = address - self.start, self.end - address
         left_name, right_name = ["{}_{:d}".format(self._array.name, i) for i in range(2)]
 
-        head_arr = expression.ArrayProxy(
+        head_arr = expression.MutableArray(
             expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name)
         )
-        tail_arr = expression.ArrayProxy(
+        tail_arr = expression.MutableArray(
             expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name)
         )
 
@@ -1364,7 +1364,8 @@ class LazySMemory(SMemory):
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        self.backing_array = constraints.new_array(index_bits=self.memory_bit_size)
+        self.backing_array = constraints.new_array(
+            index_size=self.memory_bit_size)
         self.backed_by_symbolic_store = set()
 
     def __reduce__(self):

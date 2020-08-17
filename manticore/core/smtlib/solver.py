@@ -63,7 +63,7 @@ consts.add(
 
 consts.add(
     "solver",
-    default=SolverType.z3,
+    default=SolverType.yices,
     description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
 )
 
@@ -214,8 +214,7 @@ class SmtlibProc:
         assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # If debug is enabled check if the solver reports a syntax error
-        # Error messages may contain an unbalanced parenthesis situation
-        print (">",buf)
+        #print (">",buf)
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
@@ -228,7 +227,7 @@ class SmtlibProc:
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        print ("<",cmd)
+        #print ("<",cmd)
         if self._debug:
             logger.debug(">%s", cmd)
         self._proc.stdout.flush()  # type: ignore
@@ -398,6 +397,7 @@ class SMTLIBSolver(Solver):
         """Recall the last pushed constraint store and state."""
         self._smtlib.send("(pop 1)")
 
+    @lru_cache(maxsize=32)
     def get_model(self, constraints: ConstraintSet):
         self._reset(constraints.to_string())
         self._smtlib.send("(check-sat)")
@@ -405,18 +405,36 @@ class SMTLIBSolver(Solver):
 
         model = {}
         for variable in constraints.variables:
-            print (variable)
+            value = None
             if isinstance(variable, Bool):
                 value = self.__getvalue_bool(variable.name)
             elif isinstance(variable, Bitvec):
                 value = self.__getvalue_bv(variable.name)
-            else:
+            elif isinstance(variable, Array):
                 try:
-                    #Only works if we know the max index of the arrray
-                    value = []
-                    for i in range(len(variable)):
-                        value.append(self.__getvalue_bv(variable[i]))
-                except:
+                    if variable.length is not None:
+                        value = []
+                        for i in range(len(variable)):
+                            variable_i = variable[i]
+                            if issymbolic(variable_i):
+                                value.append(self.__getvalue_bv(translate_to_smtlib(variable_i)))
+                            else:
+                                value.append(variable_i)
+                        value = bytes(value)
+                    else:
+                        #Only works if we know the max index of the arrray
+                        used_indexes = map(self.__getvalue_bv, variable.written)
+                        valued = {}
+                        for i in used_indexes:
+                            valued[i] = self.__getvalue_bv(variable[i])
+                        class A:
+                            def __init__(self, d, default):
+                                self._d = d
+                                self._default = default
+                            def __getitem__(self, index):
+                                return self._d.get(index, self._default)
+                        value = A(valued,variable.default)
+                except Exception as e:
                     value = None #We failed to get the model from the solver
 
             model[variable.name] = value
@@ -543,8 +561,8 @@ class SMTLIBSolver(Solver):
                 var = temp_cs.new_bitvec(expression.size)
             elif isinstance(expression, Array):
                 var = temp_cs.new_array(
-                    index_max=expression.index_max,
-                    value_bits=expression.value_bits,
+                    length=expression.length,
+                    value_size=expression.value_size,
                     taint=expression.taint,
                 ).array
             else:
@@ -617,14 +635,25 @@ class SMTLIBSolver(Solver):
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
-
-
+        self._cache = getattr(self, '_cache', {})
+        model = self.get_model(constraints)
 
         ####################33
         values = []
         start = time.time()
-        with constraints.related_to(*expressions) as temp_cs:
+        #with constraints.related_to(*expressions) as temp_cs:
+        with constraints as temp_cs:
             for expression in expressions:
+                bucket = self._cache.setdefault(hash(constraints), {})
+                cached_result = bucket.get(hash(expression))
+                if cached_result is not None:
+                    values.append(cached_result)
+                    continue
+                elif isinstance(expression, Variable):
+                    if model[expression.name] is not None:
+                        values.append(model[expression.name])
+                        continue
+
                 if not issymbolic(expression):
                     values.append(expression)
                     continue
@@ -636,19 +665,27 @@ class SMTLIBSolver(Solver):
                 elif isinstance(expression, Array):
                     var = []
                     result = []
-                    for i in range(expression.index_max):
-                        subvar = temp_cs.new_bitvec(expression.value_bits)
-                        var.append(expression[i]) #subvar)
-                        temp_cs.add(subvar == simplify(expression[i]))
+                    for i in range(len(expression)):
+                        expression_i = expression[i]
+                        if issymbolic(expression_i):
+                            subvar = temp_cs.new_bitvec(expression.value_size)
+                            temp_cs.add(subvar == simplify(expression[i]))
+                            var.append(subvar)
+                        else:
+                            var.append(expression_i)
                     self._reset(temp_cs.to_string())
                     if not self._is_sat():
                         raise SolverError(
                             "Solver could not find a value for expression under current constraint set"
                         )
+                    for i in range(expression.length):
+                        if issymbolic(var[i]):
+                            result.append(self.__getvalue_bv(var[i].name))
+                        else:
+                            result.append(var[i])
 
-                    for i in range(expression.index_max):
-                        result.append(self.__getvalue_bv(var[i].name))
                     values.append(bytes(result))
+                    bucket[hash(expression)] = values[-1]
                     if time.time() - start > consts.timeout:
                         raise SolverError("Timeout")
                     continue
@@ -666,8 +703,11 @@ class SMTLIBSolver(Solver):
                     values.append(self.__getvalue_bool(var.name))
                 if isinstance(expression, Bitvec):
                     values.append(self.__getvalue_bv(var.name))
+                bucket[hash(expression)] = values[-1]
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
+
+
 
         if len(expressions) == 1:
             return values[0]
@@ -792,4 +832,5 @@ class SelectedSolver:
             cls.choice = consts.solver
 
         SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
+        return YicesSolver.instance()
         return SelectedSolver.instance()

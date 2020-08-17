@@ -13,7 +13,7 @@ from ..core.smtlib import (
     SelectedSolver,
     Bitvec,
     Array,
-    ArrayProxy,
+    MutableArray,
     Operators,
     Constant,
     ArrayVariable,
@@ -181,13 +181,7 @@ class Transaction:
         :param state: a manticore state
         :param bool constrain: If True, constrain expr to concretized value
         """
-        conc_caller = state.solve_one(self.caller, constrain=constrain)
-        conc_address = state.solve_one(self.address, constrain=constrain)
-        conc_value = state.solve_one(self.value, constrain=constrain)
-        conc_gas = state.solve_one(self.gas, constrain=constrain)
-        conc_data = state.solve_one(self.data, constrain=constrain)
-        conc_return_data = state.solve_one(self.return_data, constrain=constrain)
-        conc_used_gas = state.solve_one(self.used_gas, constrain=constrain)
+        conc_caller, conc_address, conc_value, conc_gas, conc_data, conc_return_data,conc_used_gas = state.solve_one_n(self.caller,self.address,self.value,self.gas,self.data,self.return_data,self.used_gas,constrain=constrain)
         return Transaction(
             self.sort,
             conc_address,
@@ -489,8 +483,10 @@ class EndTx(EVMException):
             raise EVMException("Invalid end transaction result")
         if result is None and data is not None:
             raise EVMException("Invalid end transaction result")
+        if isinstance(data, MutableArray):
+            data = data.array
         if not isinstance(data, (type(None), Array, bytes)):
-            raise EVMException("Invalid end transaction data type")
+                raise EVMException("Invalid end transaction data type")
         self.result = result
         self.data = data
 
@@ -722,28 +718,26 @@ class EVM(Eventful):
         if data is not None and not issymbolic(data):
             data_size = len(data)
             data_symbolic = constraints.new_array(
-                index_bits=256,
-                value_bits=8,
-                index_max=data_size,
+                index_size=256,
+                value_size=8,
+                length=data_size,
                 name=f"DATA_{address:x}",
                 avoid_collisions=True,
                 default=0,
             )
-            data_symbolic[0:data_size] = data
-            data = data_symbolic
+            data = data_symbolic.write(0, data)
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
             bytecode_symbolic = constraints.new_array(
-                index_bits=256,
-                value_bits=8,
-                index_max=bytecode_size,
+                index_size=256,
+                value_size=8,
+                length=bytecode_size,
                 name=f"BYTECODE_{address:x}",
                 avoid_collisions=True,
                 default=0,
             )
-            bytecode_symbolic[0:bytecode_size] = bytecode
-            bytecode = bytecode_symbolic
+            data = bytecode_symbolic.write(0, bytecode)
 
         # TODO: Handle the case in which bytecode is symbolic (This happens at
         # CREATE instructions that has the arguments appended to the bytecode)
@@ -777,13 +771,13 @@ class EVM(Eventful):
         #    raise EVMException("Need code")
         self._constraints = constraints
         # Uninitialized values in memory are 0 by spec
-        self.memory = constraints.new_array(
-            index_bits=256,
-            value_bits=8,
+        self.memory = MutableArray(constraints.new_array(
+            index_size=256,
+            value_size=8,
             name=f"EMPTY_MEMORY_{address:x}",
             avoid_collisions=True,
             default=0,
-        )
+        ))
         self.address = address
         self.caller = (
             caller  # address of the account that is directly responsible for this execution
@@ -855,7 +849,7 @@ class EVM(Eventful):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        self.memory.constraints = constraints
+        #self.memory.constraints = constraints
 
     @property
     def gas(self):
@@ -987,7 +981,11 @@ class EVM(Eventful):
     def _getcode(self, pc):
         bytecode = self.bytecode
         for pc_i in range(pc, len(bytecode)):
-            yield simplify(bytecode[pc_i]).value
+            c = bytecode[pc_i]
+            if issymbolic(c):
+                yield simplify(c).value
+            else:
+                yield c
         while True:
             yield 0  # STOP opcode
 
@@ -1166,14 +1164,11 @@ class EVM(Eventful):
 
     def _calculate_gas(self, *arguments):
         start= time.time()
-        try:
-            current = self.instruction
-            implementation = getattr(self, f"{current.semantics}_gas", None)
-            if implementation is None:
-                return current.fee
-            return current.fee + implementation(*arguments)
-        finally:
-            print (f"calculate gas for {current} took {time.time()-start:0.4f}")
+        current = self.instruction
+        implementation = getattr(self, f"{current.semantics}_gas", None)
+        if implementation is None:
+            return current.fee
+        return current.fee + implementation(*arguments)
 
 
     def _handler(self, *arguments):
@@ -1305,20 +1300,10 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
-            import time
-            start = time.time()
-            i = self.instruction
-            try:
-                #print (self)
-                self._check_jmpdest()
-                last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
-                result = self._handler(*arguments)
-                self._advance(result)
-            except:
-                print ("Excaption!")
-                raise
-            finally:
-                print (f"Elapsed {i}: {time.time()-start:0.4f}")
+            self._check_jmpdest()
+            last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
+            result = self._handler(*arguments)
+            self._advance(result)
         except ConcretizeGas as ex:
 
             def setstate(state, value):
@@ -1408,8 +1393,7 @@ class EVM(Eventful):
         if size == 0:
             return b""
         self._allocate(offset, size)
-        data = self.memory[offset : offset + size]
-        return ArrayProxy(data)
+        return self.memory[offset : offset + size]
 
     def write_buffer(self, offset, data):
         self._allocate(offset, len(data))
@@ -1793,11 +1777,11 @@ class EVM(Eventful):
     @concretized_args(code_offset="SAMPLED", size="SAMPLED")
     def CODECOPY(self, mem_offset, code_offset, size):
         """Copy code running in current environment to memory"""
-        import pdb; pdb.set_trace()
         self._allocate(mem_offset, size)
         GCOPY = 3  # cost to copy one 32 byte word
         copyfee = self.safe_mul(GCOPY, Operators.UDIV(self.safe_add(size, 31), 32))
         self._consume(copyfee)
+
 
         if issymbolic(size):
             max_size = SelectedSolver.instance().max(self.constraints, size)
@@ -1806,7 +1790,6 @@ class EVM(Eventful):
 
         for i in range(max_size):
             if issymbolic(i < size):
-                print("SYMBOLICCCCCCCCCCCCCCCCCC"*100)
                 default = Operators.ITEBV(
                     8, i < size, 0, self._load(mem_offset + i, 1)
                 )  # Fixme. unnecessary memory read
@@ -1980,11 +1963,7 @@ class EVM(Eventful):
         self.fail_if(Operators.ULT(self.gas, SSSTORESENTRYGAS))
 
         # Get the storage from the snapshot took before this call
-        try:
-            original_value = self.world._callstack[-1][-2].get(offset, 0)
-        except IndexError:
-            original_value = 0
-
+        original_value = self.world._callstack[-1][-2].select(offset)
         current_value = self.world.get_storage_data(storage_address, offset)
 
         def ITE(*args):
@@ -2161,8 +2140,8 @@ class EVM(Eventful):
 
         data = self.read_buffer(offset, size)
         keccak_init = self.world.symbolic_function(globalsha3, data)
-        caller = ArrayProxy(msg.caller).read_BE(0,20)
-        salt = ArrayProxy(salt).read_BE(0, 32)
+        caller = MutableArray(msg.caller).read_BE(0, 20)
+        salt = MutableArray(salt).read_BE(0, 32)
         address = self.world.symbolic_function(b"\xff" + caller + salt + keccak_init) & ((1<<0x20)-1)
 
         self.world.start_transaction(
@@ -2454,7 +2433,7 @@ class EVMWorld(Platform):
         self._world_state = {}
         self._constraints = constraints
         self._callstack: List[
-            Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, ArrayProxy], EVM]
+            Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, MutableArray], EVM]
         ] = []
         self._deleted_accounts: Set[int] = set()
         self._logs: List[EVMLog] = list()
@@ -2583,21 +2562,19 @@ class EVMWorld(Platform):
         else:
             tx_fee = GTRANSACTION  # Simple transaction fee
 
+        ## This popcnt like thing is expensive when the bytecode or
+        # data has symbolic content
+
         zerocount = 0
         nonzerocount = 0
-        if isinstance(bytecode_or_data, (Array, ArrayProxy)):
-            # if nothing was written we can assume all elements are default to zero
-            if len(bytecode_or_data.written) == 0:
-                zerocount = len(bytecode_or_data)
-        else:
-            for index in range(len(bytecode_or_data)):
-                try:
-                    c = bytecode_or_data.get(index, 0)
-                except AttributeError:
-                    c = bytecode_or_data[index]
+        for index in range(len(bytecode_or_data)):
+            try:
+                c = bytecode_or_data.get(index)
+            except AttributeError:
+                c = bytecode_or_data[index]
 
-                zerocount += Operators.ITEBV(256, c == 0, 1, 0)
-                nonzerocount += Operators.ITEBV(256, c == 0, 0, 1)
+            zerocount += Operators.ITEBV(512, c == 0, 1, 0)
+            nonzerocount += Operators.ITEBV(512, c == 0, 0, 1)
 
         tx_fee += zerocount * GTXDATAZERO
         tx_fee += nonzerocount * GTXDATANONZERO
@@ -2870,11 +2847,8 @@ class EVMWorld(Platform):
         :return: the value
         :rtype: int or Bitvec
         """
-        start = time.time()
-        try:
-            return self._world_state[storage_address]["storage"].get(offset, 0)
-        finally:
-            print (f"Ellapseeeeeeeeeeeeeeeeeeeeeeeeeeeeeed in get_storage_data: {time.time()-start:04f}")
+        return self._world_state[storage_address]["storage"].select(offset)
+
     def set_storage_data(self, storage_address, offset, value):
         """
         Writes a value to a storage slot in specified account
@@ -2923,12 +2897,14 @@ class EVMWorld(Platform):
 
         :param address: account address
         :return: account storage
-        :rtype: bytearray or ArrayProxy
+        :rtype: bytearray or MutableArray
         """
         return self._world_state[address]["storage"]
 
     def _set_storage(self, address, storage):
         """Private auxiliary function to replace the storage"""
+        if not isinstance(storage, MutableArray) or storage.default != 0:
+            raise TypeError
         self._world_state[address]["storage"] = storage
 
     def get_nonce(self, address):
@@ -2946,7 +2922,7 @@ class EVMWorld(Platform):
     def set_balance(self, address, value):
         if isinstance(value, Bitvec):
             value = Operators.ZEXTEND(value, 512)
-        self._world_state[int(address)]["balance"] = value
+        self._world_state[int(address)]["balance"] = simplify(value)
 
     def get_balance(self, address):
         if address not in self._world_state:
@@ -3156,17 +3132,17 @@ class EVMWorld(Platform):
 
         if storage is None:
             # Uninitialized values in a storage are 0 by spec
-            storage = self.constraints.new_array(
-                index_bits=256,
-                value_bits=256,
+            storage = MutableArray(self.constraints.new_array(
+                index_size=256,
+                value_size=256,
                 name=f"STORAGE_{address:x}",
                 avoid_collisions=True,
                 default=0,
-            )
+            ))
         else:
-            if isinstance(storage, ArrayProxy):
+            if isinstance(storage, MutableArray):
                 if storage.index_bits != 256 or storage.value_bits != 256:
-                    raise TypeError("An ArrayProxy 256bits -> 256bits is needed")
+                    raise TypeError("An MutableArray 256bits -> 256bits is needed")
             else:
                 if any((k < 0 or k >= 1 << 256 for k, v in storage.items())):
                     raise TypeError(
@@ -3237,6 +3213,10 @@ class EVMWorld(Platform):
         """
         assert self._pending_transaction is None, "Already started tx"
         assert caller is not None
+        if issymbolic(data ):
+            assert data.index_max is not None
+            assert data.value_size == 8
+
         self._pending_transaction = PendingTransaction(
             sort, address, price, data, caller, value, gas, None
         )

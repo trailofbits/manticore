@@ -13,7 +13,7 @@ from .expression import (
     Bool,
     Bitvec,
     BoolConstant,
-    ArrayProxy,
+    MutableArray,
     BoolEqual,
     Variable,
     Constant,
@@ -23,8 +23,7 @@ from .visitors import (
     TranslatorSmtlib,
     get_variables,
     simplify,
-    replace,
-    pretty_print,
+    replace
 )
 from ...utils import config
 import logging
@@ -180,7 +179,6 @@ class ConstraintSet:
 
     def to_string(self, replace_constants: bool = False) -> str:
         variables, constraints = self.get_declared_variables(), self.constraints
-
         if replace_constants:
             constant_bindings = {}
             for expression in constraints:
@@ -193,6 +191,7 @@ class ConstraintSet:
 
         result = ""
         translator = TranslatorSmtlib(use_bindings=False)
+        tuple(translator.visit_Variable(v) for v in variables)
         for constraint in constraints:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
@@ -210,7 +209,6 @@ class ConstraintSet:
 
     def _declare(self, var):
         """ Declare the variable `var` """
-        print ("declaring", var)
         if var.name in self._declarations:
             raise ValueError("Variable already declared")
         self._declarations[var.name] = var
@@ -330,11 +328,11 @@ class ConstraintSet:
                 elif isinstance(foreign_var, Array):
                     # Note that we are discarding the ArrayProxy encapsulation
                     new_var = self.new_array(
-                        index_max=foreign_var.index_max,
-                        index_bits=foreign_var.index_bits,
-                        value_bits=foreign_var.value_bits,
+                        length=foreign_var.length,
+                        index_size=foreign_var.index_size,
+                        value_size=foreign_var.value_size,
                         name=migrated_name,
-                    ).array
+                    )
                 else:
                     raise NotImplementedError(
                         f"Unknown expression type {type(foreign_var)} encountered during expression migration"
@@ -387,20 +385,20 @@ class ConstraintSet:
 
     def new_array(
         self,
-        index_bits=32,
+        index_size=32,
         name=None,
-        index_max=None,
-        value_bits=8,
+        length=None,
+        value_size=8,
         taint=frozenset(),
         avoid_collisions=False,
         default=None,
     ):
-        """ Declares a free symbolic array of value_bits long bitvectors in the constraint store.
-            :param index_bits: size in bits for the array indexes one of [32, 64]
-            :param value_bits: size in bits for the array values
+        """ Declares a free symbolic array of value_size long bitvectors in the constraint store.
+            :param index_size: size in bits for the array indexes one of [32, 64]
+            :param value_size: size in bits for the array values
             :param name: try to assign name to internal variable representation,
                          if not unique, a numeric nonce will be appended
-            :param index_max: upper limit for indexes on this array (#FIXME)
+            :param length: upper limit for indexes on this array (#FIXME)
             :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :param default: default for not initialized values
             :return: a fresh ArrayProxy
@@ -414,7 +412,6 @@ class ConstraintSet:
             raise ValueError(f"Name {name} already used")
         var = self._declare(
             ArrayVariable(
-                index_size=index_bits, length=index_max, value_size=value_bits, name=name, taint=taint, default=default
-            )
+                index_size=index_size, length=length, value_size=value_size, name=name, taint=taint, default=default )
         )
-        return ArrayProxy(var)
+        return var

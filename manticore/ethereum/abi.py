@@ -11,7 +11,7 @@ from ..core.smtlib import (
     Operators,
     Bitvec,
     ArrayVariable,
-    ArrayProxy,
+    MutableArray,
     to_constant,
     issymbolic,
 )
@@ -285,7 +285,7 @@ class ABI:
             assert isinstance(value, Bitvec)
             # FIXME This temporary array variable should be obtained from a specific constraint store
             buffer = ArrayVariable(
-                index_bits=256, length=32, value_bits=8, name="temp{}".format(uuid.uuid1())
+                index_size=256, length=32, value_size=8, name="temp{}".format(uuid.uuid1())
             )
             if value.size <= size * 8:
                 value = Operators.ZEXTEND(value, size * 8)
@@ -316,11 +316,11 @@ class ABI:
         if issymbolic(value):
             # Help mypy out. Can remove this by teaching it how issymbolic works
             assert isinstance(value, Bitvec)
-            buf = ArrayVariable(
-                index_bits=256, length=32, value_bits=8, name="temp{}".format(uuid.uuid1())
+            buf = value.constraints.new_array(
+                index_size=256, length=32, value_size=8, name="temp{}".format(uuid.uuid1())
             )
             value = Operators.SEXTEND(value, value.size, size * 8)
-            return ArrayProxy(buf.write_BE(padding, value, size))
+            return MutableArray(buf.write_BE(padding, value, size))
         else:
             buf_arr = bytearray()
             for _ in range(padding):

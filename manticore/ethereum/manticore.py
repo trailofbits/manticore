@@ -18,7 +18,7 @@ from ..core.manticore import ManticoreBase, Testcase, ManticoreError
 from ..core.smtlib import (
     ConstraintSet,
     Array,
-    ArrayProxy,
+    MutableArray,
     Bitvec,
     Operators,
     BoolConstant,
@@ -135,7 +135,7 @@ class ManticoreEVM(ManticoreBase):
             m.finalize()
     """
 
-    def make_symbolic_buffer(self, size, name=None, avoid_collisions=False):
+    def make_symbolic_buffer(self, size, name=None, avoid_collisions=False, default=None):
         """ Creates a symbolic buffer of size bytes to be used in transactions.
             You can operate on it normally and add constraints to manticore.constraints
             via manticore.constrain(constraint_expression)
@@ -154,12 +154,13 @@ class ManticoreEVM(ManticoreBase):
             avoid_collisions = True
 
         return self.constraints.new_array(
-            index_bits=256,
+            index_size=256,
             name=name,
-            index_max=size,
-            value_bits=8,
+            length=size,
+            value_size=8,
             taint=frozenset(),
             avoid_collisions=avoid_collisions,
+            default=default
         )
 
     def make_symbolic_value(self, nbits=256, name=None):
@@ -595,11 +596,11 @@ class ManticoreEVM(ManticoreBase):
 
                     for state in self.ready_states:
                         world = state.platform
-
-                        if not SelectedSolver.instance().can_be_true(
-                            self.constraints,
-                            Operators.UGE(world.get_balance(owner.address), balance),
-                        ):
+                        if not state.can_be_true(Operators.UGE(world.get_balance(owner.address), balance)):
+                        #if not SelectedSolver.instance().can_be_true(
+                        #    self.constraints,
+                        #    Operators.UGE(world.get_balance(owner.address), balance),
+                        #):
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"because the owner account ({owner}) has insufficient balance."
@@ -760,6 +761,8 @@ class ManticoreEVM(ManticoreBase):
             :param price: gas unit price
             :raises NoAliveStates: if there are no alive states to execute
         """
+        if isinstance(data, MutableArray):
+            data = data.array
         self._transaction(
             "CALL", caller, value=value, address=address, data=data, gas=gas, price=price
         )
@@ -852,11 +855,12 @@ class ManticoreEVM(ManticoreBase):
             value = state.migrate_expression(value)
 
         if issymbolic(data):
-            if isinstance(data, ArrayProxy):  # FIXME is this necessary here?
+            if isinstance(data, MutableArray):  # FIXME is this necessary here?
                 data = data.array
+            print ("data:"*10, data)
             data = state.migrate_expression(data)
-            if isinstance(data, Array):
-                data = ArrayProxy(data)
+            #if isinstance(data, Array):
+            #    data = MutableArray(data)
 
         if issymbolic(gas):
             gas = state.migrate_expression(gas)
@@ -1083,7 +1087,7 @@ class ManticoreEVM(ManticoreBase):
                 logger.info("Starting symbolic transaction: %d", tx_no)
 
                 # run_symbolic_tx
-                symbolic_data = self.make_symbolic_buffer(320)
+                symbolic_data = self.make_symbolic_buffer(320, default=0)
                 if tx_send_ether:
                     value = self.make_symbolic_value()
                 else:

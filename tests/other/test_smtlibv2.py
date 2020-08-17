@@ -15,7 +15,7 @@ from manticore.core.smtlib import (
     replace,
     BitvecConstant,
 )
-from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver
+from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver, SelectedSolver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
 from manticore import config
@@ -98,14 +98,64 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertRaises(IndexError, c.get, 5)
 
     def test_ConstantArrayBitvec(self):
-        c = ArrayProxy(ArrayVariable(index_size=32, value_size=8, length=5, name="ARR"))
+        c = MutableArray(ArrayVariable(index_size=32, value_size=8, length=5, name="ARR"))
         c[1] = 10
         c[2] = 20
         c[3] = 30
         self.assertEqual(c[1], 10)
         self.assertEqual(c[2], 20)
         self.assertEqual(c[3], 30)
-        self.assertRaises(IndexError, c.get, 25)
+
+
+    def test_ArrayDefault3(self):
+        c = MutableArray(ArrayVariable(index_size=32, value_size=8, length=5, default=0, name="ARR"))
+        self.assertEqual(c[1], 0)
+        self.assertEqual(c[2], 0)
+        self.assertEqual(c[3], 0)
+
+        c[1] = 10
+        c[3] = 30
+        self.assertEqual(c[1], 10)
+        self.assertEqual(c[2], 0)
+        self.assertEqual(c[3], 30)
+
+    def test_ArrayDefault4(self):
+        cs = ConstraintSet()
+        a = MutableArray(cs.new_array(index_size=32, value_size=8, length=4, default=0, name="ARR"))
+        i = cs.new_bitvec(size = a.index_size)
+        SelectedSolver.instance().must_be_true(cs, 0 == a.default)
+        SelectedSolver.instance().must_be_true(cs, a[i] == a.default)
+        cs.add(i==2)
+        SelectedSolver.instance().must_be_true(cs, 0 == a.default)
+        SelectedSolver.instance().must_be_true(cs, a[i] == a.default)
+
+        b = a[:]
+        i = cs.new_bitvec(size = a.index_size)
+        SelectedSolver.instance().must_be_true(cs, 0 == b.default)
+        SelectedSolver.instance().must_be_true(cs, b[i] == b.default)
+        
+        a[1] = 10
+        a[2] = 20
+        a[3] = 30
+        # a := 0 10 20 30 0 0 x x x x      (x undefined)
+        SelectedSolver.instance().must_be_true(cs, a.default == 0)
+        SelectedSolver.instance().must_be_true(cs, a[0] == 0)
+        SelectedSolver.instance().must_be_true(cs, a[1] == 10)
+        SelectedSolver.instance().must_be_true(cs, a[2] == 20)
+        SelectedSolver.instance().must_be_true(cs, a[3] == 30)
+        # SelectedSolver.instance().must_be_true(cs, a[4] == 0) #undefined!
+        
+
+        b = a[:]
+        # b := 0 10 20 30 0 0 x x x x      (x undefined)
+        SelectedSolver.instance().must_be_true(cs, b.default == 0)
+        SelectedSolver.instance().must_be_true(cs, b[0] == 0)
+        SelectedSolver.instance().must_be_true(cs, b[1] == 10)
+        SelectedSolver.instance().must_be_true(cs, b[2] == 20)
+        SelectedSolver.instance().must_be_true(cs, b[3] == 30)
+        
+
+
 
     def test_Expression(self):
         # Used to check if all Expression have test
@@ -113,6 +163,7 @@ class ExpressionTestNew(unittest.TestCase):
 
         def check(ty, pickle_size=None, sizeof=None, **kwargs):
             x = ty(**kwargs)
+            """
             print(
                 type(x),
                 "\n  Pickle size:",
@@ -122,6 +173,7 @@ class ExpressionTestNew(unittest.TestCase):
                 "\n  Slotted:",
                 not hasattr(x, "__dict__"),
             )
+            """
             #self.assertEqual(len(pickle_dumps(x)), pickle_size)
             self.assertEqual(sys.getsizeof(x), sizeof)
             self.assertFalse(hasattr(x, "__dict__"))  # slots!
@@ -162,7 +214,7 @@ class ExpressionTestNew(unittest.TestCase):
 
         # TODO! But you can instantiate an ArraConstant
         """
-        x = ArrayConstant(index_bits=32, value_bits=8, b"AAAAAAAAAAAAAAA")
+        x = ArrayConstant(index_size=32, value_size=8, b"AAAAAAAAAAAAAAA")
         self.assertLessEqual(len(pickle_dumps(x)), 76) #master 71
         self.assertLessEqual(sys.getsizeof(x), 64) #master 56
         self.assertFalse(hasattr(x, '__dict__')) #slots!
@@ -491,7 +543,7 @@ class ExpressionTest(unittest.TestCase):
     def testBasicArray256(self):
         cs = ConstraintSet()
         # make array of 32->8 bits
-        array = cs.new_array(32, value_bits=256)
+        array = cs.new_array(32, value_size=256)
         # make free 32bit bitvector
         key = cs.new_bitvec(32)
 
@@ -559,13 +611,13 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArraySymbIdx(self):
         cs = ConstraintSet()
-        array = cs.new_array(index_bits=32, value_bits=32, name="array")
+        array = MutableArray(cs.new_array(index_size=32, value_size=32, name="array", default=0))
         key = cs.new_bitvec(32, name="key")
         index = cs.new_bitvec(32, name="index")
 
         array[key] = 1  # Write 1 to a single location
 
-        cs.add(array.get(index, default=0) != 0)  # Constrain index so it selects that location
+        cs.add(array.select(index) != 0)  # Constrain index so it selects that location
 
         cs.add(index != key)
         # key and index are the same there is only one slot in 1
@@ -573,14 +625,14 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArraySymbIdx2(self):
         cs = ConstraintSet()
-        array = cs.new_array(index_bits=32, value_bits=32, name="array")
+        array = MutableArray(cs.new_array(index_size=32, value_size=32, name="array", default=0))
         key = cs.new_bitvec(32, name="key")
         index = cs.new_bitvec(32, name="index")
 
         array[key] = 1  # Write 1 to a single location
-        cs.add(array.get(index, 0) != 0)  # Constrain index so it selects that location
+        cs.add(array.select(index) != 0)  # Constrain index so it selects that location
         a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
-        cs.add(array.get(a_index, 0) != 0)  # now storage must have something at that location
+        cs.add(array.select(a_index) != 0)  # now storage must have something at that location
         cs.add(a_index != index)  # remove it from the solutions
 
         # It should not be another solution for index
@@ -588,13 +640,13 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArrayDefault(self):
         cs = ConstraintSet()
-        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
+        array = cs.new_array(index_size=32, value_size=32, name="array", default=0)
         key = cs.new_bitvec(32, name="key")
         self.assertTrue(self.solver.must_be_true(cs, array[key] == 0))
 
     def testBasicArrayDefault2(self):
         cs = ConstraintSet()
-        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
+        array = MutableArray(cs.new_array(index_size=32, value_size=32, name="array", default=0))
         index1 = cs.new_bitvec(32)
         index2 = cs.new_bitvec(32)
         value = cs.new_bitvec(32)
@@ -605,7 +657,7 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArrayIndexConcrete(self):
         cs = ConstraintSet()
-        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
+        array = MutableArray(cs.new_array(index_size=32, value_size=32, name="array", default=0))
         array[0] = 100
         self.assertTrue(array[0] == 100)
 
@@ -613,7 +665,7 @@ class ExpressionTest(unittest.TestCase):
         hw = b"Hello world!"
         cs = ConstraintSet()
         # make array of 32->8 bits
-        array = cs.new_array(32, index_max=len(hw))
+        array = cs.new_array(32, length=len(hw))
         array = array.write(0, hw)
         self.assertEqual(len(array), len(hw))
         self.assertTrue(self.solver.must_be_true(cs, array == hw))
@@ -646,7 +698,7 @@ class ExpressionTest(unittest.TestCase):
         hw = b"Hello world!"
         cs = ConstraintSet()
         # make array of 32->8 bits
-        array = cs.new_array(32, index_max=12)
+        array = MutableArray(cs.new_array(32, length=12))
         array = array.write(0, hw)
         array_slice = array[0:2]
         self.assertTrue(self.solver.must_be_true(cs, array == hw))
@@ -666,22 +718,22 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArrayProxySymbIdx(self):
         cs = ConstraintSet()
-        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
+        array = MutableArray(cs.new_array(index_size=32, value_size=32, name="array", default=0))
         key = cs.new_bitvec(32, name="key")
         index = cs.new_bitvec(32, name="index")
 
         array[key] = 1  # Write 1 to a single location
-        cs.add(array.get(index) != 0)  # Constrain index so it selects that location
+        cs.add(array.select(index) != 0)  # Constrain index so it selects that location
         a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
 
-        cs.add(array.get(a_index) != 0)  # now storage must have something at that location
+        cs.add(array.select(a_index) != 0)  # now storage must have something at that location
         cs.add(a_index != index)  # remove it from the solutions
         # It should not be another solution for index
         self.assertFalse(self.solver.check(cs))
 
     def testBasicArrayProxySymbIdx2(self):
         cs = ConstraintSet()
-        array = cs.new_array(index_bits=32, value_bits=32, name="array")
+        array = MutableArray(cs.new_array(index_size=32, value_size=32, name="array", default=100))
         key = cs.new_bitvec(32, name="key")
         index = cs.new_bitvec(32, name="index")
 
@@ -691,23 +743,20 @@ class ExpressionTest(unittest.TestCase):
         solutions = self.solver.get_all_values(cs, array[0])  # get a concrete solution for index
         self.assertItemsEqual(solutions, (1, 2))
         solutions = self.solver.get_all_values(
-            cs, array.get(0, 100)
+            cs, array.select(0)
         )  # get a concrete solution for index 0
         self.assertItemsEqual(solutions, (1, 2))
 
         solutions = self.solver.get_all_values(
-            cs, array.get(1, 100)
+            cs, array.select(1)
         )  # get a concrete solution for index 1 (default 100)
         self.assertItemsEqual(solutions, (100, 2))
 
-        self.assertTrue(
-            self.solver.can_be_true(cs, array[1] == 12345)
-        )  # no default so it can be anything
 
     def testBasicConstatArray(self):
         cs = ConstraintSet()
-        array1 = cs.new_array(index_bits=32, value_bits=32, index_max=10, name="array1", default=0)
-        array2 = cs.new_array(index_bits=32, value_bits=32, index_max=10, name="array2", default=0)
+        array1 = MutableArray(cs.new_array(index_size=32, value_size=32, length=10, name="array1", default=0))
+        array2 = MutableArray(cs.new_array(index_size=32, value_size=32, length=10, name="array2", default=0))
         array1[0:10] = range(10)
         self.assertTrue(array1[0] == 0)
         #yeah right self.assertTrue(array1[0:10] == range(10))
@@ -813,7 +862,7 @@ class ExpressionTest(unittest.TestCase):
     def test_visitors(self):
         solver = Z3Solver.instance()
         cs = ConstraintSet()
-        arr = cs.new_array(name="MEM")
+        arr = MutableArray(cs.new_array(name="MEM"))
         a = cs.new_bitvec(32, name="VAR")
         self.assertEqual(get_depth(a), 1)
         cond = Operators.AND(a < 200, a > 100)

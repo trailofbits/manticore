@@ -26,7 +26,7 @@ from elftools.elf.sections import SymbolTableSection
 from . import linux_syscalls
 from .linux_syscall_stubs import SyscallStubs
 from ..core.state import TerminateState
-from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
+from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, MutableArray
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
@@ -422,7 +422,7 @@ class SymbolicFile(File):
 
         # build the constraints array
         size = len(data)
-        self.array = constraints.new_array(name=self.name, index_max=size)
+        self.array = constraints.new_array(name=self.name, length=size)
 
         symbols_cnt = 0
         for i in range(size):
@@ -690,7 +690,7 @@ class SymbolicSocket(Socket):
         self.symb_name = name
         self.max_recv_symbolic = max_recv_symbolic  # 0 for unlimited. Unlimited is not tested
         # Keep track of the symbolic inputs we create
-        self.inputs_recvd: List[ArrayProxy] = []
+        self.inputs_recvd: List[MutableArray] = []
         self.recv_pos = 0
 
     def __getstate__(self):
@@ -719,7 +719,7 @@ class SymbolicSocket(Socket):
         """
         return f"{self.symb_name}-{len(self.inputs_recvd)}"
 
-    def receive(self, size: int) -> Union[ArrayProxy, List[bytes]]:
+    def receive(self, size: int) -> Union[MutableArray, List[bytes]]:
         """
         Return a symbolic array of either `size` or rest of remaining symbolic bytes
         :param size: Size of receive
@@ -735,7 +735,7 @@ class SymbolicSocket(Socket):
         if rx_bytes == 0:
             # If no symbolic bytes left, return empty list
             return []
-        ret = self._constraints.new_array(name=self._next_symb_name(), index_max=rx_bytes)
+        ret = self._constraints.new_array(name=self._next_symb_name(), length=rx_bytes)
         self.recv_pos += rx_bytes
         self.inputs_recvd.append(ret)
         return ret

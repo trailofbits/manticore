@@ -191,7 +191,6 @@ def ITE(cond, true_value, false_value):
 
 
 def ITEBV(size, cond, true_value, false_value):
-    print ("ITE", cond)
     if isinstance(cond, Bitvec):
         cond = cond.Bool()
     if isinstance(cond, int):

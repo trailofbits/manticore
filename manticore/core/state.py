@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool, issymbolic, BitvecConstant
+from .smtlib import solver, Bool, issymbolic, BitvecConstant, MutableArray
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 
@@ -224,8 +224,8 @@ class StateBase(Eventful):
         taint = options.get("taint", frozenset())
         expr = self._constraints.new_array(
             name=label,
-            index_max=nbytes,
-            value_bits=8,
+            length=nbytes,
+            value_size=8,
             taint=taint,
             avoid_collisions=avoid_collisions,
         )
@@ -325,6 +325,8 @@ class StateBase(Eventful):
         return SelectedSolver.instance()  # solver
 
     def migrate_expression(self, expression):
+        if isinstance(expression, MutableArray):
+            expression=expression.array
         if not issymbolic(expression):
             return expression
         migration_map = self.context.get("migration_map")
@@ -373,6 +375,7 @@ class StateBase(Eventful):
                 values.append(expr)
             else:
                 expr = self.migrate_expression(expr)
+                print ("SOLVEONE", expr)
                 value = self._solver.get_value(self._constraints, expr)
                 if constrain:
                     self.constrain(expr == value)
@@ -380,6 +383,8 @@ class StateBase(Eventful):
                 if isinstance(value, bytearray):
                     value = bytes(value)
                 values.append(value)
+        assert any(issymbolic for x in values)
+        print (exprs, values)
         return values
 
     def solve_n(self, expr, nsolves):
@@ -479,7 +484,7 @@ class StateBase(Eventful):
         if wildcard in data:
             size = len(data)
             symb = self._constraints.new_array(
-                name=label, index_max=size, taint=taint, avoid_collisions=True
+                name=label, length=size, taint=taint, avoid_collisions=True
             )
             self._input_symbols.append(symb)
 

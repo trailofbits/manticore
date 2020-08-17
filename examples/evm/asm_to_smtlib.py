@@ -42,7 +42,7 @@ code = EVMAsm.assemble(
 )
 
 
-data = constraints.new_array(index_bits=256, name="array")
+data = constraints.new_array(index_size=256, name="array")
 
 
 class callbacks:
@@ -57,8 +57,8 @@ class callbacks:
 
 class DummyWorld:
     def __init__(self, constraints):
-        self.balances = constraints.new_array(index_bits=256, value_bits=256, name="balances")
-        self.storage = constraints.new_array(index_bits=256, value_bits=256, name="storage")
+        self.balances = constraints.new_array(index_size=256, value_size=256, name="balances")
+        self.storage = constraints.new_array(index_size=256, value_size=256, name="storage")
         self.origin = constraints.new_bitvec(256, name="origin")
         self.price = constraints.new_bitvec(256, name="price")
         self.timestamp = constraints.new_bitvec(256, name="timestamp")

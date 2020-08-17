@@ -123,7 +123,7 @@ class Visitor:
     def _changed(self, expression:Expression, operands):
         return any(x is not y for x, y in zip(expression.operands, operands))
 
-    def _rebuild(self, expression:Expression, operands):
+    def _rebuild(self, expression:Operation, operands):
         """ Default operation used when no visiting method was successful for
          this expression. If he operands have changed this reubild the curren expression
          with the new operands.
@@ -784,7 +784,7 @@ class ArithmeticSimplifier(Visitor):
 arithmetic_simplifier_cache = CacheDict(max_size=250000, flush_perc=25)
 
 
-#@lru_cache(maxsize=128, typed=True)
+@lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
     if not isinstance(expression, Expression):
         return expression
@@ -799,7 +799,7 @@ def to_constant(expression):
         Iff the expression can be simplified to a Constant get the actual concrete value.
         This discards/ignore any taint
     """
-    if isinstance(expression, ArrayProxy):
+    if isinstance(expression, MutableArray):
         expression = expression.array
     value = simplify(expression)
     if isinstance(value, Expression) and value.taint:
@@ -820,10 +820,9 @@ def to_constant(expression):
     return value
 
 
-#@lru_cache(maxsize=128, typed=True)
+@lru_cache(maxsize=128, typed=True)
 def simplify(expression):
-    expression = arithmetic_simplify(expression)
-    return expression
+    return arithmetic_simplify(expression)
 
 
 class TranslatorSmtlib(Translator):
@@ -961,7 +960,7 @@ class TranslatorSmtlib(Translator):
 
 
 def translate_to_smtlib(expression, **kwargs):
-    if isinstance(expression, ArrayProxy):
+    if isinstance(expression, MutableArray):
         expression = expression.array
     translator = TranslatorSmtlib(**kwargs)
     translator.visit(expression)
@@ -989,7 +988,7 @@ class Replace(Visitor):
 def replace(expression, bindings):
     if not bindings:
         return expression
-    if isinstance(expression, ArrayProxy):
+    if isinstance(expression, MutableArray):
         expression = expression.array
 
     visitor = Replace(bindings)
@@ -1023,7 +1022,7 @@ def simplify_array_select(array_exp):
 
 
 def get_variables(expression):
-    if isinstance(expression, ArrayProxy):
+    if isinstance(expression, MutableArray):
         expression = expression.array
 
     visitor = GetDeclarations()

@@ -16,7 +16,7 @@ from manticore import ManticoreError
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib import Z3Solver
-from manticore.core.smtlib.expression import Bitvec
+from manticore.core.smtlib.expression import BitvecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import (
@@ -377,7 +377,7 @@ class EthAbiTests(unittest.TestCase):
     # test serializing symbolic buffer with bytesM
     def test_serialize_bytesM_symbolic(self):
         cs = ConstraintSet()
-        buf = cs.new_array(index_max=17)
+        buf = cs.new_array(length=17)
         ret = ABI.serialize("bytes32", buf)
         self.assertEqual(solver.minmax(cs, ret[0]), (0, 255))
         self.assertEqual(solver.minmax(cs, ret[17]), (0, 0))
@@ -385,7 +385,7 @@ class EthAbiTests(unittest.TestCase):
     # test serializing symbolic buffer with bytes
     def test_serialize_bytes_symbolic(self):
         cs = ConstraintSet()
-        buf = cs.new_array(index_max=17)
+        buf = cs.new_array(length=17)
         ret = ABI.serialize("bytes", buf)
 
         # does the offset field look right?
@@ -410,7 +410,7 @@ class EthInstructionTests(unittest.TestCase):
         price = 0
         value = 10000
         bytecode = b"\x05"
-        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        data = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         gas = 1000000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
@@ -815,9 +815,11 @@ class EthTests(unittest.TestCase):
             self.mevm.make_symbolic_value(),
             signature="(uint256,uint256)",
         )
+        z = None
         for st in self.mevm.all_states:
             z = st.solve_one(st.platform.transactions[1].return_data)
             break
+        self.assertIsNot(z, None)
         self.assertEqual(ABI.deserialize("(uint256)", z)[0], 2)
 
     def test_migrate_integration(self):
@@ -1380,7 +1382,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = Bitvec(256)
+        self.bv = BitvecVariable(size=256, name="A")
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"
@@ -1723,6 +1725,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         # check balances
         self.assertEqual(world.get_balance(0x111111111111111111111111111111111111111), 0)
         self.assertEqual(world.get_balance(0x222222222222222222222222222222222222222), 10)
+        from manticore.core.smtlib.visitors import translate_to_smtlib, simplify
+        print ( translate_to_smtlib(simplify(world.get_balance(0x333333333333333333333333333333333333333))))
         self.assertEqual(
             world.get_balance(0x333333333333333333333333333333333333333),
             100000000000000000000000 - 10,

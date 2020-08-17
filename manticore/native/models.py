@@ -77,7 +77,7 @@ def can_be_NULL(byte, constrs) -> bool:
         return byte == 0
 
 
-def _find_zero(cpu, constrs, ptr: Union[int, BitVec]) -> int:
+def _find_zero(cpu, constrs, ptr: Union[int, Bitvec]) -> int:
     """
     Helper for finding the closest NULL or, effectively NULL byte from a starting address.
 
@@ -153,7 +153,7 @@ def strcmp(state: State, s1: Union[int, Bitvec], s2: Union[int, Bitvec]):
     return ret
 
 
-def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
+def strlen_exact(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
     """
     strlen symbolic model
 
@@ -192,7 +192,7 @@ def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     return offset
 
 
-def strlen_approx(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
+def strlen_approx(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
     """
     strlen symbolic model
 
@@ -272,8 +272,8 @@ def strcpy(state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec]) -> Un
 
 
 def strncpy(
-    state: State, dst: Union[int, BitVec], src: Union[int, BitVec], n: Union[int, BitVec]
-) -> Union[int, BitVec]:
+    state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec], n: Union[int, Bitvec]
+) -> Union[int, Bitvec]:
     """
     strncpy symbolic model
 
