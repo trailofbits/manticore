@@ -346,7 +346,7 @@ class ArrayMap(Map):
             self._array = backing_array
         else:
             self._array = expression.MutableArray(
-                expression.ArrayVariable(index_bits, length=size, value_bits=8, name=name)
+                expression.ArrayVariable(index_size=index_bits, length=size, value_size=8, name=name)
             )
 
     def __reduce__(self):

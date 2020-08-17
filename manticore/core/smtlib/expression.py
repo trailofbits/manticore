@@ -748,8 +748,7 @@ class Array(Expression, abstract=True):
         """ Builds an Array from a bytes or bytearray"""
         if isinstance(array, Array):
             return array
-        arr = self._constraints.new_array(index_size=self.index_size, length=len(array), default=0, value_size=self.value_size, name="cast{}".format(uuid.uuid1())
-        )
+        arr = ArrayVariable(index_size=self.index_size, length=len(array), default=0, value_size=self.value_size, name="cast{}".format(uuid.uuid1()))
         for pos, byte in enumerate(array):
             arr = arr.store(pos, byte)
         return arr

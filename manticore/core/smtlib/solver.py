@@ -406,9 +406,9 @@ class SMTLIBSolver(Solver):
         model = {}
         for variable in constraints.variables:
             value = None
-            if isinstance(variable, Bool):
+            if isinstance(variable, BoolVariable):
                 value = self.__getvalue_bool(variable.name)
-            elif isinstance(variable, Bitvec):
+            elif isinstance(variable, BitvecVariable):
                 value = self.__getvalue_bv(variable.name)
             elif isinstance(variable, Array):
                 try:

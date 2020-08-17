@@ -15,7 +15,7 @@ import tempfile
 from manticore import ManticoreError
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib import Z3Solver
+from manticore.core.smtlib import SelectedSolver
 from manticore.core.smtlib.expression import BitvecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
@@ -41,7 +41,7 @@ import io
 import contextlib
 
 
-solver = Z3Solver.instance()
+solver = SelectedSolver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

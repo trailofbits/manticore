@@ -316,7 +316,7 @@ class ABI:
         if issymbolic(value):
             # Help mypy out. Can remove this by teaching it how issymbolic works
             assert isinstance(value, Bitvec)
-            buf = value.constraints.new_array(
+            buf = ArrayVariable(
                 index_size=256, length=32, value_size=8, name="temp{}".format(uuid.uuid1())
             )
             value = Operators.SEXTEND(value, value.size, size * 8)
