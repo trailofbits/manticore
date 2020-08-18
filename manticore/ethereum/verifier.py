@@ -500,4 +500,5 @@ def main():
         psender=psender,
         timeout=args.timeout,
         propre=args.propre,
+        compile_args=vars(parsed)
     )
