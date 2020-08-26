@@ -1196,8 +1196,9 @@ class ManticoreBase(Eventful):
 
         :return: the latest copy of the State Descriptor dict
         """
-        if self._introspector is not None:
-            return self._introspector.get_state_descriptors()
+        key = IntrospectionAPIPlugin.NAME
+        if key in self.plugins:
+            return self.plugins[key].get_state_descriptors()
         return {}
 
     @at_not_running

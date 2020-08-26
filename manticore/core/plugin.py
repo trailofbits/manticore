@@ -465,6 +465,8 @@ class IntrospectionAPIPlugin(Plugin):
     and stores them in its context, and keeps them up to date whenever a callback registers a change in the State.
     """
 
+    NAME = "introspector"
+
     def create_state(self, state_id: int):
         """
         Adds a StateDescriptor to the context in the READY state list
@@ -665,3 +667,6 @@ class IntrospectionAPIPlugin(Plugin):
         with self.locked_context("manticore_state", dict) as context:
             out = context.copy()  # TODO: is this necessary to break out of the lock?
         return out
+
+    def unique_name(self) -> str:
+        return IntrospectionAPIPlugin.NAME
