@@ -668,5 +668,6 @@ class IntrospectionAPIPlugin(Plugin):
             out = context.copy()  # TODO: is this necessary to break out of the lock?
         return out
 
+    @property
     def unique_name(self) -> str:
         return IntrospectionAPIPlugin.NAME
