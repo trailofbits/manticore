@@ -15,4 +15,4 @@ class State(StateBase):
         :param descriptor: StateDescriptor for this state
         """
         super()._update_state_descriptor(descriptor, *args, **kwargs)
-        descriptor.pc = None  # TODO - Grab whatever notion of a PC EVM has
+        descriptor.pc = (self.platform.current_vm.address, self.platform.current_vm.pc)
