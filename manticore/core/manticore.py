@@ -1198,7 +1198,8 @@ class ManticoreBase(Eventful):
         """
         key = IntrospectionAPIPlugin.NAME
         if key in self.plugins:
-            return self.plugins[key].get_state_descriptors()
+            plug: IntrospectionAPIPlugin = self.plugins[key]  # type: ignore
+            return plug.get_state_descriptors()
         return {}
 
     @at_not_running
