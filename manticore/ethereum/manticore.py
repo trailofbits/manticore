@@ -320,7 +320,10 @@ class ManticoreEVM(ManticoreBase):
         if isinstance(source_code, io.IOBase):
             source_code = source_code.name
 
-        if isinstance(source_code, str) and not is_supported(source_code):
+        if (isinstance(source_code, str) and
+                not is_supported(source_code) and
+                # Until https://github.com/crytic/crytic-compile/issues/103 is implemented
+                "ignore_compile" not in crytic_compile_args):
             with tempfile.NamedTemporaryFile("w+", suffix=".sol") as temp:
                 temp.write(source_code)
                 temp.flush()

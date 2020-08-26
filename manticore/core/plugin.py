@@ -59,8 +59,12 @@ class Plugin(metaclass=DecorateAllMeta):
             return context.get(self._enabled_key, True)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return str(self.__class__)
+
+    @property
+    def unique_name(self) -> str:
+        return f"{self.name}_{id(self)}"
 
     @contextmanager
     def locked_context(self, key=None, value_type=list):

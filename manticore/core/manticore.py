@@ -43,7 +43,7 @@ consts.add(
 )
 consts.add("procs", default=10, description="Number of parallel processes to spawn")
 
-proc_type = MProcessingType.multiprocessing
+proc_type = MProcessingType.threading
 if sys.platform != "linux":
     logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
     proc_type = MProcessingType.threading
@@ -357,12 +357,11 @@ class ManticoreBase(Eventful):
         # the different type of events occur over an exploration.
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
-        self.plugins: typing.Set[Plugin] = set()
+        self.plugins: typing.Dict[str, Plugin] = {}
         assert issubclass(
             introspection_plugin_type, IntrospectionAPIPlugin
         ), "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
-        self._introspector = introspection_plugin_type()
-        self.register_plugin(self._introspector)
+        self.register_plugin(introspection_plugin_type())
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
@@ -877,7 +876,7 @@ class ManticoreBase(Eventful):
             PickleSerializer().serialize(state, statef)
 
         # Let the plugins generate a state based report
-        for p in self.plugins:
+        for p in self.plugins.values():
             p.generate_testcase(state, testcase, message)
 
         logger.info("Generated testcase No. %d - %s", testcase.num, message)
@@ -887,11 +886,11 @@ class ManticoreBase(Eventful):
     def register_plugin(self, plugin: Plugin):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
-        assert plugin not in self.plugins, "Plugin instance already registered"
+        assert plugin.unique_name not in self.plugins, "Plugin instance already registered"
         assert getattr(plugin, "manticore", None) is None, "Plugin instance already owned"
 
         plugin.manticore = self
-        self.plugins.add(plugin)
+        self.plugins[plugin.unique_name] = plugin
 
         events = Eventful.all_events()
         prefix = Eventful.prefixes
@@ -943,14 +942,20 @@ class ManticoreBase(Eventful):
         return plugin
 
     @at_not_running
-    def unregister_plugin(self, plugin):
+    def unregister_plugin(self, plugin: typing.Union[str, Plugin]):
         """ Removes a plugin from manticore.
             No events should be sent to it after
         """
-        assert plugin in self.plugins, "Plugin instance not registered"
-        plugin.on_unregister()
-        self.plugins.remove(plugin)
-        plugin.manticore = None
+        if isinstance(plugin, str):  # Passed plugin.unique_name instead of value
+            assert plugin in self.plugins, "Plugin instance not registered"
+            plugin_inst: Plugin = self.plugins[plugin]
+        else:
+            plugin_inst = plugin
+
+        assert plugin_inst.unique_name in self.plugins, "Plugin instance not registered"
+        plugin_inst.on_unregister()
+        del self.plugins[plugin_inst.unique_name]
+        plugin_inst.manticore = None
 
     def subscribe(self, name, callback):
         """ Register a callback to an event"""
