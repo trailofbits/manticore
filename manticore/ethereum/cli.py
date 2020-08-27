@@ -41,9 +41,11 @@ consts.add(
 )
 
 from enum import Enum
+
+
 class TermCondCovType(Enum):
     """Used as configuration constant for choosing the coverage based termination
-     condition"""
+    condition"""
 
     no = "no"
     local = "local"
@@ -56,9 +58,9 @@ class TermCondCovType(Enum):
     def from_string(cls, name):
         return cls.__members__[name]
 
+
 consts.add(
-    "txcoverage", default=TermCondCovType.local,
-    description="Set coverage stopping criteria"
+    "txcoverage", default=TermCondCovType.local, description="Set coverage stopping criteria"
 )
 
 
