@@ -324,11 +324,13 @@ def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
                 State(
                     id=st.state_id,
                     type={
-                        StateLists.ready: State.READY,
-                        StateLists.busy: State.BUSY,
-                        StateLists.terminated: State.TERMINATED,
-                        StateLists.killed: State.KILLED,
-                    }[st.state_list],
+                        StateLists.ready: State.READY,  # type: ignore
+                        StateLists.busy: State.BUSY,  # type: ignore
+                        StateLists.terminated: State.TERMINATED,  # type: ignore
+                        StateLists.killed: State.KILLED,  # type: ignore
+                    }[
+                        getattr(st, "state_list", StateLists.killed)
+                    ],  # If the state list is missing, assume it's killed
                     reason=st.termination_msg,
                     num_executing=st.own_execs,
                     wait_time=int(
