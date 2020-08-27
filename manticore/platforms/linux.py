@@ -2571,11 +2571,35 @@ class Linux(Platform):
 
         return len(data)
 
-    def sys_send(self, sockfd, buf, count, flags, trace_str="_send") -> int:
+    def sys_send(
+        self, sockfd: int, buf: int, count: int, flags: int, trace_str: str = "_send"
+    ) -> int:
+        """
+        send(2) is currently a nop; we don't communicate yet: The data is read
+        from memory, but not actually sent anywhere - we just return count to
+        pretend that it was.
+        """
         # Act like sys_sendto with zeroed dest_addr and addrlen
         return self.sys_sendto(sockfd, buf, count, flags, 0, 0, trace_str=trace_str)
 
-    def sys_sendto(self, sockfd, buf, count, flags, dest_addr, addrlen, trace_str="_sendto"):
+    def sys_sendto(
+        self,
+        sockfd: int,
+        buf: int,
+        count: int,
+        flags: int,
+        dest_addr: int,
+        addrlen: int,
+        trace_str: str = "_sendto",
+    ):
+        """
+        sendto(2) is currently a nop; we don't communicate yet: The data is read
+        from memory, but not actually sent anywhere - we just return count to
+        pretend that it was.
+
+        Additionally, dest_addr and addrlen are dropped, so it behaves exactly
+        the same as send.
+        """
         # TODO: Do something with destination address. Could be used to better
         # follow where data is being sent
         if dest_addr != 0:
@@ -2598,7 +2622,6 @@ class Linux(Platform):
             logger.info("SEND: buf within invalid memory. Returning EFAULT")
             return -errno.EFAULT
 
-        # XXX(yan): send(2) is currently a nop; we don't communicate yet
         self.syscall_trace.append((trace_str, sockfd, data))
 
         return count
