@@ -52,7 +52,7 @@ consts.add(
 )
 consts.add("procs", default=10, description="Number of parallel processes to spawn")
 
-proc_type = MProcessingType.multiprocessing
+proc_type = MProcessingType.threading
 if sys.platform != "linux":
     logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
     proc_type = MProcessingType.threading
@@ -202,7 +202,14 @@ class ManticoreBase(Eventful):
         "terminate_execution",
     }
 
-    def __init__(self, initial_state, workspace_url=None, outputspace_url=None, **kwargs):
+    def __init__(
+        self,
+        initial_state,
+        workspace_url=None,
+        outputspace_url=None,
+        introspection_plugin_type: type = IntrospectionAPIPlugin,
+        **kwargs,
+    ):
         """
         Manticore symbolically explores program states.
 
@@ -362,9 +369,11 @@ class ManticoreBase(Eventful):
         # the different type of events occur over an exploration.
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
-        self.plugins = set()
-        self._introspection_plugin: type = IntrospectionAPIPlugin
-        self._introspector: typing.Optional[IntrospectionAPIPlugin] = None
+        self.plugins: typing.Dict[str, Plugin] = {}
+        assert issubclass(
+            introspection_plugin_type, IntrospectionAPIPlugin
+        ), "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
+        self.register_plugin(introspection_plugin_type())
 
         # Set initial root state
         if not isinstance(initial_state, StateBase):
@@ -379,8 +388,8 @@ class ManticoreBase(Eventful):
         self._state_monitor = StateMonitorWorker(id=-2, manticore=self)
 
         # We won't create the daemons until .run() is called
-        self._daemon_threads = []
-        self._daemon_callbacks = []
+        self._daemon_threads: typing.List[DaemonThread] = []
+        self._daemon_callbacks: typing.List[typing.Callable] = []
 
         self._snapshot = None
         self._main_id = os.getpid(), threading.current_thread().ident
@@ -545,7 +554,7 @@ class ManticoreBase(Eventful):
 
     # State storage
     @Eventful.will_did("save_state", can_raise=False)
-    def _save(self, state, state_id=None):
+    def _save(self, state, state_id=None) -> int:
         """ Store or update a state in secondary storage under state_id.
             Use a fresh id is None is provided.
 
@@ -558,12 +567,11 @@ class ManticoreBase(Eventful):
         return state.id
 
     @Eventful.will_did("load_state", can_raise=False)
-    def _load(self, state_id: int):
+    def _load(self, state_id: int) -> StateBase:
         """ Load the state from the secondary storage
 
-            :param state_id: a estate id
-            :type state_id: int
-            :returns: the state id used
+            :param state_id: a state id
+            :returns: the loaded state
         """
         if not hasattr(self, "stcache"):
             self.stcache: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
@@ -577,11 +585,10 @@ class ManticoreBase(Eventful):
         return state
 
     @Eventful.will_did("remove_state", can_raise=False)
-    def _remove(self, state_id: int):
+    def _remove(self, state_id: int) -> int:
         """ Remove a state from secondary storage
 
-            :param state_id: a estate id
-            :type state_id: int
+            :param state_id: a state id
         """
         if not hasattr(self, "stcache"):
             self.stcache = weakref.WeakValueDictionary()
@@ -592,7 +599,7 @@ class ManticoreBase(Eventful):
         return state_id
 
     # Internal support for state lists
-    def _put_state(self, state):
+    def _put_state(self, state) -> int:
         """ This enqueues the state for exploration.
 
             Serialize and store the state with a fresh state_id. Then add it to
@@ -614,7 +621,7 @@ class ManticoreBase(Eventful):
             self._publish("did_enqueue_state", state_id, can_raise=False)
         return state_id
 
-    def _get_state(self, wait=False):
+    def _get_state(self, wait=False) -> typing.Optional[StateBase]:
         """ Dequeue a state form the READY list and add it to the BUSY list """
         with self._lock:
             # If wait is true do the conditional wait for states
@@ -885,7 +892,7 @@ class ManticoreBase(Eventful):
             PickleSerializer().serialize(state, statef)
 
         # Let the plugins generate a state based report
-        for p in self.plugins:
+        for p in self.plugins.values():
             p.generate_testcase(state, testcase, message)
 
         logger.info("Generated testcase No. %d - %s", testcase.num, message)
@@ -895,11 +902,11 @@ class ManticoreBase(Eventful):
     def register_plugin(self, plugin: Plugin):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
-        assert plugin not in self.plugins, "Plugin instance already registered"
+        assert plugin.unique_name not in self.plugins, "Plugin instance already registered"
         assert getattr(plugin, "manticore", None) is None, "Plugin instance already owned"
 
         plugin.manticore = self
-        self.plugins.add(plugin)
+        self.plugins[plugin.unique_name] = plugin
 
         events = Eventful.all_events()
         prefix = Eventful.prefixes
@@ -951,14 +958,20 @@ class ManticoreBase(Eventful):
         return plugin
 
     @at_not_running
-    def unregister_plugin(self, plugin):
+    def unregister_plugin(self, plugin: typing.Union[str, Plugin]):
         """ Removes a plugin from manticore.
             No events should be sent to it after
         """
-        assert plugin in self.plugins, "Plugin instance not registered"
-        plugin.on_unregister()
-        self.plugins.remove(plugin)
-        plugin.manticore = None
+        if isinstance(plugin, str):  # Passed plugin.unique_name instead of value
+            assert plugin in self.plugins, "Plugin instance not registered"
+            plugin_inst: Plugin = self.plugins[plugin]
+        else:
+            plugin_inst = plugin
+
+        assert plugin_inst.unique_name in self.plugins, "Plugin instance not registered"
+        plugin_inst.on_unregister()
+        del self.plugins[plugin_inst.unique_name]
+        plugin_inst.manticore = None
 
     def subscribe(self, name, callback):
         """ Register a callback to an event"""
@@ -1100,10 +1113,6 @@ class ManticoreBase(Eventful):
         # different process modifies the state
         self.stcache = weakref.WeakValueDictionary()
 
-        if self._introspector is None:
-            self._introspector = self._introspection_plugin()
-            self.register_plugin(self._introspector)
-
         # Lazy process start. At the first run() the workers are not forked.
         # This actually starts the worker procs/threads
         if self.subscribe:
@@ -1212,25 +1221,16 @@ class ManticoreBase(Eventful):
         logger.info("Results in %s", self._output.store.uri)
         self.wait_for_log_purge()
 
-    @at_not_running
-    def set_instrospection_plugin(self, new_plugin: type):
-        """
-        Allows the user to extend the functionality of the default IntrospectionAPI plugin.
-        Must be called before ManticoreBase.run()
-        :param new_plugin: a subclass of IntrospectionAPIPlugin
-        """
-        assert issubclass(
-            new_plugin, self._introspection_plugin
-        ), "New plugin must be a subclass of IntrospectionAPIPlugin"
-        self._introspection_plugin = new_plugin
-
     def introspect(self) -> typing.Dict[int, StateDescriptor]:
         """
         Allows callers to view descriptors for each state
+
         :return: the latest copy of the State Descriptor dict
         """
-        if self._introspector is not None:
-            return self._introspector.get_state_descriptors()
+        key = IntrospectionAPIPlugin.NAME
+        if key in self.plugins:
+            plug: IntrospectionAPIPlugin = self.plugins[key]  # type: ignore
+            return plug.get_state_descriptors()
         return {}
 
     @at_not_running
@@ -1239,6 +1239,7 @@ class ManticoreBase(Eventful):
         Allows the user to register a function that will be called at `ManticoreBase.run()` and can run
         in the background. Infinite loops are acceptable as it will be killed when Manticore exits. The provided
         function is passed a thread as an argument, with the current Manticore object available as thread.manticore.
+
         :param callback: function to be called
         """
         self._daemon_callbacks.append(callback)

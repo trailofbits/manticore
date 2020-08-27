@@ -59,8 +59,12 @@ class Plugin(metaclass=DecorateAllMeta):
             return context.get(self._enabled_key, True)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return str(self.__class__)
+
+    @property
+    def unique_name(self) -> str:
+        return f"{self.name}_{id(self)}"
 
     @contextmanager
     def locked_context(self, key=None, value_type=list):
@@ -461,40 +465,48 @@ class IntrospectionAPIPlugin(Plugin):
     and stores them in its context, and keeps them up to date whenever a callback registers a change in the State.
     """
 
-    def create_state(self, state_id):
+    NAME = "introspector"
+
+    def create_state(self, state_id: int):
         """
         Adds a StateDescriptor to the context in the READY state list
+
         :param state_id: ID of the state
         """
         assert state_id is not None
         with self.locked_context("manticore_state", dict) as context:
             context[state_id] = StateDescriptor(state_id=state_id, state_list=StateLists.ready)
 
-    def will_run_callback(self, ready_states):
+    def will_run_callback(self, ready_states: typing.Generator):
         """
         Called at the beginning of ManticoreBase.run(). Creates a state descriptor for each of the ready states.
+
         :param ready_states: Generator that allows us to iterate over the ready states (and modify them if necessary)
         """
         for state in ready_states:
             self.create_state(state.id)
 
-    def did_enqueue_state_callback(self, state_id):
+    def did_enqueue_state_callback(self, state_id: int):
         """
         Called whenever a state is added to the ready_states list. Creates a state descriptor.
+
         :param state_id: State ID of the new State
         """
-        logger.info("did_enqueue_state: %s", state_id)
+        logger.debug("did_enqueue_state: %s", state_id)
         self.create_state(state_id)
 
-    def did_transition_state_callback(self, state_id, from_list: StateLists, to_list: StateLists):
+    def did_transition_state_callback(
+        self, state_id: int, from_list: StateLists, to_list: StateLists
+    ):
         """
         Called whenever a state moves from one state list to another. Updates the status based on which list the state
         has been moved to.
+
         :param state_id: The ID of the state that was moved
         :param from_list: The list the state used to be in
         :param to_list: The list it's currently in
         """
-        logger.info("did_transition_state %s: %s --> %s", state_id, from_list, to_list)
+        logger.debug("did_transition_state %s: %s --> %s", state_id, from_list, to_list)
         with self.locked_context("manticore_state", dict) as context:
             if state_id not in context:
                 logger.warning(
@@ -519,14 +531,15 @@ class IntrospectionAPIPlugin(Plugin):
             elif to_list in {StateLists.terminated, StateLists.killed}:
                 state.status = StateStatus.stopped
 
-    def did_remove_state_callback(self, state_id):
+    def did_remove_state_callback(self, state_id: int):
         """
         Called whenever a state was removed. As in, not terminated, not killed, but removed. This happens when we fork -
         the parent state is removed and the children are enqueued. It can also be triggered manually if we really don't
         like a state for some reason. Doesn't destroy the state descriptor, but updates its status and list accordingly.
+
         :param state_id: ID of the state that was removed
         """
-        logger.info("did_remove_state: %s", state_id)
+        logger.debug("did_remove_state: %s", state_id)
         with self.locked_context("manticore_state", dict) as context:
             if state_id not in context:
                 logger.warning(
@@ -543,6 +556,7 @@ class IntrospectionAPIPlugin(Plugin):
     ):
         """
         Called upon each fork. Sets the children for each state.
+
         :param state: The parent state
         :param expression: The expression we forked on
         :param solutions: Possible values of the expression
@@ -550,7 +564,7 @@ class IntrospectionAPIPlugin(Plugin):
         :param children: the state IDs of the children
         """
         state_id = state.id
-        logger.info("did_fork_state: %s --> %s", state_id, children)
+        logger.debug("did_fork_state: %s --> %s", state_id, children)
         with self.locked_context("manticore_state", dict) as context:
             if state_id not in context:
                 logger.warning(
@@ -559,6 +573,74 @@ class IntrospectionAPIPlugin(Plugin):
             context.setdefault(state_id, StateDescriptor(state_id=state_id)).children.update(
                 children
             )
+
+    def will_solve_callback(self, state, constraints, expr, solv_func: str):
+        """
+        Called when we're about to ask the solver for something. Updates the status of the state accordingly.
+
+        :param state: State asking for the solve
+        :param constraints: Current constraint set used for solving
+        :param expr: Expression to be solved
+        :param solv_func: Which solver function is being used to find a solution
+        """
+        if state is None:
+            logger.debug("Solve callback fired outside of a state, dropping...")
+            return
+        with self.locked_context("manticore_state", dict) as context:
+            if state.id not in context:
+                logger.warning(
+                    "Caught will_solve in state %s, but failed to capture its initialization",
+                    state.id,
+                )
+            desc = context.setdefault(state.id, StateDescriptor(state_id=state.id))
+            desc._old_status = desc.status
+            desc.status = StateStatus.waiting_for_solver
+
+    def did_solve_callback(self, state, constraints, expr, solv_func: str, solutions):
+        """
+        Called when we've finished solving. Sets the status of the state back to whatever it was.
+
+        :param state: State asking for the solve
+        :param constraints: Current constraint set used for solving
+        :param expr: Expression to be solved
+        :param solv_func: Which solver function is being used to find a solution
+        :param solutions: the solved values for expr
+        """
+        if state is None:
+            logger.debug("Solve callback fired outside of a state, dropping...")
+            return
+        with self.locked_context("manticore_state", dict) as context:
+            if state.id not in context:
+                logger.warning(
+                    "Caught did_solve in state %s, but failed to capture its initialization",
+                    state.id,
+                )
+            desc = context[state.id]
+            desc.status = desc._old_status
+
+    def on_execution_intermittent_callback(
+        self, state, update_cb: typing.Callable, *args, **kwargs
+    ):
+        """
+        Called every n instructions, where n is config.core.execs_per_intermittent_cb. Calls the provided callback
+        to update platform-specific information on the descriptor.
+
+        :param state: The state that raised the intermittent event
+        :param update_cb: Callback provided by the caller that will set some platform-specific fields on the state
+        descriptor. This could be PC for native, or something else for EVM
+        :param args: Optional args to pass to the callback
+        :param kwargs: Optional kwargs to pass to the callback
+        """
+        with self.locked_context("manticore_state", dict) as context:
+            if state.id not in context:
+                logger.warning(
+                    "Caught intermittent callback in state %s, but failed to capture its initialization",
+                    state.id,
+                )
+            update_cb(
+                context.setdefault(state.id, StateDescriptor(state_id=state.id)), *args, **kwargs,
+            )
+            context[state.id].last_intermittent_update = datetime.now()
 
     def did_terminate_state_callback(self, state, ex: Exception):
         """
@@ -578,6 +660,14 @@ class IntrospectionAPIPlugin(Plugin):
                 ex
             )
 
+    def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
+        """
+        :return: the most up-to-date copy of the state descriptor dict available
+        """
+        with self.locked_context("manticore_state", dict) as context:
+            out = context.copy()  # TODO: is this necessary to break out of the lock?
+        return out
+
     def did_kill_state_callback(self, state, ex: Exception):
         """
         Capture other state-killing exceptions so we can get the corresponding message
@@ -596,73 +686,6 @@ class IntrospectionAPIPlugin(Plugin):
                 ex
             )
 
-    def will_solve_callback(self, state, constraints, expr, solv_func):
-        """
-        Called when we're about to ask the solver for something. Updates the status of the state accordingly.
-        :param state: State asking for the solve
-        :param constraints: Current constraint set used for solving
-        :param expr: Expression to be solved
-        :param solv_func: Which solver function is being used to find a solution
-        """
-        if state is None:
-            logger.info("Solve callback fired outside of a state, dropping...")
-            return
-        with self.locked_context("manticore_state", dict) as context:
-            if state.id not in context:
-                logger.warning(
-                    "Caught will_solve in state %s, but failed to capture its initialization",
-                    state.id,
-                )
-            desc = context.setdefault(state.id, StateDescriptor(state_id=state.id))
-            desc._old_status = desc.status
-            desc.status = StateStatus.waiting_for_solver
-
-    def did_solve_callback(self, state, constraints, expr, solv_func, solutions):
-        """
-        Called when we've finished solving. Sets the status of the state back to whatever it was.
-        :param state: State asking for the solve
-        :param constraints: Current constraint set used for solving
-        :param expr: Expression to be solved
-        :param solv_func: Which solver function is being used to find a solution
-        :param solutions: the solved values for expr
-        """
-        if state is None:
-            logger.info("Solve callback fired outside of a state, dropping...")
-            return
-        with self.locked_context("manticore_state", dict) as context:
-            if state.id not in context:
-                logger.warning(
-                    "Caught did_solve in state %s, but failed to capture its initialization",
-                    state.id,
-                )
-            desc = context[state.id]
-            desc.status = desc._old_status
-
-    def on_execution_intermittent_callback(self, state, update_cb, *args, **kwargs):
-        """
-        Called every n instructions, where n is config.core.execs_per_intermittent_cb. Calls the provided callback
-        to update platform-specific information on the descriptor.
-        :param state: The state that raised the intermittent event
-        :param update_cb: Callback provided by the caller that will set some platform-specific fields on the state
-        descriptor. This could be PC for native, or something else for EVM
-        :param args: Optional args to pass to the callback
-        :param kwargs: Optional kwargs to pass to the callback
-        """
-        with self.locked_context("manticore_state", dict) as context:
-            if state.id not in context:
-                logger.warning(
-                    "Caught intermittent callback in state %s, but failed to capture its initialization",
-                    state.id,
-                )
-            update_cb(
-                context.setdefault(state.id, StateDescriptor(state_id=state.id)), *args, **kwargs,
-            )
-            context[state.id].last_intermittent_update = datetime.now()
-
-    def get_state_descriptors(self) -> typing.Dict[int, StateDescriptor]:
-        """
-        :return: the most up-to-date copy of the state descriptor dict available
-        """
-        with self.locked_context("manticore_state", dict) as context:
-            out = context.copy()  # TODO: is this necessary to break out of the lock?
-        return out
+    @property
+    def unique_name(self) -> str:
+        return IntrospectionAPIPlugin.NAME

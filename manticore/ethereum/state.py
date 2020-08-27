@@ -11,7 +11,8 @@ class State(StateBase):
         """
         Called on execution_intermittent to update the descriptor for this state.
         This one should apply any EVM-specific information to the descriptor.
+
         :param descriptor: StateDescriptor for this state
         """
         super()._update_state_descriptor(descriptor, *args, **kwargs)
-        descriptor.pc = None  # TODO - Grab whatever notion of a PC EVM has
+        descriptor.pc = (self.platform.current_vm.address, self.platform.current_vm.pc)

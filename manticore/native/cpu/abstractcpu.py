@@ -3,7 +3,7 @@ import io
 import logging
 import struct
 import types
-from functools import wraps
+from functools import wraps, partial
 from itertools import islice
 
 import unicorn
@@ -326,6 +326,9 @@ class Abi:
         :param prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
         """
+        if type(model) is partial:
+            # mypy issue with partial types https://github.com/python/mypy/issues/1484
+            model = model.args[0]  # type: ignore
         sig = inspect.signature(model)
         if _sig_is_varargs(sig):
             model_name = getattr(model, "__qualname__", "<no name>")
@@ -424,8 +427,13 @@ class SyscallAbi(Abi):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
-        self._cpu._publish("will_execute_syscall", model)
+        if type(model) is partial:
+            self._cpu._publish("will_execute_syscall", model.args[0])
+        else:
+            self._cpu._publish("will_execute_syscall", model)
         ret = super().invoke(model, prefix_args)
+        if type(model) is partial:
+            model = model.args[0]
         self._cpu._publish(
             "did_execute_syscall",
             model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,

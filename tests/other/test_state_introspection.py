@@ -51,12 +51,8 @@ class TestIntrospect(unittest.TestCase):
                     sum(1 if (st.state_list == StateLists.terminated) else 0 for st in hist),
                 )
             )
-        self.assertEqual(
-            progression[0][1] + progression[0][0], 1
-        )  # When fired for the first time, we have one busy state OR one ready state
-        self.assertGreater(progression[-1][2], 0)  # Once finished, we have some terminated states
         self.assertEqual(progression[-1][0], 0)  # Once finished, we have no ready states
-        self.assertEqual(progression[-1][1], 0)  # Once finished, we have no ready states
+        self.assertEqual(progression[-1][1], 0)  # Once finished, we have no busy states
         # Once finished, we have only terminated states.
         self.assertGreater(progression[-1][2], 0)
 
@@ -81,8 +77,7 @@ class TestCustomIntrospector(unittest.TestCase):
 
     def test_custom_introspector(self):
         self.history = []
-        m = Manticore(ms_file, stdin_size=17)
-        m.set_instrospection_plugin(MyIntrospector)
+        m = Manticore(ms_file, introspection_plugin_type=MyIntrospector, stdin_size=17)
         m.register_daemon(self.introspect_loop)
         m.run()
 

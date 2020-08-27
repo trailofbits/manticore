@@ -248,6 +248,7 @@ class DaemonThread(WorkerThread):
         """
         Function that starts the thread. Can take an optional callable to be invoked at the start, or can be subclassed,
         in which case `target` should be None and the the `run` method will be invoked at the start.
+
         :param target: an optional callable that will be invoked to start the thread. The callable should accept this
         thread as an argument.
         """

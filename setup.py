@@ -68,7 +68,7 @@ setup(
         "prettytable",
         "ply",
         "rlp",
-        "crytic-compile>=0.1.1",
+        "crytic-compile>=0.1.8",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
