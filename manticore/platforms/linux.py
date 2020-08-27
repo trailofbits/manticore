@@ -33,7 +33,15 @@ from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
-from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
+from ..native.memory import (
+    SMemory32,
+    SMemory64,
+    Memory32,
+    Memory64,
+    LazySMemory32,
+    LazySMemory64,
+    InvalidMemoryAccess,
+)
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
@@ -2563,18 +2571,58 @@ class Linux(Platform):
 
         return len(data)
 
-    def sys_send(self, sockfd, buf, count, flags) -> int:
+    def sys_send(
+        self, sockfd: int, buf: int, count: int, flags: int, trace_str: str = "_send"
+    ) -> int:
+        """
+        send(2) is currently a nop; we don't communicate yet: The data is read
+        from memory, but not actually sent anywhere - we just return count to
+        pretend that it was.
+        """
+        # Act like sys_sendto with zeroed dest_addr and addrlen
+        return self.sys_sendto(sockfd, buf, count, flags, 0, 0, trace_str=trace_str)
+
+    def sys_sendto(
+        self,
+        sockfd: int,
+        buf: int,
+        count: int,
+        flags: int,
+        dest_addr: int,
+        addrlen: int,
+        trace_str: str = "_sendto",
+    ):
+        """
+        sendto(2) is currently a nop; we don't communicate yet: The data is read
+        from memory, but not actually sent anywhere - we just return count to
+        pretend that it was.
+
+        Additionally, dest_addr and addrlen are dropped, so it behaves exactly
+        the same as send.
+        """
+        # TODO: Do something with destination address. Could be used to better
+        # follow where data is being sent
+        if dest_addr != 0:
+            logger.warning("sys_sendto: Unimplemented non-NULL dest_addr")
+
+        if addrlen != 0:
+            logger.warning("sys_sendto: Unimplemented non-NULL addrlen")
+
         try:
             sock = self.fd_table.get_fdlike(sockfd)
-        except FdError as e:
-            return -e.err
+        except FdError:
+            return -errno.EBADF
 
         if not isinstance(sock, Socket):
             return -errno.ENOTSOCK
 
-        data = self.current.read_bytes(buf, count)
-        # XXX(yan): send(2) is currently a nop; we don't communicate yet
-        self.syscall_trace.append(("_send", sockfd, data))
+        try:
+            data = self.current.read_bytes(buf, count)
+        except InvalidMemoryAccess:
+            logger.info("SEND: buf within invalid memory. Returning EFAULT")
+            return -errno.EFAULT
+
+        self.syscall_trace.append((trace_str, sockfd, data))
 
         return count
 
