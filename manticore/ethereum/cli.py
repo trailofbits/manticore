@@ -40,6 +40,27 @@ consts.add(
     description="Simply avoid exploring basic blocks that end in a REVERT",
 )
 
+from enum import Enum
+class TermCondCovType(Enum):
+    """Used as configuration constant for choosing the coverage based termination
+     condition"""
+
+    no = "no"
+    local = "local"
+    wide = "wide"
+
+    def title(self):
+        return self._name_.title()
+
+    @classmethod
+    def from_string(cls, name):
+        return cls.__members__[name]
+
+consts.add(
+    "txcoverage", default=TermCondCovType.local,
+    description="Set coverage stopping criteria"
+)
+
 
 def get_detectors_classes():
     return [
@@ -134,7 +155,7 @@ def ethereum_main(args, logger):
                 args.argv[0],
                 contract_name=args.contract,
                 tx_limit=args.txlimit,
-                tx_use_coverage=not args.txnocoverage,
+                tx_use_coverage=consts.txcoverage,
                 tx_send_ether=not args.txnoether,
                 tx_account=args.txaccount,
                 tx_preconstrain=args.txpreconstrain,

@@ -154,9 +154,6 @@ def parse_arguments() -> argparse.Namespace:
         help="Maximum number of symbolic transactions to run (positive integer)",
     )
 
-    eth_flags.add_argument(
-        "--txnocoverage", action="store_true", help="Do not use coverage as stopping criteria"
-    )
 
     eth_flags.add_argument(
         "--txnoether", action="store_true", help="Do not attempt to send ether to contract"

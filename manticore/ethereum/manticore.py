@@ -1032,6 +1032,18 @@ class ManticoreEVM(ManticoreBase):
 
         return constraint
 
+    def local_coverage_progress(self) -> bool:
+        for state in self.ready_states:
+            new_local_coverage = len(set(state.context['evm.trace']))
+            if 'evm.localcoverage' in state.context:
+                old_local_coverage = state.context['evm.localcoverage']
+            else:
+                old_local_coverage = 0
+            state.context['evm.localcoverage'] = new_local_coverage
+            if new_local_coverage != old_local_coverage:
+                return True
+        return False
+
     def multi_tx_analysis(
         self,
         solidity_filename,
@@ -1082,8 +1094,9 @@ class ManticoreEVM(ManticoreBase):
         prev_coverage = 0
         current_coverage = 0
         tx_no = 0
-        while (current_coverage < 100 or not tx_use_coverage) and not self.is_killed():
+        while (current_coverage < 100 or tx_use_coverage is tx_use_coverage.no) and not self.is_killed():
             try:
+
                 logger.info("Starting symbolic transaction: %d", tx_no)
 
                 # run_symbolic_tx
@@ -1104,7 +1117,7 @@ class ManticoreEVM(ManticoreBase):
                     address=contract_account,
                     data=symbolic_data,
                     value=value,
-                    gas=230000,
+                    gas=2300000,
                 )
 
                 logger.info(
@@ -1118,16 +1131,30 @@ class ManticoreEVM(ManticoreBase):
 
             # Check if the maximum number of tx was reached
             if tx_limit is not None and tx_no + 1 == tx_limit:
+                print("Maximun tx limit reached")
+                logger.info("Maximun tx limit reached")
                 break
 
             # Check if coverage has improved or not
-            if tx_use_coverage:
+            if tx_use_coverage is tx_use_coverage.wide:
                 prev_coverage = current_coverage
                 current_coverage = self.global_coverage(contract_account)
                 found_new_coverage = prev_coverage < current_coverage
 
                 if not found_new_coverage:
+                    print("No coverage progresss!")
+                    logger.info("No coverage progresss!")
                     break
+
+            elif tx_use_coverage is tx_use_coverage.local:
+                try:
+                    if not self.local_coverage_progress():
+                        print("No state made any progress")
+                        logger.info("No state made any progress")
+                        break
+                except Exception as e:
+                    print (e)
+
 
             tx_no += 1
 
