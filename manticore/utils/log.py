@@ -119,7 +119,7 @@ def get_levels() -> List[List[Tuple[str, int]]]:
             ("manticore.core.worker", logging.INFO),
             ("manticore.platforms.*", logging.DEBUG),
             ("manticore.ethereum", logging.DEBUG),
-            ("manticore.core.plugin", logging.DEBUG),
+            ("manticore.core.plugin", logging.INFO),
             ("manticore.wasm.*", logging.INFO),
             ("manticore.utils.emulate", logging.INFO),
         ],
@@ -130,6 +130,7 @@ def get_levels() -> List[List[Tuple[str, int]]]:
             ("manticore.native.memory", logging.DEBUG),
             ("manticore.native.cpu.*", logging.DEBUG),
             ("manticore.native.cpu.*.registers", logging.DEBUG),
+            ("manticore.core.plugin", logging.DEBUG),
             ("manticore.utils.helpers", logging.INFO),
         ],
         # 5 (-vvvv)
