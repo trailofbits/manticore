@@ -3,7 +3,6 @@ import itertools
 import logging
 import sys
 import time
-import queue
 import typing
 import random
 import weakref
@@ -14,7 +13,6 @@ from contextlib import contextmanager
 import functools
 import shlex
 
-from collections import deque
 from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
 from ..core.smtlib import Expression
 from ..core.state import StateBase
@@ -24,7 +22,7 @@ from ..utils import config
 from ..utils.deprecated import deprecated
 from ..utils.enums import StateLists, MProcessingType
 from ..utils.event import Eventful
-from ..utils.helpers import PickleSerializer, pretty_print_state_descriptors
+from ..utils.helpers import PickleSerializer, pretty_print_state_descriptors, deque
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace, Testcase
