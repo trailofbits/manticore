@@ -3,7 +3,7 @@ import io
 import logging
 import struct
 import types
-from functools import wraps
+from functools import wraps, partial
 from itertools import islice
 
 import unicorn
@@ -13,7 +13,7 @@ from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory, Memory
 from ...core.smtlib import Operators, Constant, issymbolic
 from ...core.smtlib import visitors
-from ...core.smtlib.solver import Z3Solver
+from ...core.smtlib.solver import SelectedSolver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
@@ -89,7 +89,9 @@ class ConcretizeRegister(CpuException):
     Raised when a symbolic register needs to be concretized.
     """
 
-    def __init__(self, cpu, reg_name, message=None, policy="MINMAX"):
+    def __init__(
+        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
+    ):
         self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
@@ -324,6 +326,9 @@ class Abi:
         :param prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
         """
+        if type(model) is partial:
+            # mypy issue with partial types https://github.com/python/mypy/issues/1484
+            model = model.args[0]  # type: ignore
         sig = inspect.signature(model)
         if _sig_is_varargs(sig):
             model_name = getattr(model, "__qualname__", "<no name>")
@@ -422,8 +427,13 @@ class SyscallAbi(Abi):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
-        self._cpu._publish("will_execute_syscall", model)
+        if type(model) is partial:
+            self._cpu._publish("will_execute_syscall", model.args[0])
+        else:
+            self._cpu._publish("will_execute_syscall", model)
         ret = super().invoke(model, prefix_args)
+        if type(model) is partial:
+            model = model.args[0]
         self._cpu._publish(
             "did_execute_syscall",
             model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
@@ -906,7 +916,7 @@ class Cpu(Eventful):
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
                         c = struct.pack(
-                            "B", Z3Solver.instance().get_value(self.memory.constraints, c)
+                            "B", SelectedSolver.instance().get_value(self.memory.constraints, c)
                         )
                 elif isinstance(c, Constant):
                     c = bytes([c.value])

@@ -1,9 +1,11 @@
 import itertools
 import sys
-
+import copy
+from typing import Optional
 from ...utils.helpers import PickleSerializer
 from ...exceptions import SmtlibError
 from .expression import (
+    Expression,
     BitVecVariable,
     BoolVariable,
     ArrayVariable,
@@ -16,7 +18,15 @@ from .expression import (
     Variable,
     Constant,
 )
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from .visitors import (
+    GetDeclarations,
+    TranslatorSmtlib,
+    get_variables,
+    simplify,
+    replace,
+    pretty_print,
+)
+from ...utils import config
 import logging
 import re
 import typing
@@ -64,6 +74,9 @@ class ConstraintSet:
             },
         )
 
+    def __hash__(self):
+        return hash(self.constraints)
+
     def __enter__(self) -> "ConstraintSet":
         assert self._child is None
         self._child = self.__class__()
@@ -104,7 +117,6 @@ class ConstraintSet:
                 self._constraints = [constraint]
             else:
                 return
-
         self._constraints.append(constraint)
 
     def _get_sid(self) -> int:
@@ -113,7 +125,7 @@ class ConstraintSet:
         self._sid += 1
         return self._sid
 
-    def __get_related(self, related_to=None):
+    def related_to(self, *related_to) -> "ConstraintSet":
         # sam.moelius: There is a flaw in how __get_related works: when called on certain
         # unsatisfiable sets, it can return a satisfiable one. The flaw arises when:
         #   * self consists of a single constraint C
@@ -125,59 +137,70 @@ class ConstraintSet:
         # set. Thus, __get_related was called on an unsatisfiable set, {C}, but it returned a
         # satisfiable one, {}.
         #   In light of the above, the core __get_related logic is currently disabled.
-        # if related_to is not None:
-        if False:
-            number_of_constraints = len(self.constraints)
-            remaining_constraints = set(self.constraints)
-            related_variables = get_variables(related_to)
-            related_constraints = set()
+        """
+        Slices this ConstraintSet keeping only the related constraints.
+        Two constraints are independient if they can be expressed full using a
+        disjoint set of variables.
+        Todo: Research. constraints refering differen not overlapping parts of the same array
+        should be considered independient.
+        :param related_to: An expression
+        :return:
+        """
 
-            added = True
-            while added:
-                added = False
-                logger.debug("Related variables %r", [x.name for x in related_variables])
-                for constraint in list(remaining_constraints):
-                    if isinstance(constraint, BoolConstant):
-                        if constraint.value:
-                            continue
-                        else:
-                            related_constraints = {constraint}
-                            break
+        if not related_to:
+            return copy.copy(self)
+        number_of_constraints = len(self.constraints)
+        remaining_constraints = set(self.constraints)
+        related_variables = set()
+        for expression in related_to:
+            related_variables |= get_variables(expression)
+        related_constraints = set()
 
-                    variables = get_variables(constraint)
-                    if related_variables & variables:
-                        remaining_constraints.remove(constraint)
-                        related_constraints.add(constraint)
-                        related_variables |= variables
-                        added = True
+        added = True
+        while added:
+            added = False
+            logger.debug("Related variables %r", [x.name for x in related_variables])
+            for constraint in list(remaining_constraints):
+                if isinstance(constraint, BoolConstant):
+                    if constraint.value:
+                        continue
+                    else:
+                        related_constraints = {constraint}
+                        break
 
-            logger.debug(
-                "Reduced %d constraints!!", number_of_constraints - len(related_constraints)
-            )
-        else:
-            related_variables = set()
-            for constraint in self.constraints:
-                related_variables |= get_variables(constraint)
-            related_constraints = set(self.constraints)
-        return related_variables, related_constraints
+                variables = get_variables(constraint)
+                if related_variables & variables or not (variables):
+                    remaining_constraints.remove(constraint)
+                    related_constraints.add(constraint)
+                    related_variables |= variables
+                    added = True
 
-    def to_string(self, related_to=None, replace_constants=False):
-        rv, rc = self.__get_related(related_to)
+        logger.debug("Reduced %d constraints!!", number_of_constraints - len(related_constraints))
+        # related_variables, related_constraints
+        cs = ConstraintSet()
+        for var in related_variables:
+            cs._declare(var)
+        for constraint in related_constraints:
+            cs.add(constraint)
+        return cs
+
+    def to_string(self, replace_constants: bool = False) -> str:
+        rv, rc = self.get_declared_variables(), self.constraints
 
         # Since these are just variable declarations, sorting them probably doesn't make much
         # of a difference. It's relatively cheap, but we could skip it if it slows us down.
-        related_variables = sorted(rv, key=lambda x: sort_names(x.name))
+        variables = sorted(rv, key=lambda x: sort_names(x.name))
 
         # We sort the constraints based on the order the expressions were created in. This
         # may vary depending on the order states were explored in, but should be consistent
         # with a fixed seed. The actual ordering that comes out isn't important at this step
         # (the translator will do a depth-first ordering for expressions with operands), but we
         # need some kind of structure to consistently order disjoint, unhashable expressions.
-        related_constraints = sorted(rc, key=lambda x: x._order)
+        constraints = sorted(rc, key=lambda x: x._order)
 
         if replace_constants:
             constant_bindings = {}
-            for expression in related_constraints:
+            for expression in constraints:
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
@@ -187,7 +210,7 @@ class ConstraintSet:
 
         tmp = set()
         result = ""
-        for var in related_variables:
+        for var in variables:
             # FIXME
             # band aid hack around the fact that we are double declaring stuff :( :(
             if var.declaration in tmp:
@@ -195,8 +218,9 @@ class ConstraintSet:
                 continue
             tmp.add(var.declaration)
             result += var.declaration + "\n"
+
         translator = TranslatorSmtlib(use_bindings=True)
-        for constraint in related_constraints:
+        for constraint in constraints:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
                 # if no variables then it is a constant

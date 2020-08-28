@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a Question
+    url: https://github.com/trailofbits/manticore/discussions/new
+    about: Ask for help or clarification from the developers
+  - name: Join our Slack
+    url: https://empirehacking.slack.com/archives/C3PTWK7UM
+    about: Engage with other users of Manticore

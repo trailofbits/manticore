@@ -27,11 +27,9 @@ class LinuxTest(unittest.TestCase):
         self.symbolic_linux_aarch64 = linux.SLinux.empty_platform("aarch64")
 
     def tearDown(self) -> None:
-        for f in (
-            self.linux.files + self.symbolic_linux_armv7.files + self.symbolic_linux_aarch64.files
-        ):
-            if isinstance(f, linux.File):
-                f.close()
+        for p in [self.linux, self.symbolic_linux_armv7, self.symbolic_linux_aarch64]:
+            for entry in p.fd_table.entries():
+                entry.fdlike.close()
 
     def test_regs_init_state_x86(self) -> None:
         x86_defaults = {"CS": 0x23, "SS": 0x2B, "DS": 0x2B, "ES": 0x2B}
@@ -287,7 +285,7 @@ class LinuxTest(unittest.TestCase):
     def test_armv7_syscall_openat_symbolic(self) -> None:
         platform, temp_dir = self._armv7_create_openat_state()
         try:
-            platform.current.R0 = BitVecVariable(32, "fd")
+            platform.current.R0 = platform.constraints.new_bitvec(32, "fd")
 
             with self.assertRaises(ConcretizeRegister) as cm:
                 platform.syscall()
@@ -297,8 +295,8 @@ class LinuxTest(unittest.TestCase):
             _min, _max = Z3Solver.instance().minmax(
                 platform.constraints, e.cpu.read_register(e.reg_name)
             )
-            self.assertLess(_min, len(platform.files))
-            self.assertGreater(_max, len(platform.files) - 1)
+            self.assertLess(_min, len(platform.fd_table.entries()))
+            self.assertGreater(_max, len(platform.fd_table.entries()) - 1)
         finally:
             shutil.rmtree(temp_dir)
 

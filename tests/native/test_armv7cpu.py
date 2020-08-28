@@ -1,9 +1,9 @@
 import unittest
 
 import struct
+import binascii
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from functools import wraps
-from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
@@ -13,25 +13,279 @@ from manticore.core.smtlib.solver import Z3Solver
 from manticore.native.memory import SMemory32
 from manticore.utils.helpers import pickle_dumps
 
-ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
-ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
+ks = None
+ks_thumb = None
 
 import logging
 
 logger = logging.getLogger("ARM_TESTS")
 solver = Z3Solver.instance()
 
+# This is a cache of assembled instructions.
+# This exists so that Manticore's tests can run without requiring that the
+# Keystone dependency be installed.
+# If additional test cases are added that require new instructions, this cache
+# will need to be updated.
+assembly_cache = {
+    CS_MODE_ARM: {
+        "adc r3, r1, r2": b"0230a1e0",
+        "adc r3, r1, #0x18000": b"0639a1e2",
+        "adc r3, r1, #24, 20": b"183aa1e2",
+        "adc r3, r1, r2, ror #3": b"e231a1e0",
+        "add r3, r1, 0x1000000": b"013481e2",
+        "add r3, r1, 0x18000": b"063981e2",
+        "add r3, r1, 24, 20": b"183a81e2",
+        "add r3, r1, 0xff000000": b"ff3481e2",
+        "add r3, r1, 0x100": b"013c81e2",
+        "add r3, r1, 55": b"373081e2",
+        "add r3, r1, 0x1": b"013081e2",
+        "add r3, r1, r2": b"023081e0",
+        "add r3, r1, r2, asr #3": b"c23181e0",
+        "add r3, r1, r2, asr r4": b"523481e0",
+        "add r3, r1, r2, lsl #3": b"823181e0",
+        "add r3, r1, r2, lsl r4": b"123481e0",
+        "add r3, r1, r2, lsr #3": b"a23181e0",
+        "add r3, r1, r2, lsr r4": b"323481e0",
+        "add r3, r1, r2, ror #3": b"e23181e0",
+        "add r3, r1, r2, ror r4": b"723481e0",
+        "add r3, r1, r2, rrx": b"623081e0",
+        "add pc, pc, r1": b"01f08fe0",
+        "adds r3, r1, 0x1000000": b"013491e2",
+        "adds r3, r1, 0x80000000": b"023191e2",
+        "adds r3, r1, 0xff000000": b"ff3491e2",
+        "adds r3, r1, 0x100": b"013c91e2",
+        "adds r3, r1, 55": b"373091e2",
+        "adds r3, r1, 0x1": b"013091e2",
+        "adds r3, r3, 0x0": b"003093e2",
+        "adds r3, r1, r2": b"023091e0",
+        "adds r3, r1, r2, asr #3": b"c23191e0",
+        "adds r3, r1, r2, rrx": b"623091e0",
+        "adr r0, #16": b"10008fe2",
+        "add r0, PC, #0x10": b"10008fe2",
+        "add r0, PC, #1, 28": b"10008fe2",
+        "and r2, r2, #1": b"012002e2",
+        "and r2, r2, #0x18000": b"062902e2",
+        "and r2, r2, #24, 20": b"182a02e2",
+        "and r1, r1, r2": b"021001e0",
+        "BIC R2, R1, #0x10": b"1020c1e3",
+        "BIC R2, R1, #0x18000": b"0629c1e3",
+        "BIC R2, R1, #24, 20": b"182ac1e3",
+        "bl 0x170": b"5a0000eb",
+        "bl #-4": b"fdffffeb",
+        "BLX R1": b"31ff2fe1",
+        "blx  r1": b"31ff2fe1",
+        "bx r1": b"11ff2fe1",
+        "clz r1, r2": b"121f6fe1",
+        "cmn r0, #0x18000": b"060970e3",
+        "cmn r0, #24, 20": b"180a70e3",
+        "cmp r0, 0": b"000050e3",
+        "cmp r0, 0x40000000": b"010150e3",
+        "cmp r0, 3": b"030050e3",
+        "cmp r0, #0x18000": b"060950e3",
+        "cmp r0, #24, 20": b"180a50e3",
+        "cmp r0, 2": b"020050e3",
+        "cmp r0, 5": b"050050e3",
+        "cmp r0, 0xa0000000": b"0a0250e3",
+        "dmb ish": b"5bf07ff5",
+        "eor r2, r3, #5": b"052023e2",
+        "eor r2, r3, #0x18000": b"062923e2",
+        "eor r2, r3, #24, 20": b"182a23e2",
+        "eor r2, r3, r4": b"042023e0",
+        "eor r2, r3, r4, LSL #4": b"042223e0",
+        "eors r2, r3": b"032032e0",
+        "adds r2, r1, #0x1": b"012091e2",
+        "tst r3, r1": b"010013e1",
+        "ldm sp, {r1, r2, r3}": b"0e009de8",
+        "ldm sp!, {r1, r2, r3}": b"0e00bde8",
+        "ldmda r0!, {r1, r2, r3}": b"0e0030e8",
+        "ldmdb r0!, {r1, r2, r3}": b"0e0030e9",
+        "ldmia r0!, {r1, r2, r3}": b"0e00b0e8",
+        "ldmib r0!, {r1, r2, r3}": b"0e00b0e9",
+        "ldr r1, [sp, #-4]": b"04101de5",
+        "ldr r1, [sp]": b"00109de5",
+        "ldr pc, [sp]": b"00f09de5",
+        "ldr r1, [sp, #4]": b"04109de5",
+        "ldr r1, [sp], #-5": b"05101de4",
+        "ldr r1, [sp], #5": b"05109de4",
+        "ldr r1, [sp, #-4]!": b"04103de5",
+        "ldr r1, [sp, #4]!": b"0410bde5",
+        "ldr r1, [sp, r2]": b"02109de7",
+        "ldr r1, [sp, -r2]": b"02101de7",
+        "ldr r1, [sp, -r2, lsl #3]": b"82111de7",
+        "ldr r1, [sp, r2, lsl #3]": b"82119de7",
+        "ldr r1, [sp], r2": b"02109de6",
+        "ldr r1, [sp], -r2, lsl #3": b"82111de6",
+        "ldr r1, [sp, r2]!": b"0210bde7",
+        "ldr r1, [sp, -r2, lsl #3]!": b"82113de7",
+        "ldrb r1, [sp]": b"0010dde5",
+        "ldrb r1, [sp, r2]": b"0210dde7",
+        "ldrd r2, [sp]": b"d020cde1",
+        "ldrh r1, [sp]": b"b010dde1",
+        "ldrh r1, [sp, r2]": b"b2109de1",
+        "ldrsb r1, [sp]": b"d010dde1",
+        "ldrsb r1, [sp, r2]": b"d2109de1",
+        "ldrsh r1, [sp]": b"f010dde1",
+        "ldrsh r1, [sp, r2]": b"f2109de1",
+        "lsls r2, r2, #0x1f": b"822fb0e1",
+        "lsls r4, r3, 31": b"834fb0e1",
+        "lsls r4, r3, 1": b"8340b0e1",
+        "lsls r4, r3, r2": b"1342b0e1",
+        "lsr r0, r0, r2": b"3002a0e1",
+        "lsr r0, r0, #3": b"a001a0e1",
+        "MLA R1, R2, R3, R4": b"924321e0",
+        "mov r0, 0x0": b"0000a0e3",
+        "mov r0, 0xff000000": b"ff04a0e3",
+        "mov r0, 0x100": b"010ca0e3",
+        "mov r0, 42": b"2a00a0e3",
+        "mov r0, r1": b"0100a0e1",
+        "mov r0, #0x18000": b"0609a0e3",
+        "mov r0, #24, 20": b"180aa0e3",
+        "movs r0, 0": b"0000b0e3",
+        "movs r0, 0xff000000": b"ff04b0e3",
+        "movs r0, 0x100": b"010cb0e3",
+        "movs r0, 0x0e000000": b"0e04b0e3",
+        "movs r0, 42": b"2a00b0e3",
+        "movs r0, r1": b"0100b0e1",
+        "movt R3, #9": b"093040e3",
+        "movw r0, 0xffff": b"ff0f0fe3",
+        "movw r0, 0": b"000000e3",
+        "mrc p15, #0, r2, c13, c0, #3": b"702f1dee",
+        "MUL R1, R2": b"910201e0",
+        "MUL R3, R1, R2": b"910203e0",
+        "mvn r0, #0xFFFFFFFF": b"0000a0e3",
+        "mvn r0, #0x0": b"0000e0e3",
+        "mvn r0, #0x18000": b"0609e0e3",
+        "mvn r0, #24, 20": b"180ae0e3",
+        "orr r2, r3, #5": b"052083e3",
+        "orr r2, r3, #0x18000": b"062983e3",
+        "orr r2, r3, #24, 20": b"182a83e3",
+        "orr r2, r3, r4": b"042083e1",
+        "orr r2, r3, r4, LSL #4": b"042283e1",
+        "orr r2, r3": b"032082e1",
+        "orrs r2, r3": b"032092e1",
+        "pop {r1, r2, r3}": b"0e00bde8",
+        "pop {r1}": b"04109de4",
+        "push {r1, r2, r3}": b"0e002de9",
+        "push {r1}": b"04102de5",
+        "rev r2, r1": b"312fbfe6",
+        "RSB r2, r2, #31": b"1f2062e2",
+        "RSB r2, r2, #0x18000": b"062962e2",
+        "RSB r2, r2, #24, 20": b"182a62e2",
+        "RSBS r8, r6, #0": b"008076e2",
+        "rsc r3, r1, #0x18000": b"0639e1e2",
+        "rsc r3, r1, #24, 20": b"183ae1e2",
+        "sbc r3, r1, #5": b"0530c1e2",
+        "sbc r3, r1, #0x18000": b"0639c1e2",
+        "sbc r3, r1, #24, 20": b"183ac1e2",
+        "stm sp, {r1, r2, r3}": b"0e008de8",
+        "stm sp!, {r1, r2, r3}": b"0e00ade8",
+        "stmda r0!, {r1, r2, r3}": b"0e0020e8",
+        "stmdb r0!, {r1, r2, r3}": b"0e0020e9",
+        "stmia r0!, {r1, r2, r3}": b"0e00a0e8",
+        "stmib r0!, {r1, r2, r3}": b"0e00a0e9",
+        "str R2, [R1]": b"002081e5",
+        "str SP, [R1]": b"00d081e5",
+        "str R1, [R2, R3]": b"031082e7",
+        "str R1, [R2, R3, LSL #3]": b"831182e7",
+        "str R1, [R2, #3]!": b"0310a2e5",
+        "str R1, [R2], #3": b"031082e4",
+        "strd R2, [R1]": b"f020c1e1",
+        "sub r3, r1, r2": b"023041e0",
+        "sub r3, r1, #5": b"053041e2",
+        "sub r3, r1, #0x18000": b"063941e2",
+        "sub r3, r1, #24, 20": b"183a41e2",
+        "svc #0": b"000000ef",
+        "sxth r1, r2": b"7210bfe6",
+        "sxth r3, r4": b"7430bfe6",
+        "sxth r5, r4, ROR #8": b"7454bfe6",
+        "teq r3, r1": b"010033e1",
+        "teq r3, #0x18000": b"060933e3",
+        "teq r3, #24, 20": b"180a33e3",
+        "BIC R1, #0x10": b"1010c1e3",
+        "tst r3, #0x18000": b"060913e3",
+        "tst r3, #24, 20": b"180a13e3",
+        "UMULLS R1, R2, R1, R2": b"911292e0",
+        "uqsub8 r3, r1, r2": b"f23f61e6",
+        "uxtb r1, r2": b"7210efe6",
+        "uxth r1, r2": b"7210ffe6",
+        "vldmia  r1, {d8, d9, d10}": b"068b91ec",
+        "vldmia  r1!, {d8, d9, d10}": b"068bb1ec",
+    },
+    CS_MODE_THUMB: {
+        "adds r0, #4": b"0430",
+        "addw r0, r1, #0x2a": b"01f22a00",
+        "addw r0, pc, #0x2a": b"0ff22a00",
+        "adr r0, #16": b"04a0",
+        "asr.w R5, R6, #3": b"4feae605",
+        "cbnz r0, #0x2a": b"98b9",
+        "cbz r0, #0x2a": b"98b1",
+        "cmp r1, #1": b"0129",
+        "ite ne": b"14bf",
+        "mov r2, r12": b"6246",
+        "mov r3, r12": b"6346",
+        "mov r4, r12": b"6446",
+        "itete ne": b"15bf",
+        "mov r1, #1": b"4ff00101",
+        "mov r2, #1": b"4ff00102",
+        "mov r3, #1": b"4ff00103",
+        "mov r4, #4": b"4ff00404",
+        "itt ne": b"1cbf",
+        "lsl.w r5, r6, #3": b"4feac605",
+        "lsr.w R5, R6, #3": b"4fead605",
+        "lsr.w R0, R0, R2": b"20fa02f0",
+        "orn r2, r2, r5": b"62ea0502",
+        "sbcs r0, r3": b"9841",
+        "sel r4, r5, r6": b"a5fa86f4",
+        "subw r0, r1, #0x2a": b"a1f22a00",
+        "subw r0, pc, #0x2a": b"aff22a00",
+        "  tst r0, r0\n  beq label\n  bne label\nlabel:\n  nop": b"004200d0ffd100bf",
+        "tbb [r0, r1]": b"d0e801f0",
+        "tbb [pc, r1]": b"dfe801f0",
+        "tbh [r0, r1, lsl #1]": b"d0e811f0",
+        "tbh [pc, r1, lsl #1]": b"dfe811f0",
+        "adcs r3, r4": b"6341",
+        "eor r3, #5": b"83f00503",
+        "lsrs r1, r2": b"d140",
+        "orr r3, #5": b"43f00503",
+        "sub r3, #12": b"a3f10c03",
+        "uadd8 r2, r2, r3": b"82fa43f2",
+    },
+}
 
-def assemble(asm, mode=CS_MODE_ARM):
+
+def _ks_assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
+    """Assemble the given string using Keystone using the specified CPU mode."""
+    # Explicitly uses late importing so that Keystone will only be imported if this is called.
+    # This lets us avoid requiring installation of Keystone for running tests.
+    global ks, ks_thumb
+    from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+
+    if ks is None:
+        ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
+    if ks_thumb is None:
+        ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
+
     if CS_MODE_ARM == mode:
         ords = ks.asm(asm)[0]
+
     elif CS_MODE_THUMB == mode:
         ords = ks_thumb.asm(asm)[0]
     else:
         raise Exception(f"bad processor mode for assembly: {mode}")
     if not ords:
         raise Exception(f"bad assembly: {asm}")
-    return "".join(map(chr, ords))
+    return binascii.hexlify(bytearray(ords))
+
+
+def assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
+    """
+    Assemble the given string.
+    
+    An assembly cache is first checked, and if there is no entry there, then Keystone is used.
+    """
+    if asm in assembly_cache[mode]:
+        return binascii.unhexlify(assembly_cache[mode][asm])
+    return binascii.unhexlify(_ks_assemble(asm, mode=mode))
 
 
 class Armv7CpuTest(unittest.TestCase):
@@ -1314,7 +1568,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R2=0x01010101")
     def test_uqsub8_sym(self):
-        op1 = BitVecVariable(32, "op1")
+        op1 = self.cpu.memory.constraints.new_bitvec(32, "op1")
         self.cpu.memory.constraints.add(op1 >= 0x04030201)
         self.cpu.memory.constraints.add(op1 < 0x04030204)
         self.cpu.R1 = op1
@@ -2162,7 +2416,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("blx  r1")
     def test_blx_reg_sym(self):
-        dest = BitVecVariable(32, "dest")
+        dest = self.cpu.memory.constraints.new_bitvec(32, "dest")
         self.cpu.memory.constraints.add(dest >= 0x1000)
         self.cpu.memory.constraints.add(dest <= 0x1001)
         self.cpu.R1 = dest
@@ -2208,7 +2462,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         self._setupCpu(asm, mode=CS_MODE_THUMB)  # code starts at 0x1004
 
         # Set R0 as a symbolic value
-        self.cpu.R0 = BitVecVariable(32, "val")
+        self.cpu.R0 = self.cpu.memory.constraints.new_bitvec(32, "val")
         self.cpu.execute()  # tst r0, r0
         self.cpu.execute()  # beq label
 

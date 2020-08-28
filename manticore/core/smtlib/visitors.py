@@ -5,9 +5,11 @@ from functools import lru_cache
 import copy
 import logging
 import operator
+import math
+import threading
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
-UNSIGN_MASK = (1 << 256) - 1
 
 
 class Visitor:
@@ -51,7 +53,7 @@ class Visitor:
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        for cls in expression.__class__.__mro__:
+        for cls in expression.__class__.__mro__[:-1]:
             sort = cls.__name__
             methodname = "visit_%s" % sort
             if hasattr(self, methodname):
@@ -72,7 +74,8 @@ class Visitor:
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         """
-
+        if isinstance(node, ArrayProxy):
+            node = node.array
         cache = self._cache
         visited = set()
         stack = []
@@ -285,7 +288,6 @@ class ConstantFolderSimplifier(Visitor):
         BitVecAdd: operator.__add__,
         BitVecSub: operator.__sub__,
         BitVecMul: operator.__mul__,
-        BitVecDiv: operator.__truediv__,
         BitVecShiftLeft: operator.__lshift__,
         BitVecShiftRight: operator.__rshift__,
         BitVecAnd: operator.__and__,
@@ -293,20 +295,71 @@ class ConstantFolderSimplifier(Visitor):
         BitVecXor: operator.__xor__,
         BitVecNot: operator.__not__,
         BitVecNeg: operator.__invert__,
-        LessThan: operator.__lt__,
-        LessOrEqual: operator.__le__,
-        BoolEqual: operator.__eq__,
-        GreaterThan: operator.__gt__,
-        GreaterOrEqual: operator.__ge__,
         BoolAnd: operator.__and__,
+        BoolEqual: operator.__eq__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
-        BitVecUnsignedDiv: lambda x, y: (x & UNSIGN_MASK) // (y & UNSIGN_MASK),
-        UnsignedLessThan: lambda x, y: (x & UNSIGN_MASK) < (y & UNSIGN_MASK),
-        UnsignedLessOrEqual: lambda x, y: (x & UNSIGN_MASK) <= (y & UNSIGN_MASK),
-        UnsignedGreaterThan: lambda x, y: (x & UNSIGN_MASK) > (y & UNSIGN_MASK),
-        UnsignedGreaterOrEqual: lambda x, y: (x & UNSIGN_MASK) >= (y & UNSIGN_MASK),
+        UnsignedLessThan: operator.__lt__,
+        UnsignedLessOrEqual: operator.__le__,
+        UnsignedGreaterThan: operator.__gt__,
+        UnsignedGreaterOrEqual: operator.__ge__,
     }
+
+    def visit_BitVecUnsignedDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].value
+            b = operands[1].value
+            if a == 0:
+                ret = 0
+            else:
+                ret = math.trunc(Decimal(a) / Decimal(b))
+            return BitVecConstant(expression.size, ret, taint=expression.taint)
+        return None
+
+    def visit_LessThan(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a < b, taint=expression.taint)
+        return None
+
+    def visit_LessOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a <= b, taint=expression.taint)
+        return None
+
+    def visit_GreaterThan(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a > b, taint=expression.taint)
+        return None
+
+    def visit_GreaterOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            a = operands[0].signed_value
+            b = operands[1].signed_value
+            return BoolConstant(a >= b, taint=expression.taint)
+        return None
+
+    def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        if all(isinstance(o, Constant) for o in operands):
+            signmask = operands[0].signmask
+            mask = operands[0].mask
+            numeral = operands[0].value
+            dividend = operands[1].value
+            if numeral & signmask:
+                numeral = -(mask - numeral - 1)
+            if dividend & signmask:
+                dividend = -(mask - dividend - 1)
+            if dividend == 0:
+                result = 0
+            else:
+                result = math.trunc(Decimal(numeral) / Decimal(dividend))
+            return BitVecConstant(expression.size, result, taint=expression.taint)
+        return None
 
     def visit_BitVecConcat(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
@@ -325,12 +378,12 @@ class ConstantFolderSimplifier(Visitor):
             return operands[0]
 
     def visit_BitVecExtract(self, expression, *operands):
-        if all(isinstance(o, Constant) for o in expression.operands):
-            value = expression.operands[0].value
+        if all(isinstance(o, Constant) for o in operands):
+            value = operands[0].value
             begining = expression.begining
             end = expression.end
             value = value >> begining
-            mask = 2 ** (end - begining + 1) - 1
+            mask = (1 << (end - begining)) - 1
             value = value & mask
             return BitVecConstant(expression.size, value, taint=expression.taint)
 
@@ -361,13 +414,9 @@ class ConstantFolderSimplifier(Visitor):
     visit_BitVecOperation = _visit_operation
 
 
-constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
-
-
 @lru_cache(maxsize=128, typed=True)
 def constant_folder(expression):
-    global constant_folder_simplifier_cache
-    simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
+    simp = ConstantFolderSimplifier()
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
@@ -618,6 +667,8 @@ class ArithmeticSimplifier(Visitor):
                             new_operands.append(BitVecExtract(item, begining, item.size - begining))
                             size -= item.size - begining
                             begining = 0
+        elif isinstance(op, BitVecConstant):
+            return BitVecConstant(size, (op.value >> begining) & ~(1 << size))
 
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
@@ -767,13 +818,9 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
-
-
 @lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
-    global arithmetic_simplifier_cache
-    simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
+    simp = ArithmeticSimplifier()
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
@@ -813,6 +860,7 @@ class TranslatorSmtlib(Translator):
     """
 
     unique = 0
+    unique_lock = threading.Lock()
 
     def __init__(self, use_bindings=False, *args, **kw):
         assert "bindings" not in kw
@@ -828,7 +876,8 @@ class TranslatorSmtlib(Translator):
         if expression in self._bindings_cache:
             return self._bindings_cache[expression]
 
-        TranslatorSmtlib.unique += 1
+        with TranslatorSmtlib.unique_lock:
+            TranslatorSmtlib.unique += 1
         name = "a_%d" % TranslatorSmtlib.unique
 
         self._bindings.append((name, expression, smtlib))
@@ -930,10 +979,6 @@ class TranslatorSmtlib(Translator):
         raise StopIteration
 
     @property
-    def results(self):
-        raise SmtlibError("NOOO")
-
-    @property
     def result(self):
         output = super().result
         if self.use_bindings:
@@ -1001,6 +1046,9 @@ def simplify_array_select(array_exp):
 
 
 def get_variables(expression):
+    if isinstance(expression, ArrayProxy):
+        expression = expression.array
+
     visitor = GetDeclarations()
     visitor.visit(expression)
     return visitor.result

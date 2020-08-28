@@ -11,7 +11,7 @@ from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity
 from .ethereum.cli import ethereum_main
 from .wasm.cli import wasm_main
-from .utils import config, log, install_helper, resources
+from .utils import config, log, install_helper
 
 consts = config.get_group("main")
 consts.add("recursionlimit", default=10000, description="Value to set for Python recursion limit")
@@ -25,7 +25,7 @@ if install_helper.has_native:
     from manticore.native.cli import native_main
 
 
-def main():
+def main() -> None:
     """
     Dispatches execution into one of Manticore's engines: evm or native.
     """
@@ -38,9 +38,6 @@ def main():
 
     set_verbosity(args.v)
 
-    resources.check_disk_usage()
-    resources.check_memory_usage()
-
     if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
         ethereum_main(args, logger)
     elif args.argv[0].endswith(".wasm") or args.argv[0].endswith(".wat"):
@@ -50,7 +47,7 @@ def main():
         native_main(args, logger)
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     def positive(value):
         ivalue = int(value)
         if ivalue <= 0:
@@ -212,9 +209,7 @@ def parse_arguments():
     )
 
     eth_flags.add_argument(
-        "--limit-loops",
-        action="store_true",
-        help="Avoid exploring constant functions for human transactions",
+        "--limit-loops", action="store_true", help="Limit loops depth",
     )
 
     eth_flags.add_argument(

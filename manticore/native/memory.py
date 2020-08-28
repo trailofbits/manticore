@@ -5,12 +5,13 @@ from ..core.smtlib import (
     Operators,
     ConstraintSet,
     arithmetic_simplify,
-    Z3Solver,
+    SelectedSolver,
     TooManySolutions,
     BitVec,
     BitVecConstant,
     expression,
     issymbolic,
+    Expression,
 )
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
@@ -19,7 +20,7 @@ from ..utils import config
 import functools
 import logging
 
-from typing import Dict, Generator, Iterable, List, MutableMapping, Optional, Set
+from typing import Dict, Generator, Iterable, List, MutableMapping, Optional, Set, Union
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,14 @@ class ConcretizeMemory(MemoryException):
     Raised when a symbolic memory cell needs to be concretized.
     """
 
-    def __init__(self, mem, address, size, message=None, policy="MINMAX"):
+    def __init__(
+        self,
+        mem: "Memory",
+        address: Union[int, Expression],
+        size: int,
+        message: Optional[str] = None,
+        policy: str = "MINMAX",
+    ):
         if message is None:
             self.message = f"Concretizing memory address {address} size {size}"
         else:
@@ -1186,7 +1194,7 @@ class SMemory(Memory):
                 solutions = self._try_get_solutions(address, size, "r", force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
-                solver = Z3Solver.instance()
+                solver = SelectedSolver.instance()
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug(
                     f"Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!"
@@ -1319,8 +1327,10 @@ class SMemory(Memory):
         :rtype: list
         """
         assert issymbolic(address)
-        solver = Z3Solver.instance()
-        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
+        solver = SelectedSolver.instance()
+        solutions = solver.get_all_values(
+            self.constraints, address, maxcnt=max_solutions, silent=True
+        )
 
         crashing_condition = False
         for base in solutions:
@@ -1427,7 +1437,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return address >= mapping.start and address + size < mapping.end
         else:
-            solver = Z3Solver.instance()
+            solver = SelectedSolver.instance()
             constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
             return solver.can_be_true(self.constraints, constraint)
 
@@ -1465,7 +1475,7 @@ class LazySMemory(SMemory):
         return Operators.AND(Operators.UGE(address, map.start), Operators.ULT(address, map.end))
 
     def _reachable_range(self, sym_address, size):
-        solver = Z3Solver.instance()
+        solver = SelectedSolver.instance()
         addr_min, addr_max = solver.minmax(self.constraints, sym_address)
         return addr_min, addr_max + size - 1
 

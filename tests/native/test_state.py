@@ -1,6 +1,9 @@
+import io
 import unittest
 import os
+from contextlib import redirect_stdout
 
+from manticore.core.state import StateBase
 from manticore.utils.event import Eventful
 from manticore.platforms import linux
 from manticore.native.state import State
@@ -157,6 +160,63 @@ class StateTest(unittest.TestCase):
         expr = self.state.new_symbolic_value(64, taint=taint)
         self.assertEqual(expr.taint, frozenset(taint))
 
+    def test_state_hook(self):
+        initial_state = State(ConstraintSet(), FakePlatform())
+
+        def fake_hook(_: StateBase) -> None:
+            return None
+
+        self.assertTrue(len(initial_state._hooks) == 0)
+        self.assertTrue(len(initial_state._after_hooks) == 0)
+
+        # This hook should be propagated to child state
+        initial_state.add_hook(0x4000, fake_hook, after=False)
+
+        self.assertTrue(len(initial_state._hooks) == 1)
+        self.assertTrue(len(initial_state._after_hooks) == 0)
+
+        with initial_state as new_state:
+            # Child state has parent's hook
+            self.assertTrue(len(new_state._hooks) == 1)
+            self.assertTrue(len(new_state._after_hooks) == 0)
+
+            # Try adding the same hook
+            new_state.add_hook(0x4000, fake_hook, after=False)
+            # Should not add again
+            self.assertTrue(len(new_state._hooks) == 1)
+
+            # Add two hooks for after and before instruction
+            new_state.add_hook(0x4001, fake_hook, after=True)
+            new_state.add_hook(0x4001, fake_hook, after=False)
+
+            # A new hook added to both lists
+            self.assertTrue(len(new_state._hooks) == 2)
+            self.assertTrue(len(new_state._after_hooks) == 1)
+
+            # Ensure parent state was not affected
+            self.assertTrue(len(initial_state._hooks) == 1)
+            self.assertTrue(len(initial_state._after_hooks) == 0)
+
+            # Remove one of the hooks we added
+            new_state.remove_hook(0x4000, fake_hook, after=False)
+            # Try to remove a non-existent hook
+            self.assertFalse(new_state.remove_hook(0x4000, fake_hook, after=True))
+
+            # Ensure removal
+            self.assertTrue(len(new_state._hooks) == 1)
+            self.assertTrue(len(new_state._after_hooks) == 1)
+
+            # Ensure parent state wasn't affected
+            self.assertTrue(len(initial_state._hooks) == 1)
+            self.assertTrue(len(initial_state._after_hooks) == 0)
+
+            # Add hook to all PC in our parent state
+            initial_state.add_hook(None, fake_hook, after=True)
+
+        # Ensure only the hooks we added are still here
+        self.assertTrue(len(initial_state._hooks) == 1)
+        self.assertTrue(len(initial_state._after_hooks) == 1)
+
     def testContextSerialization(self):
         import pickle as pickle
 
@@ -209,6 +269,55 @@ class StateTest(unittest.TestCase):
         self.assertEqual(new_state.context["step"], 20)
         new_new_state = pickle.loads(new_new_file)
         self.assertEqual(new_new_state.context["step"], 30)
+
+
+"""
+This function needs to be a global function for the following test or else we
+get the following error
+    E       AttributeError: Can't pickle local object 'StateHooks.test_state_hooks.<locals>.do_nothing'
+"""
+
+
+def do_nothing(_: StateBase) -> None:
+    return None
+
+
+def fin(_: StateBase) -> None:
+    print("Reached fin callback")
+    return None
+
+
+class StateHooks(unittest.TestCase):
+    def setUp(self):
+        core = config.get_group("core")
+        core.seed = 61
+        core.mprocessing = core.mprocessing.single
+
+        dirname = os.path.dirname(__file__)
+        self.m = Manticore(os.path.join(dirname, "binaries", "basic_linux_amd64"), policy="random")
+
+    def test_state_hooks(self):
+        @self.m.hook(0x400610, after=True)
+        def process_hook(state: State) -> None:
+            # We can't remove because the globally applied hooks are stored in
+            # the Manticore class, not State
+            self.assertFalse(state.remove_hook(0x400610, process_hook, after=True))
+            # We can remove this one because it was applied specifically to this
+            # State (or its parent)
+            self.assertTrue(state.remove_hook(None, do_nothing, after=True))
+
+            state.add_hook(None, do_nothing, after=False)
+            state.add_hook(None, do_nothing, after=True)
+            state.add_hook(0x400647, fin, after=True)
+            state.add_hook(0x400647, fin, after=False)
+
+        for state in self.m.ready_states:
+            self.m.add_hook(None, do_nothing, after=True, state=state)
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            self.m.run()
+        self.assertIn("Reached fin callback", f.getvalue())
 
 
 class StateMergeTest(unittest.TestCase):
