@@ -15,8 +15,9 @@ import socketserver
 import typing
 
 consts = config.get_group("core")
-consts.HOST = "localhost"
-consts.PORT = 3214
+consts.add("HOST", "localhost", "Address to bind the log & state servers to")
+consts.add("PORT", 3214, "Port to use for the log server. State server runs one port higher.")
+
 logger = logging.getLogger(__name__)
 # logger.setLevel(9)
 
