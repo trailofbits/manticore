@@ -14,6 +14,7 @@ from contextlib import contextmanager
 import functools
 import shlex
 
+from collections import deque
 from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
 from ..core.smtlib import Expression
 from ..core.state import StateBase
@@ -97,7 +98,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
-        self._log_queue = queue.Queue(5000)
+        self._log_queue = deque(maxlen=5000)
         self._shared_context = {}
 
     def _manticore_threading(self):
@@ -109,7 +110,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
-        self._log_queue = queue.Queue(5000)
+        self._log_queue = deque(maxlen=5000)
         self._shared_context = {}
 
     def _manticore_multiprocessing(self):
@@ -131,7 +132,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = self._manager.list()
         self._busy_states = self._manager.list()
         self._killed_states = self._manager.list()
-        self._log_queue = self._manager.Queue(5000)
+        self._log_queue = self._manager.Queue(15000)
         self._shared_context = self._manager.dict()
         self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
 

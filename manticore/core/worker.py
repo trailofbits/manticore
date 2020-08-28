@@ -289,9 +289,18 @@ class LogCaptureWorker(DaemonThread):
 
     def log_callback(self, msg):
         q = self.manticore._log_queue
-        if q.full():
-            q.get()
-        q.put(msg)
+        try:
+            q.append(msg)
+        except AttributeError:
+            # Appending to a deque with maxlen=n is about 25x faster than checking if a queue.Queue is full,
+            # popping if so, and appending. For that reason, we use a deque in the threading and single, but
+            # a manager.Queue in multiprocessing (since that's all it supports). Catching an AttributeError
+            # is slightly faster than using `isinstance` for the default case (threading) but does slow down
+            # log throughput by about 20% (on top of the 25x slowdown) when using Multiprocessing instead of
+            # threading
+            if q.full():
+                q.get()
+            q.put(msg)
 
     def dump_logs(self):
         """
