@@ -320,7 +320,7 @@ class LogCaptureWorker(DaemonThread):
 
         try:
             with ReusableTCPServer((consts.HOST, consts.PORT), DumpTCPHandler) as server:
-                server.dump = self.dump_logs
+                server.dump = self.dump_logs  # type: ignore
                 server.serve_forever()
         except OSError as e:
             # TODO - this should be logger.warning, but we need to rewrite several unit tests that depend on
@@ -328,7 +328,7 @@ class LogCaptureWorker(DaemonThread):
             logger.info("Could not start log capture server: %s", str(e))
 
 
-def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]) -> StateList:
+def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
     """
     Converts the built-in list of state descriptors into a StateList from Protobuf
 
@@ -384,7 +384,7 @@ def state_monitor(self: DaemonThread):
 
     try:
         with ReusableTCPServer((consts.HOST, consts.PORT + 1), DumpTCPHandler) as server:
-            server.dump = dump_states
+            server.dump = dump_states  # type: ignore
             server.serve_forever()
     except OSError as e:
         # TODO - this should be logger.warning, but we need to rewrite several unit tests that depend on

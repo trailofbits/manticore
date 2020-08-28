@@ -21,4 +21,3 @@ class ManticoreLogger(unittest.TestCase):
         set_verbosity(0)
         self.assertEqual(get_verbosity("manticore.native.cpu.abstractcpu"), DEFAULT_LOG_LEVEL)
         self.assertEqual(get_verbosity("manticore.ethereum.abi"), DEFAULT_LOG_LEVEL)
-
