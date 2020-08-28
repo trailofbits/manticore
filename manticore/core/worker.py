@@ -315,7 +315,9 @@ class LogCaptureWorker(DaemonThread):
                 server.worker = self
                 server.serve_forever()
         except OSError as e:
-            logger.warning("Could not start log capture server: %s", str(e))
+            # TODO - this should be logger.warning, but we need to rewrite several unit tests that depend on
+            # specific stdout output in order to do that.
+            logger.info("Could not start log capture server: %s", str(e))
 
 
 class MonitorTCPHandler(socketserver.BaseRequestHandler):
@@ -370,4 +372,6 @@ def state_monitor(self):
             server.dump = dump_states
             server.serve_forever()
     except OSError as e:
-        logger.warning("Could not start state monitor server: %s", str(e))
+        # TODO - this should be logger.warning, but we need to rewrite several unit tests that depend on
+        # specific stdout output in order to do that.
+        logger.info("Could not start state monitor server: %s", str(e))
