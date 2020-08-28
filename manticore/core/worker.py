@@ -3,6 +3,7 @@ from .state import Concretize, TerminateState
 from ..core.plugin import Plugin, StateDescriptor
 from .state_pb2 import StateList, MessageList, State, LogMessage
 from ..utils.log import register_log_callback
+from ..utils import config
 from ..utils.enums import StateStatus, StateLists
 from datetime import datetime
 import logging
@@ -13,7 +14,9 @@ import os
 import socketserver
 import typing
 
-HOST, PORT = "localhost", 3214
+consts = config.get_group("core")
+consts.HOST = "localhost"
+consts.PORT = 3214
 logger = logging.getLogger(__name__)
 # logger.setLevel(9)
 
@@ -306,9 +309,12 @@ class LogCaptureWorker(DaemonThread):
         m = self.manticore
         m._is_main = False
 
-        with ReusableTCPServer((HOST, PORT), LogTCPHandler) as server:
-            server.worker = self
-            server.serve_forever()
+        try:
+            with ReusableTCPServer((consts.HOST, consts.PORT), LogTCPHandler) as server:
+                server.worker = self
+                server.serve_forever()
+        except OSError as e:
+            logger.warning("Could not start log capture server: %s", str(e))
 
 
 class MonitorTCPHandler(socketserver.BaseRequestHandler):
@@ -358,6 +364,9 @@ def state_monitor(self):
         sts = render_state_descriptors(sts)
         return sts.SerializeToString()
 
-    with ReusableTCPServer((HOST, PORT + 1), MonitorTCPHandler) as server:
-        server.dump = dump_states
-        server.serve_forever()
+    try:
+        with ReusableTCPServer((consts.HOST, consts.PORT + 1), MonitorTCPHandler) as server:
+            server.dump = dump_states
+            server.serve_forever()
+    except OSError as e:
+        logger.warning("Could not start state monitor server: %s", str(e))
