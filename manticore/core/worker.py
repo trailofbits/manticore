@@ -269,6 +269,7 @@ class LogTCPHandler(socketserver.BaseRequestHandler):
 
 class ReusableTCPServer(socketserver.TCPServer):
     allow_reuse_address = True
+    dump: typing.Optional[typing.Callable] = None
 
 
 class LogCaptureWorker(DaemonThread):
@@ -312,7 +313,7 @@ class LogCaptureWorker(DaemonThread):
 
 class MonitorTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        self.request.sendall(self.server.worker.dump_states())
+        self.request.sendall(self.server.dump())
 
 
 def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
@@ -341,26 +342,22 @@ def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
     return out
 
 
-class StateMonitorWorker(DaemonThread):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+def state_monitor(self):
+    logger.debug(
+        "Monitoring States via Thread %d. Pid %d Tid %d).",
+        self.id,
+        os.getpid(),
+        threading.get_ident(),
+    )
 
-    def dump_states(self):
-        sts = self.manticore.introspect()
+    m = self.manticore
+    m._is_main = False
+
+    def dump_states():
+        sts = m.introspect()
         sts = render_state_descriptors(sts)
         return sts.SerializeToString()
 
-    def run(self, *args):
-        logger.debug(
-            "Monitoring States via Thread %d. Pid %d Tid %d).",
-            self.id,
-            os.getpid(),
-            threading.get_ident(),
-        )
-
-        m = self.manticore
-        m._is_main = False
-
-        with ReusableTCPServer((HOST, PORT + 1), MonitorTCPHandler) as server:
-            server.worker = self
-            server.serve_forever()
+    with ReusableTCPServer((HOST, PORT + 1), MonitorTCPHandler) as server:
+        server.dump = dump_states
+        server.serve_forever()

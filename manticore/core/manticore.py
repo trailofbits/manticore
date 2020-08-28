@@ -33,7 +33,7 @@ from .worker import (
     WorkerProcess,
     DaemonThread,
     LogCaptureWorker,
-    StateMonitorWorker,
+    state_monitor,
 )
 
 from multiprocessing.managers import SyncManager
@@ -383,12 +383,10 @@ class ManticoreBase(Eventful):
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
 
-        # Create log capture and state monitor worker
-        self._log_capture = LogCaptureWorker(id=-1, manticore=self)
-        self._state_monitor = StateMonitorWorker(id=-2, manticore=self)
-
-        # We won't create the daemons until .run() is called
-        self._daemon_threads: typing.List[DaemonThread] = []
+        # Create log capture worker. We won't create the rest of the daemons until .run() is called
+        self._daemon_threads: typing.Dict[int, DaemonThread] = {
+            -1: LogCaptureWorker(id=-1, manticore=self)
+        }
         self._daemon_callbacks: typing.List[typing.Callable] = []
 
         self._snapshot = None
@@ -1119,24 +1117,27 @@ class ManticoreBase(Eventful):
             # User subscription to events is disabled from now on
             self.subscribe = None
 
+        self.register_daemon(state_monitor)
+        self._daemon_threads[-1].start()  # Start log capture worker
+
         # Passing generators to callbacks is a bit hairy because the first callback would drain it if we didn't
         # clone the iterator in event.py. We're preserving the old API here, but it's something to avoid in the future.
         self._publish("will_run", self.ready_states)
         self._running.value = True
-        self._log_capture.start()
-        self._state_monitor.start()
 
         # start all the workers!
         for w in self._workers:
             w.start()
 
         # Create each daemon thread and pass it `self`
-        if not self._daemon_threads:  # Don't recreate the threads if we call run multiple times
-            for i, cb in enumerate(self._daemon_callbacks):
+        for i, cb in enumerate(self._daemon_callbacks):
+            if (
+                i not in self._daemon_threads
+            ):  # Don't recreate the threads if we call run multiple times
                 dt = DaemonThread(
                     id=i, manticore=self
                 )  # Potentially duplicated ids with workers. Don't mix!
-                self._daemon_threads.append(dt)
+                self._daemon_threads[dt.id] = dt
                 dt.start(cb)
 
         # Main process. Lets just wait and capture CTRL+C at main
@@ -1198,11 +1199,11 @@ class ManticoreBase(Eventful):
         If a client has accessed the log server, and there are still buffered logs,
         waits up to 2 seconds for the client to retrieve the logs.
         """
-        if self._log_capture.activated:
+        if self._daemon_threads[-1].activated:
             for _ in range(8):
                 if self._log_queue.empty():
                     break
-                time.sleep(0.25 * 10)
+                time.sleep(0.25)
 
     ############################################################################
     ############################################################################
