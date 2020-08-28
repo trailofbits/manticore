@@ -265,21 +265,26 @@ class DaemonThread(WorkerThread):
         self._t.start()
 
 
-class LogTCPHandler(socketserver.BaseRequestHandler):
+class DumpTCPHandler(socketserver.BaseRequestHandler):
+    """ TCP Handler that calls the `dump` method bound to the server """
+
     def handle(self):
-        messages = self.server.worker.dump_logs()
-        self.request.sendall(messages)
+        self.request.sendall(self.server.dump())
 
 
 class ReusableTCPServer(socketserver.TCPServer):
+    """ Custom socket server that gracefully allows the address to be reused """
+
     allow_reuse_address = True
     dump: typing.Optional[typing.Callable] = None
 
 
 class LogCaptureWorker(DaemonThread):
+    """ Extended DaemonThread that runs a TCP server that dumps the captured logs """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.activated = False
+        self.activated = False  #: Whether a client has ever connected
         register_log_callback(self.log_callback)
 
     def log_callback(self, msg):
@@ -289,6 +294,9 @@ class LogCaptureWorker(DaemonThread):
         q.put(msg)
 
     def dump_logs(self):
+        """
+        Converts captured logs into protobuf format
+        """
         self.activated = True
         serialized = MessageList()
         q = self.manticore._log_queue
@@ -311,8 +319,8 @@ class LogCaptureWorker(DaemonThread):
         m._is_main = False
 
         try:
-            with ReusableTCPServer((consts.HOST, consts.PORT), LogTCPHandler) as server:
-                server.worker = self
+            with ReusableTCPServer((consts.HOST, consts.PORT), DumpTCPHandler) as server:
+                server.dump = self.dump_logs
                 server.serve_forever()
         except OSError as e:
             # TODO - this should be logger.warning, but we need to rewrite several unit tests that depend on
@@ -320,12 +328,13 @@ class LogCaptureWorker(DaemonThread):
             logger.info("Could not start log capture server: %s", str(e))
 
 
-class MonitorTCPHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        self.request.sendall(self.server.dump())
+def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]) -> StateList:
+    """
+    Converts the built-in list of state descriptors into a StateList from Protobuf
 
-
-def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
+    :param desc: Output from ManticoreBase.introspect
+    :return: Protobuf StateList to send over the wire
+    """
     out = StateList()
     for st in desc.values():
         if st.status != StateStatus.destroyed:
@@ -351,7 +360,13 @@ def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
     return out
 
 
-def state_monitor(self):
+def state_monitor(self: DaemonThread):
+    """
+    Daemon thread callback that runs a server that listens for incoming TCP connections and
+    dumps the list of state descriptors.
+
+    :param self: DeamonThread created to run the server
+    """
     logger.debug(
         "Monitoring States via Thread %d. Pid %d Tid %d).",
         self.id,
@@ -368,7 +383,7 @@ def state_monitor(self):
         return sts.SerializeToString()
 
     try:
-        with ReusableTCPServer((consts.HOST, consts.PORT + 1), MonitorTCPHandler) as server:
+        with ReusableTCPServer((consts.HOST, consts.PORT + 1), DumpTCPHandler) as server:
             server.dump = dump_states
             server.serve_forever()
     except OSError as e:
