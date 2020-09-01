@@ -2277,7 +2277,7 @@ class EVM(Eventful):
         CreateBySelfdestructGas = 25000
         SelfdestructRefundGas = 24000
         fee = 0
-        if recipient not in self.world and self.world.get_balance(self.address) != 0:
+        if not self.world.account_exists(recipient) and self.world.get_balance(self.address) != 0:
             fee += CreateBySelfdestructGas
 
         if self.address not in self.world._deleted_accounts:
