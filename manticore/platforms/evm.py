@@ -2141,10 +2141,9 @@ class EVM(Eventful):
         GCALLNEW = 25000
         wanted_gas = Operators.ZEXTEND(wanted_gas, 512)
         fee = Operators.ITEBV(512, value == 0, 0, GCALLVALUE)
-        known_address = False
-        for address_i in self.world.accounts:
-            known_address = Operators.OR(known_address, address == address_i)
-        fee += Operators.ITEBV(512, Operators.OR(known_address, value == 0), 0, GCALLNEW)
+        fee += Operators.ITEBV(
+            512, Operators.OR(self.world.account_exists(address), value == 0), 0, GCALLNEW
+        )
         fee += self._get_memfee(in_offset, in_size)
 
         exception = False

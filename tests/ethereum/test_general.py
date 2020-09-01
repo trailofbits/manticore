@@ -1799,6 +1799,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         GCALLSTIPEND = 2300 # additional gas sent with a call if value > 0
 
         with disposable_mevm() as m:
+            # empty call target
+            m.create_account(address=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
             # nonempty call target
             m.create_account(
                 address=0x111111111111111111111111111111111111111,
@@ -1812,7 +1814,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                                             PUSH1 0x0
                                             PUSH1 0X0
                                             PUSH1 0x0
-                                            PUSH20 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                                            PUSH20 0xfffffffffffffffffffffffffffffffffffffff
                                             PUSH1 0x0
                                             CALL
                                             STOP
@@ -1834,7 +1836,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                                             PUSH1 0x0
                                             PUSH1 0X0
                                             PUSH1 0x1
-                                            PUSH20 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                                            PUSH20 0xfffffffffffffffffffffffffffffffffffffff
                                             PUSH1 0x0
                                             CALL
                                             STOP
