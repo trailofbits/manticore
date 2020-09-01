@@ -1435,6 +1435,20 @@ class EthHelpersTest(unittest.TestCase):
         # wasn't requested.
         inner_func(None, self.bv, 123)
 
+    def test_account_exists(self):
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints)
+        default = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        empty = world.create_account(nonce=0, balance=0, code=b"")
+        has_code = world.create_account(nonce=0, balance=0, code=b"ff")
+        has_nonce = world.create_account(nonce=1, balance=0, code=b"")
+        has_balance = world.create_account(nonce=0, balance=1, code=b"")
+        self.assertTrue(world.account_exists(has_code))
+        self.assertTrue(world.account_exists(has_nonce))
+        self.assertTrue(world.account_exists(has_balance))
+        self.assertFalse(world.account_exists(empty))
+        self.assertFalse(world.account_exists(default))
+
 
 class EthSolidityMetadataTests(unittest.TestCase):
     def test_tuple_signature_for_components(self):

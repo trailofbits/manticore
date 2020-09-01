@@ -2897,6 +2897,15 @@ class EVMWorld(Platform):
             return 0
         return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
 
+    def account_exists(self, address):
+        if address not in self._world_state:
+            return False  # accounts default to nonexistent
+        return (
+            self.has_code(address)
+            or Operators.UGT(self.get_nonce(address), 0)
+            or Operators.UGT(self.get_balance(address), 0)
+        )
+
     def add_to_balance(self, address, value):
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
