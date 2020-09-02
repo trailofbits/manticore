@@ -42,28 +42,6 @@ consts.add(
 
 from enum import Enum
 
-
-class TermCondCovType(Enum):
-    """Used as configuration constant for choosing the coverage based termination
-    condition"""
-
-    no = "no"
-    local = "local"
-    wide = "wide"
-
-    def title(self):
-        return self._name_.title()
-
-    @classmethod
-    def from_string(cls, name):
-        return cls.__members__[name]
-
-
-consts.add(
-    "txcoverage", default=TermCondCovType.local, description="Set coverage stopping criteria"
-)
-
-
 def get_detectors_classes():
     return [
         DetectInvalid,

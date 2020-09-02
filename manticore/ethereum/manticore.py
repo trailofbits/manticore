@@ -71,6 +71,25 @@ consts.add(
     "Default timeout for matching sha3 for unsound states (see unsound symbolication).",
 )
 
+class TermCondCovType(Enum):
+    """Used as configuration constant for choosing the coverage based termination
+    condition"""
+
+    no = "no"
+    local = "local"
+    wide = "wide"
+
+    def title(self):
+        return self._name_.title()
+
+    @classmethod
+    def from_string(cls, name):
+        return cls.__members__[name]
+
+
+consts.add(
+    "txcoverage", default=TermCondCovType.local, description="Set coverage stopping criteria"
+)
 
 def flagged(flag):
     """
@@ -1035,6 +1054,7 @@ class ManticoreEVM(ManticoreBase):
 
         return constraint
 
+    @ManticoreBase.sync
     def local_coverage_progress(self) -> bool:
         for state in self.ready_states:
             new_local_coverage = len(set(state.context["evm.trace"]))
@@ -1044,15 +1064,17 @@ class ManticoreEVM(ManticoreBase):
                 old_local_coverage = 0
             state.context["evm.localcoverage"] = new_local_coverage
             if new_local_coverage != old_local_coverage:
-                return True
-        return False
+                continue
+            self._ready_states.remove(state.id)
+            self._terminated_states.append(state.id)
+        return self.count_ready_states() > 0
 
     def multi_tx_analysis(
         self,
         solidity_filename,
         contract_name=None,
         tx_limit=None,
-        tx_use_coverage=True,
+        tx_use_coverage=TermCondCovType.local,
         tx_send_ether=True,
         tx_account="attacker",
         tx_preconstrain=False,

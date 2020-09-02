@@ -61,8 +61,7 @@ class ContextFilter(logging.Filter):
 
 ctxfilter = ContextFilter()
 
-
-class CustomLogger(logging.Logger):
+class CustomLogger(logging.getLoggerClass()):
     """
     Custom Logger class that can grab the correct verbosity level from this module
     """
