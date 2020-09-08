@@ -972,13 +972,13 @@ class EVM(Eventful):
         return value
 
     def disassemble(self):
-        return EVMAsm.disassemble(self.bytecode)
+        return EVMAsm.disassemble(self._getcode(zerotail=False))
 
     @property
     def PC(self):
         return self.pc
 
-    def _getcode(self, pc):
+    def _getcode(self, pc:int = 0, zerotail:bool = True):
         bytecode = self.bytecode
         for pc_i in range(pc, len(bytecode)):
             c = bytecode[pc_i]
@@ -986,14 +986,23 @@ class EVM(Eventful):
                 yield simplify(c).value
             else:
                 yield c
-        while True:
-            yield 0  # STOP opcode
+        if zerotail:
+            while True:
+                yield 0  # STOP opcode
+
 
     @property
     def instruction(self):
         """
         Current instruction pointed by self.pc
         """
+        return self.get_instruction(pc=self.pc)
+
+    def get_instruction(self, pc: Union[Bitvec, int]):
+        """
+        Current instruction pointed by self.pc
+        """
+
         # FIXME check if pc points to invalid instruction
         # if self.pc >= len(self.bytecode):
         #    return InvalidOpcode('Code out of range')
@@ -1005,7 +1014,6 @@ class EVM(Eventful):
             self._decoding_cache = {}
             _decoding_cache = self._decoding_cache
 
-        pc = self.pc
         if isinstance(pc, Constant):
             pc = pc.value
 
@@ -1674,19 +1682,12 @@ class EVM(Eventful):
             self.constraints.add(self.safe_add(offset, 32) <= len(self.data) + calldata_overflow)
 
         self._use_calldata(offset, 32)
-
         data_length = len(self.data)
         bytes = []
         for i in range(32):
             try:
-                c = simplify(
-                    Operators.ITEBV(
-                        8,
-                        Operators.ULT(self.safe_add(offset, i), data_length),
-                        self.data[offset + i],
-                        0,
-                    )
-                )
+                c=Operators.ITEBV(8, Operators.ULT(self.safe_add(offset, i), data_length), self.data[offset + i], 0, )
+                c = simplify(c)
             except IndexError:
                 # offset + i is concrete and outside data
                 c = 0
@@ -1745,6 +1746,7 @@ class EVM(Eventful):
                 max_size = cap
                 self.constraints.add(Operators.ULE(size, cap))
 
+
         for i in range(max_size):
             try:
                 c1 = Operators.ITEBV(
@@ -1762,7 +1764,7 @@ class EVM(Eventful):
             if not issymbolic(c) or get_depth(c) < 3:
                 x = c
             else:
-                # if te expression is deep enough lets replace it by a binding
+                # if the expression is deep enough lets replace it by a binding
                 x = self.constraints.new_bitvec(8, name="temp{}".format(uuid.uuid1()))
                 self.constraints.add(x == c)
             self._store(mem_offset + i, x)
@@ -1811,7 +1813,11 @@ class EVM(Eventful):
                     value = default
                 else:
                     value = self.bytecode[code_offset + i]
+
             self._store(mem_offset + i, value)
+
+        assert SelectedSolver.instance().must_be_true(self.constraints,self.memory[0:max_size] == self.bytecode[code_offset:code_offset + max_size])
+
         self._publish("did_evm_read_code", self.address, code_offset, size)
 
     def GASPRICE(self):
@@ -2140,8 +2146,8 @@ class EVM(Eventful):
 
         data = self.read_buffer(offset, size)
         keccak_init = self.world.symbolic_function(globalsha3, data)
-        caller = MutableArray(msg.caller).read_BE(0, 20)
-        salt = MutableArray(salt).read_BE(0, 32)
+        caller = msg.caller.read_BE(0, 20)
+        salt = salt.read_BE(0, 32)
         address = self.world.symbolic_function(b"\xff" + caller + salt + keccak_init) & ((1<<0x20)-1)
 
         self.world.start_transaction(

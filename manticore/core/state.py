@@ -375,7 +375,6 @@ class StateBase(Eventful):
                 values.append(expr)
             else:
                 expr = self.migrate_expression(expr)
-                print ("SOLVEONE", expr)
                 value = self._solver.get_value(self._constraints, expr)
                 if constrain:
                     self.constrain(expr == value)
@@ -383,8 +382,6 @@ class StateBase(Eventful):
                 if isinstance(value, bytearray):
                     value = bytes(value)
                 values.append(value)
-        assert any(issymbolic for x in values)
-        print (exprs, values)
         return values
 
     def solve_n(self, expr, nsolves):

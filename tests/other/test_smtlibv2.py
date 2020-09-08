@@ -105,6 +105,8 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertEqual(c[1], 10)
         self.assertEqual(c[2], 20)
         self.assertEqual(c[3], 30)
+        c[2] = 100
+        self.assertEqual(c[2], 100)
 
 
     def test_ArrayDefault3(self):
@@ -198,8 +200,8 @@ class ExpressionTestNew(unittest.TestCase):
             self.assertTrue(ty.__doc__, ty)
             checked.add(ty)
 
-        check(BitvecVariable, size=32, name="name", pickle_size=111, sizeof=64)
-        check(BoolVariable, name="name", pickle_size=99, sizeof=56)
+        check(BitvecVariable, size=32, name="name", pickle_size=111, sizeof=56)
+        check(BoolVariable, name="name", pickle_size=99, sizeof=48)
         check(
             ArrayVariable,
             index_size=32,
@@ -207,10 +209,10 @@ class ExpressionTestNew(unittest.TestCase):
             length=100,
             name="name",
             pickle_size=156,
-            sizeof=88,
+            sizeof=80,
         )
-        check(BitvecConstant, size=32, value=10, pickle_size=107, sizeof=64)
-        check(BoolConstant, value=False, pickle_size=94, sizeof=56)
+        check(BitvecConstant, size=32, value=10, pickle_size=107, sizeof=56)
+        check(BoolConstant, value=False, pickle_size=94, sizeof=48)
 
         # TODO! But you can instantiate an ArraConstant
         """
@@ -224,58 +226,58 @@ class ExpressionTestNew(unittest.TestCase):
         x = BoolVariable(name="x")
         y = BoolVariable(name="y")
         z = BoolVariable(name="z")
-        check(BoolEqual, operanda=x, operandb=y, pickle_size=159, sizeof=56)
-        check(BoolAnd, operanda=x, operandb=y, pickle_size=157, sizeof=56)
-        check(BoolOr, operanda=x, operandb=y, pickle_size=156, sizeof=56)
-        check(BoolXor, operanda=x, operandb=y, pickle_size=157, sizeof=56)
-        check(BoolNot, operand=x, pickle_size=137, sizeof=56)
-        check(BoolITE, cond=z, true=x, false=y, pickle_size=130, sizeof=56)
+        check(BoolEqual, operanda=x, operandb=y, pickle_size=159, sizeof=48)
+        check(BoolAnd, operanda=x, operandb=y, pickle_size=157, sizeof=48)
+        check(BoolOr, operanda=x, operandb=y, pickle_size=156, sizeof=48)
+        check(BoolXor, operanda=x, operandb=y, pickle_size=157, sizeof=48)
+        check(BoolNot, operand=x, pickle_size=137, sizeof=48)
+        check(BoolITE, cond=z, true=x, false=y, pickle_size=130, sizeof=48)
 
         bvx = BitvecVariable(size=32, name="bvx")
         bvy = BitvecVariable(size=32, name="bvy")
 
-        check(BoolUnsignedGreaterThan, operanda=bvx, operandb=bvy, pickle_size=142, sizeof=56)
-        check(BoolGreaterThan, operanda=bvx, operandb=bvy, pickle_size=134, sizeof=56)
+        check(BoolUnsignedGreaterThan, operanda=bvx, operandb=bvy, pickle_size=142, sizeof=48)
+        check(BoolGreaterThan, operanda=bvx, operandb=bvy, pickle_size=134, sizeof=48)
         check(
-            BoolUnsignedGreaterOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=149, sizeof=56
+            BoolUnsignedGreaterOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=149, sizeof=48
         )
-        check(BoolGreaterOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=141, sizeof=56)
-        check(BoolUnsignedLessThan, operanda=bvx, operandb=bvy, pickle_size=139, sizeof=56)
-        check(BoolLessThan, operanda=bvx, operandb=bvy, pickle_size=131, sizeof=56)
-        check(BoolUnsignedLessOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=146, sizeof=56)
-        check(BoolLessOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=138, sizeof=56)
+        check(BoolGreaterOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=141, sizeof=48)
+        check(BoolUnsignedLessThan, operanda=bvx, operandb=bvy, pickle_size=139, sizeof=48)
+        check(BoolLessThan, operanda=bvx, operandb=bvy, pickle_size=131, sizeof=48)
+        check(BoolUnsignedLessOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=146, sizeof=48)
+        check(BoolLessOrEqualThan, operanda=bvx, operandb=bvy, pickle_size=138, sizeof=48)
 
-        check(BitvecOr, operanda=bvx, operandb=bvy, pickle_size=129, sizeof=64)
-        check(BitvecXor, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecAnd, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecNot, operanda=bvx, pickle_size=112, sizeof=64)
-        check(BitvecNeg, operanda=bvx, pickle_size=112, sizeof=64)
-        check(BitvecAdd, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecMul, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecSub, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecDiv, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecMod, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecUnsignedDiv, operanda=bvx, operandb=bvy, pickle_size=138, sizeof=64)
-        check(BitvecRem, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=64)
-        check(BitvecUnsignedRem, operanda=bvx, operandb=bvy, pickle_size=138, sizeof=64)
+        check(BitvecOr, operanda=bvx, operandb=bvy, pickle_size=129, sizeof=56)
+        check(BitvecXor, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecAnd, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecNot, operanda=bvx, pickle_size=112, sizeof=56)
+        check(BitvecNeg, operanda=bvx, pickle_size=112, sizeof=56)
+        check(BitvecAdd, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecMul, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecSub, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecDiv, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecMod, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecUnsignedDiv, operanda=bvx, operandb=bvy, pickle_size=138, sizeof=56)
+        check(BitvecRem, operanda=bvx, operandb=bvy, pickle_size=130, sizeof=56)
+        check(BitvecUnsignedRem, operanda=bvx, operandb=bvy, pickle_size=138, sizeof=56)
 
-        check(BitvecShiftLeft, operanda=bvx, operandb=bvy, pickle_size=136, sizeof=64)
-        check(BitvecShiftRight, operanda=bvx, operandb=bvy, pickle_size=137, sizeof=64)
-        check(BitvecArithmeticShiftLeft, operanda=bvx, operandb=bvy, pickle_size=146, sizeof=64)
-        check(BitvecArithmeticShiftRight, operanda=bvx, operandb=bvy, pickle_size=147, sizeof=64)
+        check(BitvecShiftLeft, operanda=bvx, operandb=bvy, pickle_size=136, sizeof=56)
+        check(BitvecShiftRight, operanda=bvx, operandb=bvy, pickle_size=137, sizeof=56)
+        check(BitvecArithmeticShiftLeft, operanda=bvx, operandb=bvy, pickle_size=146, sizeof=56)
+        check(BitvecArithmeticShiftRight, operanda=bvx, operandb=bvy, pickle_size=147, sizeof=56)
 
 
-        check(BitvecZeroExtend, operand=bvx, size=122, pickle_size=119, sizeof=64)
-        check(BitvecSignExtend, operand=bvx, size=122, pickle_size=119, sizeof=64)
-        check(BitvecExtract, operand=bvx, offset=0, size=8, pickle_size=119, sizeof=72)
-        check(BitvecConcat, operands=(bvx, bvy), pickle_size=133, sizeof=64)
-        check(BitvecITE, condition=x, true_value=bvx, false_value=bvy, pickle_size=161, sizeof=64)
+        check(BitvecZeroExtend, operand=bvx, size=122, pickle_size=119, sizeof=56)
+        check(BitvecSignExtend, operand=bvx, size=122, pickle_size=119, sizeof=56)
+        check(BitvecExtract, operand=bvx, offset=0, size=8, pickle_size=119, sizeof=64)
+        check(BitvecConcat, operands=(bvx, bvy), pickle_size=133, sizeof=56)
+        check(BitvecITE, condition=x, true_value=bvx, false_value=bvy, pickle_size=161, sizeof=56)
 
         a = ArrayVariable(index_size=32, value_size=32, length=324, name="name")
-        check(ArrayConstant, index_size=32, value_size=8, value=b"A", pickle_size=136, sizeof=72)
-        check(ArraySlice, array=a, offset=0, size=10 , pickle_size=136, sizeof=56)
-        check(ArraySelect, array=a, index=bvx, pickle_size=161, sizeof=64)
-        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=188, sizeof=72)
+        check(ArrayConstant, index_size=32, value_size=8, value=b"A", pickle_size=136, sizeof=64)
+        check(ArraySlice, array=a, offset=0, size=10 , pickle_size=136, sizeof=48)
+        check(ArraySelect, array=a, index=bvx, pickle_size=161, sizeof=56)
+        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=188, sizeof=80)
 
 
         def all_subclasses(cls):
@@ -287,10 +289,12 @@ class ExpressionTestNew(unittest.TestCase):
 
         all_types = all_subclasses(Expression)
         self.assertSetEqual(checked, all_types)
+
     def test_Expression_BitvecOp(self):
         a = BitvecConstant(size=32,value=100)
         b = BitvecConstant(size=32,value=101)
-        
+        x = a+b
+        self.assertTrue(isinstance(x, Bitvec))
 
     def test_Expression_BoolTaint(self):
         #Bool can not be instantiaated
@@ -331,7 +335,6 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertIn('blue', y.taint)
         self.assertIn('red', z.taint)
         self.assertIn('blue', z.taint)
-
 
 class ExpressionTestLoco(unittest.TestCase):
     _multiprocess_can_split_ = True

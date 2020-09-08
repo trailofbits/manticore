@@ -679,7 +679,7 @@ class BoolUnsignedGreaterOrEqualThan(BoolOperation):
 
 
 class Array(Expression, abstract=True):
-    """ And Array expression is a mapping from bitvector to bitvector
+    """ An Array expression is an unmutable mapping from bitvector to bitvector
 
     array.index_size is the number of bits used for addressing a value
     array.value_size is the number of bits used in the values
@@ -721,31 +721,37 @@ class Array(Expression, abstract=True):
         """ Returns the set of potentially symbolic indexes that were written in
         this array.
 
-        Note that as you could overwrite an index this could have more elements
+        Note that as you could overwrite an index so this could have more elements
         than total elements in the array.
         """
         raise NotImplementedError
 
-    def is_known(self, index):
+    def is_known(self, index) -> Union[Bool, bool]:
+        """ Returned Boolean Expression holds when the index was used"""
         raise NotImplementedError
 
-    ## following methods are implementes on top of the abstract methods ^
+    ###########################################################################
+    ## following methods are implemented on top of the abstract methods ^
     def in_bounds(self, index:Union[Bitvec, int]) -> Union[Bool, bool]:
-        """ True if the index points inside the array """
+        """ True if the index points inside the array (or array is unbounded)"""
         if self.length is not None:
             return (0 <= index) & (index < self.length)
         return True
 
     def __len__(self):
-        """ Number o defined values. """
+        """ Number of values. """
         return self.length
 
     def get(self, index):
-        """ Should this exist?"""
+        """ FIXME: Should this exist?"""
         return self.select(index)
 
     def cast(self, array) -> "Array":
-        """ Builds an Array from a bytes or bytearray"""
+        """ Builds an Array from bytes or bytearray
+            FIXME: this assigns a random name to a new variable and does not use
+            a ConstraintSet as a Factory
+        """
+        logger.error("THis is creating a variable out of band FTAG4985732")
         if isinstance(array, Array):
             return array
         arr = ArrayVariable(index_size=self.index_size, length=len(array), default=0, value_size=self.value_size, name="cast{}".format(uuid.uuid1()))
@@ -764,7 +770,7 @@ class Array(Expression, abstract=True):
 
     def cast_value(self, value: Union[Bitvec, bytes, int]) -> Bitvec:
         """ Forgiving casting method that will translate compatible values into
-            a compliant Bitvec to ve used as a value"""
+            a compliant Bitvec to be used as a value"""
         if not isinstance(value, (Bitvec, bytes, int)):
             raise TypeError
         if isinstance(value, Bitvec):
@@ -778,14 +784,15 @@ class Array(Expression, abstract=True):
         return BitvecConstant(self.value_size, value)
 
     def write(self, offset, buf):
-        """ Builds a new Array instance by writing buf at offset """
+        """ Builds a new unmutable Array instance on top of current array by
+            writing buf at offset """
         array = self
         for i, value in enumerate(buf):
             array = array.store(offset + i, value)
         return array
 
     def read(self, offset, size):
-        """ A proyection of the current array. """
+        """ A projection of the current array. """
         return ArraySlice(self, offset=offset, size=size)
 
     def __getitem__(self, index):
@@ -800,22 +807,26 @@ class Array(Expression, abstract=True):
         return self.select(index)
 
     def __iter__(self):
-        """ Iterations """
+        """ In a bounded array iterates over all elements. """
         for i in range(len(self)):
             yield self[i]
 
-    def __eq__(self, other):
-        # FIXME taint
-        def compare_buffers(a, b):
-            if len(a) != len(b):
+    @staticmethod
+    def _compare_buffers(a, b):
+        """ Builds an expression that represents equality between the two arrays."""
+        if len(a) != len(b):
+            return BoolConstant(False)
+        cond = BoolConstant(True)
+        for i in range(len(a)):
+            cond = BoolAnd(cond.cast(a[i] == b[i]), cond)
+            if cond is BoolConstant(False):
                 return BoolConstant(False)
-            cond = BoolConstant(True)
-            for i in range(len(a)):
-                cond = BoolAnd(cond.cast(a[i] == b[i]), cond)
-                if cond is BoolConstant(False):
-                    return BoolConstant(False)
-            return cond
-        return compare_buffers(self, other)
+        return cond
+
+    def __eq__(self, other):
+        """ If both arrays has the same elements they are equal.
+        The difference in taints are ignored."""
+        return self._compare_buffers(self, other)
 
     def __ne__(self, other):
         return BoolNot(self == other)
@@ -830,11 +841,11 @@ class Array(Expression, abstract=True):
         size = stop - start
         if isinstance(size, Bitvec):
             from .visitors import simplify
-
             size = simplify(size)
         else:
             size = BitvecConstant(self.index_size, size)
-        assert isinstance(size, BitvecConstant)
+        if not isinstance(size, BitvecConstant):
+            raise ExpressionError("Size could not be simplified to a constant in a slice operation")
         return start, stop, size.value
 
     def _concatenate(self, array_a, array_b):
@@ -1025,7 +1036,7 @@ class ArrayVariable(Array, Variable):
 
     def store(self, index, value):
         index = self.cast_index(index)
-        value = self.cast_value(value)
+        value = simplify(self.cast_value(value))
         return ArrayStore(array=self, index=index, value=value)
 
     @property
@@ -1046,27 +1057,56 @@ class ArrayOperation(Array, Operation, abstract=True):
     """ It's an operation that results in an Array"""
     pass
 
+def get_items(array):
+    if isinstance(array, ArrayStore):
+        yield from get_items_array_store(array)
+    elif isinstance(array, ArraySlice):
+        yield from get_items_array_slice(array)
+    elif isinstance(array, ArrayConstant):
+        yield from get_items_array_constant(array)
+    return
+
+def get_items_array_slice(array):
+    assert isinstance(array, ArraySlice)
+    for offset, value in get_items(array.array):
+        yield offset+array.offset, value
+
+
+def get_items_array_store(array):
+    assert isinstance(array, ArrayStore)
+    while isinstance(array, ArrayStore):
+        yield array.index, array.value
+        array = array.array
+    yield from get_items(array)
+
+def get_items_array_constant(array):
+    assert isinstance(array, ArrayConstant)
+    for index, value in enumerate(array.value):
+        yield index, value
+
+def get_items_array_variable(array):
+    assert isinstance(array, ArrayVariable)
+    raise GeneratorExit
 
 class ArrayStore(ArrayOperation):
     __xslots__: Tuple[str, ...] = (
         "_written#v",
         "_concrete_cache#v",
+        "_length#v",
+        "_default#v",
     )
 
-    @property
-    def length(self):
-        return self.array.length
 
     @property
     def concrete_cache(self):
         if self._concrete_cache is not None:
             return self._concrete_cache
-        index = self.index
         self._concrete_cache = {}
-        if isinstance(index, Constant):
-            self._concrete_cache.update(getattr(self.array, "concrete_cache",
-                                                ()))  # Cache of concrete indexes
-            self._concrete_cache[index.value] = self.value
+        for index, value in get_items(self):
+            if not isinstance(index, Constant):
+                break
+            if index.value not in self._concrete_cache:
+                self._concrete_cache[index.value] = value
         return self._concrete_cache
 
     @property
@@ -1075,21 +1115,8 @@ class ArrayStore(ArrayOperation):
         # This can have repeated and reused written indexes.
         if self._written is None:
             written = set()
-            # take out Proxy sleve
-            array = self
-            offset = 0
-            while not isinstance(array, ArrayVariable):
-                if array._written is not None:
-                    written = written.union((x - offset for x in array.written))
-                    break
-                if isinstance(array, ArraySlice):
-                    # if it is a proxy over a slice take out the slice too
-                    offset += array.offset
-                    array = array.array
-                else:
-                    # The index written to underlaying Array are displaced when sliced
-                    written.add(array.index - offset)
-                    array = array.array
+            for offset, value in get_items(self):
+                written.add(offset)
             self._written = written
         return self._written
 
@@ -1109,16 +1136,28 @@ class ArrayStore(ArrayOperation):
     def __init__(self, array: Array, index: Bitvec, value: Bitvec, **kwargs):
         assert index.size == array.index_size
         assert value.size == array.value_size
-        self._written = None  # Cache of the known indexs
+        self._written = None  # Cache of the known indexes
         self._concrete_cache = None
+        self._length = array.length
+        self._default = array.default
+
+        #recreate and reuse cache
+        #if isinstance(index, Constant) and isinstance(array, ArrayStore) and array._concrete_cache is not None:
+        #    self._concrete_cache = dict(array._concrete_cache)
+        #    self._concrete_cache[index.value] = value
+
         super().__init__(
             operands=(array, index, value),
             **kwargs,
         )
 
     @property
+    def length(self):
+        return self._length
+
+    @property
     def default(self):
-        return self.array.default
+        return self._default
 
     @property
     def index_size(self):
@@ -1128,9 +1167,6 @@ class ArrayStore(ArrayOperation):
     def value_size(self):
         return self.value.size
 
-    @property
-    def index_max(self):
-        return self.array.index_max
 
     def __hash__(self):
         return object.__hash__(self)
@@ -1159,13 +1195,14 @@ class ArrayStore(ArrayOperation):
         index = simplify(self.cast_index(index))
 
         # Emulate list[-1]
-        if self.index_max is not None:
+        has_length = self.length is not None
+        if has_length:
             index = simplify(
-                BitvecITE(index < 0, self.index_max + index + 1, index)
+                BitvecITE(index < 0, self.length + index, index)
             )
 
         if isinstance(index, Constant):
-            if self.index_max is not None and index.value > self.index_max:
+            if has_length and index.value >= self.length:
                 raise IndexError
             if index.value in self.concrete_cache:
                 return self.concrete_cache[index.value]
@@ -1208,6 +1245,7 @@ class ArrayStore(ArrayOperation):
         value = self.cast_value(value)
         new_array = ArrayStore(self, index, value)
         return new_array
+
 
 
 class ArraySlice(ArrayOperation):

@@ -857,10 +857,7 @@ class ManticoreEVM(ManticoreBase):
         if issymbolic(data):
             if isinstance(data, MutableArray):  # FIXME is this necessary here?
                 data = data.array
-            print ("data:"*10, data)
             data = state.migrate_expression(data)
-            #if isinstance(data, Array):
-            #    data = MutableArray(data)
 
         if issymbolic(gas):
             gas = state.migrate_expression(gas)
