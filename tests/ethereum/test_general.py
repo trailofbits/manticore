@@ -72,7 +72,6 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
         smtcfg = config.get_group("smt")
-        smtcfg.solver = smtcfg.solver.yices
         with smtcfg.temp_vals():
             smtcfg.solver = smtcfg.solver.yices
 
@@ -1778,6 +1777,125 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 value=0,
             )
             self.assertEqual(m.count_ready_states(), 1)
+
+    def test_call_gas(self):
+        GCALLSTATIC = 21721 # 21000 + (3 * 7 push ops) + 700 static cost for call
+        GCALLVALUE = 9000   # cost added for nonzero callvalue
+        GCALLNEW = 25000    # cost added for forcing new acct creation
+        GCALLSTIPEND = 2300 # additional gas sent with a call if value > 0
+
+        with disposable_mevm() as m:
+            # nonempty call target
+            m.create_account(
+                address=0x111111111111111111111111111111111111111,
+                nonce=1   # nonempty account
+            )
+
+            # call(gas, target, value, in_offset, in_size, out_offset, out_size)
+            # call to empty acct with value = 0
+            asm_call_empty_no_val =     """ PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH20 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                                            PUSH1 0x0
+                                            CALL
+                                            STOP
+                                        """
+            # call to existing acct with value > 0
+            asm_call_nonempty_w_val =   """ PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x1
+                                            PUSH20 0x111111111111111111111111111111111111111
+                                            PUSH1 0x0
+                                            CALL
+                                            STOP
+                                        """
+            # call to empty acct with value > 0, forcing addition to state trie
+            asm_call_empty_w_val =      """ PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x1
+                                            PUSH20 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                                            PUSH1 0x0
+                                            CALL
+                                            STOP
+                                        """
+
+            call_empty_no_val = m.create_account(
+                code=EVMAsm.assemble(asm_call_empty_no_val)
+            )
+            call_nonempty_w_val = m.create_account(
+                balance=100,
+                code=EVMAsm.assemble(asm_call_nonempty_w_val)
+            )
+            call_empty_w_val = m.create_account(
+                balance=100,
+                code=EVMAsm.assemble(asm_call_empty_w_val)
+            )
+
+            caller = m.create_account(
+                address=0x222222222222222222222222222222222222222,
+                balance=1000000000000000000
+            )
+
+            # call to empty acct with value = 0
+            m.transaction(
+                caller=caller,
+                address=call_empty_no_val,
+                data=b'',
+                value=0,
+                gas=50000000
+            )
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # no value, so no call stipend should be sent
+            self.assertEqual(txs[-2].gas, 0)
+            # no value, so only static call cost should be charged
+            self.assertEqual(txs[-1].used_gas, GCALLSTATIC)
+
+            # call to existing acct with value > 0
+            m.transaction(
+                caller=caller,
+                address=call_nonempty_w_val,
+                data=b'',
+                value=0,
+                gas=50000000
+            )
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # call stipend should be sent with call
+            self.assertEqual(txs[-2].gas, GCALLSTIPEND)
+            # cost of call should include value cost, but not new acct cost
+            self.assertEqual(
+                txs[-1].used_gas,
+                GCALLSTATIC + GCALLVALUE - GCALLSTIPEND
+            )
+
+            # call to empty acct with value > 0, forcing addition to state trie
+            m.transaction(
+                caller=caller,
+                address=call_empty_w_val,
+                data=b'',
+                value=0,
+                gas=50000000
+            )
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # call stipend should be sent with call
+            self.assertEqual(txs[-2].gas, GCALLSTIPEND)
+            # cost of call should include value cost and new acct cost
+            self.assertEqual(
+                txs[-1].used_gas,
+                GCALLSTATIC + GCALLVALUE + GCALLNEW - GCALLSTIPEND
+            )
 
 
 class EthPluginTests(unittest.TestCase):

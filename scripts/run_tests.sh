@@ -116,7 +116,9 @@ run_tests_from_dir() {
     COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
     echo "Running only the tests from 'tests/$DIR' directory"
     pytest --durations=100 --cov=manticore --cov-config=$GITHUB_WORKSPACE/.coveragerc -n auto "tests/$DIR"
+    RESULT=$?
     coverage xml
+    return $RESULT
 }
 
 run_examples() {

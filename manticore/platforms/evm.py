@@ -2165,7 +2165,7 @@ class EVM(Eventful):
         known_address = False
         for address_i in self.world.accounts:
             known_address = Operators.OR(known_address, address == address_i)
-        fee += Operators.ITEBV(512, Operators.AND(known_address, value == 0), 0, GCALLNEW)
+        fee += Operators.ITEBV(512, Operators.OR(known_address, value == 0), 0, GCALLNEW)
         fee += self._get_memfee(in_offset, in_size)
 
         exception = False

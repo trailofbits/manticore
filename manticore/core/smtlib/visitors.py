@@ -6,6 +6,7 @@ import copy
 import logging
 import operator
 import math
+import threading
 from decimal import Decimal
 
 logger = logging.getLogger(__name__)
@@ -413,13 +414,9 @@ class ConstantFolderSimplifier(Visitor):
     visit_BitVecOperation = _visit_operation
 
 
-constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
-
-
 @lru_cache(maxsize=128, typed=True)
 def constant_folder(expression):
-    global constant_folder_simplifier_cache
-    simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
+    simp = ConstantFolderSimplifier()
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
@@ -821,13 +818,9 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-arithmetic_simplifier_cache = CacheDict(max_size=250000, flush_perc=25)
-
-
 @lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
-    global arithmetic_simplifier_cache
-    simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
+    simp = ArithmeticSimplifier()
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
@@ -867,6 +860,7 @@ class TranslatorSmtlib(Translator):
     """
 
     unique = 0
+    unique_lock = threading.Lock()
 
     def __init__(self, use_bindings=False, *args, **kw):
         assert "bindings" not in kw
@@ -882,7 +876,8 @@ class TranslatorSmtlib(Translator):
         if smtlib in self._bindings_cache:
             return self._bindings_cache[smtlib]
 
-        TranslatorSmtlib.unique += 1
+        with TranslatorSmtlib.unique_lock:
+            TranslatorSmtlib.unique += 1
         name = "a_%d" % TranslatorSmtlib.unique
 
         self._bindings.append((name, expression, smtlib))
