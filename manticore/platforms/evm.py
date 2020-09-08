@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 consts = config.get_group("evm")
 DEFAULT_FORK = "istanbul"
 
+
 def globalexp(data):
     if issymbolic(data):
         return None
@@ -74,6 +75,7 @@ def globalexp(data):
 
     return base ** exp
 
+
 def globalsha3(data):
     if issymbolic(data):
         return None
@@ -83,6 +85,12 @@ def globalsha3(data):
 def globalfakesha3(data):
     return None
 
+
+consts.add(
+    "symbolicexp",
+    default=False,
+    description="If enabled treat EXP as a source of symbolic imprecision",
+)
 
 consts.add(
     "oog",
@@ -120,7 +128,9 @@ consts.add(
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 consts.add(
-    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
 )
 
 
@@ -1316,6 +1326,7 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
+            print(self)
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             result = self._handler(*arguments)
@@ -1553,18 +1564,26 @@ class EVM(Eventful):
         :param exponent: exponent value, concretized with sampled values
         :return: BitVec* EXP result
         """
-        if issymbolic(base) or issymbolic(exponent):
-            data = self.constraints.new_array(index_bits=8, value_bits=8, index_max=64)
-            data = data.write_BE(0, base, 32)
-            data = data.write_BE (32, exponent, 32)
-        else:
-            data = bytearray()
-            for i in reversed(range(256, 8)):
-                b += data.append((base >> i) & 0xff)
-            for i in reversed(range(256, 8)):
-                b += data.append((exponent >> i) & 0xff)
+        if const.symbolicexp:
+            if issymbolic(base) or issymbolic(exponent):
+                data = self.constraints.new_array(index_bits=8, value_bits=8, index_max=64)
+                data = data.write_BE(0, base, 32)
+                data = data.write_BE(32, exponent, 32)
+            else:
+                data = bytearray()
+                for i in reversed(range(256, 8)):
+                    b += data.append((base >> i) & 0xFF)
+                for i in reversed(range(256, 8)):
+                    b += data.append((exponent >> i) & 0xFF)
 
-        return self.world.symbolic_function(globalexp, data)
+            return self.world.symbolic_function(globalexp, data)
+        else:
+            result = 1
+            for i in range(256):
+                result = Operators.ITEBV(256, exponent & 1 == 1, base * result, result)
+                base = base * base
+                exponent = exponent >> 1
+            return result
 
     def SIGNEXTEND(self, size, value):
         """Extend length of two's complement signed integer"""
@@ -1647,9 +1666,9 @@ class EVM(Eventful):
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
         """Compute Keccak-256 hash
-            If the size is symbolic the potential solutions will be sampled as
-            defined by the default policy and the analysis will be forked.
-            The `size` can be considered concrete in this handler.
+        If the size is symbolic the potential solutions will be sampled as
+        defined by the default policy and the analysis will be forked.
+        The `size` can be considered concrete in this handler.
 
         """
         data = self.read_buffer(start, size)
@@ -1715,8 +1734,8 @@ class EVM(Eventful):
         return Operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, offset, size):
-        """ To improve reporting we maintain how much of the calldata is actually
-        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly """
+        """To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly"""
         self._used_calldata_size = Operators.ITEBV(
             256, size != 0, self._used_calldata_size + offset + size, self._used_calldata_size
         )
@@ -2486,7 +2505,7 @@ class EVMWorld(Platform):
         Get an unsound symbolication for function `func`
 
         """
-        #TODO(felipe): Generalize data to a tuple of expresisons
+        # TODO(felipe): Generalize data to a tuple of expresisons
         data = self.try_simplify_to_constant(data)
         try:
             result = []
