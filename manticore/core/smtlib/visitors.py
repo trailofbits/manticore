@@ -10,24 +10,26 @@ from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
+
 class VisitorException(Exception):
     pass
 
+
 class Visitor:
-    """ Class/Type Visitor
+    """Class/Type Visitor
 
-       Inherit your class visitor from this one and get called on a different
-       visiting function for each type of expression. It will call the first
-       implemented method for the __mro__ class order.
-        For example for a BitvecAdd expression this will try
-            visit_BitvecAdd()          if not defined(*) then it will try with
-            visit_BitvecOperation()    if not defined(*) then it will try with
-            visit_Bitvec()             if not defined(*) then it will try with
-            visit_Expression()
+    Inherit your class visitor from this one and get called on a different
+    visiting function for each type of expression. It will call the first
+    implemented method for the __mro__ class order.
+     For example for a BitvecAdd expression this will try
+         visit_BitvecAdd()          if not defined(*) then it will try with
+         visit_BitvecOperation()    if not defined(*) then it will try with
+         visit_Bitvec()             if not defined(*) then it will try with
+         visit_Expression()
 
-        (*) Or it is defined and it returns None for the node.
-        You can overload the visiting method to react to different semantic
-        aspects of an Exrpession.
+     (*) Or it is defined and it returns None for the node.
+     You can overload the visiting method to react to different semantic
+     aspects of an Exrpession.
 
     """
 
@@ -120,15 +122,15 @@ class Visitor:
                     return value
         return self._rebuild(expression, operands)
 
-    def _changed(self, expression:Expression, operands):
+    def _changed(self, expression: Expression, operands):
         return any(x is not y for x, y in zip(expression.operands, operands))
 
-    def _rebuild(self, expression:Operation, operands):
-        """ Default operation used when no visiting method was successful for
-         this expression. If he operands have changed this reubild the curren expression
-         with the new operands.
+    def _rebuild(self, expression: Operation, operands):
+        """Default operation used when no visiting method was successful for
+        this expression. If he operands have changed this reubild the curren expression
+        with the new operands.
 
-         Assumes the stack is used for Expresisons
+        Assumes the stack is used for Expresisons
         """
         if self._changed(expression, operands):
             aux = copy.copy(expression)
@@ -141,10 +143,10 @@ class Visitor:
 
 
 class Translator(Visitor):
-    """ Simple visitor to translate an expression into something else
-    """
+    """Simple visitor to translate an expression into something else"""
+
     def _rebuild(self, expression, operands):
-        """ The stack holds the translation of the expression.
+        """The stack holds the translation of the expression.
         There is no default action
 
         :param expression: Current expression
@@ -155,9 +157,10 @@ class Translator(Visitor):
 
 
 class GetDeclarations(Translator):
-    """ Simple visitor to collect all variables in an expression or set of
-        expressions
+    """Simple visitor to collect all variables in an expression or set of
+    expressions
     """
+
     def _rebuild(self, expression, operands):
         return expression
 
@@ -174,9 +177,10 @@ class GetDeclarations(Translator):
 
 
 class GetDepth(Translator):
-    """ Simple visitor to collect all variables in an expression or set of
-        expressions
+    """Simple visitor to collect all variables in an expression or set of
+    expressions
     """
+
     def _rebuild(self, expression, operands):
         return expression
 
@@ -244,7 +248,6 @@ class PrettyPrinter(Visitor):
     def visit_Constant(self, expression):
         self._print(expression.value)
         return True
-
 
     def visit_Variable(self, expression):
         self._print(expression.name)
@@ -395,7 +398,6 @@ def constant_folder(expression):
 
 
 class ArithmeticSimplifier(Visitor):
-
     @staticmethod
     def _same_constant(a, b):
         return isinstance(a, Constant) and isinstance(b, Constant) and a.value == b.value or a is b
@@ -463,9 +465,9 @@ class ArithmeticSimplifier(Visitor):
             return operands[0].operands[0]
 
     def visit_BoolEqual(self, expression, *operands):
-        """ (EQ, ITE(cond, constant1, constant2), constant1) -> cond
-            (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
-            (EQ (extract a, b, c) (extract a, b, c))
+        """(EQ, ITE(cond, constant1, constant2), constant1) -> cond
+        (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
+        (EQ (extract a, b, c) (extract a, b, c))
         """
         if isinstance(operands[0], BitvecITE) and isinstance(operands[1], Constant):
             if isinstance(operands[0].operands[1], Constant) and isinstance(
@@ -523,9 +525,9 @@ class ArithmeticSimplifier(Visitor):
             return BitvecITE(*operands, taint=expression.taint)
 
     def visit_BitvecConcat(self, expression, *operands):
-        """ concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
-            concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
-            concat( x , extract(k1, beg, a), extract(end, k1, a), z)  ==> concat( x , extract(k1, beg, a), extract(end, k1, a), z)
+        """concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
+        concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
+        concat( x , extract(k1, beg, a), extract(end, k1, a), z)  ==> concat( x , extract(k1, beg, a), extract(end, k1, a), z)
         """
         if len(operands) == 1:
             return operands[0]
@@ -589,9 +591,9 @@ class ArithmeticSimplifier(Visitor):
         return value
 
     def visit_BitvecExtract(self, expression, *operands):
-        """ extract(sizeof(a), 0)(a)  ==> a
-            extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
-            extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
+        """extract(sizeof(a), 0)(a)  ==> a
+        extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
+        extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
         """
         op = operands[0]
         begining = expression.begining
@@ -638,8 +640,8 @@ class ArithmeticSimplifier(Visitor):
             )
 
     def visit_BitvecAdd(self, expression, *operands):
-        """ a + 0  ==> a
-            0 + a  ==> a
+        """a + 0  ==> a
+        0 + a  ==> a
         """
         left = operands[0]
         right = operands[1]
@@ -651,9 +653,9 @@ class ArithmeticSimplifier(Visitor):
                 return right
 
     def visit_BitvecSub(self, expression, *operands):
-        """ a - 0 ==> 0
-            (a + b) - b  ==> a
-            (b + a) - b  ==> a
+        """a - 0 ==> 0
+        (a + b) - b  ==> a
+        (b + a) - b  ==> a
         """
         left = operands[0]
         right = operands[1]
@@ -676,10 +678,10 @@ class ArithmeticSimplifier(Visitor):
                 )
 
     def visit_BitvecOr(self, expression, *operands):
-        """ a | 0 => a
-            0 | a => a
-            0xffffffff & a => 0xffffffff
-            a & 0xffffffff => 0xffffffff
+        """a | 0 => a
+        0 | a => a
+        0xffffffff & a => 0xffffffff
+        a & 0xffffffff => 0xffffffff
 
         """
         left = operands[0]
@@ -698,11 +700,11 @@ class ArithmeticSimplifier(Visitor):
             return BitvecOr(right, left, taint=expression.taint)
 
     def visit_BitvecAnd(self, expression, *operands):
-        """ ct & x => x & ct                move constants to the right
-            a & 0 => 0                      remove zero
-            a & 0xffffffff => a             remove full mask
-            (b & ct2) & ct => b & (ct&ct2)  associative property
-            (a & (b | c) => a&b | a&c       distribute over |
+        """ct & x => x & ct                move constants to the right
+        a & 0 => 0                      remove zero
+        a & 0xffffffff => a             remove full mask
+        (b & ct2) & ct => b & (ct&ct2)  associative property
+        (a & (b | c) => a&b | a&c       distribute over |
         """
         left = operands[0]
         right = operands[1]
@@ -725,8 +727,8 @@ class ArithmeticSimplifier(Visitor):
             return BitvecAnd(right, left, taint=expression.taint)
 
     def visit_BitvecShiftLeft(self, expression, *operands):
-        """ a << 0 => a                       remove zero
-            a << ct => 0 if ct > sizeof(a)    remove big constant shift
+        """a << 0 => a                       remove zero
+        a << ct => 0 if ct > sizeof(a)    remove big constant shift
         """
         left = operands[0]
         right = operands[1]
@@ -737,8 +739,8 @@ class ArithmeticSimplifier(Visitor):
                 return left
 
     def visit_ArraySelect(self, expression, *operands):
-        """ ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
-                -> v0
+        """ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
+        -> v0
         """
         return None
         arr, index = operands
@@ -789,8 +791,8 @@ def arithmetic_simplify(expression):
 
 def to_constant(expression):
     """
-        Iff the expression can be simplified to a Constant get the actual concrete value.
-        This discards/ignore any taint
+    Iff the expression can be simplified to a Constant get the actual concrete value.
+    This discards/ignore any taint
     """
     if isinstance(expression, MutableArray):
         expression = expression.array
@@ -819,8 +821,7 @@ def simplify(expression):
 
 
 class TranslatorSmtlib(Translator):
-    """ Simple visitor to translate an expression to its smtlib representation
-    """
+    """Simple visitor to translate an expression to its smtlib representation"""
 
     unique = 0
 
@@ -831,7 +832,6 @@ class TranslatorSmtlib(Translator):
         self._bindings_cache = {}
         self._bindings = []
         self._variables = set()
-
 
     def _add_binding(self, expression, smtlib):
         if not self.use_bindings or len(smtlib) <= 10:
@@ -932,7 +932,7 @@ class TranslatorSmtlib(Translator):
         return output
 
     def declarations(self):
-        result = ''
+        result = ""
         for exp in self._variables:
             if isinstance(exp, Bitvec):
                 result += f"(declare-fun {exp.name} () (_ BitVec {exp.size}))\n"

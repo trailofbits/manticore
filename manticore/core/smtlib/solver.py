@@ -168,7 +168,7 @@ Version = collections.namedtuple("Version", "major minor patch")
 
 class SmtlibProc:
     def __init__(self, command: str, debug: bool = False):
-        """ Single smtlib interactive process
+        """Single smtlib interactive process
 
         :param command: the shell command to execute
         :param debug: log all messaging
@@ -214,7 +214,7 @@ class SmtlibProc:
         assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # If debug is enabled check if the solver reports a syntax error
-        #print (">",buf)
+        # print (">",buf)
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
@@ -227,7 +227,7 @@ class SmtlibProc:
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        #print ("<",cmd)
+        # print ("<",cmd)
         if self._debug:
             logger.debug(">%s", cmd)
         self._proc.stdout.flush()  # type: ignore
@@ -422,20 +422,23 @@ class SMTLIBSolver(Solver):
                                 value.append(variable_i)
                         value = bytes(value)
                     else:
-                        #Only works if we know the max index of the arrray
+                        # Only works if we know the max index of the arrray
                         used_indexes = map(self.__getvalue_bv, variable.written)
                         valued = {}
                         for i in used_indexes:
                             valued[i] = self.__getvalue_bv(variable[i])
+
                         class A:
                             def __init__(self, d, default):
                                 self._d = d
                                 self._default = default
+
                             def __getitem__(self, index):
                                 return self._d.get(index, self._default)
-                        value = A(valued,variable.default)
+
+                        value = A(valued, variable.default)
                 except Exception as e:
-                    value = None #We failed to get the model from the solver
+                    value = None  # We failed to get the model from the solver
 
             model[variable.name] = value
         return model
@@ -622,7 +625,7 @@ class SMTLIBSolver(Solver):
             temp_cs.add(operation(X, aux))
             self._reset(temp_cs.to_string())
 
-            #self._assert(operation(X, aux))
+            # self._assert(operation(X, aux))
             self._smtlib.send("(%s %s)" % (goal, aux.name))
             self._smtlib.send("(check-sat)")
             _status = self._smtlib.recv()
@@ -635,13 +638,13 @@ class SMTLIBSolver(Solver):
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
-        self._cache = getattr(self, '_cache', {})
+        self._cache = getattr(self, "_cache", {})
         model = self.get_model(constraints)
 
         ####################33
         values = []
         start = time.time()
-        #with constraints.related_to(*expressions) as temp_cs:
+        # with constraints.related_to(*expressions) as temp_cs:
         with constraints as temp_cs:
             for expression in expressions:
                 bucket = self._cache.setdefault(hash(constraints), {})
@@ -706,8 +709,6 @@ class SMTLIBSolver(Solver):
                 bucket[hash(expression)] = values[-1]
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
-
-
 
         if len(expressions) == 1:
             return values[0]
