@@ -2377,7 +2377,9 @@ class Linux(Platform):
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             if issymbolic(size):
+                self._publish("will_solve", self.constraints, size, "get_value")
                 size = SelectedSolver.instance().get_value(self.constraints, size)
+                self._publish("did_solve", self.constraints, size, "get_value", size)
 
             data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
@@ -3402,7 +3404,9 @@ class SLinux(Linux):
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
+                self._publish("will_solve", self.constraints, c, "get_value")
                 c = bytes([SelectedSolver.instance().get_value(self.constraints, c)])
+                self._publish("did_solve", self.constraints, c, "get_value", c)
             concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
@@ -3435,7 +3439,9 @@ class SLinux(Linux):
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
+            self._publish("will_solve", self.constraints, error_code, "get_value")
             error_code = SelectedSolver.instance().get_value(self.constraints, error_code)
+            self._publish("did_solve", self.constraints, error_code, "get_value", error_code)
             return self._exit(
                 f"Program finished with exit status: {ctypes.c_int32(error_code).value} (*)"
             )
@@ -3650,7 +3656,9 @@ class SLinux(Linux):
             try:
                 for c in data:
                     if issymbolic(c):
+                        self._publish("will_solve", self.constraints, c, "get_value")
                         c = SelectedSolver.instance().get_value(self.constraints, c)
+                        self._publish("did_solve", self.constraints, c, "get_value", c)
                     fd.write(make_chr(c))
             except SolverError:
                 fd.write("{SolverError}")

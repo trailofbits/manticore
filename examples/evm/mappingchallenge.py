@@ -29,7 +29,7 @@ print("Source code:\n", source_code)
 class StopAtDepth(Detector):
     """ This just aborts explorations that are too deep """
 
-    def will_start_run_callback(self, *args):
+    def will_run_callback(self, *args):
         with self.manticore.locked_context("seen_rep", dict) as reps:
             reps.clear()
 

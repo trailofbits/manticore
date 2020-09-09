@@ -647,6 +647,7 @@ class EVM(Eventful):
         "evm_write_code",
         "decode_instruction",
         "on_unsound_symbolication",
+        "solve",
     }
 
     class transact:
@@ -1239,8 +1240,16 @@ class EVM(Eventful):
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
+            self._publish("will_solve", self.constraints, should_check_jumpdest, "get_all_values")
             should_check_jumpdest_solutions = SelectedSolver.instance().get_all_values(
                 self.constraints, should_check_jumpdest
+            )
+            self._publish(
+                "did_solve",
+                self.constraints,
+                should_check_jumpdest,
+                "get_all_values",
+                should_check_jumpdest_solutions,
             )
             if len(should_check_jumpdest_solutions) != 1:
                 raise EthereumError("Conditional not concretized at JMPDEST check")
@@ -1727,7 +1736,10 @@ class EVM(Eventful):
         if consts.oog == "complete":
             # gas reduced #??
             cond = Operators.ULT(self.gas, self._checkpoint_data[1])
-            if not SelectedSolver.instance().can_be_true(self.constraints, cond):
+            self._publish("will_solve", self.constraints, cond, "can_be_true")
+            enough_gas = SelectedSolver.instance().can_be_true(self.constraints, cond)
+            self._publish("did_solve", self.constraints, cond, "can_be_true", enough_gas)
+            if not enough_gas:
                 raise NotEnoughGas()
             self.constraints.add(cond)
 
@@ -1736,7 +1748,9 @@ class EVM(Eventful):
 
         max_size = size
         if issymbolic(max_size):
+            self._publish("will_solve", self.constraints, size, "max")
             max_size = SelectedSolver.instance().max(self.constraints, size)
+            self._publish("did_solve", self.constraints, size, "max", max_size)
 
         if calldata_overflow is not None:
             cap = len(self.data) + calldata_overflow
@@ -1784,7 +1798,9 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
+            self._publish("will_solve", self.constraints, size, "max")
             max_size = SelectedSolver.instance().max(self.constraints, size)
+            self._publish("did_solve", self.constraints, size, "max", max_size)
         else:
             max_size = size
 
@@ -2392,6 +2408,7 @@ class EVMWorld(Platform):
         "open_transaction",
         "close_transaction",
         "symbolic_function",
+        "solve",
     }
 
     def __init__(self, constraints, fork=DEFAULT_FORK, **kwargs):
@@ -2449,8 +2466,12 @@ class EVMWorld(Platform):
                 concrete_data.append(simplified.value)
             else:
                 # simplify by solving. probably means that we need to improve simplification
+                self._publish("will_solve", self.constraints, simplified, "get_all_values")
                 solutions = SelectedSolver.instance().get_all_values(
                     self.constraints, simplified, 2, silent=True
+                )
+                self._publish(
+                    "did_solve", self.constraints, simplified, "get_all_values", solutions
                 )
                 if len(solutions) != 1:
                     break
@@ -2474,7 +2495,9 @@ class EVMWorld(Platform):
             return result[0]
         except Exception as e:
             logger.info("Error! %r", e)
+            self._publish("will_solve", self.constraints, data, "get_value")
             data_c = SelectedSolver.instance().get_value(self.constraints, data)
+            self._publish("did_solve", self.constraints, data, "get_value", data_c)
             return int(sha3.keccak_256(data_c).hexdigest(), 16)
 
     @property
@@ -3427,7 +3450,9 @@ class EVMWorld(Platform):
                     # temp_cs.add(storage.get(index) != 0)
                     temp_cs.add(storage.is_known(index))
                     # Query the solver to get all storage indexes with used slots
+                    self._publish("will_solve", temp_cs, index, "get_all_values")
                     all_used_indexes = SelectedSolver.instance().get_all_values(temp_cs, index)
+                    self._publish("did_solve", temp_cs, index, "get_all_values", all_used_indexes)
 
                 if all_used_indexes:
                     stream.write("Storage:\n")

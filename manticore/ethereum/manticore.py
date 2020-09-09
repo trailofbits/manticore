@@ -4,7 +4,6 @@ import logging
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from typing import Dict, Optional, Union
-from enum import Enum
 import io
 import pyevmasm as EVMAsm
 import random
@@ -13,7 +12,7 @@ import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
 
-from ..core.manticore import ManticoreBase, Testcase, ManticoreError
+from ..core.manticore import ManticoreBase, ManticoreError
 
 from ..core.smtlib import (
     ConstraintSet,
@@ -22,41 +21,24 @@ from ..core.smtlib import (
     BitVec,
     Operators,
     BoolConstant,
-    BoolOperation,
     Expression,
     issymbolic,
-    simplify,
     SelectedSolver,
 )
-from ..core.state import TerminateState, AbandonState
+from ..core.state import AbandonState
 from .account import EVMContract, EVMAccount, ABI
 from .detectors import Detector
 from .solidity import SolidityMetadata
 from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
-from ..utils import config, log
+from ..utils import config
 from ..utils.deprecated import deprecated
+from ..utils.enums import Sha3Type
 from ..utils.helpers import PickleSerializer, printable_bytes
 
 logger = logging.getLogger(__name__)
 logging.getLogger("CryticCompile").setLevel(logging.ERROR)
-
-
-class Sha3Type(Enum):
-    """Used as configuration constant for choosing sha3 flavor"""
-
-    concretize = "concretize"
-    symbolicate = "symbolicate"
-    fake = "fake"
-
-    def title(self):
-        return self._name_.title()
-
-    @classmethod
-    def from_string(cls, name):
-        return cls.__members__[name]
-
 
 consts = config.get_group("evm")
 consts.add("defaultgas", 3000000, "Default gas value for ethereum transactions.")
@@ -134,6 +116,8 @@ class ManticoreEVM(ManticoreBase):
 
             m.finalize()
     """
+
+    _published_events = {"solve"}
 
     def make_symbolic_buffer(self, size, name=None, avoid_collisions=False):
         """ Creates a symbolic buffer of size bytes to be used in transactions.
@@ -336,10 +320,13 @@ class ManticoreEVM(ManticoreBase):
         if isinstance(source_code, io.IOBase):
             source_code = source_code.name
 
-        if (isinstance(source_code, str) and
-                not is_supported(source_code) and
-                # Until https://github.com/crytic/crytic-compile/issues/103 is implemented
-                "ignore_compile" not in crytic_compile_args):
+        if (
+            isinstance(source_code, str)
+            and not is_supported(source_code)
+            and
+            # Until https://github.com/crytic/crytic-compile/issues/103 is implemented
+            "ignore_compile" not in crytic_compile_args
+        ):
             with tempfile.NamedTemporaryFile("w+", suffix=".sol") as temp:
                 temp.write(source_code)
                 temp.flush()
@@ -589,7 +576,22 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = b""
                     # Balance could be symbolic, lets ask the solver
                     # Option 1: balance can not be 0 and the function is marked as not payable
-                    if not SelectedSolver.instance().can_be_true(self.constraints, balance == 0):
+                    maybe_balance = balance == 0
+                    self._publish(
+                        "will_solve", None, self.constraints, maybe_balance, "can_be_true"
+                    )
+                    must_have_balance = SelectedSolver.instance().can_be_true(
+                        self.constraints, maybe_balance
+                    )
+                    self._publish(
+                        "did_solve",
+                        None,
+                        self.constraints,
+                        maybe_balance,
+                        "can_be_true",
+                        must_have_balance,
+                    )
+                    if not must_have_balance:
                         # balance always != 0
                         if not md.constructor_abi["payable"]:
                             raise EthereumError(
@@ -600,10 +602,14 @@ class ManticoreEVM(ManticoreBase):
                     for state in self.ready_states:
                         world = state.platform
 
-                        if not SelectedSolver.instance().can_be_true(
-                            self.constraints,
-                            Operators.UGE(world.get_balance(owner.address), balance),
-                        ):
+                        expr = Operators.UGE(world.get_balance(owner.address), balance)
+                        self._publish("will_solve", None, self.constraints, expr, "can_be_true")
+                        sufficient = SelectedSolver.instance().can_be_true(self.constraints, expr,)
+                        self._publish(
+                            "did_solve", None, self.constraints, expr, "can_be_true", sufficient
+                        )
+
+                        if not sufficient:
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"because the owner account ({owner}) has insufficient balance."
@@ -1168,8 +1174,7 @@ class ManticoreEVM(ManticoreBase):
             while saved_states:
                 state_id = saved_states.pop()
                 if state_id in self._terminated_states:
-                    self._terminated_states.remove(state_id)
-                    self._ready_states.append(state_id)
+                    self._revive_state(state_id)
 
     # Callbacks
     def _on_concretize(self, state, func, data, result):
@@ -1803,7 +1808,7 @@ class ManticoreEVM(ManticoreBase):
                 for i in EVMAsm.disassemble_all(runtime_bytecode):
                     if (address, i.pc) in seen:
                         count += 1
-                        globalmanticore / ethereum / manticore.py_runtime_asm.write("*")
+                        global_runtime_asm.write("*")
                     else:
                         global_runtime_asm.write(" ")
 
@@ -1900,7 +1905,7 @@ class ManticoreEVM(ManticoreBase):
         """
         self.fix_unsound_all()
         _ready_states = self._ready_states
-        for state_id in _all_states:
+        for state_id in _ready_states:
             state = self._load(state_id)
             if self.fix_unsound_symbolication(state):
                 yield state

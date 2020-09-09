@@ -87,8 +87,7 @@ class ManticoreWASM(ManticoreBase):
             with self.locked_context("wasm.saved_states", list) as saved_states:
                 while saved_states:
                     state_id = saved_states.pop()
-                    self._terminated_states.remove(state_id)
-                    self._ready_states.append(state_id)
+                    self._revive_state(state_id)
 
             if argv_generator is not None:
                 self.invoke(item, argv_generator)
@@ -156,27 +155,13 @@ class ManticoreWASM(ManticoreBase):
                 ret = None
                 if not p.stack.empty():
                     ret = p.stack.pop()
+                # TODO - eventually we'll need to support floats as well.
+                # That'll probably require us to subclass bitvecs into IxxBV and FxxBV
                 if issymbolic(ret):
                     if ret.size == 32:
-                        inner.append(
-                            list(
-                                I32(a)  # TODO - eventually we'll need to support floats as well.
-                                for a in SelectedSolver.instance().get_all_values(
-                                    state.constraints, ret
-                                )
-                            )
-                        )
+                        inner.append(list(I32(a) for a in state.solve_n(ret, n)))
                     elif ret.size == 64:
-                        inner.append(
-                            list(
-                                I64(
-                                    a
-                                )  # TODO - that'll probably require us to subclass bitvecs into IxxBV and FxxBV
-                                for a in SelectedSolver.instance().get_all_values(
-                                    state.constraints, ret
-                                )
-                            )
-                        )
+                        inner.append(list(I64(a) for a in state.solve_n(ret, n)))
                 else:
                     inner.append([ret])
             outer.append(inner)
@@ -205,8 +190,7 @@ class ManticoreWASM(ManticoreBase):
         with self.locked_context("wasm.saved_states", list) as saved_states:
             while saved_states:
                 state_id = saved_states.pop()
-                self._terminated_states.remove(state_id)
-                self._ready_states.append(state_id)
+                self._revive_state(state_id)
 
     def generate_testcase(self, state, message="test", name="test"):
         testcase = super().generate_testcase(state, message)

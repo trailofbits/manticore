@@ -10,7 +10,7 @@ import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from .state import HookCallback, State
+from .state import HookCallback, State, TerminateState
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet
 from ..core.smtlib.solver import SelectedSolver, issymbolic
@@ -191,7 +191,7 @@ class Manticore(ManticoreBase):
         # This will interpret the buffer specification written in INTEL ASM.
         # (It may dereference pointers)
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
-        if not SelectedSolver.instance().can_be_true(state.constraints, assertion):
+        if not state.can_be_true(assertion):
             logger.info(str(state.cpu))
             logger.info(
                 "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.pc, program
@@ -397,6 +397,8 @@ def _make_linux(
     concrete_start="",
     pure_symbolic=False,
     stdin_size=None,
+    *args,
+    **kwargs,
 ) -> State:
     from ..platforms import linux
 
