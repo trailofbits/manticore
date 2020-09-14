@@ -29,7 +29,13 @@ jobs:
         git fetch --depth=1 origin $BASE_SHA
         echo "Files Changed:"
         git diff --name-only $BASE_SHA... | tee .diff_names.txt
-        cat .diff_names.txt | python scripts/pyfile_exists.py | xargs black --diff --check
+        NAMES=$(cat .diff_names.txt | python scripts/pyfile_exists.py)
+        if test -z $NAMES
+        then
+          black --diff --check .
+        else
+          echo $NAMES | xargs black --diff --check
+        fi
         mypy --version
         mypy
   tests:
@@ -103,5 +109,3 @@ jobs:
       uses: pypa/gh-action-pypi-publish@v1.2.2
       with:
         password: ${{ secrets.PYPI_UPLOAD }}
-
-

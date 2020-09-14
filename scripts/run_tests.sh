@@ -4,13 +4,13 @@ launch_examples() {
     # concolic assumes presence of ../linux/simpleassert
     echo "Running concolic.py..."
     HW=../linux/helloworld
-    coverage run ./concolic.py
+    coverage run --append ./concolic.py
     if [ $? -ne 0 ]; then
         return 1
     fi
 
     echo "Running count_instructions.py..."
-    coverage run ./count_instructions.py $HW |grep -q Executed
+    coverage run --append ./count_instructions.py $HW |grep -q Executed
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -19,21 +19,21 @@ launch_examples() {
     gcc -static -g src/state_explore.c -o state_explore
     ADDRESS=0x$(objdump -S state_explore | grep -A 1 '((value & 0xff) != 0)' |
             tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
-    coverage run ./introduce_symbolic_bytes.py state_explore $ADDRESS
+    coverage run --append ./introduce_symbolic_bytes.py state_explore $ADDRESS
     if [ $? -ne 0 ]; then
         return 1
     fi
 
     echo "Running run_simple.py..."
     gcc -x c -static -o hello test_run_simple.c
-    coverage run ./run_simple.py hello
+    coverage run --append ./run_simple.py hello
     if [ $? -ne 0 ]; then
         return 1
     fi
 
     echo "Running run_hook.py..."
     MAIN_ADDR=$(nm $HW|grep 'T main' | awk '{print "0x"$1}')
-    coverage run ./run_hook.py $HW $MAIN_ADDR
+    coverage run --append ./run_hook.py $HW $MAIN_ADDR
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -43,7 +43,7 @@ launch_examples() {
     gcc -static -g src/state_explore.c -o state_explore
     SE_ADDR=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' |
                tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
-    coverage run ./state_control.py state_explore $SE_ADDR
+    coverage run --append ./state_control.py state_explore $SE_ADDR
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -105,9 +105,8 @@ run_truffle_tests(){
         return 1
     fi
     echo "Truffle test succeded"
-    coverage xml
     cd ..
-    cp truffle_tests/coverage.xml .
+    cp truffle_tests/.coverage .
     return 0
 }
 
@@ -117,7 +116,6 @@ run_tests_from_dir() {
     echo "Running only the tests from 'tests/$DIR' directory"
     pytest --durations=100 --cov=manticore --cov-config=$GITHUB_WORKSPACE/.coveragerc -n auto "tests/$DIR"
     RESULT=$?
-    coverage xml
     return $RESULT
 }
 
@@ -134,9 +132,8 @@ run_examples() {
     launch_examples
     RESULT=$?
     echo Ran example scripts
-    coverage xml
     popd
-    cp examples/script/coverage.xml .
+    cp examples/script/.coverage .
     return $RESULT
 }
 

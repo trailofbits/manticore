@@ -4,7 +4,7 @@ to be compatible with it.
 """
 from prettytable import PrettyTable
 
-from ..ethereum.detectors import DetectorClassification
+from .enums import DetectorClassification
 
 classification_txt = {
     DetectorClassification.INFORMATIONAL: "Informational",

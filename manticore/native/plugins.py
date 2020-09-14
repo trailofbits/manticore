@@ -10,7 +10,7 @@ class Merger(Plugin):
         p = self.manticore._publish
         self.manticore._publish = lambda *args, **kwargs: None
         for state in self.manticore.ready_states:
-            self.did_fork_state_callback(state, None, None, None)
+            self.did_fork_state_callback(state, None, None, None, None)
 
         self.manticore._publish = p
 
@@ -30,9 +30,7 @@ class Merger(Plugin):
         :param state_id: state-id for state that is being deleted
         :return: None
         """
-        with self.manticore._lock:
-            self.manticore._ready_states.remove(state_id)
-            self.manticore._remove(state_id)
+        self.manticore.kill_state(state_id, delete=True)
 
     def replace_state(self, state_id, state):
         """
@@ -43,7 +41,7 @@ class Merger(Plugin):
         """
         return self.manticore._save(state, state_id=state_id)
 
-    def did_fork_state_callback(self, state, expression, new_value, policy):
+    def did_fork_state_callback(self, state, expression, new_value, policy, children):
         state_id = state.id
         """That means no one else has to offer one Message Input
 

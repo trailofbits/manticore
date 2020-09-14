@@ -42,4 +42,5 @@ class State(StateBase):
         return frame.locals
 
     def execute(self):
+        super().execute()
         return self._platform.execute(self)

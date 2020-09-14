@@ -55,7 +55,7 @@ class ConcreteUnicornEmulator:
     implementations in Manticore. This Emulator is instead intended to completely replace Manticore's executor when
     operating on purely concrete data.
 
-    To use the emulator, register a callback for the will_start_run event that calls `state.cpu.emulate_until` with an
+    To use the emulator, register a callback for the will_run event that calls `state.cpu.emulate_until` with an
     address at which it should switch back from Unicorn to Manticore. Passing 0 will result in the entire target being
     executed concretely.
 
