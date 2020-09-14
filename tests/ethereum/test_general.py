@@ -1896,10 +1896,10 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             # nonempty call target
             nonempty = m.create_account(address=0x1111111111111111111111111111111111111111, nonce=1)
 
-            asm_sd_empty =  """ PUSH20 0xffffffffffffffffffffffffffffffffffffffff
+            asm_sd_empty = """ PUSH20 0xffffffffffffffffffffffffffffffffffffffff
                                 SELFDESTRUCT
                             """
-            asm_sd_nonempty =   """ PUSH20 0x1111111111111111111111111111111111111111
+            asm_sd_nonempty = """ PUSH20 0x1111111111111111111111111111111111111111
                                     SELFDESTRUCT
                                 """
 
