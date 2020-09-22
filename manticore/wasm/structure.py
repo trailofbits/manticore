@@ -348,7 +348,7 @@ class Module:
         :param filename: name of the WASM module
         :return: Module
         """
-        type_map = {-16: types.FunctionType, -4: F64, -3: F32, -2: I64, -1: I32}
+        type_map = {-16: FunctionType, -4: F64, -3: F32, -2: I64, -1: I32}
 
         m: Module = cls()
         with open(filename, "rb") as wasm_file:
