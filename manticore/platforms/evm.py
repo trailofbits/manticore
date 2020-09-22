@@ -2157,10 +2157,9 @@ class EVM(Eventful):
         GCALLNEW = 25000
         wanted_gas = Operators.ZEXTEND(wanted_gas, 512)
         fee = Operators.ITEBV(512, value == 0, 0, GCALLVALUE)
-        known_address = False
-        for address_i in self.world.accounts:
-            known_address = Operators.OR(known_address, address == address_i)
-        fee += Operators.ITEBV(512, Operators.OR(known_address, value == 0), 0, GCALLNEW)
+        fee += Operators.ITEBV(
+            512, Operators.OR(self.world.account_exists(address), value == 0), 0, GCALLNEW
+        )
         fee += self._get_memfee(in_offset, in_size)
 
         exception = False
@@ -2294,7 +2293,7 @@ class EVM(Eventful):
         CreateBySelfdestructGas = 25000
         SelfdestructRefundGas = 24000
         fee = 0
-        if recipient not in self.world and self.world.get_balance(self.address) != 0:
+        if not self.world.account_exists(recipient) and self.world.get_balance(self.address) != 0:
             fee += CreateBySelfdestructGas
 
         if self.address not in self.world._deleted_accounts:
@@ -2919,6 +2918,15 @@ class EVMWorld(Platform):
         if address not in self._world_state:
             return 0
         return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
+
+    def account_exists(self, address):
+        if address not in self._world_state:
+            return False  # accounts default to nonexistent
+        return (
+            self.has_code(address)
+            or Operators.UGT(self.get_nonce(address), 0)
+            or Operators.UGT(self.get_balance(address), 0)
+        )
 
     def add_to_balance(self, address, value):
         if isinstance(value, BitVec):

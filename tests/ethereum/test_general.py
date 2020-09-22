@@ -1435,6 +1435,20 @@ class EthHelpersTest(unittest.TestCase):
         # wasn't requested.
         inner_func(None, self.bv, 123)
 
+    def test_account_exists(self):
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints)
+        default = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        empty = world.create_account(nonce=0, balance=0, code=b"")
+        has_code = world.create_account(nonce=0, balance=0, code=b"ff")
+        has_nonce = world.create_account(nonce=1, balance=0, code=b"")
+        has_balance = world.create_account(nonce=0, balance=1, code=b"")
+        self.assertTrue(world.account_exists(has_code))
+        self.assertTrue(world.account_exists(has_nonce))
+        self.assertTrue(world.account_exists(has_balance))
+        self.assertFalse(world.account_exists(empty))
+        self.assertFalse(world.account_exists(default))
+
 
 class EthSolidityMetadataTests(unittest.TestCase):
     def test_tuple_signature_for_components(self):
@@ -1785,6 +1799,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         GCALLSTIPEND = 2300  # additional gas sent with a call if value > 0
 
         with disposable_mevm() as m:
+            # empty call target
+            m.create_account(address=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
             # nonempty call target
             m.create_account(
                 address=0x111111111111111111111111111111111111111, nonce=1  # nonempty account
@@ -1797,7 +1813,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                                             PUSH1 0x0
                                             PUSH1 0X0
                                             PUSH1 0x0
-                                            PUSH20 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                                            PUSH20 0xfffffffffffffffffffffffffffffffffffffff
                                             PUSH1 0x0
                                             CALL
                                             STOP
@@ -1819,7 +1835,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                                             PUSH1 0x0
                                             PUSH1 0X0
                                             PUSH1 0x1
-                                            PUSH20 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                                            PUSH20 0xfffffffffffffffffffffffffffffffffffffff
                                             PUSH1 0x0
                                             CALL
                                             STOP
@@ -1868,6 +1884,55 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             self.assertEqual(txs[-2].gas, GCALLSTIPEND)
             # cost of call should include value cost and new acct cost
             self.assertEqual(txs[-1].used_gas, GCALLSTATIC + GCALLVALUE + GCALLNEW - GCALLSTIPEND)
+
+    def test_selfdestruct_gas(self):
+        GSDSTATIC = 26003  # 21000 + 3 (push op) + 5000 static cost for selfdestruct
+        GNEWACCOUNT = 25000
+        RSELFDESTRUCT = 24000
+
+        with disposable_mevm() as m:
+            # empty call target
+            empty = m.create_account(address=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+            # nonempty call target
+            nonempty = m.create_account(address=0x1111111111111111111111111111111111111111, nonce=1)
+
+            asm_sd_empty =  """ PUSH20 0xffffffffffffffffffffffffffffffffffffffff
+                                SELFDESTRUCT
+                            """
+            asm_sd_nonempty =   """ PUSH20 0x1111111111111111111111111111111111111111
+                                    SELFDESTRUCT
+                                """
+
+            caller = m.create_account(
+                address=0x222222222222222222222222222222222222222, balance=1000000000000000000
+            )
+
+            # selfdestruct to empty acct with no value
+            sd_empty = m.create_account(code=EVMAsm.assemble(asm_sd_empty))
+            m.transaction(caller=caller, address=sd_empty, data=b"", value=0, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # no value, so only static cost charged and refund is gas_used / 2
+            self.assertEqual(txs[-1].used_gas, round(GSDSTATIC - (GSDSTATIC / 2)))
+
+            # selfdestruct to existing acct with value > 0
+            sd_nonempty = m.create_account(code=EVMAsm.assemble(asm_sd_nonempty))
+            m.transaction(caller=caller, address=sd_nonempty, data=b"", value=1, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # recipient exists, so only static cost charged and refund is gas_used / 2
+            self.assertEqual(txs[-1].used_gas, round(GSDSTATIC - (GSDSTATIC / 2)))
+
+            # selfdestruct to empty acct with value > 0, forcing addition to state trie
+            sd_empty = m.create_account(code=EVMAsm.assemble(asm_sd_empty))
+            m.transaction(caller=caller, address=sd_empty, data=b"", value=1, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # new account gas charged and full refund returned
+            self.assertEqual(txs[-1].used_gas, GSDSTATIC + GNEWACCOUNT - RSELFDESTRUCT)
 
 
 class EthPluginTests(unittest.TestCase):
