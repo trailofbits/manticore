@@ -91,6 +91,9 @@ class EthVerifierIntegrationTest(unittest.TestCase):
 
     def test_propverif_external(self) -> None:
         cli_version = subprocess.check_output(("manticore-verifier", "--version")).decode("utf-8")
+        cli_version = cli_version.split(
+            "Manticore is only supported on Linux. Proceed at your own risk!\n"
+        )[-1]
         py_version = f"Manticore {pkg_resources.get_distribution('manticore').version}\n"
         self.assertEqual(cli_version, py_version)
 
@@ -1896,10 +1899,10 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             # nonempty call target
             nonempty = m.create_account(address=0x1111111111111111111111111111111111111111, nonce=1)
 
-            asm_sd_empty =  """ PUSH20 0xffffffffffffffffffffffffffffffffffffffff
+            asm_sd_empty = """ PUSH20 0xffffffffffffffffffffffffffffffffffffffff
                                 SELFDESTRUCT
                             """
-            asm_sd_nonempty =   """ PUSH20 0x1111111111111111111111111111111111111111
+            asm_sd_nonempty = """ PUSH20 0x1111111111111111111111111111111111111111
                                     SELFDESTRUCT
                                 """
 
