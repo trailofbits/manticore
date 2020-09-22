@@ -1247,30 +1247,3 @@ class ManticoreBase(Eventful):
     def pretty_print_states(self, *_args):
         """ Calls pretty_print_state_descriptors on the current set of state descriptors """
         pretty_print_state_descriptors(self.introspect())
-
-    def introspect(self) -> typing.Dict[int, StateDescriptor]:
-        """
-        Allows callers to view descriptors for each state
-
-        :return: the latest copy of the State Descriptor dict
-        """
-        key = IntrospectionAPIPlugin.NAME
-        if key in self.plugins:
-            plug: IntrospectionAPIPlugin = self.plugins[key]  # type: ignore
-            return plug.get_state_descriptors()
-        return {}
-
-    @at_not_running
-    def register_daemon(self, callback: typing.Callable):
-        """
-        Allows the user to register a function that will be called at `ManticoreBase.run()` and can run
-        in the background. Infinite loops are acceptable as it will be killed when Manticore exits. The provided
-        function is passed a thread as an argument, with the current Manticore object available as thread.manticore.
-
-        :param callback: function to be called
-        """
-        self._daemon_callbacks.append(callback)
-
-    def pretty_print_states(self, *_args):
-        """ Calls pretty_print_state_descriptors on the current set of state descriptors """
-        pretty_print_state_descriptors(self.introspect())
