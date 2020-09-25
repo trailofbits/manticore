@@ -1063,7 +1063,10 @@ class Cpu(Eventful):
 
         if not self.emu:
             self.emu = ConcreteUnicornEmulator(self)
+        if self.emu._stop_at is None:
+            self.emu.write_backs_disabled = False
             self.emu._stop_at = self._break_unicorn_at
+            self.emu.load_state_from_manticore()
         try:
             self.emu.emulate(insn)
         except unicorn.UcError as e:

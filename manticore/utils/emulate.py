@@ -73,6 +73,7 @@ class ConcreteUnicornEmulator:
         self.flag_registers = {"CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"}
         self.write_backs_disabled = False
         self._stop_at = None
+        self.already_mapped = set()
 
         cpu.subscribe("did_write_memory", self.write_back_memory)
         cpu.subscribe("did_write_register", self.write_back_register)
@@ -104,24 +105,7 @@ class ConcreteUnicornEmulator:
         self.registers -= {"FS"}
         self.registers.add("EFLAGS")
 
-        for reg in self.registers:
-            val = self._cpu.read_register(reg)
-
-            if reg in {"FS", "GS"}:
-                self.msr_write(reg, val)
-                continue
-
-            if issymbolic(val):
-                from ..native.cpu.abstractcpu import ConcretizeRegister
-
-                raise ConcretizeRegister(
-                    self._cpu, reg, "Concretizing for emulation.", policy="ONE"
-                )
-            logger.debug("Writing %s into %s", val, reg)
-            self._emu.reg_write(self._to_unicorn_id(reg), val)
-
-        for m in cpu.memory.maps:
-            self.map_memory_callback(m.start, len(m), m.perms, m.name, 0, m.start)
+        self.load_state_from_manticore()
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
@@ -142,6 +126,26 @@ class ConcreteUnicornEmulator:
                 f"Copying {hr_size(size)} map at {hex(address)} took {time.time() - start_time} seconds"
             )
 
+    def load_state_from_manticore(self):
+        for reg in self.registers:
+            val = self._cpu.read_register(reg)
+
+            if reg in {"FS", "GS"}:
+                self.msr_write(reg, val)
+                continue
+
+            if issymbolic(val):
+                from ..native.cpu.abstractcpu import ConcretizeRegister
+
+                raise ConcretizeRegister(
+                    self._cpu, reg, "Concretizing for emulation.", policy="ONE"
+                )
+            logger.debug("Writing %s into %s", val, reg)
+            self._emu.reg_write(self._to_unicorn_id(reg), val)
+
+        for m in self._cpu.memory.maps:
+            self.map_memory_callback(m.start, len(m), m.perms, m.name, 0, m.start)
+
     def map_memory_callback(self, address, size, perms, name, offset, result):
         """
         Catches did_map_memory and copies the mapping into Manticore
@@ -161,8 +165,11 @@ class ConcreteUnicornEmulator:
                 )
             )
         )
-        self._emu.mem_map(address, size, convert_permissions(perms))
-        self.copy_memory(address, size)
+        key = (address, size, convert_permissions(perms))
+        if key not in self.already_mapped:
+            self._emu.mem_map(*key)
+            self.copy_memory(address, size)
+        self.already_mapped.add(key)
 
     def unmap_memory_callback(self, start, size):
         """Unmap Unicorn maps when Manticore unmaps them"""
@@ -308,6 +315,7 @@ class ConcreteUnicornEmulator:
             logger.info("Reached emulation target, switching to Manticore mode")
             self.sync_unicorn_to_manticore()
             self._stop_at = None
+            self.write_backs_disabled = True
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
