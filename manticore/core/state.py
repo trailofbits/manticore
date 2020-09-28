@@ -4,7 +4,15 @@ import logging
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
+from ..utils import config
+from .plugin import StateDescriptor
 
+consts = config.get_group("core")
+consts.add(
+    "execs_per_intermittent_cb",
+    default=1000,
+    description="How often to fire the `exec_intermittent` event",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +98,71 @@ class ForkState(Concretize):
         super().__init__(message, expression, policy="ALL", **kwargs)
 
 
+class EventSolver(Eventful):
+    """
+    Wrapper around the solver that raises `will_solve` and `did_solve` around every call. Each call expands to:
+    ```
+    def method_name(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "method_name")
+        solved = SelectedSolver.instance().method_name(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "method_name", solved)
+        return solved
+    ```
+    """
+
+    _published_events = {"solve"}
+
+    @property
+    def _solver(self):
+        from .smtlib import SelectedSolver
+
+        return SelectedSolver.instance()  # solver
+
+    def can_be_true(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "can_be_true")
+        solved = self._solver.can_be_true(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "can_be_true", solved)
+        return solved
+
+    def get_all_values(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "get_all_values")
+        solved = self._solver.get_all_values(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "get_all_values", solved)
+        return solved
+
+    def get_value(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "get_value")
+        solved = self._solver.get_value(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "get_value", solved)
+        return solved
+
+    def max(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "max")
+        solved = self._solver.max(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "max", solved)
+        return solved
+
+    def min(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "min")
+        solved = self._solver.min(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "min", solved)
+        return solved
+
+    def minmax(self, constraints, expression, *args, **kwargs):
+        self._publish("will_solve", constraints, expression, "minmax")
+        solved = self._solver.minmax(constraints, expression, *args, **kwargs)
+        self._publish("did_solve", constraints, expression, "minmax", solved)
+        return solved
+
+    def __getattr__(self, item: str):
+        """
+        Pass through any undefined attribute lookups to the underlying solver
+        :param item: The name of the field to get
+        :return: The item, if present on self._solver
+        """
+        return getattr(self._solver, item)
+
+
 class StateBase(Eventful):
     """
     Representation of a unique program state/path.
@@ -98,6 +171,8 @@ class StateBase(Eventful):
     :param Platform platform: Initial operating system state
     :ivar dict context: Local context for arbitrary data storage
     """
+
+    _published_events = {"execution_intermittent"}
 
     def __init__(self, constraints, platform, **kwargs):
         super().__init__(**kwargs)
@@ -108,8 +183,12 @@ class StateBase(Eventful):
         self._child = None
         self._context = dict()
         self._terminated_by = None
+        self._solver = EventSolver()
+        self._total_exec = 0
+        self._own_exec = 0
         # 33
         # Events are lost in serialization and fork !!
+        self.forward_events_from(self._solver)
         self.forward_events_from(platform)
 
     def __getstate__(self):
@@ -120,6 +199,7 @@ class StateBase(Eventful):
         state["child"] = self._child
         state["context"] = self._context
         state["terminated_by"] = self._terminated_by
+        state["exec_counter"] = self._total_exec
         return state
 
     def __setstate__(self, state):
@@ -130,8 +210,12 @@ class StateBase(Eventful):
         self._child = state["child"]
         self._context = state["context"]
         self._terminated_by = state["terminated_by"]
+        self._total_exec = state["exec_counter"]
+        self._own_exec = 0
+        self._solver = EventSolver()
         # 33
         # Events are lost in serialization and fork !!
+        self.forward_events_from(self._solver)
         self.forward_events_from(self._platform)
 
     @property
@@ -151,6 +235,7 @@ class StateBase(Eventful):
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
         new_state._id = None
+        new_state._total_exec = self._total_exec
         self.copy_eventful_state(new_state)
 
         self._child = new_state
@@ -184,8 +269,23 @@ class StateBase(Eventful):
         self._constraints = constraints
         self.platform.constraints = constraints
 
+    def _update_state_descriptor(self, descriptor: StateDescriptor, *args, **kwargs):
+        """
+         Called on execution_intermittent to update the descriptor for this state. This is intended for information
+         like the PC or instruction count, where updating after each instruction would be a waste of cycles.
+         This one updates the execution counts
+
+         :param descriptor: StateDescriptor for this state
+         """
+        descriptor.total_execs = self._total_exec
+        descriptor.own_execs = self._own_exec
+
     def execute(self):
-        raise NotImplementedError
+        self._total_exec += 1
+        self._own_exec += 1
+
+        if self._total_exec % consts.execs_per_intermittent_cb == 0:
+            self._publish("on_execution_intermittent", self._update_state_descriptor)
 
     def constrain(self, constraint):
         """Constrain state.
@@ -317,12 +417,6 @@ class StateBase(Eventful):
             )
 
         return tuple(set(vals))
-
-    @property
-    def _solver(self):
-        from .smtlib import SelectedSolver
-
-        return SelectedSolver.instance()  # solver
 
     def migrate_expression(self, expression):
         if not issymbolic(expression):

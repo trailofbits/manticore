@@ -27,13 +27,21 @@ from elftools.elf.sections import SymbolTableSection
 
 from . import linux_syscalls
 from .linux_syscall_stubs import SyscallStubs
-from ..core.state import TerminateState
+from ..core.state import TerminateState, Concretize
 from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
-from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
+from ..native.memory import (
+    SMemory32,
+    SMemory64,
+    Memory32,
+    Memory64,
+    LazySMemory32,
+    LazySMemory64,
+    InvalidMemoryAccess,
+)
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
@@ -731,6 +739,14 @@ class SymbolicSocket(Socket):
         # Keep track of the symbolic inputs we create
         self.inputs_recvd: List[ArrayProxy] = []
         self.recv_pos = 0
+        # This is a meta-variable, of sorts, and it is responsible for
+        # determining the symbolic length of the array during recv/read.
+        # Initially, it is None, to indicate we haven't forked yet. After
+        # fork, each state will be assigned their respective _actual_,
+        # concretized, receive length
+        self._symb_len: Optional[int] = None
+        # Set after adding this socket to the file descriptor list
+        self.fd: Optional[int] = None
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -738,7 +754,8 @@ class SymbolicSocket(Socket):
         state["symb_name"] = self.symb_name
         state["recv_pos"] = self.recv_pos
         state["max_recv_symbolic"] = self.max_recv_symbolic
-        state["constraints"] = self._constraints
+        state["_symb_len"] = self._symb_len
+        state["fd"] = self.fd
         return state
 
     def __setstate__(self, state):
@@ -747,10 +764,11 @@ class SymbolicSocket(Socket):
         self.symb_name = state["symb_name"]
         self.recv_pos = state["recv_pos"]
         self.max_recv_symbolic = state["max_recv_symbolic"]
-        self._constraints = state["constraints"]
+        self._symb_len = state["_symb_len"]
+        self.fd = state["fd"]
 
     def __repr__(self):
-        return f"SymbolicSocket({hash(self):x}, inputs_recvd={self.inputs_recvd}, buffer={self.buffer}, net={self.net}"
+        return f"SymbolicSocket({hash(self):x}, fd={self.fd}, inputs_recvd={self.inputs_recvd}, buffer={self.buffer}, net={self.net}"
 
     def _next_symb_name(self) -> str:
         """
@@ -764,8 +782,7 @@ class SymbolicSocket(Socket):
         :param size: Size of receive
         :return: Symbolic array or list of concrete bytes
         """
-        # NOTE: self.buffer isn't used at all for SymbolicSocket. Not sure if there is a better
-        #   way to use it for on-demand generation of symbolic data or not.
+        # First, get our max valid rx_bytes size
         rx_bytes = (
             size
             if self.max_recv_symbolic == 0
@@ -774,9 +791,31 @@ class SymbolicSocket(Socket):
         if rx_bytes == 0:
             # If no symbolic bytes left, return empty list
             return []
-        ret = self._constraints.new_array(name=self._next_symb_name(), index_max=rx_bytes)
-        self.recv_pos += rx_bytes
+        # Then do some forking with self._symb_len
+        if self._symb_len is None:
+            self._symb_len = self._constraints.new_bitvec(
+                8, "_socket_symb_len", avoid_collisions=True
+            )
+            self._constraints.add(Operators.AND(self._symb_len >= 1, self._symb_len <= rx_bytes))
+
+            def setstate(state: State, value):
+                state.platform.fd_table.get_fdlike(self.fd)._symb_len = value
+
+            logger.debug("Raising concretize in SymbolicSocket receive")
+            raise Concretize(
+                "Returning symbolic amount of data to SymbolicSocket",
+                self._symb_len,
+                setstate=setstate,
+                policy="MINMAX",
+            )
+        ret = self._constraints.new_array(
+            name=self._next_symb_name(), index_max=self._symb_len, avoid_collisions=True
+        )
+        logger.info(f"Setting recv symbolic length to {self._symb_len}")
+        self.recv_pos += self._symb_len
         self.inputs_recvd.append(ret)
+        # Reset _symb_len for next recv
+        self._symb_len = None
         return ret
 
 
@@ -2338,7 +2377,9 @@ class Linux(Platform):
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             if issymbolic(size):
+                self._publish("will_solve", self.constraints, size, "get_value")
                 size = SelectedSolver.instance().get_value(self.constraints, size)
+                self._publish("did_solve", self.constraints, size, "get_value", size)
 
             data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
@@ -2493,6 +2534,25 @@ class Linux(Platform):
         return fd
 
     def sys_recv(self, sockfd: int, buf: int, count: int, flags: int, trace_str="_recv") -> int:
+        # act like sys_recvfrom
+        return self.sys_recvfrom(sockfd, buf, count, flags, 0, 0, trace_str=trace_str)
+
+    def sys_recvfrom(
+        self,
+        sockfd: int,
+        buf: int,
+        count: int,
+        flags: int,
+        src_addr: int,
+        addrlen: int,
+        trace_str="_recvfrom",
+    ) -> int:
+        if src_addr != 0:
+            logger.warning("sys_recvfrom: Unimplemented non-NULL src_addr")
+
+        if addrlen != 0:
+            logger.warning("sys_recvfrom: Unimplemented non-NULL addrlen")
+
         if not self.current.memory.access_ok(slice(buf, buf + count), "w"):
             logger.info("RECV: buf within invalid memory. Returning -errno.EFAULT")
             return -errno.EFAULT
@@ -2513,30 +2573,58 @@ class Linux(Platform):
 
         return len(data)
 
-    def sys_recvfrom(
-        self, sockfd: int, buf: int, count: int, flags: int, src_addr: int, addrlen: int
+    def sys_send(
+        self, sockfd: int, buf: int, count: int, flags: int, trace_str: str = "_send"
     ) -> int:
-        if src_addr != 0:
-            logger.warning("sys_recvfrom: Unimplemented non-NULL src_addr")
+        """
+        send(2) is currently a nop; we don't communicate yet: The data is read
+        from memory, but not actually sent anywhere - we just return count to
+        pretend that it was.
+        """
+        # Act like sys_sendto with zeroed dest_addr and addrlen
+        return self.sys_sendto(sockfd, buf, count, flags, 0, 0, trace_str=trace_str)
+
+    def sys_sendto(
+        self,
+        sockfd: int,
+        buf: int,
+        count: int,
+        flags: int,
+        dest_addr: int,
+        addrlen: int,
+        trace_str: str = "_sendto",
+    ):
+        """
+        sendto(2) is currently a nop; we don't communicate yet: The data is read
+        from memory, but not actually sent anywhere - we just return count to
+        pretend that it was.
+
+        Additionally, dest_addr and addrlen are dropped, so it behaves exactly
+        the same as send.
+        """
+        # TODO: Do something with destination address. Could be used to better
+        # follow where data is being sent
+        if dest_addr != 0:
+            logger.warning("sys_sendto: Unimplemented non-NULL dest_addr")
 
         if addrlen != 0:
-            logger.warning("sys_recvfrom: Unimplemented non-NULL addrlen")
+            logger.warning("sys_sendto: Unimplemented non-NULL addrlen")
 
-        # TODO Unimplemented src_addr and addrlen, so act like sys_recv
-        return self.sys_recv(sockfd, buf, count, flags, trace_str="_recvfrom")
-
-    def sys_send(self, sockfd, buf, count, flags) -> int:
         try:
             sock = self.fd_table.get_fdlike(sockfd)
-        except FdError as e:
-            return -e.err
+        except FdError:
+            return -errno.EBADF
 
         if not isinstance(sock, Socket):
             return -errno.ENOTSOCK
 
-        data = self.current.read_bytes(buf, count)
-        # XXX(yan): send(2) is currently a nop; we don't communicate yet
-        self.syscall_trace.append(("_send", sockfd, data))
+        try:
+            data = self.current.read_bytes(buf, count)
+        except InvalidMemoryAccess:
+            logger.info("SEND: buf within invalid memory. Returning EFAULT")
+            return -errno.EFAULT
+
+        self.syscall_trace.append((trace_str, sockfd, data))
 
         return count
 
@@ -3243,6 +3331,8 @@ class SLinux(Linux):
         self._pure_symbolic = pure_symbolic
         self.random = 0
         self.symbolic_files = symbolic_files
+        # Keep track of number of accepted symbolic sockets
+        self.net_accepts = 0
         super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
@@ -3286,13 +3376,20 @@ class SLinux(Linux):
         state["constraints"] = self.constraints
         state["random"] = self.random
         state["symbolic_files"] = self.symbolic_files
+        state["net_accepts"] = self.net_accepts
         return state
 
     def __setstate__(self, state):
         self._constraints = state["constraints"]
         self.random = state["random"]
         self.symbolic_files = state["symbolic_files"]
+        self.net_accepts = state["net_accepts"]
         super().__setstate__(state)
+        # Add constraints to symbolic sockets
+        for fd_entry in self.fd_table.entries():
+            symb_socket_entry = fd_entry.fdlike
+            if isinstance(symb_socket_entry, SymbolicSocket):
+                symb_socket_entry._constraints = self.constraints
 
     def _sys_open_get_file(self, filename: str, flags: int) -> FdLike:
         if filename in self.symbolic_files:
@@ -3307,7 +3404,9 @@ class SLinux(Linux):
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
+                self._publish("will_solve", self.constraints, c, "get_value")
                 c = bytes([SelectedSolver.instance().get_value(self.constraints, c)])
+                self._publish("did_solve", self.constraints, c, "get_value", c)
             concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
@@ -3340,7 +3439,9 @@ class SLinux(Linux):
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
+            self._publish("will_solve", self.constraints, error_code, "get_value")
             error_code = SelectedSolver.instance().get_value(self.constraints, error_code)
+            self._publish("did_solve", self.constraints, error_code, "get_value", error_code)
             return self._exit(
                 f"Program finished with exit status: {ctypes.c_int32(error_code).value} (*)"
             )
@@ -3397,34 +3498,51 @@ class SLinux(Linux):
             logger.debug("Submitted a symbolic flags")
             raise ConcretizeArgument(self, 3)
 
-        return super().sys_recv(sockfd, buf, count, flags)
+        return self.sys_recvfrom(sockfd, buf, count, flags, 0, 0, trace_str)
 
-    def sys_recvfrom(self, sockfd, buf, count, flags, src_addr, addrlen):
+    def sys_recvfrom(
+        self,
+        sockfd: Union[int, Expression],
+        buf: Union[int, Expression],
+        count: Union[int, Expression],
+        flags: Union[int, Expression],
+        src_addr: Union[int, Expression],
+        addrlen: Union[int, Expression],
+        trace_str: str = "_recvfrom",
+    ):
         if issymbolic(sockfd):
-            logger.debug("Ask to read from a symbolic file descriptor!!")
+            logger.debug("Ask to recvfrom a symbolic file descriptor!!")
             raise ConcretizeArgument(self, 0)
 
         if issymbolic(buf):
-            logger.debug("Ask to read to a symbolic buffer")
+            logger.debug("Ask to recvfrom to a symbolic buffer")
             raise ConcretizeArgument(self, 1)
 
         if issymbolic(count):
-            logger.debug("Ask to read a symbolic number of bytes ")
+            logger.debug("Ask to recvfrom a symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
         if issymbolic(flags):
-            logger.debug("Submitted a symbolic flags")
+            logger.debug("Ask to recvfrom with symbolic flags")
             raise ConcretizeArgument(self, 3)
 
         if issymbolic(src_addr):
-            logger.debug("Submitted a symbolic source address")
+            logger.debug("Ask to recvfrom with symbolic source address")
             raise ConcretizeArgument(self, 4)
 
         if issymbolic(addrlen):
-            logger.debug("Submitted a symbolic address length")
+            logger.debug("Ask to recvfrom with symbolic address length")
             raise ConcretizeArgument(self, 5)
 
-        return super().sys_recvfrom(sockfd, buf, count, flags, src_addr, addrlen)
+        # mypy doesn't know issymbolic works like `isinstance`
+        assert isinstance(sockfd, int)
+        assert isinstance(buf, int)
+        assert isinstance(count, int)
+        assert isinstance(flags, int)
+        assert isinstance(src_addr, int)
+        assert isinstance(addrlen, int)
+
+        return super().sys_recvfrom(sockfd, buf, count, flags, src_addr, addrlen, trace_str)
 
     def sys_accept(self, sockfd, addr, addrlen):
         if issymbolic(sockfd):
@@ -3444,8 +3562,10 @@ class SLinux(Linux):
             return ret
 
         # TODO: maybe combine name with addr?
-        sock = SymbolicSocket(self.constraints, "SymbSocket", net=True)
+        sock = SymbolicSocket(self.constraints, f"SymbSocket_{self.net_accepts}", net=True)
+        self.net_accepts += 1
         fd = self._open(sock)
+        sock.fd = fd
         return fd
         # TODO: Make a concrete connection actually an option
         # return super().sys_accept(sockfd, addr, addrlen)
@@ -3536,7 +3656,9 @@ class SLinux(Linux):
             try:
                 for c in data:
                     if issymbolic(c):
+                        self._publish("will_solve", self.constraints, c, "get_value")
                         c = SelectedSolver.instance().get_value(self.constraints, c)
+                        self._publish("did_solve", self.constraints, c, "get_value", c)
                     fd.write(make_chr(c))
             except SolverError:
                 fd.write("{SolverError}")

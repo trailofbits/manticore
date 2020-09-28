@@ -504,6 +504,7 @@ class Cpu(Eventful):
         "protect_memory",
         "unmap_memory",
         "execute_syscall",
+        "solve",
     }
 
     def __init__(self, regfile: RegisterFile, memory: Memory, **kwargs):
@@ -915,9 +916,10 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack(
-                            "B", SelectedSolver.instance().get_value(self.memory.constraints, c)
-                        )
+                        self._publish("will_solve", self.memory.constraints, c, "get_value")
+                        solved = SelectedSolver.instance().get_value(self.memory.constraints, c)
+                        self._publish("did_solve", self.memory.constraints, c, "get_value", solved)
+                        c = struct.pack("B", solved)
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:

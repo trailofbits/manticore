@@ -5,11 +5,12 @@ import elftools
 import os
 import shlex
 import time
+from typing import Callable, Optional
 import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from .state import State
+from .state import HookCallback, State, TerminateState
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet
 from ..core.smtlib.solver import SelectedSolver, issymbolic
@@ -190,7 +191,7 @@ class Manticore(ManticoreBase):
         # This will interpret the buffer specification written in INTEL ASM.
         # (It may dereference pointers)
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
-        if not SelectedSolver.instance().can_be_true(state.constraints, assertion):
+        if not state.can_be_true(assertion):
             logger.info(str(state.cpu))
             logger.info(
                 "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.pc, program
@@ -229,19 +230,28 @@ class Manticore(ManticoreBase):
 
         return decorator
 
-    def add_hook(self, pc, callback, after=False):
+    def add_hook(
+        self,
+        pc: Optional[int],
+        callback: HookCallback,
+        after: bool = False,
+        state: Optional[State] = None,
+    ):
         """
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
         that takes one :class:`~manticore.core.state.State` argument.
 
         :param pc: Address of instruction to hook
-        :type pc: int or None
-        :param callable callback: Hook function
+        :param callback: Hook function
+        :param after: Hook after PC executes?
+        :param state: Optionally, add hook for this state only, else all states
         """
         if not (isinstance(pc, int) or pc is None):
             raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
-        else:
+
+        if state is None:
+            # add hook to all states
             hooks, when, hook_callback = (
                 (self._hooks, "will_execute_instruction", self._hook_callback)
                 if not after
@@ -250,6 +260,9 @@ class Manticore(ManticoreBase):
             hooks.setdefault(pc, set()).add(callback)
             if hooks:
                 self.subscribe(when, hook_callback)
+        else:
+            # only hook for the specified state
+            state.add_hook(pc, callback, after)
 
     def _hook_callback(self, state, pc, instruction):
         "Invoke all registered generic hooks"
@@ -384,6 +397,8 @@ def _make_linux(
     concrete_start="",
     pure_symbolic=False,
     stdin_size=None,
+    *args,
+    **kwargs,
 ) -> State:
     from ..platforms import linux
 
