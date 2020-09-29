@@ -3220,7 +3220,7 @@ class EVMWorld(Platform):
         assert self._pending_transaction is None, "Already started tx"
         assert caller is not None
         if issymbolic(data ):
-            assert data.index_max is not None
+            assert data.length is not None
             assert data.value_size == 8
 
         self._pending_transaction = PendingTransaction(
