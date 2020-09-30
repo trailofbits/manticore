@@ -63,7 +63,7 @@ setup(
     install_requires=[
         "pyyaml",
         "pysha3",
-        "prettytable",
+        "PTable",
         "ply",
         "rlp",
         "crytic-compile>=0.1.8",
