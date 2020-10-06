@@ -1,6 +1,35 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.4...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.5...HEAD)
+
+## 0.3.5 - 2020-10
+
+Thanks to our external contributors!
+ - [wolfo](https://github.com/trailofbits/manticore/commits?author=wolfo)
+ - [geohot](https://github.com/trailofbits/manticore/commits?author=geohot)
+ - [romits800](https://github.com/trailofbits/manticore/commits?author=romits800)
+
+### Ethereum
+* Updated gas calculations for calls to empty accounts [#1774](https://github.com/trailofbits/manticore/pull/1774)
+* Fixed account existence checks for `selfdestruct` and `call` [#1801](https://github.com/trailofbits/manticore/pull/1801)
+
+### Native
+* **[Added API]** new `strlen` models [#1725](https://github.com/trailofbits/manticore/pull/1725)
+* **[Added API]** State-specific hooks [#1777](https://github.com/trailofbits/manticore/pull/1777)
+* Improved system call argument handling [#1785](https://github.com/trailofbits/manticore/pull/1785)
+* Improved `stat` support for file descriptors [#1780](https://github.com/trailofbits/manticore/pull/1780)
+* Support symbolic-length reads from sockets [#1786](https://github.com/trailofbits/manticore/pull/1786)
+* Add stubs for `sendto` [#1791](https://github.com/trailofbits/manticore/pull/1791)
+
+### WASM
+* Fix type confusion when importing external functions [#1803](https://github.com/trailofbits/manticore/pull/1803)
+
+### Other
+* **[Added API]** Added an API for introspecting live states [#1775](https://github.com/trailofbits/manticore/pull/1775)
+* Changed default multiprocessing type to threading [#1779](https://github.com/trailofbits/manticore/pull/1779)
+* Improved array serialization performance [#1756](https://github.com/trailofbits/manticore/pull/1756)
+* Fix name collisions in SMT variables [#1792](https://github.com/trailofbits/manticore/pull/1792)
+
 
 ## 0.3.4 - 2020-06-26
 
