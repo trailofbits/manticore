@@ -349,6 +349,9 @@ class File(FdLike):
     def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         return self.file.seek(offset, whence)
 
+    def pread(self, count, offset):
+        return os.pread(self.fileno(), count, offset)
+
     def write(self, buf):
         return self.file.write(buf)
 
@@ -1753,6 +1756,33 @@ class Linux(Platform):
                 )
                 return -e.err
             self.syscall_trace.append(("_read", fd, data))
+            self.current.write_bytes(buf, data)
+
+        return len(data)
+
+    def sys_pread64(self, fd: int, buf: int, count: int, offset: int) -> int:
+        """
+        read from a file descriptor at a given offset
+        """
+        data: bytes = bytes()
+        if count != 0:
+            if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
+                logger.info("sys_pread: buf points to invalid address. Returning -errno.EFAULT")
+                return -errno.EFAULT
+
+            try:
+                # Read the data and put it in memory
+                target_file = self._get_fdlike(fd)
+                if isinstance(target_file, File):
+                    data = target_file.pread(count, offset)
+                else:
+                    logger.error(f"Unsupported pread on {type(target_file)} at fd {fd}")
+            except FdError as e:
+                logger.info(
+                    f"sys_pread: Not valid file descriptor ({fd}). Returning -{errorcode(e.err)}"
+                )
+                return -e.err
+            self.syscall_trace.append(("_pread", fd, data))
             self.current.write_bytes(buf, data)
 
         return len(data)
