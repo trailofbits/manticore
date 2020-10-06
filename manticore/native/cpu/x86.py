@@ -961,6 +961,10 @@ class X86Cpu(Cpu):
                 0x0: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
                 0x1: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
             },
+            # CPUID with EAX=80000000h returns the highest supported extended function
+            # query in EAX. We don't currently support any other than 80000000h itself,
+            # so just return it back.
+            0x80000000: (0x80000000, 0x00000000, 0x00000000, 0x00000000),
         }
 
         if cpu.EAX not in conf:
