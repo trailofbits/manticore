@@ -104,9 +104,7 @@ consts.add(
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 consts.add(
-    "ignore_balance",
-    default=False,
-    description="Do not try to solve symbolic balances",
+    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
 )
 
 
@@ -2194,12 +2192,7 @@ class EVM(Eventful):
         )
 
         self.world.start_transaction(
-            "CREATE",
-            address,
-            data=data,
-            caller=self.address,
-            value=value,
-            gas=self.gas,
+            "CREATE", address, data=data, caller=self.address, value=value, gas=self.gas,
         )
 
         raise StartTx()
