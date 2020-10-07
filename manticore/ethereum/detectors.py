@@ -1,6 +1,4 @@
-from manticore.core.smtlib.visitors import simplify
 import hashlib
-from enum import Enum
 from typing import Optional
 import logging
 from contextlib import contextmanager
@@ -15,21 +13,9 @@ from ..core.smtlib import (
     taint_with,
 )
 from ..core.plugin import Plugin
-
+from ..utils.enums import DetectorClassification
 
 logger = logging.getLogger(__name__)
-
-
-class DetectorClassification(Enum):
-    """
-    Shall be consistent with
-    https://github.com/trailofbits/slither/blob/563d5118298e4cae7f0ea5f2a531f0dcdcebd64d/slither/detectors/abstract_detector.py#L11-L15
-    """
-
-    HIGH = 0
-    MEDIUM = 1
-    LOW = 2
-    INFORMATIONAL = 3
 
 
 class Detector(Plugin):

@@ -6,8 +6,8 @@ from manticore.core.plugin import Plugin
 
 
 class ConcretePlugin(Plugin):
-    def will_run_callback(self, *_args):
-        for state in self.manticore.ready_states:
+    def will_run_callback(self, ready_states):
+        for state in ready_states:
             state.cpu.emulate_until(0)
 
 
@@ -85,11 +85,15 @@ class ManticornTest(unittest.TestCase):
 
         concrete_regs = {}
         normal_regs = {}
-        for st in self.m.all_states:
+        self.assertEqual(
+            len(list(self.m.terminated_states)), len(list(self.concrete_instance.terminated_states))
+        )
+        self.assertGreater(len(list(self.m.terminated_states)), 0)
+        for st in self.m.terminated_states:
             for reg in should_match:
                 normal_regs[reg] = getattr(st.platform.current, reg)
 
-        for st in self.concrete_instance.all_states:
+        for st in self.concrete_instance.terminated_states:
             for reg in should_match:
                 concrete_regs[reg] = getattr(st.platform.current, reg)
 

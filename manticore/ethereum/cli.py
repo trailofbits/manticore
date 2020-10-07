@@ -11,9 +11,9 @@ from .detectors import (
     DetectExternalCallAndLeak,
     DetectEnvInstruction,
     DetectRaceCondition,
-    DetectorClassification,
     DetectManipulableBalance,
 )
+from ..utils.enums import DetectorClassification
 from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
 from .plugins import (
@@ -125,7 +125,7 @@ def ethereum_main(args, logger):
             m.register_plugin(filter_nohuman_constants)
 
         if m.plugins:
-            logger.info(f'Registered plugins: {", ".join(d.name for d in m.plugins)}')
+            logger.info(f'Registered plugins: {", ".join(d.name for d in m.plugins.values())}')
 
         logger.info("Beginning analysis")
 

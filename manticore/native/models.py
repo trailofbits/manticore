@@ -5,7 +5,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
 from ..core.smtlib import issymbolic, Bitvec
-from ..core.smtlib.solver import SelectedSolver
+from ..core.smtlib.solver import SelectedSolver, issymbolic, BitVec
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 from ..core.state import Concretize
 from typing import Union
@@ -34,7 +34,7 @@ def variadic(func):
     return func
 
 
-def is_definitely_NULL(byte, constrs) -> bool:
+def must_be_NULL(state, byte) -> bool:
     """
     Checks if a given byte read from memory is NULL.
     This supports both concrete & symbolic byte values.
@@ -44,12 +44,12 @@ def is_definitely_NULL(byte, constrs) -> bool:
     :return: whether a given byte is NULL or constrained to NULL
     """
     if issymbolic(byte):
-        return SelectedSolver.instance().must_be_true(constrs, byte == 0)
+        return state.must_be_true(byte == 0)
     else:
         return byte == 0
 
 
-def cannot_be_NULL(byte, constrs) -> bool:
+def cannot_be_NULL(state, byte) -> bool:
     """
     Checks if a given byte read from memory is not NULL or cannot be NULL
 
@@ -58,12 +58,12 @@ def cannot_be_NULL(byte, constrs) -> bool:
     :return: whether a given byte is not NULL or cannot be NULL
     """
     if issymbolic(byte):
-        return SelectedSolver.instance().must_be_true(constrs, byte != 0)
+        return state.must_be_true(byte != 0)
     else:
         return byte != 0
 
 
-def can_be_NULL(byte, constrs) -> bool:
+def can_be_NULL(state, byte) -> bool:
     """
     Checks if a given byte read from memory can be NULL
 
@@ -72,12 +72,12 @@ def can_be_NULL(byte, constrs) -> bool:
     :return: whether a given byte is NULL or can be NULL
     """
     if issymbolic(byte):
-        return SelectedSolver.instance().can_be_true(constrs, byte == 0)
+        return state.can_be_true(byte == 0)
     else:
         return byte == 0
 
 
-def _find_zero(cpu, constrs, ptr: Union[int, Bitvec]) -> int:
+def _find_zero(cpu, state, ptr: Union[int, BitVec]) -> int:
     """
     Helper for finding the closest NULL or, effectively NULL byte from a starting address.
 
@@ -90,7 +90,7 @@ def _find_zero(cpu, constrs, ptr: Union[int, Bitvec]) -> int:
     offset = 0
     while True:
         byte = cpu.read_int(ptr + offset, 8)
-        if is_definitely_NULL(byte, constrs):
+        if must_be_NULL(state, byte):
             break
         offset += 1
 
@@ -129,8 +129,8 @@ def strcmp(state: State, s1: Union[int, Bitvec], s2: Union[int, Bitvec]):
     if issymbolic(s2):
         raise ConcretizeArgument(state.cpu, 2)
 
-    s1_zero_idx = _find_zero(cpu, state.constraints, s1)
-    s2_zero_idx = _find_zero(cpu, state.constraints, s2)
+    s1_zero_idx = _find_zero(cpu, state, s1)
+    s2_zero_idx = _find_zero(cpu, state, s2)
     min_zero_idx = min(s1_zero_idx, s2_zero_idx)
 
     ret = None
@@ -171,7 +171,6 @@ def strlen_exact(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
         raise ConcretizeArgument(state.cpu, 1)
 
     cpu = state.cpu
-    constrs = state.constraints
 
     # Initialize offset based on whether state has been forked in strlen
     if "strlen" not in state.context:
@@ -180,9 +179,9 @@ def strlen_exact(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
         offset = state.context["strlen"]
 
     c = cpu.read_int(s + offset, 8)
-    while not is_definitely_NULL(c, constrs):
+    while not must_be_NULL(state, c):
         # If the byte can be NULL concretize and fork states
-        if can_be_NULL(c, constrs):
+        if can_be_NULL(state, c):
             state.context["strlen"] = offset
             raise Concretize("Forking on possible NULL strlen", expression=(c == 0), policy="ALL")
 
@@ -209,7 +208,7 @@ def strlen_approx(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
         raise ConcretizeArgument(state.cpu, 1)
 
     cpu = state.cpu
-    zero_idx = _find_zero(cpu, state.constraints, s)
+    zero_idx = _find_zero(cpu, state, s)
 
     ret = zero_idx
 
@@ -241,7 +240,6 @@ def strcpy(state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec]) -> Un
         raise ConcretizeArgument(state.cpu, 1)
 
     cpu = state.cpu
-    constrs = state.constraints
     ret = dst
 
     # Initialize offset based on whether state has been forked in strcpy
@@ -252,11 +250,11 @@ def strcpy(state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec]) -> Un
 
     # Copy until a src_byte is symbolic and constrained to '\000', or is concrete and '\000'
     src_val = cpu.read_int(src + offset, 8)
-    while not is_definitely_NULL(src_val, constrs):
+    while not must_be_NULL(state, src_val):
         cpu.write_int(dst + offset, src_val, 8)
 
         # If a src byte can be NULL concretize and fork states
-        if can_be_NULL(src_val, constrs):
+        if can_be_NULL(state, src_val):
             state.context["strcpy"] = offset
             raise Concretize("Forking on NULL strcpy", expression=(src_val == 0), policy="ALL")
         offset += 1
@@ -295,7 +293,6 @@ def strncpy(
         raise ConcretizeArgument(state.cpu, 3)
 
     cpu = state.cpu
-    constrs = state.constraints
     ret = dst
 
     # Initialize offset based on whether state has been forked in strncpy
@@ -306,11 +303,11 @@ def strncpy(
 
     # Copy until a src_byte is symbolic and constrained to '\000', or is concrete and '\000'
     src_val = cpu.read_int(src + offset, 8)
-    while offset < n and not is_definitely_NULL(src_val, constrs):
+    while offset < n and not must_be_NULL(state, src_val):
         cpu.write_int(dst + offset, src_val, 8)
 
         # If a src byte can be NULL concretize and fork states
-        if can_be_NULL(src_val, constrs):
+        if can_be_NULL(state, src_val):
             state.context["strncpy"] = offset
             raise Concretize("Forking on NULL strncpy", expression=(src_val == 0), policy="ALL")
         offset += 1

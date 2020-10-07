@@ -6,6 +6,7 @@ import copy
 import logging
 import operator
 import math
+import threading
 from decimal import Decimal
 
 logger = logging.getLogger(__name__)
@@ -824,6 +825,7 @@ class TranslatorSmtlib(Translator):
     """Simple visitor to translate an expression to its smtlib representation"""
 
     unique = 0
+    unique_lock = threading.Lock()
 
     def __init__(self, use_bindings=False, *args, **kw):
         assert "bindings" not in kw
@@ -840,7 +842,8 @@ class TranslatorSmtlib(Translator):
         if smtlib in self._bindings_cache:
             return self._bindings_cache[smtlib]
 
-        TranslatorSmtlib.unique += 1
+        with TranslatorSmtlib.unique_lock:
+            TranslatorSmtlib.unique += 1
         name = "a_%d" % TranslatorSmtlib.unique
 
         self._bindings.append((name, expression, smtlib))

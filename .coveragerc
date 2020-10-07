@@ -10,3 +10,10 @@ exclude_lines =
 
     # Don't try to cover special syntax "..." in abstract class
     @abstractmethod
+
+    # Ignore informational/debugging log statements
+    logger.info
+    logger.debug
+
+    # We don't bother testing code that's explicitly unimplemented
+    raise NotImplementedError

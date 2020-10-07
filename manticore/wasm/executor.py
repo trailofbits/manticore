@@ -43,7 +43,7 @@ class Executor(Eventful):
 
     _published_events = {"set_global", "get_global", "set_local", "get_local"}
 
-    def __init__(self, constraints, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
         self._mapping = {
             0x00: self.unreachable,
@@ -220,9 +220,6 @@ class Executor(Eventful):
             0xBF: self.f64_reinterpret_i64,
         }
 
-        #: Constraint set to use for checking overflows and boundary conditions
-        self.constraints = constraints
-
         self.zero_div = False
         self.overflow = False
 
@@ -231,14 +228,12 @@ class Executor(Eventful):
     def __getstate__(self):
         state = super().__getstate__()
         state["mapping"] = self._mapping
-        state["constraints"] = self.constraints
         state["zero_div"] = self.zero_div
         state["overflow"] = self.overflow
         return state
 
     def __setstate__(self, state):
         self._mapping = state["mapping"]
-        self.constraints = state["constraints"]
         self.zero_div = state["zero_div"]
         self.overflow = state["overflow"]
         super().__setstate__(state)

@@ -348,7 +348,7 @@ class Module:
         :param filename: name of the WASM module
         :return: Module
         """
-        type_map = {-16: types.FunctionType, -4: F64, -3: F32, -2: I64, -1: I32}
+        type_map = {-16: FunctionType, -4: F64, -3: F32, -2: I64, -1: I32}
 
         m: Module = cls()
         with open(filename, "rb") as wasm_file:
@@ -729,10 +729,9 @@ class Store:
         self.globals = state["globals"]
 
 
-def _eval_maybe_symbolic(constraints, expression) -> bool:
+def _eval_maybe_symbolic(state, expression) -> bool:
     if issymbolic(expression):
-        solver = SelectedSolver.instance()
-        return solver.must_be_true(constraints, expression)
+        return state.must_be_true(expression)
     return True if expression else False
 
 
@@ -806,7 +805,7 @@ class ModuleInstance(Eventful):
         self.globaladdrs = []
         self.exports = []
         self.export_map = {}
-        self.executor = Executor(constraints)
+        self.executor = Executor()
         self.function_names = {}
         self.local_names = {}
         self._instruction_queue = deque()
@@ -1274,12 +1273,12 @@ class ModuleInstance(Eventful):
                     self._publish("will_execute_instruction", inst)
                     if 0x2 <= inst.opcode <= 0x11:  # This is a control-flow instruction
                         self.executor.zero_div = _eval_maybe_symbolic(
-                            self.executor.constraints, self.executor.zero_div
+                            self._state, self.executor.zero_div
                         )
                         if self.executor.zero_div:
                             raise ZeroDivisionTrap()
                         self.executor.overflow = _eval_maybe_symbolic(
-                            self.executor.constraints, self.executor.overflow
+                            self._state, self.executor.overflow
                         )
                         if self.executor.overflow:
                             raise OverflowDivisionTrap()
