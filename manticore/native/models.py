@@ -5,7 +5,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
 from ..core.smtlib import issymbolic, Bitvec
-from ..core.smtlib.solver import SelectedSolver, issymbolic, BitVec
+from ..core.smtlib.solver import SelectedSolver, issymbolic, Bitvec
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 from ..core.state import Concretize
 from typing import Union
@@ -77,7 +77,7 @@ def can_be_NULL(state, byte) -> bool:
         return byte == 0
 
 
-def _find_zero(cpu, state, ptr: Union[int, BitVec]) -> int:
+def _find_zero(cpu, state, ptr: Union[int, Bitvec]) -> int:
     """
     Helper for finding the closest NULL or, effectively NULL byte from a starting address.
 
