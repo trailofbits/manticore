@@ -347,7 +347,9 @@ class ArrayMap(Map):
             self._array = backing_array
         else:
             self._array = expression.MutableArray(
-                expression.ArrayVariable(index_size=index_bits, length=size, value_size=8, name=name)
+                expression.ArrayVariable(
+                    index_size=index_bits, length=size, value_size=8, name=name
+                )
             )
 
     def __reduce__(self):
@@ -1376,8 +1378,7 @@ class LazySMemory(SMemory):
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        self.backing_array = constraints.new_array(
-            index_size=self.memory_bit_size)
+        self.backing_array = constraints.new_array(index_size=self.memory_bit_size)
         self.backed_by_symbolic_store = set()
 
     def __reduce__(self):

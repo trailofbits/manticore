@@ -25,7 +25,7 @@ contract NoDistpatcher {
 }
 """
 
-user_account = m.create_account(balance=10**10, name="user_account")
+user_account = m.create_account(balance=10 ** 10, name="user_account")
 print("[+] Creating a user account", user_account.name_)
 
 contract_account = m.solidity_create_contract(

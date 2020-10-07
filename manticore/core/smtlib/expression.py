@@ -26,6 +26,7 @@ from typing import Union, Optional, Tuple, List
 
 def simplify(e):
     from .visitors import simplify as visitor_simplify
+
     return visitor_simplify(e)
 
 

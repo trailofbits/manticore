@@ -1628,9 +1628,9 @@ class EthSolidityMetadataTests(unittest.TestCase):
 class EthSpecificTxIntructionTests(unittest.TestCase):
     def test_jmpdest_check(self):
         """
-            This test that jumping to a JUMPDEST in the operand of a PUSH should
-            be treated as an INVALID instruction.
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that jumping to a JUMPDEST in the operand of a PUSH should
+        be treated as an INVALID instruction.
+        https://github.com/trailofbits/manticore/issues/1169
         """
 
         constraints = ConstraintSet()
@@ -1665,8 +1665,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_delegatecall_env(self):
         """
-            This test that the delegatecalled environment is identicall to the caller
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that the delegatecalled environment is identicall to the caller
+        https://github.com/trailofbits/manticore/issues/1169
         """
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)
@@ -1742,7 +1742,12 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         self.assertEqual(world.get_balance(0x111111111111111111111111111111111111111), 0)
         self.assertEqual(world.get_balance(0x222222222222222222222222222222222222222), 10)
         from manticore.core.smtlib.visitors import translate_to_smtlib, simplify
-        print ( translate_to_smtlib(simplify(world.get_balance(0x333333333333333333333333333333333333333))))
+
+        print(
+            translate_to_smtlib(
+                simplify(world.get_balance(0x333333333333333333333333333333333333333))
+            )
+        )
         self.assertEqual(
             world.get_balance(0x333333333333333333333333333333333333333),
             100000000000000000000000 - 10,

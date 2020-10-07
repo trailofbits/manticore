@@ -38,8 +38,8 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertEqual(sorted(a), sorted(b))
 
     def test_xslotted(self):
-        """ Test that XSlotted multi inheritance classes uses same amount 
-            of memory than a single class object with slots
+        """Test that XSlotted multi inheritance classes uses same amount
+        of memory than a single class object with slots
         """
 
         class Base(object, metaclass=XSlotted, abstract=True):
@@ -75,18 +75,22 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertEqual(sys.getsizeof(c), sys.getsizeof(x))
 
     def test_Bitvec_ops(self):
-        a = BitvecVariable(size=32, name='BV')
-        b = BitvecVariable(size=32, name='BV1')
-        c = BitvecVariable(size=32, name='BV2')
+        a = BitvecVariable(size=32, name="BV")
+        b = BitvecVariable(size=32, name="BV1")
+        c = BitvecVariable(size=32, name="BV2")
         x = BitvecConstant(size=32, value=100, taint=("T",))
-        z = ((b + 1) % b < a * x / c - 5)
+        z = (b + 1) % b < a * x / c - 5
         self.assertSetEqual(z.taint, set(("T",)))
-        self.assertEqual(translate_to_smtlib(z),
-        "(bvslt (bvsmod (bvadd BV1 #x00000001) BV1) (bvsub (bvsdiv (bvmul BV #x00000064) BV2) #x00000005))")
-        z = ((1 + b) / b <= a - x * 5 + c)
+        self.assertEqual(
+            translate_to_smtlib(z),
+            "(bvslt (bvsmod (bvadd BV1 #x00000001) BV1) (bvsub (bvsdiv (bvmul BV #x00000064) BV2) #x00000005))",
+        )
+        z = (1 + b) / b <= a - x * 5 + c
         self.assertSetEqual(z.taint, set(("T",)))
-        self.assertEqual(translate_to_smtlib(z),
-        "(bvsle (bvsdiv (bvadd #x00000001 BV1) BV1) (bvadd (bvsub BV (bvmul #x00000064 #x00000005)) BV2))")
+        self.assertEqual(
+            translate_to_smtlib(z),
+            "(bvsle (bvsdiv (bvadd #x00000001 BV1) BV1) (bvadd (bvsub BV (bvmul #x00000064 #x00000005)) BV2))",
+        )
 
     def test_ConstantArrayBitvec(self):
         c = ArrayConstant(index_size=32, value_size=8, value=b"ABCDE")
@@ -108,9 +112,10 @@ class ExpressionTestNew(unittest.TestCase):
         c[2] = 100
         self.assertEqual(c[2], 100)
 
-
     def test_ArrayDefault3(self):
-        c = MutableArray(ArrayVariable(index_size=32, value_size=8, length=5, default=0, name="ARR"))
+        c = MutableArray(
+            ArrayVariable(index_size=32, value_size=8, length=5, default=0, name="ARR")
+        )
         self.assertEqual(c[1], 0)
         self.assertEqual(c[2], 0)
         self.assertEqual(c[3], 0)
@@ -124,18 +129,18 @@ class ExpressionTestNew(unittest.TestCase):
     def test_ArrayDefault4(self):
         cs = ConstraintSet()
         a = MutableArray(cs.new_array(index_size=32, value_size=8, length=4, default=0, name="ARR"))
-        i = cs.new_bitvec(size = a.index_size)
+        i = cs.new_bitvec(size=a.index_size)
         SelectedSolver.instance().must_be_true(cs, 0 == a.default)
         SelectedSolver.instance().must_be_true(cs, a[i] == a.default)
-        cs.add(i==2)
+        cs.add(i == 2)
         SelectedSolver.instance().must_be_true(cs, 0 == a.default)
         SelectedSolver.instance().must_be_true(cs, a[i] == a.default)
 
         b = a[:]
-        i = cs.new_bitvec(size = a.index_size)
+        i = cs.new_bitvec(size=a.index_size)
         SelectedSolver.instance().must_be_true(cs, 0 == b.default)
         SelectedSolver.instance().must_be_true(cs, b[i] == b.default)
-        
+
         a[1] = 10
         a[2] = 20
         a[3] = 30
@@ -146,7 +151,6 @@ class ExpressionTestNew(unittest.TestCase):
         SelectedSolver.instance().must_be_true(cs, a[2] == 20)
         SelectedSolver.instance().must_be_true(cs, a[3] == 30)
         # SelectedSolver.instance().must_be_true(cs, a[4] == 0) #undefined!
-        
 
         b = a[:]
         # b := 0 10 20 30 0 0 x x x x      (x undefined)
@@ -155,9 +159,6 @@ class ExpressionTestNew(unittest.TestCase):
         SelectedSolver.instance().must_be_true(cs, b[1] == 10)
         SelectedSolver.instance().must_be_true(cs, b[2] == 20)
         SelectedSolver.instance().must_be_true(cs, b[3] == 30)
-        
-
-
 
     def test_Expression(self):
         # Used to check if all Expression have test
@@ -176,10 +177,10 @@ class ExpressionTestNew(unittest.TestCase):
                 not hasattr(x, "__dict__"),
             )
             """
-            #self.assertEqual(len(pickle_dumps(x)), pickle_size)
+            # self.assertEqual(len(pickle_dumps(x)), pickle_size)
             self.assertEqual(sys.getsizeof(x), sizeof)
             self.assertFalse(hasattr(x, "__dict__"))  # slots!
-            self.assertTrue(hasattr(x, "_taint"))     # taint!
+            self.assertTrue(hasattr(x, "_taint"))  # taint!
             checked.add(ty)
 
         # Can not instantiate an Expression
@@ -266,7 +267,6 @@ class ExpressionTestNew(unittest.TestCase):
         check(BitvecArithmeticShiftLeft, operanda=bvx, operandb=bvy, pickle_size=146, sizeof=56)
         check(BitvecArithmeticShiftRight, operanda=bvx, operandb=bvy, pickle_size=147, sizeof=56)
 
-
         check(BitvecZeroExtend, operand=bvx, size=122, pickle_size=119, sizeof=56)
         check(BitvecSignExtend, operand=bvx, size=122, pickle_size=119, sizeof=56)
         check(BitvecExtract, operand=bvx, offset=0, size=8, pickle_size=119, sizeof=64)
@@ -275,10 +275,9 @@ class ExpressionTestNew(unittest.TestCase):
 
         a = ArrayVariable(index_size=32, value_size=32, length=324, name="name")
         check(ArrayConstant, index_size=32, value_size=8, value=b"A", pickle_size=136, sizeof=64)
-        check(ArraySlice, array=a, offset=0, size=10 , pickle_size=136, sizeof=48)
+        check(ArraySlice, array=a, offset=0, size=10, pickle_size=136, sizeof=48)
         check(ArraySelect, array=a, index=bvx, pickle_size=161, sizeof=56)
         check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=188, sizeof=80)
-
 
         def all_subclasses(cls):
             return set((Expression,)).union(
@@ -291,50 +290,50 @@ class ExpressionTestNew(unittest.TestCase):
         self.assertSetEqual(checked, all_types)
 
     def test_Expression_BitvecOp(self):
-        a = BitvecConstant(size=32,value=100)
-        b = BitvecConstant(size=32,value=101)
-        x = a+b
+        a = BitvecConstant(size=32, value=100)
+        b = BitvecConstant(size=32, value=101)
+        x = a + b
         self.assertTrue(isinstance(x, Bitvec))
 
     def test_Expression_BoolTaint(self):
-        #Bool can not be instantiaated
+        # Bool can not be instantiaated
         self.assertRaises(Exception, Bool, ())
 
-        x = BoolConstant(value=True, taint=('red',))
-        y = BoolConstant(value=False, taint=('blue',))
-        z = BoolOr(x,y)
-        self.assertIn('red', x.taint)
-        self.assertIn('blue', y.taint)
-        self.assertIn('red', z.taint)
-        self.assertIn('blue', z.taint)
+        x = BoolConstant(value=True, taint=("red",))
+        y = BoolConstant(value=False, taint=("blue",))
+        z = BoolOr(x, y)
+        self.assertIn("red", x.taint)
+        self.assertIn("blue", y.taint)
+        self.assertIn("red", z.taint)
+        self.assertIn("blue", z.taint)
 
     def test_Expression_BitvecTaint(self):
-        #Bool can not be instantiaated
+        # Bool can not be instantiaated
         self.assertRaises(Exception, Bitvec, ())
 
-        x = BitvecConstant(size=32, value=123, taint=('red',))
-        y = BitvecConstant(size=32, value=124, taint=('blue',))
-        z = BoolGreaterOrEqualThan(x,y)
-        self.assertIn('red', x.taint)
-        self.assertIn('blue', y.taint)
-        self.assertIn('red', z.taint)
-        self.assertIn('blue', z.taint)
-
+        x = BitvecConstant(size=32, value=123, taint=("red",))
+        y = BitvecConstant(size=32, value=124, taint=("blue",))
+        z = BoolGreaterOrEqualThan(x, y)
+        self.assertIn("red", x.taint)
+        self.assertIn("blue", y.taint)
+        self.assertIn("red", z.taint)
+        self.assertIn("blue", z.taint)
 
     def test_Expression_Array(self):
-        #Bool can not be instantiaated
+        # Bool can not be instantiaated
         self.assertRaises(Exception, Array, ())
 
         a = ArrayConstant(index_size=32, value_size=8, value=b"ABCDE")
-        a[0] == ord('A')
+        a[0] == ord("A")
 
-        x = BitvecConstant(size=32, value=123, taint=('red',))
-        y = BitvecConstant(size=32, value=124, taint=('blue',))
-        z = BoolGreaterOrEqualThan(x,y)
-        self.assertIn('red', x.taint)
-        self.assertIn('blue', y.taint)
-        self.assertIn('red', z.taint)
-        self.assertIn('blue', z.taint)
+        x = BitvecConstant(size=32, value=123, taint=("red",))
+        y = BitvecConstant(size=32, value=124, taint=("blue",))
+        z = BoolGreaterOrEqualThan(x, y)
+        self.assertIn("red", x.taint)
+        self.assertIn("blue", y.taint)
+        self.assertIn("red", z.taint)
+        self.assertIn("blue", z.taint)
+
 
 class ExpressionTestLoco(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -343,7 +342,6 @@ class ExpressionTestLoco(unittest.TestCase):
         self.solver = Z3Solver.instance()
         cs = ConstraintSet()
         self.assertTrue(self.solver.check(cs))
-
 
     def assertItemsEqual(self, a, b):
         # Required for Python3 compatibility
@@ -381,7 +379,6 @@ class ExpressionTestLoco(unittest.TestCase):
 
         self.assertFalse(self.solver.can_be_true(cs, ult))
         self.assertTrue(self.solver.must_be_true(cs, lt))
-
 
 
 class ExpressionTest(unittest.TestCase):
@@ -755,18 +752,19 @@ class ExpressionTest(unittest.TestCase):
         )  # get a concrete solution for index 1 (default 100)
         self.assertItemsEqual(solutions, (100, 2))
 
-
     def testBasicConstatArray(self):
         cs = ConstraintSet()
-        array1 = MutableArray(cs.new_array(index_size=32, value_size=32, length=10, name="array1", default=0))
-        array2 = MutableArray(cs.new_array(index_size=32, value_size=32, length=10, name="array2", default=0))
+        array1 = MutableArray(
+            cs.new_array(index_size=32, value_size=32, length=10, name="array1", default=0)
+        )
+        array2 = MutableArray(
+            cs.new_array(index_size=32, value_size=32, length=10, name="array2", default=0)
+        )
         array1[0:10] = range(10)
         self.assertTrue(array1[0] == 0)
-        #yeah right self.assertTrue(array1[0:10] == range(10))
+        # yeah right self.assertTrue(array1[0:10] == range(10))
         array_slice = array1[0:10]
         self.assertTrue(array_slice[0] == 0)
-        
-
 
     def testBasicPickle(self):
         import pickle
