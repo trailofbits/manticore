@@ -1048,13 +1048,14 @@ class ArrayVariable(Array, Variable):
     def value_size(self):
         return self._value_size
 
-    '''
+    """
     @property
     def index_max(self):
         if self._length is None:
             return None
         return self._length - 1
-'''
+"""
+
     @property
     def default(self):
         return self._default

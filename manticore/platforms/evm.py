@@ -104,7 +104,9 @@ consts.add(
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 consts.add(
-    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
 )
 
 
@@ -181,7 +183,24 @@ class Transaction:
         :param state: a manticore state
         :param bool constrain: If True, constrain expr to concretized value
         """
-        conc_caller, conc_address, conc_value, conc_gas, conc_data, conc_return_data,conc_used_gas = state.solve_one_n(self.caller,self.address,self.value,self.gas,self.data,self.return_data,self.used_gas,constrain=constrain)
+        (
+            conc_caller,
+            conc_address,
+            conc_value,
+            conc_gas,
+            conc_data,
+            conc_return_data,
+            conc_used_gas,
+        ) = state.solve_one_n(
+            self.caller,
+            self.address,
+            self.value,
+            self.gas,
+            self.data,
+            self.return_data,
+            self.used_gas,
+            constrain=constrain,
+        )
         return Transaction(
             self.sort,
             conc_address,
@@ -486,7 +505,7 @@ class EndTx(EVMException):
         if isinstance(data, MutableArray):
             data = data.array
         if not isinstance(data, (type(None), Array, bytes)):
-                raise EVMException("Invalid end transaction data type")
+            raise EVMException("Invalid end transaction data type")
         self.result = result
         self.data = data
 
@@ -771,13 +790,15 @@ class EVM(Eventful):
         #    raise EVMException("Need code")
         self._constraints = constraints
         # Uninitialized values in memory are 0 by spec
-        self.memory = MutableArray(constraints.new_array(
-            index_size=256,
-            value_size=8,
-            name=f"EMPTY_MEMORY_{address:x}",
-            avoid_collisions=True,
-            default=0,
-        ))
+        self.memory = MutableArray(
+            constraints.new_array(
+                index_size=256,
+                value_size=8,
+                name=f"EMPTY_MEMORY_{address:x}",
+                avoid_collisions=True,
+                default=0,
+            )
+        )
         self.address = address
         self.caller = (
             caller  # address of the account that is directly responsible for this execution
@@ -849,7 +870,7 @@ class EVM(Eventful):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        #self.memory.constraints = constraints
+        # self.memory.constraints = constraints
 
     @property
     def gas(self):
@@ -978,7 +999,7 @@ class EVM(Eventful):
     def PC(self):
         return self.pc
 
-    def _getcode(self, pc:int = 0, zerotail:bool = True):
+    def _getcode(self, pc: int = 0, zerotail: bool = True):
         bytecode = self.bytecode
         for pc_i in range(pc, len(bytecode)):
             c = bytecode[pc_i]
@@ -989,7 +1010,6 @@ class EVM(Eventful):
         if zerotail:
             while True:
                 yield 0  # STOP opcode
-
 
     @property
     def instruction(self):
@@ -1046,7 +1066,7 @@ class EVM(Eventful):
         if isinstance(value, int):
             value = value & TT256M1
 
-        #value = simplify(value)
+        # value = simplify(value)
         if isinstance(value, Constant) and not value.taint:
             value = value.value
 
@@ -1171,13 +1191,12 @@ class EVM(Eventful):
             assert result is None
 
     def _calculate_gas(self, *arguments):
-        start= time.time()
+        start = time.time()
         current = self.instruction
         implementation = getattr(self, f"{current.semantics}_gas", None)
         if implementation is None:
             return current.fee
         return current.fee + implementation(*arguments)
-
 
     def _handler(self, *arguments):
         current = self.instruction
@@ -1410,7 +1429,7 @@ class EVM(Eventful):
 
     def _load(self, offset, size=1):
         value = self.memory.read_BE(offset, size)
-        #value = simplify(value)
+        # value = simplify(value)
         if isinstance(value, Constant) and not value.taint:
             value = value.value
         self._publish("did_evm_read_memory", offset, value, size)
@@ -1634,9 +1653,9 @@ class EVM(Eventful):
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
         """Compute Keccak-256 hash
-            If the size is symbolic the potential solutions will be sampled as
-            defined by the default policy and the analysis will be forked.
-            The `size` can be considered concrete in this handler.
+        If the size is symbolic the potential solutions will be sampled as
+        defined by the default policy and the analysis will be forked.
+        The `size` can be considered concrete in this handler.
 
         """
         data = self.read_buffer(start, size)
@@ -1686,7 +1705,12 @@ class EVM(Eventful):
         bytes = []
         for i in range(32):
             try:
-                c=Operators.ITEBV(8, Operators.ULT(self.safe_add(offset, i), data_length), self.data[offset + i], 0, )
+                c = Operators.ITEBV(
+                    8,
+                    Operators.ULT(self.safe_add(offset, i), data_length),
+                    self.data[offset + i],
+                    0,
+                )
                 c = simplify(c)
             except IndexError:
                 # offset + i is concrete and outside data
@@ -1695,8 +1719,8 @@ class EVM(Eventful):
         return Operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, offset, size):
-        """ To improve reporting we maintain how much of the calldata is actually
-        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly """
+        """To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly"""
         self._used_calldata_size = Operators.ITEBV(
             256, size != 0, self._used_calldata_size + offset + size, self._used_calldata_size
         )
@@ -1746,7 +1770,6 @@ class EVM(Eventful):
                 max_size = cap
                 self.constraints.add(Operators.ULE(size, cap))
 
-
         for i in range(max_size):
             try:
                 c1 = Operators.ITEBV(
@@ -1784,7 +1807,6 @@ class EVM(Eventful):
         copyfee = self.safe_mul(GCOPY, Operators.UDIV(self.safe_add(size, 31), 32))
         self._consume(copyfee)
 
-
         if issymbolic(size):
             max_size = SelectedSolver.instance().max(self.constraints, size)
         else:
@@ -1816,7 +1838,10 @@ class EVM(Eventful):
 
             self._store(mem_offset + i, value)
 
-        assert SelectedSolver.instance().must_be_true(self.constraints,self.memory[0:max_size] == self.bytecode[code_offset:code_offset + max_size])
+        assert SelectedSolver.instance().must_be_true(
+            self.constraints,
+            self.memory[0:max_size] == self.bytecode[code_offset : code_offset + max_size],
+        )
 
         self._publish("did_evm_read_code", self.address, code_offset, size)
 
@@ -2148,7 +2173,9 @@ class EVM(Eventful):
         keccak_init = self.world.symbolic_function(globalsha3, data)
         caller = msg.caller.read_BE(0, 20)
         salt = salt.read_BE(0, 32)
-        address = self.world.symbolic_function(b"\xff" + caller + salt + keccak_init) & ((1<<0x20)-1)
+        address = self.world.symbolic_function(b"\xff" + caller + salt + keccak_init) & (
+            (1 << 0x20) - 1
+        )
 
         self.world.start_transaction(
             "CREATE",
@@ -2172,7 +2199,6 @@ class EVM(Eventful):
             self.world.delete_account(address)
             address = 0
         return address
-
 
     def CALL_gas(self, wanted_gas, address, value, in_offset, in_size, out_offset, out_size):
         """ Dynamic gas for CALL instruction. _arguably turing complete in itself_   """
@@ -3138,13 +3164,15 @@ class EVMWorld(Platform):
 
         if storage is None:
             # Uninitialized values in a storage are 0 by spec
-            storage = MutableArray(self.constraints.new_array(
-                index_size=256,
-                value_size=256,
-                name=f"STORAGE_{address:x}",
-                avoid_collisions=True,
-                default=0,
-            ))
+            storage = MutableArray(
+                self.constraints.new_array(
+                    index_size=256,
+                    value_size=256,
+                    name=f"STORAGE_{address:x}",
+                    avoid_collisions=True,
+                    default=0,
+                )
+            )
         else:
             if isinstance(storage, MutableArray):
                 if storage.index_bits != 256 or storage.value_bits != 256:
@@ -3219,7 +3247,7 @@ class EVMWorld(Platform):
         """
         assert self._pending_transaction is None, "Already started tx"
         assert caller is not None
-        if issymbolic(data ):
+        if issymbolic(data):
             assert data.length is not None
             assert data.value_size == 8
 
