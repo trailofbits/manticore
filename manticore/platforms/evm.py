@@ -2594,7 +2594,7 @@ class EVMWorld(Platform):
         else:
             tx_fee = GTRANSACTION  # Simple transaction fee
 
-        ## This popcnt like thing is expensive when the bytecode or
+        # This popcnt like thing is expensive when the bytecode or
         # data has symbolic content
 
         zerocount = 0

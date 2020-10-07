@@ -19,11 +19,13 @@ are built operating over expression variables and constants
 
 from functools import reduce
 import uuid
-
 import re
 import copy
-from typing import Union, Optional, Dict, Tuple, List, AnyStr
+from typing import Union, Optional, Tuple, List
 
+def simplify(e):
+    from .visitors import simplify as visitor_simplify
+    return visitor_simplify(e)
 
 class ExpressionError(Exception):
     """
@@ -752,8 +754,7 @@ class Array(Expression, abstract=True):
         """ Returned Boolean Expression holds when the index was used"""
         raise NotImplementedError
 
-    ###########################################################################
-    ## following methods are implemented on top of the abstract methods ^
+    # Following methods are implemented on top of the abstract methods ^
     def in_bounds(self, index: Union[Bitvec, int]) -> Union[Bool, bool]:
         """ True if the index points inside the array (or array is unbounded)"""
         if self.length is not None:
@@ -868,8 +869,6 @@ class Array(Expression, abstract=True):
             stop = len(self)
         size = stop - start
         if isinstance(size, Bitvec):
-            from .visitors import simplify
-
             size = simplify(size)
         else:
             size = BitvecConstant(self.index_size, size)
@@ -1632,5 +1631,3 @@ def taint_with(arg, *taints, value_size=256, index_size=256):
 
     return arg
 
-
-from .visitors import simplify
