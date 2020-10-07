@@ -23,9 +23,11 @@ import re
 import copy
 from typing import Union, Optional, Tuple, List
 
+
 def simplify(e):
     from .visitors import simplify as visitor_simplify
     return visitor_simplify(e)
+
 
 class ExpressionError(Exception):
     """
@@ -1630,4 +1632,3 @@ def taint_with(arg, *taints, value_size=256, index_size=256):
         arg._taint |= tainted_fset
 
     return arg
-
