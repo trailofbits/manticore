@@ -1855,7 +1855,7 @@ class EVM(Eventful):
 
         assert SelectedSolver.instance().must_be_true(
             self.constraints,
-            self.memory[0:max_size] == self.bytecode[code_offset : code_offset + max_size],
+            self.memory[mem_offset:mem_offset+max_size] == self.bytecode[code_offset : code_offset + max_size],
         )
 
         self._publish("did_evm_read_code", self.address, code_offset, size)
