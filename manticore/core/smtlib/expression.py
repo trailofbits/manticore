@@ -24,9 +24,8 @@ import copy
 from typing import Union, Optional, Tuple, List
 
 
-def simplify(e):
+def local_simplify(e):
     from .visitors import simplify as visitor_simplify
-
     return visitor_simplify(e)
 
 
@@ -666,7 +665,7 @@ class BoolEqual(BoolOperation):
         super().__init__(operands=(operanda, operandb), **kwargs)
 
     def __bool__(self):
-        simplified = simplify(self)
+        simplified = local_simplify(self)
         if isinstance(simplified, Constant):
             return simplified.value
         raise NotImplementedError
@@ -777,7 +776,7 @@ class Array(Expression, abstract=True):
         FIXME: this assigns a random name to a new variable and does not use
         a ConstraintSet as a Factory
         """
-        logger.error("THis is creating a variable out of band FTAG4985732")
+        # logger.error("THis is creating a variable out of band FTAG4985732")
         if isinstance(array, Array):
             return array
         arr = ArrayVariable(
@@ -798,7 +797,7 @@ class Array(Expression, abstract=True):
             return BitvecConstant(self.index_size, index)
         if not isinstance(index, Bitvec) or index.size != self.index_size:
             raise ExpressionError(f"Expected Bitvector of size {self.index_size}")
-        return simplify(index)
+        return local_simplify(index)
 
     def cast_value(self, value: Union[Bitvec, bytes, int]) -> Bitvec:
         """Forgiving casting method that will translate compatible values into
@@ -872,7 +871,7 @@ class Array(Expression, abstract=True):
             stop = len(self)
         size = stop - start
         if isinstance(size, Bitvec):
-            size = simplify(size)
+            size = local_simplify(size)
         else:
             size = BitvecConstant(self.index_size, size)
         if not isinstance(size, BitvecConstant):
@@ -888,9 +887,9 @@ class Array(Expression, abstract=True):
         )
 
         for index in range(len(array_a)):
-            new_arr = new_arr.store(index, simplify(array_a[index]))
+            new_arr = new_arr.store(index, local_simplify(array_a[index]))
         for index in range(len(array_b)):
-            new_arr = new_arr.store(index + len(array_a), simplify(array_b[index]))
+            new_arr = new_arr.store(index + len(array_a), local_simplify(array_b[index]))
         return new_arr
 
     def __add__(self, other):
@@ -1072,7 +1071,7 @@ class ArrayVariable(Array, Variable):
 
     def store(self, index, value):
         index = self.cast_index(index)
-        value = simplify(self.cast_value(value))
+        value = local_simplify(self.cast_value(value))
         return ArrayStore(array=self, index=index, value=value)
 
     @property
@@ -1232,12 +1231,12 @@ class ArrayStore(ArrayOperation):
         """Gets an element from the Array.
         If the element was not previously the default is used.
         """
-        index = simplify(self.cast_index(index))
+        index = local_simplify(self.cast_index(index))
 
         # Emulate list[-1]
         has_length = self.length is not None
         if has_length:
-            index = simplify(BitvecITE(index < 0, self.length + index, index))
+            index = local_simplify(BitvecITE(index < 0, self.length + index, index))
 
         if isinstance(index, Constant):
             if has_length and index.value >= self.length:
@@ -1279,7 +1278,7 @@ class ArrayStore(ArrayOperation):
         return result
 
     def store(self, index, value):
-        index = simplify(self.cast_index(index))
+        index = local_simplify(self.cast_index(index))
         value = self.cast_value(value)
         new_array = ArrayStore(self, index, value)
         return new_array
@@ -1332,7 +1331,7 @@ class ArraySlice(ArrayOperation):
             length = self.length
             if length is not None and index.value >= length:
                 raise IndexError
-        return self.array.select(simplify(index + self.offset))
+        return self.array.select (local_simplify(index + self.offset))
 
     def store(self, index, value):
         return ArraySlice(

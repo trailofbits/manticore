@@ -6,8 +6,7 @@ import random
 import io
 import copy
 import inspect
-from functools import wraps
-from typing import List, Set, Tuple, Union
+from typing import List, Set, Tuple, Union, Dict
 from ..platforms.platform import *
 from ..core.smtlib import (
     SelectedSolver,
@@ -21,20 +20,20 @@ from ..core.smtlib import (
     BitvecConstant,
     translate_to_smtlib,
     to_constant,
-    simplify,
     get_depth,
     issymbolic,
     get_taints,
     istainted,
     taint_with,
+    simplify
 )
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..utils.helpers import printable_bytes
 from ..utils import config
-from ..core.smtlib.visitors import simplify
 from ..exceptions import EthereumError
 import pyevmasm as EVMAsm
+
 import logging
 from collections import namedtuple
 import sha3
@@ -1030,7 +1029,7 @@ class EVM(Eventful):
         try:
             _decoding_cache = getattr(self, "_decoding_cache")
         except Exception:
-            self._decoding_cache = {}
+            self._decoding_cache: Dict[int, EVMAsm.Instruction] = {}
             _decoding_cache = self._decoding_cache
 
         if isinstance(pc, Constant):
@@ -1039,6 +1038,8 @@ class EVM(Eventful):
         if pc in _decoding_cache:
             return _decoding_cache[pc]
 
+        if isinstance(pc, Bitvec):
+            raise EVMException("Trying to decode from symbolic pc")
         instruction = EVMAsm.disassemble_one(self._getcode(pc), pc=pc, fork=self.evmfork)
         _decoding_cache[pc] = instruction
         return instruction
