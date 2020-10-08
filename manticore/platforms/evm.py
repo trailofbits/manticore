@@ -25,7 +25,7 @@ from ..core.smtlib import (
     get_taints,
     istainted,
     taint_with,
-    simplify
+    simplify,
 )
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful

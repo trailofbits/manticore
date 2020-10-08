@@ -26,6 +26,7 @@ from typing import Union, Optional, Tuple, List
 
 def local_simplify(e):
     from .visitors import simplify as visitor_simplify
+
     return visitor_simplify(e)
 
 
@@ -1331,7 +1332,7 @@ class ArraySlice(ArrayOperation):
             length = self.length
             if length is not None and index.value >= length:
                 raise IndexError
-        return self.array.select (local_simplify(index + self.offset))
+        return self.array.select(local_simplify(index + self.offset))
 
     def store(self, index, value):
         return ArraySlice(
