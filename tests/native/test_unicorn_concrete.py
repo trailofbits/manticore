@@ -4,6 +4,7 @@ import io
 import contextlib
 
 from manticore.native import Manticore
+from manticore.native.state import State
 from manticore.core.plugin import Plugin
 
 
@@ -132,27 +133,32 @@ class UnicornResumeTest(unittest.TestCase):
     MAIN = 0x402180
     PRE_LOOP = 0x4022EE
     POST_LOOP = 0x402346
-    DONE = 0x402483
+    DONE = 0x4024D3
+    FAIL = 0x40247C
 
-    def hook_main(self, state):
+    def hook_main(self, state: State):
         print("Reached main!!")
 
-    def hook_pre_loop(self, state):
+    def hook_pre_loop(self, state: State):
         print("Resuming emulation")
         state.cpu.emulate_until(self.POST_LOOP)
 
-    def hook_post_emulation(self, state):
+    def hook_ret_good(self, state: State):
         print("We made it!")
+
+    def hook_ret_fail(self, state: State):
+        self.assertTrue(False, "Target binary called `lose`!")
 
     def setUp(self):
         dirname = os.path.dirname(__file__)
         self.concrete_instance = Manticore(os.path.join(dirname, "binaries", "rusticorn"))
         self.concrete_instance.register_plugin(ResumeUnicornPlugin())
-        self.concrete_instance.add_hook(self.MAIN, self.hook_main)
-        self.concrete_instance.add_hook(self.PRE_LOOP, self.hook_pre_loop)
-        self.concrete_instance.add_hook(self.DONE, self.hook_post_emulation)
+        self.concrete_instance.add_hook(self.MAIN, callback=self.hook_main)
+        self.concrete_instance.add_hook(self.PRE_LOOP, callback=self.hook_pre_loop)
+        self.concrete_instance.add_hook(self.DONE, callback=self.hook_ret_good)
+        self.concrete_instance.add_hook(self.FAIL, callback=self.hook_ret_fail)
 
-    def test_integration_basic_stdout(self):
+    def test_integration_resume(self):
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             self.concrete_instance.run()
