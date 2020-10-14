@@ -120,20 +120,6 @@ class ManticornTest(unittest.TestCase):
 
         self.assertEqual(left, right)
 
-    def test_integration_basic_stdout(self):
-        self.m.run()
-        self.concrete_instance.run()
-
-        self.m.finalize()
-        self.concrete_instance.finalize()
-
-        with open(os.path.join(self.m.workspace, "test_00000000.stdout"), "r") as f:
-            left = f.read().strip()
-        with open(os.path.join(self.concrete_instance.workspace, "test_00000000.stdout"), "r") as f:
-            right = f.read().strip()
-
-        self.assertEqual(left, right)
-
 
 class ResumeUnicornPlugin(Plugin):
     def will_run_callback(self, ready_states):
