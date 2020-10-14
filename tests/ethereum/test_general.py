@@ -91,6 +91,9 @@ class EthVerifierIntegrationTest(unittest.TestCase):
 
     def test_propverif_external(self) -> None:
         cli_version = subprocess.check_output(("manticore-verifier", "--version")).decode("utf-8")
+        cli_version = cli_version.split(
+            "Manticore is only supported on Linux. Proceed at your own risk!\n"
+        )[-1]
         py_version = f"Manticore {pkg_resources.get_distribution('manticore').version}\n"
         self.assertEqual(cli_version, py_version)
 
