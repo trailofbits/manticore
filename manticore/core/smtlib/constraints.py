@@ -187,7 +187,6 @@ class ConstraintSet:
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
-        result = ""
         translator = TranslatorSmtlib(use_bindings=False)
         for v in variables:
             translator.visit_Variable(v)
