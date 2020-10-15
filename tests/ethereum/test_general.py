@@ -1741,13 +1741,6 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         # check balances
         self.assertEqual(world.get_balance(0x111111111111111111111111111111111111111), 0)
         self.assertEqual(world.get_balance(0x222222222222222222222222222222222222222), 10)
-        from manticore.core.smtlib.visitors import translate_to_smtlib, simplify
-
-        print(
-            translate_to_smtlib(
-                simplify(world.get_balance(0x333333333333333333333333333333333333333))
-            )
-        )
         self.assertEqual(
             world.get_balance(0x333333333333333333333333333333333333333),
             100000000000000000000000 - 10,

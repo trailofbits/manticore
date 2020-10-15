@@ -16,7 +16,7 @@ are built operating over expression variables and constants
     cs.add( condition2 )
 
 """
-
+from abc import ABC, abstractmethod
 from functools import reduce
 import uuid
 import re
@@ -72,14 +72,6 @@ class XSlotted(type):
     print (sys.getsizeof(c),sys.getsizeof(x)) #same value
 
     """
-
-    @staticmethod
-    def _remove_mod(attr: str) -> str:
-        """xlots attrivutes could have modifficators after a # symbol
-        attribute#v  means attribute is _volatile_ and should not be saved to storage
-        """
-        return attr.split("#")[0]
-
     def __new__(cls, clsname, bases, attrs, abstract=False):
 
         xslots = set(attrs.get("__xslots__", ()))
@@ -90,17 +82,18 @@ class XSlotted(type):
         if abstract:
             attrs["__slots__"] = ()
         else:
-            attrs["__slots__"]: Tuple[str] = tuple(map(cls._remove_mod, attrs["__xslots__"]))
+            attrs["__slots__"]: Tuple[str] = tuple(
+                map(lambda attr: attr.split('#', 1)[0], attrs["__xslots__"]))
 
         return super().__new__(cls, clsname, bases, attrs)
 
 
-class Expression(object, metaclass=XSlotted, abstract=True):
+class Expression(ABC, metaclass=XSlotted, abstract=True):
     """ Abstract taintable Expression. """
 
     __xslots__: Tuple[str, ...] = ("_taint",)
 
-    def __init__(self, taint: Union[tuple, frozenset] = ()):
+    def __init__(self, *, taint: Union[tuple, frozenset] = ()):
         """
         An abstract Unmutable Taintable Expression
         :param taint: A frozenzset
@@ -142,7 +135,7 @@ class Variable(Expression, abstract=True):
 
     __xslots__: Tuple[str, ...] = ("_name",)
 
-    def __init__(self, name: str, **kwargs):
+    def __init__(self, *, name: str, **kwargs):
         """Variable is an Expression that has a name
         :param name: The Variable name
         """
@@ -162,7 +155,7 @@ class Constant(Expression, abstract=True):
 
     __xslots__: Tuple[str, ...] = ("_value",)
 
-    def __init__(self, value: Union[bool, int, bytes, List[int]], **kwargs):
+    def __init__(self, *, value: Union[bool, int, bytes, List[int]], **kwargs):
         """A constant expression has a value
 
         :param value: The constant value
@@ -180,7 +173,7 @@ class Operation(Expression, abstract=True):
 
     __xslots__: Tuple[str, ...] = ("_operands",)
 
-    def __init__(self, operands: Tuple[Expression, ...], **kwargs):
+    def __init__(self, *, operands: Tuple[Expression, ...], **kwargs):
         """An operation has operands
 
         :param operands: A tuple of expression operands
@@ -203,9 +196,6 @@ class Operation(Expression, abstract=True):
 # Booleans
 class Bool(Expression, abstract=True):
     """Bool expression represent symbolic value of truth"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def cast(self, value: Union["Bool", int, bool], **kwargs) -> Union["BoolConstant", "Bool"]:
         """ Cast any type into a Bool or fail """
@@ -249,12 +239,11 @@ class Bool(Expression, abstract=True):
         return BoolXor(self.cast(other), self)
 
     def __bool__(self):
-        raise NotImplementedError
+        raise ExpressionError("You tried to use a Bool Expression as a boolean constant. Expressions could represent a set of concrete values.")
 
 
 class BoolVariable(Bool, Variable):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class BoolConstant(Bool, Constant):
@@ -280,6 +269,14 @@ class BoolOperation(Bool, Operation, abstract=True):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def __bool__(self):
+        # FIXME: TODO: re-think is we want to be this forgiving every use of
+        #  local_simplify looks hacky
+        simplified = local_simplify(self)
+        if isinstance(simplified, Constant):
+            return simplified.value
+        raise ExpressionError("BoolOperation can not be reduced to a constant")
 
 
 class BoolNot(BoolOperation):
@@ -559,7 +556,6 @@ class BitvecConstant(Bitvec, Constant):
 
 class BitvecOperation(Bitvec, Operation, abstract=True):
     """ Operations that result in a Bitvec """
-
     pass
 
 
@@ -665,12 +661,6 @@ class BoolEqual(BoolOperation):
         assert isinstance(operandb, Expression)
         super().__init__(operands=(operanda, operandb), **kwargs)
 
-    def __bool__(self):
-        simplified = local_simplify(self)
-        if isinstance(simplified, Constant):
-            return simplified.value
-        raise NotImplementedError
-
 
 class BoolGreaterThan(BoolOperation):
     def __init__(self, operanda: Bitvec, operandb: Bitvec, **kwargs):
@@ -703,7 +693,6 @@ class BoolUnsignedGreaterOrEqualThan(BoolOperation):
             operands=(operanda, operandb), **kwargs
         )
 
-
 class Array(Expression, abstract=True):
     """An Array expression is an unmutable mapping from bitvector to bitvector
 
@@ -714,9 +703,10 @@ class Array(Expression, abstract=True):
     """
 
     @property
+    @abstractmethod
     def index_size(self):
         """ The bit size of the index part. Must be overloaded by a more specific class"""
-        raise NotImplementedError
+        ...
 
     @property
     def value_size(self):
@@ -1252,31 +1242,6 @@ class ArrayStore(ArrayOperation):
 
         # if a default is defined we need to check if the index was previously written
         return BitvecITE(self.is_known(index), ArraySelect(self, index), self.cast_value(default))
-
-        # build a big ITE expression
-        array, offset, items = self, 0, []
-        while not isinstance(array, ArrayVariable):
-            if isinstance(array, ArraySlice):
-                # jump over array slices
-                offset += array.offset
-            else:
-                assert isinstance(array, ArrayStore)
-                # The index written to underlaying Array are displaced when sliced
-                cond = index == (array.index - offset)
-                if isinstance(cond, Constant):
-                    if cond.value == True:
-                        items.insert(0, (cond, array.value))
-                        break
-                    else:
-                        array = array.array
-                        continue
-                items.insert(0, (cond, array.value))
-            array = array.array
-
-        result = self.cast_value(default)
-        for cond_i, value_i in items:
-            result = BitvecITE(cond_i, value_i, result)
-        return result
 
     def store(self, index, value):
         index = local_simplify(self.cast_index(index))

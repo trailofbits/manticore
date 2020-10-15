@@ -178,16 +178,19 @@ class ConstraintSet:
         if replace_constants:
             constant_bindings = {}
             for expression in constraints:
+                # FIXME  this will not catch Constant == Variable
+                # Maybe we need a way to canonicalize the expressions somewhere
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
-                    and not isinstance(expression.operands[1], (Variable, Constant))
+                    and isinstance(expression.operands[1], Constant)
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
         result = ""
         translator = TranslatorSmtlib(use_bindings=False)
-        tuple(translator.visit_Variable(v) for v in variables)
+        for v in variables:
+            translator.visit_Variable(v)
         for constraint in constraints:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))

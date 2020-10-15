@@ -2679,11 +2679,11 @@ class EVMWorld(Platform):
         if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
             raise EVMException(f"Transaction type '{sort}' not supported")
 
-        if caller not in self.accounts:
-            logger.info("Caller not in account")
-            raise EVMException(
-                f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
-            )
+        #if caller not in self.accounts:
+        #    logger.info("Caller not in account")
+        #    raise EVMException(
+        #        f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
+        #    )
 
         if sort == "CREATE":
             expected_address = self.new_address(sender=caller)

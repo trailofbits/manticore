@@ -833,5 +833,4 @@ class SelectedSolver:
             cls.choice = consts.solver
 
         SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
-        return YicesSolver.instance()
         return SelectedSolver.instance()
