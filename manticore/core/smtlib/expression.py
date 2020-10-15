@@ -758,7 +758,7 @@ class Array(Expression, abstract=True):
     def in_bounds(self, index: Union[Bitvec, int]) -> Union[Bool, bool]:
         """ True if the index points inside the array (or array is unbounded)"""
         if self.length is not None:
-            return (0 <= index) & (index < self.length)
+            return 0 <= index < self.length
         return True
 
     def __len__(self):
@@ -774,7 +774,6 @@ class Array(Expression, abstract=True):
         FIXME: this assigns a random name to a new variable and does not use
         a ConstraintSet as a Factory
         """
-        # logger.error("THis is creating a variable out of band FTAG4985732")
         if isinstance(array, Array):
             return array
         arr = ArrayVariable(
@@ -782,7 +781,7 @@ class Array(Expression, abstract=True):
             length=len(array),
             default=0,
             value_size=self.value_size,
-            name="cast{}".format(uuid.uuid1()),
+            name=f"cast{uuid.uuid1()}",
         )
         for pos, byte in enumerate(array):
             arr = arr.store(pos, byte)
@@ -963,7 +962,7 @@ class ArrayConstant(Array, Constant):
                 size=self.value_size, value=self.value[index.value], taint=self.taint
             )
 
-        # Index being symbolic generates a sybolic result !
+        # Index being symbolic generates a symbolic result !
         result = BitvecConstant(size=self.value_size, value=0, taint=("out_of_bounds"))
         for i, c in enumerate(self.value):
             result = BitvecITE(
@@ -988,7 +987,7 @@ class ArrayVariable(Array, Variable):
     If a default value is provided reading from an unused index will return the
     default. Otherwise each unused position in the array represents a free bitvector.
 
-    If an length maximun index is provided accessing over the max is undefined.
+    If a length maximum index is provided, accessing over the max is undefined.
     Otherwise the array is unbounded.
 
     """
@@ -1028,7 +1027,7 @@ class ArrayVariable(Array, Variable):
         """
         assert index_size in (32, 64, 256)
         assert value_size in (8, 16, 32, 64, 256)
-        assert length is None or length >= 0 and length < 2 ** index_size
+        assert length is None or 0 <= length < 2 ** index_size
         self._index_size = index_size
         self._length = length
         self._value_size = value_size
@@ -1043,13 +1042,6 @@ class ArrayVariable(Array, Variable):
     def value_size(self):
         return self._value_size
 
-    """
-    @property
-    def index_max(self):
-        if self._length is None:
-            return None
-        return self._length - 1
-"""
 
     @property
     def default(self):
@@ -1153,10 +1145,7 @@ class ArrayStore(ArrayOperation):
         # Calculate only first time
         # This can have repeated and reused written indexes.
         if self._written is None:
-            written = set()
-            for offset, value in get_items(self):
-                written.add(offset)
-            self._written = written
+            self._written = {offset for offset, _ in get_items(self)}
         return self._written
 
     def is_known(self, index):
@@ -1549,7 +1538,7 @@ class BitvecITE(BitvecOperation):
         return self.operands[2]
 
 
-# auxiliar functions maybe move to operators
+# auxiliary functions. Maybe move to operators
 def issymbolic(value) -> bool:
     """
     Helper to determine whether an object is symbolic (e.g checking
