@@ -75,7 +75,7 @@ class XSlotted(type):
 
     @staticmethod
     def _remove_mod(attr: str) -> str:
-        """xlots attrivutes could have modifficators after a # symbol
+        """xslots attributes could have modifiers after a # symbol
         attribute#v  means attribute is _volatile_ and should not be saved to storage
         """
         return attr.split("#")[0]
@@ -88,7 +88,7 @@ class XSlotted(type):
             xslots = xslots.union(getattr(base, "__xslots__", ()))
         attrs["__xslots__"]: Tuple[str] = tuple(xslots)
         if abstract:
-            attrs["__slots__"] = ()
+            attrs["__slots__"] = tuple()
         else:
             attrs["__slots__"]: Tuple[str] = tuple(map(cls._remove_mod, attrs["__xslots__"]))
 
@@ -127,10 +127,7 @@ class Expression(object, metaclass=XSlotted, abstract=True):
         return ()
 
     def __getstate__(self):
-        state = {}
-        for attr in self.__slots__:
-            state[attr] = getattr(self, attr)
-        return state
+        return {attr: getattr(self, attr) for attr in self.__slots__}
 
     def __setstate__(self, state):
         for attr in self.__slots__:
