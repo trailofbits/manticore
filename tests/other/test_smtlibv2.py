@@ -178,7 +178,9 @@ class ExpressionTestNew(unittest.TestCase):
             )
             """
             # self.assertEqual(len(pickle_dumps(x)), pickle_size)
-            self.assertEqual(sys.getsizeof(x), sizeof)
+            #self.assertEqual(sys.getsizeof(x), sizeof)
+            #Te test numbers are taken from Python 3.8.5 older pythons use 8 more bytes sometimes
+            self.assertLessEqual(sys.getsizeof(x), sizeof+8)
             self.assertFalse(hasattr(x, "__dict__"))  # slots!
             self.assertTrue(hasattr(x, "_taint"))  # taint!
             checked.add(ty)
