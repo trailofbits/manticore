@@ -90,7 +90,7 @@ class XSlotted(type):
         return super().__new__(cls, clsname, bases, attrs)
 
 
-class Expression(ABC, metaclass=XSlotted, abstract=True):
+class Expression(object, metaclass=XSlotted, abstract=True):
     """ Abstract taintable Expression. """
 
     __xslots__: Tuple[str, ...] = ("_taint",)
