@@ -2679,7 +2679,7 @@ class EVMWorld(Platform):
         if sort not in {"CALL", "CREATE", "DELEGATECALL", "CALLCODE", "STATICCALL"}:
             raise EVMException(f"Transaction type '{sort}' not supported")
 
-        #if caller not in self.accounts:
+        # if caller not in self.accounts:
         #    logger.info("Caller not in account")
         #    raise EVMException(
         #        f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}"
