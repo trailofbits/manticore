@@ -384,7 +384,6 @@ def state_monitor(self: DaemonThread):
     )
 
     m = self.manticore
-    m._is_main = False
 
     def dump_states():
         sts = m.introspect()
