@@ -19,9 +19,9 @@ import io
 import os
 import random
 
-from elftools.elf.descriptions import describe_symbol_type
 
 # Remove in favor of binary.py
+from elftools.elf.descriptions import describe_symbol_type
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -483,7 +483,7 @@ class SymbolicFile(File):
 
         # build the constraints array
         size = len(data)
-        self.array = constraints.new_array(name=self.name, length=size)
+        self.array = MutableArray(constraints.new_array(name=self.name, length=size))
 
         symbols_cnt = 0
         for i in range(size):

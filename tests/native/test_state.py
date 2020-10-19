@@ -79,27 +79,27 @@ class StateTest(unittest.TestCase):
 
     def test_solve_one(self):
         val = 42
-        expr = BitvecVariable(32, "tmp")
+        expr = BitvecVariable(size=32, name="tmp")
         self.state.constrain(expr == val)
         solved = self.state.solve_one(expr)
         self.assertEqual(solved, val)
 
     def test_solve_n(self):
-        expr = BitvecVariable(32, "tmp")
+        expr = BitvecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 7)
         solved = sorted(self.state.solve_n(expr, 2))
         self.assertEqual(solved, [5, 6])
 
     def test_solve_n2(self):
-        expr = BitvecVariable(32, "tmp")
+        expr = BitvecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 100)
         solved = self.state.solve_n(expr, 5)
         self.assertEqual(len(solved), 5)
 
     def test_solve_min_max(self):
-        expr = BitvecVariable(32, "tmp")
+        expr = BitvecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 7)
         self.assertEqual(self.state.solve_min(expr), 5)
@@ -107,7 +107,7 @@ class StateTest(unittest.TestCase):
         self.assertEqual(self.state.solve_minmax(expr), (5, 6))
 
     def test_policy_one(self):
-        expr = BitvecVariable(32, "tmp")
+        expr = BitvecVariable(size=32, name="tmp")
         self.state.constrain(expr > 0)
         self.state.constrain(expr < 100)
         solved = self.state.concretize(expr, "ONE")

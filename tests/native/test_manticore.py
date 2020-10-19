@@ -19,7 +19,7 @@ class ManticoreTest(unittest.TestCase):
 
     def test_profiling_data(self):
         p = Profiler()
-        set_verbosity(0)
+        set_verbosity(1)
         self.m.register_plugin(p)
         self.m.run()
         self.m.finalize()
@@ -139,7 +139,7 @@ class ManticoreTest(unittest.TestCase):
 class ManticoreLogger(unittest.TestCase):
     """Make sure we set the logging levels correctly"""
 
-    _multiprocess_can_split_ = True
+    _multiprocess_can_split_ = False
 
     def test_logging(self):
         set_verbosity(5)

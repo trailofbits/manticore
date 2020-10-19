@@ -12,6 +12,7 @@ from ..core.smtlib import (
     expression,
     issymbolic,
     Expression,
+    MutableArray
 )
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
@@ -359,7 +360,7 @@ class ArrayMap(Map):
                 self.start,
                 len(self),
                 self._perms,
-                self._array.index_bits,
+                self._array.index_size,
                 self._array,
                 self._array.name,
             ),
@@ -378,16 +379,16 @@ class ArrayMap(Map):
             return self, None
 
         assert self.start < address < self.end
-        index_bits, value_bits = self._array.index_bits, self._array.value_bits
+        index_bits, value_bits = self._array.index_size, self._array.value_size
 
         left_size, right_size = address - self.start, self.end - address
         left_name, right_name = ["{}_{:d}".format(self._array.name, i) for i in range(2)]
 
         head_arr = expression.MutableArray(
-            expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name)
+            expression.ArrayVariable(index_size=index_bits, length=left_size, value_size=value_bits, name=left_name)
         )
         tail_arr = expression.MutableArray(
-            expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name)
+            expression.ArrayVariable(index_size=index_bits, length=right_size, value_size=value_bits, name=right_name)
         )
 
         head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)
@@ -1378,7 +1379,7 @@ class LazySMemory(SMemory):
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        self.backing_array = constraints.new_array(index_size=self.memory_bit_size)
+        self.backing_array = MutableArray(constraints.new_array(index_size=self.memory_bit_size))
         self.backed_by_symbolic_store = set()
 
     def __reduce__(self):

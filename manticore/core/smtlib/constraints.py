@@ -130,8 +130,8 @@ class ConstraintSet:
         Slices this ConstraintSet keeping only the related constraints.
         Two constraints are independient if they can be expressed full using a
         disjoint set of variables.
-        Todo: Research. constraints refering differen not overlapping parts of the same array
-        should be considered independient.
+        Todo: Research. constraints referring different not overlapping parts of the same array
+          should be considered independient.
         :param related_to: An expression
         :return:
         """

@@ -497,13 +497,13 @@ class SymCPUTest(unittest.TestCase):
         cpu.write_int(0x1000, 0x4142434445464748, 64)
         cpu.write_int(0x1000, cpu.read_int(0x1000, 32) | 0, 32)
 
-        addr1 = cs.new_Bitvec(64)
+        addr1 = cs.new_bitvec(64)
         cs.add(addr1 == 0x1004)
         cpu.write_int(addr1, 0x58, 8)
 
         self.assertEqual(cpu.read_int(0x1000, 32), 0x45464748)
 
-        addr1 = cs.new_Bitvec(64)
+        addr1 = cs.new_bitvec(64)
         cs.add(addr1 == 0x1000)
         cpu.write_int(addr1, 0x59, 8)
 
@@ -592,7 +592,7 @@ class SymCPUTest(unittest.TestCase):
         for i in range(8):
             self.assertEqual(cpu.read_int(0x1008 + i, 8), ord("hgfedcba"[i]))
 
-        addr1 = cs.new_Bitvec(64)
+        addr1 = cs.new_bitvec(64)
         cs.add(addr1 == 0x1004)
         cpu.write_int(addr1, 0x58, 8)
 
@@ -601,7 +601,7 @@ class SymCPUTest(unittest.TestCase):
         value = cpu.read_int(0x1004, 16)
         self.assertItemsEqual(solver.get_all_values(cs, value), [0x4358])
 
-        addr2 = cs.new_Bitvec(64)
+        addr2 = cs.new_bitvec(64)
         cs.add(Operators.AND(addr2 >= 0x1000, addr2 <= 0x100C))
 
         cpu.write_int(addr2, 0x5959, 16)
@@ -728,11 +728,11 @@ class SymCPUTest(unittest.TestCase):
 
         mem[code : code + 3] = "\xf7\x7d\xf4"
         cpu.EIP = code
-        cpu.EAX = cs.new_Bitvec(32, "EAX")
+        cpu.EAX = cs.new_bitvec(32, "EAX")
         cs.add(cpu.EAX == 116)
-        cpu.EBP = cs.new_Bitvec(32, "EBP")
+        cpu.EBP = cs.new_bitvec(32, "EBP")
         cs.add(cpu.EBP == stack + 0x700)
-        value = cs.new_Bitvec(32, "VALUE")
+        value = cs.new_bitvec(32, "VALUE")
         cpu.write_int(cpu.EBP - 0xC, value, 32)
         cs.add(value == 100)
         cpu.execute()
@@ -765,11 +765,11 @@ class SymCPUTest(unittest.TestCase):
 
         mem[code : code + 2] = "\xf7\xf9"
         cpu.EIP = code
-        cpu.EAX = cs.new_Bitvec(32, "EAX")
+        cpu.EAX = cs.new_bitvec(32, "EAX")
         cs.add(cpu.EAX == 0xFFFFFFFF)
-        cpu.EDX = cs.new_Bitvec(32, "EDX")
+        cpu.EDX = cs.new_bitvec(32, "EDX")
         cs.add(cpu.EDX == 0xFFFFFFFF)
-        cpu.ECX = cs.new_Bitvec(32, "ECX")
+        cpu.ECX = cs.new_bitvec(32, "ECX")
         cs.add(cpu.ECX == 0x32)
 
         cpu.execute()
@@ -808,9 +808,9 @@ class SymCPUTest(unittest.TestCase):
 
         mem[code : code + 2] = "\x13\xf2"
         cpu.EIP = code
-        cpu.ESI = cs.new_Bitvec(32, "ESI")
+        cpu.ESI = cs.new_bitvec(32, "ESI")
         cs.add(cpu.ESI == 0)
-        cpu.EDX = cs.new_Bitvec(32, "EDX")
+        cpu.EDX = cs.new_bitvec(32, "EDX")
         cs.add(cpu.EDX == 0xFFFFFFFF)
         cpu.CF = cs.new_bool("CF")
         cs.add(cpu.CF)
@@ -874,7 +874,7 @@ class SymCPUTest(unittest.TestCase):
         mem[code : code + 5] = "\xf0\x0f\xc7\x0f;"
         cpu.EIP = code
 
-        cpu.EDI = cs.new_Bitvec(32, "EDI")
+        cpu.EDI = cs.new_bitvec(32, "EDI")
         cs.add(Operators.OR(cpu.EDI == 0x2000, cpu.EDI == 0x2100, cpu.EDI == 0x2200))
         self.assertEqual(sorted(solver.get_all_values(cs, cpu.EDI)), [0x2000, 0x2100, 0x2200])
         self.assertEqual(cpu.read_int(0x2000, 64), 0)
@@ -885,7 +885,7 @@ class SymCPUTest(unittest.TestCase):
 
         cpu.write_int(0x2100, 0x4142434445464748, 64)
 
-        cpu.EAX = cs.new_Bitvec(32, "EAX")
+        cpu.EAX = cs.new_bitvec(32, "EAX")
         cs.add(Operators.OR(cpu.EAX == 0x41424344, cpu.EAX == 0x0BADF00D, cpu.EAX == 0xF7F7F7F7))
         cpu.EDX = 0x45464748
 
@@ -1060,7 +1060,7 @@ Using the SAR instruction to perform a division operation does not produce the s
         cs.add(cpu.AF == False)
         cpu.OF = cs.new_bool()
         cs.add(cpu.OF == False)
-        cpu.EAX = cs.new_Bitvec(32)
+        cpu.EAX = cs.new_bitvec(32)
         cs.add(cpu.EAX == 0xFFFFFFF7)
 
         done = False
@@ -1138,7 +1138,7 @@ Using the SAR instruction to perform a division operation does not produce the s
         cs.add(cpu.AF == False)
         cpu.OF = cs.new_bool()
         cs.add(cpu.OF == False)
-        cpu.EAX = cs.new_Bitvec(32)
+        cpu.EAX = cs.new_bitvec(32)
         cs.add(cpu.EAX == 0xFFFFFFFF)
 
         done = False
@@ -1192,15 +1192,15 @@ Using the SAR instruction to perform a division operation does not produce the s
         mem[0x804D601] = "\x78"
         mem[0x804D602] = "\x00"
         mem[0x804D603] = "\xff"
-        addr = cs.new_Bitvec(32)
+        addr = cs.new_bitvec(32)
         cs.add(addr == 0xFFFFB000)
-        value = cs.new_Bitvec(8)
+        value = cs.new_bitvec(8)
         cs.add(value == 0x8F)
         mem[addr] = value
 
-        cpu.EAX = cs.new_Bitvec(32)
+        cpu.EAX = cs.new_bitvec(32)
         cs.add(cpu.EAX == 0xFFFFB000)
-        cpu.CL = cs.new_Bitvec(8)
+        cpu.CL = cs.new_bitvec(8)
         cs.add(cpu.CL == 0xFF)
 
         cpu.EIP = 0x804D600
