@@ -12,7 +12,7 @@ from ..core.smtlib import (
     expression,
     issymbolic,
     Expression,
-    MutableArray
+    MutableArray,
 )
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import interval_intersection
@@ -385,10 +385,14 @@ class ArrayMap(Map):
         left_name, right_name = ["{}_{:d}".format(self._array.name, i) for i in range(2)]
 
         head_arr = expression.MutableArray(
-            expression.ArrayVariable(index_size=index_bits, length=left_size, value_size=value_bits, name=left_name)
+            expression.ArrayVariable(
+                index_size=index_bits, length=left_size, value_size=value_bits, name=left_name
+            )
         )
         tail_arr = expression.MutableArray(
-            expression.ArrayVariable(index_size=index_bits, length=right_size, value_size=value_bits, name=right_name)
+            expression.ArrayVariable(
+                index_size=index_bits, length=right_size, value_size=value_bits, name=right_name
+            )
         )
 
         head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)

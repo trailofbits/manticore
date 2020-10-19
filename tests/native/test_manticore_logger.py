@@ -21,4 +21,4 @@ class ManticoreLogger(unittest.TestCase):
         self.assertEqual(get_verbosity("manticore.native.cpu.abstractcpu"), logging.WARNING)
         self.assertEqual(get_verbosity("manticore.ethereum.abi"), logging.INFO)
 
-        set_verbosity(0) #this is global and does not work in concurrent envs
+        set_verbosity(0)  # this is global and does not work in concurrent envs
