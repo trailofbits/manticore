@@ -632,6 +632,10 @@ class DetectDelegatecall(Detector):
     def _to_constant(self, expression):
         if isinstance(expression, Constant):
             return expression.value
+        else:
+            expression = simplify(expression)
+            if isinstance(expression, Constant):
+                return expression.value
         return expression
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):

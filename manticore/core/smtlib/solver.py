@@ -567,7 +567,7 @@ class SMTLIBSolver(Solver):
                     length=expression.length,
                     value_size=expression.value_size,
                     taint=expression.taint,
-                ).array
+                )
             else:
                 raise NotImplementedError(
                     f"get_all_values only implemented for {type(expression)} expression type."
