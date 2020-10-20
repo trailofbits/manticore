@@ -128,10 +128,10 @@ class Visitor:
 
     def _rebuild(self, expression: Operation, operands):
         """Default operation used when no visiting method was successful for
-        this expression. If he operands have changed this reubild the curren expression
+        this expression. If the operands have changed this rebuild the current expression
         with the new operands.
 
-        Assumes the stack is used for Expresisons
+        Assumes the stack is used for Expressions
         """
         if self._changed(expression, operands):
             aux = copy.copy(expression)
