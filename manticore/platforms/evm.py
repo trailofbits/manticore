@@ -69,7 +69,7 @@ def globalfakesha3(data):
 
 consts.add(
     "oog",
-    default="complete",
+    default="ignore",
     description=(
         "Default behavior for symbolic gas."
         "pedantic: Fully faithful. Test at every instruction. Forks."
