@@ -45,6 +45,8 @@ solver = Z3Solver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+consts = config.get_group("evm")
+
 
 @contextmanager
 def disposable_mevm(*args, **kwargs):
@@ -1752,6 +1754,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         self.assertFalse(world.has_storage(0x333333333333333333333333333333333333333))
 
     def test_gas_check(self):
+        default_gas = consts.oog
+        consts.oog = "complete"
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)
         asm_acc = """  PUSH1 0x0
@@ -1774,6 +1778,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         except TerminateState as e:
             result = str(e)
         self.assertEqual(result, "SELFDESTRUCT")
+        consts.oog = default_gas
 
     def test_selfdestruct(self):
         with disposable_mevm() as m:
