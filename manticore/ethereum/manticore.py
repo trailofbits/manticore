@@ -801,7 +801,7 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError("Name already used")
 
         # Balance check
-        if not isinstance(balance, int):
+        if not isinstance(balance, (int, BitVec)):
             raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):

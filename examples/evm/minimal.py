@@ -24,8 +24,7 @@ contract NoDistpatcher {
     } 
 }
 """
-
-user_account = m.create_account(balance=1000, name="user_account")
+user_account = m.create_account(balance=m.make_symbolic_value(), name="user_account")
 print("[+] Creating a user account", user_account.name_)
 
 contract_account = m.solidity_create_contract(
