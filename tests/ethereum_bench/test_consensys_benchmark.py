@@ -16,7 +16,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 from manticore.utils import config
 
-config.get_group("evm").oog = "ignore"
+config.get_group("evm").oog = "complete"
 config.get_group("core").mprocessing = "single"
 
 
