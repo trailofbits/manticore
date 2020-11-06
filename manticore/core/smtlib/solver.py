@@ -61,9 +61,22 @@ consts.add(
     "optimize", default=True, description="Use smtlib command optimize to find min/max if available"
 )
 
+
+def _detect_default_solver() -> SolverType:
+    """
+    Detect the default solver
+    Return yices, if "yices-smt2" is not present, return z3
+
+    :return: default solver type
+    """
+    if shutil.which("yices-smt2"):
+        return SolverType.yices
+    return SolverType.z3
+
+
 consts.add(
     "solver",
-    default=SolverType.z3,
+    default=_detect_default_solver(),
     description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
 )
 
