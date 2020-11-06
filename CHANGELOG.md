@@ -10,6 +10,7 @@ Thanks to our external contributors!
  - [romits800](https://github.com/trailofbits/manticore/commits?author=romits800)
 
 ### Ethereum
+* Made EVM module ignore runtime gas calculations by default [#1816](https://github.com/trailofbits/manticore/pull/1816)
 * Updated gas calculations for calls to empty accounts [#1774](https://github.com/trailofbits/manticore/pull/1774)
 * Fixed account existence checks for `selfdestruct` and `call` [#1801](https://github.com/trailofbits/manticore/pull/1801)
 
