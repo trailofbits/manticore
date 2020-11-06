@@ -44,7 +44,7 @@ class SolverType(config.ConfigEnum):
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
-consts.add("timeout", default=120, description="Timeout, in seconds, for each Z3 invocation")
+consts.add("timeout", default=240, description="Timeout, in seconds, for each Z3 invocation")
 consts.add("memory", default=1024 * 8, description="Max memory for Z3 to use (in Megabytes)")
 consts.add(
     "maxsolutions",
