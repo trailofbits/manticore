@@ -2,7 +2,7 @@
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.5...HEAD)
 
-## 0.3.5 - 2020-10
+## 0.3.5 - 2020-11-06
 
 Thanks to our external contributors!
  - [wolfo](https://github.com/trailofbits/manticore/commits?author=wolfo)
