@@ -25,6 +25,7 @@ Thanks to our external contributors!
 * Fix type confusion when importing external functions [#1803](https://github.com/trailofbits/manticore/pull/1803)
 
 ### Other
+* Made [Yices2](https://yices.csl.sri.com/) the default SMT Solver [#1820](https://github.com/trailofbits/manticore/pull/1820)
 * **[Added API]** Added an API for introspecting live states [#1775](https://github.com/trailofbits/manticore/pull/1775)
 * Changed default multiprocessing type to threading [#1779](https://github.com/trailofbits/manticore/pull/1779)
 * Improved array serialization performance [#1756](https://github.com/trailofbits/manticore/pull/1756)
