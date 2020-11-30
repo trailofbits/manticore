@@ -25,12 +25,14 @@ from typing import Dict, Generator, Iterable, List, MutableMapping, Optional, Se
 logger = logging.getLogger(__name__)
 
 consts = config.get_group("native")
-consts.add(
-    "fast_crash",
-    default=False,
-    description="If True, throws a memory safety error if ANY concretization of a pointer is"
-    " out of bounds. Otherwise, forks into valid and invalid memory access states.",
-)
+if "fast_crash" not in consts:
+    consts.add(
+        "fast_crash",
+        default=False,
+        description="If True, throws a memory safety error if ANY concretization of a pointer is"
+        " out of bounds. Otherwise, forks into valid and invalid memory access states.",
+    )
+
 solver = SelectedSolver.instance()
 
 
