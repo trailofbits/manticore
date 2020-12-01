@@ -192,11 +192,8 @@ class Manticore(ManticoreBase):
         # (It may dereference pointers)
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
         if not state.can_be_true(assertion):
-            logger.info(str(state.cpu))
-            logger.info(
-                "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.pc, program
-            )
-            raise TerminateState()
+            message = f"Assertion {state.cpu.PC:x} -> {program:s} does not hold. Aborting state."
+            raise TerminateState(message=message)
 
         # Everything is good add it.
         state.constraints.add(assertion)

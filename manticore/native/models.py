@@ -4,8 +4,8 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 
 from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
-from ..core.smtlib import issymbolic, Bitvec
-from ..core.smtlib.solver import SelectedSolver, issymbolic, Bitvec
+from ..core.smtlib import issymbolic, BitVec
+from ..core.smtlib.solver import SelectedSolver, issymbolic, BitVec
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 from ..core.state import Concretize
 from typing import Union
@@ -77,7 +77,7 @@ def can_be_NULL(state, byte) -> bool:
         return byte == 0
 
 
-def _find_zero(cpu, state, ptr: Union[int, Bitvec]) -> int:
+def _find_zero(cpu, state, ptr: Union[int, BitVec]) -> int:
     """
     Helper for finding the closest NULL or, effectively NULL byte from a starting address.
 
@@ -97,7 +97,7 @@ def _find_zero(cpu, state, ptr: Union[int, Bitvec]) -> int:
     return offset
 
 
-def strcmp(state: State, s1: Union[int, Bitvec], s2: Union[int, Bitvec]):
+def strcmp(state: State, s1: Union[int, BitVec], s2: Union[int, BitVec]):
     """
     strcmp symbolic model.
 
@@ -153,7 +153,7 @@ def strcmp(state: State, s1: Union[int, Bitvec], s2: Union[int, Bitvec]):
     return ret
 
 
-def strlen_exact(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
+def strlen_exact(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model
 
@@ -191,7 +191,7 @@ def strlen_exact(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
     return offset
 
 
-def strlen_approx(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
+def strlen_approx(state: State, s: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strlen symbolic model
 
@@ -220,7 +220,7 @@ def strlen_approx(state: State, s: Union[int, Bitvec]) -> Union[int, Bitvec]:
     return ret
 
 
-def strcpy(state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec]) -> Union[int, Bitvec]:
+def strcpy(state: State, dst: Union[int, BitVec], src: Union[int, BitVec]) -> Union[int, BitVec]:
     """
     strcpy symbolic model
 
@@ -270,8 +270,8 @@ def strcpy(state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec]) -> Un
 
 
 def strncpy(
-    state: State, dst: Union[int, Bitvec], src: Union[int, Bitvec], n: Union[int, Bitvec]
-) -> Union[int, Bitvec]:
+    state: State, dst: Union[int, BitVec], src: Union[int, BitVec], n: Union[int, BitVec]
+) -> Union[int, BitVec]:
     """
     strncpy symbolic model
 

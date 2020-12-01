@@ -1,6 +1,6 @@
 import unittest
 
-from manticore.core.smtlib import Bool, BoolVariable, BitvecConstant
+from manticore.core.smtlib import Bool, BoolVariable, BitVecConstant
 from manticore.native.cpu.register import Register
 
 
@@ -53,14 +53,14 @@ class RegisterTest(unittest.TestCase):
 
     def test_bitvec_flag(self):
         r = Register(1)
-        b = BitvecConstant(32, 0)
+        b = BitVecConstant(32, 0)
         r.write(b)
         # __nonzero__ (==) currently unimplemented for Bool
         self.assertTrue(isinstance(r.read(), Bool))
 
     def test_bitvec(self):
         r = Register(32)
-        b = BitvecConstant(32, 0)
+        b = BitVecConstant(32, 0)
         r.write(b)
         self.assertIs(r.read(), b)
 

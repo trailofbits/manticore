@@ -44,7 +44,7 @@ class CpuException(Exception):
 
 class DecodeException(CpuException):
     """
-    Raised when trying to decode an unknown or invalid instruction """
+    Raised when trying to decode an unknown or invalid instruction"""
 
     def __init__(self, pc, bytes):
         super().__init__("Error decoding instruction @ 0x{:x}".format(pc))
@@ -90,7 +90,11 @@ class ConcretizeRegister(CpuException):
     """
 
     def __init__(
-        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
+        self,
+        cpu: "Cpu",
+        reg_name: str,
+        message: Optional[str] = None,
+        policy: str = "MINMAX",
     ):
         self.message = message if message else f"Concretizing {reg_name}"
 
@@ -177,11 +181,11 @@ class Operand:
 
     @property
     def type(self):
-        """ This property encapsulates the operand type.
-            It may be one of the following:
-                register
-                memory
-                immediate
+        """This property encapsulates the operand type.
+        It may be one of the following:
+            register
+            memory
+            immediate
         """
         raise NotImplementedError
 
@@ -664,7 +668,7 @@ class Cpu(Eventful):
 
         :param int where: address to write to
         :param expr: value to write
-        :type expr: int or Bitvec
+        :type expr: int or BitVec
         :param size: bit size of `expr`
         :param force: whether to ignore memory permissions
         """
@@ -722,7 +726,7 @@ class Cpu(Eventful):
         :param int where: address to read from
         :param size: number of bits to read
         :return: the value read
-        :rtype: int or Bitvec
+        :rtype: int or BitVec
         :param force: whether to ignore memory permissions
         """
         if size is None:

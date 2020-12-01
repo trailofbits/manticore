@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool, issymbolic, BitvecConstant, MutableArray
+from .smtlib import solver, Bool, issymbolic, BitVecConstant, MutableArray
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils import config
@@ -76,7 +76,7 @@ class SerializeState(Concretize):
     def __init__(self, filename, **kwargs):
         super().__init__(
             f"Saving state to {filename}",
-            BitvecConstant(32, 0),
+            BitVecConstant(32, 0),
             setstate=self._setstate,
             policy="ONE",
             **kwargs,
@@ -323,7 +323,11 @@ class StateBase(Eventful):
             avoid_collisions = True
         taint = options.get("taint", frozenset())
         expr = self._constraints.new_array(
-            name=label, length=nbytes, value_size=8, taint=taint, avoid_collisions=avoid_collisions,
+            name=label,
+            length=nbytes,
+            value_size=8,
+            taint=taint,
+            avoid_collisions=avoid_collisions,
         )
         self._input_symbols.append(expr)
 
@@ -459,19 +463,10 @@ class StateBase(Eventful):
         :return: Concrete value or a tuple of concrete values
         :rtype: int
         """
-        values = []
-        for expr in exprs:
-            if not issymbolic(expr):
-                values.append(expr)
-            else:
-                expr = self.migrate_expression(expr)
-                value = self._solver.get_value(self._constraints, expr)
-                if constrain:
-                    self.constrain(expr == value)
-                # Include forgiveness here
-                if isinstance(value, bytearray):
-                    value = bytes(value)
-                values.append(value)
+        expressions = [self.migrate_expression(e) for e in exprs]
+        values = self._solver.get_value(self._constraints, *expressions)
+        if len(expressions) == 1:
+            values = (values,)
         return values
 
     def solve_n(self, expr, nsolves):

@@ -7,8 +7,8 @@ from ..core.smtlib import (
     arithmetic_simplify,
     SelectedSolver,
     TooManySolutions,
-    Bitvec,
-    BitvecConstant,
+    BitVec,
+    BitVecConstant,
     expression,
     issymbolic,
     Expression,
@@ -1138,7 +1138,7 @@ class SMemory(Memory):
         to their condition and value.
 
         The condition of a symbolic chunk can be concrete (True/False) or symbolic. The value should
-        always be symbolic (e.g. a BitvecVariable).
+        always be symbolic (e.g. a BitVecVariable).
         """
         super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
@@ -1161,11 +1161,11 @@ class SMemory(Memory):
         self._constraints = constraints
 
     def _get_size(self, size):
-        if isinstance(size, Bitvec):
+        if isinstance(size, BitVec):
             size = arithmetic_simplify(size)
         else:
-            size = BitvecConstant(self.memory_bit_size, size)
-        assert isinstance(size, BitvecConstant)
+            size = BitVecConstant(self.memory_bit_size, size)
+        assert isinstance(size, BitVecConstant)
         return size.value
 
     def munmap(self, start, size):

@@ -29,8 +29,6 @@ from manticore.utils import config, log
 
 from typing import Tuple, Type
 
-consts = config.get_group("core")
-consts.mprocessing = consts.mprocessing.single
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -47,6 +45,8 @@ class EthDetectorTest(unittest.TestCase):
 
     def setUp(self):
         self.mevm = ManticoreEVM()
+        consts = config.get_group("core")
+        consts.mprocessing = consts.mprocessing.single
         self.mevm.register_plugin(KeepOnlyIfStorageChanges())
         log.set_verbosity(0)
         self.worksp = self.mevm.workspace
@@ -63,7 +63,7 @@ class EthDetectorTest(unittest.TestCase):
 
         dir = os.path.join(THIS_DIR, "contracts", "detectors")
         filepath = os.path.join(dir, f"{name}.sol")
-
+        print (filepath)
         if use_ctor_sym_arg:
             ctor_arg: Tuple = (mevm.make_symbolic_value(),)
         else:
@@ -71,7 +71,7 @@ class EthDetectorTest(unittest.TestCase):
 
         self.mevm.register_detector(self.DETECTOR_CLASS())
 
-        with self.mevm.kill_timeout(240):
+        with self.mevm.kill_timeout(48000):
             mevm.multi_tx_analysis(
                 filepath,
                 contract_name="DetectThis",

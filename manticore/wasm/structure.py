@@ -44,7 +44,7 @@ from .types import (
     ZeroDivisionTrap,
 )
 from .state import State
-from ..core.smtlib import Bitvec, Bool, issymbolic, Operators, Expression
+from ..core.smtlib import BitVec, Bool, issymbolic, Operators, Expression
 from ..core.state import Concretize
 from ..utils.event import Eventful
 from ..utils import config
@@ -1021,7 +1021,7 @@ class ModuleInstance(Eventful):
         passing argv
 
         :param name: Name of the function to look for
-        :param argv: Arguments to pass to the function. Can be Bitvecs or Values
+        :param argv: Arguments to pass to the function. Can be BitVecs or Values
         """
         for export in self.exports:
             if export.name == name and isinstance(export.value, FuncAddr):
@@ -1040,7 +1040,7 @@ class ModuleInstance(Eventful):
         https://www.w3.org/TR/wasm-core-1/#invocation%E2%91%A1
 
         :param funcaddr: Address (in Store) of the function to call
-        :param argv: Arguments to pass to the function. Can be Bitvecs or Values
+        :param argv: Arguments to pass to the function. Can be BitVecs or Values
         """
         assert funcaddr in range(len(store.funcs))
         funcinst = store.funcs[funcaddr]
@@ -1795,15 +1795,15 @@ class Stack(Eventful):
 
     def has_type_on_top(self, t: typing.Union[type, typing.Tuple[type, ...]], n: int):
         """
-        *Asserts* that the stack has at least n values of type t or type Bitvec on the top
+        *Asserts* that the stack has at least n values of type t or type BitVec on the top
 
-        :param t: type of value to look for (Bitvec is always included as an option)
+        :param t: type of value to look for (BitVec is always included as an option)
         :param n: Number of values to check
         :return: True
         """
         for i in range(1, n + 1):
             assert isinstance(
-                self.data[i * -1], (t, Bitvec)
+                self.data[i * -1], (t, BitVec)
             ), f"{type(self.data[i * -1])} is not an {t}!"
         return True
 

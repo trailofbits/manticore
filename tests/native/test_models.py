@@ -11,7 +11,7 @@ from manticore.core.smtlib import (
     Z3Solver,
     issymbolic,
     ArraySelect,
-    BitvecITE,
+    BitVecITE,
 )
 from manticore.native.state import State
 from manticore.platforms import linux

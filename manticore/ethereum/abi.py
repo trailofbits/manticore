@@ -9,7 +9,7 @@ from . import abitypes
 from ..core.smtlib import (
     Array,
     Operators,
-    Bitvec,
+    BitVec,
     ArrayVariable,
     MutableArray,
     to_constant,
@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 class ABI:
     """
-        This class contains methods to handle the ABI.
-        The Application Binary Interface is the standard way to interact with
-        contracts in the Ethereum ecosystem, both from outside the blockchain
-        and for contract-to-contract interaction.
+    This class contains methods to handle the ABI.
+    The Application Binary Interface is the standard way to interact with
+    contracts in the Ethereum ecosystem, both from outside the blockchain
+    and for contract-to-contract interaction.
 
     """
 
@@ -271,18 +271,18 @@ class ABI:
     @staticmethod
     def _serialize_uint(value, size=32, padding=0):
         """
-        Translates a python integral or a Bitvec into a 32 byte string, MSB first
+        Translates a python integral or a BitVec into a 32 byte string, MSB first
         """
         if size <= 0 or size > 32:
             raise ValueError
 
         from .account import EVMAccount  # because of circular import
 
-        if not isinstance(value, (int, Bitvec, EVMAccount)):
+        if not isinstance(value, (int, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
             # Help mypy out. Can remove this by teaching it how issymbolic works
-            assert isinstance(value, Bitvec)
+            assert isinstance(value, BitVec)
             # FIXME This temporary array variable should be obtained from a specific constraint store
             buffer = ArrayVariable(
                 index_size=256, length=32, value_size=8, name="temp{}".format(uuid.uuid1())
@@ -290,7 +290,7 @@ class ABI:
             if value.size <= size * 8:
                 value = Operators.ZEXTEND(value, size * 8)
             else:
-                # automatically truncate, e.g. if they passed a Bitvec(256) for an `address` argument (160 bits)
+                # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument (160 bits)
                 value = Operators.EXTRACT(value, 0, size * 8)
             buffer = buffer.write_BE(padding, value, size)
         else:
@@ -305,17 +305,17 @@ class ABI:
         return buffer
 
     @staticmethod
-    def _serialize_int(value: typing.Union[int, Bitvec], size=32, padding=0):
+    def _serialize_int(value: typing.Union[int, BitVec], size=32, padding=0):
         """
-        Translates a signed python integral or a Bitvec into a 32 byte string, MSB first
+        Translates a signed python integral or a BitVec into a 32 byte string, MSB first
         """
         if size <= 0 or size > 32:
             raise ValueError
-        if not isinstance(value, (int, Bitvec)):
+        if not isinstance(value, (int, BitVec)):
             raise ValueError
         if issymbolic(value):
             # Help mypy out. Can remove this by teaching it how issymbolic works
-            assert isinstance(value, Bitvec)
+            assert isinstance(value, BitVec)
             buf = ArrayVariable(
                 index_size=256, length=32, value_size=8, name="temp{}".format(uuid.uuid1())
             )

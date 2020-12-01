@@ -18,7 +18,7 @@ from ..core.smtlib import (
     ConstraintSet,
     Array,
     MutableArray,
-    Bitvec,
+    BitVec,
     Operators,
     BoolConstant,
     Expression,
@@ -120,7 +120,7 @@ class ManticoreEVM(ManticoreBase):
     _published_events = {"solve"}
 
     def make_symbolic_buffer(self, size, name=None, avoid_collisions=False, default=None):
-        """ Creates a symbolic buffer of size bytes to be used in transactions.
+        """Creates a symbolic buffer of size bytes to be used in transactions.
             You can operate on it normally and add constraints to manticore.constraints
             via manticore.constrain(constraint_expression)
 
@@ -175,7 +175,7 @@ class ManticoreEVM(ManticoreBase):
 
         :param name: Name of the symbolic variable. Defaults to 'TXADDR' and later to 'TXADDR_<number>'
         :param select: Whether to select contracts or normal accounts. Not implemented for now.
-        :return: Symbolic address in form of a BitvecVariable.
+        :return: Symbolic address in form of a BitVecVariable.
         """
         if select not in ("both", "normal", "contract"):
             raise EthereumError("Wrong selection type")
@@ -538,7 +538,7 @@ class ManticoreEVM(ManticoreBase):
         :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
         :type contract_name: str
         :param balance: balance to be transferred on creation
-        :type balance: int or BitvecVariable
+        :type balance: int or BitVecVariable
         :param address: the address for the new contract (optional)
         :type address: int or EVMAccount
         :param tuple args: constructor arguments
@@ -670,7 +670,7 @@ class ManticoreEVM(ManticoreBase):
         :param owner: owner account (will be default caller in any transactions)
         :type owner: int or EVMAccount
         :param balance: balance to be transferred on creation
-        :type balance: int or BitvecVariable
+        :type balance: int or BitVecVariable
         :param int address: the address for the new contract (optional)
         :param str init: initializing evm bytecode and arguments
         :param str name: a unique name for reference
@@ -758,7 +758,7 @@ class ManticoreEVM(ManticoreBase):
         :param address: the address of the contract to call
         :type address: int or EVMAccount
         :param value: balance to be transfered on creation
-        :type value: int or BitvecVariable
+        :type value: int or BitVecVariable
         :param data: initial data
         :param gas: gas budget
         :param price: gas unit price
@@ -774,7 +774,7 @@ class ManticoreEVM(ManticoreBase):
         """Low level creates an account. This won't generate a transaction.
 
         :param balance: balance to be set on creation (optional)
-        :type balance: int or BitvecVariable
+        :type balance: int or BitVecVariable
         :param address: the address for the new account (optional)
         :type address: int
         :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
@@ -881,7 +881,7 @@ class ManticoreEVM(ManticoreBase):
         :param int address: the address for the transaction (optional)
         :param value: value to be transferred
         :param price: the price of gas for this transaction.
-        :type value: int or BitvecVariable
+        :type value: int or BitVecVariable
         :param str data: initializing evm bytecode and arguments or transaction call data
         :param gas: gas budget for current transaction
         :rtype: EVMAccount
@@ -902,13 +902,13 @@ class ManticoreEVM(ManticoreBase):
             raise TypeError("code bad type")
 
         # Check types
-        if not isinstance(caller, (int, Bitvec)):
+        if not isinstance(caller, (int, BitVec)):
             raise TypeError("Caller invalid type")
 
-        if not isinstance(value, (int, Bitvec)):
+        if not isinstance(value, (int, BitVec)):
             raise TypeError("Value invalid type")
 
-        if not isinstance(address, (int, Bitvec)):
+        if not isinstance(address, (int, BitVec)):
             raise TypeError("address invalid type")
 
         if not isinstance(price, int):
@@ -1087,7 +1087,8 @@ class ManticoreEVM(ManticoreBase):
                 logger.info("Starting symbolic transaction: %d", tx_no)
 
                 # run_symbolic_tx
-                symbolic_data = self.make_symbolic_buffer(320, default=0)
+                symbolic_data = self.make_symbolic_buffer(320, default=None)
+                symbolic_data = MutableArray(symbolic_data)
                 if tx_send_ether:
                     value = self.make_symbolic_value()
                 else:

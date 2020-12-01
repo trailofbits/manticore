@@ -10,7 +10,7 @@ import re
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.smtlib.solver import Z3Solver
-from manticore.core.smtlib import BitvecVariable, issymbolic
+from manticore.core.smtlib import BitVecVariable, issymbolic
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.utils.helpers import pickle_dumps

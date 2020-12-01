@@ -1,25 +1,32 @@
 import itertools
 import sys
 import copy
-from typing import Optional
 from ...utils.helpers import PickleSerializer
 from ...exceptions import SmtlibError
 from .expression import (
     Expression,
-    BitvecVariable,
+    BitVecVariable,
     BoolVariable,
     ArrayVariable,
     Array,
     Bool,
-    Bitvec,
+    BitVec,
     BoolConstant,
     MutableArray,
     BoolEqual,
     Variable,
     Constant,
 )
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
-from ...utils import config
+from .visitors import (
+    GetBindings,
+    GetDeclarations,
+    TranslatorSmtlib,
+    get_variables,
+    simplify,
+    replace,
+    CountExpressionUse,
+    translate_to_smtlib,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -93,6 +100,7 @@ class ConstraintSet:
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
         constraint = simplify(constraint)
+
         # If self._child is not None this constraint set has been forked and a
         # a derived constraintset may be using this. So we can't add any more
         # constraints to this one. After the child constraintSet is deleted
@@ -174,34 +182,79 @@ class ConstraintSet:
         return cs
 
     def to_string(self, replace_constants: bool = False) -> str:
+        replace_constants = True
         variables, constraints = self.get_declared_variables(), self.constraints
+        # rep_bindings = {}
+        # extra_variables, extra_constraints = [], []
+        # counts = CountExpressionUse()
+        # for c in constraints:
+        #    counts.visit(c)
+        # for exp, count in counts.counts.items():
+        #    if count > 1:
+        #        if isinstance(exp, BitVec):
+        #            new_var = BitVecVariable(size=exp.size, name=new_name)
+        #        if isinstance(exp, Bool):
+        #            new_var = BoolVariable(name=new_name)
+        #        if isinstance(exp, Array):
+        #            new_var = ArrayVariable(name=new_name, index_size=exp.index_size, value_size=exp.value_size)
+        #        extra_constraints.append(new_var == exp)
+        #        extra_variables.append(new_var)
+        #        rep_bindings[exp] = new_var
+
         if replace_constants:
             constant_bindings = {}
             for expression in constraints:
-                # FIXME  this will not catch Constant == Variable
-                # Maybe we need a way to canonicalize the expressions somewhere
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
                     and isinstance(expression.operands[1], Constant)
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
+                if (
+                    isinstance(expression, BoolEqual)
+                    and isinstance(expression.operands[1], Variable)
+                    and isinstance(expression.operands[0], Constant)
+                ):
+                    constant_bindings[expression.operands[1]] = expression.operands[0]
 
-        translator = TranslatorSmtlib(use_bindings=False)
+        translator = TranslatorSmtlib(use_bindings=True)
+        # gb = GetBindings()
         for v in variables:
             translator.visit_Variable(v)
+        # for v in extra_variables:
+        #    translator.visit_Variable(v)
+        # if constraints:
+        #    for constraint in constraints:
+        #        gb.visit(constraint)
         for constraint in constraints:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
-                # if no variables then it is a constant
-                if isinstance(constraint, Constant) and constraint.value == True:
-                    continue
+                if (
+                    isinstance(constraint, BoolEqual)
+                    and isinstance(constraint.operands[0], Variable)
+                    and isinstance(constraint.operands[1], Variable)
+                    and constraint.operands[1] in constant_bindings
+                ):
+                    constraint = simplify(replace(constraint, constant_bindings))
+
+            # constraint = simplify(replace(constraint, rep_bindings))
+            # if no variables then it is a constant
+            if isinstance(constraint, Constant) and constraint.value == True:
+                continue
             # Translate one constraint
             translator.visit(constraint)
 
         if replace_constants:
             for k, v in constant_bindings.items():
                 translator.visit(k == v)
+
+        # for constraint in extra_constraints:
+        #    if replace_constants:
+        #        constraint = simplify(replace(constraint, constant_bindings))
+        #    if isinstance(constraint, Constant) and constraint.value == True:
+        #        continue
+        #    # Translate one constraint
+        #    translator.visit(constraint)
 
         return translator.smtlib()
 
@@ -321,7 +374,7 @@ class ConstraintSet:
                 # Create and declare a new variable of given type
                 if isinstance(foreign_var, Bool):
                     new_var = self.new_bool(name=migrated_name)
-                elif isinstance(foreign_var, Bitvec):
+                elif isinstance(foreign_var, BitVec):
                     new_var = self.new_bitvec(foreign_var.size, name=migrated_name)
                 elif isinstance(foreign_var, Array):
                     # Note that we are discarding the ArrayProxy encapsulation
@@ -367,10 +420,10 @@ class ConstraintSet:
         :param name: try to assign name to internal variable representation,
                      if not unique, a numeric nonce will be appended
         :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
-        :return: a fresh BitvecVariable
+        :return: a fresh BitVecVariable
         """
         if size <= 0:
-            raise ValueError(f"Bitvec size ({size}) can't be equal to or less than 0")
+            raise ValueError(f"BitVec size ({size}) can't be equal to or less than 0")
         if name is None:
             name = "BV"
             avoid_collisions = True
@@ -378,7 +431,7 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = BitvecVariable(size=size, name=name, taint=taint)
+        var = BitVecVariable(size=size, name=name, taint=taint)
         return self._declare(var)
 
     def new_array(

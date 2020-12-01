@@ -6,7 +6,7 @@ from manticore.native.cpu.x86 import I386Cpu
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
-from manticore.core.smtlib import BitvecOr, operator, Bool
+from manticore.core.smtlib import BitVecOr, operator, Bool
 from manticore.core.smtlib.solver import SelectedSolver
 from functools import reduce
 
@@ -309,7 +309,7 @@ class SymCPUTest(unittest.TestCase):
         return reduce(operator.or_, (self._flags[f] for f in flags))
 
     def _construct_sym_flag_bitfield(self, flags):
-        return reduce(operator.or_, (BitvecConstant(32, self._flags[f]) for f in flags))
+        return reduce(operator.or_, (BitVecConstant(32, self._flags[f]) for f in flags))
 
     def test_set_eflags(self) -> None:
         cpu = I386Cpu(Memory32())
@@ -351,15 +351,15 @@ class SymCPUTest(unittest.TestCase):
         check_flag(cpu.ZF, "ZF")
 
     def test_get_sym_eflags(self):
-        def flatten_ors(x: BitvecOr) -> List:
+        def flatten_ors(x: BitVecOr) -> List:
             """
-            Retrieve all nodes of a BitvecOr expression tree
+            Retrieve all nodes of a BitVecOr expression tree
             """
-            assert isinstance(x, BitvecOr)
-            if any(isinstance(op, BitvecOr) for op in x.operands):
+            assert isinstance(x, BitVecOr)
+            if any(isinstance(op, BitVecOr) for op in x.operands):
                 ret: List = []
                 for op in x.operands:
-                    if isinstance(op, BitvecOr):
+                    if isinstance(op, BitVecOr):
                         ret += flatten_ors(op)
                     else:
                         ret.append(op)
@@ -371,14 +371,14 @@ class SymCPUTest(unittest.TestCase):
         cpu.CF = 1
         cpu.AF = 1
 
-        a = BitvecConstant(32, 1) != 0
-        b = BitvecConstant(32, 0) != 0
+        a = BitVecConstant(32, 1) != 0
+        b = BitVecConstant(32, 0) != 0
         cpu.ZF = a
         cpu.SF = b
 
         flags = flatten_ors(cpu.EFLAGS)
 
-        self.assertTrue(isinstance(cpu.EFLAGS, BitvecOr))
+        self.assertTrue(isinstance(cpu.EFLAGS, BitVecOr))
         self.assertEqual(len(flags), 8)
 
         self.assertEqual(cpu.CF, 1)
@@ -1292,7 +1292,7 @@ Using the SAR instruction to perform a division operation does not produce the s
         code = mem.mmap(0x1000, 0x1000, "rwx")
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
-        mem[code] = BitvecConstant(8, 0x90)
+        mem[code] = BitVecConstant(8, 0x90)
         cpu.EIP = code
         cpu.EAX = 116
         cpu.EBP = stack + 0x700

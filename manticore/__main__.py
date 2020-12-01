@@ -26,6 +26,8 @@ if install_helper.has_native:
 
 
 def main() -> None:
+    import pdb
+
     """
     Dispatches execution into one of Manticore's engines: evm or native.
     """
@@ -209,7 +211,9 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     eth_flags.add_argument(
-        "--limit-loops", action="store_true", help="Limit loops depth",
+        "--limit-loops",
+        action="store_true",
+        help="Limit loops depth",
     )
 
     eth_flags.add_argument(

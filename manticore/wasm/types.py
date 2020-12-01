@@ -1,6 +1,6 @@
 import typing
 from dataclasses import dataclass
-from ..core.smtlib import issymbolic, Bitvec
+from ..core.smtlib import issymbolic, BitVec
 from ctypes import *
 import wasm
 import struct
@@ -165,9 +165,9 @@ class F64(float):
 
 
 ValType = type  #: https://www.w3.org/TR/wasm-core-1/#syntax-valtype
-Value_t = (I32, I64, F32, F64, Bitvec)
-# Value = typing.TypeVar('Value', I32, I64, F32, F64, Bitvec)  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
-Value = typing.Union[I32, I64, F32, F64, Bitvec]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
+Value_t = (I32, I64, F32, F64, BitVec)
+# Value = typing.TypeVar('Value', I32, I64, F32, F64, BitVec)  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
+Value = typing.Union[I32, I64, F32, F64, BitVec]  #: https://www.w3.org/TR/wasm-core-1/#syntax-val
 
 
 class Name(str):
@@ -450,7 +450,7 @@ class ConcretizeStack(Concretize):
         :param depth: Index in the stack (should typically be negative)
         :param ty: The type to cast the
         :param message: Debug message describing the reason for concretization
-        :param expression: The expression to concretize, either a Value or a Bitvec
+        :param expression: The expression to concretize, either a Value or a BitVec
         """
 
         def setstate(state, value):
