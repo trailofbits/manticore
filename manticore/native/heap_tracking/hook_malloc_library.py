@@ -8,37 +8,25 @@ logger = logging.getLogger(__name__)
 logger.setLevel(2)
 
 
-# Globals that will become class members to control amount of information being retrieved 
+# Globals that will become class members to control amount of information being retrieved
 # TODO(Sonya): fine tune these a little bit - need to be automated
 HOOK_SBRK_INFO = True
 HOOK_MMAP_INFO = True
 HOOK_MALLOC_RETURN = True
 HOOK_FREE_RETURN = True
-"""
-TODO(Sonya): class conversion 
-class hook_malloc_library:
-    def __init__(self, m: Manticore, sbrk:int, mmap:int, munmap:int, malloc:int, free:int, calloc=None, realloc=None, 
-        HOOK_SBRK_INFO: bool = True, HOOK_MMAP_INFO: bool = True, HOOK_MALLOC_RETURN: bool = True, HOOK_FREE_RETURN: bool = True):
-        self.sbrk = sbrk
-        self.mmap = mmap
-        self.munmap = munmap
-        self.malloc = malloc
-        self.free = free
-        
-"""
 
 
 def load_ret_addr(func: str, state: State):
     """ Loads the return address of a function from the stack
     (Assuming the next instruction to be executed is the start of a function call)
     """
-    stack_location = state.cpu.read_register("RSP")
+    stack_location = state.cpu.read_register("STACK")
     ret_addr = state.cpu.read_int(stack_location, state.cpu.address_bit_size)
     logger.debug(f"Adding a hook for {func} callsite in state: {state.id}")
     return ret_addr
 
 
-def hook_malloc_lib(initial_state: State, sbrk: int, mmap: int, munmap: int, malloc: int, free: int):
+def hook_malloc_lib(initial_state: State, malloc: int, free: int):
     """ Function to add malloc hooks and do prep work
     - TODO(Sonya): would like this to eventially be __init__() method for a class
     once manticore hook callbacks have been debugged.
@@ -46,14 +34,15 @@ def hook_malloc_lib(initial_state: State, sbrk: int, mmap: int, munmap: int, mal
     & https://github.com/trailofbits/manticore/blob/master/tests/native/test_state.py#L274-L278 to work on debugging this
     """
     initial_state.context["malloc_lib"] = MallocLibData()
-    
+
     # Hook malloc and free
     initial_state.add_hook(malloc, hook_malloc, after=False)
     initial_state.add_hook(free, hook_free, after=False)
-    
-    initial_state.context['sbrk'] = sbrk
-    initial_state.context['mmap'] = mmap
-    initial_state.context['munmap'] = munmap
+
+    # Fixme: with syscall specific hooks
+    initial_state.context["sbrk"] = 0x0
+    initial_state.context["mmap"] = 0x0
+    initial_state.context["munmap"] = 0x0
 
 
 def hook_mmap_return(state: State):
@@ -68,7 +57,7 @@ def hook_mmap_return(state: State):
     del state.context["mmap_args"]
 
     logger.debug(f"Unhooking mmap return in malloc in state: {state.id}")
-    state.remove_hook(state.cpu.read_register("RIP"), hook_mmap_return)
+    state.remove_hook(state.cpu.read_register("PC"), hook_mmap_return)
 
 
 def hook_mmap(state: State):
@@ -91,6 +80,7 @@ def hook_mmap(state: State):
     ret_addr = load_ret_addr("mmap", state)
     state.add_hook(ret_addr, hook_mmap_return, after=False)
 
+
 # NOTE(Sonya): If I can't find the internal sbrk address I can get to manticore brk.
 # .....so I can calculate: sbrk_chunk size = curr_brk - new_brk, sbrk_ret_val = new_brk
 # where new_brk is the argument passed into brk - see brk and sbrk man pages
@@ -107,7 +97,7 @@ def hook_sbrk_return(state: State):
     del state.context["sbrk_size"]
 
     logger.debug(f"Unhooking sbrk return in malloc in state: {state.id}")
-    state.remove_hook(state.cpu.read_register("RIP"), hook_sbrk_return)
+    state.remove_hook(state.cpu.read_register("PC"), hook_sbrk_return)
 
 
 def hook_sbrk(state: State):
@@ -136,14 +126,14 @@ def hook_malloc_return(state: State):
 
     if HOOK_SBRK_INFO:
         logger.debug((f"Unhooking sbrk in state: {state.id}"))
-        state.remove_hook(state.context["sbrk"], hook_sbrk)
+        #state.remove_hook(state.context["sbrk"], hook_sbrk)
 
     if HOOK_MMAP_INFO:
         logger.debug(f"Unhooking mmap in state: {state.id}")
-        state.remove_hook(state.context["mmap"], hook_mmap)
+        #state.remove_hook(state.context["mmap"], hook_mmap)
 
     logger.debug(f"Unhooking malloc return in state: {state.id}")
-    state.remove_hook(state.cpu.read_register("RIP"), hook_malloc_return)
+    state.remove_hook(state.cpu.read_register("PC"), hook_malloc_return)
 
     logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
@@ -160,12 +150,13 @@ def hook_malloc(state: State):
     # Hook sbrk
     if HOOK_SBRK_INFO:
         logger.debug(f"Adding Hook for sbrk in state: {state.id}")
-        state.add_hook(state.context['sbrk'], hook_sbrk, after=False)
+        # state.add_hook("sbrk", hook_sbrk, after=False)
+        #state.add_hook(state.context["sbrk"], hook_sbrk, after=False)
 
     # Hook mmap
     if HOOK_MMAP_INFO:
         logger.debug(f"Adding Hook for mmap in state: {state.id}")
-        state.add_hook(state.context["mmap"], hook_mmap, after=False)
+        #state.add_hook(state.context["mmap"], hook_mmap, after=False)
 
     # Hook Return Address
     if HOOK_MALLOC_RETURN:
@@ -182,7 +173,7 @@ def hook_munmap_return(state: State):
     logger.info(f"munmap ret val: {hex(ret_val)}")
 
     logger.debug(f"Unhooking munmap return in malloc in state: {state.id}")
-    state.remove_hook(state.cpu.read_register("RIP"), hook_munmap_return)
+    state.remove_hook(state.cpu.read_register("PC"), hook_munmap_return)
 
 
 def hook_munmap(state: State):
@@ -208,10 +199,10 @@ def hook_free_return(state: State):
 
     if HOOK_MMAP_INFO:
         logger.debug(f"Unhooking munmap in state: {state.id}")
-        state.remove_hook(state.context['munmap'], hook_munmap)
+        state.remove_hook(state.context["munmap"], hook_munmap)
 
     logger.debug(f"Unhooking free return in state: {state.id}")
-    state.remove_hook(state.cpu.read_register("RIP"), hook_free_return)
+    state.remove_hook(state.cpu.read_register("PC"), hook_free_return)
 
     logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
@@ -228,7 +219,7 @@ def hook_free(state: State):
     # Hook munmap
     if HOOK_MMAP_INFO:
         logger.debug(f"Adding Hook for munmap in state: {state.id}")
-        state.add_hook(state.context['munmap'], hook_munmap, after=False)
+        state.add_hook(state.context["munmap"], hook_munmap, after=False)
 
     # Hook free return address
     if HOOK_FREE_RETURN:
