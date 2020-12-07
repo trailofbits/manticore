@@ -68,6 +68,18 @@ def globalfakesha3(data):
 
 
 consts.add(
+    "gas",
+    default="static",
+    description=(
+        "Control how to keep the gas count"
+        "insane: Keep static and dynamic gas including transaction fee VERY EXPENSIVE (INSANE)."
+        "full: Keep static and dynamic gas excluding the dynamic aspect of transaction related fee."
+        "static: Use a static fee for each instruction. Dynamic gas is ignored. For example, memory, storage, refunds, tx dynamic fees are ignored"
+        "ignore: Ignore gas completely. Instructions won't consume gas"
+    ),
+)
+
+consts.add(
     "oog",
     default="ignore",
     description=(
@@ -103,7 +115,9 @@ consts.add(
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 consts.add(
-    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
 )
 
 
@@ -1059,6 +1073,11 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
+        if consts.gas == "ignore":
+            return 0
+        if consts.gas == "static":
+            assert not issymbolic(fee)
+
         # Check type and bitvec size
         if isinstance(fee, int):
             if fee > (1 << 512) - 1:
@@ -1165,11 +1184,14 @@ class EVM(Eventful):
             assert result is None
 
     def _calculate_gas(self, *arguments):
+        if consts.gas == "ignore":
+            return 0
         current = self.instruction
         implementation = getattr(self, f"{current.semantics}_gas", None)
-        if implementation is None:
-            return current.fee
-        return current.fee + implementation(*arguments)
+        fee = current.fee
+        if implementation is not None and consts.gas != "static":
+            fee += implementation(*arguments)
+        return fee
 
     def _handler(self, *arguments):
         current = self.instruction
@@ -1635,9 +1657,9 @@ class EVM(Eventful):
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
         """Compute Keccak-256 hash
-            If the size is symbolic the potential solutions will be sampled as
-            defined by the default policy and the analysis will be forked.
-            The `size` can be considered concrete in this handler.
+        If the size is symbolic the potential solutions will be sampled as
+        defined by the default policy and the analysis will be forked.
+        The `size` can be considered concrete in this handler.
 
         """
         data = self.read_buffer(start, size)
@@ -1703,8 +1725,8 @@ class EVM(Eventful):
         return Operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, offset, size):
-        """ To improve reporting we maintain how much of the calldata is actually
-        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly """
+        """To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly"""
         self._used_calldata_size = Operators.ITEBV(
             256, size != 0, self._used_calldata_size + offset + size, self._used_calldata_size
         )
@@ -2122,12 +2144,13 @@ class EVM(Eventful):
     ############################################################################
     # Logging Operations
     def LOG_gas(self, address, size, *topics):
-        return self._get_memfee(address, size)
+        GLOGBYTE = 8
+        feee = self.safe_mul(size, GLOGBYTE)
+        fee += self._get_memfee(address, size)
+        return fee
 
     @concretized_args(size="ONE")
     def LOG(self, address, size, *topics):
-        GLOGBYTE = 8
-        self._consume(self.safe_mul(size, GLOGBYTE))
         memlog = self.read_buffer(address, size)
         self.world.log(self.address, topics, memlog)
 
@@ -2162,7 +2185,6 @@ class EVM(Eventful):
         )
         fee += self._get_memfee(in_offset, in_size)
 
-        exception = False
         available_gas = self._gas
         available_gas -= fee
 
@@ -2170,6 +2192,8 @@ class EVM(Eventful):
             Operators.UGT(fee, self._gas),
             Operators.ULT(self.safe_mul(available_gas, 63), available_gas),
         )
+        self.fail_if(exception)
+
         available_gas *= 63
         available_gas //= 64
 
@@ -2183,13 +2207,23 @@ class EVM(Eventful):
     @concretized_args(address="ACCOUNTS", in_offset="SAMPLED", in_size="SAMPLED")
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         """Message-call into an account"""
+        if consts.gas in ("dynamic", "insane"):
+            tx_gas = self._temp_call_gas + Operators.ITEBV(512, value != 0, 2300, 0)
+        else:
+
+            available_gas = self._gas
+            available_gas *= 63
+            available_gas //= 64
+            wanted_gas = gas
+            tx_gas = Operators.ITEBV(256, available_gas < wanted_gas, available_gas, wanted_gas)
+
         self.world.start_transaction(
             "CALL",
             address,
             data=self.read_buffer(in_offset, in_size),
             caller=self.address,
             value=value,
-            gas=self._temp_call_gas + Operators.ITEBV(512, value != 0, 2300, 0),
+            gas=tx_gas,
         )
         raise StartTx()
 
@@ -2553,19 +2587,22 @@ class EVMWorld(Platform):
 
         zerocount = 0
         nonzerocount = 0
-        if isinstance(bytecode_or_data, (Array, ArrayProxy)):
-            # if nothing was written we can assume all elements are default to zero
-            if len(bytecode_or_data.written) == 0:
-                zerocount = len(bytecode_or_data)
-        else:
-            for index in range(len(bytecode_or_data)):
-                try:
-                    c = bytecode_or_data.get(index, 0)
-                except AttributeError:
-                    c = bytecode_or_data[index]
+        if consts.gas == "insane":
+            if isinstance(bytecode_or_data, (Array, ArrayProxy)):
+                # if nothing was written we can assume all elements are default to zero
+                if len(bytecode_or_data.written) == 0:
+                    zerocount = len(bytecode_or_data)
+            else:
+                for index in range(len(bytecode_or_data)):
+                    try:
+                        c = bytecode_or_data.get(index, 0)
+                    except AttributeError:
+                        c = bytecode_or_data[index]
 
-                zerocount += Operators.ITEBV(256, c == 0, 1, 0)
-                nonzerocount += Operators.ITEBV(256, c == 0, 0, 1)
+                    zerocount += Operators.ITEBV(256, c == 0, 1, 0)
+                    nonzerocount += Operators.ITEBV(256, c == 0, 0, 1)
+        elif consts.gas == "full":
+            nonzerocount = len(bytecode_or_data)
 
         tx_fee += zerocount * GTXDATAZERO
         tx_fee += nonzerocount * GTXDATANONZERO
