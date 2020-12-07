@@ -114,8 +114,8 @@ consts.add(
     default=-1,
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
-
 consts.add("ignore_balance", default=False, description="Do not try to solve symbolic balances")
+
 
 
 # Auxiliary constants and functions
