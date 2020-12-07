@@ -40,13 +40,13 @@ class Expression:
 
 def issymbolic(value) -> bool:
     """
-        Helper to determine whether an object is symbolic (e.g checking
-        if data read from memory is symbolic)
+    Helper to determine whether an object is symbolic (e.g checking
+    if data read from memory is symbolic)
 
-        :param object value: object to check
-        :return: whether `value` is symbolic
-        :rtype: bool
-        """
+    :param object value: object to check
+    :return: whether `value` is symbolic
+    :rtype: bool
+    """
     return isinstance(value, Expression)
 
 

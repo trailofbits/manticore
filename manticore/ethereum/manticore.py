@@ -93,45 +93,45 @@ def calculate_coverage(runtime_bytecode, seen):
 
 
 class ManticoreEVM(ManticoreBase):
-    """ Manticore EVM manager
+    """Manticore EVM manager
 
-        Usage Ex::
+    Usage Ex::
 
-            from manticore.ethereum import ManticoreEVM, ABI
-            m = ManticoreEVM()
-            #And now make the contract account to analyze
-            source_code = '''
-                pragma solidity ^0.4.15;
-                contract AnInt {
-                    uint private i=0;
-                    function set(uint value){
-                        i=value
-                    }
+        from manticore.ethereum import ManticoreEVM, ABI
+        m = ManticoreEVM()
+        #And now make the contract account to analyze
+        source_code = '''
+            pragma solidity ^0.4.15;
+            contract AnInt {
+                uint private i=0;
+                function set(uint value){
+                    i=value
                 }
-            '''
-            #Initialize user and contracts
-            user_account = m.create_account(balance=1000)
-            contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
-            contract_account.set(12345, value=100)
+            }
+        '''
+        #Initialize user and contracts
+        user_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
+        contract_account.set(12345, value=100)
 
-            m.finalize()
+        m.finalize()
     """
 
     _published_events = {"solve"}
 
     def make_symbolic_buffer(self, size, name=None, avoid_collisions=False):
-        """ Creates a symbolic buffer of size bytes to be used in transactions.
-            You can operate on it normally and add constraints to manticore.constraints
-            via manticore.constrain(constraint_expression)
+        """Creates a symbolic buffer of size bytes to be used in transactions.
+        You can operate on it normally and add constraints to manticore.constraints
+        via manticore.constrain(constraint_expression)
 
-            Example use::
+        Example use::
 
-                symbolic_data = m.make_symbolic_buffer(320)
-                m.constrain(symbolic_data[0] == 0x65)
-                m.transaction(caller=attacker_account,
-                                address=contract_account,
-                                data=symbolic_data,
-                                value=100000 )
+            symbolic_data = m.make_symbolic_buffer(320)
+            m.constrain(symbolic_data[0] == 0x65)
+            m.transaction(caller=attacker_account,
+                            address=contract_account,
+                            data=symbolic_data,
+                            value=100000 )
         """
         if name is None:
             name = "TXBUFFER"
@@ -147,19 +147,19 @@ class ManticoreEVM(ManticoreBase):
         )
 
     def make_symbolic_value(self, nbits=256, name=None):
-        """ Creates a symbolic value, normally a uint256, to be used in transactions.
-            You can operate on it normally and add constraints to manticore.constraints
-            via manticore.constrain(constraint_expression)
+        """Creates a symbolic value, normally a uint256, to be used in transactions.
+        You can operate on it normally and add constraints to manticore.constraints
+        via manticore.constrain(constraint_expression)
 
-            Example use::
+        Example use::
 
-                symbolic_value = m.make_symbolic_value()
-                m.constrain(symbolic_value > 100)
-                m.constrain(symbolic_value < 1000)
-                m.transaction(caller=attacker_account,
-                                address=contract_account,
-                                data=data,
-                                value=symbolic_value )
+            symbolic_value = m.make_symbolic_value()
+            m.constrain(symbolic_value > 100)
+            m.constrain(symbolic_value < 1000)
+            m.transaction(caller=attacker_account,
+                            address=contract_account,
+                            data=data,
+                            value=symbolic_value )
 
         """
         avoid_collisions = False
@@ -303,16 +303,16 @@ class ManticoreEVM(ManticoreBase):
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None, crytic_compile_args=None):
-        """ Compile a Solidity contract, used internally
+        """Compile a Solidity contract, used internally
 
-            :param source_code: solidity source
-            :type source_code: string (filename, directory, etherscan address) or a file handle
-            :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of pairs (library_name, address)
-            :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
-            :type crytic_compile_args: dict
-            :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
-            :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        :param source_code: solidity source
+        :type source_code: string (filename, directory, etherscan address) or a file handle
+        :param contract_name: a string with the name of the contract to analyze
+        :param libraries: an itemizable of pairs (library_name, address)
+        :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+        :type crytic_compile_args: dict
+        :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
+        :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
 
         crytic_compile_args = dict() if crytic_compile_args is None else crytic_compile_args
@@ -476,7 +476,7 @@ class ManticoreEVM(ManticoreBase):
 
     def make_symbolic_arguments(self, types):
         """
-            Build a reasonable set of symbolic arguments matching the types list
+        Build a reasonable set of symbolic arguments matching the types list
         """
         from . import abitypes
 
@@ -529,24 +529,24 @@ class ManticoreEVM(ManticoreBase):
         gas=None,
         compile_args=None,
     ):
-        """ Creates a solidity contract and library dependencies
+        """Creates a solidity contract and library dependencies
 
-            :param source_code: solidity source code
-            :type source_code: string (filename, directory, etherscan address) or a file handle
-            :param owner: owner account (will be default caller in any transactions)
-            :type owner: int or EVMAccount
-            :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
-            :type contract_name: str
-            :param balance: balance to be transferred on creation
-            :type balance: int or BitVecVariable
-            :param address: the address for the new contract (optional)
-            :type address: int or EVMAccount
-            :param tuple args: constructor arguments
-            :param compile_args: crytic compile options #FIXME(https://github.com/crytic/crytic-compile/wiki/Configuration)
-            :type compile_args: dict
-            :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
-            :type gas: int
-            :rtype: EVMAccount
+        :param source_code: solidity source code
+        :type source_code: string (filename, directory, etherscan address) or a file handle
+        :param owner: owner account (will be default caller in any transactions)
+        :type owner: int or EVMAccount
+        :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
+        :type contract_name: str
+        :param balance: balance to be transferred on creation
+        :type balance: int or BitVecVariable
+        :param address: the address for the new contract (optional)
+        :type address: int or EVMAccount
+        :param tuple args: constructor arguments
+        :param compile_args: crytic compile options #FIXME(https://github.com/crytic/crytic-compile/wiki/Configuration)
+        :type compile_args: dict
+        :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
+        :type gas: int
+        :rtype: EVMAccount
         """
         if compile_args is None:
             compile_args = dict()
@@ -604,7 +604,10 @@ class ManticoreEVM(ManticoreBase):
 
                         expr = Operators.UGE(world.get_balance(owner.address), balance)
                         self._publish("will_solve", None, self.constraints, expr, "can_be_true")
-                        sufficient = SelectedSolver.instance().can_be_true(self.constraints, expr,)
+                        sufficient = SelectedSolver.instance().can_be_true(
+                            self.constraints,
+                            expr,
+                        )
                         self._publish(
                             "did_solve", None, self.constraints, expr, "can_be_true", sufficient
                         )
@@ -671,17 +674,17 @@ class ManticoreEVM(ManticoreBase):
             return next(iter(nonces))
 
     def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=None):
-        """ Creates a contract
+        """Creates a contract
 
-            :param owner: owner account (will be default caller in any transactions)
-            :type owner: int or EVMAccount
-            :param balance: balance to be transferred on creation
-            :type balance: int or BitVecVariable
-            :param int address: the address for the new contract (optional)
-            :param str init: initializing evm bytecode and arguments
-            :param str name: a unique name for reference
-            :param gas: gas budget for the creation/initialization of the contract
-            :rtype: EVMAccount
+        :param owner: owner account (will be default caller in any transactions)
+        :type owner: int or EVMAccount
+        :param balance: balance to be transferred on creation
+        :type balance: int or BitVecVariable
+        :param int address: the address for the new contract (optional)
+        :param str init: initializing evm bytecode and arguments
+        :param str name: a unique name for reference
+        :param gas: gas budget for the creation/initialization of the contract
+        :rtype: EVMAccount
         """
         if not self.count_ready_states():
             raise NoAliveStates
@@ -757,34 +760,34 @@ class ManticoreEVM(ManticoreBase):
             world.end_block()
 
     def transaction(self, caller, address, value, data, gas=None, price=1):
-        """ Issue a symbolic transaction in all running states
+        """Issue a symbolic transaction in all running states
 
-            :param caller: the address of the account sending the transaction
-            :type caller: int or EVMAccount
-            :param address: the address of the contract to call
-            :type address: int or EVMAccount
-            :param value: balance to be transfered on creation
-            :type value: int or BitVecVariable
-            :param data: initial data
-            :param gas: gas budget
-            :param price: gas unit price
-            :raises NoAliveStates: if there are no alive states to execute
+        :param caller: the address of the account sending the transaction
+        :type caller: int or EVMAccount
+        :param address: the address of the contract to call
+        :type address: int or EVMAccount
+        :param value: balance to be transfered on creation
+        :type value: int or BitVecVariable
+        :param data: initial data
+        :param gas: gas budget
+        :param price: gas unit price
+        :raises NoAliveStates: if there are no alive states to execute
         """
         self._transaction(
             "CALL", caller, value=value, address=address, data=data, gas=gas, price=price
         )
 
     def create_account(self, balance=0, address=None, code=None, name=None, nonce=None):
-        """ Low level creates an account. This won't generate a transaction.
+        """Low level creates an account. This won't generate a transaction.
 
-            :param balance: balance to be set on creation (optional)
-            :type balance: int or BitVecVariable
-            :param address: the address for the new account (optional)
-            :type address: int
-            :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
-            :param nonce: force a specific nonce
-            :param name: a global account name eg. for use as reference in the reports (optional)
-            :return: an EVMAccount
+        :param balance: balance to be set on creation (optional)
+        :type balance: int or BitVecVariable
+        :param address: the address for the new account (optional)
+        :type address: int
+        :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
+        :param nonce: force a specific nonce
+        :param name: a global account name eg. for use as reference in the reports (optional)
+        :return: an EVMAccount
         """
         # Need at least one state where to apply this
         if not self.count_ready_states():
@@ -880,17 +883,17 @@ class ManticoreEVM(ManticoreBase):
         return caller, address, value, data, gas, price
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, gas=None, price=1):
-        """ Initiates a transaction
+        """Initiates a transaction
 
-            :param caller: caller account
-            :type caller: int or EVMAccount
-            :param int address: the address for the transaction (optional)
-            :param value: value to be transferred
-            :param price: the price of gas for this transaction.
-            :type value: int or BitVecVariable
-            :param str data: initializing evm bytecode and arguments or transaction call data
-            :param gas: gas budget for current transaction
-            :rtype: EVMAccount
+        :param caller: caller account
+        :type caller: int or EVMAccount
+        :param int address: the address for the transaction (optional)
+        :param value: value to be transferred
+        :param price: the price of gas for this transaction.
+        :type value: int or BitVecVariable
+        :param str data: initializing evm bytecode and arguments or transaction call data
+        :param gas: gas budget for current transaction
+        :rtype: EVMAccount
         """
         if gas is None:
             gas = consts.defaultgas
@@ -997,13 +1000,13 @@ class ManticoreEVM(ManticoreBase):
         value: Optional[Union[int, Expression]] = None,
         contract_metadata: Optional[SolidityMetadata] = None,
     ):
-        """ Returns a constraint that excludes combinations of value and data that would cause an exception in the EVM
-            contract dispatcher.
+        """Returns a constraint that excludes combinations of value and data that would cause an exception in the EVM
+        contract dispatcher.
 
-            :param address: address of the contract to call
-            :param value: balance to be transferred (optional)
-            :param data: symbolic transaction data
-            :param contract_metadata: SolidityMetadata for the contract (optional)
+        :param address: address of the contract to call
+        :param value: balance to be transferred (optional)
+        :param data: symbolic transaction data
+        :param contract_metadata: SolidityMetadata for the contract (optional)
         """
         if isinstance(address, EVMAccount):
             address = int(address)
@@ -1270,8 +1273,8 @@ class ManticoreEVM(ManticoreBase):
         result.append(value)
 
     def fix_unsound_symbolication_fake(self, state):
-        """ This method goes through all the applied symbolic functions and tries
-            to find a concrete matching set of pairs
+        """This method goes through all the applied symbolic functions and tries
+        to find a concrete matching set of pairs
         """
 
         def make_cond(state, table):
@@ -1289,8 +1292,8 @@ class ManticoreEVM(ManticoreBase):
         return state.can_be_true(True)
 
     def fix_unsound_symbolication_sound(self, state):
-        """ This method goes through all the applied symbolic functions and tries
-            to find a concrete matching set of pairs
+        """This method goes through all the applied symbolic functions and tries
+        to find a concrete matching set of pairs
         """
 
         def concretize_known_pairs(state, symbolic_pairs, known_pairs):
@@ -1307,7 +1310,7 @@ class ManticoreEVM(ManticoreBase):
                     return
 
         def match(state, func, symbolic_pairs, concrete_pairs, start=None):
-            """ Tries to find a concrete match for the symbolic pairs. It uses
+            """Tries to find a concrete match for the symbolic pairs. It uses
             concrete_pairs (and potentially extends it with solved pairs) until
             a matching set of concrete pairs is found, or fail.
 
@@ -1424,9 +1427,9 @@ class ManticoreEVM(ManticoreBase):
         return state.context["soundcheck"]
 
     def _terminate_state_callback(self, state, e):
-        """ INTERNAL USE
-            Every time a state finishes executing the last transaction, we save it in
-            our private list
+        """INTERNAL USE
+        Every time a state finishes executing the last transaction, we save it in
+        our private list
         """
         if isinstance(e, AbandonState):
             # do nothing
@@ -1483,8 +1486,8 @@ class ManticoreEVM(ManticoreBase):
         )
 
     def get_metadata(self, address) -> Optional[SolidityMetadata]:
-        """ Gets the solidity metadata for address.
-            This is available only if address is a contract created from solidity
+        """Gets the solidity metadata for address.
+        This is available only if address is a contract created from solidity
         """
         return self.metadata.get(address)
 
@@ -1849,9 +1852,9 @@ class ManticoreEVM(ManticoreBase):
         self.remove_all()
 
     def global_coverage(self, account):
-        """ Returns code coverage for the contract on `account_address`.
-            This sums up all the visited code lines from any of the explored
-            states.
+        """Returns code coverage for the contract on `account_address`.
+        This sums up all the visited code lines from any of the explored
+        states.
         """
         account_address = int(account)
         runtime_bytecode = None
