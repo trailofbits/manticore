@@ -1626,9 +1626,9 @@ class EthSolidityMetadataTests(unittest.TestCase):
 class EthSpecificTxIntructionTests(unittest.TestCase):
     def test_jmpdest_check(self):
         """
-            This test that jumping to a JUMPDEST in the operand of a PUSH should
-            be treated as an INVALID instruction.
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that jumping to a JUMPDEST in the operand of a PUSH should
+        be treated as an INVALID instruction.
+        https://github.com/trailofbits/manticore/issues/1169
         """
 
         constraints = ConstraintSet()
@@ -1663,8 +1663,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_delegatecall_env(self):
         """
-            This test that the delegatecalled environment is identicall to the caller
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that the delegatecalled environment is identicall to the caller
+        https://github.com/trailofbits/manticore/issues/1169
         """
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)
@@ -1859,7 +1859,9 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 )
 
                 # call to empty acct with value = 0
-                m.transaction(caller=caller, address=call_empty_no_val, data=b"", value=0, gas=50000000)
+                m.transaction(
+                    caller=caller, address=call_empty_no_val, data=b"", value=0, gas=50000000
+                )
                 self.assertEqual(m.count_ready_states(), 1)
                 state = next(m.ready_states)
                 txs = state.platform.transactions
@@ -1881,14 +1883,18 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 self.assertEqual(txs[-1].used_gas, GCALLSTATIC + GCALLVALUE - GCALLSTIPEND)
 
                 # call to empty acct with value > 0, forcing addition to state trie
-                m.transaction(caller=caller, address=call_empty_w_val, data=b"", value=0, gas=50000000)
+                m.transaction(
+                    caller=caller, address=call_empty_w_val, data=b"", value=0, gas=50000000
+                )
                 self.assertEqual(m.count_ready_states(), 1)
                 state = next(m.ready_states)
                 txs = state.platform.transactions
                 # call stipend should be sent with call
                 self.assertEqual(txs[-2].gas, GCALLSTIPEND)
                 # cost of call should include value cost and new acct cost
-                self.assertEqual(txs[-1].used_gas, GCALLSTATIC + GCALLVALUE + GCALLNEW - GCALLSTIPEND)
+                self.assertEqual(
+                    txs[-1].used_gas, GCALLSTATIC + GCALLVALUE + GCALLNEW - GCALLSTIPEND
+                )
 
     def test_selfdestruct_gas(self):
         GSDSTATIC = 26003  # 21000 + 3 (push op) + 5000 static cost for selfdestruct
@@ -1902,7 +1908,9 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 # empty call target
                 empty = m.create_account(address=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
                 # nonempty call target
-                nonempty = m.create_account(address=0x1111111111111111111111111111111111111111, nonce=1)
+                nonempty = m.create_account(
+                    address=0x1111111111111111111111111111111111111111, nonce=1
+                )
 
                 asm_sd_empty = """ PUSH20 0xffffffffffffffffffffffffffffffffffffffff
                                     SELFDESTRUCT
