@@ -168,7 +168,7 @@ Version = collections.namedtuple("Version", "major minor patch")
 
 class SmtlibProc:
     def __init__(self, command: str, debug: bool = False):
-        """ Single smtlib interactive process
+        """Single smtlib interactive process
 
         :param command: the shell command to execute
         :param debug: log all messaging

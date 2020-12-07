@@ -41,10 +41,10 @@ class ConstraintException(SmtlibError):
 
 
 class ConstraintSet:
-    """ Constraint Sets
+    """Constraint Sets
 
-        An object containing a set of constraints. Serves also as a factory for
-        new variables.
+    An object containing a set of constraints. Serves also as a factory for
+    new variables.
     """
 
     def __init__(self):
@@ -298,18 +298,18 @@ class ConstraintSet:
         return any(expression_var is x for x in self.get_declared_variables())
 
     def migrate(self, expression, name_migration_map=None):
-        """ Migrate an expression created for a different constraint set to self.
-            Returns an expression that can be used with this constraintSet
+        """Migrate an expression created for a different constraint set to self.
+        Returns an expression that can be used with this constraintSet
 
-            All the foreign variables used in the expression are replaced by
-            variables of this constraint set. If the variable was replaced before
-            the replacement is taken from the provided migration map.
+        All the foreign variables used in the expression are replaced by
+        variables of this constraint set. If the variable was replaced before
+        the replacement is taken from the provided migration map.
 
-            The migration mapping is updated with new replacements.
+        The migration mapping is updated with new replacements.
 
-            :param expression: the potentially foreign expression
-            :param name_migration_map: mapping of already migrated variables. maps from string name of foreign variable to its currently existing migrated string name. this is updated during this migration.
-            :return: a migrated expression where all the variables are local. name_migration_map is updated
+        :param expression: the potentially foreign expression
+        :param name_migration_map: mapping of already migrated variables. maps from string name of foreign variable to its currently existing migrated string name. this is updated during this migration.
+        :return: a migrated expression where all the variables are local. name_migration_map is updated
 
         """
         if name_migration_map is None:
@@ -367,11 +367,11 @@ class ConstraintSet:
         return migrated_expression
 
     def new_bool(self, name=None, taint=frozenset(), avoid_collisions=False):
-        """ Declares a free symbolic boolean in the constraint store
-            :param name: try to assign name to internal variable representation,
-                         if not unique, a numeric nonce will be appended
-            :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
-            :return: a fresh BoolVariable
+        """Declares a free symbolic boolean in the constraint store
+        :param name: try to assign name to internal variable representation,
+                     if not unique, a numeric nonce will be appended
+        :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
+        :return: a fresh BoolVariable
         """
         if name is None:
             name = "B"
@@ -384,12 +384,12 @@ class ConstraintSet:
         return self._declare(var)
 
     def new_bitvec(self, size, name=None, taint=frozenset(), avoid_collisions=False):
-        """ Declares a free symbolic bitvector in the constraint store
-            :param size: size in bits for the bitvector
-            :param name: try to assign name to internal variable representation,
-                         if not unique, a numeric nonce will be appended
-            :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
-            :return: a fresh BitVecVariable
+        """Declares a free symbolic bitvector in the constraint store
+        :param size: size in bits for the bitvector
+        :param name: try to assign name to internal variable representation,
+                     if not unique, a numeric nonce will be appended
+        :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
+        :return: a fresh BitVecVariable
         """
         if size <= 0:
             raise ValueError(f"Bitvec size ({size}) can't be equal to or less than 0")
@@ -413,15 +413,15 @@ class ConstraintSet:
         avoid_collisions=False,
         default=None,
     ):
-        """ Declares a free symbolic array of value_bits long bitvectors in the constraint store.
-            :param index_bits: size in bits for the array indexes one of [32, 64]
-            :param value_bits: size in bits for the array values
-            :param name: try to assign name to internal variable representation,
-                         if not unique, a numeric nonce will be appended
-            :param index_max: upper limit for indexes on this array (#FIXME)
-            :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
-            :param default: default for not initialized values
-            :return: a fresh ArrayProxy
+        """Declares a free symbolic array of value_bits long bitvectors in the constraint store.
+        :param index_bits: size in bits for the array indexes one of [32, 64]
+        :param value_bits: size in bits for the array values
+        :param name: try to assign name to internal variable representation,
+                     if not unique, a numeric nonce will be appended
+        :param index_max: upper limit for indexes on this array (#FIXME)
+        :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
+        :param default: default for not initialized values
+        :return: a fresh ArrayProxy
         """
         if name is None:
             name = "A"

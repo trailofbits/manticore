@@ -4,8 +4,7 @@ import capstone as cs
 
 
 class Instruction:
-    """Capstone-like instruction to be used internally
-    """
+    """Capstone-like instruction to be used internally"""
 
     @property
     @abstractmethod

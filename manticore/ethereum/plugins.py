@@ -17,21 +17,21 @@ class FilterFunctions(Plugin):
         self, regexp=r".*", mutability="both", depth="both", fallback=False, include=True, **kwargs
     ):
         """
-            Constrain input based on function metadata. Include or avoid functions
-            selected by the specified criteria.
+        Constrain input based on function metadata. Include or avoid functions
+        selected by the specified criteria.
 
-            Examples:
-            #Do not explore any human transactions that end up calling a constant function
-            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
+        Examples:
+        #Do not explore any human transactions that end up calling a constant function
+        no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
 
-            #At human tx depth only accept synthetic check functions
-            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
+        #At human tx depth only accept synthetic check functions
+        only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
 
-            :param regexp: a regular expression over the name of the function '.*' will match all functions
-            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
-            :param depth: match functions in internal transactions, in human initiated transactions or in both types
-            :param fallback: if True include the fallback function. Hash will be 00000000 for it
-            :param include: if False exclude the selected functions, if True include them
+        :param regexp: a regular expression over the name of the function '.*' will match all functions
+        :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
+        :param depth: match functions in internal transactions, in human initiated transactions or in both types
+        :param fallback: if True include the fallback function. Hash will be 00000000 for it
+        :param include: if False exclude the selected functions, if True include them
         """
         super().__init__(**kwargs)
         depth = depth.lower()
@@ -155,27 +155,27 @@ class VerboseTraceStdout(Plugin):
 
 
 class KeepOnlyIfStorageChanges(Plugin):
-    """ This plugin discards all transactions that results in states where
-        the underlying EVM storage did not change or in other words,
-        there were no writes to it.
+    """This plugin discards all transactions that results in states where
+    the underlying EVM storage did not change or in other words,
+    there were no writes to it.
 
-        This allows to speed-up EVM engine exploration as we don't
-        explore states that have the same storage (contract data).
+    This allows to speed-up EVM engine exploration as we don't
+    explore states that have the same storage (contract data).
 
-        However, keep in mind that if the (contract) code relies on
-        account balance and the balance is not a symbolic value
-        it might be that a certain state will not be covered by the
-        execution when this plugin is used.
+    However, keep in mind that if the (contract) code relies on
+    account balance and the balance is not a symbolic value
+    it might be that a certain state will not be covered by the
+    execution when this plugin is used.
     """
 
     def did_open_transaction_callback(self, state, tx, *args):
-        """ We need a stack. Each tx (internal or not) starts with a "False" flag
-            denoting that it did not write anything to the storage
+        """We need a stack. Each tx (internal or not) starts with a "False" flag
+        denoting that it did not write anything to the storage
         """
         state.context["written"].append(False)
 
     def did_close_transaction_callback(self, state, tx, *args):
-        """ When a tx (internal or not) is closed a value is popped out from the
+        """When a tx (internal or not) is closed a value is popped out from the
         flag stack. Depending on the result if the storage is not rolled back the
         next flag in the stack is updated. Not that if the a tx is reverted the
         changes it may have done on the storage will not affect the final result.
@@ -195,7 +195,7 @@ class KeepOnlyIfStorageChanges(Plugin):
             state.context["written"][-1] = state.context["written"][-1] or flag
 
     def did_evm_write_storage_callback(self, state, *args):
-        """ Turn on the corresponding flag is the storage has been modified.
+        """Turn on the corresponding flag is the storage has been modified.
         Note: subject to change if the current transaction is reverted"""
         state.context["written"][-1] = True
 
@@ -206,7 +206,7 @@ class KeepOnlyIfStorageChanges(Plugin):
 
     def did_run_callback(self):
         """When  human tx/run just ended remove the states that have not changed
-         the storage"""
+        the storage"""
         with self.manticore.locked_context("ethereum.saved_states", list) as saved_states:
             # Normally the ready states are consumed and forked, eth save the
             # states that finished ok in a special context list. This list will
