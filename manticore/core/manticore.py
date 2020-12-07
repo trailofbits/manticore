@@ -136,7 +136,7 @@ class ManticoreBase(Eventful):
 
     def at_running(func: Callable) -> Callable:  # type: ignore
         """Allows the decorated method to run only when manticore is actively
-           exploring states
+        exploring states
         """
 
         @functools.wraps(func)
@@ -149,7 +149,7 @@ class ManticoreBase(Eventful):
 
     def at_not_running(func: Callable) -> Callable:  # type: ignore
         """Allows the decorated method to run only when manticore is NOT
-           exploring states
+        exploring states
         """
 
         @functools.wraps(func)
@@ -162,8 +162,7 @@ class ManticoreBase(Eventful):
         return newFunction
 
     def only_from_main_script(func: Callable) -> Callable:  # type: ignore
-        """Allows the decorated method to run only from the main manticore script
-        """
+        """Allows the decorated method to run only from the main manticore script"""
 
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
@@ -379,14 +378,14 @@ class ManticoreBase(Eventful):
         self._main_id = os.getpid(), threading.current_thread().ident
 
     def is_main(self):
-        """ True if called from the main process/script
-        Note: in "single" mode this is _most likely_ True """
+        """True if called from the main process/script
+        Note: in "single" mode this is _most likely_ True"""
         return self._main_id == (os.getpid(), threading.current_thread().ident)
 
     @sync
     @only_from_main_script
     def take_snapshot(self):
-        """ Copy/Duplicate/backup all ready states and save it in a snapshot.
+        """Copy/Duplicate/backup all ready states and save it in a snapshot.
         If there is a snapshot already saved it will be overrwritten
         """
         if self._snapshot is not None:
@@ -401,8 +400,8 @@ class ManticoreBase(Eventful):
     @sync
     @only_from_main_script
     def goto_snapshot(self):
-        """ REMOVE current ready states and replace them with the saved states
-        in a snapshot """
+        """REMOVE current ready states and replace them with the saved states
+        in a snapshot"""
         if not self._snapshot:
             raise ManticoreError("No snapshot to go to")
         self.clear_ready_states()
@@ -530,32 +529,32 @@ class ManticoreBase(Eventful):
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
     def verbosity(level):
-        """ Sets global verbosity level.
-            This will activate different logging profiles globally depending
-            on the provided numeric value
+        """Sets global verbosity level.
+        This will activate different logging profiles globally depending
+        on the provided numeric value
         """
         set_verbosity(level)
 
     # State storage
     @Eventful.will_did("save_state", can_raise=False)
     def _save(self, state, state_id=None) -> int:
-        """ Store or update a state in secondary storage under state_id.
-            Use a fresh id is None is provided.
+        """Store or update a state in secondary storage under state_id.
+        Use a fresh id is None is provided.
 
-            :param state: A manticore State
-            :param state_id: if not None force state_id (overwrite)
-            :type state_id: int or None
-            :returns: the state id used
+        :param state: A manticore State
+        :param state_id: if not None force state_id (overwrite)
+        :type state_id: int or None
+        :returns: the state id used
         """
         state._id = self._workspace.save_state(state, state_id=state_id)
         return state.id
 
     @Eventful.will_did("load_state", can_raise=False)
     def _load(self, state_id: int) -> StateBase:
-        """ Load the state from the secondary storage
+        """Load the state from the secondary storage
 
-            :param state_id: a state id
-            :returns: the loaded state
+        :param state_id: a state id
+        :returns: the loaded state
         """
         if not hasattr(self, "stcache"):
             self.stcache: weakref.WeakValueDictionary = weakref.WeakValueDictionary()
@@ -570,9 +569,9 @@ class ManticoreBase(Eventful):
 
     @Eventful.will_did("remove_state", can_raise=False)
     def _remove(self, state_id: int) -> int:
-        """ Remove a state from secondary storage
+        """Remove a state from secondary storage
 
-            :param state_id: a state id
+        :param state_id: a state id
         """
         if not hasattr(self, "stcache"):
             self.stcache = weakref.WeakValueDictionary()
@@ -584,14 +583,14 @@ class ManticoreBase(Eventful):
 
     # Internal support for state lists
     def _put_state(self, state) -> int:
-        """ This enqueues the state for exploration.
+        """This enqueues the state for exploration.
 
-            Serialize and store the state with a fresh state_id. Then add it to
-            the shared READY states list
+        Serialize and store the state with a fresh state_id. Then add it to
+        the shared READY states list
 
-                          +-------+
-            State +----- >+ READY |
-                          +-------+
+                      +-------+
+        State +----- >+ READY |
+                      +-------+
 
         """
         self._publish("will_enqueue_state", state, can_raise=False)
@@ -646,11 +645,11 @@ class ManticoreBase(Eventful):
 
     @sync
     def _revive_state(self, state_id: int):
-        """ Send a state back to READY list
+        """Send a state back to READY list
 
-            +--------+        +------------------+
-            | READY  +<-------+ BUSY/TERMINATED |
-            +---+----+        +----------------+
+        +--------+        +------------------+
+        | READY  +<-------+ BUSY/TERMINATED |
+        +---+----+        +----------------+
 
         """
         # Move from BUSY or TERMINATED to READY
@@ -669,15 +668,15 @@ class ManticoreBase(Eventful):
 
     @sync
     def _terminate_state(self, state_id: int, delete=False):
-        """ Send a BUSY state to the TERMINATED list or trash it if delete is True
+        """Send a BUSY state to the TERMINATED list or trash it if delete is True
 
-            +------+        +------------+
-            | BUSY +------->+ TERMINATED |
-            +---+--+        +------------+
-                |
-                v
-               ###
-               ###
+        +------+        +------------+
+        | BUSY +------->+ TERMINATED |
+        +---+--+        +------------+
+            |
+            v
+           ###
+           ###
 
         """
         # wait for a state id to be added to the ready list and remove it
@@ -698,15 +697,15 @@ class ManticoreBase(Eventful):
 
     @sync
     def _kill_state(self, state_id: int, delete=False):
-        """ Send a BUSY state to the KILLED list or trash it if delete is True
+        """Send a BUSY state to the KILLED list or trash it if delete is True
 
-            +------+        +--------+
-            | BUSY +------->+ KILLED |
-            +---+--+        +--------+
-                |
-                v
-               ###
-               ###
+        +------+        +--------+
+        | BUSY +------->+ KILLED |
+        +---+--+        +--------+
+            |
+            v
+           ###
+           ###
 
         """
         # wait for a state id to be added to the ready list and remove it
@@ -727,12 +726,12 @@ class ManticoreBase(Eventful):
 
     @sync
     def kill_state(self, state: typing.Union[StateBase, int], delete: bool = False):
-        """ Kill a state.
-             A state is moved from any list to the kill list or fully
-             removed from secondary storage
+        """Kill a state.
+         A state is moved from any list to the kill list or fully
+         removed from secondary storage
 
-            :param state: a state
-            :param delete: if true remove the state from the secondary storage
+        :param state: a state
+        :param delete: if true remove the state from the secondary storage
 
         """
         state_id = getattr(state, "id", state)
@@ -814,10 +813,10 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def _all_states(self):
-        """ Only allowed at not running.
-            (At running we can have states at busy)
-            Returns a tuple with all active state ids.
-            Notably the "killed" states are not included here.
+        """Only allowed at not running.
+        (At running we can have states at busy)
+        Returns a tuple with all active state ids.
+        Notably the "killed" states are not included here.
         """
         return tuple(self._ready_states) + tuple(self._terminated_states)
 
@@ -943,8 +942,8 @@ class ManticoreBase(Eventful):
 
     @at_not_running
     def unregister_plugin(self, plugin: typing.Union[str, Plugin]):
-        """ Removes a plugin from manticore.
-            No events should be sent to it after
+        """Removes a plugin from manticore.
+        No events should be sent to it after
         """
         if isinstance(plugin, str):  # Passed plugin.unique_name instead of value
             assert plugin in self.plugins, "Plugin instance not registered"
@@ -968,10 +967,10 @@ class ManticoreBase(Eventful):
     @property  # type: ignore
     @at_not_running
     def context(self):
-        """ Convenient access to shared context. We maintain a local copy of the
-            share context during the time manticore is not running.
-            This local context is copied to the shared context when a run starts
-            and copied back when a run finishes
+        """Convenient access to shared context. We maintain a local copy of the
+        share context during the time manticore is not running.
+        This local context is copied to the shared context when a run starts
+        and copied back when a run finishes
         """
         return self._shared_context
 
@@ -1030,9 +1029,9 @@ class ManticoreBase(Eventful):
 
     @sync
     def kill(self):
-        """ Attempt to cancel and kill all the workers.
-            Workers must terminate
-            RUNNING, STANDBY -> KILLED
+        """Attempt to cancel and kill all the workers.
+        Workers must terminate
+        RUNNING, STANDBY -> KILLED
         """
         self._publish("will_terminate_execution", self._output)
         self._killed.value = True
@@ -1065,8 +1064,8 @@ class ManticoreBase(Eventful):
 
     @contextmanager
     def kill_timeout(self, timeout=None):
-        """ A convenient context manager that will kill a manticore run after
-            timeout seconds
+        """A convenient context manager that will kill a manticore run after
+        timeout seconds
         """
         if timeout is None:
             timeout = consts.timeout
@@ -1154,7 +1153,7 @@ class ManticoreBase(Eventful):
     @at_not_running
     def remove_all(self):
         """
-            Deletes all streams from storage and clean state lists
+        Deletes all streams from storage and clean state lists
         """
         for state_id in self._all_states:
             self._remove(state_id)

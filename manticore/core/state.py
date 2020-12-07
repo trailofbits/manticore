@@ -30,8 +30,8 @@ class TerminateState(StateException):
 
 
 class AbandonState(TerminateState):
-    """ Exception returned for abandoned states when
-        execution is finished
+    """Exception returned for abandoned states when
+    execution is finished
     """
 
     def __init__(self, message="Abandoned state"):
@@ -39,12 +39,12 @@ class AbandonState(TerminateState):
 
 
 class Concretize(StateException):
-    """ Base class for all exceptions that trigger the concretization
-        of a symbolic expression
+    """Base class for all exceptions that trigger the concretization
+    of a symbolic expression
 
-        This will fork the state using a pre-set concretization policy
-        Optional `setstate` function set the state to the actual concretized value.
-        #Fixme Doc.
+    This will fork the state using a pre-set concretization policy
+    Optional `setstate` function set the state to the actual concretized value.
+    #Fixme Doc.
 
     """
 
@@ -65,8 +65,8 @@ class Concretize(StateException):
 
 
 class SerializeState(Concretize):
-    """ Allows the user to save a copy of the current state somewhere on the
-        disk so that analysis can later be resumed from this point.
+    """Allows the user to save a copy of the current state somewhere on the
+    disk so that analysis can later be resumed from this point.
     """
 
     def _setstate(self, state, _value):
@@ -85,12 +85,12 @@ class SerializeState(Concretize):
 
 
 class ForkState(Concretize):
-    """ Specialized concretization class for Bool expressions.
-        It tries True and False as concrete solutions. /
+    """Specialized concretization class for Bool expressions.
+    It tries True and False as concrete solutions. /
 
-        Note: as setstate is None the concrete value is not written back
-        to the state. So the expression could still by symbolic(but constrained)
-        in forked states.
+    Note: as setstate is None the concrete value is not written back
+    to the state. So the expression could still by symbolic(but constrained)
+    in forked states.
     """
 
     def __init__(self, message, expression: Bool, **kwargs):
@@ -271,12 +271,12 @@ class StateBase(Eventful):
 
     def _update_state_descriptor(self, descriptor: StateDescriptor, *args, **kwargs):
         """
-         Called on execution_intermittent to update the descriptor for this state. This is intended for information
-         like the PC or instruction count, where updating after each instruction would be a waste of cycles.
-         This one updates the execution counts
+        Called on execution_intermittent to update the descriptor for this state. This is intended for information
+        like the PC or instruction count, where updating after each instruction would be a waste of cycles.
+        This one updates the execution counts
 
-         :param descriptor: StateDescriptor for this state
-         """
+        :param descriptor: StateDescriptor for this state
+        """
         descriptor.total_execs = self._total_exec
         descriptor.own_execs = self._own_exec
 

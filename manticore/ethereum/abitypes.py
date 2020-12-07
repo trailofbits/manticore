@@ -151,20 +151,20 @@ lexer = lex.lex()
 # parser
 def p_basic_type(p):
     """
-     T : UINTN
-     T : UINT
-     T : INTN
-     T : INT
-     T : ADDRESS
-     T : BOOL
-     T : FIXEDMN
-     T : UFIXEDMN
-     T : FIXED
-     T : UFIXED
-     T : BYTESM
-     T : FUNCTION
-     T : BYTES
-     T : STRING
+    T : UINTN
+    T : UINT
+    T : INTN
+    T : INT
+    T : ADDRESS
+    T : BOOL
+    T : FIXEDMN
+    T : UFIXEDMN
+    T : FIXED
+    T : UFIXED
+    T : BYTESM
+    T : FUNCTION
+    T : BYTES
+    T : STRING
 
     """
     p[0] = p[1]
@@ -172,35 +172,35 @@ def p_basic_type(p):
 
 def p_type_list_one(p):
     """
-     TL : T
+    TL : T
     """
     p[0] = (p[1],)
 
 
 def p_type_list(p):
     """
-     TL : T COMMA TL
+    TL : T COMMA TL
     """
     p[0] = (p[1],) + p[3]
 
 
 def p_tuple(p):
     """
-     T : LPAREN TL RPAREN
+    T : LPAREN TL RPAREN
     """
     p[0] = ("tuple", p[2])
 
 
 def p_tuple_empty(p):
     """
-     T : LPAREN RPAREN
+    T : LPAREN RPAREN
     """
     p[0] = ("tuple", ())
 
 
 def p_dynamic_type(p):
     """
-     T : T LBRAKET RBRAKET
+    T : T LBRAKET RBRAKET
     """
     reps = None
     base_type = p[1]
@@ -209,7 +209,7 @@ def p_dynamic_type(p):
 
 def p_dynamic_fixed_type(p):
     """
-     T : T LBRAKET NUMBER RBRAKET
+    T : T LBRAKET NUMBER RBRAKET
     """
     reps = int(p[3])
     base_type = p[1]
