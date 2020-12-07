@@ -184,7 +184,7 @@ def _ks_assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
 def assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
     """
     Assemble the given string.
-    
+
     An assembly cache is first checked, and if there is no entry there, then Keystone is used.
     """
     if asm in assembly_cache[mode]:

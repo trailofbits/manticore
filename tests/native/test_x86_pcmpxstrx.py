@@ -54,9 +54,9 @@ class CPUTest(unittest.TestCase):
             return self.value
 
     def test_PCMPESTRI_1(self):
-        """ Instruction PCMPESTRI_1
-            Groups: sse42
-            0x400bec:	pcmpestri	xmm1, xmm2, 0x64
+        """Instruction PCMPESTRI_1
+        Groups: sse42
+        0x400bec:   pcmpestri       xmm1, xmm2, 0x64
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -91,9 +91,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_10(self):
-        """ Instruction PCMPESTRI_10
-            Groups: sse42
-            0x400b20:	pcmpestri	xmm1, xmm2, 0x20
+        """Instruction PCMPESTRI_10
+        Groups: sse42
+        0x400b20:   pcmpestri       xmm1, xmm2, 0x20
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -128,9 +128,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_11(self):
-        """ Instruction PCMPESTRI_11
-            Groups: sse42
-            0x400b38:	pcmpestri	xmm1, xmm2, 0x28
+        """Instruction PCMPESTRI_11
+        Groups: sse42
+        0x400b38:   pcmpestri       xmm1, xmm2, 0x28
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -165,9 +165,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_12(self):
-        """ Instruction PCMPESTRI_12
-            Groups: sse42
-            0x400bfe:	pcmpestri	xmm1, xmm2, 0x69
+        """Instruction PCMPESTRI_12
+        Groups: sse42
+        0x400bfe:   pcmpestri       xmm1, xmm2, 0x69
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -202,9 +202,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_13(self):
-        """ Instruction PCMPESTRI_13
-            Groups: sse42
-            0x400b86:	pcmpestri	xmm1, xmm2, 0x41
+        """Instruction PCMPESTRI_13
+        Groups: sse42
+        0x400b86:   pcmpestri       xmm1, xmm2, 0x41
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -239,9 +239,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_14(self):
-        """ Instruction PCMPESTRI_14
-            Groups: sse42
-            0x400ae4:	pcmpestri	xmm1, xmm2, 0xc
+        """Instruction PCMPESTRI_14
+        Groups: sse42
+        0x400ae4:   pcmpestri       xmm1, xmm2, 0xc
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -276,9 +276,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_15(self):
-        """ Instruction PCMPESTRI_15
-            Groups: sse42
-            0x400c04:	pcmpestri	xmm1, xmm2, 0x6c
+        """Instruction PCMPESTRI_15
+        Groups: sse42
+        0x400c04:   pcmpestri       xmm1, xmm2, 0x6c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -313,9 +313,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_16(self):
-        """ Instruction PCMPESTRI_16
-            Groups: sse42
-            0x400b6e:	pcmpestri	xmm1, xmm2, 0x39
+        """Instruction PCMPESTRI_16
+        Groups: sse42
+        0x400b6e:   pcmpestri       xmm1, xmm2, 0x39
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -350,9 +350,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_17(self):
-        """ Instruction PCMPESTRI_17
-            Groups: sse42
-            0x400b2c:	pcmpestri	xmm1, xmm2, 0x24
+        """Instruction PCMPESTRI_17
+        Groups: sse42
+        0x400b2c:   pcmpestri       xmm1, xmm2, 0x24
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -387,9 +387,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_18(self):
-        """ Instruction PCMPESTRI_18
-            Groups: sse42
-            0x400af0:	pcmpestri	xmm1, xmm2, 0x10
+        """Instruction PCMPESTRI_18
+        Groups: sse42
+        0x400af0:   pcmpestri       xmm1, xmm2, 0x10
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -424,9 +424,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_19(self):
-        """ Instruction PCMPESTRI_19
-            Groups: sse42
-            0x400be0:	pcmpestri	xmm1, xmm2, 0x60
+        """Instruction PCMPESTRI_19
+        Groups: sse42
+        0x400be0:   pcmpestri       xmm1, xmm2, 0x60
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -461,9 +461,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_2(self):
-        """ Instruction PCMPESTRI_2
-            Groups: sse42
-            0x400b4a:	pcmpestri	xmm1, xmm2, 0x2d
+        """Instruction PCMPESTRI_2
+        Groups: sse42
+        0x400b4a:   pcmpestri       xmm1, xmm2, 0x2d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -498,9 +498,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_20(self):
-        """ Instruction PCMPESTRI_20
-            Groups: sse42
-            0x400c0a:	pcmpestri	xmm1, xmm2, 0x6d
+        """Instruction PCMPESTRI_20
+        Groups: sse42
+        0x400c0a:   pcmpestri       xmm1, xmm2, 0x6d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -535,9 +535,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_21(self):
-        """ Instruction PCMPESTRI_21
-            Groups: sse42
-            0x400b14:	pcmpestri	xmm1, xmm2, 0x1c
+        """Instruction PCMPESTRI_21
+        Groups: sse42
+        0x400b14:   pcmpestri       xmm1, xmm2, 0x1c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -572,9 +572,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_22(self):
-        """ Instruction PCMPESTRI_22
-            Groups: sse42
-            0x400bb6:	pcmpestri	xmm1, xmm2, 0x51
+        """Instruction PCMPESTRI_22
+        Groups: sse42
+        0x400bb6:   pcmpestri       xmm1, xmm2, 0x51
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -609,9 +609,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_23(self):
-        """ Instruction PCMPESTRI_23
-            Groups: sse42
-            0x400b08:	pcmpestri	xmm1, xmm2, 0x18
+        """Instruction PCMPESTRI_23
+        Groups: sse42
+        0x400b08:   pcmpestri       xmm1, xmm2, 0x18
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -646,9 +646,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_24(self):
-        """ Instruction PCMPESTRI_24
-            Groups: sse42
-            0x400c1c:	pcmpestri	xmm1, xmm2, 0x74
+        """Instruction PCMPESTRI_24
+        Groups: sse42
+        0x400c1c:   pcmpestri       xmm1, xmm2, 0x74
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -683,9 +683,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_25(self):
-        """ Instruction PCMPESTRI_25
-            Groups: sse42
-            0x400bda:	pcmpestri	xmm1, xmm2, 0x5d
+        """Instruction PCMPESTRI_25
+        Groups: sse42
+        0x400bda:   pcmpestri       xmm1, xmm2, 0x5d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -720,9 +720,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_26(self):
-        """ Instruction PCMPESTRI_26
-            Groups: sse42
-            0x400c10:	pcmpestri	xmm1, xmm2, 0x70
+        """Instruction PCMPESTRI_26
+        Groups: sse42
+        0x400c10:   pcmpestri       xmm1, xmm2, 0x70
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -757,9 +757,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_27(self):
-        """ Instruction PCMPESTRI_27
-            Groups: sse42
-            0x400c34:	pcmpestri	xmm1, xmm2, 0x7c
+        """Instruction PCMPESTRI_27
+        Groups: sse42
+        0x400c34:   pcmpestri       xmm1, xmm2, 0x7c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -794,9 +794,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_28(self):
-        """ Instruction PCMPESTRI_28
-            Groups: sse42
-            0x400c2e:	pcmpestri	xmm1, xmm2, 0x79
+        """Instruction PCMPESTRI_28
+        Groups: sse42
+        0x400c2e:   pcmpestri       xmm1, xmm2, 0x79
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -831,9 +831,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_29(self):
-        """ Instruction PCMPESTRI_29
-            Groups: sse42
-            0x400b80:	pcmpestri	xmm1, xmm2, 0x40
+        """Instruction PCMPESTRI_29
+        Groups: sse42
+        0x400b80:   pcmpestri       xmm1, xmm2, 0x40
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -868,9 +868,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_3(self):
-        """ Instruction PCMPESTRI_3
-            Groups: sse42
-            0x400ac6:	pcmpestri	xmm1, xmm2, 1
+        """Instruction PCMPESTRI_3
+        Groups: sse42
+        0x400ac6:   pcmpestri       xmm1, xmm2, 1
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -905,9 +905,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_30(self):
-        """ Instruction PCMPESTRI_30
-            Groups: sse42
-            0x400ba4:	pcmpestri	xmm1, xmm2, 0x4c
+        """Instruction PCMPESTRI_30
+        Groups: sse42
+        0x400ba4:   pcmpestri       xmm1, xmm2, 0x4c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -942,9 +942,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_31(self):
-        """ Instruction PCMPESTRI_31
-            Groups: sse42
-            0x400ad8:	pcmpestri	xmm1, xmm2, 8
+        """Instruction PCMPESTRI_31
+        Groups: sse42
+        0x400ad8:   pcmpestri       xmm1, xmm2, 8
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -979,9 +979,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_32(self):
-        """ Instruction PCMPESTRI_32
-            Groups: sse42
-            0x400b50:	pcmpestri	xmm1, xmm2, 0x30
+        """Instruction PCMPESTRI_32
+        Groups: sse42
+        0x400b50:   pcmpestri       xmm1, xmm2, 0x30
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1016,9 +1016,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_33(self):
-        """ Instruction PCMPESTRI_33
-            Groups: sse42
-            0x400b44:	pcmpestri	xmm1, xmm2, 0x2c
+        """Instruction PCMPESTRI_33
+        Groups: sse42
+        0x400b44:   pcmpestri       xmm1, xmm2, 0x2c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1053,9 +1053,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_34(self):
-        """ Instruction PCMPESTRI_34
-            Groups: sse42
-            0x400bbc:	pcmpestri	xmm1, xmm2, 0x54
+        """Instruction PCMPESTRI_34
+        Groups: sse42
+        0x400bbc:   pcmpestri       xmm1, xmm2, 0x54
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1090,9 +1090,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_35(self):
-        """ Instruction PCMPESTRI_35
-            Groups: sse42
-            0x400ad2:	pcmpestri	xmm1, xmm2, 5
+        """Instruction PCMPESTRI_35
+        Groups: sse42
+        0x400ad2:   pcmpestri       xmm1, xmm2, 5
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1127,9 +1127,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_36(self):
-        """ Instruction PCMPESTRI_36
-            Groups: sse42
-            0x400b26:	pcmpestri	xmm1, xmm2, 0x21
+        """Instruction PCMPESTRI_36
+        Groups: sse42
+        0x400b26:   pcmpestri       xmm1, xmm2, 0x21
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1164,9 +1164,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_37(self):
-        """ Instruction PCMPESTRI_37
-            Groups: sse42
-            0x400bc8:	pcmpestri	xmm1, xmm2, 0x58
+        """Instruction PCMPESTRI_37
+        Groups: sse42
+        0x400bc8:   pcmpestri       xmm1, xmm2, 0x58
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1201,9 +1201,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_38(self):
-        """ Instruction PCMPESTRI_38
-            Groups: sse42
-            0x400b98:	pcmpestri	xmm1, xmm2, 0x48
+        """Instruction PCMPESTRI_38
+        Groups: sse42
+        0x400b98:   pcmpestri       xmm1, xmm2, 0x48
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1238,9 +1238,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_39(self):
-        """ Instruction PCMPESTRI_39
-            Groups: sse42
-            0x400b02:	pcmpestri	xmm1, xmm2, 0x15
+        """Instruction PCMPESTRI_39
+        Groups: sse42
+        0x400b02:   pcmpestri       xmm1, xmm2, 0x15
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1275,9 +1275,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_4(self):
-        """ Instruction PCMPESTRI_4
-            Groups: sse42
-            0x400c22:	pcmpestri	xmm1, xmm2, 0x75
+        """Instruction PCMPESTRI_4
+        Groups: sse42
+        0x400c22:   pcmpestri       xmm1, xmm2, 0x75
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1312,9 +1312,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_40(self):
-        """ Instruction PCMPESTRI_40
-            Groups: sse42
-            0x400c3a:	pcmpestri	xmm1, xmm2, 0x7d
+        """Instruction PCMPESTRI_40
+        Groups: sse42
+        0x400c3a:   pcmpestri       xmm1, xmm2, 0x7d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1349,9 +1349,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_41(self):
-        """ Instruction PCMPESTRI_41
-            Groups: sse42
-            0x400af6:	pcmpestri	xmm1, xmm2, 0x11
+        """Instruction PCMPESTRI_41
+        Groups: sse42
+        0x400af6:   pcmpestri       xmm1, xmm2, 0x11
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1386,9 +1386,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_42(self):
-        """ Instruction PCMPESTRI_42
-            Groups: sse42
-            0x400c28:	pcmpestri	xmm1, xmm2, 0x78
+        """Instruction PCMPESTRI_42
+        Groups: sse42
+        0x400c28:   pcmpestri       xmm1, xmm2, 0x78
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1423,9 +1423,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_43(self):
-        """ Instruction PCMPESTRI_43
-            Groups: sse42
-            0x400b62:	pcmpestri	xmm1, xmm2, 0x35
+        """Instruction PCMPESTRI_43
+        Groups: sse42
+        0x400b62:   pcmpestri       xmm1, xmm2, 0x35
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1460,9 +1460,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_44(self):
-        """ Instruction PCMPESTRI_44
-            Groups: sse42
-            0x400baa:	pcmpestri	xmm1, xmm2, 0x4d
+        """Instruction PCMPESTRI_44
+        Groups: sse42
+        0x400baa:   pcmpestri       xmm1, xmm2, 0x4d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1497,9 +1497,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_45(self):
-        """ Instruction PCMPESTRI_45
-            Groups: sse42
-            0x400b68:	pcmpestri	xmm1, xmm2, 0x38
+        """Instruction PCMPESTRI_45
+        Groups: sse42
+        0x400b68:   pcmpestri       xmm1, xmm2, 0x38
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1534,9 +1534,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_46(self):
-        """ Instruction PCMPESTRI_46
-            Groups: sse42
-            0x400c16:	pcmpestri	xmm1, xmm2, 0x71
+        """Instruction PCMPESTRI_46
+        Groups: sse42
+        0x400c16:   pcmpestri       xmm1, xmm2, 0x71
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1571,9 +1571,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_47(self):
-        """ Instruction PCMPESTRI_47
-            Groups: sse42
-            0x400acc:	pcmpestri	xmm1, xmm2, 4
+        """Instruction PCMPESTRI_47
+        Groups: sse42
+        0x400acc:   pcmpestri       xmm1, xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1608,9 +1608,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_48(self):
-        """ Instruction PCMPESTRI_48
-            Groups: sse42
-            0x400b92:	pcmpestri	xmm1, xmm2, 0x45
+        """Instruction PCMPESTRI_48
+        Groups: sse42
+        0x400b92:   pcmpestri       xmm1, xmm2, 0x45
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1645,9 +1645,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_49(self):
-        """ Instruction PCMPESTRI_49
-            Groups: sse42
-            0x400afc:	pcmpestri	xmm1, xmm2, 0x14
+        """Instruction PCMPESTRI_49
+        Groups: sse42
+        0x400afc:   pcmpestri       xmm1, xmm2, 0x14
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1682,9 +1682,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_5(self):
-        """ Instruction PCMPESTRI_5
-            Groups: sse42
-            0x400be6:	pcmpestri	xmm1, xmm2, 0x61
+        """Instruction PCMPESTRI_5
+        Groups: sse42
+        0x400be6:   pcmpestri       xmm1, xmm2, 0x61
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1719,9 +1719,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_50(self):
-        """ Instruction PCMPESTRI_50
-            Groups: sse42
-            0x400b9e:	pcmpestri	xmm1, xmm2, 0x49
+        """Instruction PCMPESTRI_50
+        Groups: sse42
+        0x400b9e:   pcmpestri       xmm1, xmm2, 0x49
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1756,9 +1756,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_51(self):
-        """ Instruction PCMPESTRI_51
-            Groups: sse42
-            0x400ac0:	pcmpestri	xmm1, xmm2, 0
+        """Instruction PCMPESTRI_51
+        Groups: sse42
+        0x400ac0:   pcmpestri       xmm1, xmm2, 0
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1793,9 +1793,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_52(self):
-        """ Instruction PCMPESTRI_52
-            Groups: sse42
-            0x400b74:	pcmpestri	xmm1, xmm2, 0x3c
+        """Instruction PCMPESTRI_52
+        Groups: sse42
+        0x400b74:   pcmpestri       xmm1, xmm2, 0x3c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1830,9 +1830,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_53(self):
-        """ Instruction PCMPESTRI_53
-            Groups: sse42
-            0x400bce:	pcmpestri	xmm1, xmm2, 0x59
+        """Instruction PCMPESTRI_53
+        Groups: sse42
+        0x400bce:   pcmpestri       xmm1, xmm2, 0x59
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1867,9 +1867,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_54(self):
-        """ Instruction PCMPESTRI_54
-            Groups: sse42
-            0x400b56:	pcmpestri	xmm1, xmm2, 0x31
+        """Instruction PCMPESTRI_54
+        Groups: sse42
+        0x400b56:   pcmpestri       xmm1, xmm2, 0x31
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1904,9 +1904,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_55(self):
-        """ Instruction PCMPESTRI_55
-            Groups: sse42
-            0x400b7a:	pcmpestri	xmm1, xmm2, 0x3d
+        """Instruction PCMPESTRI_55
+        Groups: sse42
+        0x400b7a:   pcmpestri       xmm1, xmm2, 0x3d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1941,9 +1941,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_56(self):
-        """ Instruction PCMPESTRI_56
-            Groups: sse42
-            0x400b5c:	pcmpestri	xmm1, xmm2, 0x34
+        """Instruction PCMPESTRI_56
+        Groups: sse42
+        0x400b5c:   pcmpestri       xmm1, xmm2, 0x34
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1978,9 +1978,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_57(self):
-        """ Instruction PCMPESTRI_57
-            Groups: sse42
-            0x400ade:	pcmpestri	xmm1, xmm2, 9
+        """Instruction PCMPESTRI_57
+        Groups: sse42
+        0x400ade:   pcmpestri       xmm1, xmm2, 9
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2015,9 +2015,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_58(self):
-        """ Instruction PCMPESTRI_58
-            Groups: sse42
-            0x400b3e:	pcmpestri	xmm1, xmm2, 0x29
+        """Instruction PCMPESTRI_58
+        Groups: sse42
+        0x400b3e:   pcmpestri       xmm1, xmm2, 0x29
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2052,9 +2052,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_59(self):
-        """ Instruction PCMPESTRI_59
-            Groups: sse42
-            0x400bb0:	pcmpestri	xmm1, xmm2, 0x50
+        """Instruction PCMPESTRI_59
+        Groups: sse42
+        0x400bb0:   pcmpestri       xmm1, xmm2, 0x50
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2089,9 +2089,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_6(self):
-        """ Instruction PCMPESTRI_6
-            Groups: sse42
-            0x400b0e:	pcmpestri	xmm1, xmm2, 0x19
+        """Instruction PCMPESTRI_6
+        Groups: sse42
+        0x400b0e:   pcmpestri       xmm1, xmm2, 0x19
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2126,9 +2126,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_60(self):
-        """ Instruction PCMPESTRI_60
-            Groups: sse42
-            0x400b1a:	pcmpestri	xmm1, xmm2, 0x1d
+        """Instruction PCMPESTRI_60
+        Groups: sse42
+        0x400b1a:   pcmpestri       xmm1, xmm2, 0x1d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2163,9 +2163,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_61(self):
-        """ Instruction PCMPESTRI_61
-            Groups: sse42
-            0x400bf2:	pcmpestri	xmm1, xmm2, 0x65
+        """Instruction PCMPESTRI_61
+        Groups: sse42
+        0x400bf2:   pcmpestri       xmm1, xmm2, 0x65
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2200,9 +2200,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_62(self):
-        """ Instruction PCMPESTRI_62
-            Groups: sse42
-            0x400bd4:	pcmpestri	xmm1, xmm2, 0x5c
+        """Instruction PCMPESTRI_62
+        Groups: sse42
+        0x400bd4:   pcmpestri       xmm1, xmm2, 0x5c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2237,9 +2237,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_63(self):
-        """ Instruction PCMPESTRI_63
-            Groups: sse42
-            0x400bf8:	pcmpestri	xmm1, xmm2, 0x68
+        """Instruction PCMPESTRI_63
+        Groups: sse42
+        0x400bf8:   pcmpestri       xmm1, xmm2, 0x68
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2274,9 +2274,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_64(self):
-        """ Instruction PCMPESTRI_64
-            Groups: sse42
-            0x400bc2:	pcmpestri	xmm1, xmm2, 0x55
+        """Instruction PCMPESTRI_64
+        Groups: sse42
+        0x400bc2:   pcmpestri       xmm1, xmm2, 0x55
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2311,9 +2311,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_7(self):
-        """ Instruction PCMPESTRI_7
-            Groups: sse42
-            0x400b8c:	pcmpestri	xmm1, xmm2, 0x44
+        """Instruction PCMPESTRI_7
+        Groups: sse42
+        0x400b8c:   pcmpestri       xmm1, xmm2, 0x44
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2348,9 +2348,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_8(self):
-        """ Instruction PCMPESTRI_8
-            Groups: sse42
-            0x400aea:	pcmpestri	xmm1, xmm2, 0xd
+        """Instruction PCMPESTRI_8
+        Groups: sse42
+        0x400aea:   pcmpestri       xmm1, xmm2, 0xd
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2385,9 +2385,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_9(self):
-        """ Instruction PCMPESTRI_9
-            Groups: sse42
-            0x400b32:	pcmpestri	xmm1, xmm2, 0x25
+        """Instruction PCMPESTRI_9
+        Groups: sse42
+        0x400b32:   pcmpestri       xmm1, xmm2, 0x25
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2422,9 +2422,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRM_1(self):
-        """ Instruction PCMPESTRM_1
-            Groups: sse42
-            0x4009d0:	pcmpestrm	xmm1, xmm2, 0x38
+        """Instruction PCMPESTRM_1
+        Groups: sse42
+        0x4009d0:   pcmpestrm       xmm1, xmm2, 0x38
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2457,9 +2457,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_10(self):
-        """ Instruction PCMPESTRM_10
-            Groups: sse42
-            0x4009ac:	pcmpestrm	xmm1, xmm2, 0x2c
+        """Instruction PCMPESTRM_10
+        Groups: sse42
+        0x4009ac:   pcmpestrm       xmm1, xmm2, 0x2c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2492,9 +2492,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_11(self):
-        """ Instruction PCMPESTRM_11
-            Groups: sse42
-            0x400a24:	pcmpestrm	xmm1, xmm2, 0x54
+        """Instruction PCMPESTRM_11
+        Groups: sse42
+        0x400a24:   pcmpestrm       xmm1, xmm2, 0x54
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2527,9 +2527,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_12(self):
-        """ Instruction PCMPESTRM_12
-            Groups: sse42
-            0x4009f4:	pcmpestrm	xmm1, xmm2, 0x44
+        """Instruction PCMPESTRM_12
+        Groups: sse42
+        0x4009f4:   pcmpestrm       xmm1, xmm2, 0x44
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2562,9 +2562,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_13(self):
-        """ Instruction PCMPESTRM_13
-            Groups: sse42
-            0x400a1e:	pcmpestrm	xmm1, xmm2, 0x51
+        """Instruction PCMPESTRM_13
+        Groups: sse42
+        0x400a1e:   pcmpestrm       xmm1, xmm2, 0x51
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2597,9 +2597,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_14(self):
-        """ Instruction PCMPESTRM_14
-            Groups: sse42
-            0x400a7e:	pcmpestrm	xmm1, xmm2, 0x71
+        """Instruction PCMPESTRM_14
+        Groups: sse42
+        0x400a7e:   pcmpestrm       xmm1, xmm2, 0x71
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2632,9 +2632,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_15(self):
-        """ Instruction PCMPESTRM_15
-            Groups: sse42
-            0x400994:	pcmpestrm	xmm1, xmm2, 0x24
+        """Instruction PCMPESTRM_15
+        Groups: sse42
+        0x400994:   pcmpestrm       xmm1, xmm2, 0x24
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2667,9 +2667,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_16(self):
-        """ Instruction PCMPESTRM_16
-            Groups: sse42
-            0x400934:	pcmpestrm	xmm1, xmm2, 4
+        """Instruction PCMPESTRM_16
+        Groups: sse42
+        0x400934:   pcmpestrm       xmm1, xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2702,9 +2702,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_17(self):
-        """ Instruction PCMPESTRM_17
-            Groups: sse42
-            0x400a9c:	pcmpestrm	xmm1, xmm2, 0x7c
+        """Instruction PCMPESTRM_17
+        Groups: sse42
+        0x400a9c:   pcmpestrm       xmm1, xmm2, 0x7c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2737,9 +2737,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_18(self):
-        """ Instruction PCMPESTRM_18
-            Groups: sse42
-            0x40092e:	pcmpestrm	xmm1, xmm2, 1
+        """Instruction PCMPESTRM_18
+        Groups: sse42
+        0x40092e:   pcmpestrm       xmm1, xmm2, 1
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2772,9 +2772,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_19(self):
-        """ Instruction PCMPESTRM_19
-            Groups: sse42
-            0x4009a6:	pcmpestrm	xmm1, xmm2, 0x29
+        """Instruction PCMPESTRM_19
+        Groups: sse42
+        0x4009a6:   pcmpestrm       xmm1, xmm2, 0x29
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2807,9 +2807,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_2(self):
-        """ Instruction PCMPESTRM_2
-            Groups: sse42
-            0x400a54:	pcmpestrm	xmm1, xmm2, 0x64
+        """Instruction PCMPESTRM_2
+        Groups: sse42
+        0x400a54:   pcmpestrm       xmm1, xmm2, 0x64
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2842,9 +2842,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_20(self):
-        """ Instruction PCMPESTRM_20
-            Groups: sse42
-            0x400a66:	pcmpestrm	xmm1, xmm2, 0x69
+        """Instruction PCMPESTRM_20
+        Groups: sse42
+        0x400a66:   pcmpestrm       xmm1, xmm2, 0x69
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2877,9 +2877,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_21(self):
-        """ Instruction PCMPESTRM_21
-            Groups: sse42
-            0x400958:	pcmpestrm	xmm1, xmm2, 0x10
+        """Instruction PCMPESTRM_21
+        Groups: sse42
+        0x400958:   pcmpestrm       xmm1, xmm2, 0x10
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2912,9 +2912,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_22(self):
-        """ Instruction PCMPESTRM_22
-            Groups: sse42
-            0x40095e:	pcmpestrm	xmm1, xmm2, 0x11
+        """Instruction PCMPESTRM_22
+        Groups: sse42
+        0x40095e:   pcmpestrm       xmm1, xmm2, 0x11
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2947,9 +2947,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_23(self):
-        """ Instruction PCMPESTRM_23
-            Groups: sse42
-            0x400976:	pcmpestrm	xmm1, xmm2, 0x19
+        """Instruction PCMPESTRM_23
+        Groups: sse42
+        0x400976:   pcmpestrm       xmm1, xmm2, 0x19
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -2982,9 +2982,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_24(self):
-        """ Instruction PCMPESTRM_24
-            Groups: sse42
-            0x400a8a:	pcmpestrm	xmm1, xmm2, 0x75
+        """Instruction PCMPESTRM_24
+        Groups: sse42
+        0x400a8a:   pcmpestrm       xmm1, xmm2, 0x75
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3017,9 +3017,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_25(self):
-        """ Instruction PCMPESTRM_25
-            Groups: sse42
-            0x400a12:	pcmpestrm	xmm1, xmm2, 0x4d
+        """Instruction PCMPESTRM_25
+        Groups: sse42
+        0x400a12:   pcmpestrm       xmm1, xmm2, 0x4d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3052,9 +3052,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_26(self):
-        """ Instruction PCMPESTRM_26
-            Groups: sse42
-            0x40093a:	pcmpestrm	xmm1, xmm2, 5
+        """Instruction PCMPESTRM_26
+        Groups: sse42
+        0x40093a:   pcmpestrm       xmm1, xmm2, 5
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3087,9 +3087,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_27(self):
-        """ Instruction PCMPESTRM_27
-            Groups: sse42
-            0x400a30:	pcmpestrm	xmm1, xmm2, 0x58
+        """Instruction PCMPESTRM_27
+        Groups: sse42
+        0x400a30:   pcmpestrm       xmm1, xmm2, 0x58
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3122,9 +3122,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_28(self):
-        """ Instruction PCMPESTRM_28
-            Groups: sse42
-            0x4009ca:	pcmpestrm	xmm1, xmm2, 0x35
+        """Instruction PCMPESTRM_28
+        Groups: sse42
+        0x4009ca:   pcmpestrm       xmm1, xmm2, 0x35
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3157,9 +3157,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_29(self):
-        """ Instruction PCMPESTRM_29
-            Groups: sse42
-            0x400a3c:	pcmpestrm	xmm1, xmm2, 0x5c
+        """Instruction PCMPESTRM_29
+        Groups: sse42
+        0x400a3c:   pcmpestrm       xmm1, xmm2, 0x5c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3192,9 +3192,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_3(self):
-        """ Instruction PCMPESTRM_3
-            Groups: sse42
-            0x400a18:	pcmpestrm	xmm1, xmm2, 0x50
+        """Instruction PCMPESTRM_3
+        Groups: sse42
+        0x400a18:   pcmpestrm       xmm1, xmm2, 0x50
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3227,9 +3227,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_30(self):
-        """ Instruction PCMPESTRM_30
-            Groups: sse42
-            0x40098e:	pcmpestrm	xmm1, xmm2, 0x21
+        """Instruction PCMPESTRM_30
+        Groups: sse42
+        0x40098e:   pcmpestrm       xmm1, xmm2, 0x21
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3262,9 +3262,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_31(self):
-        """ Instruction PCMPESTRM_31
-            Groups: sse42
-            0x400a96:	pcmpestrm	xmm1, xmm2, 0x79
+        """Instruction PCMPESTRM_31
+        Groups: sse42
+        0x400a96:   pcmpestrm       xmm1, xmm2, 0x79
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3297,9 +3297,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_32(self):
-        """ Instruction PCMPESTRM_32
-            Groups: sse42
-            0x400a90:	pcmpestrm	xmm1, xmm2, 0x78
+        """Instruction PCMPESTRM_32
+        Groups: sse42
+        0x400a90:   pcmpestrm       xmm1, xmm2, 0x78
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3332,9 +3332,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_33(self):
-        """ Instruction PCMPESTRM_33
-            Groups: sse42
-            0x400a06:	pcmpestrm	xmm1, xmm2, 0x49
+        """Instruction PCMPESTRM_33
+        Groups: sse42
+        0x400a06:   pcmpestrm       xmm1, xmm2, 0x49
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3367,9 +3367,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_34(self):
-        """ Instruction PCMPESTRM_34
-            Groups: sse42
-            0x400928:	pcmpestrm	xmm1, xmm2, 0
+        """Instruction PCMPESTRM_34
+        Groups: sse42
+        0x400928:   pcmpestrm       xmm1, xmm2, 0
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3402,9 +3402,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_35(self):
-        """ Instruction PCMPESTRM_35
-            Groups: sse42
-            0x400a84:	pcmpestrm	xmm1, xmm2, 0x74
+        """Instruction PCMPESTRM_35
+        Groups: sse42
+        0x400a84:   pcmpestrm       xmm1, xmm2, 0x74
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3437,9 +3437,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_36(self):
-        """ Instruction PCMPESTRM_36
-            Groups: sse42
-            0x400a72:	pcmpestrm	xmm1, xmm2, 0x6d
+        """Instruction PCMPESTRM_36
+        Groups: sse42
+        0x400a72:   pcmpestrm       xmm1, xmm2, 0x6d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3472,9 +3472,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_37(self):
-        """ Instruction PCMPESTRM_37
-            Groups: sse42
-            0x400946:	pcmpestrm	xmm1, xmm2, 9
+        """Instruction PCMPESTRM_37
+        Groups: sse42
+        0x400946:   pcmpestrm       xmm1, xmm2, 9
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3507,9 +3507,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_38(self):
-        """ Instruction PCMPESTRM_38
-            Groups: sse42
-            0x400940:	pcmpestrm	xmm1, xmm2, 8
+        """Instruction PCMPESTRM_38
+        Groups: sse42
+        0x400940:   pcmpestrm       xmm1, xmm2, 8
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3542,9 +3542,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_39(self):
-        """ Instruction PCMPESTRM_39
-            Groups: sse42
-            0x400aa2:	pcmpestrm	xmm1, xmm2, 0x7d
+        """Instruction PCMPESTRM_39
+        Groups: sse42
+        0x400aa2:   pcmpestrm       xmm1, xmm2, 0x7d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3577,9 +3577,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_4(self):
-        """ Instruction PCMPESTRM_4
-            Groups: sse42
-            0x40097c:	pcmpestrm	xmm1, xmm2, 0x1c
+        """Instruction PCMPESTRM_4
+        Groups: sse42
+        0x40097c:   pcmpestrm       xmm1, xmm2, 0x1c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3612,9 +3612,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_40(self):
-        """ Instruction PCMPESTRM_40
-            Groups: sse42
-            0x400a48:	pcmpestrm	xmm1, xmm2, 0x60
+        """Instruction PCMPESTRM_40
+        Groups: sse42
+        0x400a48:   pcmpestrm       xmm1, xmm2, 0x60
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3647,9 +3647,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_41(self):
-        """ Instruction PCMPESTRM_41
-            Groups: sse42
-            0x400952:	pcmpestrm	xmm1, xmm2, 0xd
+        """Instruction PCMPESTRM_41
+        Groups: sse42
+        0x400952:   pcmpestrm       xmm1, xmm2, 0xd
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3682,9 +3682,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_42(self):
-        """ Instruction PCMPESTRM_42
-            Groups: sse42
-            0x40094c:	pcmpestrm	xmm1, xmm2, 0xc
+        """Instruction PCMPESTRM_42
+        Groups: sse42
+        0x40094c:   pcmpestrm       xmm1, xmm2, 0xc
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3717,9 +3717,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_43(self):
-        """ Instruction PCMPESTRM_43
-            Groups: sse42
-            0x400a0c:	pcmpestrm	xmm1, xmm2, 0x4c
+        """Instruction PCMPESTRM_43
+        Groups: sse42
+        0x400a0c:   pcmpestrm       xmm1, xmm2, 0x4c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3752,9 +3752,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_44(self):
-        """ Instruction PCMPESTRM_44
-            Groups: sse42
-            0x400964:	pcmpestrm	xmm1, xmm2, 0x14
+        """Instruction PCMPESTRM_44
+        Groups: sse42
+        0x400964:   pcmpestrm       xmm1, xmm2, 0x14
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3787,9 +3787,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_45(self):
-        """ Instruction PCMPESTRM_45
-            Groups: sse42
-            0x400a36:	pcmpestrm	xmm1, xmm2, 0x59
+        """Instruction PCMPESTRM_45
+        Groups: sse42
+        0x400a36:   pcmpestrm       xmm1, xmm2, 0x59
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3822,9 +3822,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_46(self):
-        """ Instruction PCMPESTRM_46
-            Groups: sse42
-            0x40099a:	pcmpestrm	xmm1, xmm2, 0x25
+        """Instruction PCMPESTRM_46
+        Groups: sse42
+        0x40099a:   pcmpestrm       xmm1, xmm2, 0x25
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3857,9 +3857,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_47(self):
-        """ Instruction PCMPESTRM_47
-            Groups: sse42
-            0x400988:	pcmpestrm	xmm1, xmm2, 0x20
+        """Instruction PCMPESTRM_47
+        Groups: sse42
+        0x400988:   pcmpestrm       xmm1, xmm2, 0x20
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3892,9 +3892,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_48(self):
-        """ Instruction PCMPESTRM_48
-            Groups: sse42
-            0x400a5a:	pcmpestrm	xmm1, xmm2, 0x65
+        """Instruction PCMPESTRM_48
+        Groups: sse42
+        0x400a5a:   pcmpestrm       xmm1, xmm2, 0x65
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3927,9 +3927,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_49(self):
-        """ Instruction PCMPESTRM_49
-            Groups: sse42
-            0x40096a:	pcmpestrm	xmm1, xmm2, 0x15
+        """Instruction PCMPESTRM_49
+        Groups: sse42
+        0x40096a:   pcmpestrm       xmm1, xmm2, 0x15
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3962,9 +3962,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_5(self):
-        """ Instruction PCMPESTRM_5
-            Groups: sse42
-            0x4009b2:	pcmpestrm	xmm1, xmm2, 0x2d
+        """Instruction PCMPESTRM_5
+        Groups: sse42
+        0x4009b2:   pcmpestrm       xmm1, xmm2, 0x2d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3997,9 +3997,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_50(self):
-        """ Instruction PCMPESTRM_50
-            Groups: sse42
-            0x400a60:	pcmpestrm	xmm1, xmm2, 0x68
+        """Instruction PCMPESTRM_50
+        Groups: sse42
+        0x400a60:   pcmpestrm       xmm1, xmm2, 0x68
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4032,9 +4032,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_51(self):
-        """ Instruction PCMPESTRM_51
-            Groups: sse42
-            0x4009be:	pcmpestrm	xmm1, xmm2, 0x31
+        """Instruction PCMPESTRM_51
+        Groups: sse42
+        0x4009be:   pcmpestrm       xmm1, xmm2, 0x31
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4067,9 +4067,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_52(self):
-        """ Instruction PCMPESTRM_52
-            Groups: sse42
-            0x4009e2:	pcmpestrm	xmm1, xmm2, 0x3d
+        """Instruction PCMPESTRM_52
+        Groups: sse42
+        0x4009e2:   pcmpestrm       xmm1, xmm2, 0x3d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4102,9 +4102,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_53(self):
-        """ Instruction PCMPESTRM_53
-            Groups: sse42
-            0x4009d6:	pcmpestrm	xmm1, xmm2, 0x39
+        """Instruction PCMPESTRM_53
+        Groups: sse42
+        0x4009d6:   pcmpestrm       xmm1, xmm2, 0x39
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4137,9 +4137,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_54(self):
-        """ Instruction PCMPESTRM_54
-            Groups: sse42
-            0x400a6c:	pcmpestrm	xmm1, xmm2, 0x6c
+        """Instruction PCMPESTRM_54
+        Groups: sse42
+        0x400a6c:   pcmpestrm       xmm1, xmm2, 0x6c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4172,9 +4172,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_55(self):
-        """ Instruction PCMPESTRM_55
-            Groups: sse42
-            0x4009c4:	pcmpestrm	xmm1, xmm2, 0x34
+        """Instruction PCMPESTRM_55
+        Groups: sse42
+        0x4009c4:   pcmpestrm       xmm1, xmm2, 0x34
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4207,9 +4207,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_56(self):
-        """ Instruction PCMPESTRM_56
-            Groups: sse42
-            0x400a00:	pcmpestrm	xmm1, xmm2, 0x48
+        """Instruction PCMPESTRM_56
+        Groups: sse42
+        0x400a00:   pcmpestrm       xmm1, xmm2, 0x48
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4242,9 +4242,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_57(self):
-        """ Instruction PCMPESTRM_57
-            Groups: sse42
-            0x4009e8:	pcmpestrm	xmm1, xmm2, 0x40
+        """Instruction PCMPESTRM_57
+        Groups: sse42
+        0x4009e8:   pcmpestrm       xmm1, xmm2, 0x40
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4277,9 +4277,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_58(self):
-        """ Instruction PCMPESTRM_58
-            Groups: sse42
-            0x4009b8:	pcmpestrm	xmm1, xmm2, 0x30
+        """Instruction PCMPESTRM_58
+        Groups: sse42
+        0x4009b8:   pcmpestrm       xmm1, xmm2, 0x30
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4312,9 +4312,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_59(self):
-        """ Instruction PCMPESTRM_59
-            Groups: sse42
-            0x4009ee:	pcmpestrm	xmm1, xmm2, 0x41
+        """Instruction PCMPESTRM_59
+        Groups: sse42
+        0x4009ee:   pcmpestrm       xmm1, xmm2, 0x41
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4347,9 +4347,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_6(self):
-        """ Instruction PCMPESTRM_6
-            Groups: sse42
-            0x4009a0:	pcmpestrm	xmm1, xmm2, 0x28
+        """Instruction PCMPESTRM_6
+        Groups: sse42
+        0x4009a0:   pcmpestrm       xmm1, xmm2, 0x28
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4382,9 +4382,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_60(self):
-        """ Instruction PCMPESTRM_60
-            Groups: sse42
-            0x400970:	pcmpestrm	xmm1, xmm2, 0x18
+        """Instruction PCMPESTRM_60
+        Groups: sse42
+        0x400970:   pcmpestrm       xmm1, xmm2, 0x18
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4417,9 +4417,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_61(self):
-        """ Instruction PCMPESTRM_61
-            Groups: sse42
-            0x400a78:	pcmpestrm	xmm1, xmm2, 0x70
+        """Instruction PCMPESTRM_61
+        Groups: sse42
+        0x400a78:   pcmpestrm       xmm1, xmm2, 0x70
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4452,9 +4452,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_62(self):
-        """ Instruction PCMPESTRM_62
-            Groups: sse42
-            0x400a2a:	pcmpestrm	xmm1, xmm2, 0x55
+        """Instruction PCMPESTRM_62
+        Groups: sse42
+        0x400a2a:   pcmpestrm       xmm1, xmm2, 0x55
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4487,9 +4487,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_63(self):
-        """ Instruction PCMPESTRM_63
-            Groups: sse42
-            0x400a42:	pcmpestrm	xmm1, xmm2, 0x5d
+        """Instruction PCMPESTRM_63
+        Groups: sse42
+        0x400a42:   pcmpestrm       xmm1, xmm2, 0x5d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4522,9 +4522,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_64(self):
-        """ Instruction PCMPESTRM_64
-            Groups: sse42
-            0x400a4e:	pcmpestrm	xmm1, xmm2, 0x61
+        """Instruction PCMPESTRM_64
+        Groups: sse42
+        0x400a4e:   pcmpestrm       xmm1, xmm2, 0x61
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4557,9 +4557,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_7(self):
-        """ Instruction PCMPESTRM_7
-            Groups: sse42
-            0x4009dc:	pcmpestrm	xmm1, xmm2, 0x3c
+        """Instruction PCMPESTRM_7
+        Groups: sse42
+        0x4009dc:   pcmpestrm       xmm1, xmm2, 0x3c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4592,9 +4592,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_8(self):
-        """ Instruction PCMPESTRM_8
-            Groups: sse42
-            0x4009fa:	pcmpestrm	xmm1, xmm2, 0x45
+        """Instruction PCMPESTRM_8
+        Groups: sse42
+        0x4009fa:   pcmpestrm       xmm1, xmm2, 0x45
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4627,9 +4627,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_9(self):
-        """ Instruction PCMPESTRM_9
-            Groups: sse42
-            0x400982:	pcmpestrm	xmm1, xmm2, 0x1d
+        """Instruction PCMPESTRM_9
+        Groups: sse42
+        0x400982:   pcmpestrm       xmm1, xmm2, 0x1d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4662,9 +4662,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPISTRI_1(self):
-        """ Instruction PCMPISTRI_1
-            Groups: sse42
-            0x400746:	pcmpistri	xmm1, xmm2, 0x6d
+        """Instruction PCMPISTRI_1
+        Groups: sse42
+        0x400746:   pcmpistri       xmm1, xmm2, 0x6d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4695,9 +4695,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_10(self):
-        """ Instruction PCMPISTRI_10
-            Groups: sse42
-            0x400650:	pcmpistri	xmm1, xmm2, 0x1c
+        """Instruction PCMPISTRI_10
+        Groups: sse42
+        0x400650:   pcmpistri       xmm1, xmm2, 0x1c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4728,9 +4728,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_11(self):
-        """ Instruction PCMPISTRI_11
-            Groups: sse42
-            0x400668:	pcmpistri	xmm1, xmm2, 0x24
+        """Instruction PCMPISTRI_11
+        Groups: sse42
+        0x400668:   pcmpistri       xmm1, xmm2, 0x24
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4761,9 +4761,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_12(self):
-        """ Instruction PCMPISTRI_12
-            Groups: sse42
-            0x400698:	pcmpistri	xmm1, xmm2, 0x34
+        """Instruction PCMPISTRI_12
+        Groups: sse42
+        0x400698:   pcmpistri       xmm1, xmm2, 0x34
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4794,9 +4794,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_13(self):
-        """ Instruction PCMPISTRI_13
-            Groups: sse42
-            0x4006c8:	pcmpistri	xmm1, xmm2, 0x44
+        """Instruction PCMPISTRI_13
+        Groups: sse42
+        0x4006c8:   pcmpistri       xmm1, xmm2, 0x44
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4827,9 +4827,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_14(self):
-        """ Instruction PCMPISTRI_14
-            Groups: sse42
-            0x4006bc:	pcmpistri	xmm1, xmm2, 0x40
+        """Instruction PCMPISTRI_14
+        Groups: sse42
+        0x4006bc:   pcmpistri       xmm1, xmm2, 0x40
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4860,9 +4860,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_15(self):
-        """ Instruction PCMPISTRI_15
-            Groups: sse42
-            0x40068c:	pcmpistri	xmm1, xmm2, 0x30
+        """Instruction PCMPISTRI_15
+        Groups: sse42
+        0x40068c:   pcmpistri       xmm1, xmm2, 0x30
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4893,9 +4893,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_16(self):
-        """ Instruction PCMPISTRI_16
-            Groups: sse42
-            0x40062c:	pcmpistri	xmm1, xmm2, 0x10
+        """Instruction PCMPISTRI_16
+        Groups: sse42
+        0x40062c:   pcmpistri       xmm1, xmm2, 0x10
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4926,9 +4926,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_17(self):
-        """ Instruction PCMPISTRI_17
-            Groups: sse42
-            0x400764:	pcmpistri	xmm1, xmm2, 0x78
+        """Instruction PCMPISTRI_17
+        Groups: sse42
+        0x400764:   pcmpistri       xmm1, xmm2, 0x78
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4959,9 +4959,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_18(self):
-        """ Instruction PCMPISTRI_18
-            Groups: sse42
-            0x4005fc:	pcmpistri	xmm1, xmm2, 0
+        """Instruction PCMPISTRI_18
+        Groups: sse42
+        0x4005fc:   pcmpistri       xmm1, xmm2, 0
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -4992,9 +4992,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_19(self):
-        """ Instruction PCMPISTRI_19
-            Groups: sse42
-            0x4006ce:	pcmpistri	xmm1, xmm2, 0x45
+        """Instruction PCMPISTRI_19
+        Groups: sse42
+        0x4006ce:   pcmpistri       xmm1, xmm2, 0x45
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5025,9 +5025,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_2(self):
-        """ Instruction PCMPISTRI_2
-            Groups: sse42
-            0x400704:	pcmpistri	xmm1, xmm2, 0x58
+        """Instruction PCMPISTRI_2
+        Groups: sse42
+        0x400704:   pcmpistri       xmm1, xmm2, 0x58
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5058,9 +5058,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_20(self):
-        """ Instruction PCMPISTRI_20
-            Groups: sse42
-            0x4006f8:	pcmpistri	xmm1, xmm2, 0x54
+        """Instruction PCMPISTRI_20
+        Groups: sse42
+        0x4006f8:   pcmpistri       xmm1, xmm2, 0x54
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5091,9 +5091,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_21(self):
-        """ Instruction PCMPISTRI_21
-            Groups: sse42
-            0x4006c2:	pcmpistri	xmm1, xmm2, 0x41
+        """Instruction PCMPISTRI_21
+        Groups: sse42
+        0x4006c2:   pcmpistri       xmm1, xmm2, 0x41
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5124,9 +5124,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_22(self):
-        """ Instruction PCMPISTRI_22
-            Groups: sse42
-            0x40069e:	pcmpistri	xmm1, xmm2, 0x35
+        """Instruction PCMPISTRI_22
+        Groups: sse42
+        0x40069e:   pcmpistri       xmm1, xmm2, 0x35
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5157,9 +5157,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_23(self):
-        """ Instruction PCMPISTRI_23
-            Groups: sse42
-            0x4006b6:	pcmpistri	xmm1, xmm2, 0x3d
+        """Instruction PCMPISTRI_23
+        Groups: sse42
+        0x4006b6:   pcmpistri       xmm1, xmm2, 0x3d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5190,9 +5190,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_24(self):
-        """ Instruction PCMPISTRI_24
-            Groups: sse42
-            0x400620:	pcmpistri	xmm1, xmm2, 0xc
+        """Instruction PCMPISTRI_24
+        Groups: sse42
+        0x400620:   pcmpistri       xmm1, xmm2, 0xc
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5223,9 +5223,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_25(self):
-        """ Instruction PCMPISTRI_25
-            Groups: sse42
-            0x400710:	pcmpistri	xmm1, xmm2, 0x5c
+        """Instruction PCMPISTRI_25
+        Groups: sse42
+        0x400710:   pcmpistri       xmm1, xmm2, 0x5c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5256,9 +5256,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_26(self):
-        """ Instruction PCMPISTRI_26
-            Groups: sse42
-            0x4006b0:	pcmpistri	xmm1, xmm2, 0x3c
+        """Instruction PCMPISTRI_26
+        Groups: sse42
+        0x4006b0:   pcmpistri       xmm1, xmm2, 0x3c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5289,9 +5289,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_27(self):
-        """ Instruction PCMPISTRI_27
-            Groups: sse42
-            0x400740:	pcmpistri	xmm1, xmm2, 0x6c
+        """Instruction PCMPISTRI_27
+        Groups: sse42
+        0x400740:   pcmpistri       xmm1, xmm2, 0x6c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5322,9 +5322,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_28(self):
-        """ Instruction PCMPISTRI_28
-            Groups: sse42
-            0x400692:	pcmpistri	xmm1, xmm2, 0x31
+        """Instruction PCMPISTRI_28
+        Groups: sse42
+        0x400692:   pcmpistri       xmm1, xmm2, 0x31
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5355,9 +5355,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_29(self):
-        """ Instruction PCMPISTRI_29
-            Groups: sse42
-            0x40064a:	pcmpistri	xmm1, xmm2, 0x19
+        """Instruction PCMPISTRI_29
+        Groups: sse42
+        0x40064a:   pcmpistri       xmm1, xmm2, 0x19
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5388,9 +5388,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_3(self):
-        """ Instruction PCMPISTRI_3
-            Groups: sse42
-            0x400728:	pcmpistri	xmm1, xmm2, 0x64
+        """Instruction PCMPISTRI_3
+        Groups: sse42
+        0x400728:   pcmpistri       xmm1, xmm2, 0x64
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5421,9 +5421,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_30(self):
-        """ Instruction PCMPISTRI_30
-            Groups: sse42
-            0x40077c:	pcmpistri	xmm1, xmmword ptr [rbp - 0xa0], 0x1b
+        """Instruction PCMPISTRI_30
+        Groups: sse42
+        0x40077c:   pcmpistri       xmm1, xmmword ptr [rbp - 0xa0], 0x1b
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5480,9 +5480,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488347696)
 
     def test_PCMPISTRI_31(self):
-        """ Instruction PCMPISTRI_31
-            Groups: sse42
-            0x400626:	pcmpistri	xmm1, xmm2, 0xd
+        """Instruction PCMPISTRI_31
+        Groups: sse42
+        0x400626:   pcmpistri       xmm1, xmm2, 0xd
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5513,9 +5513,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_32(self):
-        """ Instruction PCMPISTRI_32
-            Groups: sse42
-            0x4006d4:	pcmpistri	xmm1, xmm2, 0x48
+        """Instruction PCMPISTRI_32
+        Groups: sse42
+        0x4006d4:   pcmpistri       xmm1, xmm2, 0x48
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5546,9 +5546,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_33(self):
-        """ Instruction PCMPISTRI_33
-            Groups: sse42
-            0x400686:	pcmpistri	xmm1, xmm2, 0x2d
+        """Instruction PCMPISTRI_33
+        Groups: sse42
+        0x400686:   pcmpistri       xmm1, xmm2, 0x2d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5579,9 +5579,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_34(self):
-        """ Instruction PCMPISTRI_34
-            Groups: sse42
-            0x400770:	pcmpistri	xmm1, xmm2, 0x7c
+        """Instruction PCMPISTRI_34
+        Groups: sse42
+        0x400770:   pcmpistri       xmm1, xmm2, 0x7c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5612,9 +5612,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_35(self):
-        """ Instruction PCMPISTRI_35
-            Groups: sse42
-            0x40071c:	pcmpistri	xmm1, xmm2, 0x60
+        """Instruction PCMPISTRI_35
+        Groups: sse42
+        0x40071c:   pcmpistri       xmm1, xmm2, 0x60
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5645,9 +5645,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_36(self):
-        """ Instruction PCMPISTRI_36
-            Groups: sse42
-            0x400776:	pcmpistri	xmm1, xmm2, 0x7d
+        """Instruction PCMPISTRI_36
+        Groups: sse42
+        0x400776:   pcmpistri       xmm1, xmm2, 0x7d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5678,9 +5678,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_37(self):
-        """ Instruction PCMPISTRI_37
-            Groups: sse42
-            0x400758:	pcmpistri	xmm1, xmm2, 0x74
+        """Instruction PCMPISTRI_37
+        Groups: sse42
+        0x400758:   pcmpistri       xmm1, xmm2, 0x74
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5711,9 +5711,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_38(self):
-        """ Instruction PCMPISTRI_38
-            Groups: sse42
-            0x400602:	pcmpistri	xmm1, xmm2, 1
+        """Instruction PCMPISTRI_38
+        Groups: sse42
+        0x400602:   pcmpistri       xmm1, xmm2, 1
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5744,9 +5744,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_39(self):
-        """ Instruction PCMPISTRI_39
-            Groups: sse42
-            0x400608:	pcmpistri	xmm1, xmm2, 4
+        """Instruction PCMPISTRI_39
+        Groups: sse42
+        0x400608:   pcmpistri       xmm1, xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5777,9 +5777,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_4(self):
-        """ Instruction PCMPISTRI_4
-            Groups: sse42
-            0x400752:	pcmpistri	xmm1, xmm2, 0x71
+        """Instruction PCMPISTRI_4
+        Groups: sse42
+        0x400752:   pcmpistri       xmm1, xmm2, 0x71
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5810,9 +5810,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_40(self):
-        """ Instruction PCMPISTRI_40
-            Groups: sse42
-            0x400638:	pcmpistri	xmm1, xmm2, 0x14
+        """Instruction PCMPISTRI_40
+        Groups: sse42
+        0x400638:   pcmpistri       xmm1, xmm2, 0x14
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5843,9 +5843,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_41(self):
-        """ Instruction PCMPISTRI_41
-            Groups: sse42
-            0x40074c:	pcmpistri	xmm1, xmm2, 0x70
+        """Instruction PCMPISTRI_41
+        Groups: sse42
+        0x40074c:   pcmpistri       xmm1, xmm2, 0x70
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5876,9 +5876,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_42(self):
-        """ Instruction PCMPISTRI_42
-            Groups: sse42
-            0x400734:	pcmpistri	xmm1, xmm2, 0x68
+        """Instruction PCMPISTRI_42
+        Groups: sse42
+        0x400734:   pcmpistri       xmm1, xmm2, 0x68
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5909,9 +5909,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_43(self):
-        """ Instruction PCMPISTRI_43
-            Groups: sse42
-            0x400644:	pcmpistri	xmm1, xmm2, 0x18
+        """Instruction PCMPISTRI_43
+        Groups: sse42
+        0x400644:   pcmpistri       xmm1, xmm2, 0x18
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5942,9 +5942,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_44(self):
-        """ Instruction PCMPISTRI_44
-            Groups: sse42
-            0x40065c:	pcmpistri	xmm1, xmm2, 0x20
+        """Instruction PCMPISTRI_44
+        Groups: sse42
+        0x40065c:   pcmpistri       xmm1, xmm2, 0x20
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -5975,9 +5975,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_45(self):
-        """ Instruction PCMPISTRI_45
-            Groups: sse42
-            0x40061a:	pcmpistri	xmm1, xmm2, 9
+        """Instruction PCMPISTRI_45
+        Groups: sse42
+        0x40061a:   pcmpistri       xmm1, xmm2, 9
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6008,9 +6008,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_46(self):
-        """ Instruction PCMPISTRI_46
-            Groups: sse42
-            0x40073a:	pcmpistri	xmm1, xmm2, 0x69
+        """Instruction PCMPISTRI_46
+        Groups: sse42
+        0x40073a:   pcmpistri       xmm1, xmm2, 0x69
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6041,9 +6041,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_47(self):
-        """ Instruction PCMPISTRI_47
-            Groups: sse42
-            0x40070a:	pcmpistri	xmm1, xmm2, 0x59
+        """Instruction PCMPISTRI_47
+        Groups: sse42
+        0x40070a:   pcmpistri       xmm1, xmm2, 0x59
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6074,9 +6074,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_48(self):
-        """ Instruction PCMPISTRI_48
-            Groups: sse42
-            0x4006aa:	pcmpistri	xmm1, xmm2, 0x39
+        """Instruction PCMPISTRI_48
+        Groups: sse42
+        0x4006aa:   pcmpistri       xmm1, xmm2, 0x39
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6107,9 +6107,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_49(self):
-        """ Instruction PCMPISTRI_49
-            Groups: sse42
-            0x400716:	pcmpistri	xmm1, xmm2, 0x5d
+        """Instruction PCMPISTRI_49
+        Groups: sse42
+        0x400716:   pcmpistri       xmm1, xmm2, 0x5d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6140,9 +6140,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_5(self):
-        """ Instruction PCMPISTRI_5
-            Groups: sse42
-            0x40063e:	pcmpistri	xmm1, xmm2, 0x15
+        """Instruction PCMPISTRI_5
+        Groups: sse42
+        0x40063e:   pcmpistri       xmm1, xmm2, 0x15
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6173,9 +6173,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_50(self):
-        """ Instruction PCMPISTRI_50
-            Groups: sse42
-            0x400656:	pcmpistri	xmm1, xmm2, 0x1d
+        """Instruction PCMPISTRI_50
+        Groups: sse42
+        0x400656:   pcmpistri       xmm1, xmm2, 0x1d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6206,9 +6206,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_51(self):
-        """ Instruction PCMPISTRI_51
-            Groups: sse42
-            0x40072e:	pcmpistri	xmm1, xmm2, 0x65
+        """Instruction PCMPISTRI_51
+        Groups: sse42
+        0x40072e:   pcmpistri       xmm1, xmm2, 0x65
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6239,9 +6239,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_52(self):
-        """ Instruction PCMPISTRI_52
-            Groups: sse42
-            0x400680:	pcmpistri	xmm1, xmm2, 0x2c
+        """Instruction PCMPISTRI_52
+        Groups: sse42
+        0x400680:   pcmpistri       xmm1, xmm2, 0x2c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6272,9 +6272,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_53(self):
-        """ Instruction PCMPISTRI_53
-            Groups: sse42
-            0x400674:	pcmpistri	xmm1, xmm2, 0x28
+        """Instruction PCMPISTRI_53
+        Groups: sse42
+        0x400674:   pcmpistri       xmm1, xmm2, 0x28
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6305,9 +6305,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_54(self):
-        """ Instruction PCMPISTRI_54
-            Groups: sse42
-            0x40067a:	pcmpistri	xmm1, xmm2, 0x29
+        """Instruction PCMPISTRI_54
+        Groups: sse42
+        0x40067a:   pcmpistri       xmm1, xmm2, 0x29
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6338,9 +6338,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_55(self):
-        """ Instruction PCMPISTRI_55
-            Groups: sse42
-            0x400722:	pcmpistri	xmm1, xmm2, 0x61
+        """Instruction PCMPISTRI_55
+        Groups: sse42
+        0x400722:   pcmpistri       xmm1, xmm2, 0x61
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6371,9 +6371,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_56(self):
-        """ Instruction PCMPISTRI_56
-            Groups: sse42
-            0x4006e6:	pcmpistri	xmm1, xmm2, 0x4d
+        """Instruction PCMPISTRI_56
+        Groups: sse42
+        0x4006e6:   pcmpistri       xmm1, xmm2, 0x4d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6404,9 +6404,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_57(self):
-        """ Instruction PCMPISTRI_57
-            Groups: sse42
-            0x40076a:	pcmpistri	xmm1, xmm2, 0x79
+        """Instruction PCMPISTRI_57
+        Groups: sse42
+        0x40076a:   pcmpistri       xmm1, xmm2, 0x79
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6437,9 +6437,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_58(self):
-        """ Instruction PCMPISTRI_58
-            Groups: sse42
-            0x4006ec:	pcmpistri	xmm1, xmm2, 0x50
+        """Instruction PCMPISTRI_58
+        Groups: sse42
+        0x4006ec:   pcmpistri       xmm1, xmm2, 0x50
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6470,9 +6470,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_59(self):
-        """ Instruction PCMPISTRI_59
-            Groups: sse42
-            0x400632:	pcmpistri	xmm1, xmm2, 0x11
+        """Instruction PCMPISTRI_59
+        Groups: sse42
+        0x400632:   pcmpistri       xmm1, xmm2, 0x11
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6503,9 +6503,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_6(self):
-        """ Instruction PCMPISTRI_6
-            Groups: sse42
-            0x40066e:	pcmpistri	xmm1, xmm2, 0x25
+        """Instruction PCMPISTRI_6
+        Groups: sse42
+        0x40066e:   pcmpistri       xmm1, xmm2, 0x25
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6536,9 +6536,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_60(self):
-        """ Instruction PCMPISTRI_60
-            Groups: sse42
-            0x4006f2:	pcmpistri	xmm1, xmm2, 0x51
+        """Instruction PCMPISTRI_60
+        Groups: sse42
+        0x4006f2:   pcmpistri       xmm1, xmm2, 0x51
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6569,9 +6569,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_61(self):
-        """ Instruction PCMPISTRI_61
-            Groups: sse42
-            0x400614:	pcmpistri	xmm1, xmm2, 8
+        """Instruction PCMPISTRI_61
+        Groups: sse42
+        0x400614:   pcmpistri       xmm1, xmm2, 8
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6602,9 +6602,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_62(self):
-        """ Instruction PCMPISTRI_62
-            Groups: sse42
-            0x4006da:	pcmpistri	xmm1, xmm2, 0x49
+        """Instruction PCMPISTRI_62
+        Groups: sse42
+        0x4006da:   pcmpistri       xmm1, xmm2, 0x49
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6635,9 +6635,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_63(self):
-        """ Instruction PCMPISTRI_63
-            Groups: sse42
-            0x4006a4:	pcmpistri	xmm1, xmm2, 0x38
+        """Instruction PCMPISTRI_63
+        Groups: sse42
+        0x4006a4:   pcmpistri       xmm1, xmm2, 0x38
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6668,9 +6668,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_64(self):
-        """ Instruction PCMPISTRI_64
-            Groups: sse42
-            0x4006fe:	pcmpistri	xmm1, xmm2, 0x55
+        """Instruction PCMPISTRI_64
+        Groups: sse42
+        0x4006fe:   pcmpistri       xmm1, xmm2, 0x55
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6701,9 +6701,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_65(self):
-        """ Instruction PCMPISTRI_65
-            Groups: sse42
-            0x400662:	pcmpistri	xmm1, xmm2, 0x21
+        """Instruction PCMPISTRI_65
+        Groups: sse42
+        0x400662:   pcmpistri       xmm1, xmm2, 0x21
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6734,9 +6734,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_7(self):
-        """ Instruction PCMPISTRI_7
-            Groups: sse42
-            0x4006e0:	pcmpistri	xmm1, xmm2, 0x4c
+        """Instruction PCMPISTRI_7
+        Groups: sse42
+        0x4006e0:   pcmpistri       xmm1, xmm2, 0x4c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6767,9 +6767,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_8(self):
-        """ Instruction PCMPISTRI_8
-            Groups: sse42
-            0x40060e:	pcmpistri	xmm1, xmm2, 5
+        """Instruction PCMPISTRI_8
+        Groups: sse42
+        0x40060e:   pcmpistri       xmm1, xmm2, 5
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6800,9 +6800,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_9(self):
-        """ Instruction PCMPISTRI_9
-            Groups: sse42
-            0x40075e:	pcmpistri	xmm1, xmm2, 0x75
+        """Instruction PCMPISTRI_9
+        Groups: sse42
+        0x40075e:   pcmpistri       xmm1, xmm2, 0x75
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6833,9 +6833,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_1(self):
-        """ Instruction PCMPISTRM_1
-            Groups: sse42
-            0x400856:	pcmpistrm	xmm1, xmm2, 0x41
+        """Instruction PCMPISTRM_1
+        Groups: sse42
+        0x400856:   pcmpistrm       xmm1, xmm2, 0x41
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6864,9 +6864,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_10(self):
-        """ Instruction PCMPISTRM_10
-            Groups: sse42
-            0x4007cc:	pcmpistrm	xmm1, xmm2, 0x14
+        """Instruction PCMPISTRM_10
+        Groups: sse42
+        0x4007cc:   pcmpistrm       xmm1, xmm2, 0x14
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6895,9 +6895,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_11(self):
-        """ Instruction PCMPISTRM_11
-            Groups: sse42
-            0x40087a:	pcmpistrm	xmm1, xmm2, 0x4d
+        """Instruction PCMPISTRM_11
+        Groups: sse42
+        0x40087a:   pcmpistrm       xmm1, xmm2, 0x4d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6926,9 +6926,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_12(self):
-        """ Instruction PCMPISTRM_12
-            Groups: sse42
-            0x400802:	pcmpistrm	xmm1, xmm2, 0x25
+        """Instruction PCMPISTRM_12
+        Groups: sse42
+        0x400802:   pcmpistrm       xmm1, xmm2, 0x25
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6957,9 +6957,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_13(self):
-        """ Instruction PCMPISTRM_13
-            Groups: sse42
-            0x4007fc:	pcmpistrm	xmm1, xmm2, 0x24
+        """Instruction PCMPISTRM_13
+        Groups: sse42
+        0x4007fc:   pcmpistrm       xmm1, xmm2, 0x24
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6988,9 +6988,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_14(self):
-        """ Instruction PCMPISTRM_14
-            Groups: sse42
-            0x4008c8:	pcmpistrm	xmm1, xmm2, 0x68
+        """Instruction PCMPISTRM_14
+        Groups: sse42
+        0x4008c8:   pcmpistrm       xmm1, xmm2, 0x68
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7019,9 +7019,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_15(self):
-        """ Instruction PCMPISTRM_15
-            Groups: sse42
-            0x4008f8:	pcmpistrm	xmm1, xmm2, 0x78
+        """Instruction PCMPISTRM_15
+        Groups: sse42
+        0x4008f8:   pcmpistrm       xmm1, xmm2, 0x78
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7050,9 +7050,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_16(self):
-        """ Instruction PCMPISTRM_16
-            Groups: sse42
-            0x40080e:	pcmpistrm	xmm1, xmm2, 0x29
+        """Instruction PCMPISTRM_16
+        Groups: sse42
+        0x40080e:   pcmpistrm       xmm1, xmm2, 0x29
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7081,9 +7081,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_17(self):
-        """ Instruction PCMPISTRM_17
-            Groups: sse42
-            0x40089e:	pcmpistrm	xmm1, xmm2, 0x59
+        """Instruction PCMPISTRM_17
+        Groups: sse42
+        0x40089e:   pcmpistrm       xmm1, xmm2, 0x59
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7112,9 +7112,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_18(self):
-        """ Instruction PCMPISTRM_18
-            Groups: sse42
-            0x4008f2:	pcmpistrm	xmm1, xmm2, 0x75
+        """Instruction PCMPISTRM_18
+        Groups: sse42
+        0x4008f2:   pcmpistrm       xmm1, xmm2, 0x75
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7143,9 +7143,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_19(self):
-        """ Instruction PCMPISTRM_19
-            Groups: sse42
-            0x4007b4:	pcmpistrm	xmm1, xmm2, 0xc
+        """Instruction PCMPISTRM_19
+        Groups: sse42
+        0x4007b4:   pcmpistrm       xmm1, xmm2, 0xc
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7174,9 +7174,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_2(self):
-        """ Instruction PCMPISTRM_2
-            Groups: sse42
-            0x4008ec:	pcmpistrm	xmm1, xmm2, 0x74
+        """Instruction PCMPISTRM_2
+        Groups: sse42
+        0x4008ec:   pcmpistrm       xmm1, xmm2, 0x74
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7205,9 +7205,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_20(self):
-        """ Instruction PCMPISTRM_20
-            Groups: sse42
-            0x4007d8:	pcmpistrm	xmm1, xmm2, 0x18
+        """Instruction PCMPISTRM_20
+        Groups: sse42
+        0x4007d8:   pcmpistrm       xmm1, xmm2, 0x18
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7236,9 +7236,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_21(self):
-        """ Instruction PCMPISTRM_21
-            Groups: sse42
-            0x400892:	pcmpistrm	xmm1, xmm2, 0x55
+        """Instruction PCMPISTRM_21
+        Groups: sse42
+        0x400892:   pcmpistrm       xmm1, xmm2, 0x55
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7267,9 +7267,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_22(self):
-        """ Instruction PCMPISTRM_22
-            Groups: sse42
-            0x40084a:	pcmpistrm	xmm1, xmm2, 0x3d
+        """Instruction PCMPISTRM_22
+        Groups: sse42
+        0x40084a:   pcmpistrm       xmm1, xmm2, 0x3d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7298,9 +7298,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_23(self):
-        """ Instruction PCMPISTRM_23
-            Groups: sse42
-            0x40088c:	pcmpistrm	xmm1, xmm2, 0x54
+        """Instruction PCMPISTRM_23
+        Groups: sse42
+        0x40088c:   pcmpistrm       xmm1, xmm2, 0x54
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7329,9 +7329,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_24(self):
-        """ Instruction PCMPISTRM_24
-            Groups: sse42
-            0x4008fe:	pcmpistrm	xmm1, xmm2, 0x79
+        """Instruction PCMPISTRM_24
+        Groups: sse42
+        0x4008fe:   pcmpistrm       xmm1, xmm2, 0x79
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7360,9 +7360,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_25(self):
-        """ Instruction PCMPISTRM_25
-            Groups: sse42
-            0x400838:	pcmpistrm	xmm1, xmm2, 0x38
+        """Instruction PCMPISTRM_25
+        Groups: sse42
+        0x400838:   pcmpistrm       xmm1, xmm2, 0x38
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7391,9 +7391,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_26(self):
-        """ Instruction PCMPISTRM_26
-            Groups: sse42
-            0x400832:	pcmpistrm	xmm1, xmm2, 0x35
+        """Instruction PCMPISTRM_26
+        Groups: sse42
+        0x400832:   pcmpistrm       xmm1, xmm2, 0x35
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7422,9 +7422,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_27(self):
-        """ Instruction PCMPISTRM_27
-            Groups: sse42
-            0x400820:	pcmpistrm	xmm1, xmm2, 0x30
+        """Instruction PCMPISTRM_27
+        Groups: sse42
+        0x400820:   pcmpistrm       xmm1, xmm2, 0x30
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7453,9 +7453,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_28(self):
-        """ Instruction PCMPISTRM_28
-            Groups: sse42
-            0x400850:	pcmpistrm	xmm1, xmm2, 0x40
+        """Instruction PCMPISTRM_28
+        Groups: sse42
+        0x400850:   pcmpistrm       xmm1, xmm2, 0x40
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7484,9 +7484,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_29(self):
-        """ Instruction PCMPISTRM_29
-            Groups: sse42
-            0x4007d2:	pcmpistrm	xmm1, xmm2, 0x15
+        """Instruction PCMPISTRM_29
+        Groups: sse42
+        0x4007d2:   pcmpistrm       xmm1, xmm2, 0x15
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7515,9 +7515,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_3(self):
-        """ Instruction PCMPISTRM_3
-            Groups: sse42
-            0x400826:	pcmpistrm	xmm1, xmm2, 0x31
+        """Instruction PCMPISTRM_3
+        Groups: sse42
+        0x400826:   pcmpistrm       xmm1, xmm2, 0x31
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7546,9 +7546,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_30(self):
-        """ Instruction PCMPISTRM_30
-            Groups: sse42
-            0x400898:	pcmpistrm	xmm1, xmm2, 0x58
+        """Instruction PCMPISTRM_30
+        Groups: sse42
+        0x400898:   pcmpistrm       xmm1, xmm2, 0x58
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7577,9 +7577,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_31(self):
-        """ Instruction PCMPISTRM_31
-            Groups: sse42
-            0x4008aa:	pcmpistrm	xmm1, xmm2, 0x5d
+        """Instruction PCMPISTRM_31
+        Groups: sse42
+        0x4008aa:   pcmpistrm       xmm1, xmm2, 0x5d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7608,9 +7608,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_32(self):
-        """ Instruction PCMPISTRM_32
-            Groups: sse42
-            0x4007ea:	pcmpistrm	xmm1, xmm2, 0x1d
+        """Instruction PCMPISTRM_32
+        Groups: sse42
+        0x4007ea:   pcmpistrm       xmm1, xmm2, 0x1d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7639,9 +7639,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_33(self):
-        """ Instruction PCMPISTRM_33
-            Groups: sse42
-            0x4007f6:	pcmpistrm	xmm1, xmm2, 0x21
+        """Instruction PCMPISTRM_33
+        Groups: sse42
+        0x4007f6:   pcmpistrm       xmm1, xmm2, 0x21
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7670,9 +7670,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_34(self):
-        """ Instruction PCMPISTRM_34
-            Groups: sse42
-            0x4008b0:	pcmpistrm	xmm1, xmm2, 0x60
+        """Instruction PCMPISTRM_34
+        Groups: sse42
+        0x4008b0:   pcmpistrm       xmm1, xmm2, 0x60
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7701,9 +7701,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_35(self):
-        """ Instruction PCMPISTRM_35
-            Groups: sse42
-            0x4008a4:	pcmpistrm	xmm1, xmm2, 0x5c
+        """Instruction PCMPISTRM_35
+        Groups: sse42
+        0x4008a4:   pcmpistrm       xmm1, xmm2, 0x5c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7732,9 +7732,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_36(self):
-        """ Instruction PCMPISTRM_36
-            Groups: sse42
-            0x4008e0:	pcmpistrm	xmm1, xmm2, 0x70
+        """Instruction PCMPISTRM_36
+        Groups: sse42
+        0x4008e0:   pcmpistrm       xmm1, xmm2, 0x70
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7763,9 +7763,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_37(self):
-        """ Instruction PCMPISTRM_37
-            Groups: sse42
-            0x400904:	pcmpistrm	xmm1, xmm2, 0x7c
+        """Instruction PCMPISTRM_37
+        Groups: sse42
+        0x400904:   pcmpistrm       xmm1, xmm2, 0x7c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7794,9 +7794,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_38(self):
-        """ Instruction PCMPISTRM_38
-            Groups: sse42
-            0x4008c2:	pcmpistrm	xmm1, xmm2, 0x65
+        """Instruction PCMPISTRM_38
+        Groups: sse42
+        0x4008c2:   pcmpistrm       xmm1, xmm2, 0x65
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7825,9 +7825,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_39(self):
-        """ Instruction PCMPISTRM_39
-            Groups: sse42
-            0x40081a:	pcmpistrm	xmm1, xmm2, 0x2d
+        """Instruction PCMPISTRM_39
+        Groups: sse42
+        0x40081a:   pcmpistrm       xmm1, xmm2, 0x2d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7856,9 +7856,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_4(self):
-        """ Instruction PCMPISTRM_4
-            Groups: sse42
-            0x4008bc:	pcmpistrm	xmm1, xmm2, 0x64
+        """Instruction PCMPISTRM_4
+        Groups: sse42
+        0x4008bc:   pcmpistrm       xmm1, xmm2, 0x64
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7887,9 +7887,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_40(self):
-        """ Instruction PCMPISTRM_40
-            Groups: sse42
-            0x4007de:	pcmpistrm	xmm1, xmm2, 0x19
+        """Instruction PCMPISTRM_40
+        Groups: sse42
+        0x4007de:   pcmpistrm       xmm1, xmm2, 0x19
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7918,9 +7918,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_41(self):
-        """ Instruction PCMPISTRM_41
-            Groups: sse42
-            0x400814:	pcmpistrm	xmm1, xmm2, 0x2c
+        """Instruction PCMPISTRM_41
+        Groups: sse42
+        0x400814:   pcmpistrm       xmm1, xmm2, 0x2c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7949,9 +7949,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_42(self):
-        """ Instruction PCMPISTRM_42
-            Groups: sse42
-            0x4007c6:	pcmpistrm	xmm1, xmm2, 0x11
+        """Instruction PCMPISTRM_42
+        Groups: sse42
+        0x4007c6:   pcmpistrm       xmm1, xmm2, 0x11
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -7980,9 +7980,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_43(self):
-        """ Instruction PCMPISTRM_43
-            Groups: sse42
-            0x400868:	pcmpistrm	xmm1, xmm2, 0x48
+        """Instruction PCMPISTRM_43
+        Groups: sse42
+        0x400868:   pcmpistrm       xmm1, xmm2, 0x48
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8011,9 +8011,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_44(self):
-        """ Instruction PCMPISTRM_44
-            Groups: sse42
-            0x4008ce:	pcmpistrm	xmm1, xmm2, 0x69
+        """Instruction PCMPISTRM_44
+        Groups: sse42
+        0x4008ce:   pcmpistrm       xmm1, xmm2, 0x69
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8042,9 +8042,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_45(self):
-        """ Instruction PCMPISTRM_45
-            Groups: sse42
-            0x400874:	pcmpistrm	xmm1, xmm2, 0x4c
+        """Instruction PCMPISTRM_45
+        Groups: sse42
+        0x400874:   pcmpistrm       xmm1, xmm2, 0x4c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8073,9 +8073,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_46(self):
-        """ Instruction PCMPISTRM_46
-            Groups: sse42
-            0x40085c:	pcmpistrm	xmm1, xmm2, 0x44
+        """Instruction PCMPISTRM_46
+        Groups: sse42
+        0x40085c:   pcmpistrm       xmm1, xmm2, 0x44
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8104,9 +8104,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_47(self):
-        """ Instruction PCMPISTRM_47
-            Groups: sse42
-            0x4007a8:	pcmpistrm	xmm1, xmm2, 8
+        """Instruction PCMPISTRM_47
+        Groups: sse42
+        0x4007a8:   pcmpistrm       xmm1, xmm2, 8
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8135,9 +8135,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_48(self):
-        """ Instruction PCMPISTRM_48
-            Groups: sse42
-            0x40082c:	pcmpistrm	xmm1, xmm2, 0x34
+        """Instruction PCMPISTRM_48
+        Groups: sse42
+        0x40082c:   pcmpistrm       xmm1, xmm2, 0x34
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8166,9 +8166,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_49(self):
-        """ Instruction PCMPISTRM_49
-            Groups: sse42
-            0x4008da:	pcmpistrm	xmm1, xmm2, 0x6d
+        """Instruction PCMPISTRM_49
+        Groups: sse42
+        0x4008da:   pcmpistrm       xmm1, xmm2, 0x6d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8197,9 +8197,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_5(self):
-        """ Instruction PCMPISTRM_5
-            Groups: sse42
-            0x4007a2:	pcmpistrm	xmm1, xmm2, 5
+        """Instruction PCMPISTRM_5
+        Groups: sse42
+        0x4007a2:   pcmpistrm       xmm1, xmm2, 5
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8228,9 +8228,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_50(self):
-        """ Instruction PCMPISTRM_50
-            Groups: sse42
-            0x4007e4:	pcmpistrm	xmm1, xmm2, 0x1c
+        """Instruction PCMPISTRM_50
+        Groups: sse42
+        0x4007e4:   pcmpistrm       xmm1, xmm2, 0x1c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8259,9 +8259,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_51(self):
-        """ Instruction PCMPISTRM_51
-            Groups: sse42
-            0x400880:	pcmpistrm	xmm1, xmm2, 0x50
+        """Instruction PCMPISTRM_51
+        Groups: sse42
+        0x400880:   pcmpistrm       xmm1, xmm2, 0x50
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8290,9 +8290,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_52(self):
-        """ Instruction PCMPISTRM_52
-            Groups: sse42
-            0x400886:	pcmpistrm	xmm1, xmm2, 0x51
+        """Instruction PCMPISTRM_52
+        Groups: sse42
+        0x400886:   pcmpistrm       xmm1, xmm2, 0x51
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8321,9 +8321,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_53(self):
-        """ Instruction PCMPISTRM_53
-            Groups: sse42
-            0x4008b6:	pcmpistrm	xmm1, xmm2, 0x61
+        """Instruction PCMPISTRM_53
+        Groups: sse42
+        0x4008b6:   pcmpistrm       xmm1, xmm2, 0x61
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8352,9 +8352,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_54(self):
-        """ Instruction PCMPISTRM_54
-            Groups: sse42
-            0x4007ba:	pcmpistrm	xmm1, xmm2, 0xd
+        """Instruction PCMPISTRM_54
+        Groups: sse42
+        0x4007ba:   pcmpistrm       xmm1, xmm2, 0xd
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8383,9 +8383,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_55(self):
-        """ Instruction PCMPISTRM_55
-            Groups: sse42
-            0x40090a:	pcmpistrm	xmm1, xmm2, 0x7d
+        """Instruction PCMPISTRM_55
+        Groups: sse42
+        0x40090a:   pcmpistrm       xmm1, xmm2, 0x7d
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8414,9 +8414,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_56(self):
-        """ Instruction PCMPISTRM_56
-            Groups: sse42
-            0x40079c:	pcmpistrm	xmm1, xmm2, 4
+        """Instruction PCMPISTRM_56
+        Groups: sse42
+        0x40079c:   pcmpistrm       xmm1, xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8445,9 +8445,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_57(self):
-        """ Instruction PCMPISTRM_57
-            Groups: sse42
-            0x4007ae:	pcmpistrm	xmm1, xmm2, 9
+        """Instruction PCMPISTRM_57
+        Groups: sse42
+        0x4007ae:   pcmpistrm       xmm1, xmm2, 9
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8476,9 +8476,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_58(self):
-        """ Instruction PCMPISTRM_58
-            Groups: sse42
-            0x400844:	pcmpistrm	xmm1, xmm2, 0x3c
+        """Instruction PCMPISTRM_58
+        Groups: sse42
+        0x400844:   pcmpistrm       xmm1, xmm2, 0x3c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8507,9 +8507,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_59(self):
-        """ Instruction PCMPISTRM_59
-            Groups: sse42
-            0x4008e6:	pcmpistrm	xmm1, xmm2, 0x71
+        """Instruction PCMPISTRM_59
+        Groups: sse42
+        0x4008e6:   pcmpistrm       xmm1, xmm2, 0x71
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8538,9 +8538,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_6(self):
-        """ Instruction PCMPISTRM_6
-            Groups: sse42
-            0x400808:	pcmpistrm	xmm1, xmm2, 0x28
+        """Instruction PCMPISTRM_6
+        Groups: sse42
+        0x400808:   pcmpistrm       xmm1, xmm2, 0x28
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8569,9 +8569,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_60(self):
-        """ Instruction PCMPISTRM_60
-            Groups: sse42
-            0x4008d4:	pcmpistrm	xmm1, xmm2, 0x6c
+        """Instruction PCMPISTRM_60
+        Groups: sse42
+        0x4008d4:   pcmpistrm       xmm1, xmm2, 0x6c
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8600,9 +8600,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_61(self):
-        """ Instruction PCMPISTRM_61
-            Groups: sse42
-            0x400796:	pcmpistrm	xmm1, xmm2, 1
+        """Instruction PCMPISTRM_61
+        Groups: sse42
+        0x400796:   pcmpistrm       xmm1, xmm2, 1
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8631,9 +8631,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_62(self):
-        """ Instruction PCMPISTRM_62
-            Groups: sse42
-            0x40083e:	pcmpistrm	xmm1, xmm2, 0x39
+        """Instruction PCMPISTRM_62
+        Groups: sse42
+        0x40083e:   pcmpistrm       xmm1, xmm2, 0x39
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8662,9 +8662,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_63(self):
-        """ Instruction PCMPISTRM_63
-            Groups: sse42
-            0x400790:	pcmpistrm	xmm1, xmm2, 0
+        """Instruction PCMPISTRM_63
+        Groups: sse42
+        0x400790:   pcmpistrm       xmm1, xmm2, 0
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8693,9 +8693,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_64(self):
-        """ Instruction PCMPISTRM_64
-            Groups: sse42
-            0x4007c0:	pcmpistrm	xmm1, xmm2, 0x10
+        """Instruction PCMPISTRM_64
+        Groups: sse42
+        0x4007c0:   pcmpistrm       xmm1, xmm2, 0x10
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8724,9 +8724,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_7(self):
-        """ Instruction PCMPISTRM_7
-            Groups: sse42
-            0x4007f0:	pcmpistrm	xmm1, xmm2, 0x20
+        """Instruction PCMPISTRM_7
+        Groups: sse42
+        0x4007f0:   pcmpistrm       xmm1, xmm2, 0x20
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8755,9 +8755,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_8(self):
-        """ Instruction PCMPISTRM_8
-            Groups: sse42
-            0x40086e:	pcmpistrm	xmm1, xmm2, 0x49
+        """Instruction PCMPISTRM_8
+        Groups: sse42
+        0x40086e:   pcmpistrm       xmm1, xmm2, 0x49
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8786,9 +8786,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_9(self):
-        """ Instruction PCMPISTRM_9
-            Groups: sse42
-            0x400862:	pcmpistrm	xmm1, xmm2, 0x45
+        """Instruction PCMPISTRM_9
+        Groups: sse42
+        0x400862:   pcmpistrm       xmm1, xmm2, 0x45
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -8817,9 +8817,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPESTRI_1_symbolic(self):
-        """ Instruction PCMPESTRI_1
-            Groups: sse42
-            0x400bec:	pcmpestri	xmm1, xmm2, 0x64
+        """Instruction PCMPESTRI_1
+        Groups: sse42
+        0x400bec:   pcmpestri       xmm1, xmm2, 0x64
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -8904,9 +8904,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_10_symbolic(self):
-        """ Instruction PCMPESTRI_10
-            Groups: sse42
-            0x400b20:	pcmpestri	xmm1, xmm2, 0x20
+        """Instruction PCMPESTRI_10
+        Groups: sse42
+        0x400b20:   pcmpestri       xmm1, xmm2, 0x20
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -8991,9 +8991,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_11_symbolic(self):
-        """ Instruction PCMPESTRI_11
-            Groups: sse42
-            0x400b38:	pcmpestri	xmm1, xmm2, 0x28
+        """Instruction PCMPESTRI_11
+        Groups: sse42
+        0x400b38:   pcmpestri       xmm1, xmm2, 0x28
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9078,9 +9078,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_12_symbolic(self):
-        """ Instruction PCMPESTRI_12
-            Groups: sse42
-            0x400bfe:	pcmpestri	xmm1, xmm2, 0x69
+        """Instruction PCMPESTRI_12
+        Groups: sse42
+        0x400bfe:   pcmpestri       xmm1, xmm2, 0x69
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9165,9 +9165,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_13_symbolic(self):
-        """ Instruction PCMPESTRI_13
-            Groups: sse42
-            0x400b86:	pcmpestri	xmm1, xmm2, 0x41
+        """Instruction PCMPESTRI_13
+        Groups: sse42
+        0x400b86:   pcmpestri       xmm1, xmm2, 0x41
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9252,9 +9252,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_14_symbolic(self):
-        """ Instruction PCMPESTRI_14
-            Groups: sse42
-            0x400ae4:	pcmpestri	xmm1, xmm2, 0xc
+        """Instruction PCMPESTRI_14
+        Groups: sse42
+        0x400ae4:   pcmpestri       xmm1, xmm2, 0xc
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9339,9 +9339,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_15_symbolic(self):
-        """ Instruction PCMPESTRI_15
-            Groups: sse42
-            0x400c04:	pcmpestri	xmm1, xmm2, 0x6c
+        """Instruction PCMPESTRI_15
+        Groups: sse42
+        0x400c04:   pcmpestri       xmm1, xmm2, 0x6c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9426,9 +9426,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_16_symbolic(self):
-        """ Instruction PCMPESTRI_16
-            Groups: sse42
-            0x400b6e:	pcmpestri	xmm1, xmm2, 0x39
+        """Instruction PCMPESTRI_16
+        Groups: sse42
+        0x400b6e:   pcmpestri       xmm1, xmm2, 0x39
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9513,9 +9513,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_17_symbolic(self):
-        """ Instruction PCMPESTRI_17
-            Groups: sse42
-            0x400b2c:	pcmpestri	xmm1, xmm2, 0x24
+        """Instruction PCMPESTRI_17
+        Groups: sse42
+        0x400b2c:   pcmpestri       xmm1, xmm2, 0x24
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9600,9 +9600,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_18_symbolic(self):
-        """ Instruction PCMPESTRI_18
-            Groups: sse42
-            0x400af0:	pcmpestri	xmm1, xmm2, 0x10
+        """Instruction PCMPESTRI_18
+        Groups: sse42
+        0x400af0:   pcmpestri       xmm1, xmm2, 0x10
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9687,9 +9687,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_19_symbolic(self):
-        """ Instruction PCMPESTRI_19
-            Groups: sse42
-            0x400be0:	pcmpestri	xmm1, xmm2, 0x60
+        """Instruction PCMPESTRI_19
+        Groups: sse42
+        0x400be0:   pcmpestri       xmm1, xmm2, 0x60
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9774,9 +9774,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_2_symbolic(self):
-        """ Instruction PCMPESTRI_2
-            Groups: sse42
-            0x400b4a:	pcmpestri	xmm1, xmm2, 0x2d
+        """Instruction PCMPESTRI_2
+        Groups: sse42
+        0x400b4a:   pcmpestri       xmm1, xmm2, 0x2d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9861,9 +9861,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_20_symbolic(self):
-        """ Instruction PCMPESTRI_20
-            Groups: sse42
-            0x400c0a:	pcmpestri	xmm1, xmm2, 0x6d
+        """Instruction PCMPESTRI_20
+        Groups: sse42
+        0x400c0a:   pcmpestri       xmm1, xmm2, 0x6d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -9948,9 +9948,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_21_symbolic(self):
-        """ Instruction PCMPESTRI_21
-            Groups: sse42
-            0x400b14:	pcmpestri	xmm1, xmm2, 0x1c
+        """Instruction PCMPESTRI_21
+        Groups: sse42
+        0x400b14:   pcmpestri       xmm1, xmm2, 0x1c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10035,9 +10035,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_22_symbolic(self):
-        """ Instruction PCMPESTRI_22
-            Groups: sse42
-            0x400bb6:	pcmpestri	xmm1, xmm2, 0x51
+        """Instruction PCMPESTRI_22
+        Groups: sse42
+        0x400bb6:   pcmpestri       xmm1, xmm2, 0x51
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10122,9 +10122,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_23_symbolic(self):
-        """ Instruction PCMPESTRI_23
-            Groups: sse42
-            0x400b08:	pcmpestri	xmm1, xmm2, 0x18
+        """Instruction PCMPESTRI_23
+        Groups: sse42
+        0x400b08:   pcmpestri       xmm1, xmm2, 0x18
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10209,9 +10209,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_24_symbolic(self):
-        """ Instruction PCMPESTRI_24
-            Groups: sse42
-            0x400c1c:	pcmpestri	xmm1, xmm2, 0x74
+        """Instruction PCMPESTRI_24
+        Groups: sse42
+        0x400c1c:   pcmpestri       xmm1, xmm2, 0x74
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10296,9 +10296,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_25_symbolic(self):
-        """ Instruction PCMPESTRI_25
-            Groups: sse42
-            0x400bda:	pcmpestri	xmm1, xmm2, 0x5d
+        """Instruction PCMPESTRI_25
+        Groups: sse42
+        0x400bda:   pcmpestri       xmm1, xmm2, 0x5d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10383,9 +10383,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_26_symbolic(self):
-        """ Instruction PCMPESTRI_26
-            Groups: sse42
-            0x400c10:	pcmpestri	xmm1, xmm2, 0x70
+        """Instruction PCMPESTRI_26
+        Groups: sse42
+        0x400c10:   pcmpestri       xmm1, xmm2, 0x70
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10470,9 +10470,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_27_symbolic(self):
-        """ Instruction PCMPESTRI_27
-            Groups: sse42
-            0x400c34:	pcmpestri	xmm1, xmm2, 0x7c
+        """Instruction PCMPESTRI_27
+        Groups: sse42
+        0x400c34:   pcmpestri       xmm1, xmm2, 0x7c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10557,9 +10557,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_28_symbolic(self):
-        """ Instruction PCMPESTRI_28
-            Groups: sse42
-            0x400c2e:	pcmpestri	xmm1, xmm2, 0x79
+        """Instruction PCMPESTRI_28
+        Groups: sse42
+        0x400c2e:   pcmpestri       xmm1, xmm2, 0x79
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10644,9 +10644,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_29_symbolic(self):
-        """ Instruction PCMPESTRI_29
-            Groups: sse42
-            0x400b80:	pcmpestri	xmm1, xmm2, 0x40
+        """Instruction PCMPESTRI_29
+        Groups: sse42
+        0x400b80:   pcmpestri       xmm1, xmm2, 0x40
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10731,9 +10731,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_3_symbolic(self):
-        """ Instruction PCMPESTRI_3
-            Groups: sse42
-            0x400ac6:	pcmpestri	xmm1, xmm2, 1
+        """Instruction PCMPESTRI_3
+        Groups: sse42
+        0x400ac6:   pcmpestri       xmm1, xmm2, 1
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10818,9 +10818,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_30_symbolic(self):
-        """ Instruction PCMPESTRI_30
-            Groups: sse42
-            0x400ba4:	pcmpestri	xmm1, xmm2, 0x4c
+        """Instruction PCMPESTRI_30
+        Groups: sse42
+        0x400ba4:   pcmpestri       xmm1, xmm2, 0x4c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10905,9 +10905,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_31_symbolic(self):
-        """ Instruction PCMPESTRI_31
-            Groups: sse42
-            0x400ad8:	pcmpestri	xmm1, xmm2, 8
+        """Instruction PCMPESTRI_31
+        Groups: sse42
+        0x400ad8:   pcmpestri       xmm1, xmm2, 8
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -10992,9 +10992,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_32_symbolic(self):
-        """ Instruction PCMPESTRI_32
-            Groups: sse42
-            0x400b50:	pcmpestri	xmm1, xmm2, 0x30
+        """Instruction PCMPESTRI_32
+        Groups: sse42
+        0x400b50:   pcmpestri       xmm1, xmm2, 0x30
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11079,9 +11079,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_33_symbolic(self):
-        """ Instruction PCMPESTRI_33
-            Groups: sse42
-            0x400b44:	pcmpestri	xmm1, xmm2, 0x2c
+        """Instruction PCMPESTRI_33
+        Groups: sse42
+        0x400b44:   pcmpestri       xmm1, xmm2, 0x2c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11166,9 +11166,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_34_symbolic(self):
-        """ Instruction PCMPESTRI_34
-            Groups: sse42
-            0x400bbc:	pcmpestri	xmm1, xmm2, 0x54
+        """Instruction PCMPESTRI_34
+        Groups: sse42
+        0x400bbc:   pcmpestri       xmm1, xmm2, 0x54
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11253,9 +11253,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_35_symbolic(self):
-        """ Instruction PCMPESTRI_35
-            Groups: sse42
-            0x400ad2:	pcmpestri	xmm1, xmm2, 5
+        """Instruction PCMPESTRI_35
+        Groups: sse42
+        0x400ad2:   pcmpestri       xmm1, xmm2, 5
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11340,9 +11340,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_36_symbolic(self):
-        """ Instruction PCMPESTRI_36
-            Groups: sse42
-            0x400b26:	pcmpestri	xmm1, xmm2, 0x21
+        """Instruction PCMPESTRI_36
+        Groups: sse42
+        0x400b26:   pcmpestri       xmm1, xmm2, 0x21
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11427,9 +11427,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_37_symbolic(self):
-        """ Instruction PCMPESTRI_37
-            Groups: sse42
-            0x400bc8:	pcmpestri	xmm1, xmm2, 0x58
+        """Instruction PCMPESTRI_37
+        Groups: sse42
+        0x400bc8:   pcmpestri       xmm1, xmm2, 0x58
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11514,9 +11514,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_38_symbolic(self):
-        """ Instruction PCMPESTRI_38
-            Groups: sse42
-            0x400b98:	pcmpestri	xmm1, xmm2, 0x48
+        """Instruction PCMPESTRI_38
+        Groups: sse42
+        0x400b98:   pcmpestri       xmm1, xmm2, 0x48
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11601,9 +11601,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_39_symbolic(self):
-        """ Instruction PCMPESTRI_39
-            Groups: sse42
-            0x400b02:	pcmpestri	xmm1, xmm2, 0x15
+        """Instruction PCMPESTRI_39
+        Groups: sse42
+        0x400b02:   pcmpestri       xmm1, xmm2, 0x15
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11688,9 +11688,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_4_symbolic(self):
-        """ Instruction PCMPESTRI_4
-            Groups: sse42
-            0x400c22:	pcmpestri	xmm1, xmm2, 0x75
+        """Instruction PCMPESTRI_4
+        Groups: sse42
+        0x400c22:   pcmpestri       xmm1, xmm2, 0x75
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11775,9 +11775,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_40_symbolic(self):
-        """ Instruction PCMPESTRI_40
-            Groups: sse42
-            0x400c3a:	pcmpestri	xmm1, xmm2, 0x7d
+        """Instruction PCMPESTRI_40
+        Groups: sse42
+        0x400c3a:   pcmpestri       xmm1, xmm2, 0x7d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11862,9 +11862,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_41_symbolic(self):
-        """ Instruction PCMPESTRI_41
-            Groups: sse42
-            0x400af6:	pcmpestri	xmm1, xmm2, 0x11
+        """Instruction PCMPESTRI_41
+        Groups: sse42
+        0x400af6:   pcmpestri       xmm1, xmm2, 0x11
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -11949,9 +11949,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_42_symbolic(self):
-        """ Instruction PCMPESTRI_42
-            Groups: sse42
-            0x400c28:	pcmpestri	xmm1, xmm2, 0x78
+        """Instruction PCMPESTRI_42
+        Groups: sse42
+        0x400c28:   pcmpestri       xmm1, xmm2, 0x78
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12036,9 +12036,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_43_symbolic(self):
-        """ Instruction PCMPESTRI_43
-            Groups: sse42
-            0x400b62:	pcmpestri	xmm1, xmm2, 0x35
+        """Instruction PCMPESTRI_43
+        Groups: sse42
+        0x400b62:   pcmpestri       xmm1, xmm2, 0x35
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12123,9 +12123,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_44_symbolic(self):
-        """ Instruction PCMPESTRI_44
-            Groups: sse42
-            0x400baa:	pcmpestri	xmm1, xmm2, 0x4d
+        """Instruction PCMPESTRI_44
+        Groups: sse42
+        0x400baa:   pcmpestri       xmm1, xmm2, 0x4d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12210,9 +12210,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_45_symbolic(self):
-        """ Instruction PCMPESTRI_45
-            Groups: sse42
-            0x400b68:	pcmpestri	xmm1, xmm2, 0x38
+        """Instruction PCMPESTRI_45
+        Groups: sse42
+        0x400b68:   pcmpestri       xmm1, xmm2, 0x38
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12297,9 +12297,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_46_symbolic(self):
-        """ Instruction PCMPESTRI_46
-            Groups: sse42
-            0x400c16:	pcmpestri	xmm1, xmm2, 0x71
+        """Instruction PCMPESTRI_46
+        Groups: sse42
+        0x400c16:   pcmpestri       xmm1, xmm2, 0x71
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12384,9 +12384,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_47_symbolic(self):
-        """ Instruction PCMPESTRI_47
-            Groups: sse42
-            0x400acc:	pcmpestri	xmm1, xmm2, 4
+        """Instruction PCMPESTRI_47
+        Groups: sse42
+        0x400acc:   pcmpestri       xmm1, xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12471,9 +12471,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_48_symbolic(self):
-        """ Instruction PCMPESTRI_48
-            Groups: sse42
-            0x400b92:	pcmpestri	xmm1, xmm2, 0x45
+        """Instruction PCMPESTRI_48
+        Groups: sse42
+        0x400b92:   pcmpestri       xmm1, xmm2, 0x45
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12558,9 +12558,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_49_symbolic(self):
-        """ Instruction PCMPESTRI_49
-            Groups: sse42
-            0x400afc:	pcmpestri	xmm1, xmm2, 0x14
+        """Instruction PCMPESTRI_49
+        Groups: sse42
+        0x400afc:   pcmpestri       xmm1, xmm2, 0x14
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12645,9 +12645,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_5_symbolic(self):
-        """ Instruction PCMPESTRI_5
-            Groups: sse42
-            0x400be6:	pcmpestri	xmm1, xmm2, 0x61
+        """Instruction PCMPESTRI_5
+        Groups: sse42
+        0x400be6:   pcmpestri       xmm1, xmm2, 0x61
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12732,9 +12732,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_50_symbolic(self):
-        """ Instruction PCMPESTRI_50
-            Groups: sse42
-            0x400b9e:	pcmpestri	xmm1, xmm2, 0x49
+        """Instruction PCMPESTRI_50
+        Groups: sse42
+        0x400b9e:   pcmpestri       xmm1, xmm2, 0x49
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12819,9 +12819,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_51_symbolic(self):
-        """ Instruction PCMPESTRI_51
-            Groups: sse42
-            0x400ac0:	pcmpestri	xmm1, xmm2, 0
+        """Instruction PCMPESTRI_51
+        Groups: sse42
+        0x400ac0:   pcmpestri       xmm1, xmm2, 0
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12906,9 +12906,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_52_symbolic(self):
-        """ Instruction PCMPESTRI_52
-            Groups: sse42
-            0x400b74:	pcmpestri	xmm1, xmm2, 0x3c
+        """Instruction PCMPESTRI_52
+        Groups: sse42
+        0x400b74:   pcmpestri       xmm1, xmm2, 0x3c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -12993,9 +12993,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_53_symbolic(self):
-        """ Instruction PCMPESTRI_53
-            Groups: sse42
-            0x400bce:	pcmpestri	xmm1, xmm2, 0x59
+        """Instruction PCMPESTRI_53
+        Groups: sse42
+        0x400bce:   pcmpestri       xmm1, xmm2, 0x59
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13080,9 +13080,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_54_symbolic(self):
-        """ Instruction PCMPESTRI_54
-            Groups: sse42
-            0x400b56:	pcmpestri	xmm1, xmm2, 0x31
+        """Instruction PCMPESTRI_54
+        Groups: sse42
+        0x400b56:   pcmpestri       xmm1, xmm2, 0x31
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13167,9 +13167,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_55_symbolic(self):
-        """ Instruction PCMPESTRI_55
-            Groups: sse42
-            0x400b7a:	pcmpestri	xmm1, xmm2, 0x3d
+        """Instruction PCMPESTRI_55
+        Groups: sse42
+        0x400b7a:   pcmpestri       xmm1, xmm2, 0x3d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13254,9 +13254,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_56_symbolic(self):
-        """ Instruction PCMPESTRI_56
-            Groups: sse42
-            0x400b5c:	pcmpestri	xmm1, xmm2, 0x34
+        """Instruction PCMPESTRI_56
+        Groups: sse42
+        0x400b5c:   pcmpestri       xmm1, xmm2, 0x34
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13341,9 +13341,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_57_symbolic(self):
-        """ Instruction PCMPESTRI_57
-            Groups: sse42
-            0x400ade:	pcmpestri	xmm1, xmm2, 9
+        """Instruction PCMPESTRI_57
+        Groups: sse42
+        0x400ade:   pcmpestri       xmm1, xmm2, 9
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13428,9 +13428,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_58_symbolic(self):
-        """ Instruction PCMPESTRI_58
-            Groups: sse42
-            0x400b3e:	pcmpestri	xmm1, xmm2, 0x29
+        """Instruction PCMPESTRI_58
+        Groups: sse42
+        0x400b3e:   pcmpestri       xmm1, xmm2, 0x29
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13515,9 +13515,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_59_symbolic(self):
-        """ Instruction PCMPESTRI_59
-            Groups: sse42
-            0x400bb0:	pcmpestri	xmm1, xmm2, 0x50
+        """Instruction PCMPESTRI_59
+        Groups: sse42
+        0x400bb0:   pcmpestri       xmm1, xmm2, 0x50
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13602,9 +13602,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_6_symbolic(self):
-        """ Instruction PCMPESTRI_6
-            Groups: sse42
-            0x400b0e:	pcmpestri	xmm1, xmm2, 0x19
+        """Instruction PCMPESTRI_6
+        Groups: sse42
+        0x400b0e:   pcmpestri       xmm1, xmm2, 0x19
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13689,9 +13689,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_60_symbolic(self):
-        """ Instruction PCMPESTRI_60
-            Groups: sse42
-            0x400b1a:	pcmpestri	xmm1, xmm2, 0x1d
+        """Instruction PCMPESTRI_60
+        Groups: sse42
+        0x400b1a:   pcmpestri       xmm1, xmm2, 0x1d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13776,9 +13776,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_61_symbolic(self):
-        """ Instruction PCMPESTRI_61
-            Groups: sse42
-            0x400bf2:	pcmpestri	xmm1, xmm2, 0x65
+        """Instruction PCMPESTRI_61
+        Groups: sse42
+        0x400bf2:   pcmpestri       xmm1, xmm2, 0x65
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13863,9 +13863,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_62_symbolic(self):
-        """ Instruction PCMPESTRI_62
-            Groups: sse42
-            0x400bd4:	pcmpestri	xmm1, xmm2, 0x5c
+        """Instruction PCMPESTRI_62
+        Groups: sse42
+        0x400bd4:   pcmpestri       xmm1, xmm2, 0x5c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -13950,9 +13950,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_63_symbolic(self):
-        """ Instruction PCMPESTRI_63
-            Groups: sse42
-            0x400bf8:	pcmpestri	xmm1, xmm2, 0x68
+        """Instruction PCMPESTRI_63
+        Groups: sse42
+        0x400bf8:   pcmpestri       xmm1, xmm2, 0x68
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14037,9 +14037,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_64_symbolic(self):
-        """ Instruction PCMPESTRI_64
-            Groups: sse42
-            0x400bc2:	pcmpestri	xmm1, xmm2, 0x55
+        """Instruction PCMPESTRI_64
+        Groups: sse42
+        0x400bc2:   pcmpestri       xmm1, xmm2, 0x55
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14124,9 +14124,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_7_symbolic(self):
-        """ Instruction PCMPESTRI_7
-            Groups: sse42
-            0x400b8c:	pcmpestri	xmm1, xmm2, 0x44
+        """Instruction PCMPESTRI_7
+        Groups: sse42
+        0x400b8c:   pcmpestri       xmm1, xmm2, 0x44
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14211,9 +14211,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_8_symbolic(self):
-        """ Instruction PCMPESTRI_8
-            Groups: sse42
-            0x400aea:	pcmpestri	xmm1, xmm2, 0xd
+        """Instruction PCMPESTRI_8
+        Groups: sse42
+        0x400aea:   pcmpestri       xmm1, xmm2, 0xd
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14298,9 +14298,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRI_9_symbolic(self):
-        """ Instruction PCMPESTRI_9
-            Groups: sse42
-            0x400b32:	pcmpestri	xmm1, xmm2, 0x25
+        """Instruction PCMPESTRI_9
+        Groups: sse42
+        0x400b32:   pcmpestri       xmm1, xmm2, 0x25
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14385,9 +14385,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_1_symbolic(self):
-        """ Instruction PCMPESTRM_1
-            Groups: sse42
-            0x4009d0:	pcmpestrm	xmm1, xmm2, 0x38
+        """Instruction PCMPESTRM_1
+        Groups: sse42
+        0x4009d0:   pcmpestrm       xmm1, xmm2, 0x38
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14469,9 +14469,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_10_symbolic(self):
-        """ Instruction PCMPESTRM_10
-            Groups: sse42
-            0x4009ac:	pcmpestrm	xmm1, xmm2, 0x2c
+        """Instruction PCMPESTRM_10
+        Groups: sse42
+        0x4009ac:   pcmpestrm       xmm1, xmm2, 0x2c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14553,9 +14553,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_11_symbolic(self):
-        """ Instruction PCMPESTRM_11
-            Groups: sse42
-            0x400a24:	pcmpestrm	xmm1, xmm2, 0x54
+        """Instruction PCMPESTRM_11
+        Groups: sse42
+        0x400a24:   pcmpestrm       xmm1, xmm2, 0x54
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14637,9 +14637,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_12_symbolic(self):
-        """ Instruction PCMPESTRM_12
-            Groups: sse42
-            0x4009f4:	pcmpestrm	xmm1, xmm2, 0x44
+        """Instruction PCMPESTRM_12
+        Groups: sse42
+        0x4009f4:   pcmpestrm       xmm1, xmm2, 0x44
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14721,9 +14721,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_13_symbolic(self):
-        """ Instruction PCMPESTRM_13
-            Groups: sse42
-            0x400a1e:	pcmpestrm	xmm1, xmm2, 0x51
+        """Instruction PCMPESTRM_13
+        Groups: sse42
+        0x400a1e:   pcmpestrm       xmm1, xmm2, 0x51
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14805,9 +14805,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_14_symbolic(self):
-        """ Instruction PCMPESTRM_14
-            Groups: sse42
-            0x400a7e:	pcmpestrm	xmm1, xmm2, 0x71
+        """Instruction PCMPESTRM_14
+        Groups: sse42
+        0x400a7e:   pcmpestrm       xmm1, xmm2, 0x71
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14889,9 +14889,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_15_symbolic(self):
-        """ Instruction PCMPESTRM_15
-            Groups: sse42
-            0x400994:	pcmpestrm	xmm1, xmm2, 0x24
+        """Instruction PCMPESTRM_15
+        Groups: sse42
+        0x400994:   pcmpestrm       xmm1, xmm2, 0x24
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -14973,9 +14973,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_16_symbolic(self):
-        """ Instruction PCMPESTRM_16
-            Groups: sse42
-            0x400934:	pcmpestrm	xmm1, xmm2, 4
+        """Instruction PCMPESTRM_16
+        Groups: sse42
+        0x400934:   pcmpestrm       xmm1, xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15057,9 +15057,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_17_symbolic(self):
-        """ Instruction PCMPESTRM_17
-            Groups: sse42
-            0x400a9c:	pcmpestrm	xmm1, xmm2, 0x7c
+        """Instruction PCMPESTRM_17
+        Groups: sse42
+        0x400a9c:   pcmpestrm       xmm1, xmm2, 0x7c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15141,9 +15141,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_18_symbolic(self):
-        """ Instruction PCMPESTRM_18
-            Groups: sse42
-            0x40092e:	pcmpestrm	xmm1, xmm2, 1
+        """Instruction PCMPESTRM_18
+        Groups: sse42
+        0x40092e:   pcmpestrm       xmm1, xmm2, 1
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15225,9 +15225,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_19_symbolic(self):
-        """ Instruction PCMPESTRM_19
-            Groups: sse42
-            0x4009a6:	pcmpestrm	xmm1, xmm2, 0x29
+        """Instruction PCMPESTRM_19
+        Groups: sse42
+        0x4009a6:   pcmpestrm       xmm1, xmm2, 0x29
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15309,9 +15309,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_2_symbolic(self):
-        """ Instruction PCMPESTRM_2
-            Groups: sse42
-            0x400a54:	pcmpestrm	xmm1, xmm2, 0x64
+        """Instruction PCMPESTRM_2
+        Groups: sse42
+        0x400a54:   pcmpestrm       xmm1, xmm2, 0x64
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15393,9 +15393,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_20_symbolic(self):
-        """ Instruction PCMPESTRM_20
-            Groups: sse42
-            0x400a66:	pcmpestrm	xmm1, xmm2, 0x69
+        """Instruction PCMPESTRM_20
+        Groups: sse42
+        0x400a66:   pcmpestrm       xmm1, xmm2, 0x69
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15477,9 +15477,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_21_symbolic(self):
-        """ Instruction PCMPESTRM_21
-            Groups: sse42
-            0x400958:	pcmpestrm	xmm1, xmm2, 0x10
+        """Instruction PCMPESTRM_21
+        Groups: sse42
+        0x400958:   pcmpestrm       xmm1, xmm2, 0x10
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15561,9 +15561,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_22_symbolic(self):
-        """ Instruction PCMPESTRM_22
-            Groups: sse42
-            0x40095e:	pcmpestrm	xmm1, xmm2, 0x11
+        """Instruction PCMPESTRM_22
+        Groups: sse42
+        0x40095e:   pcmpestrm       xmm1, xmm2, 0x11
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15645,9 +15645,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_23_symbolic(self):
-        """ Instruction PCMPESTRM_23
-            Groups: sse42
-            0x400976:	pcmpestrm	xmm1, xmm2, 0x19
+        """Instruction PCMPESTRM_23
+        Groups: sse42
+        0x400976:   pcmpestrm       xmm1, xmm2, 0x19
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15729,9 +15729,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_24_symbolic(self):
-        """ Instruction PCMPESTRM_24
-            Groups: sse42
-            0x400a8a:	pcmpestrm	xmm1, xmm2, 0x75
+        """Instruction PCMPESTRM_24
+        Groups: sse42
+        0x400a8a:   pcmpestrm       xmm1, xmm2, 0x75
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15813,9 +15813,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_25_symbolic(self):
-        """ Instruction PCMPESTRM_25
-            Groups: sse42
-            0x400a12:	pcmpestrm	xmm1, xmm2, 0x4d
+        """Instruction PCMPESTRM_25
+        Groups: sse42
+        0x400a12:   pcmpestrm       xmm1, xmm2, 0x4d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15897,9 +15897,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_26_symbolic(self):
-        """ Instruction PCMPESTRM_26
-            Groups: sse42
-            0x40093a:	pcmpestrm	xmm1, xmm2, 5
+        """Instruction PCMPESTRM_26
+        Groups: sse42
+        0x40093a:   pcmpestrm       xmm1, xmm2, 5
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -15981,9 +15981,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_27_symbolic(self):
-        """ Instruction PCMPESTRM_27
-            Groups: sse42
-            0x400a30:	pcmpestrm	xmm1, xmm2, 0x58
+        """Instruction PCMPESTRM_27
+        Groups: sse42
+        0x400a30:   pcmpestrm       xmm1, xmm2, 0x58
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16065,9 +16065,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_28_symbolic(self):
-        """ Instruction PCMPESTRM_28
-            Groups: sse42
-            0x4009ca:	pcmpestrm	xmm1, xmm2, 0x35
+        """Instruction PCMPESTRM_28
+        Groups: sse42
+        0x4009ca:   pcmpestrm       xmm1, xmm2, 0x35
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16149,9 +16149,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_29_symbolic(self):
-        """ Instruction PCMPESTRM_29
-            Groups: sse42
-            0x400a3c:	pcmpestrm	xmm1, xmm2, 0x5c
+        """Instruction PCMPESTRM_29
+        Groups: sse42
+        0x400a3c:   pcmpestrm       xmm1, xmm2, 0x5c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16233,9 +16233,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_3_symbolic(self):
-        """ Instruction PCMPESTRM_3
-            Groups: sse42
-            0x400a18:	pcmpestrm	xmm1, xmm2, 0x50
+        """Instruction PCMPESTRM_3
+        Groups: sse42
+        0x400a18:   pcmpestrm       xmm1, xmm2, 0x50
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16317,9 +16317,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_30_symbolic(self):
-        """ Instruction PCMPESTRM_30
-            Groups: sse42
-            0x40098e:	pcmpestrm	xmm1, xmm2, 0x21
+        """Instruction PCMPESTRM_30
+        Groups: sse42
+        0x40098e:   pcmpestrm       xmm1, xmm2, 0x21
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16401,9 +16401,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_31_symbolic(self):
-        """ Instruction PCMPESTRM_31
-            Groups: sse42
-            0x400a96:	pcmpestrm	xmm1, xmm2, 0x79
+        """Instruction PCMPESTRM_31
+        Groups: sse42
+        0x400a96:   pcmpestrm       xmm1, xmm2, 0x79
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16485,9 +16485,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_32_symbolic(self):
-        """ Instruction PCMPESTRM_32
-            Groups: sse42
-            0x400a90:	pcmpestrm	xmm1, xmm2, 0x78
+        """Instruction PCMPESTRM_32
+        Groups: sse42
+        0x400a90:   pcmpestrm       xmm1, xmm2, 0x78
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16569,9 +16569,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_33_symbolic(self):
-        """ Instruction PCMPESTRM_33
-            Groups: sse42
-            0x400a06:	pcmpestrm	xmm1, xmm2, 0x49
+        """Instruction PCMPESTRM_33
+        Groups: sse42
+        0x400a06:   pcmpestrm       xmm1, xmm2, 0x49
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16653,9 +16653,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_34_symbolic(self):
-        """ Instruction PCMPESTRM_34
-            Groups: sse42
-            0x400928:	pcmpestrm	xmm1, xmm2, 0
+        """Instruction PCMPESTRM_34
+        Groups: sse42
+        0x400928:   pcmpestrm       xmm1, xmm2, 0
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16737,9 +16737,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_35_symbolic(self):
-        """ Instruction PCMPESTRM_35
-            Groups: sse42
-            0x400a84:	pcmpestrm	xmm1, xmm2, 0x74
+        """Instruction PCMPESTRM_35
+        Groups: sse42
+        0x400a84:   pcmpestrm       xmm1, xmm2, 0x74
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16821,9 +16821,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_36_symbolic(self):
-        """ Instruction PCMPESTRM_36
-            Groups: sse42
-            0x400a72:	pcmpestrm	xmm1, xmm2, 0x6d
+        """Instruction PCMPESTRM_36
+        Groups: sse42
+        0x400a72:   pcmpestrm       xmm1, xmm2, 0x6d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16905,9 +16905,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_37_symbolic(self):
-        """ Instruction PCMPESTRM_37
-            Groups: sse42
-            0x400946:	pcmpestrm	xmm1, xmm2, 9
+        """Instruction PCMPESTRM_37
+        Groups: sse42
+        0x400946:   pcmpestrm       xmm1, xmm2, 9
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -16989,9 +16989,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_38_symbolic(self):
-        """ Instruction PCMPESTRM_38
-            Groups: sse42
-            0x400940:	pcmpestrm	xmm1, xmm2, 8
+        """Instruction PCMPESTRM_38
+        Groups: sse42
+        0x400940:   pcmpestrm       xmm1, xmm2, 8
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17073,9 +17073,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_39_symbolic(self):
-        """ Instruction PCMPESTRM_39
-            Groups: sse42
-            0x400aa2:	pcmpestrm	xmm1, xmm2, 0x7d
+        """Instruction PCMPESTRM_39
+        Groups: sse42
+        0x400aa2:   pcmpestrm       xmm1, xmm2, 0x7d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17157,9 +17157,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_4_symbolic(self):
-        """ Instruction PCMPESTRM_4
-            Groups: sse42
-            0x40097c:	pcmpestrm	xmm1, xmm2, 0x1c
+        """Instruction PCMPESTRM_4
+        Groups: sse42
+        0x40097c:   pcmpestrm       xmm1, xmm2, 0x1c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17241,9 +17241,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_40_symbolic(self):
-        """ Instruction PCMPESTRM_40
-            Groups: sse42
-            0x400a48:	pcmpestrm	xmm1, xmm2, 0x60
+        """Instruction PCMPESTRM_40
+        Groups: sse42
+        0x400a48:   pcmpestrm       xmm1, xmm2, 0x60
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17325,9 +17325,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_41_symbolic(self):
-        """ Instruction PCMPESTRM_41
-            Groups: sse42
-            0x400952:	pcmpestrm	xmm1, xmm2, 0xd
+        """Instruction PCMPESTRM_41
+        Groups: sse42
+        0x400952:   pcmpestrm       xmm1, xmm2, 0xd
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17409,9 +17409,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_42_symbolic(self):
-        """ Instruction PCMPESTRM_42
-            Groups: sse42
-            0x40094c:	pcmpestrm	xmm1, xmm2, 0xc
+        """Instruction PCMPESTRM_42
+        Groups: sse42
+        0x40094c:   pcmpestrm       xmm1, xmm2, 0xc
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17493,9 +17493,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_43_symbolic(self):
-        """ Instruction PCMPESTRM_43
-            Groups: sse42
-            0x400a0c:	pcmpestrm	xmm1, xmm2, 0x4c
+        """Instruction PCMPESTRM_43
+        Groups: sse42
+        0x400a0c:   pcmpestrm       xmm1, xmm2, 0x4c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17577,9 +17577,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_44_symbolic(self):
-        """ Instruction PCMPESTRM_44
-            Groups: sse42
-            0x400964:	pcmpestrm	xmm1, xmm2, 0x14
+        """Instruction PCMPESTRM_44
+        Groups: sse42
+        0x400964:   pcmpestrm       xmm1, xmm2, 0x14
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17661,9 +17661,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_45_symbolic(self):
-        """ Instruction PCMPESTRM_45
-            Groups: sse42
-            0x400a36:	pcmpestrm	xmm1, xmm2, 0x59
+        """Instruction PCMPESTRM_45
+        Groups: sse42
+        0x400a36:   pcmpestrm       xmm1, xmm2, 0x59
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17745,9 +17745,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_46_symbolic(self):
-        """ Instruction PCMPESTRM_46
-            Groups: sse42
-            0x40099a:	pcmpestrm	xmm1, xmm2, 0x25
+        """Instruction PCMPESTRM_46
+        Groups: sse42
+        0x40099a:   pcmpestrm       xmm1, xmm2, 0x25
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17829,9 +17829,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_47_symbolic(self):
-        """ Instruction PCMPESTRM_47
-            Groups: sse42
-            0x400988:	pcmpestrm	xmm1, xmm2, 0x20
+        """Instruction PCMPESTRM_47
+        Groups: sse42
+        0x400988:   pcmpestrm       xmm1, xmm2, 0x20
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17913,9 +17913,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_48_symbolic(self):
-        """ Instruction PCMPESTRM_48
-            Groups: sse42
-            0x400a5a:	pcmpestrm	xmm1, xmm2, 0x65
+        """Instruction PCMPESTRM_48
+        Groups: sse42
+        0x400a5a:   pcmpestrm       xmm1, xmm2, 0x65
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -17997,9 +17997,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_49_symbolic(self):
-        """ Instruction PCMPESTRM_49
-            Groups: sse42
-            0x40096a:	pcmpestrm	xmm1, xmm2, 0x15
+        """Instruction PCMPESTRM_49
+        Groups: sse42
+        0x40096a:   pcmpestrm       xmm1, xmm2, 0x15
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18081,9 +18081,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_5_symbolic(self):
-        """ Instruction PCMPESTRM_5
-            Groups: sse42
-            0x4009b2:	pcmpestrm	xmm1, xmm2, 0x2d
+        """Instruction PCMPESTRM_5
+        Groups: sse42
+        0x4009b2:   pcmpestrm       xmm1, xmm2, 0x2d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18165,9 +18165,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_50_symbolic(self):
-        """ Instruction PCMPESTRM_50
-            Groups: sse42
-            0x400a60:	pcmpestrm	xmm1, xmm2, 0x68
+        """Instruction PCMPESTRM_50
+        Groups: sse42
+        0x400a60:   pcmpestrm       xmm1, xmm2, 0x68
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18249,9 +18249,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_51_symbolic(self):
-        """ Instruction PCMPESTRM_51
-            Groups: sse42
-            0x4009be:	pcmpestrm	xmm1, xmm2, 0x31
+        """Instruction PCMPESTRM_51
+        Groups: sse42
+        0x4009be:   pcmpestrm       xmm1, xmm2, 0x31
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18333,9 +18333,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_52_symbolic(self):
-        """ Instruction PCMPESTRM_52
-            Groups: sse42
-            0x4009e2:	pcmpestrm	xmm1, xmm2, 0x3d
+        """Instruction PCMPESTRM_52
+        Groups: sse42
+        0x4009e2:   pcmpestrm       xmm1, xmm2, 0x3d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18417,9 +18417,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_53_symbolic(self):
-        """ Instruction PCMPESTRM_53
-            Groups: sse42
-            0x4009d6:	pcmpestrm	xmm1, xmm2, 0x39
+        """Instruction PCMPESTRM_53
+        Groups: sse42
+        0x4009d6:   pcmpestrm       xmm1, xmm2, 0x39
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18501,9 +18501,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_54_symbolic(self):
-        """ Instruction PCMPESTRM_54
-            Groups: sse42
-            0x400a6c:	pcmpestrm	xmm1, xmm2, 0x6c
+        """Instruction PCMPESTRM_54
+        Groups: sse42
+        0x400a6c:   pcmpestrm       xmm1, xmm2, 0x6c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18585,9 +18585,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_55_symbolic(self):
-        """ Instruction PCMPESTRM_55
-            Groups: sse42
-            0x4009c4:	pcmpestrm	xmm1, xmm2, 0x34
+        """Instruction PCMPESTRM_55
+        Groups: sse42
+        0x4009c4:   pcmpestrm       xmm1, xmm2, 0x34
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18669,9 +18669,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_56_symbolic(self):
-        """ Instruction PCMPESTRM_56
-            Groups: sse42
-            0x400a00:	pcmpestrm	xmm1, xmm2, 0x48
+        """Instruction PCMPESTRM_56
+        Groups: sse42
+        0x400a00:   pcmpestrm       xmm1, xmm2, 0x48
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18753,9 +18753,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_57_symbolic(self):
-        """ Instruction PCMPESTRM_57
-            Groups: sse42
-            0x4009e8:	pcmpestrm	xmm1, xmm2, 0x40
+        """Instruction PCMPESTRM_57
+        Groups: sse42
+        0x4009e8:   pcmpestrm       xmm1, xmm2, 0x40
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18837,9 +18837,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_58_symbolic(self):
-        """ Instruction PCMPESTRM_58
-            Groups: sse42
-            0x4009b8:	pcmpestrm	xmm1, xmm2, 0x30
+        """Instruction PCMPESTRM_58
+        Groups: sse42
+        0x4009b8:   pcmpestrm       xmm1, xmm2, 0x30
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -18921,9 +18921,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_59_symbolic(self):
-        """ Instruction PCMPESTRM_59
-            Groups: sse42
-            0x4009ee:	pcmpestrm	xmm1, xmm2, 0x41
+        """Instruction PCMPESTRM_59
+        Groups: sse42
+        0x4009ee:   pcmpestrm       xmm1, xmm2, 0x41
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19005,9 +19005,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_6_symbolic(self):
-        """ Instruction PCMPESTRM_6
-            Groups: sse42
-            0x4009a0:	pcmpestrm	xmm1, xmm2, 0x28
+        """Instruction PCMPESTRM_6
+        Groups: sse42
+        0x4009a0:   pcmpestrm       xmm1, xmm2, 0x28
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19089,9 +19089,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_60_symbolic(self):
-        """ Instruction PCMPESTRM_60
-            Groups: sse42
-            0x400970:	pcmpestrm	xmm1, xmm2, 0x18
+        """Instruction PCMPESTRM_60
+        Groups: sse42
+        0x400970:   pcmpestrm       xmm1, xmm2, 0x18
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19173,9 +19173,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_61_symbolic(self):
-        """ Instruction PCMPESTRM_61
-            Groups: sse42
-            0x400a78:	pcmpestrm	xmm1, xmm2, 0x70
+        """Instruction PCMPESTRM_61
+        Groups: sse42
+        0x400a78:   pcmpestrm       xmm1, xmm2, 0x70
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19257,9 +19257,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_62_symbolic(self):
-        """ Instruction PCMPESTRM_62
-            Groups: sse42
-            0x400a2a:	pcmpestrm	xmm1, xmm2, 0x55
+        """Instruction PCMPESTRM_62
+        Groups: sse42
+        0x400a2a:   pcmpestrm       xmm1, xmm2, 0x55
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19341,9 +19341,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_63_symbolic(self):
-        """ Instruction PCMPESTRM_63
-            Groups: sse42
-            0x400a42:	pcmpestrm	xmm1, xmm2, 0x5d
+        """Instruction PCMPESTRM_63
+        Groups: sse42
+        0x400a42:   pcmpestrm       xmm1, xmm2, 0x5d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19425,9 +19425,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_64_symbolic(self):
-        """ Instruction PCMPESTRM_64
-            Groups: sse42
-            0x400a4e:	pcmpestrm	xmm1, xmm2, 0x61
+        """Instruction PCMPESTRM_64
+        Groups: sse42
+        0x400a4e:   pcmpestrm       xmm1, xmm2, 0x61
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19509,9 +19509,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_7_symbolic(self):
-        """ Instruction PCMPESTRM_7
-            Groups: sse42
-            0x4009dc:	pcmpestrm	xmm1, xmm2, 0x3c
+        """Instruction PCMPESTRM_7
+        Groups: sse42
+        0x4009dc:   pcmpestrm       xmm1, xmm2, 0x3c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19593,9 +19593,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_8_symbolic(self):
-        """ Instruction PCMPESTRM_8
-            Groups: sse42
-            0x4009fa:	pcmpestrm	xmm1, xmm2, 0x45
+        """Instruction PCMPESTRM_8
+        Groups: sse42
+        0x4009fa:   pcmpestrm       xmm1, xmm2, 0x45
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19677,9 +19677,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPESTRM_9_symbolic(self):
-        """ Instruction PCMPESTRM_9
-            Groups: sse42
-            0x400982:	pcmpestrm	xmm1, xmm2, 0x1d
+        """Instruction PCMPESTRM_9
+        Groups: sse42
+        0x400982:   pcmpestrm       xmm1, xmm2, 0x1d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19761,9 +19761,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_1_symbolic(self):
-        """ Instruction PCMPISTRI_1
-            Groups: sse42
-            0x400746:	pcmpistri	xmm1, xmm2, 0x6d
+        """Instruction PCMPISTRI_1
+        Groups: sse42
+        0x400746:   pcmpistri       xmm1, xmm2, 0x6d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19842,9 +19842,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_10_symbolic(self):
-        """ Instruction PCMPISTRI_10
-            Groups: sse42
-            0x400650:	pcmpistri	xmm1, xmm2, 0x1c
+        """Instruction PCMPISTRI_10
+        Groups: sse42
+        0x400650:   pcmpistri       xmm1, xmm2, 0x1c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19923,9 +19923,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_11_symbolic(self):
-        """ Instruction PCMPISTRI_11
-            Groups: sse42
-            0x400668:	pcmpistri	xmm1, xmm2, 0x24
+        """Instruction PCMPISTRI_11
+        Groups: sse42
+        0x400668:   pcmpistri       xmm1, xmm2, 0x24
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20004,9 +20004,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_12_symbolic(self):
-        """ Instruction PCMPISTRI_12
-            Groups: sse42
-            0x400698:	pcmpistri	xmm1, xmm2, 0x34
+        """Instruction PCMPISTRI_12
+        Groups: sse42
+        0x400698:   pcmpistri       xmm1, xmm2, 0x34
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20085,9 +20085,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_13_symbolic(self):
-        """ Instruction PCMPISTRI_13
-            Groups: sse42
-            0x4006c8:	pcmpistri	xmm1, xmm2, 0x44
+        """Instruction PCMPISTRI_13
+        Groups: sse42
+        0x4006c8:   pcmpistri       xmm1, xmm2, 0x44
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20166,9 +20166,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_14_symbolic(self):
-        """ Instruction PCMPISTRI_14
-            Groups: sse42
-            0x4006bc:	pcmpistri	xmm1, xmm2, 0x40
+        """Instruction PCMPISTRI_14
+        Groups: sse42
+        0x4006bc:   pcmpistri       xmm1, xmm2, 0x40
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20247,9 +20247,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_15_symbolic(self):
-        """ Instruction PCMPISTRI_15
-            Groups: sse42
-            0x40068c:	pcmpistri	xmm1, xmm2, 0x30
+        """Instruction PCMPISTRI_15
+        Groups: sse42
+        0x40068c:   pcmpistri       xmm1, xmm2, 0x30
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20328,9 +20328,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_16_symbolic(self):
-        """ Instruction PCMPISTRI_16
-            Groups: sse42
-            0x40062c:	pcmpistri	xmm1, xmm2, 0x10
+        """Instruction PCMPISTRI_16
+        Groups: sse42
+        0x40062c:   pcmpistri       xmm1, xmm2, 0x10
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20409,9 +20409,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_17_symbolic(self):
-        """ Instruction PCMPISTRI_17
-            Groups: sse42
-            0x400764:	pcmpistri	xmm1, xmm2, 0x78
+        """Instruction PCMPISTRI_17
+        Groups: sse42
+        0x400764:   pcmpistri       xmm1, xmm2, 0x78
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20490,9 +20490,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_18_symbolic(self):
-        """ Instruction PCMPISTRI_18
-            Groups: sse42
-            0x4005fc:	pcmpistri	xmm1, xmm2, 0
+        """Instruction PCMPISTRI_18
+        Groups: sse42
+        0x4005fc:   pcmpistri       xmm1, xmm2, 0
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20571,9 +20571,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_19_symbolic(self):
-        """ Instruction PCMPISTRI_19
-            Groups: sse42
-            0x4006ce:	pcmpistri	xmm1, xmm2, 0x45
+        """Instruction PCMPISTRI_19
+        Groups: sse42
+        0x4006ce:   pcmpistri       xmm1, xmm2, 0x45
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20652,9 +20652,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_2_symbolic(self):
-        """ Instruction PCMPISTRI_2
-            Groups: sse42
-            0x400704:	pcmpistri	xmm1, xmm2, 0x58
+        """Instruction PCMPISTRI_2
+        Groups: sse42
+        0x400704:   pcmpistri       xmm1, xmm2, 0x58
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20733,9 +20733,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_20_symbolic(self):
-        """ Instruction PCMPISTRI_20
-            Groups: sse42
-            0x4006f8:	pcmpistri	xmm1, xmm2, 0x54
+        """Instruction PCMPISTRI_20
+        Groups: sse42
+        0x4006f8:   pcmpistri       xmm1, xmm2, 0x54
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20814,9 +20814,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_21_symbolic(self):
-        """ Instruction PCMPISTRI_21
-            Groups: sse42
-            0x4006c2:	pcmpistri	xmm1, xmm2, 0x41
+        """Instruction PCMPISTRI_21
+        Groups: sse42
+        0x4006c2:   pcmpistri       xmm1, xmm2, 0x41
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20895,9 +20895,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_22_symbolic(self):
-        """ Instruction PCMPISTRI_22
-            Groups: sse42
-            0x40069e:	pcmpistri	xmm1, xmm2, 0x35
+        """Instruction PCMPISTRI_22
+        Groups: sse42
+        0x40069e:   pcmpistri       xmm1, xmm2, 0x35
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -20976,9 +20976,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_23_symbolic(self):
-        """ Instruction PCMPISTRI_23
-            Groups: sse42
-            0x4006b6:	pcmpistri	xmm1, xmm2, 0x3d
+        """Instruction PCMPISTRI_23
+        Groups: sse42
+        0x4006b6:   pcmpistri       xmm1, xmm2, 0x3d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21057,9 +21057,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_24_symbolic(self):
-        """ Instruction PCMPISTRI_24
-            Groups: sse42
-            0x400620:	pcmpistri	xmm1, xmm2, 0xc
+        """Instruction PCMPISTRI_24
+        Groups: sse42
+        0x400620:   pcmpistri       xmm1, xmm2, 0xc
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21138,9 +21138,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_25_symbolic(self):
-        """ Instruction PCMPISTRI_25
-            Groups: sse42
-            0x400710:	pcmpistri	xmm1, xmm2, 0x5c
+        """Instruction PCMPISTRI_25
+        Groups: sse42
+        0x400710:   pcmpistri       xmm1, xmm2, 0x5c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21219,9 +21219,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_26_symbolic(self):
-        """ Instruction PCMPISTRI_26
-            Groups: sse42
-            0x4006b0:	pcmpistri	xmm1, xmm2, 0x3c
+        """Instruction PCMPISTRI_26
+        Groups: sse42
+        0x4006b0:   pcmpistri       xmm1, xmm2, 0x3c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21300,9 +21300,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_27_symbolic(self):
-        """ Instruction PCMPISTRI_27
-            Groups: sse42
-            0x400740:	pcmpistri	xmm1, xmm2, 0x6c
+        """Instruction PCMPISTRI_27
+        Groups: sse42
+        0x400740:   pcmpistri       xmm1, xmm2, 0x6c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21381,9 +21381,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_28_symbolic(self):
-        """ Instruction PCMPISTRI_28
-            Groups: sse42
-            0x400692:	pcmpistri	xmm1, xmm2, 0x31
+        """Instruction PCMPISTRI_28
+        Groups: sse42
+        0x400692:   pcmpistri       xmm1, xmm2, 0x31
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21462,9 +21462,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_29_symbolic(self):
-        """ Instruction PCMPISTRI_29
-            Groups: sse42
-            0x40064a:	pcmpistri	xmm1, xmm2, 0x19
+        """Instruction PCMPISTRI_29
+        Groups: sse42
+        0x40064a:   pcmpistri       xmm1, xmm2, 0x19
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21543,9 +21543,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_3_symbolic(self):
-        """ Instruction PCMPISTRI_3
-            Groups: sse42
-            0x400728:	pcmpistri	xmm1, xmm2, 0x64
+        """Instruction PCMPISTRI_3
+        Groups: sse42
+        0x400728:   pcmpistri       xmm1, xmm2, 0x64
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21624,9 +21624,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_30_symbolic(self):
-        """ Instruction PCMPISTRI_30
-            Groups: sse42
-            0x40077c:	pcmpistri	xmm1, xmmword ptr [rbp - 0xa0], 0x1b
+        """Instruction PCMPISTRI_30
+        Groups: sse42
+        0x40077c:   pcmpistri       xmm1, xmmword ptr [rbp - 0xa0], 0x1b
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21807,9 +21807,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_31_symbolic(self):
-        """ Instruction PCMPISTRI_31
-            Groups: sse42
-            0x400626:	pcmpistri	xmm1, xmm2, 0xd
+        """Instruction PCMPISTRI_31
+        Groups: sse42
+        0x400626:   pcmpistri       xmm1, xmm2, 0xd
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21888,9 +21888,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_32_symbolic(self):
-        """ Instruction PCMPISTRI_32
-            Groups: sse42
-            0x4006d4:	pcmpistri	xmm1, xmm2, 0x48
+        """Instruction PCMPISTRI_32
+        Groups: sse42
+        0x4006d4:   pcmpistri       xmm1, xmm2, 0x48
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -21969,9 +21969,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_33_symbolic(self):
-        """ Instruction PCMPISTRI_33
-            Groups: sse42
-            0x400686:	pcmpistri	xmm1, xmm2, 0x2d
+        """Instruction PCMPISTRI_33
+        Groups: sse42
+        0x400686:   pcmpistri       xmm1, xmm2, 0x2d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22050,9 +22050,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_34_symbolic(self):
-        """ Instruction PCMPISTRI_34
-            Groups: sse42
-            0x400770:	pcmpistri	xmm1, xmm2, 0x7c
+        """Instruction PCMPISTRI_34
+        Groups: sse42
+        0x400770:   pcmpistri       xmm1, xmm2, 0x7c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22131,9 +22131,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_35_symbolic(self):
-        """ Instruction PCMPISTRI_35
-            Groups: sse42
-            0x40071c:	pcmpistri	xmm1, xmm2, 0x60
+        """Instruction PCMPISTRI_35
+        Groups: sse42
+        0x40071c:   pcmpistri       xmm1, xmm2, 0x60
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22212,9 +22212,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_36_symbolic(self):
-        """ Instruction PCMPISTRI_36
-            Groups: sse42
-            0x400776:	pcmpistri	xmm1, xmm2, 0x7d
+        """Instruction PCMPISTRI_36
+        Groups: sse42
+        0x400776:   pcmpistri       xmm1, xmm2, 0x7d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22293,9 +22293,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_37_symbolic(self):
-        """ Instruction PCMPISTRI_37
-            Groups: sse42
-            0x400758:	pcmpistri	xmm1, xmm2, 0x74
+        """Instruction PCMPISTRI_37
+        Groups: sse42
+        0x400758:   pcmpistri       xmm1, xmm2, 0x74
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22374,9 +22374,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_38_symbolic(self):
-        """ Instruction PCMPISTRI_38
-            Groups: sse42
-            0x400602:	pcmpistri	xmm1, xmm2, 1
+        """Instruction PCMPISTRI_38
+        Groups: sse42
+        0x400602:   pcmpistri       xmm1, xmm2, 1
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22455,9 +22455,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_39_symbolic(self):
-        """ Instruction PCMPISTRI_39
-            Groups: sse42
-            0x400608:	pcmpistri	xmm1, xmm2, 4
+        """Instruction PCMPISTRI_39
+        Groups: sse42
+        0x400608:   pcmpistri       xmm1, xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22536,9 +22536,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_4_symbolic(self):
-        """ Instruction PCMPISTRI_4
-            Groups: sse42
-            0x400752:	pcmpistri	xmm1, xmm2, 0x71
+        """Instruction PCMPISTRI_4
+        Groups: sse42
+        0x400752:   pcmpistri       xmm1, xmm2, 0x71
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22617,9 +22617,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_40_symbolic(self):
-        """ Instruction PCMPISTRI_40
-            Groups: sse42
-            0x400638:	pcmpistri	xmm1, xmm2, 0x14
+        """Instruction PCMPISTRI_40
+        Groups: sse42
+        0x400638:   pcmpistri       xmm1, xmm2, 0x14
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22698,9 +22698,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_41_symbolic(self):
-        """ Instruction PCMPISTRI_41
-            Groups: sse42
-            0x40074c:	pcmpistri	xmm1, xmm2, 0x70
+        """Instruction PCMPISTRI_41
+        Groups: sse42
+        0x40074c:   pcmpistri       xmm1, xmm2, 0x70
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22779,9 +22779,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_42_symbolic(self):
-        """ Instruction PCMPISTRI_42
-            Groups: sse42
-            0x400734:	pcmpistri	xmm1, xmm2, 0x68
+        """Instruction PCMPISTRI_42
+        Groups: sse42
+        0x400734:   pcmpistri       xmm1, xmm2, 0x68
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22860,9 +22860,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_43_symbolic(self):
-        """ Instruction PCMPISTRI_43
-            Groups: sse42
-            0x400644:	pcmpistri	xmm1, xmm2, 0x18
+        """Instruction PCMPISTRI_43
+        Groups: sse42
+        0x400644:   pcmpistri       xmm1, xmm2, 0x18
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -22941,9 +22941,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_44_symbolic(self):
-        """ Instruction PCMPISTRI_44
-            Groups: sse42
-            0x40065c:	pcmpistri	xmm1, xmm2, 0x20
+        """Instruction PCMPISTRI_44
+        Groups: sse42
+        0x40065c:   pcmpistri       xmm1, xmm2, 0x20
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23022,9 +23022,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_45_symbolic(self):
-        """ Instruction PCMPISTRI_45
-            Groups: sse42
-            0x40061a:	pcmpistri	xmm1, xmm2, 9
+        """Instruction PCMPISTRI_45
+        Groups: sse42
+        0x40061a:   pcmpistri       xmm1, xmm2, 9
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23103,9 +23103,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_46_symbolic(self):
-        """ Instruction PCMPISTRI_46
-            Groups: sse42
-            0x40073a:	pcmpistri	xmm1, xmm2, 0x69
+        """Instruction PCMPISTRI_46
+        Groups: sse42
+        0x40073a:   pcmpistri       xmm1, xmm2, 0x69
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23184,9 +23184,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_47_symbolic(self):
-        """ Instruction PCMPISTRI_47
-            Groups: sse42
-            0x40070a:	pcmpistri	xmm1, xmm2, 0x59
+        """Instruction PCMPISTRI_47
+        Groups: sse42
+        0x40070a:   pcmpistri       xmm1, xmm2, 0x59
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23265,9 +23265,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_48_symbolic(self):
-        """ Instruction PCMPISTRI_48
-            Groups: sse42
-            0x4006aa:	pcmpistri	xmm1, xmm2, 0x39
+        """Instruction PCMPISTRI_48
+        Groups: sse42
+        0x4006aa:   pcmpistri       xmm1, xmm2, 0x39
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23346,9 +23346,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_49_symbolic(self):
-        """ Instruction PCMPISTRI_49
-            Groups: sse42
-            0x400716:	pcmpistri	xmm1, xmm2, 0x5d
+        """Instruction PCMPISTRI_49
+        Groups: sse42
+        0x400716:   pcmpistri       xmm1, xmm2, 0x5d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23427,9 +23427,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_5_symbolic(self):
-        """ Instruction PCMPISTRI_5
-            Groups: sse42
-            0x40063e:	pcmpistri	xmm1, xmm2, 0x15
+        """Instruction PCMPISTRI_5
+        Groups: sse42
+        0x40063e:   pcmpistri       xmm1, xmm2, 0x15
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23508,9 +23508,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_50_symbolic(self):
-        """ Instruction PCMPISTRI_50
-            Groups: sse42
-            0x400656:	pcmpistri	xmm1, xmm2, 0x1d
+        """Instruction PCMPISTRI_50
+        Groups: sse42
+        0x400656:   pcmpistri       xmm1, xmm2, 0x1d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23589,9 +23589,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_51_symbolic(self):
-        """ Instruction PCMPISTRI_51
-            Groups: sse42
-            0x40072e:	pcmpistri	xmm1, xmm2, 0x65
+        """Instruction PCMPISTRI_51
+        Groups: sse42
+        0x40072e:   pcmpistri       xmm1, xmm2, 0x65
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23670,9 +23670,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_52_symbolic(self):
-        """ Instruction PCMPISTRI_52
-            Groups: sse42
-            0x400680:	pcmpistri	xmm1, xmm2, 0x2c
+        """Instruction PCMPISTRI_52
+        Groups: sse42
+        0x400680:   pcmpistri       xmm1, xmm2, 0x2c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23751,9 +23751,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_53_symbolic(self):
-        """ Instruction PCMPISTRI_53
-            Groups: sse42
-            0x400674:	pcmpistri	xmm1, xmm2, 0x28
+        """Instruction PCMPISTRI_53
+        Groups: sse42
+        0x400674:   pcmpistri       xmm1, xmm2, 0x28
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23832,9 +23832,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_54_symbolic(self):
-        """ Instruction PCMPISTRI_54
-            Groups: sse42
-            0x40067a:	pcmpistri	xmm1, xmm2, 0x29
+        """Instruction PCMPISTRI_54
+        Groups: sse42
+        0x40067a:   pcmpistri       xmm1, xmm2, 0x29
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23913,9 +23913,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_55_symbolic(self):
-        """ Instruction PCMPISTRI_55
-            Groups: sse42
-            0x400722:	pcmpistri	xmm1, xmm2, 0x61
+        """Instruction PCMPISTRI_55
+        Groups: sse42
+        0x400722:   pcmpistri       xmm1, xmm2, 0x61
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -23994,9 +23994,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_56_symbolic(self):
-        """ Instruction PCMPISTRI_56
-            Groups: sse42
-            0x4006e6:	pcmpistri	xmm1, xmm2, 0x4d
+        """Instruction PCMPISTRI_56
+        Groups: sse42
+        0x4006e6:   pcmpistri       xmm1, xmm2, 0x4d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24075,9 +24075,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_57_symbolic(self):
-        """ Instruction PCMPISTRI_57
-            Groups: sse42
-            0x40076a:	pcmpistri	xmm1, xmm2, 0x79
+        """Instruction PCMPISTRI_57
+        Groups: sse42
+        0x40076a:   pcmpistri       xmm1, xmm2, 0x79
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24156,9 +24156,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_58_symbolic(self):
-        """ Instruction PCMPISTRI_58
-            Groups: sse42
-            0x4006ec:	pcmpistri	xmm1, xmm2, 0x50
+        """Instruction PCMPISTRI_58
+        Groups: sse42
+        0x4006ec:   pcmpistri       xmm1, xmm2, 0x50
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24237,9 +24237,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_59_symbolic(self):
-        """ Instruction PCMPISTRI_59
-            Groups: sse42
-            0x400632:	pcmpistri	xmm1, xmm2, 0x11
+        """Instruction PCMPISTRI_59
+        Groups: sse42
+        0x400632:   pcmpistri       xmm1, xmm2, 0x11
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24318,9 +24318,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_6_symbolic(self):
-        """ Instruction PCMPISTRI_6
-            Groups: sse42
-            0x40066e:	pcmpistri	xmm1, xmm2, 0x25
+        """Instruction PCMPISTRI_6
+        Groups: sse42
+        0x40066e:   pcmpistri       xmm1, xmm2, 0x25
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24399,9 +24399,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_60_symbolic(self):
-        """ Instruction PCMPISTRI_60
-            Groups: sse42
-            0x4006f2:	pcmpistri	xmm1, xmm2, 0x51
+        """Instruction PCMPISTRI_60
+        Groups: sse42
+        0x4006f2:   pcmpistri       xmm1, xmm2, 0x51
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24480,9 +24480,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_61_symbolic(self):
-        """ Instruction PCMPISTRI_61
-            Groups: sse42
-            0x400614:	pcmpistri	xmm1, xmm2, 8
+        """Instruction PCMPISTRI_61
+        Groups: sse42
+        0x400614:   pcmpistri       xmm1, xmm2, 8
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24561,9 +24561,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_62_symbolic(self):
-        """ Instruction PCMPISTRI_62
-            Groups: sse42
-            0x4006da:	pcmpistri	xmm1, xmm2, 0x49
+        """Instruction PCMPISTRI_62
+        Groups: sse42
+        0x4006da:   pcmpistri       xmm1, xmm2, 0x49
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24642,9 +24642,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_63_symbolic(self):
-        """ Instruction PCMPISTRI_63
-            Groups: sse42
-            0x4006a4:	pcmpistri	xmm1, xmm2, 0x38
+        """Instruction PCMPISTRI_63
+        Groups: sse42
+        0x4006a4:   pcmpistri       xmm1, xmm2, 0x38
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24723,9 +24723,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_64_symbolic(self):
-        """ Instruction PCMPISTRI_64
-            Groups: sse42
-            0x4006fe:	pcmpistri	xmm1, xmm2, 0x55
+        """Instruction PCMPISTRI_64
+        Groups: sse42
+        0x4006fe:   pcmpistri       xmm1, xmm2, 0x55
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24804,9 +24804,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_65_symbolic(self):
-        """ Instruction PCMPISTRI_65
-            Groups: sse42
-            0x400662:	pcmpistri	xmm1, xmm2, 0x21
+        """Instruction PCMPISTRI_65
+        Groups: sse42
+        0x400662:   pcmpistri       xmm1, xmm2, 0x21
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24885,9 +24885,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_7_symbolic(self):
-        """ Instruction PCMPISTRI_7
-            Groups: sse42
-            0x4006e0:	pcmpistri	xmm1, xmm2, 0x4c
+        """Instruction PCMPISTRI_7
+        Groups: sse42
+        0x4006e0:   pcmpistri       xmm1, xmm2, 0x4c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24966,9 +24966,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_8_symbolic(self):
-        """ Instruction PCMPISTRI_8
-            Groups: sse42
-            0x40060e:	pcmpistri	xmm1, xmm2, 5
+        """Instruction PCMPISTRI_8
+        Groups: sse42
+        0x40060e:   pcmpistri       xmm1, xmm2, 5
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25047,9 +25047,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRI_9_symbolic(self):
-        """ Instruction PCMPISTRI_9
-            Groups: sse42
-            0x40075e:	pcmpistri	xmm1, xmm2, 0x75
+        """Instruction PCMPISTRI_9
+        Groups: sse42
+        0x40075e:   pcmpistri       xmm1, xmm2, 0x75
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25128,9 +25128,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_1_symbolic(self):
-        """ Instruction PCMPISTRM_1
-            Groups: sse42
-            0x400856:	pcmpistrm	xmm1, xmm2, 0x41
+        """Instruction PCMPISTRM_1
+        Groups: sse42
+        0x400856:   pcmpistrm       xmm1, xmm2, 0x41
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25206,9 +25206,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_10_symbolic(self):
-        """ Instruction PCMPISTRM_10
-            Groups: sse42
-            0x4007cc:	pcmpistrm	xmm1, xmm2, 0x14
+        """Instruction PCMPISTRM_10
+        Groups: sse42
+        0x4007cc:   pcmpistrm       xmm1, xmm2, 0x14
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25284,9 +25284,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_11_symbolic(self):
-        """ Instruction PCMPISTRM_11
-            Groups: sse42
-            0x40087a:	pcmpistrm	xmm1, xmm2, 0x4d
+        """Instruction PCMPISTRM_11
+        Groups: sse42
+        0x40087a:   pcmpistrm       xmm1, xmm2, 0x4d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25362,9 +25362,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_12_symbolic(self):
-        """ Instruction PCMPISTRM_12
-            Groups: sse42
-            0x400802:	pcmpistrm	xmm1, xmm2, 0x25
+        """Instruction PCMPISTRM_12
+        Groups: sse42
+        0x400802:   pcmpistrm       xmm1, xmm2, 0x25
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25440,9 +25440,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_13_symbolic(self):
-        """ Instruction PCMPISTRM_13
-            Groups: sse42
-            0x4007fc:	pcmpistrm	xmm1, xmm2, 0x24
+        """Instruction PCMPISTRM_13
+        Groups: sse42
+        0x4007fc:   pcmpistrm       xmm1, xmm2, 0x24
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25518,9 +25518,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_14_symbolic(self):
-        """ Instruction PCMPISTRM_14
-            Groups: sse42
-            0x4008c8:	pcmpistrm	xmm1, xmm2, 0x68
+        """Instruction PCMPISTRM_14
+        Groups: sse42
+        0x4008c8:   pcmpistrm       xmm1, xmm2, 0x68
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25596,9 +25596,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_15_symbolic(self):
-        """ Instruction PCMPISTRM_15
-            Groups: sse42
-            0x4008f8:	pcmpistrm	xmm1, xmm2, 0x78
+        """Instruction PCMPISTRM_15
+        Groups: sse42
+        0x4008f8:   pcmpistrm       xmm1, xmm2, 0x78
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25674,9 +25674,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_16_symbolic(self):
-        """ Instruction PCMPISTRM_16
-            Groups: sse42
-            0x40080e:	pcmpistrm	xmm1, xmm2, 0x29
+        """Instruction PCMPISTRM_16
+        Groups: sse42
+        0x40080e:   pcmpistrm       xmm1, xmm2, 0x29
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25752,9 +25752,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_17_symbolic(self):
-        """ Instruction PCMPISTRM_17
-            Groups: sse42
-            0x40089e:	pcmpistrm	xmm1, xmm2, 0x59
+        """Instruction PCMPISTRM_17
+        Groups: sse42
+        0x40089e:   pcmpistrm       xmm1, xmm2, 0x59
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25830,9 +25830,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_18_symbolic(self):
-        """ Instruction PCMPISTRM_18
-            Groups: sse42
-            0x4008f2:	pcmpistrm	xmm1, xmm2, 0x75
+        """Instruction PCMPISTRM_18
+        Groups: sse42
+        0x4008f2:   pcmpistrm       xmm1, xmm2, 0x75
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25908,9 +25908,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_19_symbolic(self):
-        """ Instruction PCMPISTRM_19
-            Groups: sse42
-            0x4007b4:	pcmpistrm	xmm1, xmm2, 0xc
+        """Instruction PCMPISTRM_19
+        Groups: sse42
+        0x4007b4:   pcmpistrm       xmm1, xmm2, 0xc
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -25986,9 +25986,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_2_symbolic(self):
-        """ Instruction PCMPISTRM_2
-            Groups: sse42
-            0x4008ec:	pcmpistrm	xmm1, xmm2, 0x74
+        """Instruction PCMPISTRM_2
+        Groups: sse42
+        0x4008ec:   pcmpistrm       xmm1, xmm2, 0x74
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26064,9 +26064,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_20_symbolic(self):
-        """ Instruction PCMPISTRM_20
-            Groups: sse42
-            0x4007d8:	pcmpistrm	xmm1, xmm2, 0x18
+        """Instruction PCMPISTRM_20
+        Groups: sse42
+        0x4007d8:   pcmpistrm       xmm1, xmm2, 0x18
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26142,9 +26142,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_21_symbolic(self):
-        """ Instruction PCMPISTRM_21
-            Groups: sse42
-            0x400892:	pcmpistrm	xmm1, xmm2, 0x55
+        """Instruction PCMPISTRM_21
+        Groups: sse42
+        0x400892:   pcmpistrm       xmm1, xmm2, 0x55
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26220,9 +26220,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_22_symbolic(self):
-        """ Instruction PCMPISTRM_22
-            Groups: sse42
-            0x40084a:	pcmpistrm	xmm1, xmm2, 0x3d
+        """Instruction PCMPISTRM_22
+        Groups: sse42
+        0x40084a:   pcmpistrm       xmm1, xmm2, 0x3d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26298,9 +26298,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_23_symbolic(self):
-        """ Instruction PCMPISTRM_23
-            Groups: sse42
-            0x40088c:	pcmpistrm	xmm1, xmm2, 0x54
+        """Instruction PCMPISTRM_23
+        Groups: sse42
+        0x40088c:   pcmpistrm       xmm1, xmm2, 0x54
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26376,9 +26376,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_24_symbolic(self):
-        """ Instruction PCMPISTRM_24
-            Groups: sse42
-            0x4008fe:	pcmpistrm	xmm1, xmm2, 0x79
+        """Instruction PCMPISTRM_24
+        Groups: sse42
+        0x4008fe:   pcmpistrm       xmm1, xmm2, 0x79
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26454,9 +26454,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_25_symbolic(self):
-        """ Instruction PCMPISTRM_25
-            Groups: sse42
-            0x400838:	pcmpistrm	xmm1, xmm2, 0x38
+        """Instruction PCMPISTRM_25
+        Groups: sse42
+        0x400838:   pcmpistrm       xmm1, xmm2, 0x38
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26532,9 +26532,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_26_symbolic(self):
-        """ Instruction PCMPISTRM_26
-            Groups: sse42
-            0x400832:	pcmpistrm	xmm1, xmm2, 0x35
+        """Instruction PCMPISTRM_26
+        Groups: sse42
+        0x400832:   pcmpistrm       xmm1, xmm2, 0x35
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26610,9 +26610,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_27_symbolic(self):
-        """ Instruction PCMPISTRM_27
-            Groups: sse42
-            0x400820:	pcmpistrm	xmm1, xmm2, 0x30
+        """Instruction PCMPISTRM_27
+        Groups: sse42
+        0x400820:   pcmpistrm       xmm1, xmm2, 0x30
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26688,9 +26688,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_28_symbolic(self):
-        """ Instruction PCMPISTRM_28
-            Groups: sse42
-            0x400850:	pcmpistrm	xmm1, xmm2, 0x40
+        """Instruction PCMPISTRM_28
+        Groups: sse42
+        0x400850:   pcmpistrm       xmm1, xmm2, 0x40
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26766,9 +26766,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_29_symbolic(self):
-        """ Instruction PCMPISTRM_29
-            Groups: sse42
-            0x4007d2:	pcmpistrm	xmm1, xmm2, 0x15
+        """Instruction PCMPISTRM_29
+        Groups: sse42
+        0x4007d2:   pcmpistrm       xmm1, xmm2, 0x15
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26844,9 +26844,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_3_symbolic(self):
-        """ Instruction PCMPISTRM_3
-            Groups: sse42
-            0x400826:	pcmpistrm	xmm1, xmm2, 0x31
+        """Instruction PCMPISTRM_3
+        Groups: sse42
+        0x400826:   pcmpistrm       xmm1, xmm2, 0x31
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -26922,9 +26922,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_30_symbolic(self):
-        """ Instruction PCMPISTRM_30
-            Groups: sse42
-            0x400898:	pcmpistrm	xmm1, xmm2, 0x58
+        """Instruction PCMPISTRM_30
+        Groups: sse42
+        0x400898:   pcmpistrm       xmm1, xmm2, 0x58
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27000,9 +27000,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_31_symbolic(self):
-        """ Instruction PCMPISTRM_31
-            Groups: sse42
-            0x4008aa:	pcmpistrm	xmm1, xmm2, 0x5d
+        """Instruction PCMPISTRM_31
+        Groups: sse42
+        0x4008aa:   pcmpistrm       xmm1, xmm2, 0x5d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27078,9 +27078,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_32_symbolic(self):
-        """ Instruction PCMPISTRM_32
-            Groups: sse42
-            0x4007ea:	pcmpistrm	xmm1, xmm2, 0x1d
+        """Instruction PCMPISTRM_32
+        Groups: sse42
+        0x4007ea:   pcmpistrm       xmm1, xmm2, 0x1d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27156,9 +27156,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_33_symbolic(self):
-        """ Instruction PCMPISTRM_33
-            Groups: sse42
-            0x4007f6:	pcmpistrm	xmm1, xmm2, 0x21
+        """Instruction PCMPISTRM_33
+        Groups: sse42
+        0x4007f6:   pcmpistrm       xmm1, xmm2, 0x21
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27234,9 +27234,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_34_symbolic(self):
-        """ Instruction PCMPISTRM_34
-            Groups: sse42
-            0x4008b0:	pcmpistrm	xmm1, xmm2, 0x60
+        """Instruction PCMPISTRM_34
+        Groups: sse42
+        0x4008b0:   pcmpistrm       xmm1, xmm2, 0x60
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27312,9 +27312,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_35_symbolic(self):
-        """ Instruction PCMPISTRM_35
-            Groups: sse42
-            0x4008a4:	pcmpistrm	xmm1, xmm2, 0x5c
+        """Instruction PCMPISTRM_35
+        Groups: sse42
+        0x4008a4:   pcmpistrm       xmm1, xmm2, 0x5c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27390,9 +27390,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_36_symbolic(self):
-        """ Instruction PCMPISTRM_36
-            Groups: sse42
-            0x4008e0:	pcmpistrm	xmm1, xmm2, 0x70
+        """Instruction PCMPISTRM_36
+        Groups: sse42
+        0x4008e0:   pcmpistrm       xmm1, xmm2, 0x70
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27468,9 +27468,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_37_symbolic(self):
-        """ Instruction PCMPISTRM_37
-            Groups: sse42
-            0x400904:	pcmpistrm	xmm1, xmm2, 0x7c
+        """Instruction PCMPISTRM_37
+        Groups: sse42
+        0x400904:   pcmpistrm       xmm1, xmm2, 0x7c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27546,9 +27546,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_38_symbolic(self):
-        """ Instruction PCMPISTRM_38
-            Groups: sse42
-            0x4008c2:	pcmpistrm	xmm1, xmm2, 0x65
+        """Instruction PCMPISTRM_38
+        Groups: sse42
+        0x4008c2:   pcmpistrm       xmm1, xmm2, 0x65
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27624,9 +27624,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_39_symbolic(self):
-        """ Instruction PCMPISTRM_39
-            Groups: sse42
-            0x40081a:	pcmpistrm	xmm1, xmm2, 0x2d
+        """Instruction PCMPISTRM_39
+        Groups: sse42
+        0x40081a:   pcmpistrm       xmm1, xmm2, 0x2d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27702,9 +27702,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_4_symbolic(self):
-        """ Instruction PCMPISTRM_4
-            Groups: sse42
-            0x4008bc:	pcmpistrm	xmm1, xmm2, 0x64
+        """Instruction PCMPISTRM_4
+        Groups: sse42
+        0x4008bc:   pcmpistrm       xmm1, xmm2, 0x64
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27780,9 +27780,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_40_symbolic(self):
-        """ Instruction PCMPISTRM_40
-            Groups: sse42
-            0x4007de:	pcmpistrm	xmm1, xmm2, 0x19
+        """Instruction PCMPISTRM_40
+        Groups: sse42
+        0x4007de:   pcmpistrm       xmm1, xmm2, 0x19
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27858,9 +27858,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_41_symbolic(self):
-        """ Instruction PCMPISTRM_41
-            Groups: sse42
-            0x400814:	pcmpistrm	xmm1, xmm2, 0x2c
+        """Instruction PCMPISTRM_41
+        Groups: sse42
+        0x400814:   pcmpistrm       xmm1, xmm2, 0x2c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -27936,9 +27936,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_42_symbolic(self):
-        """ Instruction PCMPISTRM_42
-            Groups: sse42
-            0x4007c6:	pcmpistrm	xmm1, xmm2, 0x11
+        """Instruction PCMPISTRM_42
+        Groups: sse42
+        0x4007c6:   pcmpistrm       xmm1, xmm2, 0x11
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28014,9 +28014,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_43_symbolic(self):
-        """ Instruction PCMPISTRM_43
-            Groups: sse42
-            0x400868:	pcmpistrm	xmm1, xmm2, 0x48
+        """Instruction PCMPISTRM_43
+        Groups: sse42
+        0x400868:   pcmpistrm       xmm1, xmm2, 0x48
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28092,9 +28092,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_44_symbolic(self):
-        """ Instruction PCMPISTRM_44
-            Groups: sse42
-            0x4008ce:	pcmpistrm	xmm1, xmm2, 0x69
+        """Instruction PCMPISTRM_44
+        Groups: sse42
+        0x4008ce:   pcmpistrm       xmm1, xmm2, 0x69
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28170,9 +28170,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_45_symbolic(self):
-        """ Instruction PCMPISTRM_45
-            Groups: sse42
-            0x400874:	pcmpistrm	xmm1, xmm2, 0x4c
+        """Instruction PCMPISTRM_45
+        Groups: sse42
+        0x400874:   pcmpistrm       xmm1, xmm2, 0x4c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28248,9 +28248,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_46_symbolic(self):
-        """ Instruction PCMPISTRM_46
-            Groups: sse42
-            0x40085c:	pcmpistrm	xmm1, xmm2, 0x44
+        """Instruction PCMPISTRM_46
+        Groups: sse42
+        0x40085c:   pcmpistrm       xmm1, xmm2, 0x44
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28326,9 +28326,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_47_symbolic(self):
-        """ Instruction PCMPISTRM_47
-            Groups: sse42
-            0x4007a8:	pcmpistrm	xmm1, xmm2, 8
+        """Instruction PCMPISTRM_47
+        Groups: sse42
+        0x4007a8:   pcmpistrm       xmm1, xmm2, 8
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28404,9 +28404,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_48_symbolic(self):
-        """ Instruction PCMPISTRM_48
-            Groups: sse42
-            0x40082c:	pcmpistrm	xmm1, xmm2, 0x34
+        """Instruction PCMPISTRM_48
+        Groups: sse42
+        0x40082c:   pcmpistrm       xmm1, xmm2, 0x34
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28482,9 +28482,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_49_symbolic(self):
-        """ Instruction PCMPISTRM_49
-            Groups: sse42
-            0x4008da:	pcmpistrm	xmm1, xmm2, 0x6d
+        """Instruction PCMPISTRM_49
+        Groups: sse42
+        0x4008da:   pcmpistrm       xmm1, xmm2, 0x6d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28560,9 +28560,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_5_symbolic(self):
-        """ Instruction PCMPISTRM_5
-            Groups: sse42
-            0x4007a2:	pcmpistrm	xmm1, xmm2, 5
+        """Instruction PCMPISTRM_5
+        Groups: sse42
+        0x4007a2:   pcmpistrm       xmm1, xmm2, 5
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28638,9 +28638,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_50_symbolic(self):
-        """ Instruction PCMPISTRM_50
-            Groups: sse42
-            0x4007e4:	pcmpistrm	xmm1, xmm2, 0x1c
+        """Instruction PCMPISTRM_50
+        Groups: sse42
+        0x4007e4:   pcmpistrm       xmm1, xmm2, 0x1c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28716,9 +28716,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_51_symbolic(self):
-        """ Instruction PCMPISTRM_51
-            Groups: sse42
-            0x400880:	pcmpistrm	xmm1, xmm2, 0x50
+        """Instruction PCMPISTRM_51
+        Groups: sse42
+        0x400880:   pcmpistrm       xmm1, xmm2, 0x50
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28794,9 +28794,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_52_symbolic(self):
-        """ Instruction PCMPISTRM_52
-            Groups: sse42
-            0x400886:	pcmpistrm	xmm1, xmm2, 0x51
+        """Instruction PCMPISTRM_52
+        Groups: sse42
+        0x400886:   pcmpistrm       xmm1, xmm2, 0x51
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28872,9 +28872,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_53_symbolic(self):
-        """ Instruction PCMPISTRM_53
-            Groups: sse42
-            0x4008b6:	pcmpistrm	xmm1, xmm2, 0x61
+        """Instruction PCMPISTRM_53
+        Groups: sse42
+        0x4008b6:   pcmpistrm       xmm1, xmm2, 0x61
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -28950,9 +28950,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_54_symbolic(self):
-        """ Instruction PCMPISTRM_54
-            Groups: sse42
-            0x4007ba:	pcmpistrm	xmm1, xmm2, 0xd
+        """Instruction PCMPISTRM_54
+        Groups: sse42
+        0x4007ba:   pcmpistrm       xmm1, xmm2, 0xd
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29028,9 +29028,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_55_symbolic(self):
-        """ Instruction PCMPISTRM_55
-            Groups: sse42
-            0x40090a:	pcmpistrm	xmm1, xmm2, 0x7d
+        """Instruction PCMPISTRM_55
+        Groups: sse42
+        0x40090a:   pcmpistrm       xmm1, xmm2, 0x7d
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29106,9 +29106,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_56_symbolic(self):
-        """ Instruction PCMPISTRM_56
-            Groups: sse42
-            0x40079c:	pcmpistrm	xmm1, xmm2, 4
+        """Instruction PCMPISTRM_56
+        Groups: sse42
+        0x40079c:   pcmpistrm       xmm1, xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29184,9 +29184,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_57_symbolic(self):
-        """ Instruction PCMPISTRM_57
-            Groups: sse42
-            0x4007ae:	pcmpistrm	xmm1, xmm2, 9
+        """Instruction PCMPISTRM_57
+        Groups: sse42
+        0x4007ae:   pcmpistrm       xmm1, xmm2, 9
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29262,9 +29262,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_58_symbolic(self):
-        """ Instruction PCMPISTRM_58
-            Groups: sse42
-            0x400844:	pcmpistrm	xmm1, xmm2, 0x3c
+        """Instruction PCMPISTRM_58
+        Groups: sse42
+        0x400844:   pcmpistrm       xmm1, xmm2, 0x3c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29340,9 +29340,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_59_symbolic(self):
-        """ Instruction PCMPISTRM_59
-            Groups: sse42
-            0x4008e6:	pcmpistrm	xmm1, xmm2, 0x71
+        """Instruction PCMPISTRM_59
+        Groups: sse42
+        0x4008e6:   pcmpistrm       xmm1, xmm2, 0x71
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29418,9 +29418,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_6_symbolic(self):
-        """ Instruction PCMPISTRM_6
-            Groups: sse42
-            0x400808:	pcmpistrm	xmm1, xmm2, 0x28
+        """Instruction PCMPISTRM_6
+        Groups: sse42
+        0x400808:   pcmpistrm       xmm1, xmm2, 0x28
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29496,9 +29496,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_60_symbolic(self):
-        """ Instruction PCMPISTRM_60
-            Groups: sse42
-            0x4008d4:	pcmpistrm	xmm1, xmm2, 0x6c
+        """Instruction PCMPISTRM_60
+        Groups: sse42
+        0x4008d4:   pcmpistrm       xmm1, xmm2, 0x6c
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29574,9 +29574,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_61_symbolic(self):
-        """ Instruction PCMPISTRM_61
-            Groups: sse42
-            0x400796:	pcmpistrm	xmm1, xmm2, 1
+        """Instruction PCMPISTRM_61
+        Groups: sse42
+        0x400796:   pcmpistrm       xmm1, xmm2, 1
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29652,9 +29652,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_62_symbolic(self):
-        """ Instruction PCMPISTRM_62
-            Groups: sse42
-            0x40083e:	pcmpistrm	xmm1, xmm2, 0x39
+        """Instruction PCMPISTRM_62
+        Groups: sse42
+        0x40083e:   pcmpistrm       xmm1, xmm2, 0x39
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29730,9 +29730,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_63_symbolic(self):
-        """ Instruction PCMPISTRM_63
-            Groups: sse42
-            0x400790:	pcmpistrm	xmm1, xmm2, 0
+        """Instruction PCMPISTRM_63
+        Groups: sse42
+        0x400790:   pcmpistrm       xmm1, xmm2, 0
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29808,9 +29808,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_64_symbolic(self):
-        """ Instruction PCMPISTRM_64
-            Groups: sse42
-            0x4007c0:	pcmpistrm	xmm1, xmm2, 0x10
+        """Instruction PCMPISTRM_64
+        Groups: sse42
+        0x4007c0:   pcmpistrm       xmm1, xmm2, 0x10
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29886,9 +29886,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_7_symbolic(self):
-        """ Instruction PCMPISTRM_7
-            Groups: sse42
-            0x4007f0:	pcmpistrm	xmm1, xmm2, 0x20
+        """Instruction PCMPISTRM_7
+        Groups: sse42
+        0x4007f0:   pcmpistrm       xmm1, xmm2, 0x20
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29964,9 +29964,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_8_symbolic(self):
-        """ Instruction PCMPISTRM_8
-            Groups: sse42
-            0x40086e:	pcmpistrm	xmm1, xmm2, 0x49
+        """Instruction PCMPISTRM_8
+        Groups: sse42
+        0x40086e:   pcmpistrm       xmm1, xmm2, 0x49
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -30042,9 +30042,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(Z3Solver.instance().check(temp_cs))
 
     def test_PCMPISTRM_9_symbolic(self):
-        """ Instruction PCMPISTRM_9
-            Groups: sse42
-            0x400862:	pcmpistrm	xmm1, xmm2, 0x45
+        """Instruction PCMPISTRM_9
+        Groups: sse42
+        0x400862:   pcmpistrm       xmm1, xmm2, 0x45
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
