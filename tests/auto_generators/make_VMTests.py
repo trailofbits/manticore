@@ -7,11 +7,16 @@ This script generates VMTests that are used to check EVM's Istanbul fork correct
 cd manticore/tests/ && mkdir -p  ethereum_vm/VMTests_concrete 
 git clone https://github.com/ethereum/tests --depth=1
 
+#(At manticore/tests/ folder)
 ## Get help
-python make_VMTest.py --help 
+python auto_generators/make_VMTest.py --help 
 
 ## Generate concrete tests:
-for i in  tests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python make_VMTest.py -i $i --fork Istanbul -o ethereum_vm/VMTests_concrete; done
+for i in  tests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python auto_generators/make_VMTest.py -i $i --fork Istanbul -o ethereum_vm/VMTests_concrete; done
+
+
+#Dependencies
+pip install py_evm
 
 """
 import argparse
@@ -90,6 +95,7 @@ class Log(rlp.Serializable):
 consts.mprocessing = consts.mprocessing.single
 consts = config.get_group('evm')
 consts.oog = 'pedantic'
+consts.gas = 'insane'
 
 class EVMTest(unittest.TestCase):
     # https://nose.readthedocs.io/en/latest/doc_tests/test_multiprocess/multiprocess.html#controlling-distribution
@@ -113,8 +119,8 @@ def gen_body(name, testcase):
     body = f'''
     def test_{name}(self):
         """
-        Testcase taken from https://github.com/ethereum/tests
         Source: {testcase['_info']['source']} 
+        Testcase taken from https://github.com/ethereum/tests
         """
         class UsedGas(Plugin):
             @property

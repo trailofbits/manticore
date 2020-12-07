@@ -2142,7 +2142,7 @@ class EVM(Eventful):
     # Logging Operations
     def LOG_gas(self, address, size, *topics):
         GLOGBYTE = 8
-        feee = self.safe_mul(size, GLOGBYTE)
+        fee = self.safe_mul(size, GLOGBYTE)
         fee += self._get_memfee(address, size)
         return fee
 
