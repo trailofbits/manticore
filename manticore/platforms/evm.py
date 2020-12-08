@@ -117,7 +117,6 @@ consts.add(
 consts.add("ignore_balance", default=False, description="Do not try to solve symbolic balances")
 
 
-
 # Auxiliary constants and functions
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
