@@ -194,7 +194,7 @@ class Manticore(ManticoreBase):
         if not state.can_be_true(assertion):
             logger.info(str(state.cpu))
             logger.info(
-                "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.pc, program
+                "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.PC, program
             )
             raise TerminateState()
 
