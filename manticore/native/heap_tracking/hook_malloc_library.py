@@ -50,7 +50,7 @@ def hook_mmap_return(state: State):
     be inside malloc or another function inside of malloc which calls munmap), post execution of the
     munmap call.
     """
-    ret_val = state.cpu.read_register("RAX")
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
     logger.info(f"mmap ret val: {hex(ret_val)}")
 
     state.context["malloc_lib"].process_mmap(ret_val, state.context["mmap_args"])
@@ -65,15 +65,14 @@ def hook_mmap(state: State):
     be inside the free or another function inside of free which calls mmap), post execution of the
     mmap call.
     """
-    # TODO(Sonya): per Eric's suggestion -
-    #  check out manticore invoke model code to find function that will extract all these args
     args = []
-    args.append(state.cpu.read_register("RDI"))  # void *addr
-    args.append(state.cpu.read_register("RSI"))  # size_t length
-    args.append(state.cpu.read_register("RDX"))  # int prot
-    args.append(state.cpu.read_register("RCX"))  # int flags
-    args.append(state.cpu.read_register("R8"))  # int fd
-    args.append(state.cpu.read_register("R9"))  # off_t offset
+    args_gen = state._platform._function_abi.get_arguments()
+    args.append(state.cpu.read_register(next(args_gen)))  # void *addr
+    args.append(state.cpu.read_register(next(args_gen)))  # size_t length
+    args.append(state.cpu.read_register(next(args_gen)))  # int prot
+    args.append(state.cpu.read_register(next(args_gen)))  # int flags
+    args.append(state.cpu.read_register(next(args_gen)))  # int fd
+    args.append(state.cpu.read_register(next(args_gen)))  # off_t offset
     logger.info(f"Invoking mmap in malloc. Args {args}")
     state.context["mmap_args"] = args
 
@@ -90,7 +89,7 @@ def hook_sbrk_return(state: State):
     """ Hook to process sbrk return information and remove the hook to itself at the callsite to sbrk,
     post execution of the sbrk function.
     """
-    ret_val = state.cpu.read_register("RAX")
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
     logger.info(f"sbrk ret val: {hex(ret_val)}")
 
     state.context["malloc_lib"].process_sbrk(ret_val, state.context["sbrk_size"])
@@ -105,8 +104,8 @@ def hook_sbrk(state: State):
     be inside malloc or another function inside of malloc which calls sbrk), post execution of the
     sbrk call.
     """
-    # Get %rdi is first arg reg get request size from it
-    request_size = state.cpu.read_register("RDI")
+    # Get request size from arg1
+    request_size = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
     logger.info(f"Invoking sbrk in malloc. Request Size {request_size}")
     state.context["sbrk_size"] = request_size
 
@@ -119,18 +118,18 @@ def hook_malloc_return(state: State):
     """ Hook to process malloc information and remove function hooks at the return address, 
     post execution of the malloc function.
     """
-    ret_val = state.cpu.read_register("RAX")
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
     logger.info(f"malloc ret val: {hex(ret_val)}")
     state.context["malloc_lib"].process_malloc(ret_val, state.context["malloc_size"])
     del state.context["malloc_size"]
 
     if HOOK_SBRK_INFO:
         logger.debug((f"Unhooking sbrk in state: {state.id}"))
-        #state.remove_hook(state.context["sbrk"], hook_sbrk)
+        # state.remove_hook(state.context["sbrk"], hook_sbrk)
 
     if HOOK_MMAP_INFO:
         logger.debug(f"Unhooking mmap in state: {state.id}")
-        #state.remove_hook(state.context["mmap"], hook_mmap)
+        # state.remove_hook(state.context["mmap"], hook_mmap)
 
     logger.debug(f"Unhooking malloc return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_malloc_return)
@@ -143,7 +142,7 @@ def hook_malloc(state: State):
     pre-execution of the malloc function.
     """
     # Get request size
-    malloc_size = state.cpu.read_register("RDI")
+    malloc_size = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
     logger.info(f"Invoking malloc for size: {malloc_size}")
     state.context["malloc_size"] = malloc_size
 
@@ -151,12 +150,12 @@ def hook_malloc(state: State):
     if HOOK_SBRK_INFO:
         logger.debug(f"Adding Hook for sbrk in state: {state.id}")
         # state.add_hook("sbrk", hook_sbrk, after=False)
-        #state.add_hook(state.context["sbrk"], hook_sbrk, after=False)
+        # state.add_hook(state.context["sbrk"], hook_sbrk, after=False)
 
     # Hook mmap
     if HOOK_MMAP_INFO:
         logger.debug(f"Adding Hook for mmap in state: {state.id}")
-        #state.add_hook(state.context["mmap"], hook_mmap, after=False)
+        # state.add_hook(state.context["mmap"], hook_mmap, after=False)
 
     # Hook Return Address
     if HOOK_MALLOC_RETURN:
@@ -169,7 +168,7 @@ def hook_munmap_return(state: State):
     be inside malloc or another function inside of malloc which calls munmap), post execution of the
     munmap call.
     """
-    ret_val = state.cpu.read_register("RAX")
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
     logger.info(f"munmap ret val: {hex(ret_val)}")
 
     logger.debug(f"Unhooking munmap return in malloc in state: {state.id}")
@@ -181,8 +180,9 @@ def hook_munmap(state: State):
     be inside the free or another function inside of free which calls munmap), post execution of the
     munmap call.
     """
-    addr = state.cpu.read_register("RDI")  # void *addr
-    length = state.cpu.read_register("RSI")  # size_t length
+    args_gen = state._platform._function_abi.get_arguments()
+    addr = state.cpu.read_register(next(args_gen))  # void *addr
+    length = state.cpu.read_register(next(args_gen))  # size_t length
     logger.info(f"Invoking munmap in malloc. Args {addr}, {length}")
 
     state.context["malloc_lib"].process_munmap(addr, length)
@@ -212,7 +212,7 @@ def hook_free(state: State):
     pre-execution of the free function.
     """
     # Get free address
-    free_address = state.cpu.read_register("RDI")
+    free_address = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
     logger.info(f"Attempting to free: {hex(free_address)}")
     state.context["malloc_lib"].process_free(free_address)
 

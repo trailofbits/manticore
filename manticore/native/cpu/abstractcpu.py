@@ -290,6 +290,16 @@ class Abi:
         """
         raise NotImplementedError
 
+    def get_return_reg(self):
+        """
+        Extract the location a return value will be written to. Produces
+        a string describing a register where the return value is written to.
+
+        :return: return register name
+        :rtype: string
+        """
+        raise NotImplementedError
+
     def write_result(self, result):
         """
         Write the result of a model back to the environment.

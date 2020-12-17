@@ -20,10 +20,15 @@ class MallocLibData:
         return f"malloc calls: {self.malloc_calls}\nfree calls: {self.free_calls}\nsbrk chunks: {self.sbrk_chunks}\nmmap chunks: {self.mmap_chunks}\n"
 
     def _save_to_file(self, state_id: int):
-        data = {'malloc_calls': self.malloc_calls, 'free_calls': self.free_calls, 'sbrk_chunks': self.sbrk_chunks, 'mmap_chunks': self.mmap_chunks}
+        data = {
+            "malloc_calls": self.malloc_calls,
+            "free_calls": self.free_calls,
+            "sbrk_chunks": self.sbrk_chunks,
+            "mmap_chunks": self.mmap_chunks,
+        }
         with open(f"m_out/malloc_{state_id}.json", "w+") as write_file:
             json.dump(data, write_file, indent=4)
-            
+
     # TODO(Sonya): Add some more methods here for helpful semantics of recording/retrieving information
     # Might want to annotate all this with instruction address information
     def process_malloc(self, ret_addr: int, size: int):
