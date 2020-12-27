@@ -42,7 +42,7 @@ import rlp
 logger = logging.getLogger(__name__)
 
 # Gas behaviour configuration
-# When gas is concrete the gas checks and calculation are pretty straigth forward
+# When gas is concrete the gas checks and calculation are pretty straight forward
 # Though Gas can became symbolic in normal bytecode execution for example at instructions
 # MSTORE, MSTORE8, EXP, ... and every instruction with internal operation restricted by gas
 # This configuration variable allows the user to control and perhaps relax the gas calculation
