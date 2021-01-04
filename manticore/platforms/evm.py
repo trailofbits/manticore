@@ -69,7 +69,7 @@ def globalfakesha3(data):
 
 consts.add(
     "oog",
-    default="complete",
+    default="ignore",
     description=(
         "Default behavior for symbolic gas."
         "pedantic: Fully faithful. Test at every instruction. Forks."
@@ -103,7 +103,9 @@ consts.add(
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 consts.add(
-    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
 )
 
 
@@ -1635,9 +1637,9 @@ class EVM(Eventful):
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
         """Compute Keccak-256 hash
-            If the size is symbolic the potential solutions will be sampled as
-            defined by the default policy and the analysis will be forked.
-            The `size` can be considered concrete in this handler.
+        If the size is symbolic the potential solutions will be sampled as
+        defined by the default policy and the analysis will be forked.
+        The `size` can be considered concrete in this handler.
 
         """
         data = self.read_buffer(start, size)
@@ -1703,8 +1705,8 @@ class EVM(Eventful):
         return Operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, offset, size):
-        """ To improve reporting we maintain how much of the calldata is actually
-        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly """
+        """To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly"""
         self._used_calldata_size = Operators.ITEBV(
             256, size != 0, self._used_calldata_size + offset + size, self._used_calldata_size
         )

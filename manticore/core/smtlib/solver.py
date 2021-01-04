@@ -63,7 +63,7 @@ consts.add(
 
 consts.add(
     "solver",
-    default=SolverType.z3,
+    default=SolverType.auto,
     description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
 )
 
@@ -168,7 +168,7 @@ Version = collections.namedtuple("Version", "major minor patch")
 
 class SmtlibProc:
     def __init__(self, command: str, debug: bool = False):
-        """ Single smtlib interactive process
+        """Single smtlib interactive process
 
         :param command: the shell command to execute
         :param debug: log all messaging
@@ -722,7 +722,7 @@ class Z3Solver(SMTLIBSolver):
 class YicesSolver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)"]
-        command = f"{consts.yices_bin} --timeout={consts.timeout * 1000}  --incremental"
+        command = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
         super().__init__(
             command=command,
             init=init,

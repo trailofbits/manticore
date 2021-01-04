@@ -32,30 +32,30 @@ logger = logging.getLogger(__name__)
 
 class Worker:
     """
-        A Manticore Worker.
-        This will run forever potentially in a different process. Normally it
-        will be spawned at Manticore constructor and will stay alive until killed.
-        A Worker can be in 3 phases: STANDBY, RUNNING, KILLED. And will react to
-        different events: start, stop, kill.
-        The events are transmitted via 2 conditional variable: m._killed and
-        m._started.
+    A Manticore Worker.
+    This will run forever potentially in a different process. Normally it
+    will be spawned at Manticore constructor and will stay alive until killed.
+    A Worker can be in 3 phases: STANDBY, RUNNING, KILLED. And will react to
+    different events: start, stop, kill.
+    The events are transmitted via 2 conditional variable: m._killed and
+    m._started.
 
-        .. code-block:: none
+    .. code-block:: none
 
-            STANDBY:   Waiting for the start event
-            RUNNING:   Exploring and spawning states until no more READY states or
-            the cancel event is received
-            KIlLED:    This is the end. No more manticoring in this worker process
+        STANDBY:   Waiting for the start event
+        RUNNING:   Exploring and spawning states until no more READY states or
+        the cancel event is received
+        KIlLED:    This is the end. No more manticoring in this worker process
 
-                         +---------+     +---------+
-                    +--->+ STANDBY +<--->+ RUNNING |
-                         +-+-------+     +-------+-+
-                           |                     |
-                           |      +--------+     |
-                           +----->+ KILLED <-----+
-                                  +----+---+
-                                       |
-                                       #
+                     +---------+     +---------+
+                +--->+ STANDBY +<--->+ RUNNING |
+                     +-+-------+     +-------+-+
+                       |                     |
+                       |      +--------+     |
+                       +----->+ KILLED <-----+
+                              +----+---+
+                                   |
+                                   #
     """
 
     def __init__(self, *, id, manticore, single=False):
@@ -197,9 +197,9 @@ class Worker:
 
 
 class WorkerSingle(Worker):
-    """ A single worker that will run in the current process and current thread.
-        As this will not provide any concurrency is normally only used for
-        profiling underlying arch emulation and debugging."""
+    """A single worker that will run in the current process and current thread.
+    As this will not provide any concurrency is normally only used for
+    profiling underlying arch emulation and debugging."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, single=True, **kwargs)
@@ -257,7 +257,10 @@ class DaemonThread(WorkerThread):
         thread as an argument.
         """
         logger.debug(
-            "Starting Daemon %d. (Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident(),
+            "Starting Daemon %d. (Pid %d Tid %d).",
+            self.id,
+            os.getpid(),
+            threading.get_ident(),
         )
 
         self._t = threading.Thread(target=self.run if target is None else target, args=(self,))
