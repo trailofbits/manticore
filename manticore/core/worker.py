@@ -328,7 +328,6 @@ class LogCaptureWorker(DaemonThread):
         )
 
         m = self.manticore
-        m._is_main = False
 
         try:
             with ReusableTCPServer((consts.HOST, consts.PORT), DumpTCPHandler) as server:
