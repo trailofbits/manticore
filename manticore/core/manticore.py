@@ -130,6 +130,8 @@ class ManticoreBase(Eventful):
         self._terminated_states = self._manager.list()
         self._busy_states = self._manager.list()
         self._killed_states = self._manager.list()
+        # The multiprocessing queue is much slower than the deque when it gets full, so we
+        # triple the size in order to prevent that from happening.
         self._log_queue = self._manager.Queue(15000)
         self._shared_context = self._manager.dict()
         self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
