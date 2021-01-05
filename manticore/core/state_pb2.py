@@ -217,7 +217,9 @@ _STATE = _descriptor.Descriptor(
     ],
     extensions=[],
     nested_types=[],
-    enum_types=[_STATE_STATETYPE,],
+    enum_types=[
+        _STATE_STATETYPE,
+    ],
     serialized_options=None,
     is_extendable=False,
     syntax="proto3",
