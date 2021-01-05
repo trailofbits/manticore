@@ -3119,6 +3119,9 @@ class EVMWorld(Platform):
             # As per EIP 161, contract accounts are initialized with a nonce of 1
             nonce = 1 if len(code) > 0 else 0
 
+        if isinstance(balance, BitVec):
+            balance = Operators.ZEXTEND(balance, 512)
+
         if address is None:
             address = self.new_address()
 
