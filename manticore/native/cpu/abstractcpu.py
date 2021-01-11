@@ -90,11 +90,7 @@ class ConcretizeRegister(CpuException):
     """
 
     def __init__(
-        self,
-        cpu: "Cpu",
-        reg_name: str,
-        message: Optional[str] = None,
-        policy: str = "MINMAX",
+        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
     ):
         self.message = message if message else f"Concretizing {reg_name}"
 

@@ -63,7 +63,7 @@ class EthDetectorTest(unittest.TestCase):
 
         dir = os.path.join(THIS_DIR, "contracts", "detectors")
         filepath = os.path.join(dir, f"{name}.sol")
-        print (filepath)
+        print(filepath)
         if use_ctor_sym_arg:
             ctor_arg: Tuple = (mevm.make_symbolic_value(),)
         else:

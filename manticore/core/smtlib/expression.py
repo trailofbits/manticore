@@ -944,11 +944,7 @@ class ArrayConstant(Array, Constant):
     __xslots__: Tuple[str, ...] = ("_index_size", "_value_size")
 
     def __init__(
-        self,
-        *,
-        index_size: int,
-        value_size: int,
-        **kwargs,
+        self, *, index_size: int, value_size: int, **kwargs,
     ):
         self._index_size = index_size
         self._value_size = value_size
@@ -1186,8 +1182,7 @@ class ArrayStore(ArrayOperation):
         #    self._concrete_cache[index.value] = value
 
         super().__init__(
-            operands=(array, index, value),
-            **kwargs,
+            operands=(array, index, value), **kwargs,
         )
 
     @property
@@ -1270,8 +1265,7 @@ class ArraySlice(ArrayOperation):
             raise ValueError("Array expected")
 
         super().__init__(
-            operands=(array, array.cast_index(offset), array.cast_index(size)),
-            **kwargs,
+            operands=(array, array.cast_index(offset), array.cast_index(size)), **kwargs,
         )
 
     @property
@@ -1308,9 +1302,7 @@ class ArraySlice(ArrayOperation):
 
     def store(self, index, value):
         return ArraySlice(
-            self.array.store(index + self.offset, value),
-            offset=self.offset,
-            size=len(self),
+            self.array.store(index + self.offset, value), offset=self.offset, size=len(self),
         )
 
     @property
@@ -1515,11 +1507,7 @@ class BitVecITE(BitVecOperation):
     __xslots__ = BitVecOperation.__xslots__
 
     def __init__(
-        self,
-        condition: Bool,
-        true_value: BitVec,
-        false_value: BitVec,
-        **kwargs,
+        self, condition: Bool, true_value: BitVec, false_value: BitVec, **kwargs,
     ):
 
         super().__init__(

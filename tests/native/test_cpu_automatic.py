@@ -12674,7 +12674,7 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            print (temp_cs)
+            print(temp_cs)
             self.assertTrue(solver.check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)

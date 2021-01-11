@@ -60,19 +60,19 @@ class NativeIntegrationTest(unittest.TestCase):
         t = time.time()
         with open(os.path.join(os.pardir, self.test_dir, "output.log"), "w") as output:
             cmd = [
-                    "coverage",
-                    "run",  # PYTHON_BIN,
-                    "-m",
-                    "manticore",
-                    "--workspace",
-                    workspace,
-                    "--core.timeout",
-                    "1",
-                    "--core.procs",
-                    "4",
-                    filename,
-                    "+++++++++",
-                ]
+                "coverage",
+                "run",  # PYTHON_BIN,
+                "-m",
+                "manticore",
+                "--workspace",
+                workspace,
+                "--core.timeout",
+                "1",
+                "--core.procs",
+                "4",
+                filename,
+                "+++++++++",
+            ]
 
             subprocess.check_call(cmd, stdout=output)
 

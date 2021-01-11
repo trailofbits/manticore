@@ -323,11 +323,7 @@ class StateBase(Eventful):
             avoid_collisions = True
         taint = options.get("taint", frozenset())
         expr = self._constraints.new_array(
-            name=label,
-            length=nbytes,
-            value_size=8,
-            taint=taint,
-            avoid_collisions=avoid_collisions,
+            name=label, length=nbytes, value_size=8, taint=taint, avoid_collisions=avoid_collisions,
         )
         self._input_symbols.append(expr)
 

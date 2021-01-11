@@ -366,11 +366,7 @@ def main():
     cryticparser.init(parser)
 
     parser.add_argument(
-        "source_code",
-        type=str,
-        nargs="*",
-        default=[],
-        help="Contract source code",
+        "source_code", type=str, nargs="*", default=[], help="Contract source code",
     )
     parser.add_argument(
         "-v", action="count", default=0, help="Specify verbosity level from -v to -vvvv"
@@ -391,9 +387,7 @@ def main():
         help="Show program version information",
     )
     parser.add_argument(
-        "--propconfig",
-        type=str,
-        help="Solidity property accounts config file (.yml)",
+        "--propconfig", type=str, help="Solidity property accounts config file (.yml)",
     )
     eth_flags = parser.add_argument_group("Ethereum flags")
 

@@ -559,7 +559,7 @@ class ExpressionTest(unittest.TestCase):
         d[expr2] = 2
         self.assertEqual(d[expr2], 2)
 
-        '''
+        """
         expr3 = expr1 + expr2
         expr4 = expr1 + expr2
         self.assertTrue(hash(expr3) == hash(expr4))
@@ -606,7 +606,7 @@ class ExpressionTest(unittest.TestCase):
         expr1 = BitVecConstant(size=32, value=10)
         expr2 = BitVecConstant(size=256, value=10)
         self.assertTrue(hash(expr1) != hash(expr2))
-        '''
+        """
 
     def testBasicArray256(self):
         cs = ConstraintSet()
@@ -738,7 +738,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(self.solver.must_be_true(cs, array == hw))
         self.assertEqual(len(array.read(0, 12)), 12)
         x = array.read(0, 12) == hw
-        
+
         self.assertTrue(self.solver.must_be_true(cs, array.read(0, 12) == hw))
         cs.add(array.read(6, 6) == hw[6:12])
         self.assertTrue(self.solver.must_be_true(cs, array.read(6, 6) == hw[6:12]))
@@ -800,7 +800,6 @@ class ExpressionTest(unittest.TestCase):
         # It should not be another solution for index
         self.assertFalse(self.solver.check(cs))
 
-
     def testBasicArrayProxySymbIdx2(self):
         cs = ConstraintSet()
         array = MutableArray(cs.new_array(index_size=32, value_size=32, name="array", default=100))
@@ -821,7 +820,6 @@ class ExpressionTest(unittest.TestCase):
             cs, array.select(1)
         )  # get a concrete solution for index 1 (default 100)
         self.assertItemsEqual(solutions, (100, 2))
-
 
     def testBasicConstatArray(self):
         cs = ConstraintSet()
@@ -960,8 +958,9 @@ class ExpressionTest(unittest.TestCase):
         )
 
         self.assertEqual(
-            translate_to_smtlib(aux, use_bindings=True), 
-            "(let ((!a_2! (store (store MEM #x00000000 #x61) #x00000001 #x62)) (!a_4! (store !a_2! #x00000003 (select !a_2! (bvadd VAR #x00000001)))) ) (select !a_4! (bvadd VAR ((_ zero_extend 24) (select !a_4! VAR)))))")
+            translate_to_smtlib(aux, use_bindings=True),
+            "(let ((!a_2! (store (store MEM #x00000000 #x61) #x00000001 #x62)) (!a_4! (store !a_2! #x00000003 (select !a_2! (bvadd VAR #x00000001)))) ) (select !a_4! (bvadd VAR ((_ zero_extend 24) (select !a_4! VAR)))))",
+        )
 
         values = arr[0:2]
         self.assertEqual(len(values), 2)
@@ -1361,7 +1360,6 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a == d)
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), 7)
-
 
         solver = Z3Solver.instance()
         cs1 = ConstraintSet()
