@@ -300,7 +300,7 @@ class ConstantFolderSimplifier(Visitor):
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].value
             b = operands[1].value
-            if a == 0:
+            if b == 0:
                 ret = 0
             else:
                 ret = math.trunc(Decimal(a) / Decimal(b))
