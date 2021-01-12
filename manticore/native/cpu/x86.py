@@ -2079,7 +2079,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         """
         source = dest.read()
-        res = dest.write(-source)
+        res = dest.write((~source) + 1)
         cpu._calculate_logic_flags(dest.size, res)
         cpu.CF = source != 0
         cpu.AF = (res & 0x0F) != 0x00
