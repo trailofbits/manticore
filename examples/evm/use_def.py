@@ -41,6 +41,8 @@ print(source_code)
 class EVMUseDef(Plugin):
     def did_evm_write_storage_callback(self, state, address, offset, value):
         m = self.manticore
+        if not m:
+            return
         world = state.platform
         tx = world.all_transactions[-1]
         md = m.get_metadata(tx.address)
@@ -55,6 +57,8 @@ class EVMUseDef(Plugin):
 
     def did_evm_read_storage_callback(self, state, address, offset, value):
         m = self.manticore
+        if not m:
+            return
         world = state.platform
         tx = world.all_transactions[-1]
         md = m.get_metadata(tx.address)

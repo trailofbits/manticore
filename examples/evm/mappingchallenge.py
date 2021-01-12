@@ -30,22 +30,24 @@ class StopAtDepth(Detector):
     """ This just aborts explorations that are too deep """
 
     def will_run_callback(self, *args):
-        with self.manticore.locked_context("seen_rep", dict) as reps:
-            reps.clear()
+        if self.manticore:
+            with self.manticore.locked_context("seen_rep", dict) as reps:
+                reps.clear()
 
     def will_decode_instruction_callback(self, state, pc):
         world = state.platform
-        with self.manticore.locked_context("seen_rep", dict) as reps:
-            item = (
-                world.current_transaction.sort == "CREATE",
-                world.current_transaction.address,
-                pc,
-            )
-            if not item in reps:
-                reps[item] = 0
-            reps[item] += 1
-            if reps[item] > 2:
-                state.abandon()
+        if self.manticore:
+            with self.manticore.locked_context("seen_rep", dict) as reps:
+                item = (
+                    world.current_transaction.sort == "CREATE",
+                    world.current_transaction.address,
+                    pc,
+                )
+                if not item in reps:
+                    reps[item] = 0
+                reps[item] += 1
+                if reps[item] > 2:
+                    state.abandon()
 
 
 m.register_plugin(StopAtDepth())

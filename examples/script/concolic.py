@@ -16,6 +16,7 @@ Bugs
 import queue
 import struct
 import itertools
+from typing import Any
 
 from manticore import set_verbosity
 from manticore.native import Manticore
@@ -66,21 +67,21 @@ def flip(constraint):
     """
     flips a constraint (Equal)
 
-    (Equal (BitvecITE Cond IfC ElseC) IfC)
+    (Equal (BitVecITE Cond IfC ElseC) IfC)
         ->
-    (Equal (BitvecITE Cond IfC ElseC) ElseC)
+    (Equal (BitVecITE Cond IfC ElseC) ElseC)
     """
     equal = copy.copy(constraint)
 
     assert len(equal.operands) == 2
     # assume they are the equal -> ite form that we produce on standard branches
     ite, forcepc = equal.operands
-    if not (isinstance(ite, BitvecITE) and isinstance(forcepc, BitvecConstant)):
+    if not (isinstance(ite, BitVecITE) and isinstance(forcepc, BitVecConstant)):
         return constraint
-    assert isinstance(ite, BitvecITE) and isinstance(forcepc, BitvecConstant)
+    assert isinstance(ite, BitVecITE) and isinstance(forcepc, BitVecConstant)
     assert len(ite.operands) == 3
     cond, iifpc, eelsepc = ite.operands
-    assert isinstance(iifpc, BitvecConstant) and isinstance(eelsepc, BitvecConstant)
+    assert isinstance(iifpc, BitVecConstant) and isinstance(eelsepc, BitVecConstant)
 
     equal._operands = (equal.operands[0], eelsepc if forcepc.value == iifpc.value else iifpc)
 
@@ -234,7 +235,7 @@ def constraints_are_sat(cons):
 
 
 def get_new_constrs_for_queue(oldcons, newcons):
-    ret = []
+    ret: List[Any] = []
 
     # i'm pretty sure its correct to assume newcons is a superset of oldcons
 
@@ -299,7 +300,7 @@ def concrete_input_to_constraints(ci, prev=None):
 
 def main():
 
-    q = queue.Queue()
+    q: queue.Queue = queue.Queue()
 
     # todo randomly generated concrete start
     stdin = ints2inp(0, 5, 0)

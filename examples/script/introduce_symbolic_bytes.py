@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import capstone
 
 from manticore import issymbolic
 from manticore.native import Manticore
@@ -64,7 +65,6 @@ if __name__ == "__main__":
         state.cpu.write_int(state.cpu.RBP - 0xC, val, 32)
 
     def has_tainted_operands(operands, taint_id):
-        # type: (list[manticore.core.cpu.abstractcpu.Operand], object) -> bool
         for operand in operands:
             op = operand.read()
             if issymbolic(op) and taint_id in op.taint:

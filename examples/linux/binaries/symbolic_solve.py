@@ -1,4 +1,4 @@
-from manticore import Manticore
+from manticore.native import Manticore
 
 
 def fixme():
