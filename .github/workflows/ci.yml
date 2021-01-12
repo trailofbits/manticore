@@ -16,9 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.6
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: '3.6'
     - name: Lint
       if: github.event_name == 'pull_request'
       env:
@@ -46,9 +46,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: '3.6'
     - name: Install NPM
       uses: actions/setup-node@v1
       with:
@@ -98,9 +98,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.6
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: '3.6'
     - name: Build Dist
       run: |
         python3 -m pip install wheel
