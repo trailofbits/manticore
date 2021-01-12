@@ -70,6 +70,7 @@ setup(
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
+        "toposort",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
