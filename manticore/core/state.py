@@ -180,6 +180,10 @@ class StateBase(Eventful):
         self._manticore = manticore
         self._platform = platform
         self._constraints = constraints
+        self._platform._constraints = constraints
+        self._platform.state=self
+        self._input_symbols = list()
+
         self._child = None
         self._context = dict()
 
@@ -206,6 +210,8 @@ class StateBase(Eventful):
     def __setstate__(self, state):
         super().__setstate__(state)
         self._platform = state["platform"]
+        self._platform.state=self
+
         self._constraints = state["constraints"]
         self._child = state["child"]
         self._context = state["context"]

@@ -645,7 +645,7 @@ class SMTLIBSolver(Solver):
         ####################
         values = []
         start = time.time()
-        # with constraints.related_to(*expressions) as temp_cs:
+        #with constraints.related_to(*expressions) as temp_cs:
         with constraints as temp_cs:
             for expression in expressions:
                 bucket = self._cache.setdefault(hash(constraints), {})
@@ -673,7 +673,7 @@ class SMTLIBSolver(Solver):
                         expression_i = expression[i]
                         if issymbolic(expression_i):
                             subvar = temp_cs.new_bitvec(expression.value_size)
-                            temp_cs.add(subvar == simplify(expression[i]))
+                            temp_cs.add(subvar == expression[i])
                             var.append(subvar)
                         else:
                             var.append(expression_i)
@@ -687,11 +687,10 @@ class SMTLIBSolver(Solver):
                             result.append(self.__getvalue_bv(var[i].name))
                         else:
                             result.append(var[i])
-
                     values.append(bytes(result))
                     bucket[hash(expression)] = values[-1]
                     if time.time() - start > consts.timeout:
-                        raise SolverError("Timeout")
+                        raise SolverError(f"Timeout {expressions}")
                     continue
 
                 temp_cs.add(var == expression)

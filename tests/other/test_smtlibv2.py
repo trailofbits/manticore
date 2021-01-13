@@ -478,29 +478,29 @@ class ExpressionTest(unittest.TestCase):
 
     def testBool1(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.AND(bf, bt))
         self.assertFalse(self.solver.check(cs))
 
     def testBool2(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.AND(bf, bt, bt, bt))
         self.assertFalse(self.solver.check(cs))
 
     def testBool3(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.AND(bt, bt, bf, bt))
         self.assertFalse(self.solver.check(cs))
 
     def testBool4(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.OR(True, bf))
         cs.add(Operators.OR(bt, bt, False))
         self.assertTrue(self.solver.check(cs))
@@ -926,8 +926,8 @@ class ExpressionTest(unittest.TestCase):
         consts.optimize = True
 
     def testBool_nonzero(self):
-        self.assertTrue(BoolConstant(True).__bool__())
-        self.assertFalse(BoolConstant(False).__bool__())
+        self.assertTrue(BoolConstant(value=True).__bool__())
+        self.assertFalse(BoolConstant(value=False).__bool__())
 
     def test_visitors(self):
         solver = Z3Solver.instance()
@@ -1070,8 +1070,8 @@ class ExpressionTest(unittest.TestCase):
 
     def test_simplify_OR(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         var = cs.new_bool()
         cs.add(simplify(Operators.OR(var, var)) == var)
         cs.add(simplify(Operators.OR(var, bt)) == bt)

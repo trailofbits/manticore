@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.4.24;
 
 contract Overflow {
     uint private sellerBalance=10;

@@ -71,7 +71,7 @@ consts.add(
     "oog",
     default="complete",
     description=(
-        "Default behavior for symbolic gas."
+        "Default behavior for symbolic out of gas exception."
         "pedantic: Fully faithful. Test at every instruction. Forks."
         "complete: Mostly faithful. Test at BB limit. Forks."
         "concrete: Incomplete. Concretize gas to MIN/MAX values. Forks."
@@ -133,7 +133,8 @@ def ceil32(x):
 
 
 def to_signed(i):
-    return Operators.ITEBV(256, i < TT255, i, i - TT256)
+    i &= ((1<<256)-1)
+    return Operators.ITEBV(256, Operators.EXTRACT(i, 255, 1) == 0, i, -((1 << 256) - i))
 
 
 class Transaction:
@@ -832,14 +833,11 @@ class EVM(Eventful):
         self._failed = False
 
     def fail_if(self, failed):
-        old_failed = self.constraints.new_bool()
-        self.constraints.add(old_failed == self._failed)
-        self._failed = Operators.OR(old_failed, failed)
+        self._failed = Operators.OR(self._failed, failed)
 
     def is_failed(self):
         if isinstance(self._failed, bool):
             return self._failed
-
         self._failed = simplify(self._failed)
         if isinstance(self._failed, Constant):
             return self._failed.value
@@ -1335,10 +1333,9 @@ class EVM(Eventful):
 
             raise Concretize("Symbolic PC", expression=expression, setstate=setstate, policy="ALL")
         try:
-            if getattr(getattr(self, self.instruction.semantics, None), "_pos", None) is None:
-                print(self)
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
+
             result = self._handler(*arguments)
             self._advance(result)
         except ConcretizeGas as ex:
@@ -2424,11 +2421,7 @@ class EVM(Eventful):
         for i in list(reversed(self.stack))[:10]:
             argname = args.get(sp, "")
             if issymbolic(i):
-                r = "{:>12s} {:66s} {:s}".format(
-                    argname,
-                    "[%x-%x]" % SelectedSolver.instance().minmax(self.constraints, i),
-                    str(i.taint),
-                )
+                r = "{:>12s}".format(argname)
             else:
                 r = "{:>12s} 0x{:064x}".format(argname, i)
             sp += 1
@@ -2598,8 +2591,8 @@ class EVMWorld(Platform):
         return self._fork
 
     def _transaction_fee(self, sort, address, price, bytecode_or_data, caller, value):
-        return 0
-        if consts.oog == "ignore":
+        return 21000
+        if consts.tx_fee == "ignore":
             return 0
 
         GTXCREATE = (
@@ -2613,7 +2606,7 @@ class EVMWorld(Platform):
         else:
             tx_fee = GTRANSACTION  # Simple transaction fee
 
-        # This is INSANE TDO FIXME
+        # This is INSANE TODO FIXME
         # This popcnt like thing is expensive when the bytecode or
         # data has symbolic content
 
@@ -2633,9 +2626,7 @@ class EVMWorld(Platform):
         tx_fee += zerocount * GTXDATAZERO
         tx_fee += nonzerocount * GTXDATANONZERO
 
-        x = self.constraints.new_bitvec(size=512)
-        self.constraints.add(x == simplify(Operators.ZEXTEND(tx_fee, 512)))
-        return x
+        return Operators.ZEXTEND(tx_fee, 512)
 
     def _make_vm_for_tx(self, tx):
         if tx.sort == "CREATE":
@@ -2984,7 +2975,7 @@ class EVMWorld(Platform):
     def get_balance(self, address):
         if address not in self._world_state:
             return 0
-        return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
+        return simplify(Operators.EXTRACT(self._world_state[address]["balance"], 0, 256))
 
     def account_exists(self, address):
         if address not in self._world_state:
@@ -3385,7 +3376,7 @@ class EVMWorld(Platform):
                 aux_value = Operators.ZEXTEND(value, 512)
                 enough_balance = Operators.UGE(aux_src_balance, aux_value)
                 if self.depth == 0:  # the tx_fee is taken at depth 0
-                    # take the gas from the balance
+                    # take the gas from t"he balance
                     aux_price = Operators.ZEXTEND(price, 512)
                     aux_gas = Operators.ZEXTEND(gas, 512)
                     aux_fee = aux_price * aux_gas

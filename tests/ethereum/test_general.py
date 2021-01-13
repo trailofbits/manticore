@@ -454,11 +454,12 @@ class EthInstructionTests(unittest.TestCase):
         constraints, world, vm = self._make()
         xx = constraints.new_bitvec(256, name="x")
         yy = constraints.new_bitvec(256, name="y")
-        constraints.add(xx == 0x20)
-        constraints.add(yy == -1)
+        x, y = 0x20, -1
+        constraints.add(xx == x)
+        constraints.add(yy == y)
         result = vm.SDIV(xx, yy)
         self.assertListEqual(
-            list(map(evm.to_signed, solver.get_all_values(constraints, result))), [-0x20]
+            list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)]
         )
 
     def test_SDIVSx(self):
@@ -466,14 +467,32 @@ class EthInstructionTests(unittest.TestCase):
         constraints, world, vm = self._make()
         xx = constraints.new_bitvec(256, name="x")
         yy = constraints.new_bitvec(256, name="y")
+        zz = constraints.new_bitvec(256, name="z")
         constraints.add(xx == x)
         constraints.add(yy == y)
 
         result = vm.SDIV(xx, yy)
+        constraints.add(zz == result)
+        self.assertListEqual(
+            list(map(evm.to_signed, solver.get_all_values(constraints, zz))), [vm.SDIV(x, y)]
+        )
         self.assertListEqual(
             list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)]
         )
 
+    def test_to_sig(self):
+        self.assertEqual(evm.to_signed(-1), -1)
+        self.assertEqual(evm.to_signed(1), 1)
+        self.assertEqual(evm.to_signed(0), 0)
+        self.assertEqual(evm.to_signed(-2), -2)
+        self.assertEqual(evm.to_signed(2), 2)
+        self.assertEqual(evm.to_signed(0), 0)
+        self.assertEqual(evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000001), -0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000002), -0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
+        self.assertEqual(evm.to_signed(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(evm.to_signed(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), -1)
+        self.assertEqual(evm.to_signed( 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe), -2)
+        
 
 class EthTests(unittest.TestCase):
     def setUp(self):
@@ -555,6 +574,7 @@ class EthTests(unittest.TestCase):
         )
 
     def test_create_contract_with_string_args(self):
+        import pdb; pdb.set_trace()
         source_code = (
             "contract DontWork1{ string s; constructor(string memory s_) public{ s = s_;} }"
         )
@@ -1295,7 +1315,6 @@ class EthTests(unittest.TestCase):
                         func_name, args = ABI.deserialize(
                             "shutdown(string)", state.platform.current_transaction.data
                         )
-                        print("Shutdown", to_constant(args[0]))
                         self.manticore.shutdown()
                     elif func_id == ABI.function_selector("can_be_true(bool)"):
                         func_name, args = ABI.deserialize(
@@ -1741,6 +1760,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         # check balances
         self.assertEqual(world.get_balance(0x111111111111111111111111111111111111111), 0)
         self.assertEqual(world.get_balance(0x222222222222222222222222222222222222222), 10)
+        import pdb;pdb.set_trace()
         self.assertEqual(
             world.get_balance(0x333333333333333333333333333333333333333),
             100000000000000000000000 - 10,

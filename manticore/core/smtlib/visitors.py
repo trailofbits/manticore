@@ -311,21 +311,21 @@ class ConstantFolderSimplifier(Visitor):
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a < b, taint=expression.taint)
+            return BoolConstant(value=a < b, taint=expression.taint)
         return None
 
     def visit_BoolLessOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a <= b, taint=expression.taint)
+            return BoolConstant(value=a <= b, taint=expression.taint)
         return None
 
     def visit_BoolGreaterThan(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a > b, taint=expression.taint)
+            return BoolConstant(value=a > b, taint=expression.taint)
         return None
 
     def visit_BoolGreaterOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
@@ -336,6 +336,7 @@ class ConstantFolderSimplifier(Visitor):
         return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        return None
         if all(isinstance(o, Constant) for o in operands):
             signmask = operands[0].signmask
             mask = operands[0].mask
@@ -393,7 +394,7 @@ class ConstantFolderSimplifier(Visitor):
                 return BitVecConstant(expression.size, value, taint=expression.taint)
             else:
                 isinstance(expression, Bool)
-                return BoolConstant(value, taint=expression.taint)
+                return BoolConstant(value=value, taint=expression.taint)
 
 
 @lru_cache(maxsize=128, typed=True)
@@ -490,7 +491,7 @@ class ArithmeticSimplifier(Visitor):
                     return BoolNot(operands[0].operands[0], taint=expression.taint)
 
         if operands[0] is operands[1]:
-            return BoolConstant(True, taint=expression.taint)
+            return BoolConstant(value=True, taint=expression.taint)
 
         if isinstance(operands[0], BitVecExtract) and isinstance(operands[1], BitVecExtract):
             if (
@@ -499,7 +500,7 @@ class ArithmeticSimplifier(Visitor):
                 and operands[0].begining == operands[1].begining
             ):
 
-                return BoolConstant(True, taint=expression.taint)
+                return BoolConstant(value=True, taint=expression.taint)
 
     def visit_BoolOr(self, expression, a, b):
         if isinstance(a, Constant):
@@ -645,6 +646,21 @@ class ArithmeticSimplifier(Visitor):
                 taint=expression.taint,
             )
 
+    def visit_BitVecMul(self, expression, *operands):
+        left = operands[0]
+        right = operands[1]
+        if isinstance(right, BitVecConstant):
+            if right.value == 1:
+                return left
+            if right.value == 0:
+                return right
+        if isinstance(left, BitVecConstant):
+            if left.value == 1:
+                return right
+            if left.value == 0:
+                return left
+
+
     def visit_BitVecAdd(self, expression, *operands):
         """a + 0  ==> a
         0 + a  ==> a
@@ -783,9 +799,10 @@ class ArithmeticSimplifier(Visitor):
         assert not isinstance(expression, Operation)
         return expression
 
-
+import time
 @lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
+    start = time.time()
     if not isinstance(expression, Expression):
         return expression
     simp = ArithmeticSimplifier()
@@ -819,17 +836,7 @@ def to_constant(expression):
     return value
 
 
-@lru_cache(maxsize=128, typed=True)
-def simplify(expression):
-    simplified = arithmetic_simplify(expression)
-
-    def t(x):
-        try:
-            return translate_to_smtlib(x)
-        except:
-            return str(x)
-
-    return simplified
+simplify = arithmetic_simplify
 
 
 class CountExpressionUse(Visitor):
@@ -858,7 +865,7 @@ class TranslatorSmtlib(Translator):
         assert "bindings" not in kw
         super().__init__(*args, **kw)
         self._unique = 0
-        self.use_bindings = False  # use_bindings
+        self.use_bindings = use_bindings
         self._bindings_cache_exp = {}
         self._bindings = {}
         self._variables = set()
@@ -1009,13 +1016,17 @@ class TranslatorSmtlib(Translator):
             result += f"(assert {self.apply_bindings(constraint_str)})\n"
         return result
 
+@lru_cache(maxsize=128, typed=True)
+def _translate_to_smtlib(expression, use_bindings=True, **kwargs):
+    translator = TranslatorSmtlib(use_bindings=use_bindings, **kwargs)
+    translator.visit(expression)
+    return translator.result
 
 def translate_to_smtlib(expression, use_bindings=True, **kwargs):
     if isinstance(expression, MutableArray):
         expression = expression.array
-    translator = TranslatorSmtlib(use_bindings=use_bindings, **kwargs)
-    translator.visit(expression)
-    return translator.result
+    result = _translate_to_smtlib(expression, use_bindings=use_bindings, **kwargs)
+    return result
 
 
 class Replace(Visitor):
@@ -1100,10 +1111,6 @@ class GetBindings(Visitor):
     def visit_Operation(self, expression, *operands):
         try:
             self.expressions[expression] += 1
-            import pdb
-
-            pdb.set_trace()
-            print("A TWO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 222222222222222222222222222222222")
         except KeyError as e:
             self.expressions[expression] = 1
 

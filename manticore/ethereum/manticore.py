@@ -1407,6 +1407,7 @@ class ManticoreEVM(ManticoreBase):
         return state.can_be_true(True)
 
     def fix_unsound_symbolication(self, state):
+        logger.info(f"Starting unsound symbolication search for {state.id}")
         soundcheck = state.context.get("soundcheck", None)
         if soundcheck is not None:
             return soundcheck
@@ -1416,6 +1417,7 @@ class ManticoreEVM(ManticoreBase):
             state.context["soundcheck"] = self.fix_unsound_symbolication_fake(state)
         else:
             state.context["soundcheck"] = True
+        logger.info(f"Done unsound symbolication search for {state.id}")
         return state.context["soundcheck"]
 
     def _terminate_state_callback(self, state, e):

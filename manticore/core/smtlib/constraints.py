@@ -97,7 +97,7 @@ class ConstraintSet:
         :param constraint: The constraint to add to the set.
         """
         if isinstance(constraint, bool):
-            constraint = BoolConstant(constraint)
+            constraint = BoolConstant(value=constraint)
         assert isinstance(constraint, Bool)
         constraint = simplify(constraint)
 
