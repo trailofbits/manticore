@@ -1,7 +1,8 @@
 import copy
 import logging
+from typing import Optional
 
-from .smtlib import solver, Bool, issymbolic, BitVecConstant, MutableArray
+from .smtlib import Bool, issymbolic, BitVecConstant, MutableArray
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils import config
@@ -174,14 +175,14 @@ class StateBase(Eventful):
 
     _published_events = {"execution_intermittent"}
 
-    def __init__(self, constraints, platform, **kwargs):
+    def __init__(self, *, constraints: "Constraints", platform: "Platform", manticore: Optional["ManticoreBase"] = None, **kwargs):
         super().__init__(**kwargs)
+        self._manticore = manticore
         self._platform = platform
         self._constraints = constraints
-        self._platform.constraints = constraints
-        self._input_symbols = list()
         self._child = None
         self._context = dict()
+
         self._terminated_by = None
         self._solver = EventSolver()
         self._total_exec = 0
@@ -189,15 +190,15 @@ class StateBase(Eventful):
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._solver)
-        self.forward_events_from(platform)
+        platform.set_state(self)
 
     def __getstate__(self):
         state = super().__getstate__()
         state["platform"] = self._platform
         state["constraints"] = self._constraints
-        state["input_symbols"] = self._input_symbols
         state["child"] = self._child
         state["context"] = self._context
+
         state["terminated_by"] = self._terminated_by
         state["exec_counter"] = self._total_exec
         return state
@@ -206,9 +207,10 @@ class StateBase(Eventful):
         super().__setstate__(state)
         self._platform = state["platform"]
         self._constraints = state["constraints"]
-        self._input_symbols = state["input_symbols"]
         self._child = state["child"]
         self._context = state["context"]
+        self._manticore = None
+
         self._terminated_by = state["terminated_by"]
         self._total_exec = state["exec_counter"]
         self._own_exec = 0
@@ -216,7 +218,7 @@ class StateBase(Eventful):
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._solver)
-        self.forward_events_from(self._platform)
+        self.platform.set_state(self)
 
     @property
     def id(self):
@@ -229,15 +231,16 @@ class StateBase(Eventful):
     # This need to change. this is the center of ALL the problems. re. CoW
     def __enter__(self):
         assert self._child is None
-        self._platform.constraints = None
-        new_state = self.__class__(self._constraints.__enter__(), self._platform)
-        self.platform.constraints = new_state.constraints
-        new_state._input_symbols = list(self._input_symbols)
+        self._platform._constraints = None
+        new_state = self.__class__(constraints=self._constraints.__enter__(), platform=self._platform, manticore=self._manticore)
+        #Keep the same constraint
+        self.platform._constraints = new_state.constraints
+        #backup copy of the context
         new_state._context = copy.copy(self._context)
         new_state._id = None
+
         new_state._total_exec = self._total_exec
         self.copy_eventful_state(new_state)
-
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
 
@@ -246,7 +249,6 @@ class StateBase(Eventful):
     def __exit__(self, ty, value, traceback):
         self._constraints.__exit__(ty, value, traceback)
         self._child = None
-        self.platform.constraints = self.constraints
 
     @property
     def input_symbols(self):
@@ -267,7 +269,6 @@ class StateBase(Eventful):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        self.platform.constraints = constraints
 
     def _update_state_descriptor(self, descriptor: StateDescriptor, *args, **kwargs):
         """

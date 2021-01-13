@@ -43,7 +43,7 @@ from ..native.memory import (
     InvalidMemoryAccess,
 )
 from ..native.state import State
-from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
+from ..platforms.platform import NativePlatform, SyscallNotImplemented, unimplemented
 
 from typing import cast, Any, Deque, Dict, IO, Iterable, List, Optional, Set, Tuple, Union, Callable
 
@@ -819,7 +819,7 @@ class SymbolicSocket(Socket):
         return ret
 
 
-class Linux(Platform):
+class Linux(NativePlatform):
     """
     A simple Linux Operating System Platform.
     This class emulates the most common Linux system calls

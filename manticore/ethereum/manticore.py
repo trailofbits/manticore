@@ -390,7 +390,7 @@ class ManticoreEVM(ManticoreBase):
         constraints = ConstraintSet()
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
-        initial_state = State(constraints, world)
+        initial_state = State(constraints=constraints, platform=world, maticore=self)
         super().__init__(initial_state, **kwargs)
         if plugins is not None:
             for p in plugins:

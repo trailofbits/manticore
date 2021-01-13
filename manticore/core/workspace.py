@@ -602,10 +602,17 @@ class ManticoreOutput:
         # The workspaces should override `save_testcase` method
         #
         # Below is native-only
+        def save_input_symbols(testcase, state: StateBase):
+            with testcase.open_stream("input") as f:
+                for symbol in state.input_symbols:
+                    # TODO - constrain=False here, so the extra migration shouldn't cause problems, right?
+                    buf = state.solve_one(symbol)
+                    f.write(f"{symbol.name}: {buf!r}\n")
+
         self.save_summary(testcase, state, message)
         self.save_trace(testcase, state)
         self.save_constraints(testcase, state)
-        self.save_input_symbols(testcase, state)
+        save_input_symbols(testcase, state)
 
         for stream_name, data in state.platform.generate_workspace_files().items():
             with testcase.open_stream(stream_name, binary=True) as stream:
@@ -655,10 +662,3 @@ class ManticoreOutput:
         with testcase.open_stream("smt") as f:
             f.write(str(state.constraints))
 
-    @staticmethod
-    def save_input_symbols(testcase, state: StateBase):
-        with testcase.open_stream("input") as f:
-            for symbol in state.input_symbols:
-                # TODO - constrain=False here, so the extra migration shouldn't cause problems, right?
-                buf = state.solve_one(symbol)
-                f.write(f"{symbol.name}: {buf!r}\n")

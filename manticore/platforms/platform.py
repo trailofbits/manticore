@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from functools import wraps
 from typing import Any, Callable, TypeVar
@@ -50,11 +51,18 @@ class Platform(Eventful):
 
     _published_events = {"solve"}
 
-    def __init__(self, path, **kwargs):
+
+    def __init__(self, *, state: Optional["StateBase"] = None, **kwargs):
+        self._state = state
         super().__init__(**kwargs)
 
-    def invoke_model(self, model, prefix_args=None):
-        self._function_abi.invoke(model, prefix_args)
+    def set_state(self, state: "StateBase"):
+        self._state = state
+        state.forward_events_from(self)
+
+    @property
+    def constraints(self):
+        return self._state._constraints
 
     def __setstate__(self, state):
         super().__setstate__(state)
@@ -62,6 +70,13 @@ class Platform(Eventful):
     def __getstate__(self):
         state = super().__getstate__()
         return state
+
+class NativePlatform(Platform):
+    def __init__(self, path, **kwargs):
+        super().__init__(**kwargs)
+
+    def invoke_model(self, model, prefix_args=None):
+        self._function_abi.invoke(model, prefix_args)
 
     def generate_workspace_files(self):
         return {}

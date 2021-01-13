@@ -422,7 +422,7 @@ def _make_linux(
             # TODO: use argv as arguments for function
             platform.set_entry(entry_pc)
 
-    initial_state = State(constraints, platform)
+    initial_state = State(constraints=constraints, platform=platform)
 
     if concrete_start != "":
         logger.info("Starting with concrete input: %s", concrete_start)

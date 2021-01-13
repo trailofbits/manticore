@@ -59,7 +59,6 @@ consts.add(
     description="The seed to use when randomly selecting states",
 )
 
-
 class ManticoreBase(Eventful):
     _published_events = {"solve"}
 

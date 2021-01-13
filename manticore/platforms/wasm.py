@@ -1,4 +1,4 @@
-from .platform import Platform
+from .platform import NativePlatform
 from ..wasm.structure import (
     ModuleInstance,
     Store,
@@ -33,7 +33,7 @@ def stub(arity, _state, *args):
     return [0 for _ in range(arity)]  # TODO: Return symbolic values
 
 
-class WASMWorld(Platform):
+class WASMWorld(NativePlatform):
     """Manages global environment for a WASM state. Analagous to EVMWorld."""
 
     def __init__(self, filename, name="self", **kwargs):

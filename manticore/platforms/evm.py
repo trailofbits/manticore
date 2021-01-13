@@ -708,7 +708,6 @@ class EVM(Eventful):
 
     def __init__(
         self,
-        constraints,
         address,
         data,
         caller,
@@ -732,6 +731,7 @@ class EVM(Eventful):
         :param gas: gas budget for this transaction
         """
         super().__init__(**kwargs)
+        constraints = world.constraints
         if data is not None and not issymbolic(data):
             data_size = len(data)
             data_symbolic = constraints.new_array(
@@ -2482,10 +2482,9 @@ class EVMWorld(Platform):
         "solve",
     }
 
-    def __init__(self, constraints, fork=DEFAULT_FORK, **kwargs):
-        super().__init__(path="NOPATH", **kwargs)
+    def __init__(self, fork=DEFAULT_FORK, **kwargs):
+        super().__init__(**kwargs)
         self._world_state = {}
-        self._constraints = constraints
         self._callstack: List[
             Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, MutableArray], EVM]
         ] = []
@@ -2502,7 +2501,6 @@ class EVMWorld(Platform):
         state["_pending_transaction"] = self._pending_transaction
         state["_logs"] = self._logs
         state["_world_state"] = self._world_state
-        state["_constraints"] = self._constraints
         state["_callstack"] = self._callstack
         state["_deleted_accounts"] = self._deleted_accounts
         state["_transactions"] = self._transactions
@@ -2513,7 +2511,6 @@ class EVMWorld(Platform):
 
     def __setstate__(self, state):
         super().__setstate__(state)
-        self._constraints = state["_constraints"]
         self._pending_transaction = state["_pending_transaction"]
         self._world_state = state["_world_state"]
         self._deleted_accounts = state["_deleted_accounts"]
@@ -2597,16 +2594,6 @@ class EVMWorld(Platform):
         return self._logs
 
     @property
-    def constraints(self):
-        return self._constraints
-
-    @constraints.setter
-    def constraints(self, constraints):
-        self._constraints = constraints
-        if self.current_vm:
-            self.current_vm.constraints = constraints
-
-    @property
     def evmfork(self):
         return self._fork
 
@@ -2672,7 +2659,7 @@ class EVMWorld(Platform):
 
         gas = tx.gas
 
-        vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
+        vm = EVM(address, data, caller, value, bytecode, world=self, gas=gas)
         if self.depth == 0:
             # Only at human level we need to debit the tx_fee from the gas
             # In case of an internal tx the CALL-like instruction will
@@ -2752,9 +2739,9 @@ class EVMWorld(Platform):
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish("will_close_transaction", self._callstack[-1][0])
         tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
-        assert self.constraints == vm.constraints
+
         # Keep constraints gathered in the last vm
-        self.constraints = vm.constraints
+        self._state.constraints = vm.constraints
 
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
         if data is not None and self.current_vm is not None:
