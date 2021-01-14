@@ -961,10 +961,11 @@ class TranslatorSmtlib(Translator):
 
     @property
     def result(self):
-        return self.apply_bindings(self._stack[-1])
+        return f"{self.apply_bindings(self._stack[-1])}"
 
     def apply_bindings(self, main_smtlib_str):
         # Python program to print topological sorting of a DAG
+        # Well-sortedness requirements
         from toposort import toposort_flatten as toposort
 
         G = {}
@@ -977,25 +978,22 @@ class TranslatorSmtlib(Translator):
             if not variables:
                 G[name] = set()
 
-        output = ""
         # Build let statement
+        output = main_smtlib_str
         for name in reversed(toposort(G)):
             if name not in self._bindings:
                 continue
             expr, smtlib = self._bindings[name]
 
+
             # FIXME: too much string manipulation. Search occurrences in the Expression realm
-            if main_smtlib_str.count(name) + output.count(name) == 1:
-                main_smtlib_str = main_smtlib_str.replace(name, smtlib)
+            if output.count(name) <= 1:
+                #output = f"let (({name} {smtlib})) ({output})"
                 output = output.replace(name, smtlib)
             else:
-                output = f"({name} {smtlib}) {output}"
+                output = f"(let (({name} {smtlib})) {output})"
 
-        if output:
-            output = f"(let ({output}) {main_smtlib_str})"
-        else:
-            output = main_smtlib_str
-        return output
+        return f"{output}"
 
     def declarations(self):
         result = ""

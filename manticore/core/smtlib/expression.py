@@ -1259,7 +1259,7 @@ class ArrayStore(ArrayOperation):
             return ArraySelect(self, index)
 
         # if a default is defined we need to check if the index was previously written
-        return BitVecITE(self.is_known(index), ArraySelect(self, index), self.cast_value(default))
+        return local_simplify(BitVecITE(self.is_known(index), ArraySelect(self, index), self.cast_value(default)))
 
     def store(self, index, value):
         casted = self.cast_index(index)

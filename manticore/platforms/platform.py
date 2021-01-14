@@ -51,7 +51,6 @@ class Platform(Eventful):
 
     _published_events = {"solve"}
 
-
     def __init__(self, *, state: Optional["StateBase"] = None, **kwargs):
         self._state = state
         super().__init__(**kwargs)
