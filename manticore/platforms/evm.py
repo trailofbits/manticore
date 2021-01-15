@@ -135,7 +135,7 @@ def ceil32(x):
 
 
 def to_signed(i):
-    i &= ((1<<256)-1)
+    i &= (1 << 256) - 1
     return Operators.ITEBV(256, Operators.EXTRACT(i, 255, 1) == 0, i, -((1 << 256) - i))
 
 
@@ -2195,7 +2195,12 @@ class EVM(Eventful):
         )
 
         self.world.start_transaction(
-            "CREATE", address, data=data, caller=self.address, value=value, gas=self.gas,
+            "CREATE",
+            address,
+            data=data,
+            caller=self.address,
+            value=value,
+            gas=self.gas,
         )
 
         raise StartTx()

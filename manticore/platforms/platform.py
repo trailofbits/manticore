@@ -70,6 +70,7 @@ class Platform(Eventful):
         state = super().__getstate__()
         return state
 
+
 class NativePlatform(Platform):
     def __init__(self, path, **kwargs):
         super().__init__(**kwargs)

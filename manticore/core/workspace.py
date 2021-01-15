@@ -661,4 +661,3 @@ class ManticoreOutput:
 
         with testcase.open_stream("smt") as f:
             f.write(str(state.constraints))
-

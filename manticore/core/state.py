@@ -175,13 +175,20 @@ class StateBase(Eventful):
 
     _published_events = {"execution_intermittent"}
 
-    def __init__(self, *, constraints: "Constraints", platform: "Platform", manticore: Optional["ManticoreBase"] = None, **kwargs):
+    def __init__(
+        self,
+        *,
+        constraints: "Constraints",
+        platform: "Platform",
+        manticore: Optional["ManticoreBase"] = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self._manticore = manticore
         self._platform = platform
         self._constraints = constraints
         self._platform._constraints = constraints
-        self._platform.state=self
+        self._platform.state = self
         self._input_symbols = list()
 
         self._child = None
@@ -210,7 +217,7 @@ class StateBase(Eventful):
     def __setstate__(self, state):
         super().__setstate__(state)
         self._platform = state["platform"]
-        self._platform.state=self
+        self._platform.state = self
 
         self._constraints = state["constraints"]
         self._child = state["child"]
@@ -238,10 +245,14 @@ class StateBase(Eventful):
     def __enter__(self):
         assert self._child is None
         self._platform._constraints = None
-        new_state = self.__class__(constraints=self._constraints.__enter__(), platform=self._platform, manticore=self._manticore)
-        #Keep the same constraint
+        new_state = self.__class__(
+            constraints=self._constraints.__enter__(),
+            platform=self._platform,
+            manticore=self._manticore,
+        )
+        # Keep the same constraint
         self.platform._constraints = new_state.constraints
-        #backup copy of the context
+        # backup copy of the context
         new_state._context = copy.copy(self._context)
         new_state._id = None
 
@@ -330,7 +341,11 @@ class StateBase(Eventful):
             avoid_collisions = True
         taint = options.get("taint", frozenset())
         expr = self._constraints.new_array(
-            name=label, length=nbytes, value_size=8, taint=taint, avoid_collisions=avoid_collisions,
+            name=label,
+            length=nbytes,
+            value_size=8,
+            taint=taint,
+            avoid_collisions=avoid_collisions,
         )
         self._input_symbols.append(expr)
 

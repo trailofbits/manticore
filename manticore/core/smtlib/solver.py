@@ -214,7 +214,7 @@ class SmtlibProc:
         assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # If debug is enabled check if the solver reports a syntax error
-        #print (">",buf)
+        # print (">",buf)
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
@@ -227,7 +227,7 @@ class SmtlibProc:
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        #print ("<",cmd)
+        # print ("<",cmd)
         if self._debug:
             logger.debug(">%s", cmd)
         self._proc.stdout.flush()  # type: ignore
@@ -645,7 +645,7 @@ class SMTLIBSolver(Solver):
         ####################
         values = []
         start = time.time()
-        #with constraints.related_to(*expressions) as temp_cs:
+        # with constraints.related_to(*expressions) as temp_cs:
         with constraints as temp_cs:
             for expression in expressions:
                 bucket = self._cache.setdefault(hash(constraints), {})

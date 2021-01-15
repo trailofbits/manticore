@@ -660,7 +660,6 @@ class ArithmeticSimplifier(Visitor):
             if left.value == 0:
                 return left
 
-
     def visit_BitVecAdd(self, expression, *operands):
         """a + 0  ==> a
         0 + a  ==> a
@@ -799,7 +798,10 @@ class ArithmeticSimplifier(Visitor):
         assert not isinstance(expression, Operation)
         return expression
 
+
 import time
+
+
 @lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
     start = time.time()
@@ -985,10 +987,9 @@ class TranslatorSmtlib(Translator):
                 continue
             expr, smtlib = self._bindings[name]
 
-
             # FIXME: too much string manipulation. Search occurrences in the Expression realm
             if output.count(name) <= 1:
-                #output = f"let (({name} {smtlib})) ({output})"
+                # output = f"let (({name} {smtlib})) ({output})"
                 output = output.replace(name, smtlib)
             else:
                 output = f"(let (({name} {smtlib})) {output})"
@@ -1014,11 +1015,13 @@ class TranslatorSmtlib(Translator):
             result += f"(assert {self.apply_bindings(constraint_str)})\n"
         return result
 
+
 @lru_cache(maxsize=128, typed=True)
 def _translate_to_smtlib(expression, use_bindings=True, **kwargs):
     translator = TranslatorSmtlib(use_bindings=use_bindings, **kwargs)
     translator.visit(expression)
     return translator.result
+
 
 def translate_to_smtlib(expression, use_bindings=True, **kwargs):
     if isinstance(expression, MutableArray):

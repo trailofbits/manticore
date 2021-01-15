@@ -487,12 +487,25 @@ class EthInstructionTests(unittest.TestCase):
         self.assertEqual(evm.to_signed(-2), -2)
         self.assertEqual(evm.to_signed(2), 2)
         self.assertEqual(evm.to_signed(0), 0)
-        self.assertEqual(evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000001), -0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
-        self.assertEqual(evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000002), -0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
-        self.assertEqual(evm.to_signed(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
-        self.assertEqual(evm.to_signed(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), -1)
-        self.assertEqual(evm.to_signed( 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe), -2)
-        
+        self.assertEqual(
+            evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000001),
+            -0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+        )
+        self.assertEqual(
+            evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000002),
+            -0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE,
+        )
+        self.assertEqual(
+            evm.to_signed(0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),
+            0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+        )
+        self.assertEqual(
+            evm.to_signed(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF), -1
+        )
+        self.assertEqual(
+            evm.to_signed(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE), -2
+        )
+
 
 class EthTests(unittest.TestCase):
     def setUp(self):
@@ -574,7 +587,9 @@ class EthTests(unittest.TestCase):
         )
 
     def test_create_contract_with_string_args(self):
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         source_code = (
             "contract DontWork1{ string s; constructor(string memory s_) public{ s = s_;} }"
         )
@@ -1760,7 +1775,9 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         # check balances
         self.assertEqual(world.get_balance(0x111111111111111111111111111111111111111), 0)
         self.assertEqual(world.get_balance(0x222222222222222222222222222222222222222), 10)
-        import pdb;pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         self.assertEqual(
             world.get_balance(0x333333333333333333333333333333333333333),
             100000000000000000000000 - 10,
