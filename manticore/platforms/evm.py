@@ -42,7 +42,7 @@ import rlp
 logger = logging.getLogger(__name__)
 
 # Gas behaviour configuration
-# When gas is concrete the gas checks and calculation are pretty straigth forward
+# When gas is concrete the gas checks and calculation are pretty straight forward
 # Though Gas can became symbolic in normal bytecode execution for example at instructions
 # MSTORE, MSTORE8, EXP, ... and every instruction with internal operation restricted by gas
 # This configuration variable allows the user to control and perhaps relax the gas calculation
@@ -69,7 +69,7 @@ def globalfakesha3(data):
 
 consts.add(
     "oog",
-    default="complete",
+    default="ignore",
     description=(
         "Default behavior for symbolic out of gas exception."
         "pedantic: Fully faithful. Test at every instruction. Forks."
@@ -103,7 +103,9 @@ consts.add(
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 consts.add(
-    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
 )
 
 
@@ -3174,6 +3176,9 @@ class EVMWorld(Platform):
         if nonce is None:
             # As per EIP 161, contract accounts are initialized with a nonce of 1
             nonce = 1 if len(code) > 0 else 0
+
+        if isinstance(balance, BitVec):
+            balance = Operators.ZEXTEND(balance, 512)
 
         if address is None:
             address = self.new_address()

@@ -638,7 +638,9 @@ class IntrospectionAPIPlugin(Plugin):
                     state.id,
                 )
             update_cb(
-                context.setdefault(state.id, StateDescriptor(state_id=state.id)), *args, **kwargs,
+                context.setdefault(state.id, StateDescriptor(state_id=state.id)),
+                *args,
+                **kwargs,
             )
             context[state.id].last_intermittent_update = datetime.now()
 

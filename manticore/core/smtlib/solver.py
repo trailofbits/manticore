@@ -63,7 +63,7 @@ consts.add(
 
 consts.add(
     "solver",
-    default=SolverType.yices,
+    default=SolverType.auto,
     description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
 )
 
@@ -794,7 +794,7 @@ class Z3Solver(SMTLIBSolver):
 class YicesSolver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)"]
-        command = f"{consts.yices_bin} --timeout={consts.timeout * 1000}  --incremental"
+        command = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
         super().__init__(
             command=command,
             init=init,

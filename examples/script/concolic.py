@@ -110,7 +110,7 @@ def eq(a, b):
 
 
 def perm(lst, func):
-    """ Produce permutations of `lst`, where permutations are mutated by `func`. Used for flipping constraints. highly
+    """Produce permutations of `lst`, where permutations are mutated by `func`. Used for flipping constraints. highly
     possible that returned constraints can be unsat this does it blindly, without any attention to the constraints
     themselves
 

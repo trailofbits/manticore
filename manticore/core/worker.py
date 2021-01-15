@@ -246,7 +246,10 @@ class DaemonThread(WorkerThread):
         thread as an argument.
         """
         logger.debug(
-            "Starting Daemon %d. (Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident(),
+            "Starting Daemon %d. (Pid %d Tid %d).",
+            self.id,
+            os.getpid(),
+            threading.get_ident(),
         )
 
         self._t = threading.Thread(target=self.run if target is None else target, args=(self,))

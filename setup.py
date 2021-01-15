@@ -18,7 +18,7 @@ def rtd_dependent_deps():
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc2"]
 
-lint_deps = ["black==19.10b0", "mypy==0.790"]
+lint_deps = ["black==20.8b1", "mypy==0.790"]
 
 auto_test_deps = ["py-evm"]
 
@@ -57,7 +57,7 @@ setup(
     long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.4" + dev_extension,
+    version="0.3.5" + dev_extension,
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
