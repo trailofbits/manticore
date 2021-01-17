@@ -211,6 +211,7 @@ class StateBase(Eventful):
         state["constraints"] = self._constraints
         state["child"] = self._child
         state["context"] = self._context
+        state["input_symbols"] = self._input_symbols
 
         state["terminated_by"] = self._terminated_by
         state["exec_counter"] = self._total_exec
@@ -223,6 +224,7 @@ class StateBase(Eventful):
         self._constraints = state["constraints"]
         self._child = state["child"]
         self._context = state["context"]
+        self._input_symbols = state["input_symbols"]
         self._manticore = None
 
         self._terminated_by = state["terminated_by"]
@@ -255,6 +257,7 @@ class StateBase(Eventful):
         self.platform._constraints = new_state.constraints
         # backup copy of the context
         new_state._context = copy.copy(self._context)
+        new_state._input_symbols = self._input_symbols
         new_state._id = None
 
         new_state._total_exec = self._total_exec

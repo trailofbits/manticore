@@ -22,20 +22,17 @@ class CheckpointData(NamedTuple):
 class State(StateBase):
     def __init__(self, *, constraints: ConstraintSet, platform: "Platform", **kwargs):
         super().__init__(constraints=constraints, platform=platform, **kwargs)
-        self._input_symbols = list()
         self._hooks: Dict[Optional[int], Set[HookCallback]] = {}
         self._after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
-        state["input_symbols"] = self._input_symbols
         state["hooks"] = self._hooks
         state["after_hooks"] = self._after_hooks
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
         super().__setstate__(state)
-        self._input_symbols = state["input_symbols"]
         self._hooks = state["hooks"]
         self._after_hooks = state["after_hooks"]
         self._resub_hooks()

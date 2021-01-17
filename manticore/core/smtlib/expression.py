@@ -210,7 +210,7 @@ class Operation(Expression, abstract=True):
         taint = kwargs.get("taint")
         # If taint was not forced by a keyword argument, calculate default
         if taint is None:
-            kwargs["taint"] = frozenset({x.taint for x in operands})
+            kwargs["taint"] = frozenset({y for x in operands for y in x.taint})
         super().__init__(**kwargs)
 
     @property
