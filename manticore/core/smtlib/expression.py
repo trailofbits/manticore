@@ -140,9 +140,9 @@ class Expression(object, metaclass=XSlotted, abstract=True):
         return self._taint
 
     @property
-    def operands(self) -> Tuple["Expression"]:
+    def operands(self) -> Optional[Tuple["Expression"]]:
         """ Hack so we can use any Expression as a node """
-        return ()
+        ...
 
     def __getstate__(self):
         return {attr: getattr(self, attr) for attr in self.__slots__}
@@ -183,7 +183,7 @@ class Constant(Expression, abstract=True):
 
     __xslots__: Tuple[str, ...] = ("_value",)
 
-    def __init__(self, *, value: Union[bool, int, bytes, List[int]], **kwargs):
+    def __init__(self, *, value: Union[bool, int], **kwargs):
         """A constant expression has a value
 
         :param value: The constant value
@@ -210,9 +210,7 @@ class Operation(Expression, abstract=True):
         taint = kwargs.get("taint")
         # If taint was not forced by a keyword argument, calculate default
         if taint is None:
-            operands_taints = map(lambda x: x.taint, operands)
-            taint = reduce(lambda x, y: x.union(y), operands_taints, frozenset())
-            kwargs["taint"] = taint
+            kwargs["taint"] = frozenset({x.taint for x in operands})
         super().__init__(**kwargs)
 
     @property
@@ -278,7 +276,7 @@ class BoolConstant(Bool, Constant):
         super().__init__(value=bool(value), **kwargs)
 
     def __bool__(self) -> bool:
-        return self._value
+        return bool(self._value)
 
 
 class BoolOperation(Bool, Operation, abstract=True):
@@ -574,7 +572,7 @@ class BitVecConstant(BitVec, Constant):
 class BitVecOperation(BitVec, Operation, abstract=True):
     """ Operations that result in a BitVec """
 
-    def __init__(self, *, operands: Tuple[BitVec, ...], **kwargs):
+    def __init__(self, *, operands: Tuple[Expression, ...], **kwargs):
         super().__init__(operands=operands, **kwargs)
 
 
@@ -724,9 +722,6 @@ class BoolUnsignedGreaterOrEqualThan(BoolOperation):
         )
 
 
-Array = "Array"
-
-
 class Array(Expression, abstract=True):
     """An Array expression is an unmutable mapping from bitvector to bitvector
 
@@ -844,7 +839,7 @@ class Array(Expression, abstract=True):
             array = array.store(offset + i, value)
         return array
 
-    def read(self, offset: Union[BitVec, int], size: int) -> "Array":
+    def read(self, offset: int, size: int) -> "Array":
         """ A projection of the current array. """
         return ArraySlice(self, offset=offset, size=size)
 
@@ -873,11 +868,11 @@ class Array(Expression, abstract=True):
             yield self[i]
 
     @staticmethod
-    def _compare_buffers(a: "Array", b: "Array") -> Union[Bool, bool]:
+    def _compare_buffers(a: "Array", b: "Array") -> Bool:
         """ Builds an expression that represents equality between the two arrays."""
         if a.length != b.length:
             return BoolConstant(value=False)
-        cond = BoolConstant(value=True)
+        cond: Bool = BoolConstant(value=True)
         for i in range(a.length):
             cond = BoolAnd(cond.cast(a[i] == b[i]), cond)
             if cond is BoolConstant(value=False):
@@ -941,10 +936,12 @@ class Array(Expression, abstract=True):
         address = self.cast_index(address)
         bytes = []
         for offset in range(size):
-            bytes.append(self.get(address + offset, self._default))
-        return BitVecConcat(operands=reversed(bytes))
+            bytes.append(self.cast_value(self[address + offset]))
+        return BitVecConcat(operands=tuple(reversed(bytes)))
 
-    def write_BE(self, address: Union[int, BitVec], value: Union[int, BitVec], size: int) -> Array:
+    def write_BE(
+        self, address: Union[int, BitVec], value: Union[int, BitVec], size: int
+    ) -> "Array":
         address = self.cast_index(address)
         value = BitVecConstant(size=size * self.value_size, value=0).cast(value)
         array = self
@@ -955,7 +952,9 @@ class Array(Expression, abstract=True):
             )
         return array
 
-    def write_LE(self, address: Union[int, BitVec], value: Union[int, BitVec], size: int) -> Array:
+    def write_LE(
+        self, address: Union[int, BitVec], value: Union[int, BitVec], size: int
+    ) -> "Array":
         address = self.cast_index(address)
         value = BitVec(size * self.value_size).cast(value)
         array = self

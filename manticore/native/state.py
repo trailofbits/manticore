@@ -1,13 +1,15 @@
 import copy
 from collections import namedtuple
-from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Tuple, Union, TYPE_CHECKING
 
 from .cpu.disasm import Instruction
 from .memory import ConcretizeMemory, MemoryException
 from .. import issymbolic
 from ..core.state import StateBase, Concretize, TerminateState
-from ..core.smtlib import Expression
+from ..core.smtlib import Expression, ConstraintSet
 
+if TYPE_CHECKING:
+    from ..platforms.platform import Platform
 
 HookCallback = Callable[[StateBase], None]
 
@@ -18,8 +20,8 @@ class CheckpointData(NamedTuple):
 
 
 class State(StateBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, constraints: ConstraintSet, platform: "Platform", **kwargs):
+        super().__init__(constraints=constraints, platform=platform, **kwargs)
         self._input_symbols = list()
         self._hooks: Dict[Optional[int], Set[HookCallback]] = {}
         self._after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
@@ -224,7 +226,7 @@ class State(StateBase):
             raise TerminateState(str(e), testcase=True)
 
         # Remove when code gets stable?
-        assert self.platform.constraints is self.constraints
+        # assert self.platform.constraints is self.constraints
 
         return result
 

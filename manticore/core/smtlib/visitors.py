@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Set
 
 from ...utils.helpers import CacheDict
 from ...exceptions import SmtlibError
@@ -55,7 +55,7 @@ class Visitor:
         assert len(self._stack) == 1
         return self._stack[-1]
 
-    def visit(self, node, use_fixed_point=False):
+    def visit(self, node: Expression, use_fixed_point: bool = False):
         assert isinstance(node, Expression)
         """
         The entry point of the visitor.
@@ -71,7 +71,7 @@ class Visitor:
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         """
         cache = self._cache
-        visited = set()
+        visited: Set[Expression] = set()
         local_stack = [node]  # initially the stack contains only the visiting node
         while local_stack:
             node = local_stack.pop()
@@ -81,15 +81,18 @@ class Visitor:
             if node in visited:
                 visited.remove(node)
                 # Visited! Then there is a visited version of the operands in the stack
-                operands = (self.pop() for _ in range(len(node.operands)))
-                # Actually process the node
+                operands: Tuple[Expression, ...] = tuple([])
+                if node.operands:
+                    operands = tuple([self.pop() for _ in range(len(node.operands))])
+                    # Actually process the node
                 value = self._method(node, *operands)
                 self.push(value)
                 cache[node] = value
             else:
                 visited.add(node)
                 local_stack.append(node)
-                local_stack.extend(node.operands)
+                if node.operands:
+                    local_stack.extend(node.operands)
 
         # Repeat until the result is not changed
         if use_fixed_point:
@@ -101,7 +104,7 @@ class Visitor:
                 new_value = self.pop()
             self.push(new_value)
 
-    def _method(self, expression, *operands):
+    def _method(self, expression: Expression, *operands):
         """
           Magic method to walk the mro looking for the first overloaded
           visiting method that returns something.
@@ -124,8 +127,8 @@ class Visitor:
                     return value
         return self._rebuild(expression, operands)
 
-    def _changed(self, expression: Expression, operands):
-        changed = any(x is not y for x, y in zip(expression.operands, operands))
+    def _changed(self, expression: Expression, operands: Optional[Tuple[Expression, ...]]):
+        changed = any(x is not y for x, y in zip(expression.operands or (), operands or ()))
         return changed
 
     @lru_cache(maxsize=32, typed=True)
@@ -332,7 +335,7 @@ class ConstantFolderSimplifier(Visitor):
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a >= b, taint=expression.taint)
+            return BoolConstant(value=a >= b, taint=expression.taint)
         return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
