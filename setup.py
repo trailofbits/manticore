@@ -25,7 +25,15 @@ auto_test_deps = ["py-evm"]
 # Development dependencies without keystone
 dev_noks = (
     native_deps
-    + ["coverage", "Sphinx", "pytest==5.3.0", "pytest-xdist==1.30.0", "pytest-cov==2.8.1", "jinja2"]
+    + [
+        "coverage",
+        "Sphinx",
+        "pytest==5.3.0",
+        "pytest-timeout==1.4.2",
+        "pytest-xdist==1.30.0",
+        "pytest-cov==2.8.1",
+        "jinja2",
+    ]
     + lint_deps
     + auto_test_deps
 )
