@@ -82,6 +82,7 @@ class ConstraintSet:
         return self._child
 
     def __exit__(self, ty, value, traceback) -> None:
+        assert self._child is not None
         self._child._parent = None
         self._child = None
 

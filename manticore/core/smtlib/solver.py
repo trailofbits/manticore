@@ -22,7 +22,7 @@ import collections
 import shlex
 import time
 from functools import lru_cache
-from typing import Dict, Tuple, Sequence, Optional
+from typing import Dict, Tuple, Sequence, Optional, NamedTuple
 from subprocess import PIPE, Popen, check_output
 import re
 from . import operators as Operators
@@ -163,7 +163,10 @@ class Solver(SingletonMixin):
             return x, x
 
 
-Version = collections.namedtuple("Version", "major minor patch")
+class Version(NamedTuple):
+    major: int
+    minor: int
+    path: int
 
 
 class SmtlibProc:
@@ -773,8 +776,8 @@ class Z3Solver(SMTLIBSolver):
         Anticipated version_cmd_output format: 'Z3 version 4.4.2'
                                                'Z3 version 4.4.5 - 64 bit - build hashcode $Z3GITHASH'
         """
+        received_version = check_output([f"{consts.z3_bin}", "--version"])
         try:
-            received_version = check_output([f"{consts.z3_bin}", "--version"])
             Z3VERSION = re.compile(
                 r".*(?P<major>([0-9]+))\.(?P<minor>([0-9]+))\.(?P<patch>([0-9]+)).*"
             )
@@ -787,7 +790,7 @@ class Z3Solver(SMTLIBSolver):
             logger.warning(
                 f"Could not parse Z3 version: '{str(received_version)}'. Assuming compatibility."
             )
-            parsed_version = Version(float("inf"), float("inf"), float("inf"))
+            parsed_version = Version(sys.maxsize, sys.maxsize, sys.maxsize)
         return parsed_version
 
 

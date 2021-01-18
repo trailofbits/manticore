@@ -21,7 +21,7 @@ from functools import reduce
 import uuid
 import re
 import copy
-from typing import overload, Union, Optional, Tuple, List, FrozenSet
+from typing import overload, Union, Optional, Tuple, List, FrozenSet, Dict, Any, Set
 from functools import lru_cache
 
 
@@ -83,13 +83,11 @@ class XSlotted(type):
         # merge the xslots of all the bases with the one defined here
         for base in bases:
             xslots = xslots.union(getattr(base, "__xslots__", ()))
-        attrs["__xslots__"]: Tuple[str] = tuple(xslots)
+        attrs["__xslots__"] = tuple(xslots)
         if abstract:
             attrs["__slots__"] = tuple()
         else:
-            attrs["__slots__"]: Tuple[str] = tuple(
-                map(lambda attr: attr.split("#", 1)[0], attrs["__xslots__"])
-            )
+            attrs["__slots__"] = tuple(map(lambda attr: attr.split("#", 1)[0], attrs["__xslots__"]))
         """
         def h(self):
             print(self.__class__, self.__slots__)
@@ -1007,7 +1005,7 @@ class ArrayConstant(Array, Constant):
             )
 
         # Index being symbolic generates a symbolic result !
-        result = BitVecConstant(size=self.value_size, value=0, taint=("out_of_bounds"))
+        result: BitVec = BitVecConstant(size=self.value_size, value=0, taint=("out_of_bounds"))
         for i, c in enumerate(self.value):
             result = BitVecITE(
                 index == i, BitVecConstant(size=self.value_size, value=c), result, taint=self.taint
@@ -1166,44 +1164,11 @@ class ArrayStore(ArrayOperation):
         "_default#v",
     )
 
-    @property
-    def concrete_cache(self):
-        if self._concrete_cache is not None:
-            return self._concrete_cache
-        self._concrete_cache = {}
-        for index, value in get_items(self):
-            if not isinstance(index, Constant):
-                break
-            if index.value not in self._concrete_cache:
-                self._concrete_cache[index.value] = value
-        return self._concrete_cache
-
-    @property
-    def written(self):
-        # Calculate only first time
-        # This can have repeated and reused written indexes.
-        if self._written is None:
-            self._written = {offset for offset, _ in get_items(self)}
-        return self._written
-
-    def is_known(self, index):
-        if isinstance(index, Constant) and index.value in self.concrete_cache:
-            return BoolConstant(value=True)
-
-        is_known_index = BoolConstant(value=False)
-        written = self.written
-        for known_index in written:
-            if isinstance(index, Constant) and isinstance(known_index, Constant):
-                if known_index.value == index.value:
-                    return BoolConstant(value=True)
-            is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
-        return is_known_index
-
     def __init__(self, array: Array, index: BitVec, value: BitVec, **kwargs):
         assert index.size == array.index_size
         assert value.size == array.value_size
-        self._written = None  # Cache of the known indexes
-        self._concrete_cache = None
+        self._written: Optional[Set[Any]] = None  # Cache of the known indexes
+        self._concrete_cache: Dict[Any, Any] = dict()
         self._length = array.length
         self._default = array.default
 
@@ -1216,6 +1181,36 @@ class ArrayStore(ArrayOperation):
             operands=(array, index, value),
             **kwargs,
         )
+
+    @property
+    def concrete_cache(self):
+        for index, value in get_items(self):
+            if not isinstance(index, Constant):
+                break
+            if index.value not in self._concrete_cache:
+                self._concrete_cache[index.value] = value
+        return self._concrete_cache
+
+    @property
+    def written(self):
+        # Calculate only first time
+        # This can have repeated and reused written indexes.
+        if not self._written:
+            self._written = {offset for offset, _ in get_items(self)}
+        return self._written
+
+    def is_known(self, index):
+        if isinstance(index, Constant) and index.value in self.concrete_cache:
+            return BoolConstant(value=True)
+
+        is_known_index: Bool = BoolConstant(value=False)
+        written = self.written
+        for known_index in written:
+            if isinstance(index, Constant) and isinstance(known_index, Constant):
+                if known_index.value == index.value:
+                    return BoolConstant(value=True)
+            is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
+        return is_known_index
 
     @property
     def length(self):
@@ -1378,11 +1373,19 @@ class MutableArray:
 
     @property
     def underlying_variable(self):
-        return self._array.underlying_variable
+        if isinstance(self._array, ArrayVariable):
+            return self._array.underlying_variable
+        # NOTE: What to do here?
+        assert False
+        return self._array
 
     @property
     def name(self):
-        return self._array.name
+        if isinstance(self._array, ArrayVariable):
+            return self._array.name
+        # NOTE: What to do here?
+        assert False
+        return None
 
     @property
     def array(self):

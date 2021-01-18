@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Set
+from typing import Optional, Dict, Set, Type, TYPE_CHECKING
 
 from ...utils.helpers import CacheDict
 from ...exceptions import SmtlibError
@@ -9,6 +9,9 @@ import logging
 import operator
 import math
 from decimal import Decimal
+
+if TYPE_CHECKING:
+    from . import ConstraintException
 
 logger = logging.getLogger(__name__)
 
@@ -388,11 +391,11 @@ class ConstantFolderSimplifier(Visitor):
         if isinstance(b, Constant) and b.value == True:
             return a
 
-    def visit_Operation(self, expression, *operands):
+    def visit_Operation(self, expression: Expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
         if operation is not None and all(isinstance(o, Constant) for o in operands):
-            value = operation(*(x.value for x in operands))
+            value = operation(*(x.value for x in operands))  # type: ignore
             if isinstance(expression, BitVec):
                 return BitVecConstant(expression.size, value, taint=expression.taint)
             else:
@@ -570,8 +573,8 @@ class ArithmeticSimplifier(Visitor):
 
         op = operands[0]
         value = None
-        end = None
-        begining = None
+        end: Optional[int] = None
+        begining: Optional[int] = None
         for o in operands:
             # If found a non BitVecExtract, do not apply
             if not isinstance(o, BitVecExtract):
@@ -594,7 +597,7 @@ class ArithmeticSimplifier(Visitor):
                 # update begining variable
                 begining = o.begining
 
-        if value is not None:
+        if value is not None and end is not None and begining is not None:
             if end + 1 != value.size or begining != 0:
                 return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
 
@@ -615,8 +618,9 @@ class ArithmeticSimplifier(Visitor):
         elif isinstance(op, BitVecExtract):
             return BitVecExtract(op.value, op.begining + begining, size, taint=expression.taint)
         elif isinstance(op, BitVecConcat):
-            new_operands = []
+            new_operands: List[BitVec] = []
             for item in reversed(op.operands):
+                assert isinstance(item, BitVec)
                 if size == 0:
                     assert expression.size == sum([x.size for x in new_operands])
                     return BitVecConcat(
@@ -872,7 +876,7 @@ class TranslatorSmtlib(Translator):
         self._unique = 0
         self.use_bindings = use_bindings
         self._bindings_cache_exp = {}
-        self._bindings = {}
+        self._bindings: Dict[str, Any] = {}
         self._variables = set()
 
     def _add_binding(self, expression, smtlib):
@@ -894,7 +898,7 @@ class TranslatorSmtlib(Translator):
     def bindings(self):
         return self._bindings
 
-    translation_table = {
+    translation_table: Dict[Type[Operation], str] = {
         BoolNot: "not",
         BoolEqual: "=",
         BoolAnd: "and",
@@ -961,8 +965,10 @@ class TranslatorSmtlib(Translator):
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
 
-        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        return f"({operation} {' '.join(operands)})"
+        bound_operands: List[str] = [
+            self._add_binding(*x) for x in zip(expression.operands, operands)
+        ]
+        return f"({operation} {' '.join(bound_operands)})"
 
     @property
     def result(self):
@@ -973,7 +979,7 @@ class TranslatorSmtlib(Translator):
         # Well-sortedness requirements
         from toposort import toposort_flatten as toposort
 
-        G = {}
+        G: Dict[Any, Any] = {}
         for name, (expr, smtlib) in self._bindings.items():
             variables = {v.name for v in get_variables(expr)}
             variables.update(re.findall(r"!a_\d+!", smtlib))
@@ -1002,11 +1008,11 @@ class TranslatorSmtlib(Translator):
     def declarations(self):
         result = ""
         for exp in self._variables:
-            if isinstance(exp, BitVec):
+            if isinstance(exp, BitVecVariable):
                 result += f"(declare-fun {exp.name} () (_ BitVec {exp.size}))\n"
-            elif isinstance(exp, Bool):
+            elif isinstance(exp, BoolVariable):
                 result += f"(declare-fun {exp.name} () Bool)\n"
-            elif isinstance(exp, Array):
+            elif isinstance(exp, ArrayVariable):
                 result += f"(declare-fun {exp.name} () (Array (_ BitVec {exp.index_size}) (_ BitVec {exp.value_size})))\n"
             else:
                 raise ConstraintException(f"Type not supported {exp!r}")
