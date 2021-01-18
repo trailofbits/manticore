@@ -35,7 +35,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def make_mock_evm_state():
     cs = ConstraintSet()
-    fakestate = State(cs, EVMWorld(cs))
+    fakestate = State(constraints=cs, platform=EVMWorld(cs))
     return fakestate
 
 

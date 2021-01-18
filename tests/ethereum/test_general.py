@@ -415,7 +415,7 @@ class EthInstructionTests(unittest.TestCase):
         data = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         gas = 1000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm = evm.EVM(address, data, caller, value, bytecode, gas=gas, world=world)
         return constraints, world, new_vm
 
     def test_str(self):
@@ -587,9 +587,6 @@ class EthTests(unittest.TestCase):
         )
 
     def test_create_contract_with_string_args(self):
-        import pdb
-
-        pdb.set_trace()
         source_code = (
             "contract DontWork1{ string s; constructor(string memory s_) public{ s = s_;} }"
         )
@@ -811,7 +808,7 @@ class EthTests(unittest.TestCase):
             for ext in ("summary", "constraints", "pkl", "tx.json", "tx", "trace", "logs")
         }
 
-        expected_files.add("state_00000001.pkl")
+        expected_files.add("state_00000002.pkl")
 
         actual_files = set((fn for fn in os.listdir(self.mevm.workspace) if not fn.startswith(".")))
         self.assertEqual(actual_files, expected_files)
@@ -1683,7 +1680,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         bytecode = world.get_code(address)
         gas = 100000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        new_vm = evm.EVM(address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
         returndata = ""
@@ -1775,9 +1772,6 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         # check balances
         self.assertEqual(world.get_balance(0x111111111111111111111111111111111111111), 0)
         self.assertEqual(world.get_balance(0x222222222222222222222222222222222222222), 10)
-        import pdb
-
-        pdb.set_trace()
         self.assertEqual(
             world.get_balance(0x333333333333333333333333333333333333333),
             100000000000000000000000 - 10,

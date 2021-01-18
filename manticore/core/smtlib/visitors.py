@@ -828,9 +828,9 @@ def to_constant(expression):
     if isinstance(value, Constant):
         return value.value
     elif isinstance(value, Array):
-        if expression.index_max:
+        if expression.length:
             ba = bytearray()
-            for i in range(expression.index_max):
+            for i in range(expression.length):
                 value_i = simplify(value[i])
                 if not isinstance(value_i, Constant):
                     break
