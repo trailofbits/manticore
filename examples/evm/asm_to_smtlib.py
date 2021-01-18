@@ -117,7 +117,7 @@ world = DummyWorld(constraints)
 callbacks = Callbacks()
 
 # evm = world.current_vm
-evm = EVM(constraints, 0x41424344454647484950, data, caller, value, code, world=world, gas=1000000)
+evm = EVM(0x41424344454647484950, data, caller, value, code, world=world, gas=1000000)
 evm.subscribe("will_execute_instruction", callbacks.will_execute_instruction)
 
 print("CODE:")
