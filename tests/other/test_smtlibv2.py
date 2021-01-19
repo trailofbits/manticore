@@ -958,7 +958,7 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertEqual(
             translate_to_smtlib(aux, use_bindings=True),
-            "(let ((!a_2! (store (store MEM #x00000000 #x61) #x00000001 #x62))) (let ((!a_4! (store !a_2! #x00000003 (select !a_2! (bvadd VAR #x00000001))))) (select !a_4! (bvadd VAR ((_ zero_extend 24) (select !a_4! VAR))))))"
+            "(let ((!a_2! (store (store MEM #x00000000 #x61) #x00000001 #x62))) (let ((!a_4! (store !a_2! #x00000003 (select !a_2! (bvadd VAR #x00000001))))) (select !a_4! (bvadd VAR ((_ zero_extend 24) (select !a_4! VAR))))))",
         )
 
         values = arr[0:2]

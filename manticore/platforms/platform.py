@@ -5,6 +5,7 @@ from functools import wraps
 from typing import Any, Callable, TypeVar
 
 from ..utils.event import Eventful
+from ..core.state import StateBase
 
 
 logger = logging.getLogger(__name__)
@@ -51,11 +52,11 @@ class Platform(Eventful):
 
     _published_events = {"solve"}
 
-    def __init__(self, *, state: Optional["StateBase"] = None, **kwargs):
+    def __init__(self, *, state: Optional[StateBase] = None, **kwargs):
         self._state = state
         super().__init__(**kwargs)
 
-    def set_state(self, state: "StateBase"):
+    def set_state(self, state: StateBase):
         self._state = state
         state.forward_events_from(self)
 
@@ -69,6 +70,7 @@ class Platform(Eventful):
     def __getstate__(self):
         state = super().__getstate__()
         return state
+
 
 class NativePlatform(Platform):
     def __init__(self, path, **kwargs):

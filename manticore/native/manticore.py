@@ -375,7 +375,7 @@ def _make_decree(program, concrete_start="", **kwargs):
 
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
-    initial_state = State(constraints, platform)
+    initial_state = State(constraints=constraints, platform=platform)
     logger.info("Loading program %s", program)
 
     if concrete_start != "":

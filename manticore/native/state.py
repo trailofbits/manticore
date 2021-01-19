@@ -1,13 +1,15 @@
 import copy
 from collections import namedtuple
-from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Tuple, Union, TYPE_CHECKING
 
 from .cpu.disasm import Instruction
 from .memory import ConcretizeMemory, MemoryException
 from .. import issymbolic
 from ..core.state import StateBase, Concretize, TerminateState
-from ..core.smtlib import Expression
+from ..core.smtlib import Expression, ConstraintSet
 
+if TYPE_CHECKING:
+    from ..platforms.platform import Platform
 
 HookCallback = Callable[[StateBase], None]
 
@@ -18,22 +20,19 @@ class CheckpointData(NamedTuple):
 
 
 class State(StateBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._input_symbols = list()
+    def __init__(self, *, constraints: ConstraintSet, platform: "Platform", **kwargs):
+        super().__init__(constraints=constraints, platform=platform, **kwargs)
         self._hooks: Dict[Optional[int], Set[HookCallback]] = {}
         self._after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
-        state["input_symbols"] = self._input_symbols
         state["hooks"] = self._hooks
         state["after_hooks"] = self._after_hooks
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
         super().__setstate__(state)
-        self._input_symbols = state["input_symbols"]
         self._hooks = state["hooks"]
         self._after_hooks = state["after_hooks"]
         self._resub_hooks()
@@ -224,7 +223,7 @@ class State(StateBase):
             raise TerminateState(str(e), testcase=True)
 
         # Remove when code gets stable?
-        assert self.platform.constraints is self.constraints
+        # assert self.platform.constraints is self.constraints
 
         return result
 

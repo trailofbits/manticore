@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Set, Type, TYPE_CHECKING
 
 from ...utils.helpers import CacheDict
 from ...exceptions import SmtlibError
@@ -9,6 +9,9 @@ import logging
 import operator
 import math
 from decimal import Decimal
+
+if TYPE_CHECKING:
+    from . import ConstraintException
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +58,7 @@ class Visitor:
         assert len(self._stack) == 1
         return self._stack[-1]
 
-    def visit(self, node, use_fixed_point=False):
+    def visit(self, node: Expression, use_fixed_point: bool = False):
         assert isinstance(node, Expression)
         """
         The entry point of the visitor.
@@ -71,7 +74,7 @@ class Visitor:
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         """
         cache = self._cache
-        visited = set()
+        visited: Set[Expression] = set()
         local_stack = [node]  # initially the stack contains only the visiting node
         while local_stack:
             node = local_stack.pop()
@@ -81,15 +84,18 @@ class Visitor:
             if node in visited:
                 visited.remove(node)
                 # Visited! Then there is a visited version of the operands in the stack
-                operands = (self.pop() for _ in range(len(node.operands)))
-                # Actually process the node
+                operands: Tuple[Expression, ...] = tuple([])
+                if node.operands:
+                    operands = tuple([self.pop() for _ in range(len(node.operands))])
+                    # Actually process the node
                 value = self._method(node, *operands)
                 self.push(value)
                 cache[node] = value
             else:
                 visited.add(node)
                 local_stack.append(node)
-                local_stack.extend(node.operands)
+                if node.operands:
+                    local_stack.extend(node.operands)
 
         # Repeat until the result is not changed
         if use_fixed_point:
@@ -101,7 +107,7 @@ class Visitor:
                 new_value = self.pop()
             self.push(new_value)
 
-    def _method(self, expression, *operands):
+    def _method(self, expression: Expression, *operands):
         """
           Magic method to walk the mro looking for the first overloaded
           visiting method that returns something.
@@ -124,9 +130,9 @@ class Visitor:
                     return value
         return self._rebuild(expression, operands)
 
-    def _changed(self, expression: Expression, operands):
+    def _changed(self, expression: Expression, operands: Optional[Tuple[Expression, ...]]):
         # False if no operands
-        changed = any(x is not y for x, y in zip(expression.operands, operands))
+        changed = any(x is not y for x, y in zip(expression.operands or (), operands or ()))
         return changed
 
     @lru_cache(maxsize=32, typed=True)
@@ -333,7 +339,7 @@ class ConstantFolderSimplifier(Visitor):
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a >= b, taint=expression.taint)
+            return BoolConstant(value=a >= b, taint=expression.taint)
         return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
@@ -386,11 +392,11 @@ class ConstantFolderSimplifier(Visitor):
         if isinstance(b, Constant) and b.value == True:
             return a
 
-    def visit_Operation(self, expression, *operands):
+    def visit_Operation(self, expression: Expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
         if operation is not None and all(isinstance(o, Constant) for o in operands):
-            value = operation(*(x.value for x in operands))
+            value = operation(*(x.value for x in operands))  # type: ignore
             if isinstance(expression, BitVec):
                 return BitVecConstant(expression.size, value, taint=expression.taint)
             else:
@@ -568,8 +574,8 @@ class ArithmeticSimplifier(Visitor):
 
         op = operands[0]
         value = None
-        end = None
-        begining = None
+        end: Optional[int] = None
+        begining: Optional[int] = None
         for o in operands:
             # If found a non BitVecExtract, do not apply
             if not isinstance(o, BitVecExtract):
@@ -592,7 +598,7 @@ class ArithmeticSimplifier(Visitor):
                 # update begining variable
                 begining = o.begining
 
-        if value is not None:
+        if value is not None and end is not None and begining is not None:
             if end + 1 != value.size or begining != 0:
                 return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
 
@@ -613,8 +619,9 @@ class ArithmeticSimplifier(Visitor):
         elif isinstance(op, BitVecExtract):
             return BitVecExtract(op.value, op.begining + begining, size, taint=expression.taint)
         elif isinstance(op, BitVecConcat):
-            new_operands = []
+            new_operands: List[BitVec] = []
             for item in reversed(op.operands):
+                assert isinstance(item, BitVec)
                 if size == 0:
                     assert expression.size == sum([x.size for x in new_operands])
                     return BitVecConcat(
@@ -660,7 +667,6 @@ class ArithmeticSimplifier(Visitor):
                 return right
             if left.value == 0:
                 return left
-
 
     def visit_BitVecAdd(self, expression, *operands):
         """a + 0  ==> a
@@ -800,7 +806,10 @@ class ArithmeticSimplifier(Visitor):
         assert not isinstance(expression, Operation)
         return expression
 
+
 import time
+
+
 @lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
     start = time.time()
@@ -824,9 +833,9 @@ def to_constant(expression):
     if isinstance(value, Constant):
         return value.value
     elif isinstance(value, Array):
-        if expression.index_max:
+        if expression.length:
             ba = bytearray()
-            for i in range(expression.index_max):
+            for i in range(expression.length):
                 value_i = simplify(value[i])
                 if not isinstance(value_i, Constant):
                     break
@@ -868,7 +877,7 @@ class TranslatorSmtlib(Translator):
         self._unique = 0
         self.use_bindings = use_bindings
         self._bindings_cache_exp = {}
-        self._bindings = {}
+        self._bindings: Dict[str, Any] = {}
         self._variables = set()
 
     def _add_binding(self, expression, smtlib):
@@ -890,7 +899,7 @@ class TranslatorSmtlib(Translator):
     def bindings(self):
         return self._bindings
 
-    translation_table = {
+    translation_table: Dict[Type[Operation], str] = {
         BoolNot: "not",
         BoolEqual: "=",
         BoolAnd: "and",
@@ -957,8 +966,10 @@ class TranslatorSmtlib(Translator):
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
 
-        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        return f"({operation} {' '.join(operands)})"
+        bound_operands: List[str] = [
+            self._add_binding(*x) for x in zip(expression.operands, operands)
+        ]
+        return f"({operation} {' '.join(bound_operands)})"
 
     @property
     def result(self):
@@ -969,7 +980,7 @@ class TranslatorSmtlib(Translator):
         # Well-sortedness requirements
         from toposort import toposort_flatten as toposort
 
-        G = {}
+        G: Dict[Any, Any] = {}
         for name, (expr, smtlib) in self._bindings.items():
             variables = {v.name for v in get_variables(expr)}
             variables.update(re.findall(r"!a_\d+!", smtlib))
@@ -986,10 +997,9 @@ class TranslatorSmtlib(Translator):
                 continue
             expr, smtlib = self._bindings[name]
 
-
             # FIXME: too much string manipulation. Search occurrences in the Expression realm
             if output.count(name) <= 1:
-                #output = f"let (({name} {smtlib})) ({output})"
+                # output = f"let (({name} {smtlib})) ({output})"
                 output = output.replace(name, smtlib)
             else:
                 output = f"(let (({name} {smtlib})) {output})"
@@ -999,11 +1009,11 @@ class TranslatorSmtlib(Translator):
     def declarations(self):
         result = ""
         for exp in self._variables:
-            if isinstance(exp, BitVec):
+            if isinstance(exp, BitVecVariable):
                 result += f"(declare-fun {exp.name} () (_ BitVec {exp.size}))\n"
-            elif isinstance(exp, Bool):
+            elif isinstance(exp, BoolVariable):
                 result += f"(declare-fun {exp.name} () Bool)\n"
-            elif isinstance(exp, Array):
+            elif isinstance(exp, ArrayVariable):
                 result += f"(declare-fun {exp.name} () (Array (_ BitVec {exp.index_size}) (_ BitVec {exp.value_size})))\n"
             else:
                 raise ConstraintException(f"Type not supported {exp!r}")
@@ -1015,11 +1025,13 @@ class TranslatorSmtlib(Translator):
             result += f"(assert {self.apply_bindings(constraint_str)})\n"
         return result
 
+
 @lru_cache(maxsize=128, typed=True)
 def _translate_to_smtlib(expression, use_bindings=True, **kwargs):
     translator = TranslatorSmtlib(use_bindings=use_bindings, **kwargs)
     translator.visit(expression)
     return translator.result
+
 
 def translate_to_smtlib(expression, use_bindings=True, **kwargs):
     if isinstance(expression, MutableArray):
