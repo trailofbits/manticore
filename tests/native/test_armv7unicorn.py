@@ -1493,7 +1493,7 @@ class UnicornConcretization(unittest.TestCase):
             constraints = ConstraintSet()
             dirname = os.path.dirname(__file__)
             platform = linux.SLinux(os.path.join(dirname, "binaries", "basic_linux_amd64"))
-            cls.state = State(constraints, platform)
+            cls.state = State(constraints=constraints, platform=platform)
             cls.cpu = platform._mk_proc("armv7")
         return (cls.cpu, cls.state)
 

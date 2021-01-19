@@ -60,7 +60,7 @@ class StateTest(unittest.TestCase):
         #    self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
         dirname = os.path.dirname(__file__)
         l = linux.Linux(os.path.join(dirname, "binaries", "basic_linux_amd64"))
-        self.state = State(ConstraintSet(), l)
+        self.state = State(constraints=ConstraintSet(), platform=l)
         # self.lock = self.manager.Condition()
 
     def test_workspace_save_load(self):

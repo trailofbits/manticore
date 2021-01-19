@@ -184,10 +184,10 @@ def ITE(cond, true_value, false_value):
             return false_value
 
     if isinstance(true_value, bool):
-        true_value = BoolConstant(true_value)
+        true_value = BoolConstant(value=true_value)
 
     if isinstance(false_value, bool):
-        false_value = BoolConstant(false_value)
+        false_value = BoolConstant(value=false_value)
 
     return BoolITE(cond, true_value, false_value)
 

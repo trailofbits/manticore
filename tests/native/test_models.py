@@ -47,7 +47,7 @@ class ModelMiscTest(unittest.TestCase):
 class ModelTest(unittest.TestCase):
     dirname = os.path.dirname(__file__)
     l = linux.SLinux(os.path.join(dirname, "binaries", "basic_linux_amd64"))
-    state = State(ConstraintSet(), l)
+    state = State(constraints=ConstraintSet(), platform=l)
     stack_top = state.cpu.RSP
 
     def _clear_constraints(self):

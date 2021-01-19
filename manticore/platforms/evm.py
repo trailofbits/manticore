@@ -135,7 +135,7 @@ def ceil32(x):
 
 
 def to_signed(i):
-    i &= ((1<<256)-1)
+    i &= (1 << 256) - 1
     return Operators.ITEBV(256, Operators.EXTRACT(i, 255, 1) == 0, i, -((1 << 256) - i))
 
 
@@ -716,7 +716,7 @@ class EVM(Eventful):
         caller,
         value,
         bytecode,
-        world=None,
+        world,
         gas=None,
         fork=DEFAULT_FORK,
         **kwargs,
@@ -831,7 +831,7 @@ class EVM(Eventful):
         self._valid_jmpdests = set()
         self._sha3 = {}
         self._refund = 0
-        self._temp_call_gas = None
+        self._temp_call_gas = 0
         self._failed = False
 
     def fail_if(self, failed):
@@ -870,7 +870,7 @@ class EVM(Eventful):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        # self.memory.constraints = constraints
+        self.memory.constraints = constraints
 
     @property
     def gas(self):
@@ -1087,8 +1087,8 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        if consts.oog == "ignore":
-            return
+        # if consts.oog == "ignore":
+        #    return
         # Check type and bitvec size
         if isinstance(fee, int):
             if fee > (1 << 512) - 1:
@@ -1188,8 +1188,8 @@ class EVM(Eventful):
             assert result is None
 
     def _calculate_gas(self, *arguments):
-        if consts.oog == "ignore":
-            return 0
+        # if consts.oog == "ignore":
+        #    return 0
 
         start = time.time()
         current = self.instruction
@@ -1267,13 +1267,15 @@ class EVM(Eventful):
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
-            self._publish("will_solve", self.constraints, should_check_jumpdest, "get_all_values")
+            self._publish(
+                "will_solve", self.world.constraints, should_check_jumpdest, "get_all_values"
+            )
             should_check_jumpdest_solutions = SelectedSolver.instance().get_all_values(
-                self.constraints, should_check_jumpdest
+                self.world.constraints, should_check_jumpdest
             )
             self._publish(
                 "did_solve",
-                self.constraints,
+                self.world.constraints,
                 should_check_jumpdest,
                 "get_all_values",
                 should_check_jumpdest_solutions,
@@ -1422,6 +1424,7 @@ class EVM(Eventful):
             raise
 
     def read_buffer(self, offset, size):
+        size = simplify(size)
         if issymbolic(size) and not isinstance(size, Constant):
             raise EVMException("Symbolic size not supported")
         if isinstance(size, Constant):
@@ -2195,7 +2198,12 @@ class EVM(Eventful):
         )
 
         self.world.start_transaction(
-            "CREATE", address, data=data, caller=self.address, value=value, gas=self.gas,
+            "CREATE",
+            address,
+            data=data,
+            caller=self.address,
+            value=value,
+            gas=self.gas,
         )
 
         raise StartTx()
@@ -2477,9 +2485,10 @@ class EVMWorld(Platform):
         "solve",
     }
 
-    def __init__(self, fork=DEFAULT_FORK, **kwargs):
+    def __init__(self, constraints, fork=DEFAULT_FORK, **kwargs):
         super().__init__(**kwargs)
         self._world_state = {}
+        self._constraints = constraints
         self._callstack: List[
             Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, MutableArray], EVM]
         ] = []
@@ -2496,6 +2505,7 @@ class EVMWorld(Platform):
         state["_pending_transaction"] = self._pending_transaction
         state["_logs"] = self._logs
         state["_world_state"] = self._world_state
+        state["_constraints"] = self._constraints
         state["_callstack"] = self._callstack
         state["_deleted_accounts"] = self._deleted_accounts
         state["_transactions"] = self._transactions
@@ -2506,6 +2516,7 @@ class EVMWorld(Platform):
 
     def __setstate__(self, state):
         super().__setstate__(state)
+        self._constraints = state["_constraints"]
         self._pending_transaction = state["_pending_transaction"]
         self._world_state = state["_world_state"]
         self._deleted_accounts = state["_deleted_accounts"]
@@ -2517,6 +2528,14 @@ class EVMWorld(Platform):
 
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
+
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
@@ -2734,7 +2753,7 @@ class EVMWorld(Platform):
         tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
 
         # Keep constraints gathered in the last vm
-        self._state.constraints = vm.constraints
+        self.constraints = vm.constraints
 
         # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-211.md
         if data is not None and self.current_vm is not None:

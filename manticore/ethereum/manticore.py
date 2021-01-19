@@ -1014,7 +1014,7 @@ class ManticoreEVM(ManticoreBase):
 
         selectors = contract_metadata.function_selectors
         if not selectors or len(data) <= 4:
-            return BoolConstant(True)
+            return BoolConstant(value=True)
 
         symbolic_selector = data[:4]
 

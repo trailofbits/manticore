@@ -65,6 +65,14 @@ class WASMWorld(NativePlatform):
         self.forward_events_from(self.instance)
         self.forward_events_from(self.instance.executor)
 
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
     def __getstate__(self):
         state = super().__getstate__()
         state["modules"] = self.modules
@@ -83,7 +91,7 @@ class WASMWorld(NativePlatform):
         self.store = state["store"]
         self.stack = state["stack"]
         self.advice = state["advice"]
-        self.constraints = state["constraints"]
+        self._constraints = state["constraints"]
         self.instantiated = state["instantiated"]
         self.module_names = state["module_names"]
         self.default_module = state["default_module"]
