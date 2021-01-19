@@ -237,14 +237,6 @@ def SDIV(a, b):
     return int(math.trunc(float(a) / float(b)))
 
 
-def SMOD(a, b):
-    if isinstance(a, BitVec):
-        return a.smod(b)
-    elif isinstance(b, BitVec):
-        return b.rsmod(a)
-    return int(math.fmod(a, b))
-
-
 def SREM(a, b):
     if isinstance(a, BitVec):
         return a.srem(b)
