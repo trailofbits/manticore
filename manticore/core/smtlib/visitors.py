@@ -125,6 +125,7 @@ class Visitor:
         return self._rebuild(expression, operands)
 
     def _changed(self, expression: Expression, operands):
+        # False if no operands
         changed = any(x is not y for x, y in zip(expression.operands, operands))
         return changed
 
