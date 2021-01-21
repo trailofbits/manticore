@@ -497,6 +497,16 @@ class AMD64RegFile(RegisterFile):
         "FPTAG",
     )
 
+    def __copy__(self):
+        """Custom shallow copy to create new dictionaries for concrete register
+        values lookups (snapshot). Should be read-only"""
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        result._cache = self._cache.copy()
+        result._registers = self._registers.copy()
+        return result
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
