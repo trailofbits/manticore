@@ -1416,6 +1416,9 @@ class EVM(Eventful):
         value = simplify(value)
         if isinstance(value, Constant) and not value.taint:
             value = value.value
+        aux = self.constraints.new_bitvec(size = size*8, name=f"M_{offset}", avoid_collisions=True)
+        self.constraints.add(aux == value)
+        value=aux
         self._publish("did_evm_read_memory", offset, value, size)
         return value
 
@@ -1470,7 +1473,7 @@ class EVM(Eventful):
         try:
             result = Operators.UDIV(a, b)
         except ZeroDivisionError:
-            result = 0
+            return 0
         return Operators.ITEBV(256, b == 0, 0, result)
 
     def SDIV(self, a, b):
@@ -1702,7 +1705,10 @@ class EVM(Eventful):
                 # offset + i is concrete and outside data
                 c = 0
             bytes.append(c)
-        return Operators.CONCAT(256, *bytes)
+        value = Operators.CONCAT(256, *bytes)
+        aux = self.constraints.new_bitvec(size=256, name=f"C_{offset}", avoid_collisions=True)
+        self.constraints.add(aux == value)
+        return aux
 
     def _use_calldata(self, offset, size):
         """To improve reporting we maintain how much of the calldata is actually
@@ -2282,10 +2288,11 @@ class EVM(Eventful):
     def REVERT_gas(self, offset, size):
         return self._get_memfee(offset, size)
 
+    @concretized_args(size="ONE")
     def REVERT(self, offset, size):
         data = self.read_buffer(offset, size)
         # FIXME return remaining gas
-        raise EndTx("REVERT", data)
+        raise Revert(data)
 
     def THROW(self):
         # revert balance on CALL fail
@@ -2385,7 +2392,6 @@ class EVM(Eventful):
         # Append gas
         gas = self.gas
         if issymbolic(gas):
-            # gas = simplify(gas)
             result.append(f"Gas: {translate_to_smtlib(gas)[:20]} {gas.taint}")
         else:
             result.append(f"Gas: {gas}")

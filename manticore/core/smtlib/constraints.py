@@ -4,6 +4,7 @@ import copy
 from typing import Optional
 from ...utils.helpers import PickleSerializer
 from ...exceptions import SmtlibError
+from functools import cached_property
 from .expression import (
     Expression,
     BitVecVariable,
@@ -82,9 +83,7 @@ class ConstraintSet:
         self._child = None
 
     def __len__(self) -> int:
-        if self._parent is not None:
-            return len(self._constraints) + len(self._parent)
-        return len(self._constraints)
+        return len(self.constraints)
 
     def add(self, constraint) -> None:
         """
@@ -102,6 +101,9 @@ class ConstraintSet:
         # we regain the ability to add constraints.
         if self._child is not None:
             raise ConstraintException("ConstraintSet is frozen")
+        # Reset cache
+        if hasattr(self, "constraints"):
+            del self.constraints
 
         if isinstance(constraint, BoolConstant):
             if not constraint.value:
@@ -131,10 +133,10 @@ class ConstraintSet:
         #   In light of the above, the core __get_related logic is currently disabled.
         """
         Slices this ConstraintSet keeping only the related constraints.
-        Two constraints are independient if they can be expressed full using a
+        Two constraints are independent if they can be expressed full using a
         disjoint set of variables.
         Todo: Research. constraints refering differen not overlapping parts of the same array
-        should be considered independient.
+        should be considered independent.
         :param related_to: An expression
         :return:
         """
@@ -234,38 +236,31 @@ class ConstraintSet:
     def _declare(self, var):
         """ Declare the variable `var` """
         if var.name in self._declarations:
-            raise ValueError("Variable already declared")
+            raise ValueError("Variable {var.name} already declared")
         self._declarations[var.name] = var
         return var
 
     def get_declared_variables(self):
         """ Returns the variable expressions of this constraint set """
-        return self._declarations.values()
+        return self.declarations.values()
 
     def get_variable(self, name):
         """ Returns the variable declared under name or None if it does not exists """
-        return self._declarations.get(name)
+        return self.declarations.get(name)
 
     @property
     def declarations(self):
-        """ Returns the variable expressions of this constraint set """
+        """ Returns the variable expressions dictionary of this constraint set """
+        declarations = {}
+        cs = self
+        while cs is not None:
+            declarations.update(cs._declarations)
+            cs = cs._parent
+        return declarations
         declarations = GetDeclarations()
-        for a in self.constraints:
-            try:
-                declarations.visit(a)
-            except RuntimeError:
-                # TODO: (defunct) move recursion management out of PickleSerializer
-                if sys.getrecursionlimit() >= PickleSerializer.MAX_RECURSION:
-                    raise ConstraintException(
-                        f"declarations recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting"
-                    )
-                new_limit = sys.getrecursionlimit() + PickleSerializer.DEFAULT_RECURSION
-                if new_limit <= PickleSerializer.DEFAULT_RECURSION:
-                    sys.setrecursionlimit(new_limit)
-                    return self.declarations
-        return declarations.result
 
-    @property
+
+    @cached_property
     def constraints(self):
         """
         :rtype tuple
@@ -287,9 +282,18 @@ class ConstraintSet:
         # the while loop is necessary because appending the result of _get_sid()
         # is not guaranteed to make a unique name on the first try; a colliding
         # name could have been added previously
-        while name in self._declarations:
-            name = f"{name}_{self._get_sid()}"
-        return name
+
+        name_i = name
+        if name == "C_0":
+            print(name_i in self.declarations, name,
+              tuple(self._declarations.keys()))
+        while name_i in self.declarations:
+            if name == "C_0":
+                print(name_i in self.declarations, name,
+                      tuple(self._declarations.keys()))
+
+            name_i = f"{name}_{self._get_sid()}"
+        return name_i
 
     def is_declared(self, expression_var) -> bool:
         """ True if expression_var is declared in this constraint set """
@@ -383,7 +387,7 @@ class ConstraintSet:
         var = BoolVariable(name, taint=taint)
         return self._declare(var)
 
-    def new_bitvec(self, size, name=None, taint=frozenset(), avoid_collisions=False):
+    def new_bitvec(self, size:int, name=None, taint=frozenset(), avoid_collisions=False):
         """Declares a free symbolic bitvector in the constraint store
         :param size: size in bits for the bitvector
         :param name: try to assign name to internal variable representation,
