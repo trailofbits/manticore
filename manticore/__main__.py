@@ -209,7 +209,9 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     eth_flags.add_argument(
-        "--limit-loops", action="store_true", help="Limit loops depth",
+        "--limit-loops",
+        action="store_true",
+        help="Limit loops depth",
     )
 
     eth_flags.add_argument(

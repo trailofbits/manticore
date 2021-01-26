@@ -100,8 +100,8 @@ class Plugin(metaclass=DecorateAllMeta):
         pass
 
     def generate_testcase(self, state, testcase, message):
-        """ Called so the plugin can attach some results to the testcase if the
-            state needs it"""
+        """Called so the plugin can attach some results to the testcase if the
+        state needs it"""
         pass
 
 
@@ -361,8 +361,8 @@ class ExamplePlugin(Plugin):
         logger.info("did_execute_instruction %r %r %r %r", state, pc, target_pc, instruction)
 
     def will_run_callback(self, state):
-        """ Called once at the beginning of the run.
-            state is the initial root state
+        """Called once at the beginning of the run.
+        state is the initial root state
         """
         logger.info("will_run")
 
@@ -638,7 +638,9 @@ class IntrospectionAPIPlugin(Plugin):
                     state.id,
                 )
             update_cb(
-                context.setdefault(state.id, StateDescriptor(state_id=state.id)), *args, **kwargs,
+                context.setdefault(state.id, StateDescriptor(state_id=state.id)),
+                *args,
+                **kwargs,
             )
             context[state.id].last_intermittent_update = datetime.now()
 

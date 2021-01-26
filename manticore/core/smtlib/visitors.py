@@ -13,22 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class Visitor:
-    """ Class/Type Visitor
+    """Class/Type Visitor
 
-       Inherit your class visitor from this one and get called on a different
-       visiting function for each type of expression. It will call the first
-       implemented method for the __mro__ class order.
-        For example for a BitVecAdd it will try
-            visit_BitVecAdd()          if not defined then it will try with
-            visit_BitVecOperation()    if not defined then it will try with
-            visit_BitVec()             if not defined then it will try with
-            visit_Expression()
+    Inherit your class visitor from this one and get called on a different
+    visiting function for each type of expression. It will call the first
+    implemented method for the __mro__ class order.
+     For example for a BitVecAdd it will try
+         visit_BitVecAdd()          if not defined then it will try with
+         visit_BitVecOperation()    if not defined then it will try with
+         visit_BitVec()             if not defined then it will try with
+         visit_Expression()
 
-        Other class named visitors are:
+     Other class named visitors are:
 
-        visit_BitVec()
-        visit_Bool()
-        visit_Array()
+     visit_BitVec()
+     visit_Bool()
+     visit_Array()
 
     """
 
@@ -120,8 +120,7 @@ class Visitor:
 
 
 class Translator(Visitor):
-    """ Simple visitor to translate an expression into something else
-    """
+    """Simple visitor to translate an expression into something else"""
 
     def _method(self, expression, *args):
         # Special case. Need to get the unsleeved version of the array
@@ -140,8 +139,8 @@ class Translator(Visitor):
 
 
 class GetDeclarations(Visitor):
-    """ Simple visitor to collect all variables in an expression or set of
-        expressions
+    """Simple visitor to collect all variables in an expression or set of
+    expressions
     """
 
     def __init__(self, **kwargs):
@@ -161,8 +160,8 @@ class GetDeclarations(Visitor):
 
 
 class GetDepth(Translator):
-    """ Simple visitor to collect all variables in an expression or set of
-        expressions
+    """Simple visitor to collect all variables in an expression or set of
+    expressions
     """
 
     def __init__(self, *args, **kwargs):
@@ -504,9 +503,9 @@ class ArithmeticSimplifier(Visitor):
             return operands[0].operands[0]
 
     def visit_BoolEqual(self, expression, *operands):
-        """ (EQ, ITE(cond, constant1, constant2), constant1) -> cond
-            (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
-            (EQ (extract a, b, c) (extract a, b, c))
+        """(EQ, ITE(cond, constant1, constant2), constant1) -> cond
+        (EQ, ITE(cond, constant1, constant2), constant2) -> NOT cond
+        (EQ (extract a, b, c) (extract a, b, c))
         """
         if isinstance(operands[0], BitVecITE) and isinstance(operands[1], Constant):
             if isinstance(operands[0].operands[1], Constant) and isinstance(
@@ -564,9 +563,9 @@ class ArithmeticSimplifier(Visitor):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
     def visit_BitVecConcat(self, expression, *operands):
-        """ concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
-            concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
-            concat( x , extract(k1, beg, a), extract(end, k1, a), z)  ==> concat( x , extract(k1, beg, a), extract(end, k1, a), z)
+        """concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
+        concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
+        concat( x , extract(k1, beg, a), extract(end, k1, a), z)  ==> concat( x , extract(k1, beg, a), extract(end, k1, a), z)
         """
         if len(operands) == 1:
             return operands[0]
@@ -630,9 +629,9 @@ class ArithmeticSimplifier(Visitor):
         return value
 
     def visit_BitVecExtract(self, expression, *operands):
-        """ extract(sizeof(a), 0)(a)  ==> a
-            extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
-            extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
+        """extract(sizeof(a), 0)(a)  ==> a
+        extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
+        extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
         """
         op = operands[0]
         begining = expression.begining
@@ -679,8 +678,8 @@ class ArithmeticSimplifier(Visitor):
             )
 
     def visit_BitVecAdd(self, expression, *operands):
-        """ a + 0  ==> a
-            0 + a  ==> a
+        """a + 0  ==> a
+        0 + a  ==> a
         """
         left = operands[0]
         right = operands[1]
@@ -692,9 +691,9 @@ class ArithmeticSimplifier(Visitor):
                 return right
 
     def visit_BitVecSub(self, expression, *operands):
-        """ a - 0 ==> 0
-            (a + b) - b  ==> a
-            (b + a) - b  ==> a
+        """a - 0 ==> 0
+        (a + b) - b  ==> a
+        (b + a) - b  ==> a
         """
         left = operands[0]
         right = operands[1]
@@ -717,10 +716,10 @@ class ArithmeticSimplifier(Visitor):
                 )
 
     def visit_BitVecOr(self, expression, *operands):
-        """ a | 0 => a
-            0 | a => a
-            0xffffffff & a => 0xffffffff
-            a & 0xffffffff => 0xffffffff
+        """a | 0 => a
+        0 | a => a
+        0xffffffff & a => 0xffffffff
+        a & 0xffffffff => 0xffffffff
 
         """
         left = operands[0]
@@ -739,11 +738,11 @@ class ArithmeticSimplifier(Visitor):
             return BitVecOr(right, left, taint=expression.taint)
 
     def visit_BitVecAnd(self, expression, *operands):
-        """ ct & x => x & ct                move constants to the right
-            a & 0 => 0                      remove zero
-            a & 0xffffffff => a             remove full mask
-            (b & ct2) & ct => b & (ct&ct2)  associative property
-            (a & (b | c) => a&b | a&c       distribute over |
+        """ct & x => x & ct                move constants to the right
+        a & 0 => 0                      remove zero
+        a & 0xffffffff => a             remove full mask
+        (b & ct2) & ct => b & (ct&ct2)  associative property
+        (a & (b | c) => a&b | a&c       distribute over |
         """
         left = operands[0]
         right = operands[1]
@@ -766,8 +765,8 @@ class ArithmeticSimplifier(Visitor):
             return BitVecAnd(right, left, taint=expression.taint)
 
     def visit_BitVecShiftLeft(self, expression, *operands):
-        """ a << 0 => a                       remove zero
-            a << ct => 0 if ct > sizeof(a)    remove big constant shift
+        """a << 0 => a                       remove zero
+        a << ct => 0 if ct > sizeof(a)    remove big constant shift
         """
         left = operands[0]
         right = operands[1]
@@ -778,8 +777,8 @@ class ArithmeticSimplifier(Visitor):
                 return left
 
     def visit_ArraySelect(self, expression, *operands):
-        """ ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
-                -> v0
+        """ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
+        -> v0
         """
         arr, index = operands
         if isinstance(arr, ArrayVariable):
@@ -827,8 +826,8 @@ def arithmetic_simplify(expression):
 
 def to_constant(expression):
     """
-        Iff the expression can be simplified to a Constant get the actual concrete value.
-        This discards/ignore any taint
+    Iff the expression can be simplified to a Constant get the actual concrete value.
+    This discards/ignore any taint
     """
     value = simplify(expression)
     if isinstance(value, Expression) and value.taint:
@@ -856,8 +855,7 @@ def simplify(expression):
 
 
 class TranslatorSmtlib(Translator):
-    """ Simple visitor to translate an expression to its smtlib representation
-    """
+    """Simple visitor to translate an expression to its smtlib representation"""
 
     unique = 0
     unique_lock = threading.Lock()
