@@ -89,7 +89,7 @@ def hook_malloc_lib(initial_state: State, malloc: int, free: int):
 
 
 def hook_mmap_return(state: State):
-    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should 
+    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should
     be inside malloc or another function inside of malloc which calls munmap), post execution of the
     munmap call.
 
@@ -106,7 +106,7 @@ def hook_mmap_return(state: State):
 
 
 def hook_mmap(state: State):
-    """ Hook to process mmap information and add a function hook to the callsite of mmap (which should 
+    """ Hook to process mmap information and add a function hook to the callsite of mmap (which should
     be inside the free or another function inside of free which calls mmap), post execution of the
     mmap call.
 
@@ -148,7 +148,7 @@ def hook_sbrk_return(state: State):
 
 
 def hook_sbrk(state: State):
-    """ Hook to process sbrk information and add a function hook to the callsite of sbrk (which should 
+    """ Hook to process sbrk information and add a function hook to the callsite of sbrk (which should
     be inside malloc or another function inside of malloc which calls sbrk), post execution of the
     sbrk call.
 
@@ -164,7 +164,7 @@ def hook_sbrk(state: State):
 
 
 def hook_malloc_return(state: State):
-    """ Hook to process malloc information and remove function hooks at the return address, 
+    """ Hook to process malloc information and remove function hooks at the return address,
     post execution of the malloc function.
 
     malloc() returns a pointer to the allocated memory
@@ -182,7 +182,7 @@ def hook_malloc_return(state: State):
 
 
 def hook_malloc(state: State):
-    """ Hook to process malloc information and add function hooks at malloc function start, 
+    """ Hook to process malloc information and add function hooks at malloc function start,
     pre-execution of the malloc function.
 
     void *malloc(size_t size);
@@ -200,7 +200,7 @@ def hook_malloc(state: State):
 
 
 def hook_munmap_return(state: State):
-    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should 
+    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should
     be inside malloc or another function inside of malloc which calls munmap), post execution of the
     munmap call.
 
@@ -214,7 +214,7 @@ def hook_munmap_return(state: State):
 
 
 def hook_munmap(state: State):
-    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should 
+    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should
     be inside the free or another function inside of free which calls munmap), post execution of the
     munmap call.
 
@@ -231,7 +231,7 @@ def hook_munmap(state: State):
 
 
 def hook_free_return(state: State):
-    """ Hook to process free information and remove function hooks at the callsite, 
+    """ Hook to process free information and remove function hooks at the callsite,
     post execution of the free function.
 
     free() has no return value

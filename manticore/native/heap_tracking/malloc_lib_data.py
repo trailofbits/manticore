@@ -5,6 +5,8 @@ import json
 # Data Class to hold malloc_lib information
 # - This is added to state 0 pre-manticore execution and will be saving state specific information as manticore
 # forks and different program paths are found
+
+
 @dataclass
 class MallocLibData:
     """This class holds the malloc library data in a specific state (or on specific program path)."""
