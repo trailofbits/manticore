@@ -9,14 +9,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(2)
 
 
-# Globals that will become class members to control amount of information being retrieved
-# TODO(Sonya): fine tune these a little bit - need to be automated
-HOOK_SBRK_INFO = True
-HOOK_MMAP_INFO = True
-HOOK_MALLOC_RETURN = True
-HOOK_FREE_RETURN = True
-HOOK_CALLOC_RETURN = True
-HOOK_REALLOC_RETURN = True
+HOOK_SBRK_INFO: bool
+HOOK_MMAP_INFO: bool
+HOOK_MALLOC_RETURN: bool
+HOOK_FREE_RETURN: bool
+HOOK_CALLOC_RETURN: bool
+HOOK_REALLOC_RETURN: bool
 
 
 def load_ret_addr(state: State) -> int:
@@ -36,7 +34,7 @@ def add_ret_hook(func: str, state: State, ret_hook: Callable[[State], None]) -> 
 
 def add_sys_freeing_hooks(state: State):
     if HOOK_MMAP_INFO:
-        logger.debug(f"Adding Hook for munmap in state: {state.id}")
+        logger.debug(f"Adding hook for munmap in state: {state.id}")
         state.add_hook(state.context["munmap"], hook_munmap, after=False)
 
 
@@ -48,12 +46,11 @@ def remove_sys_freeing_hooks(state: State):
 
 def add_sys_allocing_hooks(state: State):
     if HOOK_SBRK_INFO:
-        logger.debug(f"Adding Hook for sbrk in state: {state.id}")
-        state.add_hook("sbrk", hook_sbrk, after=False)
+        logger.debug(f"Adding hook for sbrk in state: {state.id}")
         state.add_hook(state.context["sbrk"], hook_sbrk, after=False)
 
     if HOOK_MMAP_INFO:
-        logger.debug(f"Adding Hook for mmap in state: {state.id}")
+        logger.debug(f"Adding hook for mmap in state: {state.id}")
         state.add_hook(state.context["mmap"], hook_mmap, after=False)
 
 
@@ -67,7 +64,19 @@ def remove_sys_allocing_hooks(state: State):
         state.remove_hook(state.context["mmap"], hook_mmap)
 
 
-def hook_malloc_lib(initial_state: State, malloc: int, free: int):
+def hook_malloc_lib(
+    initial_state: State,
+    malloc: int,
+    free: int,
+    calloc: int,
+    realloc: int,
+    hook_sbrk: bool = True,
+    hook_mmap: bool = True,
+    hook_malloc_ret: bool = True,
+    hook_free_ret: bool = True,
+    hook_calloc_ret: bool = True,
+    hook_realloc_ret: bool = True,
+):
     """Function to add malloc hooks and do prep work
     - TODO(Sonya): would like this to eventially be __init__() method for a class
     once manticore hook callbacks have been debugged.
@@ -76,11 +85,19 @@ def hook_malloc_lib(initial_state: State, malloc: int, free: int):
     """
     initial_state.context["malloc_lib"] = MallocLibData()
 
+    global HOOK_SBRK_INFO, HOOK_MMAP_INFO, HOOK_MALLOC_RETURN, HOOK_FREE_RETURN, HOOK_CALLOC_RETURN, HOOK_REALLOC_RETURN
+    HOOK_SBRK_INFO = hook_sbrk
+    HOOK_MMAP_INFO = hook_mmap
+    HOOK_MALLOC_RETURN = hook_malloc_ret
+    HOOK_FREE_RETURN = hook_free_ret
+    HOOK_CALLOC_RETURN = hook_calloc_ret
+    HOOK_REALLOC_RETURN = hook_realloc_ret
+
     # Hook malloc and free
     initial_state.add_hook(malloc, hook_malloc, after=False)
     initial_state.add_hook(free, hook_free, after=False)
-    # initial_state.add_hook(calloc, hook_calloc, after=False)
-    # initial_state.add_hook(realloc, hook_realloc, after=False)
+    initial_state.add_hook(calloc, hook_calloc, after=False)
+    initial_state.add_hook(realloc, hook_realloc, after=False)
 
     # Fixme: with syscall specific hooks
     initial_state.context["sbrk"] = 0x0
@@ -289,9 +306,9 @@ def hook_calloc(state: State):
 
     void *calloc(size_t nmemb, size_t size);
     """
-
-    nmemb = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
-    elem_size = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
+    args_gen = state._platform._function_abi.get_arguments()
+    nmemb = state.cpu.read_register(next(args_gen))
+    elem_size = state.cpu.read_register(next(args_gen))
     logger.info(f"Invoking calloc for {nmemb} element(s) of size: {elem_size}")
     state.context["calloc_request"] = (nmemb, elem_size)
 
@@ -330,9 +347,9 @@ def hook_realloc(state: State):
 
     void *realloc(void *ptr, size_t size);
     """
-
-    ptr = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
-    new_size = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
+    args_gen = state._platform._function_abi.get_arguments()
+    ptr = state.cpu.read_register(next(args_gen))
+    new_size = state.cpu.read_register(next(args_gen))
     logger.info(f"Attempting to realloc: {hex(ptr)} to a requested size of {new_size}")
     state.context["realloc_request"] = (ptr, new_size)
 
