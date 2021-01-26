@@ -20,7 +20,7 @@ HOOK_REALLOC_RETURN = True
 
 
 def load_ret_addr(state: State) -> int:
-    """ Loads the return address of a function from the stack
+    """Loads the return address of a function from the stack
     (Assuming the next instruction to be executed is the start of a function call)
     """
     stack_location = state.cpu.read_register("STACK")
@@ -68,7 +68,7 @@ def remove_sys_allocing_hooks(state: State):
 
 
 def hook_malloc_lib(initial_state: State, malloc: int, free: int):
-    """ Function to add malloc hooks and do prep work
+    """Function to add malloc hooks and do prep work
     - TODO(Sonya): would like this to eventially be __init__() method for a class
     once manticore hook callbacks have been debugged.
     (from Eric) See: https://github.com/trailofbits/manticore/blob/master/tests/native/test_state.py#L163-L218
@@ -89,7 +89,7 @@ def hook_malloc_lib(initial_state: State, malloc: int, free: int):
 
 
 def hook_mmap_return(state: State):
-    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should
+    """Hook to process munmap information and add a function hook to the callsite of munmap (which should
     be inside malloc or another function inside of malloc which calls munmap), post execution of the
     munmap call.
 
@@ -106,7 +106,7 @@ def hook_mmap_return(state: State):
 
 
 def hook_mmap(state: State):
-    """ Hook to process mmap information and add a function hook to the callsite of mmap (which should
+    """Hook to process mmap information and add a function hook to the callsite of mmap (which should
     be inside the free or another function inside of free which calls mmap), post execution of the
     mmap call.
 
@@ -132,7 +132,7 @@ def hook_mmap(state: State):
 # https://github.com/trailofbits/manticore/blob/f46f78b69bd440af144f19ec97695ec7e911a374/manticore/platforms/linux.py#L1864
 # state.platform.brk gives current brk
 def hook_sbrk_return(state: State):
-    """ Hook to process sbrk return information and remove the hook to itself at the callsite to sbrk,
+    """Hook to process sbrk return information and remove the hook to itself at the callsite to sbrk,
     post execution of the sbrk function.
 
     sbrk() returns the previous program break - on error, (void *) -1 is returned
@@ -148,7 +148,7 @@ def hook_sbrk_return(state: State):
 
 
 def hook_sbrk(state: State):
-    """ Hook to process sbrk information and add a function hook to the callsite of sbrk (which should
+    """Hook to process sbrk information and add a function hook to the callsite of sbrk (which should
     be inside malloc or another function inside of malloc which calls sbrk), post execution of the
     sbrk call.
 
@@ -164,7 +164,7 @@ def hook_sbrk(state: State):
 
 
 def hook_malloc_return(state: State):
-    """ Hook to process malloc information and remove function hooks at the return address,
+    """Hook to process malloc information and remove function hooks at the return address,
     post execution of the malloc function.
 
     malloc() returns a pointer to the allocated memory
@@ -182,7 +182,7 @@ def hook_malloc_return(state: State):
 
 
 def hook_malloc(state: State):
-    """ Hook to process malloc information and add function hooks at malloc function start,
+    """Hook to process malloc information and add function hooks at malloc function start,
     pre-execution of the malloc function.
 
     void *malloc(size_t size);
@@ -200,7 +200,7 @@ def hook_malloc(state: State):
 
 
 def hook_munmap_return(state: State):
-    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should
+    """Hook to process munmap information and add a function hook to the callsite of munmap (which should
     be inside malloc or another function inside of malloc which calls munmap), post execution of the
     munmap call.
 
@@ -214,7 +214,7 @@ def hook_munmap_return(state: State):
 
 
 def hook_munmap(state: State):
-    """ Hook to process munmap information and add a function hook to the callsite of munmap (which should
+    """Hook to process munmap information and add a function hook to the callsite of munmap (which should
     be inside the free or another function inside of free which calls munmap), post execution of the
     munmap call.
 
@@ -231,7 +231,7 @@ def hook_munmap(state: State):
 
 
 def hook_free_return(state: State):
-    """ Hook to process free information and remove function hooks at the callsite,
+    """Hook to process free information and remove function hooks at the callsite,
     post execution of the free function.
 
     free() has no return value
@@ -245,7 +245,7 @@ def hook_free_return(state: State):
 
 
 def hook_free(state: State):
-    """ Hook to process free information and add function hooks at free function start,
+    """Hook to process free information and add function hooks at free function start,
     pre-execution of the free function.
 
     void free(void *ptr);
@@ -263,7 +263,7 @@ def hook_free(state: State):
 
 
 def hook_calloc_return(state: State):
-    """ Hook to process calloc information and remove function hooks at the callsite,
+    """Hook to process calloc information and remove function hooks at the callsite,
     post execution of the calloc function.
 
     calloc() returns a pointer to the allocated memory
@@ -284,7 +284,7 @@ def hook_calloc_return(state: State):
 
 
 def hook_calloc(state: State):
-    """ Hook to process calloc information and add function hooks at calloc function start,
+    """Hook to process calloc information and add function hooks at calloc function start,
     pre-execution of the calloc function.
 
     void *calloc(size_t nmemb, size_t size);
@@ -303,7 +303,7 @@ def hook_calloc(state: State):
 
 
 def hook_realloc_return(state: State):
-    """ Hook to process realloc information and remove function hooks at the callsite,
+    """Hook to process realloc information and remove function hooks at the callsite,
     post execution of the realloc function.
 
     realloc() returns a pointer to the newly allocated memory
@@ -325,7 +325,7 @@ def hook_realloc_return(state: State):
 
 
 def hook_realloc(state: State):
-    """ Hook to process realloc information and add function hooks at realloc function start,
+    """Hook to process realloc information and add function hooks at realloc function start,
     pre-execution of the realloc function.
 
     void *realloc(void *ptr, size_t size);
