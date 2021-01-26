@@ -17,7 +17,12 @@ class MallocLibData:
 
     def __str__(self):
         # TODO(Sonya): This does not print address information in hexadecimal
-        return f"malloc calls: {self.malloc_calls}\nfree calls: {self.free_calls}\nsbrk chunks: {self.sbrk_chunks}\nmmap chunks: {self.mmap_chunks}\n"
+        return (
+            f"malloc calls: {self.malloc_calls}\n"
+            f"free calls: {self.free_calls}\n"
+            f"sbrk chunks: {self.sbrk_chunks}\n"
+            f"mmap chunks: {self.mmap_chunks}\n"
+        )
 
     def _save_to_file(self, state_id: int):
         data = {
@@ -39,7 +44,13 @@ class MallocLibData:
         # Maybe remove from malloc list and add to a used_and_free list
         self.free_calls.append(free_addr)
 
-    # TODO(Sonya): Add other malloc library functions here
+    def process_calloc(self, nmemb: int, elem_size: int, ret_addr: int):
+        # TODO(Sonya)
+        pass
+
+    def process_realloc(self, old_addr: int, new_addr: int, size: int):
+        # TODO(Sonya)
+        pass
 
     def process_sbrk(self, ret_addr: int, size: int):
         # check last chunk added to list
