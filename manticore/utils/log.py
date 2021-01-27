@@ -1,5 +1,6 @@
 import logging
 import sys
+import io
 
 from typing import List, Set, Tuple
 
@@ -11,6 +12,23 @@ logfmt = "%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s"
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(logfmt)
 handler.setFormatter(formatter)
+
+
+class CallbackStream(io.TextIOBase):
+    def __init__(self, callback):
+        self.callback = callback
+
+    def write(self, log_str):
+        self.callback(log_str)
+
+
+def register_log_callback(cb):
+    for name in all_loggers:
+        logger = logging.getLogger(name)
+        handler_internal = logging.StreamHandler(CallbackStream(cb))
+        if name.startswith("manticore"):
+            handler_internal.setFormatter(formatter)
+        logger.addHandler(handler_internal)
 
 
 class ContextFilter(logging.Filter):
@@ -101,7 +119,7 @@ def get_levels() -> List[List[Tuple[str, int]]]:
             ("manticore.core.worker", logging.INFO),
             ("manticore.platforms.*", logging.DEBUG),
             ("manticore.ethereum", logging.DEBUG),
-            ("manticore.core.plugin", logging.DEBUG),
+            ("manticore.core.plugin", logging.INFO),
             ("manticore.wasm.*", logging.INFO),
             ("manticore.utils.emulate", logging.INFO),
         ],
@@ -112,6 +130,7 @@ def get_levels() -> List[List[Tuple[str, int]]]:
             ("manticore.native.memory", logging.DEBUG),
             ("manticore.native.cpu.*", logging.DEBUG),
             ("manticore.native.cpu.*.registers", logging.DEBUG),
+            ("manticore.core.plugin", logging.DEBUG),
             ("manticore.utils.helpers", logging.INFO),
         ],
         # 5 (-vvvv)
