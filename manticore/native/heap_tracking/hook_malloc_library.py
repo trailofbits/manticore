@@ -56,7 +56,7 @@ def add_sys_allocing_hooks(state: State):
 
 def remove_sys_allocing_hooks(state: State):
     if HOOK_SBRK_INFO:
-        logger.debug((f"Unhooking sbrk in state: {state.id}"))
+        logger.debug(f"Unhooking sbrk in state: {state.id}")
         state.remove_hook(state.context["sbrk"], hook_sbrk)
 
     if HOOK_MMAP_INFO:
@@ -70,12 +70,12 @@ def hook_malloc_lib(
     free: int,
     calloc: int,
     realloc: int,
-    hook_sbrk: bool = True,
-    hook_mmap: bool = True,
-    hook_malloc_ret: bool = True,
-    hook_free_ret: bool = True,
-    hook_calloc_ret: bool = True,
-    hook_realloc_ret: bool = True,
+    hook_sbrk_info: bool = True,
+    hook_mmap_info: bool = True,
+    hook_malloc_ret_info: bool = True,
+    hook_free_ret_info: bool = True,
+    hook_calloc_ret_info: bool = True,
+    hook_realloc_ret_info: bool = True,
 ):
     """Function to add malloc hooks and do prep work
     - TODO(Sonya): would like this to eventially be __init__() method for a class
@@ -86,12 +86,12 @@ def hook_malloc_lib(
     initial_state.context["malloc_lib"] = MallocLibData()
 
     global HOOK_SBRK_INFO, HOOK_MMAP_INFO, HOOK_MALLOC_RETURN, HOOK_FREE_RETURN, HOOK_CALLOC_RETURN, HOOK_REALLOC_RETURN
-    HOOK_SBRK_INFO = hook_sbrk
-    HOOK_MMAP_INFO = hook_mmap
-    HOOK_MALLOC_RETURN = hook_malloc_ret
-    HOOK_FREE_RETURN = hook_free_ret
-    HOOK_CALLOC_RETURN = hook_calloc_ret
-    HOOK_REALLOC_RETURN = hook_realloc_ret
+    HOOK_SBRK_INFO = hook_sbrk_info
+    HOOK_MMAP_INFO = hook_mmap_info
+    HOOK_MALLOC_RETURN = hook_malloc_ret_info
+    HOOK_FREE_RETURN = hook_free_ret_info
+    HOOK_CALLOC_RETURN = hook_calloc_ret_info
+    HOOK_REALLOC_RETURN = hook_realloc_ret_info
 
     # Hook malloc and free
     initial_state.add_hook(malloc, hook_malloc, after=False)
@@ -99,7 +99,7 @@ def hook_malloc_lib(
     initial_state.add_hook(calloc, hook_calloc, after=False)
     initial_state.add_hook(realloc, hook_realloc, after=False)
 
-    # Fixme: with syscall specific hooks
+    # TODO(Sonya) - Fixme: with syscall specific hooks
     initial_state.context["sbrk"] = 0x0
     initial_state.context["mmap"] = 0x0
     initial_state.context["munmap"] = 0x0
