@@ -258,10 +258,7 @@ class Manticore(ManticoreBase):
         """
         if not (isinstance(pc_or_sys, int) or pc_or_sys is None or syscall):
             raise TypeError(f"pc must be either an int or None, not {pc_or_sys.__class__.__name__}")
-        elif (
-            not (isinstance(pc_or_sys, int) or pc_or_sys is None or isinstance(pc_or_sys, str))
-            and syscall
-        ):
+        elif not (isinstance(pc_or_sys, (int, str)) or pc_or_sys is None) and syscall:
             raise TypeError(
                 f"syscall must be either an int, string, or None, not {pc_or_sys.__class__.__name__}"
             )
