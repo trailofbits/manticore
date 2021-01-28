@@ -44,7 +44,7 @@ class Manticore(ManticoreBase):
         # Move the following into a linux plugin
         self._assertions = {}
         self.trace = None
-        self.linux_machine_arch: Optional[str] = None
+        self.linux_machine_arch: str
         # sugar for 'will_execute_instruction"
         self._hooks = {}
         self._after_hooks = {}
