@@ -2728,7 +2728,10 @@ class Linux(Platform):
             else:
                 raise EnvironmentError(f"Bad syscall index, {index}")
 
-        return self._syscall_abi.invoke(implementation)
+        self._syscall_abi._cpu._publish("will_invoke_syscall", index)
+        ret = self._syscall_abi.invoke(implementation)
+        self._syscall_abi._cpu._publish("did_invoke_syscall", index)
+        return ret
 
     def _handle_unimplemented_syscall(self, impl: Callable, *args):
         """

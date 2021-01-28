@@ -48,6 +48,8 @@ class Manticore(ManticoreBase):
         # sugar for 'will_execute_instruction"
         self._hooks = {}
         self._after_hooks = {}
+        self._sys_hooks = {}
+        self._sys_after_hooks = {}
         self._init_hooks = set()
 
         # self.subscribe('will_generate_testcase', self._generate_testcase_callback)
@@ -215,17 +217,17 @@ class Manticore(ManticoreBase):
             self.subscribe("will_run", self._init_callback)
         return f
 
-    def hook(self, pc, after=False):
+    def hook(self, pc, after=False, syscall=False):
         """
         A decorator used to register a hook function for a given instruction address.
         Equivalent to calling :func:`~add_hook`.
 
-        :param pc: Address of instruction to hook
+        :param pc: Address of instruction to hook (or syscall number)
         :type pc: int or None
         """
 
         def decorator(f):
-            self.add_hook(pc, f, after)
+            self.add_hook(pc, f, after, syscall)
             return f
 
         return decorator
@@ -236,6 +238,7 @@ class Manticore(ManticoreBase):
         callback: HookCallback,
         after: bool = False,
         state: Optional[State] = None,
+        syscall: bool = False,
     ):
         """
         Add a callback to be invoked on executing a program counter. Pass `None`
@@ -252,12 +255,20 @@ class Manticore(ManticoreBase):
 
         if state is None:
             # add hook to all states
-            hooks, when, hook_callback = (
-                (self._hooks, "will_execute_instruction", self._hook_callback)
-                if not after
-                else (self._after_hooks, "did_execute_instruction", self._after_hook_callback)
-            )
-            hooks.setdefault(pc, set()).add(callback)
+            if not syscall:
+                hooks, when, hook_callback = (
+                    (self._hooks, "will_execute_instruction", self._hook_callback)
+                    if not after
+                    else (self._after_hooks, "did_execute_instruction", self._after_hook_callback)
+                )
+                hooks.setdefault(pc, set()).add(callback)
+            else:
+                hooks, when, hook_callback = (
+                    (self._sys_hooks, "will_invoke_syscall", self._sys_hook_callback)
+                    if not after
+                    else (self._sys_after_hooks, "did_invoke_syscall", self._sys_after_hook_callback)
+                )
+                hooks.setdefault(pc, set()).add(callback)
             if hooks:
                 self.subscribe(when, hook_callback)
         else:
@@ -291,6 +302,35 @@ class Manticore(ManticoreBase):
 
         # Invoke all pc-agnostic hooks
         for cb in self._after_hooks.get(None, []):
+            cb(state)
+
+    def _sys_hook_callback(self, state, syscall_num):
+        "Invoke all registered generic hooks"
+
+        # Ignore symbolic pc.
+        # TODO(yan): Should we ask the solver if any of the hooks are possible,
+        # and execute those that are?
+
+        # if issymbolic(syscall_num): TODO(Sonya)
+        #     return
+
+        # Invoke all syscall_num-specific hooks
+        for cb in self._sys_hooks.get(syscall_num, []):
+            cb(state)
+
+        # Invoke all syscall_num-agnostic hooks
+        for cb in self._sys_hooks.get(None, []):
+            cb(state)
+
+    def _after_hook_callback(self, state, syscall_num):
+        "Invoke all registered generic hooks"
+
+        # Invoke all syscall_num-specific hooks
+        for cb in self._sys_after_hooks.get(syscall_num, []):
+            cb(state)
+
+        # Invoke all syscall_num-agnostic hooks
+        for cb in self._sys_after_hooks.get(None, []):
             cb(state)
 
     def _init_callback(self, ready_states):
