@@ -72,6 +72,7 @@ class State(StateBase):
         Internal helper function to get hook context information.
 
         :param after: Whether we want info pertaining to hooks after instruction executes or before
+        :param syscall: Catch a syscall invocation instead of instruction?
         :return: Information for hooks after or before:
             - set of hooks for specified after or before
             - string of callback event
@@ -103,8 +104,8 @@ class State(StateBase):
     ) -> bool:
         """
         Remove a callback with the specified properties
-        :param pc: Address of instruction to remove from
-        :param callback: The callback function that was at the address
+        :param pc_or_sys: Address of instruction, syscall number, or syscall name to remove hook from
+        :param callback: The callback function that was at the address (or syscall)
         :param after: Whether it was after instruction executed or not
         :param syscall: Catch a syscall invocation instead of instruction?
         :return: Whether it was removed
@@ -143,14 +144,13 @@ class State(StateBase):
         syscall: bool = False,
     ) -> None:
         """
-        Add a callback to be invoked on executing a program counter. Pass `None`
-        for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.native.state.State` argument.
+        Add a callback to be invoked on executing a program counter (or syscall). Pass `None`
+        for pc_or_sys to invoke callback on every instruction (or syscall invocation).
+        `callback` should be a callable that takes one :class:`~manticore.native.state.State` argument.
 
-        :param pc_or_sys: Address of instruction to hook
+        :param pc_or_sys: Address of instruction to hook, syscall number, or syscall name
         :param callback: Hook function
-        :param after: Hook after PC executes?
-        :param state: Add hook to this state
+        :param after: Hook after PC (or after syscall) executes?
         :param syscall: Catch a syscall invocation instead of instruction?
         """
 
@@ -230,17 +230,16 @@ class State(StateBase):
         """
         Invoke all registered State hooks before the instruction executes.
 
-        :param pc: Address where the hook should run
-        :param _instruction: Instruction at this PC
+        :param syscall_num: index of the syscall about to be executed
         """
         # Prevent crash if removing hook(s) during a callback
         tmp_hooks = copy.deepcopy(self._sys_hooks)
 
-        # Invoke all pc-specific hooks
+        # Invoke all syscall-specific hooks
         for cb in tmp_hooks.get(syscall_num, []):
             cb(self)
 
-        # Invoke all pc-agnostic hooks
+        # Invoke all syscall-agnostic hooks
         for cb in tmp_hooks.get(None, []):
             cb(self)
 
@@ -248,18 +247,16 @@ class State(StateBase):
         """
         Invoke all registered State hooks after the instruction executes.
 
-        :param last_pc: Address where the hook should run after instruction execution
-        :param _pc: Next address to execute
-        :param _instruction: Instruction at this last_pc
+        :param syscall_num: index of the syscall that was just executed
         """
         # Prevent crash if removing hook(s) during a callback
         tmp_hooks = copy.deepcopy(self._sys_after_hooks)
 
-        # Invoke all pc-specific hooks
+        # Invoke all syscall-specific hooks
         for cb in tmp_hooks.get(syscall_num, []):
             cb(self)
 
-        # Invoke all pc-agnostic hooks
+        # Invoke all syscall-agnostic hooks
         for cb in tmp_hooks.get(None, []):
             cb(self)
 
