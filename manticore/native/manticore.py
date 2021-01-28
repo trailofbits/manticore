@@ -267,7 +267,11 @@ class Manticore(ManticoreBase):
                 hooks, when, hook_callback = (
                     (self._sys_hooks, "will_invoke_syscall", self._sys_hook_callback)
                     if not after
-                    else (self._sys_after_hooks, "did_invoke_syscall", self._sys_after_hook_callback)
+                    else (
+                        self._sys_after_hooks,
+                        "did_invoke_syscall",
+                        self._sys_after_hook_callback,
+                    )
                 )
                 hooks.setdefault(pc, set()).add(callback)
             if hooks:

@@ -84,10 +84,16 @@ class State(StateBase):
             return (
                 (self._sys_hooks, "will_invoke_syscall", self._state_sys_hook_callback)
                 if not after
-                else (self._sys_after_hooks, "did_invoke_syscall", self._state_sys_after_hook_callback)
+                else (
+                    self._sys_after_hooks,
+                    "did_invoke_syscall",
+                    self._state_sys_after_hook_callback,
+                )
             )
 
-    def remove_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False) -> bool:
+    def remove_hook(
+        self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False
+    ) -> bool:
         """
         Remove a callback with the specified properties
         :param pc: Address of instruction to remove from
@@ -107,7 +113,9 @@ class State(StateBase):
 
         return True
 
-    def add_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False) -> None:
+    def add_hook(
+        self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False
+    ) -> None:
         """
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
