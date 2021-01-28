@@ -2,6 +2,7 @@ import os
 import itertools
 import logging
 import sys
+import time
 import typing
 import random
 import weakref
@@ -21,11 +22,18 @@ from ..utils import config
 from ..utils.deprecated import deprecated
 from ..utils.enums import StateLists, MProcessingType
 from ..utils.event import Eventful
-from ..utils.helpers import PickleSerializer, pretty_print_state_descriptors
+from ..utils.helpers import PickleSerializer, pretty_print_state_descriptors, deque
 from ..utils.log import set_verbosity
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace, Testcase
-from .worker import WorkerSingle, WorkerThread, WorkerProcess, DaemonThread
+from .worker import (
+    WorkerSingle,
+    WorkerThread,
+    WorkerProcess,
+    DaemonThread,
+    LogCaptureWorker,
+    state_monitor,
+)
 
 from multiprocessing.managers import SyncManager
 import threading
@@ -88,6 +96,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
+        self._log_queue = deque(maxlen=5000)
         self._shared_context = {}
 
     def _manticore_threading(self):
@@ -99,6 +108,7 @@ class ManticoreBase(Eventful):
         self._terminated_states = []
         self._busy_states = []
         self._killed_states = []
+        self._log_queue = deque(maxlen=5000)
         self._shared_context = {}
 
     def _manticore_multiprocessing(self):
@@ -120,6 +130,9 @@ class ManticoreBase(Eventful):
         self._terminated_states = self._manager.list()
         self._busy_states = self._manager.list()
         self._killed_states = self._manager.list()
+        # The multiprocessing queue is much slower than the deque when it gets full, so we
+        # triple the size in order to prevent that from happening.
+        self._log_queue = self._manager.Queue(15000)
         self._shared_context = self._manager.dict()
         self._context_value_types = {list: self._manager.list, dict: self._manager.dict}
 
@@ -370,8 +383,10 @@ class ManticoreBase(Eventful):
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
 
-        # We won't create the daemons until .run() is called
-        self._daemon_threads: typing.List[DaemonThread] = []
+        # Create log capture worker. We won't create the rest of the daemons until .run() is called
+        self._daemon_threads: typing.Dict[int, DaemonThread] = {
+            -1: LogCaptureWorker(id=-1, manticore=self)
+        }
         self._daemon_callbacks: typing.List[typing.Callable] = []
 
         self._snapshot = None
@@ -1102,21 +1117,27 @@ class ManticoreBase(Eventful):
             # User subscription to events is disabled from now on
             self.subscribe = None
 
+        self.register_daemon(state_monitor)
+        self._daemon_threads[-1].start()  # Start log capture worker
+
         # Passing generators to callbacks is a bit hairy because the first callback would drain it if we didn't
         # clone the iterator in event.py. We're preserving the old API here, but it's something to avoid in the future.
         self._publish("will_run", self.ready_states)
         self._running.value = True
+
         # start all the workers!
         for w in self._workers:
             w.start()
 
         # Create each daemon thread and pass it `self`
-        if not self._daemon_threads:  # Don't recreate the threads if we call run multiple times
-            for i, cb in enumerate(self._daemon_callbacks):
+        for i, cb in enumerate(self._daemon_callbacks):
+            if (
+                i not in self._daemon_threads
+            ):  # Don't recreate the threads if we call run multiple times
                 dt = DaemonThread(
                     id=i, manticore=self
                 )  # Potentially duplicated ids with workers. Don't mix!
-                self._daemon_threads.append(dt)
+                self._daemon_threads[dt.id] = dt
                 dt.start(cb)
 
         # Main process. Lets just wait and capture CTRL+C at main
@@ -1173,6 +1194,17 @@ class ManticoreBase(Eventful):
             self.generate_testcase(state)
         self.remove_all()
 
+    def wait_for_log_purge(self):
+        """
+        If a client has accessed the log server, and there are still buffered logs,
+        waits up to 2 seconds for the client to retrieve the logs.
+        """
+        if self._daemon_threads[-1].activated:
+            for _ in range(8):
+                if self._log_queue.empty():
+                    break
+                time.sleep(0.25)
+
     ############################################################################
     ############################################################################
     ############################################################################
@@ -1188,6 +1220,7 @@ class ManticoreBase(Eventful):
             config.save(f)
 
         logger.info("Results in %s", self._output.store.uri)
+        self.wait_for_log_purge()
 
     def introspect(self) -> typing.Dict[int, StateDescriptor]:
         """
