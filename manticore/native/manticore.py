@@ -327,7 +327,7 @@ class Manticore(ManticoreBase):
         for cb in self._sys_hooks.get(None, []):
             cb(state)
 
-    def _after_hook_callback(self, state, syscall_num):
+    def _sys_after_hook_callback(self, state, syscall_num):
         "Invoke all registered generic hooks"
 
         # Invoke all syscall_num-specific hooks
