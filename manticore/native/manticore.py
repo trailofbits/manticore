@@ -227,7 +227,7 @@ class Manticore(ManticoreBase):
         """
 
         def decorator(f):
-            self.add_hook(pc, f, after, syscall)
+            self.add_hook(pc, f, after, None, syscall)
             return f
 
         return decorator
