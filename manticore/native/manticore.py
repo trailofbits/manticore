@@ -256,7 +256,7 @@ class Manticore(ManticoreBase):
         :param state: Optionally, add hook for this state only, else all states
         :param syscall: Catch a syscall invocation instead of instruction?
         """
-        if not (isinstance(pc_or_sys, int) or pc_or_sys is None) and not syscall:
+        if not (isinstance(pc_or_sys, int) or pc_or_sys is None or syscall):
             raise TypeError(f"pc must be either an int or None, not {pc_or_sys.__class__.__name__}")
         elif (
             not (isinstance(pc_or_sys, int) or pc_or_sys is None or isinstance(pc_or_sys, str))
