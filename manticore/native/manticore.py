@@ -245,10 +245,11 @@ class Manticore(ManticoreBase):
         for pc to invoke callback on every instruction. `callback` should be a callable
         that takes one :class:`~manticore.core.state.State` argument.
 
-        :param pc: Address of instruction to hook
+        :param pc: Address of instruction to hook (or syscall number for syscall specific hooks)
         :param callback: Hook function
-        :param after: Hook after PC executes?
+        :param after: Hook after PC (or after syscall) executes?
         :param state: Optionally, add hook for this state only, else all states
+        :param syscall: Catch a syscall invocation instead of instruction?
         """
         if not (isinstance(pc, int) or pc is None):
             raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
@@ -273,7 +274,7 @@ class Manticore(ManticoreBase):
                 self.subscribe(when, hook_callback)
         else:
             # only hook for the specified state
-            state.add_hook(pc, callback, after)
+            state.add_hook(pc, callback, after, syscall)
 
     def _hook_callback(self, state, pc, instruction):
         "Invoke all registered generic hooks"

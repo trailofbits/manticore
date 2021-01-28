@@ -22,23 +22,31 @@ class State(StateBase):
         super().__init__(*args, **kwargs)
         self._hooks: Dict[Optional[int], Set[HookCallback]] = {}
         self._after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
+        self._sys_hooks: Dict[Optional[int], Set[HookCallback]] = {}
+        self._sys_after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
         state["hooks"] = self._hooks
         state["after_hooks"] = self._after_hooks
+        state["sys_hooks"] = self._sys_hooks
+        state["sys_after_hooks"] = self._sys_after_hooks
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
         super().__setstate__(state)
         self._hooks = state["hooks"]
         self._after_hooks = state["after_hooks"]
+        self._sys_hooks = state["sys_hooks"]
+        self._sys_after_hooks = state["sys_after_hooks"]
         self._resub_hooks()
 
     def __enter__(self) -> "State":
         new_state = super().__enter__()
         new_state._hooks = copy.copy(self._hooks)
         new_state._after_hooks = copy.copy(self._after_hooks)
+        new_state._sys_hooks = copy.copy(self._sys_hooks)
+        new_state._sys_after_hooks = copy.copy(self._sys_after_hooks)
 
         # Update constraint pointers in platform objects
         from ..platforms.linux import SLinux
@@ -55,7 +63,7 @@ class State(StateBase):
         return new_state
 
     def _get_hook_context(
-        self, after: bool = True
+        self, after: bool = True, syscall: bool = False
     ) -> Tuple[Dict[Optional[int], Set[HookCallback]], str, Any]:
         """
         Internal helper function to get hook context information.
@@ -66,13 +74,20 @@ class State(StateBase):
             - string of callback event
             - State function that handles the callback
         """
-        return (
-            (self._hooks, "will_execute_instruction", self._state_hook_callback)
-            if not after
-            else (self._after_hooks, "did_execute_instruction", self._state_after_hook_callback)
-        )
+        if not syscall:
+            return (
+                (self._hooks, "will_execute_instruction", self._state_hook_callback)
+                if not after
+                else (self._after_hooks, "did_execute_instruction", self._state_after_hook_callback)
+            )
+        else:
+            return (
+                (self._sys_hooks, "will_invoke_syscall", self._state_sys_hook_callback)
+                if not after
+                else (self._sys_after_hooks, "did_invoke_syscall", self._state_sys_after_hook_callback)
+            )
 
-    def remove_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False) -> bool:
+    def remove_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False) -> bool:
         """
         Remove a callback with the specified properties
         :param pc: Address of instruction to remove from
@@ -80,7 +95,7 @@ class State(StateBase):
         :param after: Whether it was after instruction executed or not
         :return: Whether it was removed
         """
-        hooks, when, _ = self._get_hook_context(after)
+        hooks, when, _ = self._get_hook_context(after, syscall)
         cbs = hooks.get(pc, set())
         if callback in cbs:
             cbs.remove(callback)
@@ -92,7 +107,7 @@ class State(StateBase):
 
         return True
 
-    def add_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False) -> None:
+    def add_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False) -> None:
         """
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
@@ -103,7 +118,7 @@ class State(StateBase):
         :param after: Hook after PC executes?
         :param state: Add hook to this state
         """
-        hooks, when, hook_callback = self._get_hook_context(after)
+        hooks, when, hook_callback = self._get_hook_context(after, syscall)
         hooks.setdefault(pc, set()).add(callback)
         if hooks:
             self.subscribe(when, hook_callback)
@@ -114,10 +129,16 @@ class State(StateBase):
         state is active again.
         """
         # TODO: check if the lists actually have hooks
-        _, when, hook_callback = self._get_hook_context(False)
+        _, when, hook_callback = self._get_hook_context(False, False)
         self.subscribe(when, hook_callback)
 
-        _, when, hook_callback = self._get_hook_context(True)
+        _, when, hook_callback = self._get_hook_context(True, False)
+        self.subscribe(when, hook_callback)
+
+        _, when, hook_callback = self._get_hook_context(False, True)
+        self.subscribe(when, hook_callback)
+
+        _, when, hook_callback = self._get_hook_context(True, True)
         self.subscribe(when, hook_callback)
 
     def _state_hook_callback(self, pc: int, _instruction: Instruction) -> None:
@@ -150,6 +171,43 @@ class State(StateBase):
         tmp_hooks = copy.deepcopy(self._after_hooks)
         # Invoke all pc-specific hooks
         for cb in tmp_hooks.get(last_pc, []):
+            cb(self)
+
+        # Invoke all pc-agnostic hooks
+        for cb in tmp_hooks.get(None, []):
+            cb(self)
+
+    def _state_sys_hook_callback(self, syscall_num: int) -> None:
+        """
+        Invoke all registered State hooks before the instruction executes.
+
+        :param pc: Address where the hook should run
+        :param _instruction: Instruction at this PC
+        """
+        # Prevent crash if removing hook(s) during a callback
+        tmp_hooks = copy.deepcopy(self._sys_hooks)
+
+        # Invoke all pc-specific hooks
+        for cb in tmp_hooks.get(syscall_num, []):
+            cb(self)
+
+        # Invoke all pc-agnostic hooks
+        for cb in tmp_hooks.get(None, []):
+            cb(self)
+
+    def _state_sys_after_hook_callback(self, syscall_num: int):
+        """
+        Invoke all registered State hooks after the instruction executes.
+
+        :param last_pc: Address where the hook should run after instruction execution
+        :param _pc: Next address to execute
+        :param _instruction: Instruction at this last_pc
+        """
+        # Prevent crash if removing hook(s) during a callback
+        tmp_hooks = copy.deepcopy(self._sys_after_hooks)
+
+        # Invoke all pc-specific hooks
+        for cb in tmp_hooks.get(syscall_num, []):
             cb(self)
 
         # Invoke all pc-agnostic hooks
