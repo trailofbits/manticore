@@ -53,6 +53,7 @@ class Manticore(ManticoreBase):
         self._init_hooks = set()
 
         from ..platforms.linux import Linux
+
         if isinstance(initial_state.platform, Linux):
             self.linux_machine_arch = initial_state.platform.current.machine
 
@@ -257,11 +258,17 @@ class Manticore(ManticoreBase):
         """
         if not (isinstance(pc_or_sys, int) or pc_or_sys is None) and not syscall:
             raise TypeError(f"pc must be either an int or None, not {pc_or_sys.__class__.__name__}")
-        elif not (isinstance(pc_or_sys, int) or pc_or_sys is None or isinstance(pc_or_sys, str)) and syscall:
-            raise TypeError(f"syscall must be either an int, string, or None, not {pc_or_sys.__class__.__name__}")
+        elif (
+            not (isinstance(pc_or_sys, int) or pc_or_sys is None or isinstance(pc_or_sys, str))
+            and syscall
+        ):
+            raise TypeError(
+                f"syscall must be either an int, string, or None, not {pc_or_sys.__class__.__name__}"
+            )
 
         if isinstance(pc_or_sys, str):
             from ..platforms import linux_syscalls
+
             table = getattr(linux_syscalls, self.linux_machine_arch)
             for index, name in table.items():
                 if name == pc_or_sys:
