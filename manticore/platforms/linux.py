@@ -2728,10 +2728,7 @@ class Linux(Platform):
             else:
                 raise EnvironmentError(f"Bad syscall index, {index}")
 
-        self._syscall_abi._cpu._publish("will_invoke_syscall", index)
-        ret = self._syscall_abi.invoke(implementation)
-        self._syscall_abi._cpu._publish("did_invoke_syscall", index)
-        return ret
+        return self._syscall_abi.invoke(implementation)
 
     def _handle_unimplemented_syscall(self, impl: Callable, *args):
         """
@@ -2912,13 +2909,15 @@ class Linux(Platform):
                 self.check_timers()
                 self.sched()
         except (Interruption, Syscall) as e:
+            index: int = self._syscall_abi.syscall_number()
+            self._syscall_abi._cpu._publish("will_invoke_syscall", index)
             try:
                 self.syscall()
                 if hasattr(e, "on_handled"):
                     e.on_handled()
             except RestartSyscall:
                 pass
-
+            self._syscall_abi._cpu._publish("did_invoke_syscall", index)
         return True
 
     # 64bit syscalls
