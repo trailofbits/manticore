@@ -1,4 +1,5 @@
 import copy
+import logging
 from collections import namedtuple
 from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Tuple, Union
 
@@ -7,9 +8,11 @@ from .memory import ConcretizeMemory, MemoryException
 from .. import issymbolic
 from ..core.state import StateBase, Concretize, TerminateState
 from ..core.smtlib import Expression
+from ..platforms import linux_syscalls
 
 
 HookCallback = Callable[[StateBase], None]
+logger = logging.getLogger(__name__)
 
 
 class CheckpointData(NamedTuple):
@@ -92,42 +95,80 @@ class State(StateBase):
             )
 
     def remove_hook(
-        self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False
+        self,
+        pc_or_sys: Optional[int],
+        callback: HookCallback,
+        after: bool = False,
+        syscall: bool = False,
     ) -> bool:
         """
         Remove a callback with the specified properties
         :param pc: Address of instruction to remove from
         :param callback: The callback function that was at the address
         :param after: Whether it was after instruction executed or not
+        :param syscall: Catch a syscall invocation instead of instruction?
         :return: Whether it was removed
         """
+
+        if isinstance(pc_or_sys, str):
+            table = getattr(linux_syscalls, self._platform.current.machine)
+            for index, name in table.items():
+                if name == pc_or_sys:
+                    pc_or_sys = index
+                    break
+            if isinstance(pc_or_sys, str):
+                logger.warning(
+                    f"{pc_or_sys} is not a valid syscall name in architecture {self._platform.current.machine}. "
+                    "Please refer to manticore/platforms/linux_syscalls.py to find the correct name."
+                )
+                return False
+
         hooks, when, _ = self._get_hook_context(after, syscall)
-        cbs = hooks.get(pc, set())
+        cbs = hooks.get(pc_or_sys, set())
         if callback in cbs:
             cbs.remove(callback)
         else:
             return False
 
-        if len(hooks.get(pc, set())) == 0:
-            del hooks[pc]
+        if len(hooks.get(pc_or_sys, set())) == 0:
+            del hooks[pc_or_sys]
 
         return True
 
     def add_hook(
-        self, pc: Optional[int], callback: HookCallback, after: bool = False, syscall: bool = False
+        self,
+        pc_or_sys: Optional[int],
+        callback: HookCallback,
+        after: bool = False,
+        syscall: bool = False,
     ) -> None:
         """
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
         that takes one :class:`~manticore.native.state.State` argument.
 
-        :param pc: Address of instruction to hook
+        :param pc_or_sys: Address of instruction to hook
         :param callback: Hook function
         :param after: Hook after PC executes?
         :param state: Add hook to this state
+        :param syscall: Catch a syscall invocation instead of instruction?
         """
+
+        if isinstance(pc_or_sys, str):
+            table = getattr(linux_syscalls, self._platform.current.machine)
+            for index, name in table.items():
+                if name == pc_or_sys:
+                    pc_or_sys = index
+                    break
+            if isinstance(pc_or_sys, str):
+                logger.warning(
+                    f"{pc_or_sys} is not a valid syscall name in architecture {self._platform.current.machine}. "
+                    "Please refer to manticore/platforms/linux_syscalls.py to find the correct name."
+                )
+                return
+
         hooks, when, hook_callback = self._get_hook_context(after, syscall)
-        hooks.setdefault(pc, set()).add(callback)
+        hooks.setdefault(pc_or_sys, set()).add(callback)
         if hooks:
             self.subscribe(when, hook_callback)
 
