@@ -228,7 +228,7 @@ class State(StateBase):
 
     def _state_sys_hook_callback(self, syscall_num: int) -> None:
         """
-        Invoke all registered State hooks before the instruction executes.
+        Invoke all registered State hooks before the syscall executes.
 
         :param syscall_num: index of the syscall about to be executed
         """
@@ -245,7 +245,7 @@ class State(StateBase):
 
     def _state_sys_after_hook_callback(self, syscall_num: int):
         """
-        Invoke all registered State hooks after the instruction executes.
+        Invoke all registered State hooks after the syscall executes.
 
         :param syscall_num: index of the syscall that was just executed
         """
