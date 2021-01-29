@@ -97,7 +97,7 @@ class State(StateBase):
 
     def remove_hook(
         self,
-        pc_or_sys: Optional[int],
+        pc_or_sys: Optional[Union[int, str]],
         callback: HookCallback,
         after: bool = False,
         syscall: bool = False,
@@ -138,7 +138,7 @@ class State(StateBase):
 
     def add_hook(
         self,
-        pc_or_sys: Optional[int],
+        pc_or_sys: Optional[Union[int, str]],
         callback: HookCallback,
         after: bool = False,
         syscall: bool = False,
