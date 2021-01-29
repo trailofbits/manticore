@@ -90,7 +90,8 @@ class ManticoreTest(unittest.TestCase):
 
     def test_add_sys_hook(self):
         def tmp(state):
-            pass
+            assert state._platformn._syscall_abi.syscall_number() == index
+            self.m.kill()
 
         name = "sys_brk"
         index = 12
@@ -107,6 +108,19 @@ class ManticoreTest(unittest.TestCase):
 
         self.assertTrue(tmp in self.m._sys_hooks[index])
 
+    def test_sys_hook(self):
+        self.m.context["x"] = 0
+
+        @self.m.hook(None, syscall=True)
+        def tmp(state):
+            with self.m.locked_context() as ctx:
+                ctx["x"] = 1
+            self.m.kill()
+
+        self.m.run()
+
+        self.assertEqual(self.m.context["x"], 1)
+
     def test_add_sys_hook_after(self):
         def tmp(state):
             pass
@@ -116,8 +130,8 @@ class ManticoreTest(unittest.TestCase):
         assert tmp in self.m._sys_after_hooks[index]
 
     def test_sys_hook_after_dec(self):
-        name = "sys_brk"
-        index = 12
+        name = "sys_mmap"
+        index = 9
 
         @self.m.hook(name, after=True, syscall=True)
         def tmp(state):
