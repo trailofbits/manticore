@@ -89,12 +89,13 @@ class ManticoreTest(unittest.TestCase):
         assert tmp in self.m._after_hooks[entry]
 
     def test_add_sys_hook(self):
+        name = "sys_brk"
+        index = 12
+
         def tmp(state):
             assert state._platformn._syscall_abi.syscall_number() == index
             self.m.kill()
 
-        name = "sys_brk"
-        index = 12
         self.m.add_hook(name, tmp, syscall=True)
         self.assertTrue(tmp in self.m._sys_hooks[index])
 

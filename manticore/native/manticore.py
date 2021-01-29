@@ -222,17 +222,20 @@ class Manticore(ManticoreBase):
             self.subscribe("will_run", self._init_callback)
         return f
 
-    def hook(self, pc, after=False, syscall=False):
+    def hook(
+        self, pc_or_sys: Optional[Union[int, str]], after: bool = False, syscall: bool = False
+    ):
         """
         A decorator used to register a hook function for a given instruction address.
         Equivalent to calling :func:`~add_hook`.
 
-        :param pc: Address of instruction to hook (or syscall number)
-        :type pc: int or None
+        :param pc_or_sys: Address of instruction to hook (or syscall number)
+        :param after: Hook after PC (or after syscall) executes?
+        :param syscall: Catch a syscall invocation instead of instruction?
         """
 
         def decorator(f):
-            self.add_hook(pc, f, after, None, syscall)
+            self.add_hook(pc_or_sys, f, after, None, syscall)
             return f
 
         return decorator
@@ -247,7 +250,7 @@ class Manticore(ManticoreBase):
     ):
         """
         Add a callback to be invoked on executing a program counter (or syscall). Pass `None`
-        for pc_or_sys to invoke callback on every instruction (or syscall). `callback` should
+        for `pc_or_sys` to invoke callback on every instruction (or syscall). `callback` should
         be a callable that takes one :class:`~manticore.core.state.State` argument.
 
         :param pc_or_sys: Address of instruction to hook (or syscall number for syscall specific hooks)
@@ -286,7 +289,6 @@ class Manticore(ManticoreBase):
                     if not after
                     else (self._after_hooks, "did_execute_instruction", self._after_hook_callback)
                 )
-                hooks.setdefault(pc_or_sys, set()).add(callback)
             else:
                 hooks, when, hook_callback = (
                     (self._sys_hooks, "will_invoke_syscall", self._sys_hook_callback)
@@ -297,7 +299,7 @@ class Manticore(ManticoreBase):
                         self._sys_after_hook_callback,
                     )
                 )
-                hooks.setdefault(pc_or_sys, set()).add(callback)
+            hooks.setdefault(pc_or_sys, set()).add(callback)
             if hooks:
                 self.subscribe(when, hook_callback)
         else:

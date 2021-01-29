@@ -145,7 +145,7 @@ class State(StateBase):
     ) -> None:
         """
         Add a callback to be invoked on executing a program counter (or syscall). Pass `None`
-        for pc_or_sys to invoke callback on every instruction (or syscall invocation).
+        for `pc_or_sys` to invoke callback on every instruction (or syscall invocation).
         `callback` should be a callable that takes one :class:`~manticore.native.state.State` argument.
 
         :param pc_or_sys: Address of instruction to hook, syscall number, or syscall name
