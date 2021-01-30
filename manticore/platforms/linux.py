@@ -2915,9 +2915,9 @@ class Linux(Platform):
                 self.syscall()
                 if hasattr(e, "on_handled"):
                     e.on_handled()
+                self._syscall_abi._cpu._publish("did_invoke_syscall", index)
             except RestartSyscall:
                 pass
-            self._syscall_abi._cpu._publish("did_invoke_syscall", index)
         return True
 
     # 64bit syscalls
