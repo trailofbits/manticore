@@ -440,7 +440,7 @@ Thanks to our external contributors!
 - Ethereum: Support for Solidity `bytesM` and `bytes` types
 - Ethereum: Beta API for preconstraining inputs (`ManticoreEVM.constrain`)
 - Improved performance for smtlib module
-- Ability to transparently operate on bytearray and symbolic buffer (MutableArray) types (e.g: concatenate, slice)
+- Ability to transparently operate on bytearray and symbolic buffer (ArrayProxy) types (e.g: concatenate, slice)
 
 ### Changed
 
