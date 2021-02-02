@@ -44,7 +44,7 @@ class Manticore(ManticoreBase):
         # Move the following into a linux plugin
         self._assertions = {}
         self.trace = None
-        self.linux_machine_arch: str
+        self._linux_machine_arch: str  # used when looking up syscall numbers for sys hooks
         # sugar for 'will_execute_instruction"
         self._hooks = {}
         self._after_hooks = {}
@@ -55,7 +55,7 @@ class Manticore(ManticoreBase):
         from ..platforms.linux import Linux
 
         if isinstance(initial_state.platform, Linux):
-            self.linux_machine_arch = initial_state.platform.current.machine
+            self._linux_machine_arch = initial_state.platform.current.machine
 
         # self.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
@@ -229,7 +229,8 @@ class Manticore(ManticoreBase):
         A decorator used to register a hook function for a given instruction address.
         Equivalent to calling :func:`~add_hook`.
 
-        :param pc_or_sys: Address of instruction to hook (or syscall number)
+        :param pc_or_sys: Address of instruction, syscall number, or syscall name to remove hook from
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
         :param after: Hook after PC (or after syscall) executes?
         :param syscall: Catch a syscall invocation instead of instruction?
         """
@@ -253,7 +254,8 @@ class Manticore(ManticoreBase):
         for `pc_or_sys` to invoke callback on every instruction (or syscall). `callback` should
         be a callable that takes one :class:`~manticore.core.state.State` argument.
 
-        :param pc_or_sys: Address of instruction to hook (or syscall number for syscall specific hooks)
+        :param pc_or_sys: Address of instruction, syscall number, or syscall name to remove hook from
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
         :param callback: Hook function
         :param after: Hook after PC (or after syscall) executes?
         :param state: Optionally, add hook for this state only, else all states
@@ -269,14 +271,14 @@ class Manticore(ManticoreBase):
         if isinstance(pc_or_sys, str):
             from ..platforms import linux_syscalls
 
-            table = getattr(linux_syscalls, self.linux_machine_arch)
+            table = getattr(linux_syscalls, self._linux_machine_arch)
             for index, name in table.items():
                 if name == pc_or_sys:
                     pc_or_sys = index
                     break
             if isinstance(pc_or_sys, str):
                 logger.warning(
-                    f"{pc_or_sys} is not a valid syscall name in architecture {self.linux_machine_arch}. "
+                    f"{pc_or_sys} is not a valid syscall name in architecture {self._linux_machine_arch}. "
                     "Please refer to manticore/platforms/linux_syscalls.py to find the correct name."
                 )
                 return

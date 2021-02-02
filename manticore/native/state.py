@@ -105,6 +105,7 @@ class State(StateBase):
         """
         Remove a callback with the specified properties
         :param pc_or_sys: Address of instruction, syscall number, or syscall name to remove hook from
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
         :param callback: The callback function that was at the address (or syscall)
         :param after: Whether it was after instruction executed or not
         :param syscall: Catch a syscall invocation instead of instruction?
@@ -131,7 +132,7 @@ class State(StateBase):
         else:
             return False
 
-        if len(hooks.get(pc_or_sys, set())) == 0:
+        if not len(hooks.get(pc_or_sys, set())):
             del hooks[pc_or_sys]
 
         return True
@@ -149,6 +150,7 @@ class State(StateBase):
         `callback` should be a callable that takes one :class:`~manticore.native.state.State` argument.
 
         :param pc_or_sys: Address of instruction to hook, syscall number, or syscall name
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
         :param callback: Hook function
         :param after: Hook after PC (or after syscall) executes?
         :param syscall: Catch a syscall invocation instead of instruction?
