@@ -16,6 +16,10 @@ HOOK_FREE_RETURN: bool
 HOOK_CALLOC_RETURN: bool
 HOOK_REALLOC_RETURN: bool
 
+BRK_SYS_NUM: int
+MMAP_SYS_NUM: int
+MUNMAP_SYS_NUM: int
+
 
 def load_ret_addr(state: State) -> int:
     """Loads the return address of a function from the stack
@@ -35,33 +39,33 @@ def add_ret_hook(func: str, state: State, ret_hook: Callable[[State], None]) -> 
 def add_sys_freeing_hooks(state: State):
     if HOOK_MMAP_INFO:
         logger.debug(f"Adding hook for munmap in state: {state.id}")
-        state.add_hook(state.context["munmap"], hook_munmap, after=False)
+        state.add_hook(MUNMAP_SYS_NUM, hook_munmap, after=False, syscall=True)
 
 
 def remove_sys_freeing_hooks(state: State):
     if HOOK_MMAP_INFO:
         logger.debug(f"Unhooking munmap in state: {state.id}")
-        state.remove_hook(state.context["munmap"], hook_munmap)
+        state.remove_hook(MUNMAP_SYS_NUM, hook_munmap, syscall=True)
 
 
 def add_sys_allocing_hooks(state: State):
     if HOOK_SBRK_INFO:
         logger.debug(f"Adding hook for sbrk in state: {state.id}")
-        state.add_hook(state.context["sbrk"], hook_sbrk, after=False)
+        state.add_hook(BRK_SYS_NUM, hook_sbrk, after=False, syscall=True)
 
     if HOOK_MMAP_INFO:
         logger.debug(f"Adding hook for mmap in state: {state.id}")
-        state.add_hook(state.context["mmap"], hook_mmap, after=False)
+        state.add_hook(MMAP_SYS_NUM, hook_mmap, after=False, syscall=True)
 
 
 def remove_sys_allocing_hooks(state: State):
     if HOOK_SBRK_INFO:
         logger.debug(f"Unhooking sbrk in state: {state.id}")
-        state.remove_hook(state.context["sbrk"], hook_sbrk)
+        state.remove_hook(BRK_SYS_NUM, hook_sbrk, syscall=True)
 
     if HOOK_MMAP_INFO:
         logger.debug(f"Unhooking mmap in state: {state.id}")
-        state.remove_hook(state.context["mmap"], hook_mmap)
+        state.remove_hook(MMAP_SYS_NUM, hook_mmap, syscall=True)
 
 
 def hook_malloc_lib(
@@ -98,11 +102,16 @@ def hook_malloc_lib(
     initial_state.add_hook(free, hook_free, after=False)
     initial_state.add_hook(calloc, hook_calloc, after=False)
     initial_state.add_hook(realloc, hook_realloc, after=False)
+    # print(initial_state._hooks)
 
-    # TODO(Sonya) - Fixme: with syscall specific hooks
-    initial_state.context["sbrk"] = 0x0
-    initial_state.context["mmap"] = 0x0
-    initial_state.context["munmap"] = 0x0
+    # Import syscall numbers for current architecture
+    global BRK_SYS_NUM, MMAP_SYS_NUM, MUNMAP_SYS_NUM
+    from . import heap_syscalls
+
+    table = getattr(heap_syscalls, initial_state.platform.current.machine)
+    BRK_SYS_NUM = table["brk"]
+    MMAP_SYS_NUM = table["mmap"]
+    MUNMAP_SYS_NUM = table["munmap"]
 
 
 def hook_mmap_return(state: State):
@@ -154,6 +163,7 @@ def hook_sbrk_return(state: State):
 
     sbrk() returns the previous program break - on error, (void *) -1 is returned
     """
+    # TODO: FIXME(Sonya) update this since we're hooking brk instead of sbrk now
     ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
     logger.info(f"sbrk ret val: {hex(ret_val)}")
 
