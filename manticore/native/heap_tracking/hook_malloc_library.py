@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(2)
 
 
-HOOK_SBRK_INFO: bool
+HOOK_BRK_INFO: bool
 HOOK_MMAP_INFO: bool
 HOOK_MALLOC_RETURN: bool
 HOOK_FREE_RETURN: bool
@@ -49,9 +49,9 @@ def remove_sys_freeing_hooks(state: State):
 
 
 def add_sys_allocing_hooks(state: State):
-    if HOOK_SBRK_INFO:
-        logger.debug(f"Adding hook for sbrk in state: {state.id}")
-        state.add_hook(BRK_SYS_NUM, hook_sbrk, after=False, syscall=True)
+    if HOOK_BRK_INFO:
+        logger.debug(f"Adding hook for brk in state: {state.id}")
+        state.add_hook(BRK_SYS_NUM, hook_brk, after=False, syscall=True)
 
     if HOOK_MMAP_INFO:
         logger.debug(f"Adding hook for mmap in state: {state.id}")
@@ -59,9 +59,9 @@ def add_sys_allocing_hooks(state: State):
 
 
 def remove_sys_allocing_hooks(state: State):
-    if HOOK_SBRK_INFO:
-        logger.debug(f"Unhooking sbrk in state: {state.id}")
-        state.remove_hook(BRK_SYS_NUM, hook_sbrk, syscall=True)
+    if HOOK_BRK_INFO:
+        logger.debug(f"Unhooking brk in state: {state.id}")
+        state.remove_hook(BRK_SYS_NUM, hook_brk, syscall=True)
 
     if HOOK_MMAP_INFO:
         logger.debug(f"Unhooking mmap in state: {state.id}")
@@ -74,7 +74,7 @@ def hook_malloc_lib(
     free: int,
     calloc: int,
     realloc: int,
-    hook_sbrk_info: bool = True,
+    hook_brk_info: bool = True,
     hook_mmap_info: bool = True,
     hook_malloc_ret_info: bool = True,
     hook_free_ret_info: bool = True,
@@ -89,8 +89,8 @@ def hook_malloc_lib(
     """
     initial_state.context["malloc_lib"] = MallocLibData()
 
-    global HOOK_SBRK_INFO, HOOK_MMAP_INFO, HOOK_MALLOC_RETURN, HOOK_FREE_RETURN, HOOK_CALLOC_RETURN, HOOK_REALLOC_RETURN
-    HOOK_SBRK_INFO = hook_sbrk_info
+    global HOOK_BRK_INFO, HOOK_MMAP_INFO, HOOK_MALLOC_RETURN, HOOK_FREE_RETURN, HOOK_CALLOC_RETURN, HOOK_REALLOC_RETURN
+    HOOK_BRK_INFO = hook_brk_info
     HOOK_MMAP_INFO = hook_mmap_info
     HOOK_MALLOC_RETURN = hook_malloc_ret_info
     HOOK_FREE_RETURN = hook_free_ret_info
@@ -127,7 +127,7 @@ def hook_mmap_return(state: State):
     state.context["malloc_lib"].process_mmap(ret_val, state.context["mmap_args"])
     del state.context["mmap_args"]
 
-    logger.debug(f"Unhooking mmap return in malloc in state: {state.id}")
+    logger.debug(f"Unhooking mmap return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_mmap_return)
 
 
@@ -152,42 +152,44 @@ def hook_mmap(state: State):
     add_ret_hook("mmap", state, hook_mmap_return)
 
 
-# NOTE(Sonya): If I can't find the internal sbrk address I can get to manticore brk.
-# .....so I can calculate: sbrk_chunk size = curr_brk - new_brk, sbrk_ret_val = new_brk
-# where new_brk is the argument passed into brk - see brk and sbrk man pages
-# https://github.com/trailofbits/manticore/blob/f46f78b69bd440af144f19ec97695ec7e911a374/manticore/platforms/linux.py#L1864
-# state.platform.brk gives current brk
-def hook_sbrk_return(state: State):
-    """Hook to process sbrk return information and remove the hook to itself at the callsite to sbrk,
-    post execution of the sbrk function.
+def hook_brk_return(state: State):
+    """Hook to process brk return information and remove the hook to itself at the callsite to brk,
+    post execution of the brk function.
 
-    sbrk() returns the previous program break - on error, (void *) -1 is returned
+    brk() returns 0 - on error, -1 is returned
     """
-    # TODO: FIXME(Sonya) update this since we're hooking brk instead of sbrk now
     ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
-    logger.info(f"sbrk ret val: {hex(ret_val)}")
+    logger.info(f"brk ret val: {hex(ret_val)}")
 
-    state.context["malloc_lib"].process_sbrk(ret_val, state.context["sbrk_size"])
-    del state.context["sbrk_size"]
+    state.context["malloc_lib"].process_brk(ret_val, state.context["brk_increment"])
+    del state.context["brk_increment"]
 
-    logger.debug(f"Unhooking sbrk return in malloc in state: {state.id}")
-    state.remove_hook(state.cpu.read_register("PC"), hook_sbrk_return)
+    logger.debug(f"Unhooking brk return in state: {state.id}")
+    state.remove_hook(state.cpu.read_register("PC"), hook_brk_return)
 
 
-def hook_sbrk(state: State):
-    """Hook to process sbrk information and add a function hook to the callsite of sbrk (which should
-    be inside malloc or another function inside of malloc which calls sbrk), post execution of the
-    sbrk call.
+def hook_brk(state: State):
+    """Hook to process brk information and add a function hook to the callsite of brk (which should
+    be inside malloc or another function inside of malloc which calls brk), post execution of the
+    brk call.
+
+    Note (Sonya): Reminder that any call to sbrk with a val of 0 will never reach brk
+    Note (Sonya): See https://code.woboq.org/userspace/glibc/misc/sbrk.c.html for approximate
+                sbrk implementation
 
     void *sbrk(intptr_t increment);
+    int brk(void *addr);
     """
     # Get request size from arg1
-    request_size = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
-    logger.info(f"Invoking sbrk in malloc. Request Size {request_size}")
-    state.context["sbrk_size"] = request_size
+    addr = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
+    increment = addr - state.platform.brk
+    logger.info(
+        f"Invoking brk. Request address: {addr} for an increment of {increment}. Old brk: {state.platform.brk}"
+    )
+    state.context["brk_increment"] = increment
 
     # Pull return address off the stack and add a hook for it
-    add_ret_hook("sbrk", state, hook_sbrk_return)
+    add_ret_hook("brk", state, hook_brk_return)
 
 
 def hook_malloc_return(state: State):
@@ -236,7 +238,7 @@ def hook_munmap_return(state: State):
     ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
     logger.info(f"munmap ret val: {hex(ret_val)}")
 
-    logger.debug(f"Unhooking munmap return in malloc in state: {state.id}")
+    logger.debug(f"Unhooking munmap return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_munmap_return)
 
 
