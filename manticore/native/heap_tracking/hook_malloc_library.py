@@ -97,7 +97,7 @@ def hook_malloc_lib(
     HOOK_CALLOC_RETURN = hook_calloc_ret_info
     HOOK_REALLOC_RETURN = hook_realloc_ret_info
 
-    # Hook malloc and free
+    # Add requested malloc lib hooks
     if malloc:
         initial_state.add_hook(malloc, hook_malloc, after=False)
     if free:
