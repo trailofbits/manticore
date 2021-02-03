@@ -70,10 +70,10 @@ def remove_sys_allocing_hooks(state: State):
 
 def hook_malloc_lib(
     initial_state: State,
-    malloc: int,
-    free: int,
-    calloc: int,
-    realloc: int,
+    malloc: int = 0x0,
+    free: int = 0x0,
+    calloc: int = 0x0,
+    realloc: int = 0x0,
     hook_brk_info: bool = True,
     hook_mmap_info: bool = True,
     hook_malloc_ret_info: bool = True,
@@ -98,11 +98,14 @@ def hook_malloc_lib(
     HOOK_REALLOC_RETURN = hook_realloc_ret_info
 
     # Hook malloc and free
-    initial_state.add_hook(malloc, hook_malloc, after=False)
-    initial_state.add_hook(free, hook_free, after=False)
-    initial_state.add_hook(calloc, hook_calloc, after=False)
-    initial_state.add_hook(realloc, hook_realloc, after=False)
-    # print(initial_state._hooks)
+    if malloc:
+        initial_state.add_hook(malloc, hook_malloc, after=False)
+    if free:
+        initial_state.add_hook(free, hook_free, after=False)
+    if calloc:
+        initial_state.add_hook(calloc, hook_calloc, after=False)
+    if realloc:
+        initial_state.add_hook(realloc, hook_realloc, after=False)
 
     # Import syscall numbers for current architecture
     global BRK_SYS_NUM, MMAP_SYS_NUM, MUNMAP_SYS_NUM
