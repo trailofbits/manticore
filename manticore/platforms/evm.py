@@ -769,9 +769,16 @@ class EVM(Eventful):
             except Exception as e:
                 return
 
+        prev_was_jumpi = False
         for i in EVMAsm.disassemble_all(extend_with_zeroes(bytecode)):
             if i.mnemonic == "JUMPDEST":
                 self._valid_jumpdests.add(i.pc)
+            if prev_was_jumpi:
+                self._valid_jumpdests.add(i.pc)
+            prev_was_jumpi = False
+            if i.mnemonic == "JUMPI":
+                prev_was_jumpi = True
+
 
         # A no code VM is used to execute transactions to normal accounts.
         # I'll execute a STOP and close the transaction
@@ -1233,6 +1240,10 @@ class EVM(Eventful):
         already constrained to a single concrete value.
         """
         # If pc is already pointing to a JUMPDEST thre is no need to check.
+
+        if isinstance(self._need_check_jumpdest, bool) and self._need_check_jumpdest is False:
+            return
+
         pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
         if pc in self._valid_jumpdests:
             self._need_check_jumpdest = False
@@ -2080,7 +2091,6 @@ class EVM(Eventful):
         """Conditionally alter the program counter"""
         # TODO(feliam) If dest is Constant we do not need to 3 queries. There would
         # be only 2 options
-
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         # This set ups a check for JMPDEST in the next instruction if cond != 0
         self._set_check_jmpdest(cond != 0)
