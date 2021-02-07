@@ -17,6 +17,7 @@
 import os
 import shutil
 import threading
+import traceback
 from queue import Queue
 import collections
 import shlex
@@ -121,6 +122,7 @@ class Solver(SingletonMixin):
         raise SolverException("Abstract method not implemented")
 
     def must_be_true(self, constraints, expression) -> bool:
+        print('must be true')
         """Check if expression is True and that it can not be False with current constraints"""
         solutions = self.get_all_values(constraints, expression, maxcnt=2, silent=True)
         return solutions == [True]
@@ -398,13 +400,20 @@ class SMTLIBSolver(Solver):
 
     @lru_cache(maxsize=32)
     def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
+        print('Can be true')
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
                 return expression
             else:
                 # if True check if constraints are feasible
-                self._reset(constraints.to_string())
+                cst = constraints.to_string()
+                filename = str(uuid.uuid4())
+                with open(f'formulas/{filename}', 'w') as f:
+                    f.write("(set-logic QF_AUFBV)")
+                    f.write(cst)
+                    f.write("(check-sat)")
+                self._reset(cst)
                 return self._is_sat()
 
         with constraints as temp_cs:
@@ -499,6 +508,10 @@ class SMTLIBSolver(Solver):
         maxcnt: Optional[int] = None,
         silent: bool = False,
     ):
+        print('get_all_values')
+        #print(traceback.print_stack())
+        print(''.join(traceback.format_stack()))
+        print()
         """Returns a list with all the possible values for the symbol x"""
         if not isinstance(expression, Expression):
             return [expression]
@@ -528,7 +541,15 @@ class SMTLIBSolver(Solver):
                 )
 
             temp_cs.add(var == expression)
-            self._reset(temp_cs.to_string())
+            cst = temp_cs.to_string()
+            self._reset(cst)
+
+            filename = str(uuid.uuid4())
+            with open(f'formulas/{filename}', 'w') as f:
+                f.write("(set-logic QF_AUFBV)")
+                f.write(cst)
+                f.write("(check-sat)")
+
             result = []
             start = time.time()
             while self._is_sat():
@@ -590,6 +611,7 @@ class SMTLIBSolver(Solver):
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
+        print('get_value')
         values = []
         start = time.time()
         with constraints.related_to(*expressions) as temp_cs:
@@ -609,7 +631,14 @@ class SMTLIBSolver(Solver):
                         subvar = temp_cs.new_bitvec(expression.value_bits)
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
-                    self._reset(temp_cs.to_string())
+                    cst = temp_cs.to_string()
+                    self._reset(cst)
+                    filename = str(uuid.uuid4())
+                    with open(f'formulas/{filename}', 'w') as f:
+                        f.write("(set-logic QF_AUFBV)")
+                        f.write(cst)
+                        f.write("(check-sat)")
+
                     if not self._is_sat():
                         raise SolverError(
                             "Solver could not find a value for expression under current constraint set"
