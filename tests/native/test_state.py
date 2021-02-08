@@ -319,6 +319,30 @@ class StateHooks(unittest.TestCase):
             self.m.run()
         self.assertIn("Reached fin callback", f.getvalue())
 
+    def test_state_sys_hooks(self):
+        @self.m.hook(12, after=False, syscall=True)
+        def process_hook(state: State) -> None:
+            # We can't remove because the globally applied hooks are stored in
+            # the Manticore class, not State
+            self.assertFalse(state.remove_hook(12, process_hook, after=True, syscall=True))
+            # We can remove this one because it was applied specifically to this
+            # State (or its parent)
+            self.assertTrue(state.remove_hook(None, do_nothing, after=True, syscall=True))
+
+            state.add_hook(None, do_nothing, after=False, syscall=True)
+            state.add_hook(None, do_nothing, after=True, syscall=True)
+
+            # Should execute directly after sys_brk invocation
+            state.add_hook("sys_brk", fin, after=True, syscall=True)
+
+        for state in self.m.ready_states:
+            self.m.add_hook(None, do_nothing, after=True, state=state, syscall=True)
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            self.m.run()
+        self.assertIn("Reached fin callback", f.getvalue())
+
 
 class StateMergeTest(unittest.TestCase):
 

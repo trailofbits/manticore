@@ -1,4 +1,5 @@
 import copy
+import logging
 from collections import namedtuple
 from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Tuple, Union
 
@@ -7,9 +8,11 @@ from .memory import ConcretizeMemory, MemoryException
 from .. import issymbolic
 from ..core.state import StateBase, Concretize, TerminateState
 from ..core.smtlib import Expression
+from ..platforms import linux_syscalls
 
 
 HookCallback = Callable[[StateBase], None]
+logger = logging.getLogger(__name__)
 
 
 class CheckpointData(NamedTuple):
@@ -22,23 +25,31 @@ class State(StateBase):
         super().__init__(*args, **kwargs)
         self._hooks: Dict[Optional[int], Set[HookCallback]] = {}
         self._after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
+        self._sys_hooks: Dict[Optional[int], Set[HookCallback]] = {}
+        self._sys_after_hooks: Dict[Optional[int], Set[HookCallback]] = {}
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
         state["hooks"] = self._hooks
         state["after_hooks"] = self._after_hooks
+        state["sys_hooks"] = self._sys_hooks
+        state["sys_after_hooks"] = self._sys_after_hooks
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
         super().__setstate__(state)
         self._hooks = state["hooks"]
         self._after_hooks = state["after_hooks"]
+        self._sys_hooks = state["sys_hooks"]
+        self._sys_after_hooks = state["sys_after_hooks"]
         self._resub_hooks()
 
     def __enter__(self) -> "State":
         new_state = super().__enter__()
         new_state._hooks = copy.copy(self._hooks)
         new_state._after_hooks = copy.copy(self._after_hooks)
+        new_state._sys_hooks = copy.copy(self._sys_hooks)
+        new_state._sys_after_hooks = copy.copy(self._sys_after_hooks)
 
         # Update constraint pointers in platform objects
         from ..platforms.linux import SLinux
@@ -55,56 +66,111 @@ class State(StateBase):
         return new_state
 
     def _get_hook_context(
-        self, after: bool = True
+        self, after: bool = True, syscall: bool = False
     ) -> Tuple[Dict[Optional[int], Set[HookCallback]], str, Any]:
         """
         Internal helper function to get hook context information.
 
         :param after: Whether we want info pertaining to hooks after instruction executes or before
+        :param syscall: Catch a syscall invocation instead of instruction?
         :return: Information for hooks after or before:
             - set of hooks for specified after or before
             - string of callback event
             - State function that handles the callback
         """
-        return (
-            (self._hooks, "will_execute_instruction", self._state_hook_callback)
-            if not after
-            else (self._after_hooks, "did_execute_instruction", self._state_after_hook_callback)
-        )
+        if not syscall:
+            return (
+                (self._hooks, "will_execute_instruction", self._state_hook_callback)
+                if not after
+                else (self._after_hooks, "did_execute_instruction", self._state_after_hook_callback)
+            )
+        else:
+            return (
+                (self._sys_hooks, "will_invoke_syscall", self._state_sys_hook_callback)
+                if not after
+                else (
+                    self._sys_after_hooks,
+                    "did_invoke_syscall",
+                    self._state_sys_after_hook_callback,
+                )
+            )
 
-    def remove_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False) -> bool:
+    def remove_hook(
+        self,
+        pc_or_sys: Optional[Union[int, str]],
+        callback: HookCallback,
+        after: bool = False,
+        syscall: bool = False,
+    ) -> bool:
         """
         Remove a callback with the specified properties
-        :param pc: Address of instruction to remove from
-        :param callback: The callback function that was at the address
+        :param pc_or_sys: Address of instruction, syscall number, or syscall name to remove hook from
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
+        :param callback: The callback function that was at the address (or syscall)
         :param after: Whether it was after instruction executed or not
+        :param syscall: Catch a syscall invocation instead of instruction?
         :return: Whether it was removed
         """
-        hooks, when, _ = self._get_hook_context(after)
-        cbs = hooks.get(pc, set())
+
+        if isinstance(pc_or_sys, str):
+            table = getattr(linux_syscalls, self._platform.current.machine)
+            for index, name in table.items():
+                if name == pc_or_sys:
+                    pc_or_sys = index
+                    break
+            if isinstance(pc_or_sys, str):
+                logger.warning(
+                    f"{pc_or_sys} is not a valid syscall name in architecture {self._platform.current.machine}. "
+                    "Please refer to manticore/platforms/linux_syscalls.py to find the correct name."
+                )
+                return False
+
+        hooks, when, _ = self._get_hook_context(after, syscall)
+        cbs = hooks.get(pc_or_sys, set())
         if callback in cbs:
             cbs.remove(callback)
         else:
             return False
 
-        if len(hooks.get(pc, set())) == 0:
-            del hooks[pc]
+        if not len(hooks.get(pc_or_sys, set())):
+            del hooks[pc_or_sys]
 
         return True
 
-    def add_hook(self, pc: Optional[int], callback: HookCallback, after: bool = False) -> None:
+    def add_hook(
+        self,
+        pc_or_sys: Optional[Union[int, str]],
+        callback: HookCallback,
+        after: bool = False,
+        syscall: bool = False,
+    ) -> None:
         """
-        Add a callback to be invoked on executing a program counter. Pass `None`
-        for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.native.state.State` argument.
+        Add a callback to be invoked on executing a program counter (or syscall). Pass `None`
+        for `pc_or_sys` to invoke callback on every instruction (or syscall invocation).
+        `callback` should be a callable that takes one :class:`~manticore.native.state.State` argument.
 
-        :param pc: Address of instruction to hook
+        :param pc_or_sys: Address of instruction to hook, syscall number, or syscall name
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
         :param callback: Hook function
-        :param after: Hook after PC executes?
-        :param state: Add hook to this state
+        :param after: Hook after PC (or after syscall) executes?
+        :param syscall: Catch a syscall invocation instead of instruction?
         """
-        hooks, when, hook_callback = self._get_hook_context(after)
-        hooks.setdefault(pc, set()).add(callback)
+
+        if isinstance(pc_or_sys, str):
+            table = getattr(linux_syscalls, self._platform.current.machine)
+            for index, name in table.items():
+                if name == pc_or_sys:
+                    pc_or_sys = index
+                    break
+            if isinstance(pc_or_sys, str):
+                logger.warning(
+                    f"{pc_or_sys} is not a valid syscall name in architecture {self._platform.current.machine}. "
+                    "Please refer to manticore/platforms/linux_syscalls.py to find the correct name."
+                )
+                return
+
+        hooks, when, hook_callback = self._get_hook_context(after, syscall)
+        hooks.setdefault(pc_or_sys, set()).add(callback)
         if hooks:
             self.subscribe(when, hook_callback)
 
@@ -114,10 +180,16 @@ class State(StateBase):
         state is active again.
         """
         # TODO: check if the lists actually have hooks
-        _, when, hook_callback = self._get_hook_context(False)
+        _, when, hook_callback = self._get_hook_context(False, False)
         self.subscribe(when, hook_callback)
 
-        _, when, hook_callback = self._get_hook_context(True)
+        _, when, hook_callback = self._get_hook_context(True, False)
+        self.subscribe(when, hook_callback)
+
+        _, when, hook_callback = self._get_hook_context(False, True)
+        self.subscribe(when, hook_callback)
+
+        _, when, hook_callback = self._get_hook_context(True, True)
         self.subscribe(when, hook_callback)
 
     def _state_hook_callback(self, pc: int, _instruction: Instruction) -> None:
@@ -153,6 +225,40 @@ class State(StateBase):
             cb(self)
 
         # Invoke all pc-agnostic hooks
+        for cb in tmp_hooks.get(None, []):
+            cb(self)
+
+    def _state_sys_hook_callback(self, syscall_num: int) -> None:
+        """
+        Invoke all registered State hooks before the syscall executes.
+
+        :param syscall_num: index of the syscall about to be executed
+        """
+        # Prevent crash if removing hook(s) during a callback
+        tmp_hooks = copy.deepcopy(self._sys_hooks)
+
+        # Invoke all syscall-specific hooks
+        for cb in tmp_hooks.get(syscall_num, []):
+            cb(self)
+
+        # Invoke all syscall-agnostic hooks
+        for cb in tmp_hooks.get(None, []):
+            cb(self)
+
+    def _state_sys_after_hook_callback(self, syscall_num: int):
+        """
+        Invoke all registered State hooks after the syscall executes.
+
+        :param syscall_num: index of the syscall that was just executed
+        """
+        # Prevent crash if removing hook(s) during a callback
+        tmp_hooks = copy.deepcopy(self._sys_after_hooks)
+
+        # Invoke all syscall-specific hooks
+        for cb in tmp_hooks.get(syscall_num, []):
+            cb(self)
+
+        # Invoke all syscall-agnostic hooks
         for cb in tmp_hooks.get(None, []):
             cb(self)
 

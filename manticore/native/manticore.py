@@ -5,7 +5,7 @@ import elftools
 import os
 import shlex
 import time
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -39,16 +39,23 @@ class Manticore(ManticoreBase):
             initial_state = _make_initial_state(path_or_state, argv=argv, **kwargs)
         else:
             initial_state = path_or_state
-
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
         # Move the following into a linux plugin
         self._assertions = {}
         self.trace = None
+        self._linux_machine_arch: str  # used when looking up syscall numbers for sys hooks
         # sugar for 'will_execute_instruction"
         self._hooks = {}
         self._after_hooks = {}
+        self._sys_hooks = {}
+        self._sys_after_hooks = {}
         self._init_hooks = set()
+
+        from ..platforms.linux import Linux
+
+        if isinstance(initial_state.platform, Linux):
+            self._linux_machine_arch = initial_state.platform.current.machine
 
         # self.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
@@ -215,54 +222,91 @@ class Manticore(ManticoreBase):
             self.subscribe("will_run", self._init_callback)
         return f
 
-    def hook(self, pc, after=False):
+    def hook(
+        self, pc_or_sys: Optional[Union[int, str]], after: bool = False, syscall: bool = False
+    ):
         """
         A decorator used to register a hook function for a given instruction address.
         Equivalent to calling :func:`~add_hook`.
 
-        :param pc: Address of instruction to hook
-        :type pc: int or None
+        :param pc_or_sys: Address of instruction, syscall number, or syscall name to remove hook from
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
+        :param after: Hook after PC (or after syscall) executes?
+        :param syscall: Catch a syscall invocation instead of instruction?
         """
 
         def decorator(f):
-            self.add_hook(pc, f, after)
+            self.add_hook(pc_or_sys, f, after, None, syscall)
             return f
 
         return decorator
 
     def add_hook(
         self,
-        pc: Optional[int],
+        pc_or_sys: Optional[Union[int, str]],
         callback: HookCallback,
         after: bool = False,
         state: Optional[State] = None,
+        syscall: bool = False,
     ):
         """
-        Add a callback to be invoked on executing a program counter. Pass `None`
-        for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.core.state.State` argument.
+        Add a callback to be invoked on executing a program counter (or syscall). Pass `None`
+        for `pc_or_sys` to invoke callback on every instruction (or syscall). `callback` should
+        be a callable that takes one :class:`~manticore.core.state.State` argument.
 
-        :param pc: Address of instruction to hook
+        :param pc_or_sys: Address of instruction, syscall number, or syscall name to remove hook from
+        :type pc_or_sys: int or None if `syscall` = False. int, str, or None if `syscall` = True
         :param callback: Hook function
-        :param after: Hook after PC executes?
+        :param after: Hook after PC (or after syscall) executes?
         :param state: Optionally, add hook for this state only, else all states
+        :param syscall: Catch a syscall invocation instead of instruction?
         """
-        if not (isinstance(pc, int) or pc is None):
-            raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
+        if not (isinstance(pc_or_sys, int) or pc_or_sys is None or syscall):
+            raise TypeError(f"pc must be either an int or None, not {pc_or_sys.__class__.__name__}")
+        elif not (isinstance(pc_or_sys, (int, str)) or pc_or_sys is None) and syscall:
+            raise TypeError(
+                f"syscall must be either an int, string, or None, not {pc_or_sys.__class__.__name__}"
+            )
+
+        if isinstance(pc_or_sys, str):
+            from ..platforms import linux_syscalls
+
+            table = getattr(linux_syscalls, self._linux_machine_arch)
+            for index, name in table.items():
+                if name == pc_or_sys:
+                    pc_or_sys = index
+                    break
+            if isinstance(pc_or_sys, str):
+                logger.warning(
+                    f"{pc_or_sys} is not a valid syscall name in architecture {self._linux_machine_arch}. "
+                    "Please refer to manticore/platforms/linux_syscalls.py to find the correct name."
+                )
+                return
 
         if state is None:
             # add hook to all states
-            hooks, when, hook_callback = (
-                (self._hooks, "will_execute_instruction", self._hook_callback)
-                if not after
-                else (self._after_hooks, "did_execute_instruction", self._after_hook_callback)
-            )
-            hooks.setdefault(pc, set()).add(callback)
+            if not syscall:
+                hooks, when, hook_callback = (
+                    (self._hooks, "will_execute_instruction", self._hook_callback)
+                    if not after
+                    else (self._after_hooks, "did_execute_instruction", self._after_hook_callback)
+                )
+            else:
+                hooks, when, hook_callback = (
+                    (self._sys_hooks, "will_invoke_syscall", self._sys_hook_callback)
+                    if not after
+                    else (
+                        self._sys_after_hooks,
+                        "did_invoke_syscall",
+                        self._sys_after_hook_callback,
+                    )
+                )
+            hooks.setdefault(pc_or_sys, set()).add(callback)
             if hooks:
                 self.subscribe(when, hook_callback)
         else:
             # only hook for the specified state
-            state.add_hook(pc, callback, after)
+            state.add_hook(pc_or_sys, callback, after, syscall)
 
     def _hook_callback(self, state, pc, instruction):
         "Invoke all registered generic hooks"
@@ -291,6 +335,28 @@ class Manticore(ManticoreBase):
 
         # Invoke all pc-agnostic hooks
         for cb in self._after_hooks.get(None, []):
+            cb(state)
+
+    def _sys_hook_callback(self, state, syscall_num):
+        "Invoke all registered generic hooks"
+
+        # Invoke all syscall_num-specific hooks
+        for cb in self._sys_hooks.get(syscall_num, []):
+            cb(state)
+
+        # Invoke all syscall_num-agnostic hooks
+        for cb in self._sys_hooks.get(None, []):
+            cb(state)
+
+    def _sys_after_hook_callback(self, state, syscall_num):
+        "Invoke all registered generic hooks"
+
+        # Invoke all syscall_num-specific hooks
+        for cb in self._sys_after_hooks.get(syscall_num, []):
+            cb(state)
+
+        # Invoke all syscall_num-agnostic hooks
+        for cb in self._sys_after_hooks.get(None, []):
             cb(state)
 
     def _init_callback(self, ready_states):
