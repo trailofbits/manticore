@@ -2909,13 +2909,15 @@ class Linux(Platform):
                 self.check_timers()
                 self.sched()
         except (Interruption, Syscall) as e:
+            index: int = self._syscall_abi.syscall_number()
+            self._syscall_abi._cpu._publish("will_invoke_syscall", index)
             try:
                 self.syscall()
                 if hasattr(e, "on_handled"):
                     e.on_handled()
+                self._syscall_abi._cpu._publish("did_invoke_syscall", index)
             except RestartSyscall:
                 pass
-
         return True
 
     # 64bit syscalls

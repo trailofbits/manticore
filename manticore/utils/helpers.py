@@ -1,3 +1,4 @@
+import collections
 import logging
 import pickle
 import string
@@ -200,3 +201,13 @@ def pretty_print_state_descriptors(desc: Dict):
 
         print(tab)
     print()
+
+
+class deque(collections.deque):
+    """ A wrapper around collections.deque that adds a few APIs present in SyncManager.Queue """
+
+    def empty(self) -> bool:
+        return len(self) == 0
+
+    def get(self):
+        return self.popleft()
