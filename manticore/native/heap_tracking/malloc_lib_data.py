@@ -54,7 +54,7 @@ class MallocLibData:
         # TODO(Sonya)
         pass
 
-    def process_sbrk(self, ret_addr: int, size: int):
+    def process_brk(self, ret_addr: int, size: int):
         # check last chunk added to list
         # if size + address == new starting address of chunk -> add new chunk size to last allocated chunk
         # else -> add a new chunk to the list
