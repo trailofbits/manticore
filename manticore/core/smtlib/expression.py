@@ -1168,7 +1168,7 @@ class ArrayStore(ArrayOperation):
         assert index.size == array.index_size
         assert value.size == array.value_size
         self._written: Optional[Set[Any]] = None  # Cache of the known indexes
-        self._concrete_cache: Dict[Any, Any] = dict()
+        self._concrete_cache: Dict[Any, Any] = None
         self._length = array.length
         self._default = array.default
 
@@ -1184,11 +1184,13 @@ class ArrayStore(ArrayOperation):
 
     @property
     def concrete_cache(self):
-        for index, value in get_items(self):
-            if not isinstance(index, Constant):
-                break
-            if index.value not in self._concrete_cache:
-                self._concrete_cache[index.value] = value
+        if self._concrete_cache is None:
+            self._concrete_cache = {}
+            for index, value in get_items(self):
+                if not isinstance(index, Constant):
+                    break
+                if index.value not in self._concrete_cache:
+                    self._concrete_cache[index.value] = value
         return self._concrete_cache
 
     @property
