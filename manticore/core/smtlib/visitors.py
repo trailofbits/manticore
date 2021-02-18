@@ -5,8 +5,10 @@ from ...exceptions import SmtlibError
 from .expression import *
 from functools import lru_cache
 import copy
+import io
 import logging
 import operator
+import time
 import math
 from decimal import Decimal
 
@@ -209,9 +211,6 @@ def get_depth(exp):
     visitor = GetDepth()
     visitor.visit(exp)
     return visitor.result
-
-
-import io
 
 
 class PrettyPrinter(Visitor):
@@ -805,9 +804,6 @@ class ArithmeticSimplifier(Visitor):
         assert len(operands) == 0
         assert not isinstance(expression, Operation)
         return expression
-
-
-import time
 
 
 @lru_cache(maxsize=128, typed=True)
