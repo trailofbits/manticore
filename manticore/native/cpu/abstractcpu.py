@@ -503,6 +503,7 @@ class Cpu(Eventful):
         "read_memory",
         "decode_instruction",
         "execute_instruction",
+        "invoke_syscall",
         "set_descriptor",
         "map_memory",
         "protect_memory",
