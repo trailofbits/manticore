@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TypeVar, TYPE_CHECKING
 
 from .smtlib import Bool, ConstraintSet, Expression, issymbolic, BitVecConstant, MutableArray
 from ..utils.event import Eventful
@@ -172,8 +172,8 @@ class StateBase(Eventful):
     """
     Representation of a unique program state/path.
 
-    :param ConstraintSet constraints: Initial constraints
-    :param Platform platform: Initial operating system state
+    :param constraints: Initial constraints
+    :param platform: Initial operating system state
     :ivar dict context: Local context for arbitrary data storage
     """
 

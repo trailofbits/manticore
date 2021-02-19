@@ -3,6 +3,7 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from base64 import b64encode
 from copy import copy
+from typing import Any, List
 
 parser = argparse.ArgumentParser("Generate Manticore tests from the WASM Spec")
 parser.add_argument("filename", type=argparse.FileType("r"), help="JSON file output from wast2json")
@@ -60,7 +61,7 @@ env.filters["escape_null"] = escape_null
 template = env.get_template("test_template.jinja2")
 
 
-modules = []
+modules: List[Any] = []
 registered_modules = {}
 imports = []
 current_module = None
@@ -100,14 +101,16 @@ for d in data:
                     mod_name=d["action"].get("module", None),
                 )
         elif d["action"]["type"] == "get":
-            modules[current_module].add_test(
-                d["action"]["field"],
-                d["line"],
-                [],
-                convert_types(d["expected"]),
-                "assert_global",
-                d["action"].get("module", None),
-            )
+            if current_module:
+                modules[current_module].add_test(
+                    d["action"]["field"],
+                    d["line"],
+                    [],
+                    convert_types(d["expected"]),
+                    "assert_global",
+                    d["action"].get("module", None),
+                )
+            current_module = None
         else:
             raise NotImplementedError("assert_return with action type: " + d["action"]["type"])
     elif d["type"] == "assert_return_arithmetic_nan":
@@ -155,10 +158,16 @@ for d in data:
         if maybe_name:  # This is an alias for another registered module
             imports.append({"type": "alias", "alias": d["as"], "orig": maybe_name})
         else:  # This is an alias for the current module
-            imports.append(
-                {"type": "import", "name": d["as"], "filename": modules[current_module].filename}
-            )
-            modules[current_module].registered_name = d["as"]
+            if current_module:
+                imports.append(
+                    {
+                        "type": "import",
+                        "name": d["as"],
+                        "filename": modules[current_module].filename,
+                    }
+                )
+                modules[current_module].registered_name = d["as"]
+            current_module = None
 
     if current_module:
         modules[current_module].imports = copy(imports)

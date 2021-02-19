@@ -11,9 +11,10 @@ from ..core.smtlib import Expression, ConstraintSet
 from ..platforms import linux_syscalls
 
 if TYPE_CHECKING:
-    from ..platforms.platform import Platform
+    from ..platforms.linux import Linux
+    from ..platforms.decree import Decree
 
-HookCallback = Callable[[StateBase], None]
+HookCallback = Callable[["State"], None]
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +24,7 @@ class CheckpointData(NamedTuple):
 
 
 class State(StateBase):
-    def __init__(self, *, constraints: ConstraintSet, platform: "Platform", **kwargs):
+    def __init__(self, *, constraints: ConstraintSet, platform: Union["Linux", "Decree"], **kwargs):
         super().__init__(constraints=constraints, platform=platform, **kwargs)
         self._hooks: Dict[Optional[int], Set[HookCallback]] = {}
         self._after_hooks: Dict[Optional[int], Set[HookCallback]] = {}

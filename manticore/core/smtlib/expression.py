@@ -1168,7 +1168,7 @@ class ArrayStore(ArrayOperation):
         assert index.size == array.index_size
         assert value.size == array.value_size
         self._written: Optional[Set[Any]] = None  # Cache of the known indexes
-        self._concrete_cache: Dict[Any, Any] = None
+        self._concrete_cache: Optional[Dict[Any, Any]] = None
         self._length = array.length
         self._default = array.default
 

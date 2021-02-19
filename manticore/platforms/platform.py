@@ -1,11 +1,10 @@
 import logging
-from typing import Optional
-
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Optional
 
 from ..utils.event import Eventful
 from ..core.state import StateBase
+from ..native.cpu.abstractcpu import Cpu
 
 
 logger = logging.getLogger(__name__)
@@ -49,6 +48,8 @@ class Platform(Eventful):
     """
     Base class for all platforms e.g. operating systems or virtual machines.
     """
+
+    current: Any
 
     _published_events = {"solve"}
 
