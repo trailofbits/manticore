@@ -687,6 +687,16 @@ class BoolEqual(BoolOperation):
     def __init__(self, operanda, operandb, **kwargs):
         super().__init__(operands=(operanda, operandb), **kwargs)
 
+    def __bool__(self):
+        from .visitors import simplify
+
+        x = simplify(self)
+        if isinstance(x, Constant):
+            return bool(x.value)
+        # NOTE: True is the default return value for objects that don't implement __bool__
+        # https://docs.python.org/3.6/reference/datamodel.html#object.__bool__
+        return True
+
 
 class BoolGreaterThan(BoolOperation):
     def __init__(self, operanda: BitVec, operandb: BitVec, **kwargs):
