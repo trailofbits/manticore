@@ -28,10 +28,10 @@ dev_noks = (
     + [
         "coverage",
         "Sphinx",
-        "pytest==5.3.0",
-        "pytest-timeout==1.4.2",
-        "pytest-xdist==1.30.0",
-        "pytest-cov==2.8.1",
+        "pytest",
+        "pytest-timeout",
+        "pytest-xdist",
+        "pytest-cov",
         "jinja2",
     ]
     + lint_deps
