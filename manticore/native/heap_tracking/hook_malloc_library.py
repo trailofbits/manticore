@@ -3,7 +3,7 @@ from manticore.native import Manticore
 from manticore.native.heap_tracking.malloc_lib_data import MallocLibData
 
 import logging
-from typing import Callable
+from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 logger.setLevel(2)
@@ -80,6 +80,7 @@ def hook_malloc_lib(
     hook_free_ret_info: bool = True,
     hook_calloc_ret_info: bool = True,
     hook_realloc_ret_info: bool = True,
+    workspace: Optional[str] = None,
 ):
     """Function to add malloc hooks and do prep work
     - TODO(Sonya): would like this to eventially be __init__() method for a class
@@ -87,7 +88,12 @@ def hook_malloc_lib(
     (from Eric) See: https://github.com/trailofbits/manticore/blob/master/tests/native/test_state.py#L163-L218
     & https://github.com/trailofbits/manticore/blob/master/tests/native/test_state.py#L274-L278 to work on debugging this
     """
-    initial_state.context["malloc_lib"] = MallocLibData()
+    # This features use on platforms besides amd64 is entirely untested
+    assert initial_state.platform.current.machine == "amd64", (
+        "This feature's use on platforms besides amd64 is " "entirely untested."
+    )
+
+    initial_state.context["malloc_lib"] = MallocLibData(workspace)
 
     global HOOK_BRK_INFO, HOOK_MMAP_INFO, HOOK_MALLOC_RETURN, HOOK_FREE_RETURN, HOOK_CALLOC_RETURN, HOOK_REALLOC_RETURN
     HOOK_BRK_INFO = hook_brk_info

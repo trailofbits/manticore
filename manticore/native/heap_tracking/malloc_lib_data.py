@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass, field
 import json
 
@@ -11,6 +11,7 @@ import json
 class MallocLibData:
     """This class holds the malloc library data in a specific state (or on specific program path)."""
 
+    workspace: Optional[str]
     malloc_calls: List[Tuple[int, int]] = field(default_factory=list)
     free_calls: List[int] = field(default_factory=list)
     sbrk_chunks: List[Tuple[int, int]] = field(default_factory=list)
@@ -33,8 +34,12 @@ class MallocLibData:
             "sbrk_chunks": self.sbrk_chunks,
             "mmap_chunks": self.mmap_chunks,
         }
-        with open(f"m_out/malloc_{state_id}.json", "w+") as write_file:
-            json.dump(data, write_file, indent=4)
+        if self.workspace:
+            with open(f"{self.workspace}/malloc_{state_id}.json", "w+") as write_file:
+                json.dump(data, write_file, indent=4)
+        else:
+            with open(f"m_out/malloc_{state_id}.json", "w+") as write_file:
+                json.dump(data, write_file, indent=4)
 
     # TODO(Sonya): Add some more methods here for helpful semantics of recording/retrieving information
     # Might want to annotate all this with instruction address information
