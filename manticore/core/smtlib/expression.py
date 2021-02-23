@@ -907,7 +907,7 @@ class Array(Expression, abstract=True):
             index_size=self.index_size,
             length=len(array_a) + len(array_b),
             value_size=self.value_size,
-            name="concatenation",
+            name=f"concatenation{uuid.uuid1()}",
         )
         for index in range(len(array_a)):
             new_arr = new_arr.store(index, local_simplify(array_a[index]))
