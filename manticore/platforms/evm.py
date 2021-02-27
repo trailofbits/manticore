@@ -42,7 +42,7 @@ import rlp
 logger = logging.getLogger(__name__)
 
 # Gas behaviour configuration
-# When gas is concrete the gas checks and calculation are pretty straigth forward
+# When gas is concrete the gas checks and calculation are pretty straight forward
 # Though Gas can became symbolic in normal bytecode execution for example at instructions
 # MSTORE, MSTORE8, EXP, ... and every instruction with internal operation restricted by gas
 # This configuration variable allows the user to control and perhaps relax the gas calculation
@@ -69,7 +69,7 @@ def globalfakesha3(data):
 
 consts.add(
     "oog",
-    default="complete",
+    default="ignore",
     description=(
         "Default behavior for symbolic gas."
         "pedantic: Fully faithful. Test at every instruction. Forks."
@@ -102,6 +102,12 @@ consts.add(
     default=-1,
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
+consts.add(
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
+)
+
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -251,6 +257,8 @@ class Transaction:
         stream.write("Gas used: %d %s\n" % (conc_tx.gas, flagged(issymbolic(self.gas))))
 
         tx_data = conc_tx.data
+        if len(tx_data) > 80:
+            tx_data = tx_data.rstrip(conc_tx.data[-3:-1])
 
         stream.write(
             "Data: 0x{} {}\n".format(
@@ -262,9 +270,9 @@ class Transaction:
             return_data = conc_tx.return_data
 
             stream.write(
-                "Return_data: 0x{} ({}) {}\n".format(
+                "Return_data: 0x{} {} {}\n".format(
                     binascii.hexlify(return_data).decode(),
-                    printable_bytes(return_data),
+                    f"({printable_bytes(return_data)})" if conc_tx.sort != "CREATE" else "",
                     flagged(issymbolic(self.return_data)),
                 )
             )
@@ -641,6 +649,7 @@ class EVM(Eventful):
         "evm_write_code",
         "decode_instruction",
         "on_unsound_symbolication",
+        "solve",
     }
 
     class transact:
@@ -743,7 +752,7 @@ class EVM(Eventful):
         # This is a very cornered corner case in which code is actually symbolic
         # We should simply not allow to jump to unconstrained(*) symbolic code.
         # (*) bytecode that could take more than a single value
-        self._check_jumpdest = False
+        self._need_check_jumpdest = False
         self._valid_jumpdests = set()
 
         # Compile the list of valid jumpdests via linear dissassembly
@@ -876,7 +885,7 @@ class EVM(Eventful):
         state["_published_pre_instruction_events"] = self._published_pre_instruction_events
         state["_used_calldata_size"] = self._used_calldata_size
         state["_valid_jumpdests"] = self._valid_jumpdests
-        state["_check_jumpdest"] = self._check_jumpdest
+        state["_need_check_jumpdest"] = self._need_check_jumpdest
         state["_return_data"] = self._return_data
         state["evmfork"] = self.evmfork
         state["_refund"] = self._refund
@@ -905,7 +914,7 @@ class EVM(Eventful):
         self.suicides = state["suicides"]
         self._used_calldata_size = state["_used_calldata_size"]
         self._valid_jumpdests = state["_valid_jumpdests"]
-        self._check_jumpdest = state["_check_jumpdest"]
+        self._need_check_jumpdest = state["_need_check_jumpdest"]
         self._return_data = state["_return_data"]
         self.evmfork = state["evmfork"]
         self._refund = state["_refund"]
@@ -1213,28 +1222,36 @@ class EVM(Eventful):
         Note that at this point `flag` can be the conditional from a JUMPI
         instruction hence potentially a symbolic value.
         """
-        self._check_jumpdest = flag
+        self._need_check_jumpdest = flag
 
     def _check_jmpdest(self):
         """
         If the previous instruction was a JUMP/JUMPI and the conditional was
         True, this checks that the current instruction must be a JUMPDEST.
 
-        Here, if symbolic, the conditional `self._check_jumpdest` would be
+        Here, if symbolic, the conditional `self._need_check_jumpdest` would be
         already constrained to a single concrete value.
         """
         # If pc is already pointing to a JUMPDEST thre is no need to check.
         pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
         if pc in self._valid_jumpdests:
-            self._check_jumpdest = False
+            self._need_check_jumpdest = False
             return
 
-        should_check_jumpdest = simplify(self._check_jumpdest)
+        should_check_jumpdest = simplify(self._need_check_jumpdest)
         if isinstance(should_check_jumpdest, Constant):
             should_check_jumpdest = should_check_jumpdest.value
         elif issymbolic(should_check_jumpdest):
+            self._publish("will_solve", self.constraints, should_check_jumpdest, "get_all_values")
             should_check_jumpdest_solutions = SelectedSolver.instance().get_all_values(
                 self.constraints, should_check_jumpdest
+            )
+            self._publish(
+                "did_solve",
+                self.constraints,
+                should_check_jumpdest,
+                "get_all_values",
+                should_check_jumpdest_solutions,
             )
             if len(should_check_jumpdest_solutions) != 1:
                 raise EthereumError("Conditional not concretized at JMPDEST check")
@@ -1242,7 +1259,7 @@ class EVM(Eventful):
 
         # If it can be solved only to False just set it False. If it can be solved
         # only to True, process it and also set it to False
-        self._check_jumpdest = False
+        self._need_check_jumpdest = False
 
         if should_check_jumpdest:
             if pc not in self._valid_jumpdests:
@@ -1620,9 +1637,9 @@ class EVM(Eventful):
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
         """Compute Keccak-256 hash
-            If the size is symbolic the potential solutions will be sampled as
-            defined by the default policy and the analysis will be forked.
-            The `size` can be considered concrete in this handler.
+        If the size is symbolic the potential solutions will be sampled as
+        defined by the default policy and the analysis will be forked.
+        The `size` can be considered concrete in this handler.
 
         """
         data = self.read_buffer(start, size)
@@ -1688,8 +1705,8 @@ class EVM(Eventful):
         return Operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, offset, size):
-        """ To improve reporting we maintain how much of the calldata is actually
-        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly """
+        """To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly"""
         self._used_calldata_size = Operators.ITEBV(
             256, size != 0, self._used_calldata_size + offset + size, self._used_calldata_size
         )
@@ -1721,7 +1738,10 @@ class EVM(Eventful):
         if consts.oog == "complete":
             # gas reduced #??
             cond = Operators.ULT(self.gas, self._checkpoint_data[1])
-            if not SelectedSolver.instance().can_be_true(self.constraints, cond):
+            self._publish("will_solve", self.constraints, cond, "can_be_true")
+            enough_gas = SelectedSolver.instance().can_be_true(self.constraints, cond)
+            self._publish("did_solve", self.constraints, cond, "can_be_true", enough_gas)
+            if not enough_gas:
                 raise NotEnoughGas()
             self.constraints.add(cond)
 
@@ -1730,7 +1750,9 @@ class EVM(Eventful):
 
         max_size = size
         if issymbolic(max_size):
+            self._publish("will_solve", self.constraints, size, "max")
             max_size = SelectedSolver.instance().max(self.constraints, size)
+            self._publish("did_solve", self.constraints, size, "max", max_size)
 
         if calldata_overflow is not None:
             cap = len(self.data) + calldata_overflow
@@ -1778,7 +1800,9 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
+            self._publish("will_solve", self.constraints, size, "max")
             max_size = SelectedSolver.instance().max(self.constraints, size)
+            self._publish("did_solve", self.constraints, size, "max", max_size)
         else:
             max_size = size
 
@@ -2135,10 +2159,9 @@ class EVM(Eventful):
         GCALLNEW = 25000
         wanted_gas = Operators.ZEXTEND(wanted_gas, 512)
         fee = Operators.ITEBV(512, value == 0, 0, GCALLVALUE)
-        known_address = False
-        for address_i in self.world.accounts:
-            known_address = Operators.OR(known_address, address == address_i)
-        fee += Operators.ITEBV(512, Operators.AND(known_address, value == 0), 0, GCALLNEW)
+        fee += Operators.ITEBV(
+            512, Operators.OR(self.world.account_exists(address), value == 0), 0, GCALLNEW
+        )
         fee += self._get_memfee(in_offset, in_size)
 
         exception = False
@@ -2272,7 +2295,7 @@ class EVM(Eventful):
         CreateBySelfdestructGas = 25000
         SelfdestructRefundGas = 24000
         fee = 0
-        if recipient not in self.world and self.world.get_balance(self.address) != 0:
+        if not self.world.account_exists(recipient) and self.world.get_balance(self.address) != 0:
             fee += CreateBySelfdestructGas
 
         if self.address not in self.world._deleted_accounts:
@@ -2387,6 +2410,7 @@ class EVMWorld(Platform):
         "open_transaction",
         "close_transaction",
         "symbolic_function",
+        "solve",
     }
 
     def __init__(self, constraints, fork=DEFAULT_FORK, **kwargs):
@@ -2444,8 +2468,12 @@ class EVMWorld(Platform):
                 concrete_data.append(simplified.value)
             else:
                 # simplify by solving. probably means that we need to improve simplification
+                self._publish("will_solve", self.constraints, simplified, "get_all_values")
                 solutions = SelectedSolver.instance().get_all_values(
                     self.constraints, simplified, 2, silent=True
+                )
+                self._publish(
+                    "did_solve", self.constraints, simplified, "get_all_values", solutions
                 )
                 if len(solutions) != 1:
                     break
@@ -2469,7 +2497,9 @@ class EVMWorld(Platform):
             return result[0]
         except Exception as e:
             logger.info("Error! %r", e)
+            self._publish("will_solve", self.constraints, data, "get_value")
             data_c = SelectedSolver.instance().get_value(self.constraints, data)
+            self._publish("did_solve", self.constraints, data, "get_value", data_c)
             return int(sha3.keccak_256(data_c).hexdigest(), 16)
 
     @property
@@ -2891,6 +2921,15 @@ class EVMWorld(Platform):
             return 0
         return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
 
+    def account_exists(self, address):
+        if address not in self._world_state:
+            return False  # accounts default to nonexistent
+        return (
+            self.has_code(address)
+            or Operators.UGT(self.get_nonce(address), 0)
+            or Operators.UGT(self.get_balance(address), 0)
+        )
+
     def add_to_balance(self, address, value):
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
@@ -3079,6 +3118,9 @@ class EVMWorld(Platform):
         if nonce is None:
             # As per EIP 161, contract accounts are initialized with a nonce of 1
             nonce = 1 if len(code) > 0 else 0
+
+        if isinstance(balance, BitVec):
+            balance = Operators.ZEXTEND(balance, 512)
 
         if address is None:
             address = self.new_address()
@@ -3371,21 +3413,24 @@ class EVMWorld(Platform):
                     stream.write("\n")
 
         # Accounts summary
+        assert state.can_be_true(True)
         is_something_symbolic = False
         stream.write("%d accounts.\n" % len(blockchain.accounts))
         for account_address in blockchain.accounts:
             is_account_address_symbolic = issymbolic(account_address)
-            account_address = state.solve_one(account_address)
+            account_address = state.solve_one(account_address, constrain=True)
 
             stream.write("* %s::\n" % mevm.account_name(account_address))
             stream.write(
                 "Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic))
             )
             balance = blockchain.get_balance(account_address)
-            is_balance_symbolic = issymbolic(balance)
-            is_something_symbolic = is_something_symbolic or is_balance_symbolic
-            balance = state.solve_one(balance, constrain=True)
-            stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+
+            if not consts.ignore_balance:
+                is_balance_symbolic = issymbolic(balance)
+                is_something_symbolic = is_something_symbolic or is_balance_symbolic
+                balance = state.solve_one(balance, constrain=True)
+                stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain.get_storage(account_address)
             concrete_indexes = set()
@@ -3394,7 +3439,7 @@ class EVMWorld(Platform):
 
             for index in concrete_indexes:
                 stream.write(
-                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}"
+                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}\n"
                 )
             storage = blockchain.get_storage(account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
@@ -3410,7 +3455,9 @@ class EVMWorld(Platform):
                     # temp_cs.add(storage.get(index) != 0)
                     temp_cs.add(storage.is_known(index))
                     # Query the solver to get all storage indexes with used slots
+                    self._publish("will_solve", temp_cs, index, "get_all_values")
                     all_used_indexes = SelectedSolver.instance().get_all_values(temp_cs, index)
+                    self._publish("did_solve", temp_cs, index, "get_all_values", all_used_indexes)
 
                 if all_used_indexes:
                     stream.write("Storage:\n")
@@ -3420,8 +3467,8 @@ class EVMWorld(Platform):
                         stream.write(
                             "storage[%x] = %x %s\n"
                             % (
-                                state.solve_one(i),
-                                state.solve_one(value),
+                                state.solve_one(i, constrain=True),
+                                state.solve_one(value, constrain=True),
                                 flagged(is_storage_symbolic),
                             )
                         )

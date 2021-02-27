@@ -3,7 +3,7 @@ import io
 import logging
 import struct
 import types
-from functools import wraps
+from functools import wraps, partial
 from itertools import islice
 
 import unicorn
@@ -44,7 +44,7 @@ class CpuException(Exception):
 
 class DecodeException(CpuException):
     """
-    Raised when trying to decode an unknown or invalid instruction """
+    Raised when trying to decode an unknown or invalid instruction"""
 
     def __init__(self, pc, bytes):
         super().__init__("Error decoding instruction @ 0x{:x}".format(pc))
@@ -90,7 +90,11 @@ class ConcretizeRegister(CpuException):
     """
 
     def __init__(
-        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
+        self,
+        cpu: "Cpu",
+        reg_name: str,
+        message: Optional[str] = None,
+        policy: str = "MINMAX",
     ):
         self.message = message if message else f"Concretizing {reg_name}"
 
@@ -177,11 +181,11 @@ class Operand:
 
     @property
     def type(self):
-        """ This property encapsulates the operand type.
-            It may be one of the following:
-                register
-                memory
-                immediate
+        """This property encapsulates the operand type.
+        It may be one of the following:
+            register
+            memory
+            immediate
         """
         raise NotImplementedError
 
@@ -326,6 +330,9 @@ class Abi:
         :param prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
         """
+        if type(model) is partial:
+            # mypy issue with partial types https://github.com/python/mypy/issues/1484
+            model = model.args[0]  # type: ignore
         sig = inspect.signature(model)
         if _sig_is_varargs(sig):
             model_name = getattr(model, "__qualname__", "<no name>")
@@ -424,8 +431,13 @@ class SyscallAbi(Abi):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
-        self._cpu._publish("will_execute_syscall", model)
+        if type(model) is partial:
+            self._cpu._publish("will_execute_syscall", model.args[0])
+        else:
+            self._cpu._publish("will_execute_syscall", model)
         ret = super().invoke(model, prefix_args)
+        if type(model) is partial:
+            model = model.args[0]
         self._cpu._publish(
             "did_execute_syscall",
             model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
@@ -491,11 +503,13 @@ class Cpu(Eventful):
         "read_memory",
         "decode_instruction",
         "execute_instruction",
+        "invoke_syscall",
         "set_descriptor",
         "map_memory",
         "protect_memory",
         "unmap_memory",
         "execute_syscall",
+        "solve",
     }
 
     def __init__(self, regfile: RegisterFile, memory: Memory, **kwargs):
@@ -907,9 +921,10 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack(
-                            "B", SelectedSolver.instance().get_value(self.memory.constraints, c)
-                        )
+                        self._publish("will_solve", self.memory.constraints, c, "get_value")
+                        solved = SelectedSolver.instance().get_value(self.memory.constraints, c)
+                        self._publish("did_solve", self.memory.constraints, c, "get_value", solved)
+                        c = struct.pack("B", solved)
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:

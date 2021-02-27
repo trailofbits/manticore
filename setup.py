@@ -1,5 +1,7 @@
 import os
+import sys
 from setuptools import setup, find_packages
+from datetime import date
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
@@ -16,7 +18,7 @@ def rtd_dependent_deps():
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc2"]
 
-lint_deps = ["black==19.10b0", "mypy==0.770"]
+lint_deps = ["black==20.8b1", "mypy==0.790"]
 
 auto_test_deps = ["py-evm"]
 
@@ -41,30 +43,43 @@ this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+
+# https://stackoverflow.com/a/4792601 grumble grumble
+dev_extension = ""
+if "--dev_release" in sys.argv:
+    dev_extension = ".dev" + date.today().strftime("%y%m%d")
+    sys.argv.remove("--dev_release")
+
 setup(
     name="manticore",
     description="Manticore is a symbolic execution tool for analysis of binaries and smart contracts.",
-    long_description=long_description,
     long_description_content_type="text/markdown",
+    long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.3",
+    version="0.3.5" + dev_extension,
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
         "pyyaml",
+        "protobuf",
+        # evm dependencies
         "pysha3",
         "prettytable",
         "ply",
         "rlp",
-        "crytic-compile>=0.1.1",
+        "crytic-compile>=0.1.8",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
-        "psutil",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,
-    entry_points={"console_scripts": ["manticore = manticore.__main__:main"]},
+    entry_points={
+        "console_scripts": [
+            "manticore = manticore.__main__:main",
+            "manticore-verifier = manticore.ethereum.verifier:main",
+        ]
+    },
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
 )

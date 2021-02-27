@@ -1,5 +1,7 @@
 import binascii
 import unittest
+import subprocess
+import pkg_resources
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -27,12 +29,17 @@ from manticore.ethereum import (
     ABI,
     EthereumError,
     EVMContract,
+    verifier,
 )
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
+from manticore.utils import config
+import io
+import contextlib
+
 
 solver = Z3Solver.instance()
 
@@ -60,6 +67,35 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn("Unsigned integer overflow at SUB instruction", all_findings)
         self.assertIn("Unsigned integer overflow at ADD instruction", all_findings)
         self.assertIn("Unsigned integer overflow at MUL instruction", all_findings)
+
+
+class EthVerifierIntegrationTest(unittest.TestCase):
+    def test_propverif(self):
+        smtcfg = config.get_group("smt")
+        with smtcfg.temp_vals():
+            smtcfg.solver = smtcfg.solver.yices
+
+            filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
+            f = io.StringIO()
+            with contextlib.redirect_stdout(f):
+                verifier.manticore_verifier(filename, "TestToken")
+            output = f.getvalue()
+            self.assertIsNotNone(
+                re.compile(
+                    r".*crytic_test_balance\s*\|\s*failed\s*\([0-9a-f]+\).*", re.DOTALL
+                ).match(output)
+            )
+            self.assertIsNotNone(
+                re.compile(r".*crytic_test_must_revert\s*\|\s*passed.*", re.DOTALL).match(output)
+            )
+
+    def test_propverif_external(self) -> None:
+        cli_version = subprocess.check_output(("manticore-verifier", "--version")).decode("utf-8")
+        cli_version = cli_version.split(
+            "Manticore is only supported on Linux. Proceed at your own risk!\n"
+        )[-1]
+        py_version = f"Manticore {pkg_resources.get_distribution('manticore').version}\n"
+        self.assertEqual(cli_version, py_version)
 
 
 class EthAbiTests(unittest.TestCase):
@@ -93,7 +129,7 @@ class EthAbiTests(unittest.TestCase):
             }
         }
         """
-        user_account = m.create_account(balance=1000000, name="user_account")
+        user_account = m.create_account(balance=10 ** 10, name="user_account")
         contract_account = m.solidity_create_contract(
             source_code, owner=user_account, name="contract_account", gas=36225
         )
@@ -684,7 +720,7 @@ class EthTests(unittest.TestCase):
     def test_check_jumpdest_symbolic_pc(self):
         """
         In Manticore 0.2.4 (up to 6804661) when run with DetectIntegerOverflow,
-        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._check_jumpdest:
+        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._need_check_jumpdest:
             self.pc in self._valid_jumpdests
         failed (because we checked if the object is in a list of integers...).
 
@@ -993,20 +1029,16 @@ class EthTests(unittest.TestCase):
             """
 
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-                try:
-                    world = state.platform
-                    if world.current_transaction.sort == "CREATE":
-                        name = "init"
-                    else:
-                        name = "rt"
+                world = state.platform
+                if world.current_transaction.sort == "CREATE":
+                    name = "init"
+                else:
+                    name = "rt"
 
-                    # collect all end instructions based on whether they are in init or rt
-                    if instruction.is_endtx:
-                        with self.locked_context(name) as d:
-                            d.append(instruction.pc)
-                except Exception as e:
-                    print(e)
-                    raise
+                # collect all end instructions based on whether they are in init or rt
+                if instruction.is_endtx:
+                    with self.locked_context(name) as d:
+                        d.append(instruction.pc)
 
         mevm = self.mevm
         p = TestPlugin()
@@ -1406,6 +1438,20 @@ class EthHelpersTest(unittest.TestCase):
         # wasn't requested.
         inner_func(None, self.bv, 123)
 
+    def test_account_exists(self):
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints)
+        default = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        empty = world.create_account(nonce=0, balance=0, code=b"")
+        has_code = world.create_account(nonce=0, balance=0, code=b"ff")
+        has_nonce = world.create_account(nonce=1, balance=0, code=b"")
+        has_balance = world.create_account(nonce=0, balance=1, code=b"")
+        self.assertTrue(world.account_exists(has_code))
+        self.assertTrue(world.account_exists(has_nonce))
+        self.assertTrue(world.account_exists(has_balance))
+        self.assertFalse(world.account_exists(empty))
+        self.assertFalse(world.account_exists(default))
+
 
 class EthSolidityMetadataTests(unittest.TestCase):
     def test_tuple_signature_for_components(self):
@@ -1580,9 +1626,9 @@ class EthSolidityMetadataTests(unittest.TestCase):
 class EthSpecificTxIntructionTests(unittest.TestCase):
     def test_jmpdest_check(self):
         """
-            This test that jumping to a JUMPDEST in the operand of a PUSH should
-            be treated as an INVALID instruction.
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that jumping to a JUMPDEST in the operand of a PUSH should
+        be treated as an INVALID instruction.
+        https://github.com/trailofbits/manticore/issues/1169
         """
 
         constraints = ConstraintSet()
@@ -1617,8 +1663,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_delegatecall_env(self):
         """
-            This test that the delegatecalled environment is identicall to the caller
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that the delegatecalled environment is identicall to the caller
+        https://github.com/trailofbits/manticore/issues/1169
         """
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)
@@ -1748,6 +1794,148 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 value=0,
             )
             self.assertEqual(m.count_ready_states(), 1)
+
+    def test_call_gas(self):
+        GCALLSTATIC = 21721  # 21000 + (3 * 7 push ops) + 700 static cost for call
+        GCALLVALUE = 9000  # cost added for nonzero callvalue
+        GCALLNEW = 25000  # cost added for forcing new acct creation
+        GCALLSTIPEND = 2300  # additional gas sent with a call if value > 0
+
+        with disposable_mevm() as m:
+            # empty call target
+            m.create_account(address=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+            # nonempty call target
+            m.create_account(
+                address=0x111111111111111111111111111111111111111, nonce=1  # nonempty account
+            )
+
+            # call(gas, target, value, in_offset, in_size, out_offset, out_size)
+            # call to empty acct with value = 0
+            asm_call_empty_no_val = """ PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH20 0xfffffffffffffffffffffffffffffffffffffff
+                                            PUSH1 0x0
+                                            CALL
+                                            STOP
+                                        """
+            # call to existing acct with value > 0
+            asm_call_nonempty_w_val = """ PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x1
+                                            PUSH20 0x111111111111111111111111111111111111111
+                                            PUSH1 0x0
+                                            CALL
+                                            STOP
+                                        """
+            # call to empty acct with value > 0, forcing addition to state trie
+            asm_call_empty_w_val = """ PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x0
+                                            PUSH1 0X0
+                                            PUSH1 0x1
+                                            PUSH20 0xfffffffffffffffffffffffffffffffffffffff
+                                            PUSH1 0x0
+                                            CALL
+                                            STOP
+                                        """
+
+            call_empty_no_val = m.create_account(code=EVMAsm.assemble(asm_call_empty_no_val))
+            call_nonempty_w_val = m.create_account(
+                balance=100, code=EVMAsm.assemble(asm_call_nonempty_w_val)
+            )
+            call_empty_w_val = m.create_account(
+                balance=100, code=EVMAsm.assemble(asm_call_empty_w_val)
+            )
+
+            caller = m.create_account(
+                address=0x222222222222222222222222222222222222222, balance=1000000000000000000
+            )
+
+            # call to empty acct with value = 0
+            m.transaction(caller=caller, address=call_empty_no_val, data=b"", value=0, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # no value, so no call stipend should be sent
+            self.assertEqual(txs[-2].gas, 0)
+            # no value, so only static call cost should be charged
+            self.assertEqual(txs[-1].used_gas, GCALLSTATIC)
+
+            # call to existing acct with value > 0
+            m.transaction(
+                caller=caller, address=call_nonempty_w_val, data=b"", value=0, gas=50000000
+            )
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # call stipend should be sent with call
+            self.assertEqual(txs[-2].gas, GCALLSTIPEND)
+            # cost of call should include value cost, but not new acct cost
+            self.assertEqual(txs[-1].used_gas, GCALLSTATIC + GCALLVALUE - GCALLSTIPEND)
+
+            # call to empty acct with value > 0, forcing addition to state trie
+            m.transaction(caller=caller, address=call_empty_w_val, data=b"", value=0, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # call stipend should be sent with call
+            self.assertEqual(txs[-2].gas, GCALLSTIPEND)
+            # cost of call should include value cost and new acct cost
+            self.assertEqual(txs[-1].used_gas, GCALLSTATIC + GCALLVALUE + GCALLNEW - GCALLSTIPEND)
+
+    def test_selfdestruct_gas(self):
+        GSDSTATIC = 26003  # 21000 + 3 (push op) + 5000 static cost for selfdestruct
+        GNEWACCOUNT = 25000
+        RSELFDESTRUCT = 24000
+
+        with disposable_mevm() as m:
+            # empty call target
+            empty = m.create_account(address=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+            # nonempty call target
+            nonempty = m.create_account(address=0x1111111111111111111111111111111111111111, nonce=1)
+
+            asm_sd_empty = """ PUSH20 0xffffffffffffffffffffffffffffffffffffffff
+                                SELFDESTRUCT
+                            """
+            asm_sd_nonempty = """ PUSH20 0x1111111111111111111111111111111111111111
+                                    SELFDESTRUCT
+                                """
+
+            caller = m.create_account(
+                address=0x222222222222222222222222222222222222222, balance=1000000000000000000
+            )
+
+            # selfdestruct to empty acct with no value
+            sd_empty = m.create_account(code=EVMAsm.assemble(asm_sd_empty))
+            m.transaction(caller=caller, address=sd_empty, data=b"", value=0, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # no value, so only static cost charged and refund is gas_used / 2
+            self.assertEqual(txs[-1].used_gas, round(GSDSTATIC - (GSDSTATIC / 2)))
+
+            # selfdestruct to existing acct with value > 0
+            sd_nonempty = m.create_account(code=EVMAsm.assemble(asm_sd_nonempty))
+            m.transaction(caller=caller, address=sd_nonempty, data=b"", value=1, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # recipient exists, so only static cost charged and refund is gas_used / 2
+            self.assertEqual(txs[-1].used_gas, round(GSDSTATIC - (GSDSTATIC / 2)))
+
+            # selfdestruct to empty acct with value > 0, forcing addition to state trie
+            sd_empty = m.create_account(code=EVMAsm.assemble(asm_sd_empty))
+            m.transaction(caller=caller, address=sd_empty, data=b"", value=1, gas=50000000)
+            self.assertEqual(m.count_ready_states(), 1)
+            state = next(m.ready_states)
+            txs = state.platform.transactions
+            # new account gas charged and full refund returned
+            self.assertEqual(txs[-1].used_gas, GSDSTATIC + GNEWACCOUNT - RSELFDESTRUCT)
 
 
 class EthPluginTests(unittest.TestCase):

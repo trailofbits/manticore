@@ -3,15 +3,19 @@
 rm -rf */
 touch __init__.py
 
-wget -nc -nv -O wabt.tgz -c https://github.com/WebAssembly/wabt/releases/download/1.0.12/wabt-1.0.12-linux.tar.gz
+if ! [ -x "$(command -v wast2json)" ]; then
+  wget -nc -nv -O wabt.tgz -c https://github.com/WebAssembly/wabt/releases/download/1.0.12/wabt-1.0.12-linux.tar.gz
+  tar --wildcards --strip=1 -xf wabt.tgz 'wabt-*/wast2json'
+  rm wabt.tgz
+else
+  cp "$(command -v wast2json)" .
+fi
+
 wget -nc -nv -O spec.zip -c https://github.com/WebAssembly/spec/archive/opam-1.1.zip
 
-yes | unzip -q -j spec.zip 'spec-*/test/core/*' -d .
+unzip -q -j spec.zip 'spec-*/test/core/*' -d .
 rm run.py README.md
 rm spec.zip
-
-tar --wildcards --strip=1 -xf wabt.tgz 'wabt-*/wast2json'
-rm wabt.tgz
 
 mkdir skipped_tests
 while read skip; do

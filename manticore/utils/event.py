@@ -5,6 +5,7 @@ import functools
 from typing import Dict, Set
 from itertools import takewhile
 from weakref import WeakKeyDictionary, ref
+from inspect import isgenerator
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +158,13 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.items():
             for callback in methods:
-                callback(robj(), *args, **kwargs)
+                # Need to clone any iterable args, otherwise the first usage will drain it.
+                # If the generator isn't available on `self`, give up and return it anyway.
+                new_args = (
+                    (arg if not isgenerator(arg) else getattr(self, arg.__name__, arg))
+                    for arg in args
+                )
+                callback(robj(), *new_args, **kwargs)
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to

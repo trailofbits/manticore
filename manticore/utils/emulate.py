@@ -55,7 +55,7 @@ class ConcreteUnicornEmulator:
     implementations in Manticore. This Emulator is instead intended to completely replace Manticore's executor when
     operating on purely concrete data.
 
-    To use the emulator, register a callback for the will_start_run event that calls `state.cpu.emulate_until` with an
+    To use the emulator, register a callback for the will_run event that calls `state.cpu.emulate_until` with an
     address at which it should switch back from Unicorn to Manticore. Passing 0 will result in the entire target being
     executed concretely.
 
@@ -184,7 +184,7 @@ class ConcreteUnicornEmulator:
         self._emu.mem_protect(start, size, convert_permissions(perms))
 
     def get_unicorn_pc(self):
-        """ Get the program counter from Unicorn regardless of architecture.
+        """Get the program counter from Unicorn regardless of architecture.
         Legacy method, since this module only works on x86."""
         if self._cpu.arch == CS_ARCH_ARM:
             return self._emu.reg_read(UC_ARM_REG_R15)
