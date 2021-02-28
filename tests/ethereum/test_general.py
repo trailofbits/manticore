@@ -16,7 +16,7 @@ from manticore import ManticoreError
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib import Z3Solver
-from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib.expression import BitVec, BitVecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import (
@@ -1382,7 +1382,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = BitVec(256)
+        self.bv = BitVecVariable(256, name="BVV")
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"

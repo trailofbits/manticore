@@ -1,5 +1,7 @@
 import unittest
 import os
+import sys
+from typing import Set, Type
 
 from manticore.core.smtlib import (
     ConstraintSet,
@@ -61,6 +63,187 @@ class Z3Specific(unittest.TestCase):
         )
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 """
+
+
+class ExpressionPropertiesTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
+    def test_xslotted(self):
+        """Test that XSlotted multi inheritance classes uses same amount
+        of memory than a single class object with slots
+        """
+
+        class Base(object, metaclass=XSlotted, abstract=True):
+            __xslots__ = ("t",)
+            pass
+
+        class A(Base, abstract=True):
+            __xslots__ = ("a",)
+            pass
+
+        class B(Base, abstract=True):
+            __xslots__ = ("b",)
+            pass
+
+        class C(A, B):
+            pass
+
+        class X(object):
+            __slots__ = ("t", "a", "b")
+
+        c = C()
+        c.a = 1
+        c.t = 10
+
+        c.b = 2
+        c.t = 10
+
+        x = X()
+        x.a = 1
+        x.b = 2
+        x.t = 20
+
+        self.assertEqual(sys.getsizeof(c), sys.getsizeof(x))
+
+    def test_Expression(self):
+        # Used to check if all Expression have test
+        checked = set()
+
+        def check(ty: Type, pickle_size=None, sizeof=None, **kwargs):
+            x = ty(**kwargs)
+            """
+            print(
+                type(x),
+                "\n  Pickle size:",
+                len(pickle_dumps(x)),
+                "\n  GetSizeOf:",
+                sys.getsizeof(x),
+                "\n  Slotted:",
+                not hasattr(x, "__dict__"),
+            )
+            """
+            self.assertEqual(len(pickle_dumps(x)), pickle_size)
+            if sys.version_info[1] == 6:  # Python 3.6
+                self.assertEqual(sys.getsizeof(x), sizeof)
+            elif sys.version_info[1] == 7:  # Python 3.7
+                self.assertEqual(sys.getsizeof(x), sizeof + 8)
+            elif sys.version_info[1] >= 8:  # Python 3.8+
+                self.assertEqual(sys.getsizeof(x), sizeof - 8)
+            self.assertFalse(hasattr(x, "__dict__"))  # slots!
+            self.assertTrue(hasattr(x, "_taint"))  # taint!
+            checked.add(ty)
+
+        # Can not instantiate an Expression
+        for ty in (
+            Expression,
+            # Constant,  # These are actually tuples of types
+            # Variable,
+            # Operation,
+            BoolOperation,
+            BitVecOperation,
+            ArrayOperation,
+            BitVec,
+            Bool,
+            Array,
+        ):
+            self.assertRaises(Exception, ty, ())
+            self.assertTrue(hasattr(ty, "__doc__"))
+            self.assertTrue(ty.__doc__, ty)
+            checked.add(ty)
+
+        # The test numbers are taken from Python 3.6.13 (the oldest supported version)
+        # New pythons could use a different number of bytes. Look at the 'check' function
+        check(BitVecVariable, size=32, name="name", pickle_size=113, sizeof=64)
+        check(BoolVariable, name="name", pickle_size=102, sizeof=56)
+        check(
+            ArrayVariable,
+            index_bits=32,
+            value_bits=8,
+            index_max=100,
+            name="name",
+            pickle_size=150,
+            sizeof=80,
+        )
+        check(BitVecConstant, size=32, value=10, pickle_size=109, sizeof=64)
+        check(BoolConstant, value=False, pickle_size=97, sizeof=56)
+
+        # But you can instantiate a BoolOr
+        x = BoolVariable(name="x")
+        y = BoolVariable(name="y")
+        z = BoolVariable(name="z")
+        check(BoolEqual, a=x, b=y, pickle_size=168, sizeof=56)
+        check(BoolAnd, a=x, b=y, pickle_size=166, sizeof=56)
+        check(BoolOr, a=x, b=y, pickle_size=165, sizeof=56)
+        check(BoolXor, a=x, b=y, pickle_size=166, sizeof=56)
+        check(BoolNot, value=x, pickle_size=143, sizeof=56)
+        check(BoolITE, cond=z, true=x, false=y, pickle_size=189, sizeof=56)
+
+        bvx = BitVecVariable(size=32, name="bvx")
+        bvy = BitVecVariable(size=32, name="bvy")
+
+        check(UnsignedGreaterThan, a=bvx, b=bvy, pickle_size=197, sizeof=56)
+        check(GreaterThan, a=bvx, b=bvy, pickle_size=189, sizeof=56)
+        check(UnsignedGreaterOrEqual, a=bvx, b=bvy, pickle_size=200, sizeof=56)
+        check(GreaterOrEqual, a=bvx, b=bvy, pickle_size=192, sizeof=56)
+        check(UnsignedLessThan, a=bvx, b=bvy, pickle_size=194, sizeof=56)
+        check(LessThan, a=bvx, b=bvy, pickle_size=186, sizeof=56)
+        check(UnsignedLessOrEqual, a=bvx, b=bvy, pickle_size=197, sizeof=56)
+        check(LessOrEqual, a=bvx, b=bvy, pickle_size=189, sizeof=56)
+
+        check(BitVecOr, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecXor, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecAnd, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecNot, a=bvx, pickle_size=162, sizeof=64)
+        check(BitVecNeg, a=bvx, pickle_size=162, sizeof=64)
+        check(BitVecAdd, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecMul, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecSub, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecDiv, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecMod, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecUnsignedDiv, a=bvx, b=bvy, pickle_size=199, sizeof=64)
+        check(BitVecRem, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecUnsignedRem, a=bvx, b=bvy, pickle_size=199, sizeof=64)
+
+        check(BitVecShiftLeft, a=bvx, b=bvy, pickle_size=197, sizeof=64)
+        check(BitVecShiftRight, a=bvx, b=bvy, pickle_size=198, sizeof=64)
+        check(BitVecArithmeticShiftLeft, a=bvx, b=bvy, pickle_size=207, sizeof=64)
+        check(BitVecArithmeticShiftRight, a=bvx, b=bvy, pickle_size=208, sizeof=64)
+
+        check(BitVecZeroExtend, operand=bvx, size_dest=122, pickle_size=180, sizeof=72)
+        check(BitVecSignExtend, operand=bvx, size_dest=122, pickle_size=180, sizeof=72)
+        check(BitVecExtract, operand=bvx, offset=0, size=8, pickle_size=189, sizeof=80)
+        check(
+            BitVecConcat,
+            operands=(bvx, bvy),
+            size_dest=(bvx.size + bvy.size),
+            pickle_size=194,
+            sizeof=64,
+        )
+        check(
+            BitVecITE,
+            size=bvx.size,
+            condition=x,
+            true_value=bvx,
+            false_value=bvy,
+            pickle_size=231,
+            sizeof=64,
+        )
+
+        a = ArrayVariable(index_bits=32, value_bits=32, index_max=324, name="name")
+        check(ArraySlice, array=a, offset=0, size=10, pickle_size=244, sizeof=136)
+        check(ArraySelect, array=a, index=bvx, pickle_size=255, sizeof=64)
+        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=281, sizeof=120)
+        check(ArrayProxy, array=a, default=0, pickle_size=222, sizeof=120)
+
+        def all_subclasses(cls) -> Set[Type]:
+            return {cls}.union(
+                set(cls.__subclasses__()).union(
+                    [s for c in cls.__subclasses__() for s in all_subclasses(c)]
+                )
+            )
+
+        all_types = all_subclasses(Expression)
+        self.assertSetEqual(checked, all_types)
 
 
 class ExpressionTest(unittest.TestCase):

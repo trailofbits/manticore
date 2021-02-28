@@ -18,9 +18,12 @@ def wasm_main(args, _logger):
         policy=args.policy,
     )
 
-    if consts.profile:
-        profiler = Profiler()
-        m.register_plugin(profiler)
+    try:
+        if consts.profile:
+            profiler = Profiler()
+            m.register_plugin(profiler)
+    except AttributeError:
+        pass
 
     m.default_invoke(func_name=consts.target_func)
 

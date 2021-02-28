@@ -164,7 +164,9 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 
 ###############################################################################
 # Booleans
-class Bool(Expression):
+class Bool(Expression, abstract=True):
+    """Bool expressions represent symbolic value of truth"""
+
     def __init__(self, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
 
@@ -257,7 +259,9 @@ class BoolConstant(Bool):
         return self._value
 
 
-class BoolOperation(Bool):
+class BoolOperation(Bool, abstract=True):
+    """ An operation that results in a Bool """
+
     __xslots__: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, *operands, **kwargs):
@@ -298,8 +302,8 @@ class BoolITE(BoolOperation):
         super().__init__(cond, true, false, **kwargs)
 
 
-class BitVec(Expression):
-    """ This adds a bitsize to the Expression class """
+class BitVec(Expression, abstract=True):
+    """ BitVector expressions have a fixed bit size """
 
     __xslots__: Tuple[str, ...] = ("size",)
 
@@ -560,7 +564,9 @@ class BitVecConstant(BitVec):
             return self._value
 
 
-class BitVecOperation(BitVec):
+class BitVecOperation(BitVec, abstract=True):
+    """ An operation that results in a BitVec """
+
     __xslots__: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, size, *operands, **kwargs):
@@ -718,7 +724,14 @@ class UnsignedGreaterOrEqual(BoolOperation):
 
 ###############################################################################
 # Array  BV32 -> BV8  or BV64 -> BV8
-class Array(Expression):
+class Array(Expression, abstract=True):
+    """An Array expression is an unmutable mapping from bitvector to bitvector
+
+    array.index_bits is the number of bits used for addressing a value
+    array.value_bits is the number of bits used in the values
+    array.index_max counts the valid indexes starting at 0. Accessing outside the bound is undefined
+    """
+
     __xslots__: Tuple[str, ...] = ("_index_bits", "_index_max", "_value_bits")
 
     def __init__(
@@ -868,18 +881,18 @@ class Array(Expression):
         bytes = []
         for offset in range(size):
             bytes.append(self.get(address + offset, 0))
-        return BitVecConcat(size * self.value_bits, *bytes)
+        return BitVecConcat(size * self.value_bits, tuple(bytes))
 
     def read_LE(self, address, size):
         address = self.cast_index(address)
         bytes = []
         for offset in range(size):
             bytes.append(self.get(address + offset, 0))
-        return BitVecConcat(size * self.value_bits, *reversed(bytes))
+        return BitVecConcat(size * self.value_bits, tuple(reversed(bytes)))
 
     def write_BE(self, address, value, size):
         address = self.cast_index(address)
-        value = BitVec(size * self.value_bits).cast(value)
+        value = BitVecConstant(size * self.value_bits, value=0).cast(value)
         array = self
         for offset in range(size):
             array = array.store(
@@ -890,7 +903,7 @@ class Array(Expression):
 
     def write_LE(self, address, value, size):
         address = self.cast_index(address)
-        value = BitVec(size * self.value_bits).cast(value)
+        value = BitVecConstant(size * self.value_bits, value=0).cast(value)
         array = self
         for offset in reversed(range(size)):
             array = array.store(
@@ -977,6 +990,8 @@ class ArrayVariable(Array):
 
 
 class ArrayOperation(Array):
+    """An operation that result in an Array"""
+
     __xslots__: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, array: Array, *operands, **kwargs):
@@ -1356,7 +1371,7 @@ class BitVecExtract(BitVecOperation):
 
 
 class BitVecConcat(BitVecOperation):
-    def __init__(self, size_dest: int, *operands, **kwargs):
+    def __init__(self, size_dest: int, operands: Tuple, **kwargs):
         assert all(isinstance(x, BitVec) for x in operands)
         assert size_dest == sum(x.size for x in operands)
         super().__init__(size_dest, *operands, **kwargs)

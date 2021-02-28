@@ -594,7 +594,7 @@ class ArithmeticSimplifier(Visitor):
         if last_o is not None:
             new_operands.append(last_o)
         if changed:
-            return BitVecConcat(expression.size, *new_operands)
+            return BitVecConcat(expression.size, tuple(new_operands))
 
         op = operands[0]
         value = None
@@ -648,7 +648,7 @@ class ArithmeticSimplifier(Visitor):
                 if size == 0:
                     assert expression.size == sum([x.size for x in new_operands])
                     return BitVecConcat(
-                        expression.size, *reversed(new_operands), taint=expression.taint
+                        expression.size, tuple(reversed(new_operands)), taint=expression.taint
                     )
 
                 if begining >= item.size:
