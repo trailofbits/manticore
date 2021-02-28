@@ -4,7 +4,7 @@ import uuid
 
 import re
 import copy
-from typing import Union, Optional, Dict, List
+from typing import Union, Optional, Dict, Tuple
 
 
 class ExpressionException(SmtlibError):
@@ -15,10 +15,60 @@ class ExpressionException(SmtlibError):
     pass
 
 
-class Expression:
+class XSlotted(type):
+    """
+    Metaclass that will propagate slots on multi-inheritance classes
+    Every class should define __xslots__ (instead of __slots__)
+
+    class Base(object, metaclass=XSlotted, abstract=True):
+        pass
+
+    class A(Base, abstract=True):
+        __xslots__ = ('a',)
+        pass
+
+    class B(Base, abstract=True):
+        __xslots__ = ('b',)
+        pass
+
+    class C(A, B):
+        pass
+
+    # Normal case / baseline
+    class X(object):
+        __slots__ = ('a', 'b')
+
+    c = C()
+    c.a = 1
+    c.b = 2
+
+    x = X()
+    x.a = 1
+    x.b = 2
+
+    import sys
+    print (sys.getsizeof(c),sys.getsizeof(x)) #same value
+    """
+
+    def __new__(cls, clsname, bases, attrs, abstract=False):
+        xslots = frozenset(attrs.get("__xslots__", ()))
+        # merge the xslots of all the bases with the one defined here
+        for base in bases:
+            xslots = xslots.union(getattr(base, "__xslots__", ()))
+        attrs["__xslots__"] = tuple(xslots)
+        if abstract:
+            attrs["__slots__"] = tuple()
+        else:
+            attrs["__slots__"] = tuple(map(lambda attr: attr.split("#", 1)[0], attrs["__xslots__"]))
+        attrs["__hash__"] = object.__hash__
+        # attrs["__hash__"] = lambda self : hash((clsname, tuple(getattr(self, name) for name in self.__slots__ if name not in ("_concrete_cache", "_written"))))
+        return super().__new__(cls, clsname, bases, attrs)
+
+
+class Expression(object, metaclass=XSlotted, abstract=True):
     """ Abstract taintable Expression. """
 
-    __slots__ = ["_taint"]
+    __xslots__: Tuple[str, ...] = ("_taint",)
 
     def __init__(self, taint: Union[tuple, frozenset] = ()):
         if self.__class__ is Expression:
@@ -115,8 +165,6 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
 ###############################################################################
 # Booleans
 class Bool(Expression):
-    __slots__: List[str] = []
-
     def __init__(self, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
 
@@ -169,7 +217,7 @@ class Bool(Expression):
 
 
 class BoolVariable(Bool):
-    __slots__ = ["_name"]
+    __xslots__: Tuple[str, ...] = ("_name",)
 
     def __init__(self, name: str, *args, **kwargs):
         assert " " not in name
@@ -195,11 +243,11 @@ class BoolVariable(Bool):
 
 
 class BoolConstant(Bool):
-    __slots__ = ["_value"]
+    __xslots__: Tuple[str, ...] = ("_value",)
 
     def __init__(self, value: bool, *args, **kwargs):
-        self._value = value
         super().__init__(*args, **kwargs)
+        self._value = value
 
     def __bool__(self):
         return self.value
@@ -210,7 +258,7 @@ class BoolConstant(Bool):
 
 
 class BoolOperation(Bool):
-    __slots__ = ["_operands"]
+    __xslots__: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, *operands, **kwargs):
         self._operands = operands
@@ -253,7 +301,7 @@ class BoolITE(BoolOperation):
 class BitVec(Expression):
     """ This adds a bitsize to the Expression class """
 
-    __slots__ = ["size"]
+    __xslots__: Tuple[str, ...] = ("size",)
 
     def __init__(self, size, *operands, **kwargs):
         super().__init__(*operands, **kwargs)
@@ -456,7 +504,7 @@ class BitVec(Expression):
 
 
 class BitVecVariable(BitVec):
-    __slots__ = ["_name"]
+    __xslots__: Tuple[str, ...] = ("_name",)
 
     def __init__(self, size: int, name: str, *args, **kwargs):
         assert " " not in name
@@ -482,7 +530,7 @@ class BitVecVariable(BitVec):
 
 
 class BitVecConstant(BitVec):
-    __slots__ = ["_value"]
+    __xslots__: Tuple[str, ...] = ("_value",)
 
     def __init__(self, size: int, value: int, *args, **kwargs):
         MASK = (1 << size) - 1
@@ -513,7 +561,7 @@ class BitVecConstant(BitVec):
 
 
 class BitVecOperation(BitVec):
-    __slots__ = ["_operands"]
+    __xslots__: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, size, *operands, **kwargs):
         self._operands = operands
@@ -671,7 +719,7 @@ class UnsignedGreaterOrEqual(BoolOperation):
 ###############################################################################
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
-    __slots__ = ["_index_bits", "_index_max", "_value_bits"]
+    __xslots__: Tuple[str, ...] = ("_index_bits", "_index_max", "_value_bits")
 
     def __init__(
         self, index_bits: int, index_max: Optional[int], value_bits: int, *operands, **kwargs
@@ -764,7 +812,7 @@ class Array(Expression):
 
     def write(self, offset, buf):
         if not isinstance(buf, (Array, bytearray)):
-            raise TypeError("Array or bytearray expected got {:s}".format(type(buf)))
+            raise TypeError(f"Array or bytearray expected got {type(buf)}")
         arr = self
         for i, val in enumerate(buf):
             arr = arr.store(offset + i, val)
@@ -903,7 +951,7 @@ class Array(Expression):
 
 
 class ArrayVariable(Array):
-    __slots__ = ["_name"]
+    __xslots__: Tuple[str, ...] = ("_name",)
 
     def __init__(self, index_bits, index_max, value_bits, name, *args, **kwargs):
         assert " " not in name
@@ -929,7 +977,7 @@ class ArrayVariable(Array):
 
 
 class ArrayOperation(Array):
-    __slots__ = ["_operands"]
+    __xslots__: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, array: Array, *operands, **kwargs):
         self._operands = (array, *operands)
@@ -989,6 +1037,8 @@ class ArrayStore(ArrayOperation):
 
 
 class ArraySlice(ArrayOperation):
+    __xslots__: Tuple[str, ...] = ("_slice_offset", "_slice_size")
+
     def __init__(
         self, array: Union["Array", "ArrayProxy"], offset: int, size: int, *args, **kwargs
     ):
@@ -1033,6 +1083,15 @@ class ArraySlice(ArrayOperation):
 
 
 class ArrayProxy(Array):
+    __xslots__: Tuple[str, ...] = (
+        "constraints",
+        "_default",
+        "_concrete_cache",
+        "_written",
+        "_array",
+        "_name",
+    )
+
     def __init__(self, array: Array, default: Optional[int] = None):
         self._default = default
         self._concrete_cache: Dict[int, int] = {}
@@ -1229,7 +1288,7 @@ class ArrayProxy(Array):
 
 
 class ArraySelect(BitVec):
-    __slots__ = ["_operands"]
+    __xslots__: Tuple[str, ...] = ("_operands",)
 
     def __init__(self, array: "Array", index: "BitVec", *operands, **kwargs):
         assert index.size == array.index_bits
@@ -1257,6 +1316,8 @@ class ArraySelect(BitVec):
 
 
 class BitVecSignExtend(BitVecOperation):
+    __xslots__: Tuple[str, ...] = ("extend",)
+
     def __init__(self, operand: "BitVec", size_dest: int, *args, **kwargs):
         assert size_dest >= operand.size
         super().__init__(size_dest, operand, *args, **kwargs)
@@ -1264,6 +1325,8 @@ class BitVecSignExtend(BitVecOperation):
 
 
 class BitVecZeroExtend(BitVecOperation):
+    __xslots__: Tuple[str, ...] = ("extend",)
+
     def __init__(self, size_dest: int, operand: "BitVec", *args, **kwargs):
         assert size_dest >= operand.size
         super().__init__(size_dest, operand, *args, **kwargs)
@@ -1271,6 +1334,8 @@ class BitVecZeroExtend(BitVecOperation):
 
 
 class BitVecExtract(BitVecOperation):
+    __xslots__: Tuple[str, ...] = ("_begining", "_end")
+
     def __init__(self, operand: "BitVec", offset: int, size: int, *args, **kwargs):
         assert offset >= 0 and offset + size <= operand.size
         super().__init__(size, operand, *args, **kwargs)
