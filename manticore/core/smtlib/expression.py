@@ -70,10 +70,8 @@ class Expression(object, metaclass=XSlotted, abstract=True):
     __xslots__: Tuple[str, ...] = ("_taint",)
 
     def __init__(self, *, taint: Union[tuple, frozenset] = (), **kwargs):
-        if self.__class__ is Expression:
-            raise TypeError
-        super().__init__()
         self._taint = frozenset(taint)
+        super().__init__()
 
     def __repr__(self):
         return "<{:s} at {:x}{:s}>".format(type(self).__name__, id(self), self.taint and "-T" or "")
@@ -161,6 +159,70 @@ def taint_with(arg, *taints, value_bits=256, index_bits=256):
     return arg
 
 
+class Variable(Expression, abstract=True):
+    """ An Expression that has a name """
+
+    __xslots__: Tuple[str, ...] = ("_name",)
+
+    def __init__(self, *, name: str, **kwargs):
+        """An Expression that has a name
+        :param name: The Variable name
+        """
+        super().__init__(**kwargs)
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def __repr__(self):
+        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
+
+    def __copy__(self, memo=""):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+    def __deepcopy__(self, memo=""):
+        raise ExpressionException("Copying of Variables is not allowed.")
+
+
+class Constant(Expression, abstract=True):
+    """ An Expression that has a concrete Python value """
+
+    __xslots__: Tuple[str, ...] = ("_value",)
+
+    def __init__(self, *, value: Union[bool, int], **kwargs):
+        """An Expression that has a name
+        :param name: The Variable name
+        """
+        super().__init__(**kwargs)
+        self._value = value
+
+    @property
+    def value(self) -> Union[bool, int]:
+        return self._value
+
+
+class Operation(Expression, abstract=True):
+    """ An Expression that contains operands that are also Expressions. """
+
+    __xslots__: Tuple[str, ...] = ("_operands",)
+
+    def __init__(self, *, operands: Tuple[Expression, ...], **kwargs):
+        """An operation has operands
+        :param operands: A tuple of expression operands
+        """
+        self._operands = operands
+        taint = kwargs.get("taint")
+        # If taint was not forced by a keyword argument, calculate default
+        if taint is None:
+            kwargs["taint"] = frozenset({y for x in operands for y in x.taint})
+        super().__init__(**kwargs)
+
+    @property
+    def operands(self) -> Tuple[Expression, ...]:
+        return self._operands
+
+
 ###############################################################################
 # Booleans
 class Bool(Expression, abstract=True):
@@ -217,63 +279,24 @@ class Bool(Expression, abstract=True):
         raise NotImplementedError("__bool__ for Bool")
 
 
-class BoolVariable(Bool):
-    __xslots__: Tuple[str, ...] = ("_name",)
-
-    def __init__(self, *, name: str, **kwargs):
-        assert " " not in name
-        super().__init__(**kwargs)
-        self._name = name
-
-    @property
-    def name(self):
-        return self._name
-
-    def __copy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __deepcopy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __repr__(self):
-        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
-
+class BoolVariable(Bool, Variable):
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () Bool)"
 
 
-class BoolConstant(Bool):
-    __xslots__: Tuple[str, ...] = ("_value",)
-
+class BoolConstant(Bool, Constant):
     def __init__(self, *, value: bool, **kwargs):
-        super().__init__(**kwargs)
-        self._value = value
+        super().__init__(value=bool(value), **kwargs)
 
     def __bool__(self):
         return self.value
 
-    @property
-    def value(self):
-        return self._value
 
-
-class BoolOperation(Bool, abstract=True):
+class BoolOperation(Bool, Operation, abstract=True):
     """ An operation that results in a Bool """
 
-    __xslots__: Tuple[str, ...] = ("_operands",)
-
-    def __init__(self, *, operands: Tuple, **kwargs):
-        self._operands = operands
-
-        # If taint was not forced by a keyword argument, calculate default
-        kwargs.setdefault("taint", reduce(lambda x, y: x.union(y.taint), operands, frozenset()))
-
-        super().__init__(**kwargs)
-
-    @property
-    def operands(self):
-        return self._operands
+    pass
 
 
 class BoolNot(BoolOperation):
@@ -506,39 +529,16 @@ class BitVec(Expression, abstract=True):
         return self != 0
 
 
-class BitVecVariable(BitVec):
-    __xslots__: Tuple[str, ...] = ("_name",)
-
-    def __init__(self, *, size: int, name: str, **kwargs):
-        assert " " not in name
-        super().__init__(size=size, **kwargs)
-        self._name = name
-
-    @property
-    def name(self):
-        return self._name
-
-    def __copy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __deepcopy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __repr__(self):
-        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
-
+class BitVecVariable(BitVec, Variable):
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () (_ BitVec {self.size}))"
 
 
-class BitVecConstant(BitVec):
-    __xslots__: Tuple[str, ...] = ("_value",)
-
+class BitVecConstant(BitVec, Constant):
     def __init__(self, *, size: int, value: int, **kwargs):
         MASK = (1 << size) - 1
-        self._value = value & MASK
-        super().__init__(size=size, **kwargs)
+        super().__init__(size=size, value=value & MASK, **kwargs)
 
     def __bool__(self):
         return self.value != 0
@@ -552,10 +552,6 @@ class BitVecConstant(BitVec):
         return super().__hash__()
 
     @property
-    def value(self):
-        return self._value
-
-    @property
     def signed_value(self):
         if self._value & self.signmask:
             return self._value - (1 << self.size)
@@ -563,22 +559,11 @@ class BitVecConstant(BitVec):
             return self._value
 
 
-class BitVecOperation(BitVec, abstract=True):
+class BitVecOperation(BitVec, Operation, abstract=True):
     """ An operation that results in a BitVec """
 
-    __xslots__: Tuple[str, ...] = ("_operands",)
-
     def __init__(self, *, size, operands: Tuple, **kwargs):
-        self._operands = operands
-
-        # If taint was not forced by a keyword argument, calculate default
-        kwargs.setdefault("taint", reduce(lambda x, y: x.union(y.taint), operands, frozenset()))
-
-        super().__init__(size=size, **kwargs)
-
-    @property
-    def operands(self):
-        return self._operands
+        super().__init__(size=size, operands=operands, **kwargs)
 
 
 class BitVecAdd(BitVecOperation):
@@ -971,55 +956,34 @@ class Array(Expression, abstract=True):
         return new_arr
 
 
-class ArrayVariable(Array):
-    __xslots__: Tuple[str, ...] = ("_name",)
-
+class ArrayVariable(Array, Variable):
     def __init__(self, *, index_bits, index_max, value_bits, name, **kwargs):
-        assert " " not in name
         super().__init__(
-            index_bits=index_bits, index_max=index_max, value_bits=value_bits, **kwargs
+            index_bits=index_bits, index_max=index_max, value_bits=value_bits, name=name, **kwargs
         )
-        self._name = name
-
-    @property
-    def name(self):
-        return self._name
-
-    def __copy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __deepcopy__(self, memo=""):
-        raise ExpressionException("Copying of Variables is not allowed.")
-
-    def __repr__(self):
-        return "<{:s}({:s}) at {:x}>".format(type(self).__name__, self.name, id(self))
 
     @property
     def declaration(self):
         return f"(declare-fun {self.name} () (Array (_ BitVec {self.index_bits}) (_ BitVec {self.value_bits})))"
 
 
-class ArrayOperation(Array):
+class ArrayOperation(Array, Operation):
     """An operation that result in an Array"""
 
-    __xslots__: Tuple[str, ...] = ("_operands",)
-
     def __init__(self, *, array: Array, operands: Tuple, **kwargs):
-        self._operands = (array, *operands)
-
-        # If taint was not forced by a keyword argument, calculate default
-        kwargs.setdefault("taint", reduce(lambda x, y: x.union(y.taint), operands, frozenset()))
-
         super().__init__(
             index_bits=array.index_bits,
             index_max=array.index_max,
             value_bits=array.value_bits,
+            operands=(array, *operands),
             **kwargs,
         )
 
     @property
-    def operands(self):
-        return self._operands
+    def array(self) -> Array:
+        arr = self.operands[0]
+        assert isinstance(arr, Array)
+        return arr
 
 
 class ArrayStore(ArrayOperation):
@@ -1029,12 +993,8 @@ class ArrayStore(ArrayOperation):
         super().__init__(array=array, operands=(index, value), **kwargs)
 
     @property
-    def array(self):
-        return self.operands[0]
-
-    @property
     def name(self):
-        return self.operands[0].name
+        return self.array.name
 
     @property
     def index(self):
@@ -1076,6 +1036,7 @@ class ArraySlice(ArrayOperation):
             raise ValueError("Array expected")
         if isinstance(array, ArrayProxy):
             array = array._array
+        # NOTE: Needed for calls to `cast_index`
         self._operands = (array,)
         super().__init__(
             array=array, operands=(self.cast_index(offset), self.cast_index(size)), **kwargs
@@ -1083,10 +1044,6 @@ class ArraySlice(ArrayOperation):
 
         self._slice_offset = offset
         self._slice_size = size
-
-    @property
-    def array(self):
-        return self._operands[0]
 
     @property
     def underlying_variable(self):
@@ -1344,18 +1301,11 @@ class ArrayProxy(Array):
         )
 
 
-class ArraySelect(BitVec):
-    __xslots__: Tuple[str, ...] = ("_operands",)
-
+class ArraySelect(BitVecOperation):
     def __init__(self, *, array: "Array", index: "BitVec", **kwargs):
         assert isinstance(array, Array)
         assert index.size == array.index_bits
-        self._operands = (array, index)
-
-        # If taint was not forced by a keyword argument, calculate default
-        kwargs.setdefault("taint", frozenset({y for x in self._operands for y in x.taint}))
-
-        super().__init__(size=array.value_bits, **kwargs)
+        super().__init__(size=array.value_bits, operands=(array, index), **kwargs)
 
     @property
     def array(self):
@@ -1445,8 +1395,3 @@ class BitVecITE(BitVecOperation):
     @property
     def false_value(self):
         return self.operands[2]
-
-
-Constant = (BitVecConstant, BoolConstant)
-Variable = (BitVecVariable, BoolVariable, ArrayVariable)
-Operation = (BitVecOperation, BoolOperation, ArrayOperation, ArraySelect)

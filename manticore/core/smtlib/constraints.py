@@ -185,7 +185,7 @@ class ConstraintSet:
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
-                    and isinstance(expression.operands[1], (*Variable, *Constant))
+                    and isinstance(expression.operands[1], (Variable, Constant))
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 

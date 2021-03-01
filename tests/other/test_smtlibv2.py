@@ -134,9 +134,9 @@ class ExpressionPropertiesTest(unittest.TestCase):
         # Can not instantiate an Expression
         for ty in (
             Expression,
-            # Constant,  # These are actually tuples of types
-            # Variable,
-            # Operation,
+            Constant,
+            Variable,
+            Operation,
             BoolOperation,
             BitVecOperation,
             ArrayOperation,
@@ -169,52 +169,52 @@ class ExpressionPropertiesTest(unittest.TestCase):
         x = BoolVariable(name="x")
         y = BoolVariable(name="y")
         z = BoolVariable(name="z")
-        check(BoolEqual, a=x, b=y, pickle_size=168, sizeof=56)
-        check(BoolAnd, a=x, b=y, pickle_size=166, sizeof=56)
-        check(BoolOr, a=x, b=y, pickle_size=165, sizeof=56)
-        check(BoolXor, a=x, b=y, pickle_size=166, sizeof=56)
-        check(BoolNot, value=x, pickle_size=143, sizeof=56)
-        check(BoolITE, cond=z, true=x, false=y, pickle_size=189, sizeof=56)
+        check(BoolEqual, a=x, b=y, pickle_size=167, sizeof=56)
+        check(BoolAnd, a=x, b=y, pickle_size=165, sizeof=56)
+        check(BoolOr, a=x, b=y, pickle_size=164, sizeof=56)
+        check(BoolXor, a=x, b=y, pickle_size=165, sizeof=56)
+        check(BoolNot, value=x, pickle_size=142, sizeof=56)
+        check(BoolITE, cond=z, true=x, false=y, pickle_size=188, sizeof=56)
 
         bvx = BitVecVariable(size=32, name="bvx")
         bvy = BitVecVariable(size=32, name="bvy")
 
-        check(UnsignedGreaterThan, a=bvx, b=bvy, pickle_size=197, sizeof=56)
-        check(GreaterThan, a=bvx, b=bvy, pickle_size=189, sizeof=56)
-        check(UnsignedGreaterOrEqual, a=bvx, b=bvy, pickle_size=200, sizeof=56)
-        check(GreaterOrEqual, a=bvx, b=bvy, pickle_size=192, sizeof=56)
-        check(UnsignedLessThan, a=bvx, b=bvy, pickle_size=194, sizeof=56)
-        check(LessThan, a=bvx, b=bvy, pickle_size=186, sizeof=56)
-        check(UnsignedLessOrEqual, a=bvx, b=bvy, pickle_size=197, sizeof=56)
-        check(LessOrEqual, a=bvx, b=bvy, pickle_size=189, sizeof=56)
+        check(UnsignedGreaterThan, a=bvx, b=bvy, pickle_size=196, sizeof=56)
+        check(GreaterThan, a=bvx, b=bvy, pickle_size=188, sizeof=56)
+        check(UnsignedGreaterOrEqual, a=bvx, b=bvy, pickle_size=199, sizeof=56)
+        check(GreaterOrEqual, a=bvx, b=bvy, pickle_size=191, sizeof=56)
+        check(UnsignedLessThan, a=bvx, b=bvy, pickle_size=193, sizeof=56)
+        check(LessThan, a=bvx, b=bvy, pickle_size=185, sizeof=56)
+        check(UnsignedLessOrEqual, a=bvx, b=bvy, pickle_size=196, sizeof=56)
+        check(LessOrEqual, a=bvx, b=bvy, pickle_size=188, sizeof=56)
 
-        check(BitVecOr, a=bvx, b=bvy, pickle_size=190, sizeof=64)
-        check(BitVecXor, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecAnd, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecNot, a=bvx, pickle_size=162, sizeof=64)
-        check(BitVecNeg, a=bvx, pickle_size=162, sizeof=64)
-        check(BitVecAdd, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecMul, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecSub, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecDiv, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecMod, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecUnsignedDiv, a=bvx, b=bvy, pickle_size=199, sizeof=64)
-        check(BitVecRem, a=bvx, b=bvy, pickle_size=191, sizeof=64)
-        check(BitVecUnsignedRem, a=bvx, b=bvy, pickle_size=199, sizeof=64)
+        check(BitVecOr, a=bvx, b=bvy, pickle_size=189, sizeof=64)
+        check(BitVecXor, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecAnd, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecNot, a=bvx, pickle_size=161, sizeof=64)
+        check(BitVecNeg, a=bvx, pickle_size=161, sizeof=64)
+        check(BitVecAdd, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecMul, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecSub, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecDiv, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecMod, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecUnsignedDiv, a=bvx, b=bvy, pickle_size=198, sizeof=64)
+        check(BitVecRem, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecUnsignedRem, a=bvx, b=bvy, pickle_size=198, sizeof=64)
 
-        check(BitVecShiftLeft, a=bvx, b=bvy, pickle_size=197, sizeof=64)
-        check(BitVecShiftRight, a=bvx, b=bvy, pickle_size=198, sizeof=64)
-        check(BitVecArithmeticShiftLeft, a=bvx, b=bvy, pickle_size=207, sizeof=64)
-        check(BitVecArithmeticShiftRight, a=bvx, b=bvy, pickle_size=208, sizeof=64)
+        check(BitVecShiftLeft, a=bvx, b=bvy, pickle_size=196, sizeof=64)
+        check(BitVecShiftRight, a=bvx, b=bvy, pickle_size=197, sizeof=64)
+        check(BitVecArithmeticShiftLeft, a=bvx, b=bvy, pickle_size=206, sizeof=64)
+        check(BitVecArithmeticShiftRight, a=bvx, b=bvy, pickle_size=207, sizeof=64)
 
-        check(BitVecZeroExtend, operand=bvx, size_dest=122, pickle_size=180, sizeof=72)
-        check(BitVecSignExtend, operand=bvx, size_dest=122, pickle_size=180, sizeof=72)
-        check(BitVecExtract, operand=bvx, offset=0, size=8, pickle_size=189, sizeof=80)
+        check(BitVecZeroExtend, operand=bvx, size_dest=122, pickle_size=179, sizeof=72)
+        check(BitVecSignExtend, operand=bvx, size_dest=122, pickle_size=179, sizeof=72)
+        check(BitVecExtract, operand=bvx, offset=0, size=8, pickle_size=188, sizeof=80)
         check(
             BitVecConcat,
             operands=(bvx, bvy),
             size_dest=(bvx.size + bvy.size),
-            pickle_size=194,
+            pickle_size=193,
             sizeof=64,
         )
         check(
@@ -223,14 +223,14 @@ class ExpressionPropertiesTest(unittest.TestCase):
             condition=x,
             true_value=bvx,
             false_value=bvy,
-            pickle_size=231,
+            pickle_size=230,
             sizeof=64,
         )
 
         a = ArrayVariable(index_bits=32, value_bits=32, index_max=324, name="name")
-        check(ArraySlice, array=a, offset=0, size=10, pickle_size=326, sizeof=136)
+        check(ArraySlice, array=a, offset=0, size=10, pickle_size=325, sizeof=136)
         check(ArraySelect, array=a, index=bvx, pickle_size=255, sizeof=64)
-        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=286, sizeof=120)
+        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=285, sizeof=120)
         check(ArrayProxy, array=a, default=0, pickle_size=222, sizeof=120)
 
         def all_subclasses(cls) -> Set[Type]:
@@ -1223,28 +1223,6 @@ class ExpressionTest(unittest.TestCase):
         # But if the tautollogy can not get simplified we have to ask the solver
         # and send in all the other stuff
         self.assertNotIn("AA", cs.related_to(bb1 == bb1).to_string())
-
-    def test_API(self):
-        """
-        As we've split up the Constant, Variable, and Operation classes to avoid using multiple inheritance,
-        this test ensures that their expected properties are still present on their former subclasses. Doesn't
-        check the types or behavior, but hopefully will at least help avoid footguns related to defining new
-        Constant/Variable/Operation types in the future.
-        """
-        for cls in Constant:
-            attrs = ["value"]
-            for attr in attrs:
-                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
-
-        for cls in Variable:
-            attrs = ["name", "declaration", "__copy__", "__deepcopy__"]
-            for attr in attrs:
-                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
-
-        for cls in Operation:
-            attrs = ["operands"]
-            for attr in attrs:
-                self.assertTrue(hasattr(cls, attr), f"{cls.__name__} is missing attribute {attr}")
 
     def test_signed_unsigned_LT_simple(self):
         cs = ConstraintSet()
