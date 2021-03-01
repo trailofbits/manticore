@@ -94,8 +94,8 @@ def fetch_update():
         time.sleep(0.5)
 
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
+class TestTui(unittest.TestCase):
+    def test_simple_state_updates(self):
         global finished
 
         fetch_thread = threading.Thread(target=fetch_update)
@@ -128,7 +128,7 @@ class MyTestCase(unittest.TestCase):
         )
 
         # Check that state lists seem correct
-        self.assertEqual(
+        self.assertLessEqual(
             max(len(list(filter(lambda x: x.type == State.BUSY, i))) for i in state_captures), 10
         )  # At most ten running states
 
