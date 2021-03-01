@@ -347,7 +347,9 @@ class ArrayMap(Map):
             self._array = backing_array
         else:
             self._array = expression.ArrayProxy(
-                expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name)
+                array=expression.ArrayVariable(
+                    index_bits=index_bits, index_max=size, value_bits=8, name=name
+                )
             )
 
     def __reduce__(self):
@@ -382,10 +384,14 @@ class ArrayMap(Map):
         left_name, right_name = ["{}_{:d}".format(self._array.name, i) for i in range(2)]
 
         head_arr = expression.ArrayProxy(
-            expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name)
+            array=expression.ArrayVariable(
+                index_bits=index_bits, index_max=left_size, value_bits=value_bits, name=left_name
+            )
         )
         tail_arr = expression.ArrayProxy(
-            expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name)
+            array=expression.ArrayVariable(
+                index_bits=index_bits, index_max=right_size, value_bits=value_bits, name=right_name
+            )
         )
 
         head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)
@@ -1157,7 +1163,7 @@ class SMemory(Memory):
         if isinstance(size, BitVec):
             size = arithmetic_simplify(size)
         else:
-            size = BitVecConstant(self.memory_bit_size, size)
+            size = BitVecConstant(size=self.memory_bit_size, value=size)
         assert isinstance(size, BitVecConstant)
         return size.value
 

@@ -76,7 +76,7 @@ class SerializeState(Concretize):
     def __init__(self, filename, **kwargs):
         super().__init__(
             f"Saving state to {filename}",
-            BitVecConstant(32, 0),
+            BitVecConstant(size=32, value=0),
             setstate=self._setstate,
             policy="ONE",
             **kwargs,

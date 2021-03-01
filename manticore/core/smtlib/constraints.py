@@ -93,7 +93,7 @@ class ConstraintSet:
         :param constraint: The constraint to add to the set.
         """
         if isinstance(constraint, bool):
-            constraint = BoolConstant(constraint)
+            constraint = BoolConstant(value=constraint)
         assert isinstance(constraint, Bool)
         constraint = simplify(constraint)
         # If self._child is not None this constraint set has been forked and a
@@ -380,8 +380,7 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = BoolVariable(name, taint=taint)
-        return self._declare(var)
+        return self._declare(BoolVariable(name=name, taint=taint))
 
     def new_bitvec(self, size, name=None, taint=frozenset(), avoid_collisions=False):
         """Declares a free symbolic bitvector in the constraint store
@@ -400,8 +399,7 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = BitVecVariable(size, name, taint=taint)
-        return self._declare(var)
+        return self._declare(BitVecVariable(size=size, name=name, taint=taint))
 
     def new_array(
         self,
@@ -430,5 +428,15 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
-        return ArrayProxy(var, default=default)
+        return ArrayProxy(
+            array=self._declare(
+                ArrayVariable(
+                    index_bits=index_bits,
+                    index_max=index_max,
+                    value_bits=value_bits,
+                    name=name,
+                    taint=taint,
+                )
+            ),
+            default=default,
+        )
