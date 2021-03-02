@@ -59,9 +59,8 @@ class XSlotted(type):
         if abstract:
             attrs["__slots__"] = tuple()
         else:
-            attrs["__slots__"] = tuple(map(lambda attr: attr.split("#", 1)[0], attrs["__xslots__"]))
+            attrs["__slots__"] = attrs["__xslots__"]
         attrs["__hash__"] = object.__hash__
-        # attrs["__hash__"] = lambda self : hash((clsname, tuple(getattr(self, name) for name in self.__slots__ if name not in ("_concrete_cache", "_written"))))
         return super().__new__(cls, clsname, bases, attrs)
 
 
