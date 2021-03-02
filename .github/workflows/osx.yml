@@ -1,8 +1,6 @@
 name: MacOS Tests
 
 on:
-  # Remove this once the tests are passing
-  pull_request:
   schedule:
     # Run every day at 11 PM.
     - cron:  '0 23 * * *'
