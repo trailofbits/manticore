@@ -5,6 +5,7 @@ from ..utils import config
 
 consts = config.get_group("cli")
 consts.add("target_func", default="main", description="WASM Function to execute")
+consts.add("profile", default=False, description="Enable worker profiling mode")
 
 
 def wasm_main(args, _logger):
@@ -18,12 +19,9 @@ def wasm_main(args, _logger):
         policy=args.policy,
     )
 
-    try:
-        if consts.profile:
-            profiler = Profiler()
-            m.register_plugin(profiler)
-    except AttributeError:
-        pass
+    if consts.profile:
+        profiler = Profiler()
+        m.register_plugin(profiler)
 
     m.default_invoke(func_name=consts.target_func)
 
