@@ -93,8 +93,6 @@ class ExpressionPropertiesTest(unittest.TestCase):
 
         c = C()
         c.a = 1
-        c.t = 10
-
         c.b = 2
         c.t = 10
 
