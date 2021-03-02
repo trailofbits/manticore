@@ -41,11 +41,16 @@ class ConfigTest(unittest.TestCase):
         self.assertFalse(g._vars["val1"].was_set)
         self.assertTrue(g._vars["val2"].was_set)
 
-    def test_double_add(self):
+    def test_double_add_different(self):
         g = config.get_group("test1")
         g.add("val1", default="foo")
         with self.assertRaises(config.ConfigError):
             g.add("val1")
+
+    def test_double_add_exact_duplicate(self):
+        g = config.get_group("test2")
+        g.add("val1", default="foo", description="Some description")
+        g.add("val1", default="foo", description="Some description")
 
     def test_update(self):
         g = config.get_group("update")
