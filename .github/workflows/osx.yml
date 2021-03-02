@@ -31,12 +31,13 @@ jobs:
     - name: Install Mac Dependencies
       run: |
         brew install bash
-        brew tap ethereum/ethereum
-        brew install solidity@4
         brew install wabt
         brew install SRI-CSL/sri-csl/yices2
         brew tap cvc4/cvc4
         brew install cvc4/cvc4/cvc4
+        pip install solc-select
+        solc-select install 0.4.26
+        solc-select use 0.4.26
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
