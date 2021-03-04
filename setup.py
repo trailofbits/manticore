@@ -65,7 +65,7 @@ setup(
     author="Trail of Bits",
     version=version,
     packages=find_packages(exclude=["tests", "tests.*"]),
-    python_requires=">=3.7",
+    python_requires="<3.11,>=3.7",
     install_requires=[
         "pyyaml",
         "protobuf~=3.20",
