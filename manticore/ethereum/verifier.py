@@ -101,10 +101,64 @@ def manticore_verifier(
     :param timeout: timeout in seconds
     :return:
     """
+
+    def check_properties():
+        m.take_snapshot()  # make a copy of all ready states
+
+        # And now explore all properties (and only the properties)
+        filter_no_crytic.disable()  # Allow crytic_porperties
+        filter_out_human_constants.disable()  # Allow them to be marked as constants
+        filter_only_crytic.enable()  # Exclude all methods that are not property checks
+        symbolic_data = m.make_symbolic_buffer(4 + 32 * 2)
+        m.transaction(caller=checker_account, address=contract_account, value=0, data=symbolic_data)
+
+        for state in m.all_states:
+            world = state.platform
+            tx = world.human_transactions[-1]
+            md = m.get_metadata(tx.address)
+            """
+            A is _broken_ if:
+                 * is normal property
+                 * RETURN False
+               OR:
+                 * property name ends witth 'revert'
+                 * does not REVERT
+            Property is considered to _pass_ otherwise
+            """
+            N = constrain_to_known_func_ids(state)
+            for func_id in map(bytes, state.solve_n(tx.data[:4], nsolves=N)):
+                func_name = md.get_abi(func_id)["name"]
+                if not func_name.endswith("revert"):
+                    # Property does not ends in "revert"
+                    # It must RETURN a 1
+                    if tx.return_value == 1:
+                        # TODO: test when property STOPs
+                        return_data = ABI.deserialize("bool", tx.return_data)
+                        testcase = m.generate_testcase(
+                            state,
+                            f"property {md.get_func_name(func_id)} is broken",
+                            only_if=AND(tx.data[:4] == func_id, return_data == 0),
+                        )
+                        if testcase:
+                            properties[func_name].append(testcase.num)
+                else:
+                    # property name ends in "revert" so it MUST revert
+                    if tx.result != "REVERT":
+                        testcase = m.generate_testcase(
+                            state,
+                            f"Some property is broken did not reverted.(MUST REVERTED)",
+                            only_if=tx.data[:4] == func_id,
+                        )
+                        if testcase:
+                            properties[func_name].append(testcase.num)
+
+        m.clear_terminated_states()  # no interest in reverted states for now!
+        m.goto_snapshot()  # GO back to whatever we ahd before checking the properties
+
     # Termination condition
     # Exploration will stop when some of the following happens:
     # * MAXTX human transaction sent
-    # * Code coverage is greater than MAXCOV meassured on target contract
+    # * Global code coverage is greater than MAXCOV meassured on target contract
     # * No more coverage was gained in the last transaction
     # * At least MAXFAIL different properties where found to be breakable. (1 for fail fast)
 
@@ -189,8 +243,8 @@ def manticore_verifier(
     print(
         f"""# Exploration will stop when some of the following happens:
 # * {MAXTX} human transaction sent
-# * Code coverage is greater than {MAXCOV}% meassured on target contract
-# * No more coverage was gained in the last transaction
+# * Global code coverage is greater than {MAXCOV}% meassured on target contract
+# * No more global coverage was gained in the last transaction
 # * At least {MAXFAIL} different properties where found to be breakable. (1 for fail fast)
 # * {timeout} seconds pass"""
     )
@@ -199,6 +253,8 @@ def manticore_verifier(
         f"Transactions done: {tx_num}. States: {m.count_ready_states()}, RT Coverage: {0.00}%, "
         f"Failing properties: 0/{len(properties)}"
     )
+
+    check_properties()  # check the porperties at the initial state
     with m.kill_timeout(timeout=timeout):
         while not m.is_killed():
             # check if we found a way to break more than MAXFAIL properties
@@ -234,97 +290,7 @@ def manticore_verifier(
                 print("Cancelled or timeout.")
                 break
 
-            # Explore all methods but the "crytic_" properties
-            # Note: you may be tempted to get all valid function ids/hashes from the
-            #  metadata and to constrain the first 4 bytes of the calldata here.
-            #  This wont work because we also want to prevent the contract to call
-            #  crytic added methods as internal transactions
-            filter_no_crytic.enable()  # filter out crytic_porperties
-            filter_out_human_constants.enable()  # Exclude constant methods
-            filter_only_crytic.disable()  # Exclude all methods that are not property checks
-
-            symbolic_data = m.make_symbolic_buffer(320)
-            symbolic_value = m.make_symbolic_value()
-            caller_account = m.make_symbolic_value(160)
-            args = tuple((caller_account == address_i for address_i in user_accounts))
-
-            m.constrain(OR(*args, False))
-            m.transaction(
-                caller=caller_account,
-                address=contract_account,
-                value=symbolic_value,
-                data=symbolic_data,
-            )
-
-            # check if timeout was requested during the previous transaction
-            if m.is_killed():
-                print("Cancelled or timeout.")
-                break
-
-            m.clear_terminated_states()  # no interest in reverted states
-            m.take_snapshot()  # make a copy of all ready states
-            print(
-                f"Transactions done: {tx_num}. States: {m.count_ready_states()}, "
-                f"RT Coverage: {m.global_coverage(contract_account):3.2f}%, "
-                f"Failing properties: {broken_properties}/{len(properties)}"
-            )
-
-            # check if timeout was requested while we were taking the snapshot
-            if m.is_killed():
-                print("Cancelled or timeout.")
-                break
-
-            # And now explore all properties (and only the properties)
-            filter_no_crytic.disable()  # Allow crytic_porperties
-            filter_out_human_constants.disable()  # Allow them to be marked as constants
-            filter_only_crytic.enable()  # Exclude all methods that are not property checks
-            symbolic_data = m.make_symbolic_buffer(4)
-            m.transaction(
-                caller=checker_account, address=contract_account, value=0, data=symbolic_data
-            )
-
-            for state in m.all_states:
-                world = state.platform
-                tx = world.human_transactions[-1]
-                md = m.get_metadata(tx.address)
-                """
-                A is _broken_ if:
-                     * is normal property
-                     * RETURN False
-                   OR:
-                     * property name ends with 'revert'
-                     * does not REVERT
-                Property is considered to _pass_ otherwise
-                """
-                N = constrain_to_known_func_ids(state)
-                for func_id in map(bytes, state.solve_n(tx.data[:4], nsolves=N)):
-                    func_name = md.get_abi(func_id)["name"]
-                    if not func_name.endswith("revert"):
-                        # Property does not ends in "revert"
-                        # It must RETURN a 1
-                        if tx.return_value == 1:
-                            # TODO: test when property STOPs
-                            return_data = ABI.deserialize("bool", tx.return_data)
-                            testcase = m.generate_testcase(
-                                state,
-                                f"property {md.get_func_name(func_id)} is broken",
-                                only_if=AND(tx.data[:4] == func_id, return_data == 0),
-                            )
-                            if testcase:
-                                properties[func_name].append(testcase.num)
-                    else:
-                        # property name ends in "revert" so it MUST revert
-                        if tx.result != "REVERT":
-                            testcase = m.generate_testcase(
-                                state,
-                                f"Some property is broken did not reverted.(MUST REVERTED)",
-                                only_if=tx.data[:4] == func_id,
-                            )
-                            if testcase:
-                                properties[func_name].append(testcase.num)
-
-            m.clear_terminated_states()  # no interest in reverted states for now!
-            m.goto_snapshot()
+            check_properties()
         else:
             print("Cancelled or timeout.")
 

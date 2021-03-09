@@ -928,6 +928,9 @@ class TranslatorSmtlib(Translator):
         ArraySelect: "select",
     }
 
+    def visit_BitVecPow(self, expression, base, exponent):
+        return f"((_ int2bv {expression.size})  ( ^ (bv2int {base}) (bv2int {exponent}) ))"
+
     def visit_BitVecConstant(self, expression):
         assert isinstance(expression, BitVecConstant)
         if expression.size == 1:
