@@ -1797,7 +1797,7 @@ class Stack(Eventful):
         """
         *Asserts* that the stack has at least n values of type t or type BitVec on the top
 
-        :param t: type of value to look for (Bitvec is always included as an option)
+        :param t: type of value to look for (BitVec is always included as an option)
         :param n: Number of values to check
         :return: True
         """

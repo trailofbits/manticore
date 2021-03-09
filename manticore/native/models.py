@@ -5,6 +5,7 @@ Models here are intended to be passed to :meth:`~manticore.native.state.State.in
 from .cpu.abstractcpu import Cpu, ConcretizeArgument
 from .state import State
 from ..core.smtlib import issymbolic, BitVec
+from ..core.smtlib.solver import SelectedSolver, issymbolic, BitVec
 from ..core.smtlib.operators import ITEBV, ZEXTEND
 from ..core.state import Concretize
 from typing import Union

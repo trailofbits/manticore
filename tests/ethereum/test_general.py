@@ -15,8 +15,8 @@ import tempfile
 from manticore import ManticoreError
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib import Z3Solver
-from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib import SelectedSolver
+from manticore.core.smtlib.expression import BitVecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import (
@@ -41,7 +41,7 @@ import io
 import contextlib
 
 
-solver = Z3Solver.instance()
+solver = SelectedSolver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -379,7 +379,7 @@ class EthAbiTests(unittest.TestCase):
     # test serializing symbolic buffer with bytesM
     def test_serialize_bytesM_symbolic(self):
         cs = ConstraintSet()
-        buf = cs.new_array(index_max=17)
+        buf = cs.new_array(length=17)
         ret = ABI.serialize("bytes32", buf)
         self.assertEqual(solver.minmax(cs, ret[0]), (0, 255))
         self.assertEqual(solver.minmax(cs, ret[17]), (0, 0))
@@ -387,7 +387,7 @@ class EthAbiTests(unittest.TestCase):
     # test serializing symbolic buffer with bytes
     def test_serialize_bytes_symbolic(self):
         cs = ConstraintSet()
-        buf = cs.new_array(index_max=17)
+        buf = cs.new_array(length=17)
         ret = ABI.serialize("bytes", buf)
 
         # does the offset field look right?
@@ -412,10 +412,10 @@ class EthInstructionTests(unittest.TestCase):
         price = 0
         value = 10000
         bytecode = b"\x05"
-        data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        data = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         gas = 1000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm = evm.EVM(address, data, caller, value, bytecode, gas=gas, world=world)
         return constraints, world, new_vm
 
     def test_str(self):
@@ -454,11 +454,12 @@ class EthInstructionTests(unittest.TestCase):
         constraints, world, vm = self._make()
         xx = constraints.new_bitvec(256, name="x")
         yy = constraints.new_bitvec(256, name="y")
-        constraints.add(xx == 0x20)
-        constraints.add(yy == -1)
+        x, y = 0x20, -1
+        constraints.add(xx == x)
+        constraints.add(yy == y)
         result = vm.SDIV(xx, yy)
         self.assertListEqual(
-            list(map(evm.to_signed, solver.get_all_values(constraints, result))), [-0x20]
+            list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)]
         )
 
     def test_SDIVSx(self):
@@ -466,12 +467,43 @@ class EthInstructionTests(unittest.TestCase):
         constraints, world, vm = self._make()
         xx = constraints.new_bitvec(256, name="x")
         yy = constraints.new_bitvec(256, name="y")
+        zz = constraints.new_bitvec(256, name="z")
         constraints.add(xx == x)
         constraints.add(yy == y)
 
         result = vm.SDIV(xx, yy)
+        constraints.add(zz == result)
+        self.assertListEqual(
+            list(map(evm.to_signed, solver.get_all_values(constraints, zz))), [vm.SDIV(x, y)]
+        )
         self.assertListEqual(
             list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)]
+        )
+
+    def test_to_sig(self):
+        self.assertEqual(evm.to_signed(-1), -1)
+        self.assertEqual(evm.to_signed(1), 1)
+        self.assertEqual(evm.to_signed(0), 0)
+        self.assertEqual(evm.to_signed(-2), -2)
+        self.assertEqual(evm.to_signed(2), 2)
+        self.assertEqual(evm.to_signed(0), 0)
+        self.assertEqual(
+            evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000001),
+            -0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+        )
+        self.assertEqual(
+            evm.to_signed(0x8000000000000000000000000000000000000000000000000000000000000002),
+            -0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE,
+        )
+        self.assertEqual(
+            evm.to_signed(0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),
+            0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+        )
+        self.assertEqual(
+            evm.to_signed(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF), -1
+        )
+        self.assertEqual(
+            evm.to_signed(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE), -2
         )
 
 
@@ -776,7 +808,7 @@ class EthTests(unittest.TestCase):
             for ext in ("summary", "constraints", "pkl", "tx.json", "tx", "trace", "logs")
         }
 
-        expected_files.add("state_00000001.pkl")
+        expected_files.add("state_00000002.pkl")
 
         actual_files = set((fn for fn in os.listdir(self.mevm.workspace) if not fn.startswith(".")))
         self.assertEqual(actual_files, expected_files)
@@ -817,9 +849,11 @@ class EthTests(unittest.TestCase):
             self.mevm.make_symbolic_value(),
             signature="(uint256,uint256)",
         )
+        z = None
         for st in self.mevm.all_states:
             z = st.solve_one(st.platform.transactions[1].return_data)
             break
+        self.assertIsNot(z, None)
         self.assertEqual(ABI.deserialize("(uint256)", z)[0], 2)
 
     def test_migrate_integration(self):
@@ -1293,7 +1327,6 @@ class EthTests(unittest.TestCase):
                         func_name, args = ABI.deserialize(
                             "shutdown(string)", state.platform.current_transaction.data
                         )
-                        print("Shutdown", to_constant(args[0]))
                         self.manticore.shutdown()
                     elif func_id == ABI.function_selector("can_be_true(bool)"):
                         func_name, args = ABI.deserialize(
@@ -1382,7 +1415,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = BitVec(256)
+        self.bv = BitVecVariable(size=256, name="A")
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"
@@ -1647,7 +1680,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         bytecode = world.get_code(address)
         gas = 100000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        new_vm = evm.EVM(address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
         returndata = ""

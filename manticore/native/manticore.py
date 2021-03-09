@@ -199,11 +199,8 @@ class Manticore(ManticoreBase):
         # (It may dereference pointers)
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
         if not state.can_be_true(assertion):
-            logger.info(str(state.cpu))
-            logger.info(
-                "Assertion %x -> {%s} does not hold. Aborting state.", state.cpu.PC, program
-            )
-            raise TerminateState()
+            message = f"Assertion {state.cpu.PC:x} -> {program:s} does not hold. Aborting state."
+            raise TerminateState(message=message)
 
         # Everything is good add it.
         state.constraints.add(assertion)
@@ -444,7 +441,7 @@ def _make_decree(program, concrete_start="", **kwargs):
 
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
-    initial_state = State(constraints, platform)
+    initial_state = State(constraints=constraints, platform=platform)
     logger.info("Loading program %s", program)
 
     if concrete_start != "":
@@ -491,7 +488,7 @@ def _make_linux(
             # TODO: use argv as arguments for function
             platform.set_entry(entry_pc)
 
-    initial_state = State(constraints, platform)
+    initial_state = State(constraints=constraints, platform=platform)
 
     if concrete_start != "":
         logger.info("Starting with concrete input: %s", concrete_start)

@@ -7,12 +7,12 @@ from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr, operator, Bool
-from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.smtlib.solver import SelectedSolver
 from functools import reduce
 
 from typing import List
 
-solver = Z3Solver.instance()
+solver = SelectedSolver.instance()
 
 
 sizes = {

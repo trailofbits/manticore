@@ -144,7 +144,7 @@ def repe(old_method):
 
 
 class AMD64RegFile(RegisterFile):
-    Regspec = collections.namedtuple("RegSpec", "register_id ty offset size reset")
+    Regspec = collections.namedtuple("Regspec", "register_id ty offset size reset")
     _flags = {"CF": 0, "PF": 2, "AF": 4, "ZF": 6, "SF": 7, "IF": 9, "DF": 10, "OF": 11}
     _table = {
         "CS": Regspec("CS", int, 0, 16, False),
@@ -2079,7 +2079,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         """
         source = dest.read()
-        res = dest.write(-source)
+        res = dest.write((~source) + 1)
         cpu._calculate_logic_flags(dest.size, res)
         cpu.CF = source != 0
         cpu.AF = (res & 0x0F) != 0x00

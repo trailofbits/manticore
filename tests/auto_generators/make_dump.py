@@ -5,8 +5,10 @@ import os
 import sys
 import time
 import subprocess
-from capstone import *
-from capstone.x86 import *
+from typing import Any, Dict
+from capstone import Cs
+from capstone.x86 import CS_ARCH_X86, CS_MODE_32, CS_MODE_64, X86_OP_MEM, X86_OP_REG, X86_OP_IMM
+import capstone.x86 as csr
 from flags import flags
 
 flags_maks = {
@@ -228,7 +230,7 @@ while True:
         groups = map(instruction.group_name, instruction.groups)
 
         PC = {"i386": "EIP", "amd64": "RIP"}[arch]
-        registers = {PC: gdb.getR(PC)}
+        registers: Dict[Any, Any] = {PC: gdb.getR(PC)}
         memory = {}
 
         # save the encoded instruction
@@ -246,11 +248,11 @@ while True:
         if instruction.insn_name().upper() in ["PUSHF", "PUSHFD"]:
             registers["EFLAGS"] = gdb.getR("EFLAGS")
 
-        if instruction.insn_name().upper() in ["XLAT", "XLATB"]:
-            registers["AL"] = gdb.getR("AL")
-            registers[B] = gdb.getR(B)
-            address = registers[B] + registers["AL"]
-            memory[address] = chr(gdb.getByte(address))
+        # if instruction.insn_name().upper() in ["XLAT", "XLATB"]:
+        #     registers["AL"] = gdb.getR("AL")
+        #     registers[B] = gdb.getR(B)
+        #     address = registers[B] + registers["AL"]
+        #     memory[address] = chr(gdb.getByte(address))
 
         if instruction.insn_name().upper() in ["BTC", "BTR", "BTS", "BT"]:
             if instruction.operands[0].type == X86_OP_MEM:
@@ -310,34 +312,34 @@ while True:
         #            registers[reg_name] = gdb.getR(reg_name)
 
         reg_sizes = {
-            X86_REG_AH: X86_REG_AX,
-            X86_REG_AL: X86_REG_AX,
-            X86_REG_AX: X86_REG_EAX,
-            X86_REG_EAX: X86_REG_RAX,
-            X86_REG_RAX: X86_REG_INVALID,
-            X86_REG_BH: X86_REG_BX,
-            X86_REG_BL: X86_REG_BX,
-            X86_REG_BX: X86_REG_EBX,
-            X86_REG_EBX: X86_REG_RBX,
-            X86_REG_RBX: X86_REG_INVALID,
-            X86_REG_CH: X86_REG_CX,
-            X86_REG_CL: X86_REG_CX,
-            X86_REG_CX: X86_REG_ECX,
-            X86_REG_ECX: X86_REG_RCX,
-            X86_REG_RCX: X86_REG_INVALID,
-            X86_REG_DH: X86_REG_DX,
-            X86_REG_DL: X86_REG_DX,
-            X86_REG_DX: X86_REG_EDX,
-            X86_REG_EDX: X86_REG_RDX,
-            X86_REG_RDX: X86_REG_INVALID,
-            X86_REG_DIL: X86_REG_EDI,
-            X86_REG_DI: X86_REG_EDI,
-            X86_REG_EDI: X86_REG_RDI,
-            X86_REG_RDI: X86_REG_INVALID,
-            X86_REG_SIL: X86_REG_ESI,
-            X86_REG_SI: X86_REG_ESI,
-            X86_REG_ESI: X86_REG_RSI,
-            X86_REG_RSI: X86_REG_INVALID,
+            csr.X86_REG_AH: csr.X86_REG_AX,
+            csr.X86_REG_AL: csr.X86_REG_AX,
+            csr.X86_REG_AX: csr.X86_REG_EAX,
+            csr.X86_REG_EAX: csr.X86_REG_RAX,
+            csr.X86_REG_RAX: csr.X86_REG_INVALID,
+            csr.X86_REG_BH: csr.X86_REG_BX,
+            csr.X86_REG_BL: csr.X86_REG_BX,
+            csr.X86_REG_BX: csr.X86_REG_EBX,
+            csr.X86_REG_EBX: csr.X86_REG_RBX,
+            csr.X86_REG_RBX: csr.X86_REG_INVALID,
+            csr.X86_REG_CH: csr.X86_REG_CX,
+            csr.X86_REG_CL: csr.X86_REG_CX,
+            csr.X86_REG_CX: csr.X86_REG_ECX,
+            csr.X86_REG_ECX: csr.X86_REG_RCX,
+            csr.X86_REG_RCX: csr.X86_REG_INVALID,
+            csr.X86_REG_DH: csr.X86_REG_DX,
+            csr.X86_REG_DL: csr.X86_REG_DX,
+            csr.X86_REG_DX: csr.X86_REG_EDX,
+            csr.X86_REG_EDX: csr.X86_REG_RDX,
+            csr.X86_REG_RDX: csr.X86_REG_INVALID,
+            csr.X86_REG_DIL: csr.X86_REG_EDI,
+            csr.X86_REG_DI: csr.X86_REG_EDI,
+            csr.X86_REG_EDI: csr.X86_REG_RDI,
+            csr.X86_REG_RDI: csr.X86_REG_INVALID,
+            csr.X86_REG_SIL: csr.X86_REG_ESI,
+            csr.X86_REG_SI: csr.X86_REG_ESI,
+            csr.X86_REG_ESI: csr.X86_REG_RSI,
+            csr.X86_REG_RSI: csr.X86_REG_INVALID,
         }
         # There is a capstone branch that should fix all these annoyances... soon
         # https://github.com/aquynh/capstone/tree/next
@@ -387,7 +389,7 @@ while True:
                     registers[reg_name] = gdb.getR(reg_name)
                     address += o.mem.scale * registers[reg_name]
                 address = address & ({"i386": 0xFFFFFFFF, "amd64": 0xFFFFFFFFFFFFFFFF}[arch])
-                for i in xrange(address, address + o.size):
+                for i in range(address, address + o.size):
                     memory[i] = chr(gdb.getByte(i))
 
         # gather PRE info

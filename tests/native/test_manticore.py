@@ -19,7 +19,7 @@ class ManticoreTest(unittest.TestCase):
 
     def test_profiling_data(self):
         p = Profiler()
-        set_verbosity(0)
+        set_verbosity(1)
         self.m.register_plugin(p)
         self.m.run()
         self.m.finalize()

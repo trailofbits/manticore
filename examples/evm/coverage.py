@@ -8,9 +8,8 @@ with open("coverage.sol") as f:
 
 user_account = m.create_account(balance=1000)
 
-bytecode = m.compile(source_code)
 # Initialize contract
-contract_account = m.create_contract(owner=user_account, balance=0, init=bytecode)
+contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
 
 m.transaction(
     caller=user_account,

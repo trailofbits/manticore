@@ -1,15 +1,25 @@
+from typing import Optional, Dict, Set, Type, TYPE_CHECKING
+
 from ...utils.helpers import CacheDict
 from ...exceptions import SmtlibError
 from .expression import *
 from functools import lru_cache
 import copy
+import io
 import logging
 import operator
+import time
 import math
-import threading
 from decimal import Decimal
 
+if TYPE_CHECKING:
+    from . import ConstraintException
+
 logger = logging.getLogger(__name__)
+
+
+class VisitorException(Exception):
+    pass
 
 
 class Visitor:
@@ -18,17 +28,16 @@ class Visitor:
     Inherit your class visitor from this one and get called on a different
     visiting function for each type of expression. It will call the first
     implemented method for the __mro__ class order.
-     For example for a BitVecAdd it will try
-         visit_BitVecAdd()          if not defined then it will try with
-         visit_BitVecOperation()    if not defined then it will try with
-         visit_BitVec()             if not defined then it will try with
+     For example for a BitVecAdd expression this will try
+         visit_BitVecAdd()          if not defined(*) then it will try with
+         visit_BitVecOperation()    if not defined(*) then it will try with
+         visit_BitVec()             if not defined(*) then it will try with
+         visit_Operation()          if not defined(*) then it will try with
          visit_Expression()
 
-     Other class named visitors are:
-
-     visit_BitVec()
-     visit_Bool()
-     visit_Array()
+     (*) Or it is defined and it returns None for the node.
+     You can overload the visiting method to react to different semantic
+     aspects of an Exrpession.
 
     """
 
@@ -44,115 +53,136 @@ class Visitor:
     def pop(self):
         if len(self._stack) == 0:
             return None
-        result = self._stack.pop()
-        return result
+        return self._stack.pop()
 
     @property
     def result(self):
         assert len(self._stack) == 1
         return self._stack[-1]
 
-    def _method(self, expression, *args):
-        for cls in expression.__class__.__mro__[:-1]:
-            sort = cls.__name__
-            methodname = "visit_%s" % sort
-            if hasattr(self, methodname):
-                value = getattr(self, methodname)(expression, *args)
-                if value is not None:
-                    return value
-        return self._rebuild(expression, args)
-
-    def visit(self, node, use_fixed_point=False):
+    def visit(self, node: Expression, use_fixed_point: bool = False):
+        assert isinstance(node, Expression)
         """
         The entry point of the visitor.
         The exploration algorithm is a DFS post-order traversal
         The implementation used two stacks instead of a recursion
-        The final result is store in self.result
+        The final result is store in result or can be taken from the resultant
+        stack via pop()
+
+        #TODO: paste example
 
         :param node: Node to explore
         :type node: Expression
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
-        :type use_fixed_point: Bool
         """
-        if isinstance(node, ArrayProxy):
-            node = node.array
         cache = self._cache
-        visited = set()
-        stack = []
-        stack.append(node)
-        while stack:
-            node = stack.pop()
-            if node in cache:
+        visited: Set[Expression] = set()
+        local_stack = [node]  # initially the stack contains only the visiting node
+        while local_stack:
+            node = local_stack.pop()
+            if node in cache:  # If seen we do not really need to visit this
                 self.push(cache[node])
-            elif isinstance(node, Operation):
-                if node in visited:
-                    operands = [self.pop() for _ in range(len(node.operands))]
-                    value = self._method(node, *operands)
-
-                    visited.remove(node)
-                    self.push(value)
-                    cache[node] = value
-                else:
-                    visited.add(node)
-                    stack.append(node)
-                    stack.extend(node.operands)
+                continue
+            if node in visited:
+                visited.remove(node)
+                # Visited! Then there is a visited version of the operands in the stack
+                operands: Tuple[Expression, ...] = tuple([])
+                if node.operands:
+                    operands = tuple([self.pop() for _ in range(len(node.operands))])
+                    # Actually process the node
+                value = self._method(node, *operands)
+                self.push(value)
+                cache[node] = value
             else:
-                self.push(self._method(node))
+                visited.add(node)
+                local_stack.append(node)
+                if node.operands:
+                    local_stack.extend(node.operands)
 
+        # Repeat until the result is not changed
         if use_fixed_point:
-            old_value = None
+            old_value = node
             new_value = self.pop()
             while old_value is not new_value:
                 self.visit(new_value)
                 old_value = new_value
                 new_value = self.pop()
-
             self.push(new_value)
 
-    @staticmethod
-    def _rebuild(expression, operands):
-        if isinstance(expression, Operation):
-            if any(x is not y for x, y in zip(expression.operands, operands)):
-                aux = copy.copy(expression)
-                aux._operands = operands
-                return aux
+    def _method(self, expression: Expression, *operands):
+        """
+          Magic method to walk the mro looking for the first overloaded
+          visiting method that returns something.
+
+          If no visiting methods are found the expression gets _rebuild using
+          the processed operands.
+          Iff the operands did not change the expression is left unchanged.
+
+        :param expression: Expression node
+        :param operands: The already processed operands
+        :return: Optional resulting Expression
+        """
+        assert expression.__class__.__mro__[-1] is object
+        for cls in expression.__class__.__mro__[:-1]:
+            sort = cls.__name__
+            methodname = f"visit_{sort:s}"
+            if hasattr(self, methodname):
+                value = getattr(self, methodname)(expression, *operands)
+                if value is not None:
+                    return value
+        return self._rebuild(expression, operands)
+
+    def _changed(self, expression: Expression, operands: Optional[Tuple[Expression, ...]]):
+        # False if no operands
+        changed = any(x is not y for x, y in zip(expression.operands or (), operands or ()))
+        return changed
+
+    @lru_cache(maxsize=32, typed=True)
+    def _rebuild(self, expression: Operation, operands):
+        """Default operation used when no visiting method was successful for
+        this expression. If the operands have changed this rebuild the current expression
+        with the new operands.
+
+        Assumes the stack is used for Expressions
+        """
+        if self._changed(expression, operands):
+            aux = copy.copy(expression)
+            aux._operands = operands
+            return aux
+        # The expression is not modified in any way iff:
+        #  - no visitor method is defined for the expression type
+        #  - no operands were modified
         return expression
 
 
 class Translator(Visitor):
     """Simple visitor to translate an expression into something else"""
 
-    def _method(self, expression, *args):
-        # Special case. Need to get the unsleeved version of the array
-        if isinstance(expression, ArrayProxy):
-            expression = expression.array
+    def _rebuild(self, expression, operands):
+        """The stack holds the translation of the expression.
+        There is no default action
 
-        assert expression.__class__.__mro__[-1] is object
-        for cls in expression.__class__.__mro__:
-            sort = cls.__name__
-            methodname = f"visit_{sort:s}"
-            if hasattr(self, methodname):
-                value = getattr(self, methodname)(expression, *args)
-                if value is not None:
-                    return value
-        raise SmtlibError(f"No translation for this {expression}")
+        :param expression: Current expression
+        :param operands: The translations of the nodes
+        :return: No
+        """
+        raise VisitorException(f"No translation for this {expression}")
 
 
-class GetDeclarations(Visitor):
+class GetDeclarations(Translator):
     """Simple visitor to collect all variables in an expression or set of
     expressions
     """
+
+    def _rebuild(self, expression, operands):
+        return expression
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.variables = set()
 
-    def _visit_variable(self, expression):
+    def visit_Variable(self, expression):
         self.variables.add(expression)
-
-    visit_ArrayVariable = _visit_variable
-    visit_BitVecVariable = _visit_variable
-    visit_BoolVariable = _visit_variable
 
     @property
     def result(self):
@@ -164,19 +194,17 @@ class GetDepth(Translator):
     expressions
     """
 
+    def _rebuild(self, expression, operands):
+        return expression
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def visit_Expression(self, expression):
         return 1
 
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         return 1 + max(operands)
-
-    visit_ArraySelect = _visit_operation
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
 
 
 def get_depth(exp):
@@ -188,13 +216,12 @@ def get_depth(exp):
 class PrettyPrinter(Visitor):
     def __init__(self, depth=None, **kwargs):
         super().__init__(**kwargs)
-        self.output = ""
+        self.output = io.StringIO()
         self.indent = 0
         self.depth = depth
 
     def _print(self, s, e=None):
-        self.output += " " * self.indent + str(s)  # + '(%016x)'%hash(e)
-        self.output += "\n"
+        self.output.write(" " * self.indent + str(s) + "\n")  # + '(%016x)'%hash(e)
 
     def visit(self, expression):
         """
@@ -205,22 +232,7 @@ class PrettyPrinter(Visitor):
         """
         self._method(expression)
 
-    def _method(self, expression, *args):
-        """
-        Overload Visitor._method because we want to stop to iterate over the
-        visit_ functions as soon as a valid visit_ function is found
-        """
-        assert expression.__class__.__mro__[-1] is object
-        for cls in expression.__class__.__mro__:
-            sort = cls.__name__
-            methodname = "visit_%s" % sort
-            method = getattr(self, methodname, None)
-            if method is not None:
-                method(expression, *args)
-                return
-        return
-
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         self._print(expression.__class__.__name__, expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
@@ -229,12 +241,7 @@ class PrettyPrinter(Visitor):
         else:
             self._print("...")
         self.indent -= 2
-        return ""
-
-    visit_ArraySelect = _visit_operation
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
+        return True
 
     def visit_BitVecExtract(self, expression):
         self._print(
@@ -248,26 +255,19 @@ class PrettyPrinter(Visitor):
         else:
             self._print("...")
         self.indent -= 2
-        return ""
+        return True
 
-    def _visit_constant(self, expression):
+    def visit_Constant(self, expression):
         self._print(expression.value)
-        return ""
+        return True
 
-    visit_BitVecConstant = _visit_constant
-    visit_BoolConstant = _visit_constant
-
-    def _visit_variable(self, expression):
+    def visit_Variable(self, expression):
         self._print(expression.name)
-        return ""
-
-    visit_ArrayVariable = _visit_variable
-    visit_BitVecVariable = _visit_variable
-    visit_BoolVariable = _visit_variable
+        return True
 
     @property
     def result(self):
-        return self.output
+        return self.output.getvalue()
 
 
 def pretty_print(expression, **kwargs):
@@ -279,8 +279,6 @@ def pretty_print(expression, **kwargs):
 
 
 class ConstantFolderSimplifier(Visitor):
-    def __init__(self, **kw):
-        super().__init__(**kw)
 
     operations = {
         BitVecMod: operator.__mod__,
@@ -298,52 +296,53 @@ class ConstantFolderSimplifier(Visitor):
         BoolEqual: operator.__eq__,
         BoolOr: operator.__or__,
         BoolNot: operator.__not__,
-        UnsignedLessThan: operator.__lt__,
-        UnsignedLessOrEqual: operator.__le__,
-        UnsignedGreaterThan: operator.__gt__,
-        UnsignedGreaterOrEqual: operator.__ge__,
+        BoolUnsignedLessThan: operator.__lt__,
+        BoolUnsignedLessOrEqualThan: operator.__le__,
+        BoolUnsignedGreaterThan: operator.__gt__,
+        BoolUnsignedGreaterOrEqualThan: operator.__ge__,
     }
 
     def visit_BitVecUnsignedDiv(self, expression, *operands) -> Optional[BitVecConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].value
             b = operands[1].value
-            if a == 0:
+            if b == 0:
                 ret = 0
             else:
                 ret = math.trunc(Decimal(a) / Decimal(b))
             return BitVecConstant(expression.size, ret, taint=expression.taint)
         return None
 
-    def visit_LessThan(self, expression, *operands) -> Optional[BoolConstant]:
+    def visit_BoolLessThan(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a < b, taint=expression.taint)
+            return BoolConstant(value=a < b, taint=expression.taint)
         return None
 
-    def visit_LessOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+    def visit_BoolLessOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a <= b, taint=expression.taint)
+            return BoolConstant(value=a <= b, taint=expression.taint)
         return None
 
-    def visit_GreaterThan(self, expression, *operands) -> Optional[BoolConstant]:
+    def visit_BoolGreaterThan(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a > b, taint=expression.taint)
+            return BoolConstant(value=a > b, taint=expression.taint)
         return None
 
-    def visit_GreaterOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
+    def visit_BoolGreaterOrEqual(self, expression, *operands) -> Optional[BoolConstant]:
         if all(isinstance(o, Constant) for o in operands):
             a = operands[0].signed_value
             b = operands[1].signed_value
-            return BoolConstant(a >= b, taint=expression.taint)
+            return BoolConstant(value=a >= b, taint=expression.taint)
         return None
 
     def visit_BitVecDiv(self, expression, *operands) -> Optional[BitVecConstant]:
+        return None
         if all(isinstance(o, Constant) for o in operands):
             signmask = operands[0].signmask
             mask = operands[0].mask
@@ -392,25 +391,16 @@ class ConstantFolderSimplifier(Visitor):
         if isinstance(b, Constant) and b.value == True:
             return a
 
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression: Expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
         if operation is not None and all(isinstance(o, Constant) for o in operands):
-            value = operation(*(x.value for x in operands))
+            value = operation(*(x.value for x in operands))  # type: ignore
             if isinstance(expression, BitVec):
                 return BitVecConstant(expression.size, value, taint=expression.taint)
             else:
                 isinstance(expression, Bool)
-                return BoolConstant(value, taint=expression.taint)
-        else:
-            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
-                expression = self._rebuild(expression, operands)
-        return expression
-
-    visit_ArraySelect = _visit_operation
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
+                return BoolConstant(value=value, taint=expression.taint)
 
 
 @lru_cache(maxsize=128, typed=True)
@@ -421,31 +411,16 @@ def constant_folder(expression):
 
 
 class ArithmeticSimplifier(Visitor):
-    def __init__(self, parent=None, **kw):
-        super().__init__(**kw)
-
     @staticmethod
     def _same_constant(a, b):
         return isinstance(a, Constant) and isinstance(b, Constant) and a.value == b.value or a is b
 
-    @staticmethod
-    def _changed(expression, operands):
-        if isinstance(expression, Constant) and len(operands) > 0:
-            return True
-        arity = len(operands)
-        return any(operands[i] is not expression.operands[i] for i in range(arity))
-
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         """ constant folding, if all operands of an expression are a Constant do the math """
+        expression = self._rebuild(expression, operands)
         if all(isinstance(o, Constant) for o in operands):
             expression = constant_folder(expression)
-        if self._changed(expression, operands):
-            expression = self._rebuild(expression, operands)
         return expression
-
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
 
     def visit_BitVecZeroExtend(self, expression, *operands):
         if self._changed(expression, operands):
@@ -522,7 +497,7 @@ class ArithmeticSimplifier(Visitor):
                     return BoolNot(operands[0].operands[0], taint=expression.taint)
 
         if operands[0] is operands[1]:
-            return BoolConstant(True, taint=expression.taint)
+            return BoolConstant(value=True, taint=expression.taint)
 
         if isinstance(operands[0], BitVecExtract) and isinstance(operands[1], BitVecExtract):
             if (
@@ -531,7 +506,7 @@ class ArithmeticSimplifier(Visitor):
                 and operands[0].begining == operands[1].begining
             ):
 
-                return BoolConstant(True, taint=expression.taint)
+                return BoolConstant(value=True, taint=expression.taint)
 
     def visit_BoolOr(self, expression, a, b):
         if isinstance(a, Constant):
@@ -560,7 +535,7 @@ class ArithmeticSimplifier(Visitor):
             return result
 
         if self._changed(expression, operands):
-            return BitVecITE(expression.size, *operands, taint=expression.taint)
+            return BitVecITE(*operands, taint=expression.taint)
 
     def visit_BitVecConcat(self, expression, *operands):
         """concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
@@ -594,12 +569,12 @@ class ArithmeticSimplifier(Visitor):
         if last_o is not None:
             new_operands.append(last_o)
         if changed:
-            return BitVecConcat(expression.size, *new_operands)
+            return BitVecConcat(operands=tuple(new_operands))
 
         op = operands[0]
         value = None
-        end = None
-        begining = None
+        end: Optional[int] = None
+        begining: Optional[int] = None
         for o in operands:
             # If found a non BitVecExtract, do not apply
             if not isinstance(o, BitVecExtract):
@@ -622,7 +597,7 @@ class ArithmeticSimplifier(Visitor):
                 # update begining variable
                 begining = o.begining
 
-        if value is not None:
+        if value is not None and end is not None and begining is not None:
             if end + 1 != value.size or begining != 0:
                 return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
 
@@ -643,12 +618,13 @@ class ArithmeticSimplifier(Visitor):
         elif isinstance(op, BitVecExtract):
             return BitVecExtract(op.value, op.begining + begining, size, taint=expression.taint)
         elif isinstance(op, BitVecConcat):
-            new_operands = []
+            new_operands: List[BitVec] = []
             for item in reversed(op.operands):
+                assert isinstance(item, BitVec)
                 if size == 0:
                     assert expression.size == sum([x.size for x in new_operands])
                     return BitVecConcat(
-                        expression.size, *reversed(new_operands), taint=expression.taint
+                        operands=tuple(reversed(new_operands)), taint=expression.taint
                     )
 
                 if begining >= item.size:
@@ -676,6 +652,20 @@ class ArithmeticSimplifier(Visitor):
                 BitVecExtract(bitoperand_b, begining, expression.size),
                 taint=expression.taint,
             )
+
+    def visit_BitVecMul(self, expression, *operands):
+        left = operands[0]
+        right = operands[1]
+        if isinstance(right, BitVecConstant):
+            if right.value == 1:
+                return left
+            if right.value == 0:
+                return right
+        if isinstance(left, BitVecConstant):
+            if left.value == 1:
+                return right
+            if left.value == 0:
+                return left
 
     def visit_BitVecAdd(self, expression, *operands):
         """a + 0  ==> a
@@ -782,7 +772,7 @@ class ArithmeticSimplifier(Visitor):
         """
         arr, index = operands
         if isinstance(arr, ArrayVariable):
-            return self._visit_operation(expression, *operands)
+            return None
 
         if isinstance(index, BitVecConstant):
             ival = index.value
@@ -809,7 +799,6 @@ class ArithmeticSimplifier(Visitor):
                 out = arr.select(index)
                 if out is not None:
                     return arr.select(index)
-        return self._visit_operation(expression, *operands)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
@@ -819,6 +808,9 @@ class ArithmeticSimplifier(Visitor):
 
 @lru_cache(maxsize=128, typed=True)
 def arithmetic_simplify(expression):
+    start = time.time()
+    if not isinstance(expression, Expression):
+        return expression
     simp = ArithmeticSimplifier()
     simp.visit(expression, use_fixed_point=True)
     return simp.result
@@ -829,15 +821,17 @@ def to_constant(expression):
     Iff the expression can be simplified to a Constant get the actual concrete value.
     This discards/ignore any taint
     """
+    if isinstance(expression, MutableArray):
+        expression = expression.array
     value = simplify(expression)
     if isinstance(value, Expression) and value.taint:
         raise ValueError("Can not simplify tainted values to constant")
     if isinstance(value, Constant):
         return value.value
     elif isinstance(value, Array):
-        if expression.index_max:
+        if expression.length:
             ba = bytearray()
-            for i in range(expression.index_max):
+            for i in range(expression.length):
                 value_i = simplify(value[i])
                 if not isinstance(value_i, Constant):
                     break
@@ -848,46 +842,60 @@ def to_constant(expression):
     return value
 
 
-@lru_cache(maxsize=128, typed=True)
-def simplify(expression):
-    expression = arithmetic_simplify(expression)
-    return expression
+simplify = arithmetic_simplify
+
+
+class CountExpressionUse(Visitor):
+    def _rebuild(self, expression, operands):
+        return expression
+
+    def __init__(self, *args, counts: Optional[Dict[Expression, int]] = None, **kw):
+        super().__init__(*args, **kw)
+        if counts is not None:
+            self.counts = counts
+        else:
+            self.counts = {}
+
+    def visit_Expression(self, expression, *args):
+        if not isinstance(expression, (Variable, Constant)):
+            try:
+                self.counts[expression] += 1
+            except KeyError:
+                self.counts[expression] = 1
 
 
 class TranslatorSmtlib(Translator):
     """Simple visitor to translate an expression to its smtlib representation"""
 
-    unique = 0
-    unique_lock = threading.Lock()
-
-    def __init__(self, use_bindings=False, *args, **kw):
+    def __init__(self, use_bindings=True, *args, **kw):
         assert "bindings" not in kw
         super().__init__(*args, **kw)
+        self._unique = 0
         self.use_bindings = use_bindings
-        self._bindings_cache = {}
-        self._bindings = []
+        self._bindings_cache_exp = {}
+        self._bindings: Dict[str, Any] = {}
+        self._variables = set()
 
     def _add_binding(self, expression, smtlib):
-        if not self.use_bindings or len(smtlib) <= 10:
+        if not self.use_bindings:
             return smtlib
 
-        if smtlib in self._bindings_cache:
-            return self._bindings_cache[smtlib]
+        if isinstance(expression, (Constant, Variable)):
+            return smtlib
+        if expression in self._bindings_cache_exp:
+            return self._bindings_cache_exp[expression]
+        self._unique += 1
+        name = "!a_%d!" % self._unique
 
-        with TranslatorSmtlib.unique_lock:
-            TranslatorSmtlib.unique += 1
-        name = "a_%d" % TranslatorSmtlib.unique
-
-        self._bindings.append((name, expression, smtlib))
-
-        self._bindings_cache[expression] = name
+        self._bindings[name] = expression, smtlib
+        self._bindings_cache_exp[expression] = name
         return name
 
     @property
     def bindings(self):
         return self._bindings
 
-    translation_table = {
+    translation_table: Dict[Type[Operation], str] = {
         BoolNot: "not",
         BoolEqual: "=",
         BoolAnd: "and",
@@ -911,14 +919,14 @@ class TranslatorSmtlib(Translator):
         BitVecXor: "bvxor",
         BitVecNot: "bvnot",
         BitVecNeg: "bvneg",
-        LessThan: "bvslt",
-        LessOrEqual: "bvsle",
-        GreaterThan: "bvsgt",
-        GreaterOrEqual: "bvsge",
-        UnsignedLessThan: "bvult",
-        UnsignedLessOrEqual: "bvule",
-        UnsignedGreaterThan: "bvugt",
-        UnsignedGreaterOrEqual: "bvuge",
+        BoolLessThan: "bvslt",
+        BoolLessOrEqualThan: "bvsle",
+        BoolGreaterThan: "bvsgt",
+        BoolGreaterOrEqualThan: "bvsge",
+        BoolUnsignedLessThan: "bvult",
+        BoolUnsignedLessOrEqualThan: "bvule",
+        BoolUnsignedGreaterThan: "bvugt",
+        BoolUnsignedGreaterOrEqualThan: "bvuge",
         BitVecSignExtend: "(_ sign_extend %d)",
         BitVecZeroExtend: "(_ zero_extend %d)",
         BitVecExtract: "(_ extract %d %d)",
@@ -938,47 +946,94 @@ class TranslatorSmtlib(Translator):
     def visit_BoolConstant(self, expression):
         return expression.value and "true" or "false"
 
-    def _visit_variable(self, expression):
+    def visit_Variable(self, expression):
+        self._variables.add(expression)
         return expression.name
-
-    visit_ArrayVariable = _visit_variable
-    visit_BitVecVariable = _visit_variable
-    visit_BoolVariable = _visit_variable
 
     def visit_ArraySelect(self, expression, *operands):
         array_smt, index_smt = operands
-        if isinstance(expression.array, ArrayStore):
-            array_smt = self._add_binding(expression.array, array_smt)
+        array_smt = self._add_binding(expression.array, array_smt)
+        return f"(select {array_smt} {index_smt})"
 
-        return "(select %s %s)" % (array_smt, index_smt)
-
-    def _visit_operation(self, expression, *operands):
+    def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
         if isinstance(expression, (BitVecSignExtend, BitVecZeroExtend)):
             operation = operation % expression.extend
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
 
-        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        return "(%s %s)" % (operation, " ".join(operands))
-
-    visit_ArrayOperation = _visit_operation
-    visit_BoolOperation = _visit_operation
-    visit_BitVecOperation = _visit_operation
+        bound_operands: List[str] = [
+            self._add_binding(*x) for x in zip(expression.operands, operands)
+        ]
+        return f"({operation} {' '.join(bound_operands)})"
 
     @property
     def result(self):
-        output = super().result
-        if self.use_bindings:
-            for name, expr, smtlib in reversed(self._bindings):
-                output = "( let ((%s %s)) %s )" % (name, smtlib, output)
-        return output
+        return f"{self.apply_bindings(self._stack[-1])}"
+
+    def apply_bindings(self, main_smtlib_str):
+        # Python program to print topological sorting of a DAG
+        # Well-sortedness requirements
+        from toposort import toposort_flatten as toposort
+
+        G: Dict[Any, Any] = {}
+        for name, (expr, smtlib) in self._bindings.items():
+            variables = {v.name for v in get_variables(expr)}
+            variables.update(re.findall(r"!a_\d+!", smtlib))
+
+            for v_name in variables:
+                G.setdefault(name, set()).add(v_name)
+            if not variables:
+                G[name] = set()
+
+        # Build let statement
+        output = main_smtlib_str
+        for name in reversed(toposort(G)):
+            if name not in self._bindings:
+                continue
+            expr, smtlib = self._bindings[name]
+
+            # FIXME: too much string manipulation. Search occurrences in the Expression realm
+            if output.count(name) <= 1:
+                # output = f"let (({name} {smtlib})) ({output})"
+                output = output.replace(name, smtlib)
+            else:
+                output = f"(let (({name} {smtlib})) {output})"
+
+        return f"{output}"
+
+    def declarations(self):
+        result = ""
+        for exp in self._variables:
+            if isinstance(exp, BitVecVariable):
+                result += f"(declare-fun {exp.name} () (_ BitVec {exp.size}))\n"
+            elif isinstance(exp, BoolVariable):
+                result += f"(declare-fun {exp.name} () Bool)\n"
+            elif isinstance(exp, ArrayVariable):
+                result += f"(declare-fun {exp.name} () (Array (_ BitVec {exp.index_size}) (_ BitVec {exp.value_size})))\n"
+            else:
+                raise ConstraintException(f"Type not supported {exp!r}")
+        return result
+
+    def smtlib(self):
+        result = self.declarations()
+        for constraint_str in self._stack:
+            result += f"(assert {self.apply_bindings(constraint_str)})\n"
+        return result
 
 
-def translate_to_smtlib(expression, **kwargs):
-    translator = TranslatorSmtlib(**kwargs)
+@lru_cache(maxsize=128, typed=True)
+def _translate_to_smtlib(expression, use_bindings=True, **kwargs):
+    translator = TranslatorSmtlib(use_bindings=use_bindings, **kwargs)
     translator.visit(expression)
     return translator.result
+
+
+def translate_to_smtlib(expression, use_bindings=True, **kwargs):
+    if isinstance(expression, MutableArray):
+        expression = expression.array
+    result = _translate_to_smtlib(expression, use_bindings=use_bindings, **kwargs)
+    return result
 
 
 class Replace(Visitor):
@@ -990,19 +1045,21 @@ class Replace(Visitor):
             raise ValueError("bindings needed in replace")
         self._replace_bindings = bindings
 
-    def _visit_variable(self, expression):
+    def visit(self, *args, **kwargs):
+        return super().visit(*args, **kwargs)
+
+    def visit_Variable(self, expression):
         if expression in self._replace_bindings:
             return self._replace_bindings[expression]
         return expression
-
-    visit_ArrayVariable = _visit_variable
-    visit_BitVecVariable = _visit_variable
-    visit_BoolVariable = _visit_variable
 
 
 def replace(expression, bindings):
     if not bindings:
         return expression
+    if isinstance(expression, MutableArray):
+        expression = expression.array
+
     visitor = Replace(bindings)
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result
@@ -1033,10 +1090,37 @@ def simplify_array_select(array_exp):
     return simplifier.stores
 
 
-def get_variables(expression):
-    if isinstance(expression, ArrayProxy):
-        expression = expression.array
-
+@lru_cache(maxsize=128, typed=True)
+def _get_variables(expression):
     visitor = GetDeclarations()
     visitor.visit(expression)
     return visitor.result
+
+
+def get_variables(expression):
+    if isinstance(expression, MutableArray):
+        expression = expression.array
+    return _get_variables(expression)
+
+
+class GetBindings(Visitor):
+    """Simple visitor to collect all variables in an expression or set of
+    expressions
+    """
+
+    def _rebuild(self, expression, operands):
+        return expression
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.expressions = {}
+
+    def visit_Operation(self, expression, *operands):
+        try:
+            self.expressions[expression] += 1
+        except KeyError as e:
+            self.expressions[expression] = 1
+
+    @property
+    def result(self):
+        return self.expressions

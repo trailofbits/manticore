@@ -1047,7 +1047,9 @@ truffle_json = r"""{
 user_account = m.create_account(balance=1000, name="user_account")
 print("[+] Creating a user account", user_account.name_)
 
-contract_account = m.json_create_contract(truffle_json, owner=user_account, name="contract_account")
+contract_account = m.solidity_create_contract(
+    truffle_json, owner=user_account, name="contract_account"
+)
 print("[+] Creating a contract account", contract_account.name_)
 contract_account.sendCoin(1, 1)
 

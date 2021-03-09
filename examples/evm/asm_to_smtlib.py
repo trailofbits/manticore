@@ -7,7 +7,9 @@ from manticore.core.smtlib.visitors import *
 from manticore.utils import log
 
 # log.set_verbosity(9)
-config.out_of_gas = 1
+# FIXME: What's the equivalent?
+consts = config.get_group("evm")
+consts["oog"] = "complete"
 
 
 def printi(instruction):
@@ -42,11 +44,11 @@ code = EVMAsm.assemble(
 )
 
 
-data = constraints.new_array(index_bits=256, name="array")
+data = constraints.new_array(index_size=256, name="array")
 
 
-class callbacks:
-    initial_stack = []
+class Callbacks:
+    initial_stack: List[BitVec] = []
 
     def will_execute_instruction(self, pc, instr):
         for i in range(len(evm.stack), instr.pops):
@@ -57,8 +59,8 @@ class callbacks:
 
 class DummyWorld:
     def __init__(self, constraints):
-        self.balances = constraints.new_array(index_bits=256, value_bits=256, name="balances")
-        self.storage = constraints.new_array(index_bits=256, value_bits=256, name="storage")
+        self.balances = constraints.new_array(index_size=256, value_size=256, name="balances")
+        self.storage = constraints.new_array(index_size=256, value_size=256, name="storage")
         self.origin = constraints.new_bitvec(256, name="origin")
         self.price = constraints.new_bitvec(256, name="price")
         self.timestamp = constraints.new_bitvec(256, name="timestamp")
@@ -112,10 +114,10 @@ caller = constraints.new_bitvec(256, name="caller")
 value = constraints.new_bitvec(256, name="value")
 
 world = DummyWorld(constraints)
-callbacks = callbacks()
+callbacks = Callbacks()
 
 # evm = world.current_vm
-evm = EVM(constraints, 0x41424344454647484950, data, caller, value, code, world=world, gas=1000000)
+evm = EVM(0x41424344454647484950, data, caller, value, code, world=world, gas=1000000)
 evm.subscribe("will_execute_instruction", callbacks.will_execute_instruction)
 
 print("CODE:")
@@ -138,5 +140,5 @@ print("CONSTRAINTS:")
 print(constraints)
 
 print(
-    f"PC: {translate_to_smtlib(evm.pc)} {solver.get_all_values(constraints, evm.pc, maxcnt=3, silent=True)}"
+    f"PC: {translate_to_smtlib(evm.pc)} {SMTLIBSolver.get_all_values(constraints, evm.pc, maxcnt=3, silent=True)}"
 )

@@ -18,14 +18,22 @@ def rtd_dependent_deps():
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.1", "pyelftools", "unicorn==1.0.2rc2"]
 
-lint_deps = ["black==20.8b1", "mypy==0.790"]
+lint_deps = ["black==20.8b1", "mypy==0.812"]
 
 auto_test_deps = ["py-evm"]
 
 # Development dependencies without keystone
 dev_noks = (
     native_deps
-    + ["coverage", "Sphinx", "pytest==5.3.0", "pytest-xdist==1.30.0", "pytest-cov==2.8.1", "jinja2"]
+    + [
+        "coverage",
+        "Sphinx",
+        "pytest",
+        "pytest-timeout",
+        "pytest-xdist",
+        "pytest-cov",
+        "jinja2",
+    ]
     + lint_deps
     + auto_test_deps
 )
@@ -72,6 +80,7 @@ setup(
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
+        "toposort",
     ]
     + rtd_dependent_deps(),
     extras_require=extra_require,

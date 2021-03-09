@@ -60,7 +60,7 @@ env.filters["escape_null"] = escape_null
 template = env.get_template("test_template.jinja2")
 
 
-modules = []
+modules = []  # type: ignore
 registered_modules = {}
 imports = []
 current_module = None
@@ -100,7 +100,7 @@ for d in data:
                     mod_name=d["action"].get("module", None),
                 )
         elif d["action"]["type"] == "get":
-            modules[current_module].add_test(
+            modules[current_module].add_test(  # type: ignore
                 d["action"]["field"],
                 d["line"],
                 [],
@@ -156,9 +156,9 @@ for d in data:
             imports.append({"type": "alias", "alias": d["as"], "orig": maybe_name})
         else:  # This is an alias for the current module
             imports.append(
-                {"type": "import", "name": d["as"], "filename": modules[current_module].filename}
+                {"type": "import", "name": d["as"], "filename": modules[current_module].filename}  # type: ignore
             )
-            modules[current_module].registered_name = d["as"]
+            modules[current_module].registered_name = d["as"]  # type: ignore
 
     if current_module:
         modules[current_module].imports = copy(imports)

@@ -163,7 +163,7 @@ def CONCAT(total_size, *args):
                     return BitVecConstant(arg_size, x)
                 return x
 
-            return BitVecConcat(total_size, *list(map(cast, args)))
+            return BitVecConcat(operands=tuple(map(cast, args)))
         else:
             return args[0]
     else:
@@ -184,10 +184,10 @@ def ITE(cond, true_value, false_value):
             return false_value
 
     if isinstance(true_value, bool):
-        true_value = BoolConstant(true_value)
+        true_value = BoolConstant(value=true_value)
 
     if isinstance(false_value, bool):
-        false_value = BoolConstant(false_value)
+        false_value = BoolConstant(value=false_value)
 
     return BoolITE(cond, true_value, false_value)
 
@@ -217,7 +217,7 @@ def ITEBV(size, cond, true_value, false_value):
 
     if isinstance(false_value, int):
         false_value = BitVecConstant(size, false_value)
-    return BitVecITE(size, cond, true_value, false_value)
+    return BitVecITE(cond, true_value, false_value)
 
 
 def UDIV(dividend, divisor):
@@ -235,14 +235,6 @@ def SDIV(a, b):
     elif isinstance(b, BitVec):
         return b.rsdiv(a)
     return int(math.trunc(float(a) / float(b)))
-
-
-def SMOD(a, b):
-    if isinstance(a, BitVec):
-        return a.smod(b)
-    elif isinstance(b, BitVec):
-        return b.rsmod(a)
-    return int(math.fmod(a, b))
 
 
 def SREM(a, b):

@@ -1,5 +1,6 @@
 from __future__ import print_function
 import sys
+from typing import Any, Dict
 import random
 
 tests = []
@@ -15,7 +16,7 @@ for t_str in tests_str:
 
 random.shuffle(tests)
 
-op_count = {}
+op_count: Dict[str, int] = {}
 test_dic = {}
 for test in tests:
     try:

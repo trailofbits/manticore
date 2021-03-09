@@ -59,23 +59,22 @@ class NativeIntegrationTest(unittest.TestCase):
         workspace = os.path.join(self.test_dir, "workspace")
         t = time.time()
         with open(os.path.join(os.pardir, self.test_dir, "output.log"), "w") as output:
-            subprocess.check_call(
-                [
-                    "coverage",
-                    "run",  # PYTHON_BIN,
-                    "-m",
-                    "manticore",
-                    "--workspace",
-                    workspace,
-                    "--core.timeout",
-                    "1",
-                    "--core.procs",
-                    "4",
-                    filename,
-                    "+++++++++",
-                ],
-                stdout=output,
-            )
+            cmd = [
+                "coverage",
+                "run",  # PYTHON_BIN,
+                "-m",
+                "manticore",
+                "--workspace",
+                workspace,
+                "--core.timeout",
+                "1",
+                "--core.procs",
+                "4",
+                filename,
+                "+++++++++",
+            ]
+
+            subprocess.check_call(cmd, stdout=output)
 
         self.assertTrue(time.time() - t < 20)
 
@@ -129,6 +128,7 @@ class NativeIntegrationTest(unittest.TestCase):
             cmd += ["--assertions", assertions]
 
         cmd += [filename, "+++++++++"]
+
         output = subprocess.check_output(cmd).splitlines()
         # self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
 

@@ -16,6 +16,7 @@ Bugs
 import queue
 import struct
 import itertools
+from typing import Any
 
 from manticore import set_verbosity
 from manticore.native import Manticore
@@ -234,7 +235,7 @@ def constraints_are_sat(cons):
 
 
 def get_new_constrs_for_queue(oldcons, newcons):
-    ret = []
+    ret: List[Any] = []
 
     # i'm pretty sure its correct to assume newcons is a superset of oldcons
 
@@ -299,7 +300,7 @@ def concrete_input_to_constraints(ci, prev=None):
 
 def main():
 
-    q = queue.Queue()
+    q: queue.Queue = queue.Queue()
 
     # todo randomly generated concrete start
     stdin = ints2inp(0, 5, 0)

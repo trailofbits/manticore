@@ -22,7 +22,7 @@ import collections
 import shlex
 import time
 from functools import lru_cache
-from typing import Dict, Tuple, Sequence, Optional
+from typing import Dict, Tuple, Sequence, Optional, NamedTuple
 from subprocess import PIPE, Popen, check_output
 import re
 from . import operators as Operators
@@ -163,7 +163,10 @@ class Solver(SingletonMixin):
             return x, x
 
 
-Version = collections.namedtuple("Version", "major minor patch")
+class Version(NamedTuple):
+    major: int
+    minor: int
+    path: int
 
 
 class SmtlibProc:
@@ -214,7 +217,7 @@ class SmtlibProc:
         assert self._proc.stdout
         buf = self._proc.stdout.readline()  # No timeout enforced here
         # If debug is enabled check if the solver reports a syntax error
-        # Error messages may contain an unbalanced parenthesis situation
+        # print (">",buf)
         if self._debug:
             if "(error" in buf:
                 raise SolverException(f"Error in smtlib: {buf}")
@@ -223,10 +226,11 @@ class SmtlibProc:
 
     def send(self, cmd: str) -> None:
         """
-        Send a string to the solver.
+        Send a string to the solver.s
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
+        # print ("<",cmd)
         if self._debug:
             logger.debug(">%s", cmd)
         self._proc.stdout.flush()  # type: ignore
@@ -244,6 +248,7 @@ class SmtlibProc:
 
         buf = "".join(bufl).strip()
 
+        # print (">",buf)
         if self._debug:
             logger.debug("<%s", buf)
 
@@ -397,6 +402,52 @@ class SMTLIBSolver(Solver):
         self._smtlib.send("(pop 1)")
 
     @lru_cache(maxsize=32)
+    def get_model(self, constraints: ConstraintSet):
+        self._reset(constraints.to_string())
+        self._smtlib.send("(check-sat)")
+        self._smtlib.recv()
+
+        model = {}
+        for variable in constraints.variables:
+            value = None
+            if isinstance(variable, BoolVariable):
+                value = self.__getvalue_bool(variable.name)
+            elif isinstance(variable, BitVecVariable):
+                value = self.__getvalue_bv(variable.name)
+            elif isinstance(variable, Array):
+                try:
+                    if variable.length is not None:
+                        value = []
+                        for i in range(len(variable)):
+                            variable_i = variable[i]
+                            if issymbolic(variable_i):
+                                value.append(self.__getvalue_bv(translate_to_smtlib(variable_i)))
+                            else:
+                                value.append(variable_i)
+                        value = bytes(value)
+                    else:
+                        # Only works if we know the max index of the arrray
+                        used_indexes = map(self.__getvalue_bv, variable.written)
+                        valued = {}
+                        for i in used_indexes:
+                            valued[i] = self.__getvalue_bv(variable[i])
+
+                        class A:
+                            def __init__(self, d, default):
+                                self._d = d
+                                self._default = default
+
+                            def __getitem__(self, index):
+                                return self._d.get(index, self._default)
+
+                        value = A(valued, variable.default)
+                except Exception as e:
+                    value = None  # We failed to get the model from the solver
+
+            model[variable.name] = value
+        return model
+
+    @lru_cache(maxsize=32)
     def can_be_true(self, constraints: ConstraintSet, expression: Union[bool, Bool] = True) -> bool:
         """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
@@ -503,7 +554,6 @@ class SMTLIBSolver(Solver):
         if not isinstance(expression, Expression):
             return [expression]
         assert isinstance(expression, Expression)
-        expression = simplify(expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
             if isinstance(expression, Bool) and consts.maxsolutions > 1:
@@ -518,15 +568,15 @@ class SMTLIBSolver(Solver):
                 var = temp_cs.new_bitvec(expression.size)
             elif isinstance(expression, Array):
                 var = temp_cs.new_array(
-                    index_max=expression.index_max,
-                    value_bits=expression.value_bits,
+                    length=expression.length,
+                    index_size=expression.index_size,
+                    value_size=expression.value_size,
                     taint=expression.taint,
-                ).array
+                )
             else:
                 raise NotImplementedError(
                     f"get_all_values only implemented for {type(expression)} expression type."
                 )
-
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string())
             result = []
@@ -549,7 +599,7 @@ class SMTLIBSolver(Solver):
                         logger.info("Timeout searching for all solutions")
                         return list(result)
                     raise SolverError("Timeout")
-                # Sometimes adding a new contraint after a check-sat eats all the mem
+                # Sometimes adding a new constraint after a check-sat eats all the mem
                 if self._multiple_check:
                     self._smtlib.send(f"(assert {translate_to_smtlib(var != value)})")
                 else:
@@ -575,9 +625,11 @@ class SMTLIBSolver(Solver):
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name="optimized_")
+
+            temp_cs.add(operation(X, aux))
             self._reset(temp_cs.to_string())
 
-            self._assert(operation(X, aux))
+            # self._assert(operation(X, aux))
             self._smtlib.send("(%s %s)" % (goal, aux.name))
             self._smtlib.send("(check-sat)")
             _status = self._smtlib.recv()
@@ -590,10 +642,25 @@ class SMTLIBSolver(Solver):
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
+        self._cache = getattr(self, "_cache", {})
+        model = self.get_model(constraints)
+
+        ####################
         values = []
         start = time.time()
-        with constraints.related_to(*expressions) as temp_cs:
+        # with constraints.related_to(*expressions) as temp_cs:
+        with constraints as temp_cs:
             for expression in expressions:
+                bucket = self._cache.setdefault(hash(constraints), {})
+                cached_result = bucket.get(hash(expression))
+                if cached_result is not None:
+                    values.append(cached_result)
+                    continue
+                elif isinstance(expression, Variable):
+                    if model[expression.name] is not None:
+                        values.append(model[expression.name])
+                        continue
+
                 if not issymbolic(expression):
                     values.append(expression)
                     continue
@@ -605,21 +672,28 @@ class SMTLIBSolver(Solver):
                 elif isinstance(expression, Array):
                     var = []
                     result = []
-                    for i in range(expression.index_max):
-                        subvar = temp_cs.new_bitvec(expression.value_bits)
-                        var.append(subvar)
-                        temp_cs.add(subvar == simplify(expression[i]))
+                    for i in range(len(expression)):
+                        expression_i = expression[i]
+                        if issymbolic(expression_i):
+                            subvar = temp_cs.new_bitvec(expression.value_size)
+                            temp_cs.add(subvar == expression[i])
+                            var.append(subvar)
+                        else:
+                            var.append(expression_i)
                     self._reset(temp_cs.to_string())
                     if not self._is_sat():
                         raise SolverError(
                             "Solver could not find a value for expression under current constraint set"
                         )
-
-                    for i in range(expression.index_max):
-                        result.append(self.__getvalue_bv(var[i].name))
+                    for i in range(expression.length):
+                        if issymbolic(var[i]):
+                            result.append(self.__getvalue_bv(var[i].name))
+                        else:
+                            result.append(var[i])
                     values.append(bytes(result))
+                    bucket[hash(expression)] = values[-1]
                     if time.time() - start > consts.timeout:
-                        raise SolverError("Timeout")
+                        raise SolverError(f"Timeout {expressions}")
                     continue
 
                 temp_cs.add(var == expression)
@@ -635,6 +709,7 @@ class SMTLIBSolver(Solver):
                     values.append(self.__getvalue_bool(var.name))
                 if isinstance(expression, BitVec):
                     values.append(self.__getvalue_bv(var.name))
+                bucket[hash(expression)] = values[-1]
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
 
@@ -690,7 +765,7 @@ class Z3Solver(SMTLIBSolver):
 
         # Certain version of Z3 fails to handle multiple check-sat
         # https://gist.github.com/feliam/0f125c00cb99ef05a6939a08c4578902
-        multiple_check = self.version < Version(4, 8, 7)
+        multiple_check = False  # self.version < Version(4, 8, 7)
         return init, support_minmax, support_reset, multiple_check
 
     def _solver_version(self) -> Version:
@@ -701,8 +776,8 @@ class Z3Solver(SMTLIBSolver):
         Anticipated version_cmd_output format: 'Z3 version 4.4.2'
                                                'Z3 version 4.4.5 - 64 bit - build hashcode $Z3GITHASH'
         """
+        received_version = check_output([f"{consts.z3_bin}", "--version"])
         try:
-            received_version = check_output([f"{consts.z3_bin}", "--version"])
             Z3VERSION = re.compile(
                 r".*(?P<major>([0-9]+))\.(?P<minor>([0-9]+))\.(?P<patch>([0-9]+)).*"
             )
@@ -715,7 +790,7 @@ class Z3Solver(SMTLIBSolver):
             logger.warning(
                 f"Could not parse Z3 version: '{str(received_version)}'. Assuming compatibility."
             )
-            parsed_version = Version(float("inf"), float("inf"), float("inf"))
+            parsed_version = Version(sys.maxsize, sys.maxsize, sys.maxsize)
         return parsed_version
 
 

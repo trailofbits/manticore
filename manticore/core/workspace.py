@@ -602,6 +602,7 @@ class ManticoreOutput:
         # The workspaces should override `save_testcase` method
         #
         # Below is native-only
+
         self.save_summary(testcase, state, message)
         self.save_trace(testcase, state)
         self.save_constraints(testcase, state)

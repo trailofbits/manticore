@@ -1,4 +1,6 @@
-flags = {
+from typing import Dict, List
+
+flags: Dict[str, Dict[str, List[str]]] = {
     "AAA": {
         "undefined": ["OF", "SF", "ZF", "PF"],
         "defined": ["AF", "CF"],

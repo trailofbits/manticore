@@ -7,7 +7,7 @@ from ..native.memory import SMemory32, Memory32
 from ..core.smtlib import *
 from ..core.state import TerminateState
 from ..binary import CGCElf
-from ..platforms.platform import Platform
+from ..platforms.platform import NativePlatform
 import logging
 import random
 
@@ -76,7 +76,7 @@ class Socket:
         return len(buf)
 
 
-class Decree(Platform):
+class Decree(NativePlatform):
     """
     A simple Decree Operating System.
     This class emulates the most common Decree system calls

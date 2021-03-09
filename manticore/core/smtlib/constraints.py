@@ -1,7 +1,6 @@
 import itertools
 import sys
 import copy
-from typing import Optional
 from ...utils.helpers import PickleSerializer
 from ...exceptions import SmtlibError
 from .expression import (
@@ -13,20 +12,21 @@ from .expression import (
     Bool,
     BitVec,
     BoolConstant,
-    ArrayProxy,
+    MutableArray,
     BoolEqual,
     Variable,
     Constant,
 )
 from .visitors import (
+    GetBindings,
     GetDeclarations,
     TranslatorSmtlib,
     get_variables,
     simplify,
     replace,
-    pretty_print,
+    CountExpressionUse,
+    translate_to_smtlib,
 )
-from ...utils import config
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,10 @@ class ConstraintException(SmtlibError):
     Constraint exception
     """
 
+    pass
+
+
+class Model:
     pass
 
 
@@ -78,6 +82,7 @@ class ConstraintSet:
         return self._child
 
     def __exit__(self, ty, value, traceback) -> None:
+        assert self._child is not None
         self._child._parent = None
         self._child = None
 
@@ -93,9 +98,10 @@ class ConstraintSet:
         :param constraint: The constraint to add to the set.
         """
         if isinstance(constraint, bool):
-            constraint = BoolConstant(constraint)
+            constraint = BoolConstant(value=constraint)
         assert isinstance(constraint, Bool)
         constraint = simplify(constraint)
+
         # If self._child is not None this constraint set has been forked and a
         # a derived constraintset may be using this. So we can't add any more
         # constraints to this one. After the child constraintSet is deleted
@@ -133,8 +139,8 @@ class ConstraintSet:
         Slices this ConstraintSet keeping only the related constraints.
         Two constraints are independient if they can be expressed full using a
         disjoint set of variables.
-        Todo: Research. constraints refering differen not overlapping parts of the same array
-        should be considered independient.
+        Todo: Research. constraints referring different not overlapping parts of the same array
+          should be considered independient.
         :param related_to: An expression
         :return:
         """
@@ -177,7 +183,24 @@ class ConstraintSet:
         return cs
 
     def to_string(self, replace_constants: bool = False) -> str:
+        replace_constants = True
         variables, constraints = self.get_declared_variables(), self.constraints
+        # rep_bindings = {}
+        # extra_variables, extra_constraints = [], []
+        # counts = CountExpressionUse()
+        # for c in constraints:
+        #    counts.visit(c)
+        # for exp, count in counts.counts.items():
+        #    if count > 1:
+        #        if isinstance(exp, BitVec):
+        #            new_var = BitVecVariable(size=exp.size, name=new_name)
+        #        if isinstance(exp, Bool):
+        #            new_var = BoolVariable(name=new_name)
+        #        if isinstance(exp, Array):
+        #            new_var = ArrayVariable(name=new_name, index_size=exp.index_size, value_size=exp.value_size)
+        #        extra_constraints.append(new_var == exp)
+        #        extra_variables.append(new_var)
+        #        rep_bindings[exp] = new_var
 
         if replace_constants:
             constant_bindings = {}
@@ -185,51 +208,56 @@ class ConstraintSet:
                 if (
                     isinstance(expression, BoolEqual)
                     and isinstance(expression.operands[0], Variable)
-                    and isinstance(expression.operands[1], (*Variable, *Constant))
+                    and isinstance(expression.operands[1], Constant)
                 ):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
-
-        tmp = set()
-        result = ""
-        for var in variables:
-            # FIXME
-            # band aid hack around the fact that we are double declaring stuff :( :(
-            if var.declaration in tmp:
-                logger.warning("Variable '%s' was copied twice somewhere", var.name)
-                continue
-            tmp.add(var.declaration)
-            result += var.declaration + "\n"
+                if (
+                    isinstance(expression, BoolEqual)
+                    and isinstance(expression.operands[1], Variable)
+                    and isinstance(expression.operands[0], Constant)
+                ):
+                    constant_bindings[expression.operands[1]] = expression.operands[0]
 
         translator = TranslatorSmtlib(use_bindings=True)
+        # gb = GetBindings()
+        for v in variables:
+            translator.visit_Variable(v)
+        # for v in extra_variables:
+        #    translator.visit_Variable(v)
+        # if constraints:
+        #    for constraint in constraints:
+        #        gb.visit(constraint)
         for constraint in constraints:
             if replace_constants:
                 constraint = simplify(replace(constraint, constant_bindings))
-                # if no variables then it is a constant
-                if isinstance(constraint, Constant) and constraint.value == True:
-                    continue
+                if (
+                    isinstance(constraint, BoolEqual)
+                    and isinstance(constraint.operands[0], Variable)
+                    and isinstance(constraint.operands[1], Variable)
+                    and constraint.operands[1] in constant_bindings
+                ):
+                    constraint = simplify(replace(constraint, constant_bindings))
 
+            # constraint = simplify(replace(constraint, rep_bindings))
+            # if no variables then it is a constant
+            if isinstance(constraint, Constant) and constraint.value == True:
+                continue
+            # Translate one constraint
             translator.visit(constraint)
+
         if replace_constants:
             for k, v in constant_bindings.items():
                 translator.visit(k == v)
 
-        for name, exp, smtlib in translator.bindings:
-            if isinstance(exp, BitVec):
-                result += f"(declare-fun {name} () (_ BitVec {exp.size}))"
-            elif isinstance(exp, Bool):
-                result += f"(declare-fun {name} () Bool)"
-            elif isinstance(exp, Array):
-                result += f"(declare-fun {name} () (Array (_ BitVec {exp.index_bits}) (_ BitVec {exp.value_bits})))"
-            else:
-                raise ConstraintException(f"Type not supported {exp!r}")
-            result += f"(assert (= {name} {smtlib}))\n"
+        # for constraint in extra_constraints:
+        #    if replace_constants:
+        #        constraint = simplify(replace(constraint, constant_bindings))
+        #    if isinstance(constraint, Constant) and constraint.value == True:
+        #        continue
+        #    # Translate one constraint
+        #    translator.visit(constraint)
 
-        constraint_str = translator.pop()
-        while constraint_str is not None:
-            if constraint_str != "true":
-                result += f"(assert {constraint_str})\n"
-            constraint_str = translator.pop()
-        return result
+        return translator.smtlib()
 
     def _declare(self, var):
         """ Declare the variable `var` """
@@ -237,6 +265,10 @@ class ConstraintSet:
             raise ValueError("Variable already declared")
         self._declarations[var.name] = var
         return var
+
+    @property
+    def variables(self):
+        return self._declarations.values()
 
     def get_declared_variables(self):
         """ Returns the variable expressions of this constraint set """
@@ -348,11 +380,11 @@ class ConstraintSet:
                 elif isinstance(foreign_var, Array):
                     # Note that we are discarding the ArrayProxy encapsulation
                     new_var = self.new_array(
-                        index_max=foreign_var.index_max,
-                        index_bits=foreign_var.index_bits,
-                        value_bits=foreign_var.value_bits,
+                        length=foreign_var.length,
+                        index_size=foreign_var.index_size,
+                        value_size=foreign_var.value_size,
                         name=migrated_name,
-                    ).array
+                    )
                 else:
                     raise NotImplementedError(
                         f"Unknown expression type {type(foreign_var)} encountered during expression migration"
@@ -380,7 +412,7 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = BoolVariable(name, taint=taint)
+        var = BoolVariable(name=name, taint=taint)
         return self._declare(var)
 
     def new_bitvec(self, size, name=None, taint=frozenset(), avoid_collisions=False):
@@ -392,7 +424,7 @@ class ConstraintSet:
         :return: a fresh BitVecVariable
         """
         if size <= 0:
-            raise ValueError(f"Bitvec size ({size}) can't be equal to or less than 0")
+            raise ValueError(f"BitVec size ({size}) can't be equal to or less than 0")
         if name is None:
             name = "BV"
             avoid_collisions = True
@@ -400,25 +432,25 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = BitVecVariable(size, name, taint=taint)
+        var = BitVecVariable(size=size, name=name, taint=taint)
         return self._declare(var)
 
     def new_array(
         self,
-        index_bits=32,
+        index_size=32,
         name=None,
-        index_max=None,
-        value_bits=8,
+        length=None,
+        value_size=8,
         taint=frozenset(),
         avoid_collisions=False,
         default=None,
     ):
-        """Declares a free symbolic array of value_bits long bitvectors in the constraint store.
-        :param index_bits: size in bits for the array indexes one of [32, 64]
-        :param value_bits: size in bits for the array values
+        """Declares a free symbolic array of value_size long bitvectors in the constraint store.
+        :param index_size: size in bits for the array indexes one of [32, 64]
+        :param value_size: size in bits for the array values
         :param name: try to assign name to internal variable representation,
                      if not unique, a numeric nonce will be appended
-        :param index_max: upper limit for indexes on this array (#FIXME)
+        :param length: upper limit for indexes on this array (#FIXME)
         :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
         :param default: default for not initialized values
         :return: a fresh ArrayProxy
@@ -430,5 +462,14 @@ class ConstraintSet:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError(f"Name {name} already used")
-        var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
-        return ArrayProxy(var, default=default)
+        var = self._declare(
+            ArrayVariable(
+                index_size=index_size,
+                length=length,
+                value_size=value_size,
+                name=name,
+                taint=taint,
+                default=default,
+            )
+        )
+        return var

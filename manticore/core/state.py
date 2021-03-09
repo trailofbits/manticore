@@ -1,11 +1,16 @@
 import copy
 import logging
+from typing import Any, Dict, List, Optional, TypeVar, TYPE_CHECKING
 
-from .smtlib import solver, Bool, issymbolic, BitVecConstant
+from .smtlib import Bool, ConstraintSet, Expression, issymbolic, BitVecConstant, MutableArray
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils import config
 from .plugin import StateDescriptor
+
+if TYPE_CHECKING:
+    from .manticore import ManticoreBase
+    from ..platforms.platform import Platform
 
 consts = config.get_group("core")
 consts.add(
@@ -167,21 +172,30 @@ class StateBase(Eventful):
     """
     Representation of a unique program state/path.
 
-    :param ConstraintSet constraints: Initial constraints
-    :param Platform platform: Initial operating system state
+    :param constraints: Initial constraints
+    :param platform: Initial operating system state
     :ivar dict context: Local context for arbitrary data storage
     """
 
     _published_events = {"execution_intermittent"}
 
-    def __init__(self, constraints, platform, **kwargs):
+    def __init__(
+        self,
+        *,
+        constraints: ConstraintSet,
+        platform: "Platform",
+        manticore: Optional["ManticoreBase"] = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
+        self._manticore = manticore
         self._platform = platform
         self._constraints = constraints
-        self._platform.constraints = constraints
-        self._input_symbols = list()
+        self._input_symbols: List[Expression] = list()
+
         self._child = None
-        self._context = dict()
+        self._context: Dict[str, Any] = dict()
+
         self._terminated_by = None
         self._solver = EventSolver()
         self._total_exec = 0
@@ -189,15 +203,16 @@ class StateBase(Eventful):
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._solver)
-        self.forward_events_from(platform)
+        self._platform.set_state(self)
 
     def __getstate__(self):
         state = super().__getstate__()
         state["platform"] = self._platform
         state["constraints"] = self._constraints
-        state["input_symbols"] = self._input_symbols
         state["child"] = self._child
         state["context"] = self._context
+        state["input_symbols"] = self._input_symbols
+
         state["terminated_by"] = self._terminated_by
         state["exec_counter"] = self._total_exec
         return state
@@ -205,10 +220,13 @@ class StateBase(Eventful):
     def __setstate__(self, state):
         super().__setstate__(state)
         self._platform = state["platform"]
+
         self._constraints = state["constraints"]
-        self._input_symbols = state["input_symbols"]
         self._child = state["child"]
         self._context = state["context"]
+        self._input_symbols = state["input_symbols"]
+        self._manticore = None
+
         self._terminated_by = state["terminated_by"]
         self._total_exec = state["exec_counter"]
         self._own_exec = 0
@@ -216,7 +234,7 @@ class StateBase(Eventful):
         # 33
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._solver)
-        self.forward_events_from(self._platform)
+        self._platform.set_state(self)
 
     @property
     def id(self):
@@ -229,24 +247,30 @@ class StateBase(Eventful):
     # This need to change. this is the center of ALL the problems. re. CoW
     def __enter__(self):
         assert self._child is None
-        self._platform.constraints = None
-        new_state = self.__class__(self._constraints.__enter__(), self._platform)
-        self.platform.constraints = new_state.constraints
-        new_state._input_symbols = list(self._input_symbols)
+        self._platform._constraints = None
+        new_state = self.__class__(
+            constraints=self._constraints.__enter__(),
+            platform=self._platform,
+            manticore=self._manticore,
+        )
+        # Keep the same constraint
+        self.platform._constraints = new_state.constraints
+        # backup copy of the context
         new_state._context = copy.copy(self._context)
+        new_state._input_symbols = self._input_symbols
         new_state._id = None
+
         new_state._total_exec = self._total_exec
         self.copy_eventful_state(new_state)
-
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
+        # assert self.platform.constraints is self.constraints
 
         return new_state
 
     def __exit__(self, ty, value, traceback):
         self._constraints.__exit__(ty, value, traceback)
         self._child = None
-        self.platform.constraints = self.constraints
 
     @property
     def input_symbols(self):
@@ -267,7 +291,6 @@ class StateBase(Eventful):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        self.platform.constraints = constraints
 
     def _update_state_descriptor(self, descriptor: StateDescriptor, *args, **kwargs):
         """
@@ -324,8 +347,8 @@ class StateBase(Eventful):
         taint = options.get("taint", frozenset())
         expr = self._constraints.new_array(
             name=label,
-            index_max=nbytes,
-            value_bits=8,
+            length=nbytes,
+            value_size=8,
             taint=taint,
             avoid_collisions=avoid_collisions,
         )
@@ -368,7 +391,7 @@ class StateBase(Eventful):
         than `maxcount` feasible solutions, some states will be silently
         ignored.**
         """
-        assert self.constraints == self.platform.constraints
+        # assert self.constraints is self.platform.constraints
         symbolic = self.migrate_expression(symbolic)
 
         vals = []
@@ -419,6 +442,8 @@ class StateBase(Eventful):
         return tuple(set(vals))
 
     def migrate_expression(self, expression):
+        if isinstance(expression, MutableArray):
+            expression = expression.array
         if not issymbolic(expression):
             return expression
         migration_map = self.context.get("migration_map")
@@ -461,19 +486,10 @@ class StateBase(Eventful):
         :return: Concrete value or a tuple of concrete values
         :rtype: int
         """
-        values = []
-        for expr in exprs:
-            if not issymbolic(expr):
-                values.append(expr)
-            else:
-                expr = self.migrate_expression(expr)
-                value = self._solver.get_value(self._constraints, expr)
-                if constrain:
-                    self.constrain(expr == value)
-                # Include forgiveness here
-                if isinstance(value, bytearray):
-                    value = bytes(value)
-                values.append(value)
+        expressions = [self.migrate_expression(e) for e in exprs]
+        values = self._solver.get_value(self._constraints, *expressions)
+        if len(expressions) == 1:
+            values = (values,)
         return values
 
     def solve_n(self, expr, nsolves):
@@ -573,7 +589,7 @@ class StateBase(Eventful):
         if wildcard in data:
             size = len(data)
             symb = self._constraints.new_array(
-                name=label, index_max=size, taint=taint, avoid_collisions=True
+                name=label, length=size, taint=taint, avoid_collisions=True
             )
             self._input_symbols.append(symb)
 

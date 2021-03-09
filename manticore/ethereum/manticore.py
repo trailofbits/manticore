@@ -17,7 +17,7 @@ from ..core.manticore import ManticoreBase, ManticoreError
 from ..core.smtlib import (
     ConstraintSet,
     Array,
-    ArrayProxy,
+    MutableArray,
     BitVec,
     Operators,
     BoolConstant,
@@ -119,10 +119,10 @@ class ManticoreEVM(ManticoreBase):
 
     _published_events = {"solve"}
 
-    def make_symbolic_buffer(self, size, name=None, avoid_collisions=False):
+    def make_symbolic_buffer(self, size, name=None, avoid_collisions=False, default=None):
         """Creates a symbolic buffer of size bytes to be used in transactions.
-        You can operate on it normally and add constraints to manticore.constraints
-        via manticore.constrain(constraint_expression)
+            You can operate on it normally and add constraints to manticore.constraints
+            via manticore.constrain(constraint_expression)
 
         Example use::
 
@@ -138,12 +138,13 @@ class ManticoreEVM(ManticoreBase):
             avoid_collisions = True
 
         return self.constraints.new_array(
-            index_bits=256,
+            index_size=256,
             name=name,
-            index_max=size,
-            value_bits=8,
+            length=size,
+            value_size=8,
             taint=frozenset(),
             avoid_collisions=avoid_collisions,
+            default=default,
         )
 
     def make_symbolic_value(self, nbits=256, name=None):
@@ -293,7 +294,6 @@ class ManticoreEVM(ManticoreBase):
             filename = crytic_compile.filename_of_contract(name).absolute
             with open(filename) as f:
                 source_code = f.read()
-
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
 
         except InvalidCompilation as e:
@@ -390,7 +390,7 @@ class ManticoreEVM(ManticoreBase):
         constraints = ConstraintSet()
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
-        initial_state = State(constraints, world)
+        initial_state = State(constraints=constraints, platform=world, maticore=self)
         super().__init__(initial_state, **kwargs)
         if plugins is not None:
             for p in plugins:
@@ -601,18 +601,9 @@ class ManticoreEVM(ManticoreBase):
 
                     for state in self.ready_states:
                         world = state.platform
-
-                        expr = Operators.UGE(world.get_balance(owner.address), balance)
-                        self._publish("will_solve", None, self.constraints, expr, "can_be_true")
-                        sufficient = SelectedSolver.instance().can_be_true(
-                            self.constraints,
-                            expr,
-                        )
-                        self._publish(
-                            "did_solve", None, self.constraints, expr, "can_be_true", sufficient
-                        )
-
-                        if not sufficient:
+                        if not state.can_be_true(
+                            Operators.UGE(world.get_balance(owner.address), balance)
+                        ):
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"because the owner account ({owner}) has insufficient balance."
@@ -773,6 +764,8 @@ class ManticoreEVM(ManticoreBase):
         :param price: gas unit price
         :raises NoAliveStates: if there are no alive states to execute
         """
+        if isinstance(data, MutableArray):
+            data = data.array
         self._transaction(
             "CALL", caller, value=value, address=address, data=data, gas=gas, price=price
         )
@@ -865,11 +858,9 @@ class ManticoreEVM(ManticoreBase):
             value = state.migrate_expression(value)
 
         if issymbolic(data):
-            if isinstance(data, ArrayProxy):  # FIXME is this necessary here?
+            if isinstance(data, MutableArray):  # FIXME is this necessary here?
                 data = data.array
             data = state.migrate_expression(data)
-            if isinstance(data, Array):
-                data = ArrayProxy(data)
 
         if issymbolic(gas):
             gas = state.migrate_expression(gas)
@@ -1023,7 +1014,7 @@ class ManticoreEVM(ManticoreBase):
 
         selectors = contract_metadata.function_selectors
         if not selectors or len(data) <= 4:
-            return BoolConstant(True)
+            return BoolConstant(value=True)
 
         symbolic_selector = data[:4]
 
@@ -1096,7 +1087,8 @@ class ManticoreEVM(ManticoreBase):
                 logger.info("Starting symbolic transaction: %d", tx_no)
 
                 # run_symbolic_tx
-                symbolic_data = self.make_symbolic_buffer(320)
+                symbolic_data = self.make_symbolic_buffer(320, default=None)
+                symbolic_data = MutableArray(symbolic_data)
                 if tx_send_ether:
                     value = self.make_symbolic_value()
                 else:
@@ -1415,6 +1407,7 @@ class ManticoreEVM(ManticoreBase):
         return state.can_be_true(True)
 
     def fix_unsound_symbolication(self, state):
+        logger.info(f"Starting unsound symbolication search for {state.id}")
         soundcheck = state.context.get("soundcheck", None)
         if soundcheck is not None:
             return soundcheck
@@ -1424,6 +1417,7 @@ class ManticoreEVM(ManticoreBase):
             state.context["soundcheck"] = self.fix_unsound_symbolication_fake(state)
         else:
             state.context["soundcheck"] = True
+        logger.info(f"Done unsound symbolication search for {state.id}")
         return state.context["soundcheck"]
 
     def _terminate_state_callback(self, state, e):

@@ -4,6 +4,7 @@ import os
 from contextlib import redirect_stdout
 
 from manticore.core.state import StateBase
+from manticore.platforms.platform import Platform
 from manticore.utils.event import Eventful
 from manticore.platforms import linux
 from manticore.native.state import State
@@ -37,7 +38,7 @@ class FakeCpu:
         return self._memory
 
 
-class FakePlatform(Eventful):
+class FakePlatform(Platform):
     def __init__(self):
         super().__init__()
         self._constraints = None
@@ -75,31 +76,31 @@ class StateTest(unittest.TestCase):
     def setUp(self):
         dirname = os.path.dirname(__file__)
         l = linux.Linux(os.path.join(dirname, "binaries", "basic_linux_amd64"))
-        self.state = State(ConstraintSet(), l)
+        self.state = State(constraints=ConstraintSet(), platform=l)
 
     def test_solve_one(self):
         val = 42
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr == val)
         solved = self.state.solve_one(expr)
         self.assertEqual(solved, val)
 
     def test_solve_n(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 7)
         solved = sorted(self.state.solve_n(expr, 2))
         self.assertEqual(solved, [5, 6])
 
     def test_solve_n2(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 100)
         solved = self.state.solve_n(expr, 5)
         self.assertEqual(len(solved), 5)
 
     def test_solve_min_max(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 7)
         self.assertEqual(self.state.solve_min(expr), 5)
@@ -107,7 +108,7 @@ class StateTest(unittest.TestCase):
         self.assertEqual(self.state.solve_minmax(expr), (5, 6))
 
     def test_policy_one(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 0)
         self.state.constrain(expr < 100)
         solved = self.state.concretize(expr, "ONE")
@@ -116,7 +117,7 @@ class StateTest(unittest.TestCase):
 
     def test_state(self):
         constraints = ConstraintSet()
-        initial_state = State(constraints, FakePlatform())
+        initial_state = State(constraints=constraints, platform=FakePlatform())
 
         arr = initial_state.symbolicate_buffer("+" * 100, label="SYMBA")
         initial_state.constrain(arr[0] > 0x41)
@@ -153,15 +154,15 @@ class StateTest(unittest.TestCase):
     def test_tainted_symbolic_buffer(self):
         taint = ("TEST_TAINT",)
         expr = self.state.new_symbolic_buffer(64, taint=taint)
-        self.assertEqual(expr.taint, frozenset(taint))
+        self.assertEqual(frozenset(expr.taint), frozenset(taint))
 
     def test_tainted_symbolic_value(self):
         taint = ("TEST_TAINT",)
         expr = self.state.new_symbolic_value(64, taint=taint)
-        self.assertEqual(expr.taint, frozenset(taint))
+        self.assertEqual(frozenset(expr.taint), frozenset(taint))
 
     def test_state_hook(self):
-        initial_state = State(ConstraintSet(), FakePlatform())
+        initial_state = State(constraints=ConstraintSet(), platform=FakePlatform())
 
         def fake_hook(_: StateBase) -> None:
             return None
@@ -224,7 +225,7 @@ class StateTest(unittest.TestCase):
         new_file = ""
         new_new_file = ""
         constraints = ConstraintSet()
-        initial_state = State(constraints, FakePlatform())
+        initial_state = State(constraints=constraints, platform=FakePlatform())
         initial_state.context["step"] = 10
         initial_file = pickle_dumps(initial_state)
         with initial_state as new_state:

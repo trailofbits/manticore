@@ -1,4 +1,4 @@
-from .platform import Platform
+from .platform import NativePlatform
 from ..wasm.structure import (
     ModuleInstance,
     Store,
@@ -33,7 +33,7 @@ def stub(arity, _state, *args):
     return [0 for _ in range(arity)]  # TODO: Return symbolic values
 
 
-class WASMWorld(Platform):
+class WASMWorld(NativePlatform):
     """Manages global environment for a WASM state. Analagous to EVMWorld."""
 
     def __init__(self, filename, name="self", **kwargs):
@@ -65,6 +65,14 @@ class WASMWorld(Platform):
         self.forward_events_from(self.instance)
         self.forward_events_from(self.instance.executor)
 
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
     def __getstate__(self):
         state = super().__getstate__()
         state["modules"] = self.modules
@@ -83,7 +91,7 @@ class WASMWorld(Platform):
         self.store = state["store"]
         self.stack = state["stack"]
         self.advice = state["advice"]
-        self.constraints = state["constraints"]
+        self._constraints = state["constraints"]
         self.instantiated = state["instantiated"]
         self.module_names = state["module_names"]
         self.default_module = state["default_module"]

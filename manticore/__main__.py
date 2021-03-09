@@ -26,6 +26,8 @@ if install_helper.has_native:
 
 
 def main() -> None:
+    import pdb
+
     """
     Dispatches execution into one of Manticore's engines: evm or native.
     """

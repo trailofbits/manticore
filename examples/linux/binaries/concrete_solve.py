@@ -1,4 +1,4 @@
-from manticore import Manticore
+from manticore.native import Manticore
 
 
 def fixme():
@@ -6,11 +6,9 @@ def fixme():
 
 
 # Let's initialize the manticore control object
-m = Manticore("multiple-styles")
-
 # First, let's give it some fake data for the input. Anything the same size as
 # the real flag should work fine!
-m.concrete_data = "infiltrate miami!"
+m = Manticore("multiple-styles", concrete_start="infiltrate miami!")
 
 # Now we're going to want to execute a few different hooks and share data, so
 # let's use the m.context dict to keep our solution in

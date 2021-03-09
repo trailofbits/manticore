@@ -244,6 +244,6 @@ def _make_wasm_bin(program, env={}, sup_env={}, **kwargs) -> State:
         exec_start=kwargs.get("exec_start", False),
         stub_missing=kwargs.get("stub_missing", True),
     )
-    initial_state = State(constraints, platform)
+    initial_state = State(constraints=constraints, platform=platform)
 
     return initial_state

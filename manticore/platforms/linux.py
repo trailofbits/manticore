@@ -19,16 +19,16 @@ import io
 import os
 import random
 
-from elftools.elf.descriptions import describe_symbol_type
 
 # Remove in favor of binary.py
+from elftools.elf.descriptions import describe_symbol_type
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from . import linux_syscalls
 from .linux_syscall_stubs import SyscallStubs
 from ..core.state import TerminateState, Concretize
-from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
+from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, MutableArray
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
@@ -43,7 +43,7 @@ from ..native.memory import (
     InvalidMemoryAccess,
 )
 from ..native.state import State
-from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
+from ..platforms.platform import NativePlatform, SyscallNotImplemented, unimplemented
 
 from typing import cast, Any, Deque, Dict, IO, Iterable, List, Optional, Set, Tuple, Union, Callable
 
@@ -483,7 +483,7 @@ class SymbolicFile(File):
 
         # build the constraints array
         size = len(data)
-        self.array = constraints.new_array(name=self.name, index_max=size)
+        self.array = MutableArray(constraints.new_array(name=self.name, length=size))
 
         symbols_cnt = 0
         for i in range(size):
@@ -737,7 +737,7 @@ class SymbolicSocket(Socket):
         self.symb_name = name
         self.max_recv_symbolic = max_recv_symbolic  # 0 for unlimited. Unlimited is not tested
         # Keep track of the symbolic inputs we create
-        self.inputs_recvd: List[ArrayProxy] = []
+        self.inputs_recvd: List[MutableArray] = []
         self.recv_pos = 0
         # This is a meta-variable, of sorts, and it is responsible for
         # determining the symbolic length of the array during recv/read.
@@ -776,7 +776,7 @@ class SymbolicSocket(Socket):
         """
         return f"{self.symb_name}-{len(self.inputs_recvd)}"
 
-    def receive(self, size: int) -> Union[ArrayProxy, List[bytes]]:
+    def receive(self, size: int) -> Union[MutableArray, List[bytes]]:
         """
         Return a symbolic array of either `size` or rest of remaining symbolic bytes
         :param size: Size of receive
@@ -794,7 +794,7 @@ class SymbolicSocket(Socket):
         # Then do some forking with self._symb_len
         if self._symb_len is None:
             self._symb_len = self._constraints.new_bitvec(
-                8, "_socket_symb_len", avoid_collisions=True
+                size=8, name="_socket_symb_len", avoid_collisions=True
             )
             self._constraints.add(Operators.AND(self._symb_len >= 1, self._symb_len <= rx_bytes))
 
@@ -809,7 +809,7 @@ class SymbolicSocket(Socket):
                 policy="MINMAX",
             )
         ret = self._constraints.new_array(
-            name=self._next_symb_name(), index_max=self._symb_len, avoid_collisions=True
+            name=self._next_symb_name(), length=self._symb_len, avoid_collisions=True
         )
         logger.info(f"Setting recv symbolic length to {self._symb_len}")
         self.recv_pos += self._symb_len
@@ -819,7 +819,7 @@ class SymbolicSocket(Socket):
         return ret
 
 
-class Linux(Platform):
+class Linux(NativePlatform):
     """
     A simple Linux Operating System Platform.
     This class emulates the most common Linux system calls
