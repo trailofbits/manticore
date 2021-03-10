@@ -6,7 +6,7 @@ import io
 import copy
 import inspect
 from functools import wraps
-from typing import List, Set, Tuple, Union
+from typing import List, Set, Tuple, Union, Optional
 from ..platforms.platform import *
 from ..core.smtlib import (
     SelectedSolver,
@@ -182,13 +182,26 @@ class Transaction:
         :param state: a manticore state
         :param bool constrain: If True, constrain expr to concretized value
         """
-        conc_caller = state.solve_one(self.caller, constrain=constrain)
-        conc_address = state.solve_one(self.address, constrain=constrain)
-        conc_value = state.solve_one(self.value, constrain=constrain)
-        conc_gas = state.solve_one(self.gas, constrain=constrain)
-        conc_data = state.solve_one(self.data, constrain=constrain)
-        conc_return_data = state.solve_one(self.return_data, constrain=constrain)
-        conc_used_gas = state.solve_one(self.used_gas, constrain=constrain)
+        # conc_caller = state.solve_one(self.caller, constrain=constrain)
+        # conc_address = state.solve_one(self.address, constrain=constrain)
+        # conc_value = state.solve_one(self.value, constrain=constrain)
+        # conc_gas = state.solve_one(self.gas, constrain=constrain)
+
+        # conc_return_data = state.solve_one(self.return_data, constrain=constrain)
+        # conc_used_gas = state.solve_one(self.used_gas, constrain=constrain)
+
+
+
+        all_elems = [self.caller, self.address, self.value, self.gas, self.data, self._return_data]
+        values = state.solve_one_n_optimized(all_elems, constrain=constrain)
+        conc_caller = values[0]
+        conc_address = values[1]
+        conc_value = values[2]
+        conc_gas = values[3]
+        conc_data = values[4]
+        conc_return_data = values[5]
+        # conc_used_gas = values[6] # TODO not used
+
         return Transaction(
             self.sort,
             conc_address,
@@ -619,7 +632,6 @@ def concretized_args(**policies):
                 logger.info(
                     f"Concretizing instruction {args[0].world.current_vm.instruction} argument {arg} by {policy}"
                 )
-
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
 
@@ -769,16 +781,9 @@ class EVM(Eventful):
             except Exception as e:
                 return
 
-        prev_was_jumpi = False
         for i in EVMAsm.disassemble_all(extend_with_zeroes(bytecode)):
             if i.mnemonic == "JUMPDEST":
                 self._valid_jumpdests.add(i.pc)
-            if prev_was_jumpi:
-                self._valid_jumpdests.add(i.pc)
-            prev_was_jumpi = False
-            if i.mnemonic == "JUMPI":
-                prev_was_jumpi = True
-
 
         # A no code VM is used to execute transactions to normal accounts.
         # I'll execute a STOP and close the transaction
@@ -827,6 +832,14 @@ class EVM(Eventful):
         self._temp_call_gas = None
         self._failed = False
 
+        # Use to keep track of the jumpi destination
+        # Only save PUSH X values
+        #self._concrete_stack: List[Optional[int]] = []
+        # Save the JUMPI false branch, or None if it was not a JUMPI
+        self._jumpi_false_branch: Optional[int] = None
+        self._jumpi_true_branch: Optional[int] = None
+        self._jump_cond = False
+
     def fail_if(self, failed):
         self._failed = Operators.OR(self._failed, failed)
 
@@ -870,6 +883,27 @@ class EVM(Eventful):
     def gas(self):
         return Operators.EXTRACT(self._gas, 0, 256)
 
+    # def concrete_stack(self) -> List[Optional[int]]:
+    #     """
+    #     Return the concrete stack. Only contains PUSH X value (None otherwise)
+    #
+    #     """
+    #     return self._concrete_stack
+
+    def jumpi_false_branch(self) -> Optional[int]:
+        """
+        Return the JUMPI false branch. Return None if the last instruction was not a JUMPI
+
+        """
+        return self._jumpi_false_branch
+
+    def jumpi_true_branch(self) -> Optional[int]:
+        """
+        Return the JUMPI false branch. Return None if the last instruction was not a JUMPI
+
+        """
+        return self._jumpi_true_branch
+
     def __getstate__(self):
         state = super().__getstate__()
         state["sha3"] = self._sha3
@@ -898,6 +932,7 @@ class EVM(Eventful):
         state["_refund"] = self._refund
         state["_temp_call_gas"] = self._temp_call_gas
         state["_failed"] = self._failed
+        #state["_concrete_stack"] = self._concrete_stack
         return state
 
     def __setstate__(self, state):
@@ -927,6 +962,7 @@ class EVM(Eventful):
         self._refund = state["_refund"]
         self._temp_call_gas = state["_temp_call_gas"]
         self._failed = state["_failed"]
+        #self._concrete_stack = state["_concrete_stack"]
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -1182,9 +1218,15 @@ class EVM(Eventful):
 
     def _handler(self, *arguments):
         current = self.instruction
+        print(f'{hex(current.pc)}: {current}')
         implementation = getattr(self, current.semantics, None)
         if implementation is None:
             raise TerminateState(f"Instruction not implemented {current.semantics}", testcase=True)
+        # Concrete stack is only changed by PUSH
+        #self._concrete_stack.append(None)
+        # Jumpi false branch set in JUMPI
+        self._jumpi_false_branch = None
+        self._need_check_jumpdest = None
         return implementation(*arguments)
 
     def _checkpoint(self):
@@ -1222,6 +1264,9 @@ class EVM(Eventful):
         self._allocated = allocated
         self._checkpoint_data = None
 
+    def need_check_jumpdest(self):
+        return self._need_check_jumpdest
+
     def _set_check_jmpdest(self, flag=True):
         """
         Next instruction must be a JUMPDEST iff `flag` holds.
@@ -1241,40 +1286,18 @@ class EVM(Eventful):
         """
         # If pc is already pointing to a JUMPDEST thre is no need to check.
 
-        if isinstance(self._need_check_jumpdest, bool) and self._need_check_jumpdest is False:
-            return
-
-        pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
-        if pc in self._valid_jumpdests:
-            self._need_check_jumpdest = False
-            return
-
-        should_check_jumpdest = simplify(self._need_check_jumpdest)
-        if isinstance(should_check_jumpdest, Constant):
-            should_check_jumpdest = should_check_jumpdest.value
-        elif issymbolic(should_check_jumpdest):
-            self._publish("will_solve", self.constraints, should_check_jumpdest, "get_all_values")
-            should_check_jumpdest_solutions = SelectedSolver.instance().get_all_values(
-                self.constraints, should_check_jumpdest
-            )
-            self._publish(
-                "did_solve",
-                self.constraints,
-                should_check_jumpdest,
-                "get_all_values",
-                should_check_jumpdest_solutions,
-            )
-            if len(should_check_jumpdest_solutions) != 1:
-                raise EthereumError("Conditional not concretized at JMPDEST check")
-            should_check_jumpdest = should_check_jumpdest_solutions[0]
-
-        # If it can be solved only to False just set it False. If it can be solved
-        # only to True, process it and also set it to False
         self._need_check_jumpdest = False
 
-        if should_check_jumpdest:
+        if self._world.last_ins_was_true_jumpi():
+            pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
             if pc not in self._valid_jumpdests:
+                #print(f'THROOOOOOW {hex(pc)}')
+                #print()
                 self._throw()
+
+        self._world.set_last_ins_was_true_jumpi(False)
+        return
+
 
     def _advance(self, result=None, exception=False):
         if self._checkpoint_data is None:
@@ -2089,6 +2112,8 @@ class EVM(Eventful):
 
     def JUMPI(self, dest, cond):
         """Conditionally alter the program counter"""
+        self._jumpi_false_branch = self.pc + self.instruction.size
+        self._jumpi_true_branch = dest
         # TODO(feliam) If dest is Constant we do not need to 3 queries. There would
         # be only 2 options
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
@@ -2115,6 +2140,7 @@ class EVM(Eventful):
     # Push Operations
     def PUSH(self, value):
         """Place 1 to 32 bytes item on stack"""
+        #self._concrete_stack[-1] = value
         return value
 
     ############################################################################
@@ -2437,6 +2463,8 @@ class EVMWorld(Platform):
         self._fork = fork
         self._block_header = None
         self.start_block()
+        # True if the last instruction was a JUMPI and the true branch was taken
+        self._last_ins_was_true_jumpi = False
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -2449,6 +2477,7 @@ class EVMWorld(Platform):
         state["_transactions"] = self._transactions
         state["_fork"] = self._fork
         state["_block_header"] = self._block_header
+        state["_last_ins_was_true_jumpi"] = self._last_ins_was_true_jumpi
 
         return state
 
@@ -2463,6 +2492,7 @@ class EVMWorld(Platform):
         self._transactions = state["_transactions"]
         self._fork = state["_fork"]
         self._block_header = state["_block_header"]
+        self._last_ins_was_true_jumpi = state["_last_ins_was_true_jumpi"]
 
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
@@ -2546,6 +2576,13 @@ class EVMWorld(Platform):
         self._constraints = constraints
         if self.current_vm:
             self.current_vm.constraints = constraints
+
+
+    def last_ins_was_true_jumpi(self) -> Optional[bool]:
+        return self._last_ins_was_true_jumpi
+
+    def set_last_ins_was_true_jumpi(self, jump_cond: Optional[bool]):
+        self._last_ins_was_true_jumpi = jump_cond
 
     @property
     def evmfork(self):
@@ -3423,7 +3460,8 @@ class EVMWorld(Platform):
                     stream.write("\n")
 
         # Accounts summary
-        assert state.can_be_true(True)
+        if not state.can_be_true(True):
+            raise EVMException("Unreacheable state")
         is_something_symbolic = False
         stream.write("%d accounts.\n" % len(blockchain.accounts))
         for account_address in blockchain.accounts:

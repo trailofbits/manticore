@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ..core.state import StateBase
 from ..core.plugin import StateDescriptor
 

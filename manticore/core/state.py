@@ -130,10 +130,22 @@ class EventSolver(Eventful):
         self._publish("did_solve", constraints, expression, "get_all_values", solved)
         return solved
 
+    def get_all_values_multiple(self, constraints, expression, additional_expressions, maxcnt, silent):
+        self._publish("will_solve", constraints, expression, "get_all_values")
+        solved = self._solver.get_all_values_multiple(constraints, expression, additional_expressions, maxcnt, silent)
+        self._publish("did_solve", constraints, expression, "get_all_values", solved)
+        return solved
+
     def get_value(self, constraints, expression, *args, **kwargs):
         self._publish("will_solve", constraints, expression, "get_value")
         solved = self._solver.get_value(constraints, expression, *args, **kwargs)
         self._publish("did_solve", constraints, expression, "get_value", solved)
+        return solved
+
+    def get_value_optimized(self, constraints, expressions, *args, **kwargs):
+        self._publish("will_solve", constraints, expressions, "get_value_optimized")
+        solved = self._solver.get_value_optimized(constraints, expressions, *args, **kwargs)
+        self._publish("did_solve", constraints, expressions, "get_value_optimized", solved)
         return solved
 
     def max(self, constraints, expression, *args, **kwargs):
@@ -360,7 +372,7 @@ class StateBase(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=7):
+    def concretize(self, symbolic, policy, maxcount=7, additional_symbolics = None):
         """This finds a set of solutions for symbolic using policy.
 
         This limits the number of solutions returned to `maxcount` to avoid
@@ -412,9 +424,16 @@ class StateBase(Eventful):
                 vals = (True,)
         else:
             assert policy == "ALL"
-            vals = self._solver.get_all_values(
-                self._constraints, symbolic, maxcnt=maxcount, silent=True
-            )
+            if additional_symbolics:
+                #print(additional_symbolics)
+                vals = self._solver.get_all_values_multiple(
+                    self._constraints, symbolic, additional_symbolics, maxcnt=maxcount, silent=True
+                )
+                return vals
+            else:
+                vals = self._solver.get_all_values(
+                    self._constraints, symbolic, maxcnt=maxcount, silent=True
+                )
 
         return tuple(set(vals))
 
@@ -475,6 +494,31 @@ class StateBase(Eventful):
                     value = bytes(value)
                 values.append(value)
         return values
+
+    def solve_one_n_optimized(self, exprs, constrain=False):
+        """
+        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        one solution.
+
+        :param exprs: An iterable of manticore.core.smtlib.Expression
+        :param bool constrain: If True, constrain expr to solved solution value
+        :return: Concrete value or a tuple of concrete values
+        :rtype: int
+        """
+        # Return ret instead of value, to allow the bytearray/bytes conversion
+        ret = []
+        exprs = [self.migrate_expression(x) for x in exprs]
+        values = self._solver.get_value_optimized(self._constraints, exprs)
+        assert len(values) == len(exprs)
+        for idx, expr in enumerate(exprs):
+            value = values[idx]
+            if constrain:
+                self.constrain(expr == values[idx])
+            # Include forgiveness here
+            if isinstance(value, bytearray):
+                value = bytes(value)
+            ret.append(value)
+        return ret
 
     def solve_n(self, expr, nsolves):
         """
