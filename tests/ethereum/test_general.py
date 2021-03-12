@@ -1382,7 +1382,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = BitVecVariable(256, name="BVV")
+        self.bv = BitVecVariable(size=256, name="BVV")
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"

@@ -645,8 +645,8 @@ class AMD64RegFile(RegisterFile):
             return Operators.ITEBV(
                 register_size,
                 value,
-                BitVecConstant(register_size, 1 << offset),
-                BitVecConstant(register_size, 0),
+                BitVecConstant(size=register_size, value=1 << offset),
+                BitVecConstant(size=register_size, value=0),
             )
 
         flags = []
@@ -2529,7 +2529,12 @@ class X86Cpu(Cpu):
 
         def make_flag(val, offset):
             if is_expression:
-                return Operators.ITEBV(8, val, BitVecConstant(8, 1 << offset), BitVecConstant(8, 0))
+                return Operators.ITEBV(
+                    size=8,
+                    cond=val,
+                    true_value=BitVecConstant(size=8, value=1 << offset),
+                    false_value=BitVecConstant(size=8, value=0),
+                )
             else:
                 return val << offset
 

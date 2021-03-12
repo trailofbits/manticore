@@ -1304,7 +1304,9 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 if taints:
-                    state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
+                    state.platform.current_vm.pc = BitVecConstant(
+                        size=256, value=value, taint=taints
+                    )
                 else:
                     state.platform.current_vm.pc = value
 
@@ -1404,7 +1406,7 @@ class EVM(Eventful):
             return b""
         self._allocate(offset, size)
         data = self.memory[offset : offset + size]
-        return ArrayProxy(data)
+        return ArrayProxy(array=data)
 
     def write_buffer(self, offset, data):
         self._allocate(offset, len(data))

@@ -869,7 +869,7 @@ class ManticoreEVM(ManticoreBase):
                 data = data.array
             data = state.migrate_expression(data)
             if isinstance(data, Array):
-                data = ArrayProxy(data)
+                data = ArrayProxy(array=data)
 
         if issymbolic(gas):
             gas = state.migrate_expression(gas)
@@ -1023,7 +1023,7 @@ class ManticoreEVM(ManticoreBase):
 
         selectors = contract_metadata.function_selectors
         if not selectors or len(data) <= 4:
-            return BoolConstant(True)
+            return BoolConstant(value=True)
 
         symbolic_selector = data[:4]
 

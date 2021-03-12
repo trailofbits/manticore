@@ -309,7 +309,7 @@ class SymCPUTest(unittest.TestCase):
         return reduce(operator.or_, (self._flags[f] for f in flags))
 
     def _construct_sym_flag_bitfield(self, flags):
-        return reduce(operator.or_, (BitVecConstant(32, self._flags[f]) for f in flags))
+        return reduce(operator.or_, (BitVecConstant(size=32, value=self._flags[f]) for f in flags))
 
     def test_set_eflags(self) -> None:
         cpu = I386Cpu(Memory32())
@@ -371,8 +371,8 @@ class SymCPUTest(unittest.TestCase):
         cpu.CF = 1
         cpu.AF = 1
 
-        a = BitVecConstant(32, 1) != 0
-        b = BitVecConstant(32, 0) != 0
+        a = BitVecConstant(size=32, value=1) != 0
+        b = BitVecConstant(size=32, value=0) != 0
         cpu.ZF = a
         cpu.SF = b
 
@@ -1290,7 +1290,7 @@ class SymCPUTest(unittest.TestCase):
         code = mem.mmap(0x1000, 0x1000, "rwx")
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
-        mem[code] = BitVecConstant(8, 0x90)
+        mem[code] = BitVecConstant(size=8, value=0x90)
         cpu.EIP = code
         cpu.EAX = 116
         cpu.EBP = stack + 0x700
