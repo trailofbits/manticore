@@ -163,7 +163,7 @@ def CONCAT(total_size, *args):
                     return BitVecConstant(arg_size, x)
                 return x
 
-            return BitVecConcat(total_size, *list(map(cast, args)))
+            return BitVecConcat(total_size, tuple(map(cast, args)))
         else:
             return args[0]
     else:
