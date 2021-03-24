@@ -84,7 +84,7 @@ jobs:
   # Send notification when all tests have finished to combine coverage results
   coverage-finish:
     needs: tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - name: Coveralls Finished
       uses: coverallsapp/github-action@v1.1.2
@@ -92,7 +92,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
   upload:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     if: github.event_name == 'schedule'
     needs: tests
     steps:
