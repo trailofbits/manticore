@@ -393,7 +393,7 @@ class ConstraintSet:
         if size <= 0:
             raise ValueError(f"Bitvec size ({size}) can't be equal to or less than 0")
         if name is None:
-            name = "BV"
+            name = "BIVEC"
             avoid_collisions = True
         if avoid_collisions:
             name = self._make_unique_name(name)

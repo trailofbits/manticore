@@ -40,7 +40,7 @@ class SolverType(config.ConfigEnum):
     cvc4 = "cvc4"
     yices = "yices"
     auto = "auto"
-
+    boolector = "boolector"
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -54,6 +54,7 @@ consts.add(
 consts.add("z3_bin", default="z3", description="Z3 solver binary to use")
 consts.add("cvc4_bin", default="cvc4", description="CVC4 solver binary to use")
 consts.add("yices_bin", default="yices-smt2", description="Yices solver binary to use")
+consts.add("boolector_bin", default="boolector", description="Boolector solver binary to use")
 
 
 consts.add("defaultunsat", default=True, description="Consider solver timeouts as unsat core")
@@ -64,7 +65,7 @@ consts.add(
 consts.add(
     "solver",
     default=SolverType.auto,
-    description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
+    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
 )
 
 # Regular expressions used by the solver
@@ -740,6 +741,13 @@ class CVC4Solver(SMTLIBSolver):
         super().__init__(command=command, value_fmt=10, init=init)
 
 
+class Boolector(SMTLIBSolver):
+    def __init__(self):
+        init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+        command = f"{consts.boolector_bin} -i"
+        super().__init__(command=command, value_fmt=10, init=init)
+
+
 class SelectedSolver:
     choice = None
 
@@ -753,12 +761,14 @@ class SelectedSolver:
                     cls.choice = consts.solver.z3
                 elif shutil.which(consts.cvc4_bin):
                     cls.choice = consts.solver.cvc4
+                elif shutil.which(consts.boolector_bin):
+                    cls.choice = consts.solver.boolector
                 else:
                     raise SolverException(
-                        f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin})."
+                        f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
                     )
         else:
             cls.choice = consts.solver
 
-        SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
+        SelectedSolver = {"cvc4": CVC4Solver, "boolector": Boolector, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
         return SelectedSolver.instance()
