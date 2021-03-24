@@ -770,5 +770,10 @@ class SelectedSolver:
         else:
             cls.choice = consts.solver
 
-        SelectedSolver = {"cvc4": CVC4Solver, "boolector": Boolector, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
+        SelectedSolver = {
+                "cvc4": CVC4Solver,
+                "boolector": Boolector,
+                "yices": YicesSolver,
+                "z3": Z3Solver,
+        }[cls.choice.name]
         return SelectedSolver.instance()
