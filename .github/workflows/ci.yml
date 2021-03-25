@@ -57,6 +57,9 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
+        #install utils
+        pip install coveralls
+        pip install -e ".[dev-noks]"
         #install cvc4
         sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
@@ -79,11 +82,8 @@ jobs:
         mkdir -p /tmp/boolector
         sudo make DESTDIR=/usr install
         # Install solc unconditionally because it only takes a second or two
-        cd ~
         sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
         sudo chmod +x /usr/bin/solc
-        pip install coveralls
-        pip install -e ".[dev-noks]"
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
