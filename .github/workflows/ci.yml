@@ -77,8 +77,9 @@ jobs:
         cd build
         make -j4
         mkdir -p /tmp/boolector
-        sudo make install
+        sudo make DESTDIR=/usr install
         # Install solc unconditionally because it only takes a second or two
+        cd ~
         sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
         sudo chmod +x /usr/bin/solc
         pip install coveralls

@@ -1289,9 +1289,11 @@ class ExpressionTestCVC4(ExpressionTest):
     def setUp(self):
         self.solver = CVC4Solver.instance()
 
+
 class ExpressionTestBoolector(ExpressionTest):
     def setUp(self):
         self.solver = BoolectorSolver.instance()
+
 
 if __name__ == "__main__":
     unittest.main()
