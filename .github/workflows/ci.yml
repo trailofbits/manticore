@@ -64,6 +64,20 @@ jobs:
         sudo add-apt-repository ppa:sri-csl/formal-methods
         sudo apt-get update
         sudo apt-get install yices2
+        #install boolector
+        mkdir -p /tmp/build
+        cd /tmp/build
+        git clone https://github.com/boolector/boolector.git
+        cd boolector
+        git checkout "f61c0dcf4a76e2f7766a6358bfb9c16ca8217224"
+        git log -1 --oneline > ../boolector.commit
+        ./contrib/setup-lingeling.sh
+        ./contrib/setup-btor2tools.sh
+        ./configure.sh
+        cd build
+        make -j4
+        mkdir -p /tmp/boolector
+        sudo make install
         # Install solc unconditionally because it only takes a second or two
         sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
         sudo chmod +x /usr/bin/solc
