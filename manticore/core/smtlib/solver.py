@@ -42,6 +42,7 @@ class SolverType(config.ConfigEnum):
     auto = "auto"
     boolector = "boolector"
 
+
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
 consts.add("timeout", default=120, description="Timeout, in seconds, for each Z3 invocation")
@@ -771,9 +772,9 @@ class SelectedSolver:
             cls.choice = consts.solver
 
         SelectedSolver = {
-                "cvc4": CVC4Solver,
-                "boolector": Boolector,
-                "yices": YicesSolver,
-                "z3": Z3Solver,
+            "cvc4": CVC4Solver,
+            "boolector": Boolector,
+            "yices": YicesSolver,
+            "z3": Z3Solver,
         }[cls.choice.name]
         return SelectedSolver.instance()
