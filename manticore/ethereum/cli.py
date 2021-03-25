@@ -96,6 +96,13 @@ def ethereum_main(args, logger):
         consts_evm = config.get_group("evm")
         consts_evm.oog = "ignore"
         consts.skip_reverts = True
+        # TODO decide if lazy evaluation is part of the quick mode or not
+        # Require benchmark and discussion
+        # Require handling of loops
+        #m.enable_lazy_evaluation()
+
+    if args.lazy_evaluation:
+        m.enable_lazy_evaluation()
 
     with WithKeyboardInterruptAs(m.kill):
         if consts.skip_reverts:

@@ -18,6 +18,7 @@ from ..core.smtlib import Expression
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
+from ..platforms.evm import EVM, EVMWorld
 from ..utils import config
 from ..utils.deprecated import deprecated
 from ..utils.enums import StateLists, MProcessingType
@@ -504,6 +505,20 @@ class ManticoreBase(Eventful):
             def setstate(x, y):
                 pass
 
+        # print(policy)
+        # if (
+        #     self._lazy_evaluation
+        #     and (state.platform, EVMWorld)
+        #     and state.platform.current_vm
+        #     and state.platform.current_vm.jumpi_false_branch
+        #     and len(state.platform.current_vm.concrete_stack()) > 2
+        # ):
+        #
+        #     solutions = [
+        #         (state.platform.current_vm.jumpi_false_branch(), False),
+        #         (state.platform.current_vm.concrete_stack()[-2], True),
+        #     ]
+        # else:
         # Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 

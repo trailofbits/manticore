@@ -2,8 +2,12 @@
 This is the Manticore's CLI `manticore` script.
 """
 import argparse
+import cProfile
+import datetime
 import logging
+import pstats
 import sys
+from typing import Optional
 
 import pkg_resources
 
@@ -39,7 +43,31 @@ def main() -> None:
     set_verbosity(args.v)
 
     if args.argv[0].endswith(".sol") or is_supported(args.argv[0]):
+        cp: Optional[cProfile.Profile] = None
+        if args.perf:
+            # cp = cProfile.Profile()
+            # cp.enable()
+            import yappi
+            yappi.start()
+
         ethereum_main(args, logger)
+        if args.perf:
+            # cp.disable()
+            # stats = pstats.Stats(cp).sort_stats("cumtime")
+            # stats.print_stats()
+            import yappi
+            yappi.stop()
+            # threads = yappi.get_thread_stats()
+            # for thread in threads:
+            #     print(
+            #         "Function stats for (%s) (%d)" % (thread.name, thread.id)
+            #     )  # it is the Thread.__class__.__name__
+            #     yappi.get_func_stats(ctx_id=thread.id).print_all()
+            yappi.get_func_stats().print_all()
+            yappi.get_thread_stats().print_all()
+            func_stats = yappi.get_func_stats()
+            func_stats.save('callgrind.out.' + datetime.datetime.now().isoformat(), 'CALLGRIND')
+
     elif args.argv[0].endswith(".wasm") or args.argv[0].endswith(".wat"):
         wasm_main(args, logger)
     else:
@@ -179,6 +207,15 @@ def parse_arguments() -> argparse.Namespace:
     eth_flags.add_argument(
         "--contract", type=str, help="Contract name to analyze in case of multiple contracts"
     )
+
+    eth_flags.add_argument(
+        "--lazy-evaluation", action="store_true", help="Enable lazy solver evaluation"
+    )
+
+    eth_flags.add_argument(
+        "--perf", action="store_true", help=argparse.SUPPRESS, default=False
+    )
+
 
     eth_detectors = parser.add_argument_group("Ethereum detectors")
 
