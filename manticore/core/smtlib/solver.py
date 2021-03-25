@@ -742,7 +742,7 @@ class CVC4Solver(SMTLIBSolver):
         super().__init__(command=command, value_fmt=10, init=init)
 
 
-class Boolector(SMTLIBSolver):
+class BoolectorSolver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.boolector_bin} -i"
@@ -773,7 +773,7 @@ class SelectedSolver:
 
         SelectedSolver = {
             "cvc4": CVC4Solver,
-            "boolector": Boolector,
+            "boolector": BoolectorSolver,
             "yices": YicesSolver,
             "z3": Z3Solver,
         }[cls.choice.name]
