@@ -284,15 +284,6 @@ class SMTLIBSolver(Solver):
         if init is None:
             init = tuple()
         self._init = init
-        self._get_value_fmt = (
-            {
-                2: RE_GET_EXPR_VALUE_FMT_BIN,
-                10: RE_GET_EXPR_VALUE_FMT_DEC,
-                16: RE_GET_EXPR_VALUE_FMT_HEX,
-            }[value_fmt],
-            value_fmt,
-        )
-
         self._support_minmax = support_minmax
         self._support_reset = support_reset
         self._support_pushpop = support_pushpop
@@ -353,15 +344,29 @@ class SMTLIBSolver(Solver):
 
     def __getvalue_bv(self, expression_str: str) -> int:
         self._smtlib.send(f"(get-value ({expression_str}))")
-        pattern, base = self._get_value_fmt
-        m = pattern.match(self._smtlib.recv())
+        t = self._smtlib.recv()
+        pattern = RE_GET_EXPR_VALUE_FMT_BIN
+        base = 2
+        m = pattern.match(t)
+        if m is None:
+            pattern = RE_GET_EXPR_VALUE_FMT_DEC
+            m = pattern.match(t)
+            base = 10
+        if m is None:
+            pattern = RE_GET_EXPR_VALUE_FMT_HEX
+            m = pattern.match(t)
+            base = 16
+        if m is None:
+            logger.error("I don't know how to parse the value %s from %s", str(t), expression_str)
+            assert False
+
         expr, value = m.group("expr"), m.group("value")  # type: ignore
         return int(value, base)
 
     def __getvalue_bool(self, expression_str):
         self._smtlib.send(f"(get-value ({expression_str}))")
         ret = self._smtlib.recv()
-        return {"true": True, "false": False}[ret[2:-2].split(" ")[1]]
+        return {"true": True, "false": False, "#b0": False, "#b1": True}[ret[2:-2].split(" ")[1]]
 
     def _getvalue(self, expression) -> Union[int, bool, bytes]:
         """
