@@ -16,7 +16,7 @@ from manticore.core.smtlib import (
     replace,
     BitVecConstant,
 )
-from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver
+from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver, BoolectorSolver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
 from manticore import config
