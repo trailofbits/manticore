@@ -343,6 +343,7 @@ class SMTLIBSolver(Solver):
             SOLVER_STATS["unknown"] += 1
             raise SolverUnknown(status)
         else:
+            assert self.sname is not None
             if self.sname not in SOLVER_STATS:
                 SOLVER_STATS[self.sname] = 0
             SOLVER_STATS[self.sname] += 1
