@@ -355,7 +355,7 @@ class SMTLIBSolver(Solver):
             base = 16
         if m is None:
             raise SolverError(
-                "I don't know how to parse the value %s from %s" % (str(t), expression_str)
+                f"I don't know how to parse the value {str(t)} from {expression_str}"
             )
 
         expr, value = m.group("expr"), m.group("value")  # type: ignore
