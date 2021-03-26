@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
 from dataclasses import dataclass, field
+from ..core.state import EventSolver
 from ..core.smtlib import (
     Operators,
     ConstraintSet,
@@ -31,7 +32,6 @@ consts.add(
     description="If True, throws a memory safety error if ANY concretization of a pointer is"
     " out of bounds. Otherwise, forks into valid and invalid memory access states.",
 )
-solver = SelectedSolver.instance()
 
 
 class MemoryException(Exception):
@@ -603,6 +603,7 @@ class Memory(object, metaclass=ABCMeta):
         self.cpu = cpu
         self._page2map: MutableMapping[int, Map] = WeakValueDictionary()  # {page -> ref{MAP}}
         self._recording_stack: List = []
+        self._solver = EventSolver()
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
                 assert i not in self._page2map
@@ -1201,9 +1202,7 @@ class SMemory(Memory):
                 solutions = self._try_get_solutions(address, size, "r", force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
-                self.cpu._publish("will_solve", self.constraints, address, "minmax")
-                m, M = solver.minmax(self.constraints, address)
-                self.cpu._publish("did_solve", self.constraints, address, "minmax", (m, M))
+                m, M = self._solver.minmax(self.constraints, address)
                 logger.debug(
                     f"Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!"
                 )
@@ -1218,11 +1217,7 @@ class SMemory(Memory):
                                 crashing_condition,
                             )
 
-                self.cpu._publish("will_solve", self.constraints, crashing_condition, "can_be_true")
-                can_crash = solver.can_be_true(self.constraints, crashing_condition)
-                self.cpu._publish(
-                    "did_solve", self.constraints, crashing_condition, "can_be_true", can_crash
-                )
+                can_crash = self._solver.can_be_true(self.constraints, crashing_condition)
                 if can_crash:
                     raise InvalidSymbolicMemoryAccess(address, "r", size, crashing_condition)
 
@@ -1340,22 +1335,16 @@ class SMemory(Memory):
         :rtype: list
         """
         assert issymbolic(address)
-        self.cpu._publish("will_solve", self.constraints, address, "get_all_values")
-        solutions = solver.get_all_values(
+        solutions = self._solver.get_all_values(
             self.constraints, address, maxcnt=max_solutions, silent=True
         )
-        self.cpu._publish("did_solve", self.constraints, address, "get_all_values", solutions)
 
         crashing_condition = False
         for base in solutions:
             if not self.access_ok(slice(base, base + size), access, force):
                 crashing_condition = Operators.OR(address == base, crashing_condition)
 
-        self.cpu._publish("will_solve", self.constraints, crashing_condition, "get_all_values")
-        crash_or_not = solver.get_all_values(self.constraints, crashing_condition, maxcnt=3)
-        self.cpu._publish(
-            "did_solve", self.constraints, crashing_condition, "get_all_values", crash_or_not
-        )
+        crash_or_not = self._solver.get_all_values(self.constraints, crashing_condition, maxcnt=3)
 
         if not consts.fast_crash and len(crash_or_not) == 2:
             from ..core.state import Concretize
@@ -1456,11 +1445,7 @@ class LazySMemory(SMemory):
             return address >= mapping.start and address + size < mapping.end
         else:
             constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
-            self.cpu._publish("will_solve", self.constraints, constraint, "can_be_true")
-            deref_can_succeed = solver.can_be_true(self.constraints, constraint)
-            self.cpu._publish(
-                "did_solve", self.constraints, constraint, "can_be_true", deref_can_succeed
-            )
+            deref_can_succeed = self._solver.can_be_true(self.constraints, constraint)
             return deref_can_succeed
 
     def _import_concrete_memory(self, from_addr, to_addr):
@@ -1497,11 +1482,7 @@ class LazySMemory(SMemory):
         return Operators.AND(Operators.UGE(address, map.start), Operators.ULT(address, map.end))
 
     def _reachable_range(self, sym_address, size):
-        self.cpu._publish("will_solve", self.constraints, sym_address, "minmax")
-        addr_min, addr_max = solver.minmax(self.constraints, sym_address)
-        self.cpu._publish(
-            "did_solve", self.constraints, sym_address, "minmax", (addr_min, addr_max)
-        )
+        addr_min, addr_max = self._solver.minmax(self.constraints, sym_address)
         return addr_min, addr_max + size - 1
 
     def valid_ptr(self, address):
