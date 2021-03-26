@@ -357,8 +357,9 @@ class SMTLIBSolver(Solver):
             m = pattern.match(t)
             base = 16
         if m is None:
-            logger.error("I don't know how to parse the value %s from %s", str(t), expression_str)
-            assert False
+            raise SolverError(
+                "I don't know how to parse the value %s from %s" % (str(t), expression_str)
+            )
 
         expr, value = m.group("expr"), m.group("value")  # type: ignore
         return int(value, base)
