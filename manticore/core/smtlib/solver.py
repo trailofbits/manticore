@@ -345,16 +345,13 @@ class SMTLIBSolver(Solver):
     def __getvalue_bv(self, expression_str: str) -> int:
         self._smtlib.send(f"(get-value ({expression_str}))")
         t = self._smtlib.recv()
-        pattern = RE_GET_EXPR_VALUE_FMT_BIN
         base = 2
-        m = pattern.match(t)
+        m = RE_GET_EXPR_VALUE_FMT_BIN.match(t)
         if m is None:
-            pattern = RE_GET_EXPR_VALUE_FMT_DEC
-            m = pattern.match(t)
+            m = RE_GET_EXPR_VALUE_FMT_DEC.match(t)
             base = 10
         if m is None:
-            pattern = RE_GET_EXPR_VALUE_FMT_HEX
-            m = pattern.match(t)
+            m = RE_GET_EXPR_VALUE_FMT_HEX.match(t)
             base = 16
         if m is None:
             raise SolverError(
