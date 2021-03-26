@@ -22,7 +22,7 @@ import collections
 import shlex
 import time
 from functools import lru_cache
-from typing import Dict, Tuple, Sequence, Optional
+from typing import Dict, Tuple, Sequence, Optional, List
 from subprocess import PIPE, Popen, check_output
 import re
 from . import operators as Operators
@@ -68,6 +68,7 @@ consts.add(
 )
 
 # Regular expressions used by the solver
+RE_GET_EXPR_VALUE_ALL = re.compile("\(([a-zA-Z0-9_]*)[ \\n\\s]*(#b[0-1]*|#x[0-9a-fA-F]|[\(]?_ bv[0-9]* [0-9]*|true|false)\\)")
 RE_GET_EXPR_VALUE_FMT_BIN = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
 RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r"\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)")
 RE_GET_EXPR_VALUE_FMT_HEX = re.compile(r"\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
@@ -76,6 +77,21 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
+def _convert(v):
+    if v == 'true':
+        return True
+    if v == 'false':
+        return False
+    if v.startswith('#b'):
+        return int(v[2:], 2)
+    if v.startswith('#x'):
+        return int(v[2:], 16)
+    if v.startswith('_ bv'):
+        return int(v[len('_ bv'):-len(' 256')], 10)
+    if v.startswith('(_ bv'):
+        v = v[len('(_ bv'):]
+        return int(v[:v.find(' ')], 10)
+    assert False
 
 class SingletonMixin(object):
     __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
@@ -361,6 +377,13 @@ class SMTLIBSolver(Solver):
         ret = self._smtlib.recv()
         return {"true": True, "false": False}[ret[2:-2].split(" ")[1]]
 
+    def __getvalue_all(self, expressions_str: List[str], is_bv: List[bool]) -> Dict[str, int]:
+        all_expressions_str = " ".join(expressions_str)
+        self._smtlib.send(f"(get-value ({all_expressions_str}))")
+        ret_solver = self._smtlib.recv()
+        return_values = re.findall(RE_GET_EXPR_VALUE_ALL, ret_solver)
+        return {value[0]: _convert(value[1]) for value in return_values}, ret_solver
+
     def _getvalue(self, expression) -> Union[int, bool, bytes]:
         """
         Ask the solver for one possible assignment for given expression using current set of constraints.
@@ -586,55 +609,94 @@ class SMTLIBSolver(Solver):
             raise SolverError("Optimize failed")
 
     def get_value(self, constraints: ConstraintSet, *expressions):
+        return self.get_value_in_batch(constraints, [*expressions])
+
+    def get_value_in_batch(self, constraints: ConstraintSet, expressions):
         """
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
-        values = []
+        # print('get_value')
+        # print(''.join(traceback.format_stack()))
+        # print()
+        values = [None] * len(expressions)
         start = time.time()
         with constraints.related_to(*expressions) as temp_cs:
-            for expression in expressions:
+            vars = []
+            for idx, expression in enumerate(expressions):
                 if not issymbolic(expression):
-                    values.append(expression)
+                    values[idx] = expression
+                    vars.append(None)
                     continue
                 assert isinstance(expression, (Bool, BitVec, Array))
                 if isinstance(expression, Bool):
                     var = temp_cs.new_bool()
+                    vars.append(var)
+                    temp_cs.add(var == expression)
                 elif isinstance(expression, BitVec):
                     var = temp_cs.new_bitvec(expression.size)
+                    vars.append(var)
+                    temp_cs.add(var == expression)
                 elif isinstance(expression, Array):
                     var = []
-                    result = []
                     for i in range(expression.index_max):
                         subvar = temp_cs.new_bitvec(expression.value_bits)
                         var.append(subvar)
                         temp_cs.add(subvar == simplify(expression[i]))
-                    self._reset(temp_cs.to_string())
-                    if not self._is_sat():
-                        raise SolverError(
-                            "Solver could not find a value for expression under current constraint set"
-                        )
+                    vars.append(var)
 
-                    for i in range(expression.index_max):
-                        result.append(self.__getvalue_bv(var[i].name))
-                    values.append(bytes(result))
-                    if time.time() - start > consts.timeout:
-                        raise SolverError("Timeout")
+            self._reset(temp_cs.to_string())
+
+            if not self._is_sat():
+                raise SolverError(
+                    "Solver could not find a value for expression under current constraint set"
+                )
+
+            values_to_ask: List[str] = []
+            is_bv: List[bool] = []
+            for idx, expression in enumerate(expressions):
+                if not issymbolic(expression):
                     continue
-
-                temp_cs.add(var == expression)
-
-                self._reset(temp_cs.to_string())
-
-                if not self._is_sat():
-                    raise SolverError(
-                        "Solver could not find a value for expression under current constraint set"
-                    )
-
+                var = vars[idx]
                 if isinstance(expression, Bool):
-                    values.append(self.__getvalue_bool(var.name))
+                    values_to_ask.append(var.name)
+                    is_bv.append(False)
                 if isinstance(expression, BitVec):
-                    values.append(self.__getvalue_bv(var.name))
+                    values_to_ask.append(var.name)
+                    is_bv.append(True)
+                if isinstance(expression, Array):
+                    #result = []
+                    for i in range(expression.index_max):
+                        #result.append(self.__getvalue_bv(var[i].name))
+                        values_to_ask.append(var[i].name)
+                        is_bv.append(True)
+
+            values_returned, sol = self.__getvalue_all(values_to_ask, is_bv)
+            #print(values_returned)
+            #print(values_returned.keys())
+            # print(values_returned)
+            for idx, expression in enumerate(expressions):
+                if not issymbolic(expression):
+                    continue
+                var = vars[idx]
+                if isinstance(expression, Bool):
+                    values[idx] = values_returned[var.name]
+                if isinstance(expression, BitVec):
+                    if var.name not in values_returned:
+                        print('Error')
+                        print(values_returned)
+                        print(values_returned.keys())
+                        print(values_to_ask)
+                        print(sol)
+                        #print(temp_cs.to_string())
+
+                    values[idx] = values_returned[var.name]
+                if isinstance(expression, Array):
+                    result = []
+                    for i in range(expression.index_max):
+                        result.append(values_returned[var[i].name])
+                    values[idx] = bytes(result)
+
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
 
@@ -642,7 +704,6 @@ class SMTLIBSolver(Solver):
             return values[0]
         else:
             return values
-
 
 class Z3Solver(SMTLIBSolver):
     def __init__(self):
