@@ -354,9 +354,7 @@ class SMTLIBSolver(Solver):
             m = RE_GET_EXPR_VALUE_FMT_HEX.match(t)
             base = 16
         if m is None:
-            raise SolverError(
-                f"I don't know how to parse the value {str(t)} from {expression_str}"
-            )
+            raise SolverError(f"I don't know how to parse the value {str(t)} from {expression_str}")
 
         expr, value = m.group("expr"), m.group("value")  # type: ignore
         return int(value, base)
