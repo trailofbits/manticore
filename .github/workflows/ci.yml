@@ -72,6 +72,7 @@ jobs:
         cd /tmp/build
         git clone https://github.com/boolector/boolector.git
         cd boolector
+        # Version 3.2.1
         git checkout "f61c0dcf4a76e2f7766a6358bfb9c16ca8217224"
         git log -1 --oneline > ../boolector.commit
         ./contrib/setup-lingeling.sh
