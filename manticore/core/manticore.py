@@ -14,7 +14,7 @@ import functools
 import shlex
 
 from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
-from ..core.smtlib import Expression
+from ..core.smtlib import Expression, SOLVER_STATS
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
@@ -1218,6 +1218,15 @@ class ManticoreBase(Eventful):
 
         with self._output.save_stream("manticore.yml") as f:
             config.save(f)
+
+        with self._output.save_stream("global.solver_stats") as f:
+            for s, n in sorted(SOLVER_STATS.items()):
+                f.write("%s: %d\n" % (s, n))
+
+        if SOLVER_STATS["timeout"] > 0 or SOLVER_STATS["unknown"] > 0:
+            logger.info(
+                "Warning: the SMT solvers returned timeout or unknown for certain program paths. Results could not cover the entire set of possible paths"
+            )
 
         logger.info("Results in %s", self._output.store.uri)
         self.wait_for_log_purge()

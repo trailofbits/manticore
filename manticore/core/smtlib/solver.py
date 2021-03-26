@@ -78,6 +78,8 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
+SOLVER_STATS = dict({"unknown": 0, "timeout": 0})
+
 
 class SingletonMixin(object):
     __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
@@ -261,6 +263,8 @@ class SmtlibProc:
 
 
 class SMTLIBSolver(Solver):
+    sname = None
+
     def __init__(
         self,
         command: str,
@@ -331,9 +335,18 @@ class SMTLIBSolver(Solver):
         if consts.defaultunsat:
             if status == "unknown":
                 logger.info("Found an unknown core, probably a solver timeout")
+                SOLVER_STATS["timeout"] += 1
                 status = "unsat"
+                raise SolverUnknown(status)
+
         if status == "unknown":
+            SOLVER_STATS["unknown"] += 1
             raise SolverUnknown(status)
+        else:
+            if self.sname not in SOLVER_STATS:
+                SOLVER_STATS[self.sname] = 0
+            SOLVER_STATS[self.sname] += 1
+
         return status == "sat"
 
     def _assert(self, expression: Bool):
@@ -464,6 +477,7 @@ class SMTLIBSolver(Solver):
                     M = L
 
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["unknown"] += 1
                     raise SolverError("Timeout")
 
         # reset to before the dichotomic search
@@ -488,6 +502,7 @@ class SMTLIBSolver(Solver):
                 if i > max_iter:
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["unknown"] += 1
                     raise SolverError("Timeout")
             if last_value is not None:
                 return last_value
@@ -775,4 +790,6 @@ class SelectedSolver:
             "yices": YicesSolver,
             "z3": Z3Solver,
         }[cls.choice.name]
-        return SelectedSolver.instance()
+        solver = SelectedSolver.instance()
+        solver.sname = cls.choice.name
+        return solver
