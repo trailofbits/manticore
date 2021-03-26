@@ -265,7 +265,6 @@ class SMTLIBSolver(Solver):
         self,
         command: str,
         init: Sequence[str] = None,
-        value_fmt: int = 16,
         support_reset: bool = False,
         support_minmax: bool = False,
         support_pushpop: bool = False,
@@ -660,7 +659,6 @@ class Z3Solver(SMTLIBSolver):
         super().__init__(
             command=command,
             init=init,
-            value_fmt=16,
             support_minmax=support_minmax,
             support_reset=support_reset,
             multiple_check=multiple_check,
@@ -729,7 +727,6 @@ class YicesSolver(SMTLIBSolver):
         super().__init__(
             command=command,
             init=init,
-            value_fmt=2,
             debug=False,
             support_minmax=False,
             support_reset=False,
@@ -740,14 +737,14 @@ class CVC4Solver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.cvc4_bin} --lang=smt2 --incremental"
-        super().__init__(command=command, value_fmt=10, init=init)
+        super().__init__(command=command, init=init)
 
 
 class BoolectorSolver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.boolector_bin} -i"
-        super().__init__(command=command, value_fmt=10, init=init)
+        super().__init__(command=command, init=init)
 
 
 class SelectedSolver:
