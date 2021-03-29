@@ -309,7 +309,7 @@ class SymCPUTest(unittest.TestCase):
         return reduce(operator.or_, (self._flags[f] for f in flags))
 
     def _construct_sym_flag_bitfield(self, flags):
-        return reduce(operator.or_, (BitVecConstant(32, self._flags[f]) for f in flags))
+        return reduce(operator.or_, (BitVecConstant(size=32, value=self._flags[f]) for f in flags))
 
     def test_set_eflags(self) -> None:
         cpu = I386Cpu(Memory32())
@@ -371,8 +371,8 @@ class SymCPUTest(unittest.TestCase):
         cpu.CF = 1
         cpu.AF = 1
 
-        a = BitVecConstant(32, 1) != 0
-        b = BitVecConstant(32, 0) != 0
+        a = BitVecConstant(size=32, value=1) != 0
+        b = BitVecConstant(size=32, value=0) != 0
         cpu.ZF = a
         cpu.SF = b
 
@@ -825,9 +825,9 @@ class SymCPUTest(unittest.TestCase):
 
     # regression test for issue #560
     def test_AND_1(self):
-        """ Instruction AND
-            Groups:
-            0x7ffff7de390a:	and rax, 0xfc000000
+        """Instruction AND
+        Groups:
+        0x7ffff7de390a:     and rax, 0xfc000000
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -918,9 +918,9 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, False)
 
     def test_DEC_1(self):
-        """ Instruction DEC_1
-            Groups: mode64
-            0x41e10a:	dec	ecx
+        """Instruction DEC_1
+        Groups: mode64
+        0x41e10a:   dec     ecx
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -945,9 +945,9 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 12)
 
     def test_PUSHFD_1(self):
-        """ Instruction PUSHFD_1
-            Groups: not64bitmode
-            0x8065f6f:	pushfd
+        """Instruction PUSHFD_1
+        Groups: not64bitmode
+        0x8065f6f:  pushfd
         """
         mem = Memory32()
         cpu = I386Cpu(mem)
@@ -975,9 +975,9 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.ESP, 0xFFFFC600)
 
     def test_XLATB_1(self):
-        """ Instruction XLATB_1
-            Groups:
-            0x8059a8d: xlatb
+        """Instruction XLATB_1
+        Groups:
+        0x8059a8d: xlatb
         """
         mem = Memory32()
         cpu = I386Cpu(mem)
@@ -997,9 +997,9 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.EIP, 134584974)
 
     def test_XLATB_1_symbolic(self):
-        """ Instruction XLATB_1
-            Groups:
-            0x8059a8d: xlatb
+        """Instruction XLATB_1
+        Groups:
+        0x8059a8d: xlatb
         """
         cs = ConstraintSet()
         mem = SMemory32(cs)
@@ -1014,10 +1014,10 @@ class SymCPUTest(unittest.TestCase):
         cpu.EBX = 0xFFFFD000
 
     def test_SAR_1(self):
-        """ Instruction SAR_1
-            Groups: mode64
-            0x41e10a:	SAR	cl, EBX
-Using the SAR instruction to perform a division operation does not produce the same result as the IDIV instruction. The quotient from the IDIV instruction is rounded toward zero, whereas the "quotient" of the SAR instruction is rounded toward negative infinity. This difference is apparent only for negative numbers. For example, when the IDIV instruction is used to divide -9 by 4, the result is -2 with a remainder of -1. If the SAR instruction is used to shift -9 right by two bits, the result is -3 and the "remainder" is +3; however, the SAR instruction stores only the most significant bit of the remainder (in the CF flag).
+        """Instruction SAR_1
+                    Groups: mode64
+                    0x41e10a:   SAR     cl, EBX
+        Using the SAR instruction to perform a division operation does not produce the same result as the IDIV instruction. The quotient from the IDIV instruction is rounded toward zero, whereas the "quotient" of the SAR instruction is rounded toward negative infinity. This difference is apparent only for negative numbers. For example, when the IDIV instruction is used to divide -9 by 4, the result is -2 with a remainder of -1. If the SAR instruction is used to shift -9 right by two bits, the result is -3 and the "remainder" is +3; however, the SAR instruction stores only the most significant bit of the remainder (in the CF flag).
 
         """
         mem = Memory32()
@@ -1090,9 +1090,7 @@ Using the SAR instruction to perform a division operation does not produce the s
             self.assertFalse(solver.check(temp_cs))
 
     def test_SAR_2(self):
-        """ Instruction SAR_2
-
-        """
+        """Instruction SAR_2"""
         mem = Memory32()
         cpu = I386Cpu(mem)
         mem.mmap(0x0041E000, 0x1000, "rwx")
@@ -1167,20 +1165,20 @@ Using the SAR instruction to perform a division operation does not produce the s
             self.assertFalse(solver.check(temp_cs))
 
     def test_SAR_3_symbolic(self):
-        """ Instruction SAR_6
-            eax            0xffffd000	-12288
-            ecx            0x3d1ce0ff	1025302783
-            eip            0x80483f3	0x80483f3
-            eflags         0x287	[ CF PF SF IF ]
-            0xffffd000:	0x8f
+        """Instruction SAR_6
+        eax            0xffffd000   -12288
+        ecx            0x3d1ce0ff   1025302783
+        eip            0x80483f3    0x80483f3
+        eflags         0x287        [ CF PF SF IF ]
+        0xffffd000: 0x8f
 
-            => 0x80483f0 <main+3>:	sarb   %cl,0x0(%eax)
+        => 0x80483f0 <main+3>:      sarb   %cl,0x0(%eax)
 
-            eax            0xffffd000	-12288
-            ecx            0x3d1ce0ff	1025302783
-            eip            0x80483f4	0x80483f4
-            eflags         0x287	[ CF PF SF IF ]
-            0xffffd000:	0xff
+        eax            0xffffd000   -12288
+        ecx            0x3d1ce0ff   1025302783
+        eip            0x80483f4    0x80483f4
+        eflags         0x287        [ CF PF SF IF ]
+        0xffffd000: 0xff
 
         """
         cs = ConstraintSet()
@@ -1292,7 +1290,7 @@ Using the SAR instruction to perform a division operation does not produce the s
         code = mem.mmap(0x1000, 0x1000, "rwx")
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
-        mem[code] = BitVecConstant(8, 0x90)
+        mem[code] = BitVecConstant(size=8, value=0x90)
         cpu.EIP = code
         cpu.EAX = 116
         cpu.EBP = stack + 0x700

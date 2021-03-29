@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 class ABI:
     """
-        This class contains methods to handle the ABI.
-        The Application Binary Interface is the standard way to interact with
-        contracts in the Ethereum ecosystem, both from outside the blockchain
-        and for contract-to-contract interaction.
+    This class contains methods to handle the ABI.
+    The Application Binary Interface is the standard way to interact with
+    contracts in the Ethereum ecosystem, both from outside the blockchain
+    and for contract-to-contract interaction.
 
     """
 
@@ -320,7 +320,7 @@ class ABI:
                 index_bits=256, index_max=32, value_bits=8, name="temp{}".format(uuid.uuid1())
             )
             value = Operators.SEXTEND(value, value.size, size * 8)
-            return ArrayProxy(buf.write_BE(padding, value, size))
+            return ArrayProxy(array=buf.write_BE(padding, value, size))
         else:
             buf_arr = bytearray()
             for _ in range(padding):

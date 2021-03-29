@@ -42,7 +42,7 @@ import rlp
 logger = logging.getLogger(__name__)
 
 # Gas behaviour configuration
-# When gas is concrete the gas checks and calculation are pretty straigth forward
+# When gas is concrete the gas checks and calculation are pretty straight forward
 # Though Gas can became symbolic in normal bytecode execution for example at instructions
 # MSTORE, MSTORE8, EXP, ... and every instruction with internal operation restricted by gas
 # This configuration variable allows the user to control and perhaps relax the gas calculation
@@ -103,7 +103,9 @@ consts.add(
     description="Max calldata size to explore in each CALLDATACOPY. Iff size in a calldata related instruction are symbolic it will be constrained to be less than this constant. -1 means free(only use when gas is being tracked)",
 )
 consts.add(
-    "ignore_balance", default=False, description="Do not try to solve symbolic balances",
+    "ignore_balance",
+    default=False,
+    description="Do not try to solve symbolic balances",
 )
 
 
@@ -1302,7 +1304,9 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 if taints:
-                    state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
+                    state.platform.current_vm.pc = BitVecConstant(
+                        size=256, value=value, taint=taints
+                    )
                 else:
                     state.platform.current_vm.pc = value
 
@@ -1402,7 +1406,7 @@ class EVM(Eventful):
             return b""
         self._allocate(offset, size)
         data = self.memory[offset : offset + size]
-        return ArrayProxy(data)
+        return ArrayProxy(array=data)
 
     def write_buffer(self, offset, data):
         self._allocate(offset, len(data))
@@ -1635,9 +1639,9 @@ class EVM(Eventful):
     @concretized_args(size="ALL")
     def SHA3(self, start, size):
         """Compute Keccak-256 hash
-            If the size is symbolic the potential solutions will be sampled as
-            defined by the default policy and the analysis will be forked.
-            The `size` can be considered concrete in this handler.
+        If the size is symbolic the potential solutions will be sampled as
+        defined by the default policy and the analysis will be forked.
+        The `size` can be considered concrete in this handler.
 
         """
         data = self.read_buffer(start, size)
@@ -1703,8 +1707,8 @@ class EVM(Eventful):
         return Operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, offset, size):
-        """ To improve reporting we maintain how much of the calldata is actually
-        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly """
+        """To improve reporting we maintain how much of the calldata is actually
+        used. CALLDATACOPY and CALLDATA LOAD update this limit accordingly"""
         self._used_calldata_size = Operators.ITEBV(
             256, size != 0, self._used_calldata_size + offset + size, self._used_calldata_size
         )
@@ -3116,6 +3120,9 @@ class EVMWorld(Platform):
         if nonce is None:
             # As per EIP 161, contract accounts are initialized with a nonce of 1
             nonce = 1 if len(code) > 0 else 0
+
+        if isinstance(balance, BitVec):
+            balance = Operators.ZEXTEND(balance, 512)
 
         if address is None:
             address = self.new_address()

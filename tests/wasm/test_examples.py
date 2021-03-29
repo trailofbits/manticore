@@ -121,7 +121,6 @@ class TestCollatz(unittest.TestCase):
         self.assertEqual(sorted(results), [70])
 
     def test_wasm_main(self):
-        config.get_group("cli").add("profile", False)
         m = wasm_main(
             namedtuple("Args", ["argv", "workspace", "policy"])([collatz_file], "mcore_tmp", "ALL"),
             None,

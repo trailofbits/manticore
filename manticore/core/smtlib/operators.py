@@ -19,7 +19,7 @@ def ORD(s):
         if s.size == 8:
             return s
         else:
-            return BitVecExtract(s, 0, 8)
+            return BitVecExtract(operand=s, offset=0, size=8)
     elif isinstance(s, int):
         return s & 0xFF
     else:
@@ -31,7 +31,7 @@ def CHR(s):
         if s.size == 8:
             return s
         else:
-            return BitVecExtract(s, 0, 8)
+            return BitVecExtract(operand=s, offset=0, size=8)
     elif isinstance(s, int):
         return bytes([s & 0xFF])
     else:
@@ -125,11 +125,11 @@ def ULE(a, b):
 
 def EXTRACT(x, offset, size):
     if isinstance(x, BitVec) and isinstance(offset, BitVec):
-        return BitVecExtract(x >> offset, 0, size)
+        return BitVecExtract(operand=x >> offset, offset=0, size=size)
     elif isinstance(x, BitVec):
         if offset == 0 and size == x.size:
             return x
-        return BitVecExtract(x, offset, size)
+        return BitVecExtract(operand=x, offset=offset, size=size)
     else:
         return (x >> offset) & ((1 << size) - 1)
 
@@ -140,7 +140,7 @@ def SEXTEND(x, size_src, size_dest):
             x -= 1 << size_src
         return x & ((1 << size_dest) - 1)
     assert x.size == size_src
-    return BitVecSignExtend(x, size_dest)
+    return BitVecSignExtend(operand=x, size_dest=size_dest)
 
 
 def ZEXTEND(x, size):
@@ -148,7 +148,7 @@ def ZEXTEND(x, size):
         return x & ((1 << size) - 1)
     assert isinstance(x, BitVec) and size - x.size >= 0
     if size - x.size > 0:
-        return BitVecZeroExtend(size, x)
+        return BitVecZeroExtend(size_dest=size, operand=x)
     else:
         return x
 
@@ -160,10 +160,10 @@ def CONCAT(total_size, *args):
 
             def cast(x):
                 if isinstance(x, int):
-                    return BitVecConstant(arg_size, x)
+                    return BitVecConstant(size=arg_size, value=x)
                 return x
 
-            return BitVecConcat(total_size, *list(map(cast, args)))
+            return BitVecConcat(size_dest=total_size, operands=tuple(map(cast, args)))
         else:
             return args[0]
     else:
@@ -184,12 +184,12 @@ def ITE(cond, true_value, false_value):
             return false_value
 
     if isinstance(true_value, bool):
-        true_value = BoolConstant(true_value)
+        true_value = BoolConstant(value=true_value)
 
     if isinstance(false_value, bool):
-        false_value = BoolConstant(false_value)
+        false_value = BoolConstant(value=false_value)
 
-    return BoolITE(cond, true_value, false_value)
+    return BoolITE(cond=cond, true=true_value, false=false_value)
 
 
 def ITEBV(size, cond, true_value, false_value):
@@ -213,11 +213,11 @@ def ITEBV(size, cond, true_value, false_value):
             return false_value
 
     if isinstance(true_value, int):
-        true_value = BitVecConstant(size, true_value)
+        true_value = BitVecConstant(size=size, value=true_value)
 
     if isinstance(false_value, int):
-        false_value = BitVecConstant(size, false_value)
-    return BitVecITE(size, cond, true_value, false_value)
+        false_value = BitVecConstant(size=size, value=false_value)
+    return BitVecITE(size=size, condition=cond, true_value=true_value, false_value=false_value)
 
 
 def UDIV(dividend, divisor):
@@ -271,7 +271,7 @@ def SAR(size, a, b):
         assert size == a.size
         return a.sar(b)
     elif isinstance(b, BitVec):
-        return BitVecConstant(size, a).sar(b)
+        return BitVecConstant(size=size, value=a).sar(b)
     else:
         tempDest = a
         tempCount = b

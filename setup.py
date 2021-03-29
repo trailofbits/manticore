@@ -22,7 +22,7 @@ native_deps = [
     "unicorn==1.0.2rc2",
 ]
 
-lint_deps = ["black==19.10b0", "mypy==0.770"]
+lint_deps = ["black==20.8b1", "mypy==0.790"]
 
 auto_test_deps = ["py-evm"]
 
@@ -66,6 +66,8 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "pyyaml",
+        "protobuf",
+        # evm dependencies
         "pysha3",
         "prettytable",
         "ply",

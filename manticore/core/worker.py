@@ -1,11 +1,22 @@
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .state import Concretize, TerminateState
+from ..core.plugin import Plugin, StateDescriptor
+from .state_pb2 import StateList, MessageList, State, LogMessage
+from ..utils.log import register_log_callback
+from ..utils import config
+from ..utils.enums import StateStatus, StateLists
+from datetime import datetime
 import logging
 import multiprocessing
 import threading
+from collections import deque
 import os
+import socketserver
 import typing
 
+consts = config.get_group("core")
+consts.add("HOST", "localhost", "Address to bind the log & state servers to")
+consts.add("PORT", 3214, "Port to use for the log server. State server runs one port higher.")
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(9)
@@ -21,30 +32,30 @@ logger = logging.getLogger(__name__)
 
 class Worker:
     """
-        A Manticore Worker.
-        This will run forever potentially in a different process. Normally it
-        will be spawned at Manticore constructor and will stay alive until killed.
-        A Worker can be in 3 phases: STANDBY, RUNNING, KILLED. And will react to
-        different events: start, stop, kill.
-        The events are transmitted via 2 conditional variable: m._killed and
-        m._started.
+    A Manticore Worker.
+    This will run forever potentially in a different process. Normally it
+    will be spawned at Manticore constructor and will stay alive until killed.
+    A Worker can be in 3 phases: STANDBY, RUNNING, KILLED. And will react to
+    different events: start, stop, kill.
+    The events are transmitted via 2 conditional variable: m._killed and
+    m._started.
 
-        .. code-block:: none
+    .. code-block:: none
 
-            STANDBY:   Waiting for the start event
-            RUNNING:   Exploring and spawning states until no more READY states or
-            the cancel event is received
-            KIlLED:    This is the end. No more manticoring in this worker process
+        STANDBY:   Waiting for the start event
+        RUNNING:   Exploring and spawning states until no more READY states or
+        the cancel event is received
+        KIlLED:    This is the end. No more manticoring in this worker process
 
-                         +---------+     +---------+
-                    +--->+ STANDBY +<--->+ RUNNING |
-                         +-+-------+     +-------+-+
-                           |                     |
-                           |      +--------+     |
-                           +----->+ KILLED <-----+
-                                  +----+---+
-                                       |
-                                       #
+                     +---------+     +---------+
+                +--->+ STANDBY +<--->+ RUNNING |
+                     +-+-------+     +-------+-+
+                       |                     |
+                       |      +--------+     |
+                       +----->+ KILLED <-----+
+                              +----+---+
+                                   |
+                                   #
     """
 
     def __init__(self, *, id, manticore, single=False):
@@ -186,9 +197,9 @@ class Worker:
 
 
 class WorkerSingle(Worker):
-    """ A single worker that will run in the current process and current thread.
-        As this will not provide any concurrency is normally only used for
-        profiling underlying arch emulation and debugging."""
+    """A single worker that will run in the current process and current thread.
+    As this will not provide any concurrency is normally only used for
+    profiling underlying arch emulation and debugging."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, single=True, **kwargs)
@@ -246,9 +257,146 @@ class DaemonThread(WorkerThread):
         thread as an argument.
         """
         logger.debug(
-            "Starting Daemon %d. (Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident(),
+            "Starting Daemon %d. (Pid %d Tid %d).",
+            self.id,
+            os.getpid(),
+            threading.get_ident(),
         )
 
         self._t = threading.Thread(target=self.run if target is None else target, args=(self,))
         self._t.daemon = True
         self._t.start()
+
+
+class DumpTCPHandler(socketserver.BaseRequestHandler):
+    """ TCP Handler that calls the `dump` method bound to the server """
+
+    def handle(self):
+        self.request.sendall(self.server.dump())
+
+
+class ReusableTCPServer(socketserver.TCPServer):
+    """ Custom socket server that gracefully allows the address to be reused """
+
+    allow_reuse_address = True
+    dump: typing.Optional[typing.Callable] = None
+
+
+class LogCaptureWorker(DaemonThread):
+    """ Extended DaemonThread that runs a TCP server that dumps the captured logs """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.activated = False  #: Whether a client has ever connected
+        register_log_callback(self.log_callback)
+
+    def log_callback(self, msg):
+        q = self.manticore._log_queue
+        try:
+            q.append(msg)
+        except AttributeError:
+            # Appending to a deque with maxlen=n is about 25x faster than checking if a queue.Queue is full,
+            # popping if so, and appending. For that reason, we use a deque in the threading and single, but
+            # a manager.Queue in multiprocessing (since that's all it supports). Catching an AttributeError
+            # is slightly faster than using `isinstance` for the default case (threading) but does slow down
+            # log throughput by about 20% (on top of the 25x slowdown) when using Multiprocessing instead of
+            # threading
+            if q.full():
+                q.get()
+            q.put(msg)
+
+    def dump_logs(self):
+        """
+        Converts captured logs into protobuf format
+        """
+        self.activated = True
+        serialized = MessageList()
+        q = self.manticore._log_queue
+        i = 0
+        while i < 50 and not q.empty():
+            msg = LogMessage(content=q.get())
+            serialized.messages.append(msg)
+            i += 1
+        return serialized.SerializeToString()
+
+    def run(self, *args):
+        logger.debug(
+            "Capturing Logs via Thread %d. Pid %d Tid %d).",
+            self.id,
+            os.getpid(),
+            threading.get_ident(),
+        )
+
+        m = self.manticore
+
+        try:
+            with ReusableTCPServer((consts.HOST, consts.PORT), DumpTCPHandler) as server:
+                server.dump = self.dump_logs  # type: ignore
+                server.serve_forever()
+        except OSError as e:
+            # TODO - this should be logger.warning, but we need to rewrite several unit tests that depend on
+            # specific stdout output in order to do that.
+            logger.info("Could not start log capture server: %s", str(e))
+
+
+def render_state_descriptors(desc: typing.Dict[int, StateDescriptor]):
+    """
+    Converts the built-in list of state descriptors into a StateList from Protobuf
+
+    :param desc: Output from ManticoreBase.introspect
+    :return: Protobuf StateList to send over the wire
+    """
+    out = StateList()
+    for st in desc.values():
+        if st.status != StateStatus.destroyed:
+            now = datetime.now()
+            out.states.append(
+                State(
+                    id=st.state_id,
+                    type={
+                        StateLists.ready: State.READY,  # type: ignore
+                        StateLists.busy: State.BUSY,  # type: ignore
+                        StateLists.terminated: State.TERMINATED,  # type: ignore
+                        StateLists.killed: State.KILLED,  # type: ignore
+                    }[
+                        getattr(st, "state_list", StateLists.killed)
+                    ],  # If the state list is missing, assume it's killed
+                    reason=st.termination_msg,
+                    num_executing=st.own_execs,
+                    wait_time=int(
+                        (now - st.field_updated_at.get("state_list", now)).total_seconds() * 1000
+                    ),
+                )
+            )
+    return out
+
+
+def state_monitor(self: DaemonThread):
+    """
+    Daemon thread callback that runs a server that listens for incoming TCP connections and
+    dumps the list of state descriptors.
+
+    :param self: DeamonThread created to run the server
+    """
+    logger.debug(
+        "Monitoring States via Thread %d. Pid %d Tid %d).",
+        self.id,
+        os.getpid(),
+        threading.get_ident(),
+    )
+
+    m = self.manticore
+
+    def dump_states():
+        sts = m.introspect()
+        sts = render_state_descriptors(sts)
+        return sts.SerializeToString()
+
+    try:
+        with ReusableTCPServer((consts.HOST, consts.PORT + 1), DumpTCPHandler) as server:
+            server.dump = dump_states  # type: ignore
+            server.serve_forever()
+    except OSError as e:
+        # TODO - this should be logger.warning, but we need to rewrite several unit tests that depend on
+        # specific stdout output in order to do that.
+        logger.info("Could not start state monitor server: %s", str(e))

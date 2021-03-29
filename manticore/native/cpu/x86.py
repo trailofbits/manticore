@@ -655,8 +655,8 @@ class AMD64RegFile(RegisterFile):
             return Operators.ITEBV(
                 register_size,
                 value,
-                BitVecConstant(register_size, 1 << offset),
-                BitVecConstant(register_size, 0),
+                BitVecConstant(size=register_size, value=1 << offset),
+                BitVecConstant(size=register_size, value=0),
             )
 
         flags = []
@@ -2516,7 +2516,12 @@ class X86Cpu(Cpu):
 
         def make_flag(val, offset):
             if is_expression:
-                return Operators.ITEBV(8, val, BitVecConstant(8, 1 << offset), BitVecConstant(8, 0))
+                return Operators.ITEBV(
+                    size=8,
+                    cond=val,
+                    true_value=BitVecConstant(size=8, value=1 << offset),
+                    false_value=BitVecConstant(size=8, value=0),
+                )
             else:
                 return val << offset
 
@@ -2754,7 +2759,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-         """
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF) == False, 1, 0))
 
     @instruction
@@ -4130,8 +4135,8 @@ class X86Cpu(Cpu):
     #
     ########################################################################################
     def _getMemoryBit(cpu, bitbase, bitoffset):
-        """ Calculate address and bit offset given a base address and a bit offset
-            relative to that address (in the form of asm operands) """
+        """Calculate address and bit offset given a base address and a bit offset
+        relative to that address (in the form of asm operands)"""
         assert bitbase.type == "memory"
         assert bitbase.size >= bitoffset.size
         addr = bitbase.address()
@@ -4678,14 +4683,14 @@ class X86Cpu(Cpu):
     @instruction
     def ANDN(cpu, dest, src1, src2):
         """Performs a bitwise logical AND of inverted second operand (the first source operand)
-           with the third operand (the second source operand). The result is stored in the first
-           operand (destination operand).
+        with the third operand (the second source operand). The result is stored in the first
+        operand (destination operand).
 
-                DEST <- (NOT SRC1) bitwiseAND SRC2;
-                SF <- DEST[OperandSize -1];
-                ZF <- (DEST = 0);
-           Flags Affected
-                SF and ZF are updated based on result. OF and CF flags are cleared. AF and PF flags are undefined.
+             DEST <- (NOT SRC1) bitwiseAND SRC2;
+             SF <- DEST[OperandSize -1];
+             ZF <- (DEST = 0);
+        Flags Affected
+             SF and ZF are updated based on result. OF and CF flags are cleared. AF and PF flags are undefined.
         """
         value = ~src1.read() & src2.read()
         dest.write(value)
@@ -4952,7 +4957,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         """
+        """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -5006,7 +5011,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         """
+        """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -5806,12 +5811,12 @@ class X86Cpu(Cpu):
 
     @instruction
     def PTEST(cpu, dest, src):
-        """ PTEST
-         PTEST set the ZF flag if all bits in the result are 0 of the bitwise AND
-         of the first source operand (first operand) and the second source operand
-         (second operand). Also this sets the CF flag if all bits in the result
-         are 0 of the bitwise AND of the second source operand (second operand)
-         and the logical NOT of the destination operand.
+        """PTEST
+        PTEST set the ZF flag if all bits in the result are 0 of the bitwise AND
+        of the first source operand (first operand) and the second source operand
+        (second operand). Also this sets the CF flag if all bits in the result
+        are 0 of the bitwise AND of the second source operand (second operand)
+        and the logical NOT of the destination operand.
         """
         cpu.OF = False
         cpu.AF = False
@@ -6096,9 +6101,9 @@ class X86Cpu(Cpu):
     @instruction
     def PALIGNR(cpu, dest, src, offset):
         """ALIGNR concatenates the destination operand (the first operand) and the source
-            operand (the second operand) into an intermediate composite, shifts the composite
-            at byte granularity to the right by a constant immediate, and extracts the right-
-            aligned result into the destination."""
+        operand (the second operand) into an intermediate composite, shifts the composite
+        at byte granularity to the right by a constant immediate, and extracts the right-
+        aligned result into the destination."""
         dest.write(
             Operators.EXTRACT(
                 Operators.CONCAT(dest.size * 2, dest.read(), src.read()),
@@ -6109,7 +6114,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSLLDQ(cpu, dest, src):
-        """ Packed Shift Left Logical Double Quadword
+        """Packed Shift Left Logical Double Quadword
         Shifts the destination operand (first operand) to the left by the number
          of bytes specified in the count operand (second operand). The empty low-order
          bytes are cleared (set to all 0s). If the value specified by the count
@@ -6242,7 +6247,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         """
+        """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
