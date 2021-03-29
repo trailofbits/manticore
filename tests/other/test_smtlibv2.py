@@ -16,7 +16,7 @@ from manticore.core.smtlib import (
     replace,
     BitVecConstant,
 )
-from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver
+from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver, BoolectorSolver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
 from manticore import config
@@ -784,11 +784,11 @@ class ExpressionTest(unittest.TestCase):
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
         self.assertEqual(
-            translate_to_smtlib(exp), "(bvor (bvand (bvor BV #x00000000) #x00000001) #x00000000)"
+            translate_to_smtlib(exp), "(bvor (bvand (bvor BIVEC #x00000000) #x00000001) #x00000000)"
         )
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
-        self.assertEqual(translate_to_smtlib(exp), "(bvand BV #x00000001)")
+        self.assertEqual(translate_to_smtlib(exp), "(bvand BIVEC #x00000001)")
 
     def test_arithmetic_simplify_extract(self):
         cs = ConstraintSet()
@@ -1288,6 +1288,11 @@ class ExpressionTestYices(ExpressionTest):
 class ExpressionTestCVC4(ExpressionTest):
     def setUp(self):
         self.solver = CVC4Solver.instance()
+
+
+class ExpressionTestBoolector(ExpressionTest):
+    def setUp(self):
+        self.solver = BoolectorSolver.instance()
 
 
 if __name__ == "__main__":
