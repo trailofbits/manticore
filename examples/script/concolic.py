@@ -166,7 +166,8 @@ def input_from_cons(constupl, datas):
     ret = ""
     for data in datas:
         for c in data:
-            _, ret += make_chr(Z3Solver.instance().get_value(newset, c))
+            _, r = Z3Solver.instance().get_value(newset, c)
+            ret += make_chr(r)
     return ret
 
 
