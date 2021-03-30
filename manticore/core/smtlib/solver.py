@@ -630,7 +630,7 @@ class SMTLIBSolver(Solver):
         """
         # print(''.join(traceback.format_stack()))
         # print()
-        values = [None] * len(expressions)
+        values: List[Any] = [None] * len(expressions)
         start = time.time()
         with constraints.related_to(*expressions) as temp_cs:
             vars: List[Any] = []
