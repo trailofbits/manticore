@@ -83,20 +83,23 @@ RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>
 
 
 def _convert(v):
+    r = None
     if v == "true":
-        return True
-    if v == "false":
-        return False
-    if v.startswith("#b"):
-        return int(v[2:], 2)
-    if v.startswith("#x"):
-        return int(v[2:], 16)
-    if v.startswith("_ bv"):
-        return int(v[len("_ bv") : -len(" 256")], 10)
-    if v.startswith("(_ bv"):
+        r = True
+    elif v == "false":
+        r = False
+    elif v.startswith("#b"):
+        r = int(v[2:], 2)
+    elif v.startswith("#x"):
+        r = int(v[2:], 16)
+    elif v.startswith("_ bv"):
+        r = int(v[len("_ bv") : -len(" 256")], 10)
+    elif v.startswith("(_ bv"):
         v = v[len("(_ bv") :]
-        return int(v[: v.find(" ")], 10)
-    assert False
+        r = int(v[: v.find(" ")], 10)
+
+    assert r is not None
+    return r
 
 
 class SingletonMixin(object):
