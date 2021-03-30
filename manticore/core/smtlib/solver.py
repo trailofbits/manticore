@@ -387,9 +387,6 @@ class SMTLIBSolver(Solver):
         self, expressions_str: List[str], is_bv: List[bool]
     ) -> Tuple[Dict[str, int], str]:
         all_expressions_str = " ".join(expressions_str)
-        if all_expressions_str == "":
-            return {}, ""
-
         self._smtlib.send(f"(get-value ({all_expressions_str}))")
         ret_solver = self._smtlib.recv()
         return_values = re.findall(RE_GET_EXPR_VALUE_ALL, ret_solver)
@@ -620,7 +617,11 @@ class SMTLIBSolver(Solver):
             raise SolverError("Optimize failed")
 
     def get_value(self, constraints: ConstraintSet, *expressions):
-        return self.get_value_in_batch(constraints, expressions)
+        values = self.get_value_in_batch(constraints, expressions)
+        if len(expressions) == 1:
+            return values[0]
+        else:
+            return values
 
     def get_value_in_batch(self, constraints: ConstraintSet, expressions):
         """
@@ -680,6 +681,9 @@ class SMTLIBSolver(Solver):
                         # result.append(self.__getvalue_bv(var[i].name))
                         values_to_ask.append(var[i].name)
                         is_bv.append(True)
+
+            if values_to_ask == []:
+                return values
 
             values_returned, sol = self.__getvalue_all(values_to_ask, is_bv)
             # print(values_returned)
