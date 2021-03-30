@@ -461,20 +461,31 @@ class StateBase(Eventful):
         :return: Concrete value or a tuple of concrete values
         :rtype: int
         """
-        values = []
-        for expr in exprs:
-            if not issymbolic(expr):
-                values.append(expr)
-            else:
-                expr = self.migrate_expression(expr)
-                value = self._solver.get_value(self._constraints, expr)
-                if constrain:
-                    self.constrain(expr == value)
-                # Include forgiveness here
-                if isinstance(value, bytearray):
-                    value = bytes(value)
-                values.append(value)
-        return values
+        return self.solve_one_n_batched(exprs, constrain)
+
+    def solve_one_n_batched(self, exprs, constrain=False):
+        """
+        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        one solution.
+        :param exprs: An iterable of manticore.core.smtlib.Expression
+        :param bool constrain: If True, constrain expr to solved solution value
+        :return: Concrete value or a tuple of concrete values
+        :rtype: int
+        """
+        # Return ret instead of value, to allow the bytearray/bytes conversion
+        ret = []
+        exprs = [self.migrate_expression(x) for x in exprs]
+        values = self._solver.get_value_in_batch(self._constraints, exprs)
+        assert len(values) == len(exprs)
+        for idx, expr in enumerate(exprs):
+            value = values[idx]
+            if constrain:
+                self.constrain(expr == values[idx])
+            # Include forgiveness here
+            if isinstance(value, bytearray):
+                value = bytes(value)
+            ret.append(value)
+        return ret
 
     def solve_n(self, expr, nsolves):
         """

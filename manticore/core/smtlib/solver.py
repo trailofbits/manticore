@@ -381,6 +381,9 @@ class SMTLIBSolver(Solver):
 
     def __getvalue_all(self, expressions_str: List[str], is_bv: List[bool]) -> Dict[str, int]:
         all_expressions_str = " ".join(expressions_str)
+        if all_expressions_str == '':
+            return {}, None
+
         self._smtlib.send(f"(get-value ({all_expressions_str}))")
         ret_solver = self._smtlib.recv()
         return_values = re.findall(RE_GET_EXPR_VALUE_ALL, ret_solver)
@@ -611,14 +614,13 @@ class SMTLIBSolver(Solver):
             raise SolverError("Optimize failed")
 
     def get_value(self, constraints: ConstraintSet, *expressions):
-        return self.get_value_in_batch(constraints, [*expressions])
+        return self.get_value_in_batch(constraints, expressions)
 
     def get_value_in_batch(self, constraints: ConstraintSet, expressions):
         """
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
-        # print('get_value')
         # print(''.join(traceback.format_stack()))
         # print()
         values = [None] * len(expressions)
@@ -702,10 +704,10 @@ class SMTLIBSolver(Solver):
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
 
-        if len(expressions) == 1:
-            return values[0]
-        else:
-            return values
+        #if len(expressions) == 1:
+        #    return values[0]
+        #else:
+        return values
 
 class Z3Solver(SMTLIBSolver):
     def __init__(self):
