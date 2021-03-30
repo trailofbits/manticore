@@ -71,7 +71,7 @@ consts.add(
 
 # Regular expressions used by the solver
 RE_GET_EXPR_VALUE_ALL = re.compile(
-    "\(([a-zA-Z0-9_]*)[ \\n\\s]*(#b[0-1]*|#x[0-9a-fA-F]|[\(]?_ bv[0-9]* [0-9]*|true|false)\\)"
+    "\(([a-zA-Z0-9_]*)[ \\n\\s]*(#b[0-1]*|#x[0-9a-fA-F]*|[\(]?_ bv[0-9]* [0-9]*|true|false)\\)"
 )
 RE_GET_EXPR_VALUE_FMT_BIN = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
 RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r"\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)")
