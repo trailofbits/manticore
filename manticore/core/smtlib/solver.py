@@ -22,7 +22,7 @@ import collections
 import shlex
 import time
 from functools import lru_cache
-from typing import Dict, Tuple, Sequence, Optional, List
+from typing import Any, Dict, Tuple, Sequence, Optional, List
 from subprocess import PIPE, Popen, check_output
 import re
 from . import operators as Operators
@@ -632,7 +632,7 @@ class SMTLIBSolver(Solver):
         values = [None] * len(expressions)
         start = time.time()
         with constraints.related_to(*expressions) as temp_cs:
-            vars = []
+            vars: List[Any] = []
             for idx, expression in enumerate(expressions):
                 if not issymbolic(expression):
                     values[idx] = expression
