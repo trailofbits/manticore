@@ -70,7 +70,9 @@ consts.add(
 )
 
 # Regular expressions used by the solver
-RE_GET_EXPR_VALUE_ALL = re.compile("\(([a-zA-Z0-9_]*)[ \\n\\s]*(#b[0-1]*|#x[0-9a-fA-F]|[\(]?_ bv[0-9]* [0-9]*|true|false)\\)")
+RE_GET_EXPR_VALUE_ALL = re.compile(
+    "\(([a-zA-Z0-9_]*)[ \\n\\s]*(#b[0-1]*|#x[0-9a-fA-F]|[\(]?_ bv[0-9]* [0-9]*|true|false)\\)"
+)
 RE_GET_EXPR_VALUE_FMT_BIN = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
 RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r"\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)")
 RE_GET_EXPR_VALUE_FMT_HEX = re.compile(r"\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
@@ -79,21 +81,23 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
+
 def _convert(v):
-    if v == 'true':
+    if v == "true":
         return True
-    if v == 'false':
+    if v == "false":
         return False
-    if v.startswith('#b'):
+    if v.startswith("#b"):
         return int(v[2:], 2)
-    if v.startswith('#x'):
+    if v.startswith("#x"):
         return int(v[2:], 16)
-    if v.startswith('_ bv'):
-        return int(v[len('_ bv'):-len(' 256')], 10)
-    if v.startswith('(_ bv'):
-        v = v[len('(_ bv'):]
-        return int(v[:v.find(' ')], 10)
+    if v.startswith("_ bv"):
+        return int(v[len("_ bv") : -len(" 256")], 10)
+    if v.startswith("(_ bv"):
+        v = v[len("(_ bv") :]
+        return int(v[: v.find(" ")], 10)
     assert False
+
 
 class SingletonMixin(object):
     __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
@@ -381,7 +385,7 @@ class SMTLIBSolver(Solver):
 
     def __getvalue_all(self, expressions_str: List[str], is_bv: List[bool]) -> Dict[str, int]:
         all_expressions_str = " ".join(expressions_str)
-        if all_expressions_str == '':
+        if all_expressions_str == "":
             return {}, None
 
         self._smtlib.send(f"(get-value ({all_expressions_str}))")
@@ -669,15 +673,15 @@ class SMTLIBSolver(Solver):
                     values_to_ask.append(var.name)
                     is_bv.append(True)
                 if isinstance(expression, Array):
-                    #result = []
+                    # result = []
                     for i in range(expression.index_max):
-                        #result.append(self.__getvalue_bv(var[i].name))
+                        # result.append(self.__getvalue_bv(var[i].name))
                         values_to_ask.append(var[i].name)
                         is_bv.append(True)
 
             values_returned, sol = self.__getvalue_all(values_to_ask, is_bv)
-            #print(values_returned)
-            #print(values_returned.keys())
+            # print(values_returned)
+            # print(values_returned.keys())
             # print(values_returned)
             for idx, expression in enumerate(expressions):
                 if not issymbolic(expression):
@@ -687,12 +691,12 @@ class SMTLIBSolver(Solver):
                     values[idx] = values_returned[var.name]
                 if isinstance(expression, BitVec):
                     if var.name not in values_returned:
-                        print('Error')
+                        print("Error")
                         print(values_returned)
                         print(values_returned.keys())
                         print(values_to_ask)
                         print(sol)
-                        #print(temp_cs.to_string())
+                        # print(temp_cs.to_string())
 
                     values[idx] = values_returned[var.name]
                 if isinstance(expression, Array):
@@ -704,10 +708,11 @@ class SMTLIBSolver(Solver):
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
 
-        #if len(expressions) == 1:
+        # if len(expressions) == 1:
         #    return values[0]
-        #else:
+        # else:
         return values
+
 
 class Z3Solver(SMTLIBSolver):
     def __init__(self):
