@@ -412,17 +412,6 @@ class Manticore(ManticoreBase):
     def save_run_data(self):
         super().save_run_data()
 
-        time_ended = time.time()
-
-        with self.locked_context() as context:
-            time_elapsed = time_ended - context["time_started"]
-
-            logger.info("Total time: %s", time_elapsed)
-
-            context["time_ended"] = time_ended
-            context["time_elapsed"] = time_elapsed
-
-
 def _make_initial_state(binary_path, **kwargs):
     with open(binary_path, "rb") as f:
         magic = f.read(4)
