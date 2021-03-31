@@ -604,6 +604,7 @@ class SMTLIBSolver(Solver):
             self._smtlib.send("(check-sat)")
             _status = self._smtlib.recv()
 
+            assert self.sname is not None
             if self.sname not in SOLVER_STATS:
                 SOLVER_STATS[self.sname] = 0
             SOLVER_STATS[self.sname] += 1
