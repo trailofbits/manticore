@@ -1106,6 +1106,10 @@ class ManticoreBase(Eventful):
         """
         Runs analysis.
         """
+        # Start measuring the execution time
+        with self.locked_context() as context:
+            context["time_started"] = time.time()
+
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a
         # different process modifies the state
@@ -1229,6 +1233,17 @@ class ManticoreBase(Eventful):
             )
 
         logger.info("Results in %s", self._output.store.uri)
+
+        time_ended = time.time()
+
+        with self.locked_context() as context:
+            time_elapsed = time_ended - context["time_started"]
+
+            logger.info("Total time: %s", time_elapsed)
+
+            context["time_ended"] = time_ended
+            context["time_elapsed"] = time_elapsed
+
         self.wait_for_log_purge()
 
     def introspect(self) -> typing.Dict[int, StateDescriptor]:

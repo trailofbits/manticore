@@ -46,9 +46,6 @@ class ManticoreWASM(ManticoreBase):
 
         :param timeout: number of seconds after which to kill execution
         """
-        with self.locked_context() as context:
-            context["time_started"] = time.time()
-
         with self.kill_timeout(timeout):
             super().run()
 
