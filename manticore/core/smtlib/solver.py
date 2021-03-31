@@ -478,7 +478,7 @@ class SMTLIBSolver(Solver):
                     M = L
 
                 if time.time() - start > consts.timeout:
-                    SOLVER_STATS["unknown"] += 1
+                    SOLVER_STATS["timeout"] += 1
                     raise SolverError("Timeout")
 
         # reset to before the dichotomic search
@@ -501,12 +501,15 @@ class SMTLIBSolver(Solver):
                 self._assert(X != last_value)
                 i = i + 1
                 if i > max_iter:
+                    SOLVER_STATS["unknown"] += 1
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
                 if time.time() - start > consts.timeout:
-                    SOLVER_STATS["unknown"] += 1
+                    SOLVER_STATS["timeout"] += 1
                     raise SolverError("Timeout")
             if last_value is not None:
                 return last_value
+
+            SOLVER_STATS["unknown"] += 1
             raise SolverError("Optimizing error, unsat or unknown core")
 
     @lru_cache(maxsize=32)
@@ -563,6 +566,7 @@ class SMTLIBSolver(Solver):
                     else:
                         raise TooManySolutions(result)
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["timeout"] += 1
                     if silent:
                         logger.info("Timeout searching for all solutions")
                         return list(result)
@@ -599,6 +603,11 @@ class SMTLIBSolver(Solver):
             self._smtlib.send("(%s %s)" % (goal, aux.name))
             self._smtlib.send("(check-sat)")
             _status = self._smtlib.recv()
+
+            if self.sname not in SOLVER_STATS:
+                SOLVER_STATS[self.sname] = 0
+            SOLVER_STATS[self.sname] += 1
+
             if _status == "sat":
                 return self._getvalue(aux)
             raise SolverError("Optimize failed")
@@ -637,6 +646,7 @@ class SMTLIBSolver(Solver):
                         result.append(self.__getvalue_bv(var[i].name))
                     values.append(bytes(result))
                     if time.time() - start > consts.timeout:
+                        SOLVER_STATS["timeout"] += 1
                         raise SolverError("Timeout")
                     continue
 
@@ -654,6 +664,7 @@ class SMTLIBSolver(Solver):
                 if isinstance(expression, BitVec):
                     values.append(self.__getvalue_bv(var.name))
             if time.time() - start > consts.timeout:
+                SOLVER_STATS["timeout"] += 1
                 raise SolverError("Timeout")
 
         if len(expressions) == 1:
