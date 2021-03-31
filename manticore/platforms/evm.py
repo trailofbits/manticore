@@ -182,13 +182,24 @@ class Transaction:
         :param state: a manticore state
         :param bool constrain: If True, constrain expr to concretized value
         """
-        conc_caller = state.solve_one(self.caller, constrain=constrain)
-        conc_address = state.solve_one(self.address, constrain=constrain)
-        conc_value = state.solve_one(self.value, constrain=constrain)
-        conc_gas = state.solve_one(self.gas, constrain=constrain)
-        conc_data = state.solve_one(self.data, constrain=constrain)
-        conc_return_data = state.solve_one(self.return_data, constrain=constrain)
-        conc_used_gas = state.solve_one(self.used_gas, constrain=constrain)
+        all_elems = [
+            self.caller,
+            self.address,
+            self.value,
+            self.gas,
+            self.data,
+            self._return_data,
+            self.used_gas,
+        ]
+        values = state.solve_one_n_batched(all_elems, constrain=constrain)
+        conc_caller = values[0]
+        conc_address = values[1]
+        conc_value = values[2]
+        conc_gas = values[3]
+        conc_data = values[4]
+        conc_return_data = values[5]
+        conc_used_gas = values[6]
+
         return Transaction(
             self.sort,
             conc_address,
