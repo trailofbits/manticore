@@ -412,6 +412,7 @@ class Manticore(ManticoreBase):
     def save_run_data(self):
         super().save_run_data()
 
+
 def _make_initial_state(binary_path, **kwargs):
     with open(binary_path, "rb") as f:
         magic = f.read(4)
