@@ -302,9 +302,7 @@ class Transaction:
                 )  # is this redundant since arguments are all concrete?
                 stream.write("Function call:\n")
                 stream.write("Constructor(")
-                stream.write(
-                    ",".join(map(repr, map(state.solve_one, arguments)))
-                )  # is this redundant since arguments are all concrete?
+                stream.write(",".join(map(repr, arguments)))
                 stream.write(") -> %s %s\n" % (self.result, flagged(is_argument_symbolic)))
 
         if self.sort == "CALL":
