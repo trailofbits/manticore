@@ -263,7 +263,7 @@ class SmtlibProc:
 
 
 class SMTLIBSolver(Solver):
-    sname = None
+    sname: Optional[str] = None
 
     def __init__(
         self,
@@ -675,6 +675,8 @@ class SMTLIBSolver(Solver):
 
 
 class Z3Solver(SMTLIBSolver):
+    sname = "z3"
+
     def __init__(self):
         """
         Build a Z3 solver instance.
@@ -749,6 +751,8 @@ class Z3Solver(SMTLIBSolver):
 
 
 class YicesSolver(SMTLIBSolver):
+    sname = "yices"
+
     def __init__(self):
         init = ["(set-logic QF_AUFBV)"]
         command = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
@@ -762,6 +766,8 @@ class YicesSolver(SMTLIBSolver):
 
 
 class CVC4Solver(SMTLIBSolver):
+    sname = "cvc4"
+
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.cvc4_bin} --lang=smt2 --incremental"
@@ -769,6 +775,8 @@ class CVC4Solver(SMTLIBSolver):
 
 
 class BoolectorSolver(SMTLIBSolver):
+    sname = "boolector"
+
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.boolector_bin} -i"
@@ -803,6 +811,4 @@ class SelectedSolver:
             "yices": YicesSolver,
             "z3": Z3Solver,
         }[cls.choice.name]
-        solver = SelectedSolver.instance()
-        solver.sname = cls.choice.name
-        return solver
+        return SelectedSolver.instance()
