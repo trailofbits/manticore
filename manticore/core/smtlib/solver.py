@@ -770,7 +770,7 @@ class CVC4Solver(SMTLIBSolver):
 
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"{consts.cvc4_bin} --lang=smt2 --incremental"
+        command = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
         super().__init__(command=command, init=init)
 
 
@@ -779,7 +779,7 @@ class BoolectorSolver(SMTLIBSolver):
 
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"{consts.boolector_bin} -i"
+        command = f"{consts.boolector_bin} --time={consts.timeout} -i"
         super().__init__(command=command, init=init)
 
 
