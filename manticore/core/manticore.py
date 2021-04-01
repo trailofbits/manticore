@@ -1237,12 +1237,13 @@ class ManticoreBase(Eventful):
         time_ended = time.time()
 
         with self.locked_context() as context:
-            time_elapsed = time_ended - context["time_started"]
-
-            logger.info("Total time: %s", time_elapsed)
-
-            context["time_ended"] = time_ended
-            context["time_elapsed"] = time_elapsed
+            if "time_started" in context:
+                time_elapsed = time_ended - context["time_started"]
+                logger.info("Total time: %s", time_elapsed)
+                context["time_ended"] = time_ended
+                context["time_elapsed"] = time_elapsed
+            else:
+                logger.info("Warning: manticore failed to run")
 
         self.wait_for_log_purge()
 
