@@ -3318,7 +3318,7 @@ class EVMWorld(Platform):
                 aux_src_balance = Operators.ZEXTEND(self.get_balance(caller), 512)
                 aux_value = Operators.ZEXTEND(value, 512)
                 enough_balance = Operators.UGE(aux_src_balance, aux_value)
-                if self.depth == 0:
+                if consts.oog != "ignore" and self.depth == 0:
                     # take the gas from the balance
                     aux_price = Operators.ZEXTEND(price, 512)
                     aux_gas = Operators.ZEXTEND(gas, 512)
