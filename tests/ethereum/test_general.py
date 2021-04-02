@@ -752,6 +752,8 @@ class EthTests(unittest.TestCase):
             }
         }
         """
+        consts = config.get_group("evm")
+        consts.events = True
         user_account = self.mevm.create_account(balance=10 ** 10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         input_sym = self.mevm.make_symbolic_value()
