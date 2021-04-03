@@ -15,6 +15,7 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
 import os
+import fcntl
 import shutil
 import threading
 from queue import Queue
@@ -22,8 +23,8 @@ import collections
 import shlex
 import time
 from functools import lru_cache
-from typing import Dict, Tuple, Sequence, Optional
-from subprocess import PIPE, Popen, check_output
+from typing import Dict, Tuple, Sequence, Optional, List
+from subprocess import PIPE, Popen, check_output 
 import re
 from . import operators as Operators
 from .constraints import *
@@ -31,17 +32,6 @@ from .visitors import *
 from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
 from . import issymbolic
-
-
-class SolverType(config.ConfigEnum):
-    """Used as configuration constant for choosing solver flavor"""
-
-    z3 = "z3"
-    cvc4 = "cvc4"
-    yices = "yices"
-    auto = "auto"
-    boolector = "boolector"
-
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -63,12 +53,6 @@ consts.add(
     "optimize", default=True, description="Use smtlib command optimize to find min/max if available"
 )
 
-consts.add(
-    "solver",
-    default=SolverType.auto,
-    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
-)
-
 # Regular expressions used by the solver
 RE_GET_EXPR_VALUE_FMT_BIN = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
 RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r"\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)")
@@ -78,6 +62,37 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
+class SolverType(config.ConfigEnum):
+    """Used as configuration constant for choosing solver flavor"""
+
+    z3 = "z3"
+    cvc4 = "cvc4"
+    yices = "yices"
+    auto = "auto"
+    portfolio = "portfolio"
+    boolector = "boolector"
+
+consts.add(
+    "solver",
+    default=SolverType.auto,
+    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
+)
+
+class SolverInfo:
+    def __init__(self):
+        self.commands = dict()
+        self.inits = dict()
+
+        self.commands["z3"] = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+        self.inits["z3"] = ["(set-logic QF_AUFBV)", "(set-option :global-decls false)", "(set-option :tactic.solve_eqs.context_solve false)"]
+        self.commands["yices"] = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
+        self.inits["yices"] = ["(set-logic QF_AUFBV)"]
+        self.commands["boolector"] = f"{consts.boolector_bin} --time={consts.timeout} -i"
+        self.inits["boolector"] = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+        self.commands["cvc4"] = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
+        self.inits["cvc4"] = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+
+info = SolverInfo()
 
 class SingletonMixin(object):
     __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
@@ -192,6 +207,10 @@ class SmtlibProc:
             close_fds=True,
         )
 
+        # stdout should be non-blocking
+        fl = fcntl.fcntl(self._proc.stdout, fcntl.F_GETFL)
+        fcntl.fcntl(self._proc.stdout, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
     def stop(self):
         """
         Stops the solver process by:
@@ -211,10 +230,21 @@ class SmtlibProc:
             # No need to wait for termination, zombies avoided.
         self._proc = None
 
-    def __readline_and_count(self):
+    def __readline_and_count(self, wait):
         assert self._proc
         assert self._proc.stdout
-        buf = self._proc.stdout.readline()  # No timeout enforced here
+        buf = None
+        
+        while buf is None:
+            try: 
+                buf = self._proc.stdout.readline()
+            except TypeError:
+                print("sleep(1)")
+                if not wait:
+                    return None, None, None
+                time.sleep(1)
+
+        print(buf)
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
         if self._debug:
@@ -234,9 +264,12 @@ class SmtlibProc:
         self._proc.stdout.flush()  # type: ignore
         self._proc.stdin.write(f"{cmd}\n")  # type: ignore
 
-    def recv(self) -> str:
+    def recv(self, wait = True) -> str:
         """Reads the response from the smtlib solver"""
-        buf, left, right = self.__readline_and_count()
+        buf, left, right = self.__readline_and_count(wait)
+        if buf is None and left is None and right is None: # timeout
+            return None
+
         bufl = [buf]
         while left != right:
             buf, l, r = self.__readline_and_count()
@@ -258,7 +291,6 @@ class SmtlibProc:
 
     def is_started(self):
         return self._proc is not None
-
 
 class SMTLIBSolver(Solver):
     def __init__(
@@ -653,7 +685,7 @@ class Z3Solver(SMTLIBSolver):
         This is implemented using an external z3 solver (via a subprocess).
         See https://github.com/Z3Prover/z3
         """
-        command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+        command = info.commands["z3"]
 
         init, support_minmax, support_reset, multiple_check = self.__autoconfig()
         super().__init__(
@@ -667,25 +699,11 @@ class Z3Solver(SMTLIBSolver):
         )
 
     def __autoconfig(self):
-        init = [
-            # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
-            # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
-            # free sort and function symbols.
-            "(set-logic QF_AUFBV)",
-            # The declarations and definitions will be scoped
-            "(set-option :global-decls false)",
-        ]
+        init = info.inits["z3"]
 
         # To cache what get-info returned; can be directly set when writing tests
         self.version = self._solver_version()
         support_reset = True
-
-        if self.version > Version(4, 8, 4):
-            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
-            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
-            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
-            # in test_consensys_benchmark.py.
-            init.append("(set-option :tactic.solve_eqs.context_solve false)")
 
         support_minmax = self.version >= Version(4, 4, 1)
 
@@ -722,8 +740,8 @@ class Z3Solver(SMTLIBSolver):
 
 class YicesSolver(SMTLIBSolver):
     def __init__(self):
-        init = ["(set-logic QF_AUFBV)"]
-        command = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
+        init = info.inits["yices"]
+        command = info.commands["yices"]
         super().__init__(
             command=command,
             init=init,
@@ -735,17 +753,130 @@ class YicesSolver(SMTLIBSolver):
 
 class CVC4Solver(SMTLIBSolver):
     def __init__(self):
-        init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
+        init = info.inits["cvc4"]
+        command = info.commands["cvc4"]
         super().__init__(command=command, init=init)
 
 
 class BoolectorSolver(SMTLIBSolver):
-    def __init__(self):
-        init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"{consts.boolector_bin} --time={consts.timeout} -i"
+    def __init__(self,  args: List[str] = []):
+        init = info.inits["boolector"]
+        command = info.commands["boolector"]
         super().__init__(command=command, init=init)
 
+class SmtlibPortfolio:
+    def __init__(self, solvers: List[str], debug: bool = False):
+        """Single smtlib interactive process
+
+        :param command: the shell command to execute
+        :param debug: log all messaging
+        """
+        self._procs: List[Optional[SmtlibProc]] = []
+        self._solvers = solvers
+        self._debug = debug
+
+    def start(self):
+        if len(self._procs) == 0:
+            for solver in self._solvers:
+                self._procs.append(SmtlibProc(info.commands[solver], self._debug))
+
+        for proc in self._procs:
+            print("starting", proc._command)
+            proc.start()
+
+    def stop(self):
+        """
+        Stops the solver process by:
+        - sending a SIGKILL signal,
+        - waiting till the process terminates (so we don't leave a zombie process)
+        """
+        print("stop")
+        for proc in self._procs:
+            proc.stop()
+
+    def send(self, cmd: str) -> None:
+        """
+        Send a string to the solver.
+
+        :param cmd: a SMTLIBv2 command (ex. (check-sat))
+        """
+        assert len(self._procs) > 0
+        #print(cmd)
+        for proc in self._procs:
+            proc.send(cmd)
+
+    def recv(self) -> str:
+        """Reads the response from the smtlib solver"""
+        print("recv solvers", self._procs)
+
+        while True:
+            time.sleep(1)
+            for proc in self._procs:
+                buf = proc.recv()
+                #print("busy waiting..")
+                if buf is not None:
+                    #print(proc._command, "finished!")
+                    return buf
+
+    def _restart(self) -> None:
+        """Auxiliary to start or restart the external solver"""
+        self.stop()
+        self.start()
+
+    def is_started(self):
+        return len(self._procs) > 0
+
+
+class Portfolio(SMTLIBSolver):
+    def __init__(self):
+
+        solvers = []
+        #if shutil.which(consts.yices_bin):
+        #    solvers.append(consts.solver.yices.name)
+        #if shutil.which(consts.z3_bin):
+        #    solvers.append(consts.solver.z3.name)
+        if shutil.which(consts.cvc4_bin):
+            solvers.append(consts.solver.cvc4.name)
+        #if shutil.which(consts.boolector_bin):
+        #    solvers.append(consts.solver.boolector.name)
+        else:
+            raise SolverException(
+                f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
+            )
+
+        print("Creating portfolio with solvers", solvers)
+        assert len(solvers) > 0
+        value_fmt: int = 2
+        support_reset: bool = False
+        support_minmax: bool = False
+        support_pushpop: bool = False
+        multiple_check: bool = True
+        debug: bool = False
+
+        self._smtlib: SmtlibPortfolio = SmtlibPortfolio(solvers, debug)
+        init = ["(set-option :produce-models true)", "(set-logic QF_AUFBV)"]
+
+        # Commands used to initialize smtlib
+        if init is None:
+            init = tuple()
+        self._init = init
+        self._support_minmax = support_minmax
+        self._support_reset = support_reset
+        self._support_pushpop = support_pushpop
+        self._multiple_check = multiple_check
+
+        if not self._support_pushpop:
+            setattr(self, "_push", None)
+            setattr(self, "_pop", None)
+
+        if self._support_minmax and consts.optimize:
+            setattr(self, "optimize", self._optimize_fancy)
+        else:
+            setattr(self, "optimize", self._optimize_generic)
+
+        #self._smtlib.start()
+        #assert False
+        # run solver specific initializations
 
 class SelectedSolver:
     choice = None
@@ -766,6 +897,7 @@ class SelectedSolver:
                     raise SolverException(
                         f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
                     )
+
         else:
             cls.choice = consts.solver
 
@@ -774,5 +906,6 @@ class SelectedSolver:
             "boolector": BoolectorSolver,
             "yices": YicesSolver,
             "z3": Z3Solver,
+            "portfolio": Portfolio,
         }[cls.choice.name]
         return SelectedSolver.instance()
