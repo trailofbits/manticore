@@ -270,7 +270,7 @@ class SmtlibProc:
 
         bufl = [buf]
         while left != right:
-            buf, l, r = self.__readline_and_count()
+            buf, l, r = self.__readline_and_count(wait)
             bufl.append(buf)
             left += l
             right += r
