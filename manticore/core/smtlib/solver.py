@@ -239,12 +239,10 @@ class SmtlibProc:
             try: 
                 buf = self._proc.stdout.readline()
             except TypeError:
-                print("sleep(1)")
                 if not wait:
                     return None, None, None
-                time.sleep(1)
+                #time.sleep(1)
 
-        print(buf)
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
         if self._debug:
