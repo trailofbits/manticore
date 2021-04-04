@@ -779,7 +779,6 @@ class SmtlibPortfolio:
                 self._procs.append(SmtlibProc(info.commands[solver], self._debug))
 
         for proc in self._procs:
-            print("starting", proc._command)
             proc.start()
 
     def stop(self):
@@ -788,7 +787,6 @@ class SmtlibPortfolio:
         - sending a SIGKILL signal,
         - waiting till the process terminates (so we don't leave a zombie process)
         """
-        print("stop")
         for proc in self._procs:
             proc.stop()
 
@@ -805,10 +803,7 @@ class SmtlibPortfolio:
 
     def recv(self) -> str:
         """Reads the response from the smtlib solver"""
-        print("recv solvers", self._procs)
-
         while True:
-            time.sleep(1)
             for proc in self._procs:
                 buf = proc.recv()
                 #print("busy waiting..")
@@ -824,27 +819,31 @@ class SmtlibPortfolio:
     def is_started(self):
         return len(self._procs) > 0
 
+    def init(self):
+        for solver, proc in zip(self._solvers, self._procs):
+            for cfg in info.inits[solver]:
+                proc.send(cfg)
+
 
 class Portfolio(SMTLIBSolver):
     def __init__(self):
 
         solvers = []
-        #if shutil.which(consts.yices_bin):
-        #    solvers.append(consts.solver.yices.name)
+        if shutil.which(consts.yices_bin):
+            solvers.append(consts.solver.yices.name)
         #if shutil.which(consts.z3_bin):
         #    solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
-        #if shutil.which(consts.boolector_bin):
-        #    solvers.append(consts.solver.boolector.name)
+        if shutil.which(consts.boolector_bin):
+            solvers.append(consts.solver.boolector.name)
         else:
             raise SolverException(
                 f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
             )
 
-        print("Creating portfolio with solvers", solvers)
+        #print("Creating portfolio with solvers", solvers)
         assert len(solvers) > 0
-        value_fmt: int = 2
         support_reset: bool = False
         support_minmax: bool = False
         support_pushpop: bool = False
@@ -852,12 +851,6 @@ class Portfolio(SMTLIBSolver):
         debug: bool = False
 
         self._smtlib: SmtlibPortfolio = SmtlibPortfolio(solvers, debug)
-        init = ["(set-option :produce-models true)", "(set-logic QF_AUFBV)"]
-
-        # Commands used to initialize smtlib
-        if init is None:
-            init = tuple()
-        self._init = init
         self._support_minmax = support_minmax
         self._support_reset = support_reset
         self._support_pushpop = support_pushpop
@@ -872,9 +865,20 @@ class Portfolio(SMTLIBSolver):
         else:
             setattr(self, "optimize", self._optimize_generic)
 
-        #self._smtlib.start()
-        #assert False
-        # run solver specific initializations
+    def _reset(self, constraints: Optional[str] = None) -> None:
+        """Auxiliary method to reset the smtlib external solver to initial defaults"""
+        if self._support_reset:
+            self._smtlib.start()  # does not do anything if already started
+            self._smtlib.send("(reset)")
+        else:
+            self._smtlib.stop()  # does not do anything if already stopped
+            self._smtlib.start()
+
+        self._smtlib.init()
+
+        if constraints is not None:
+            self._smtlib.send(constraints)
+
 
 class SelectedSolver:
     choice = None
