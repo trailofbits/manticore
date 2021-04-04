@@ -24,7 +24,7 @@ import shlex
 import time
 from functools import lru_cache
 from typing import Dict, Tuple, Sequence, Optional, List
-from subprocess import PIPE, Popen, check_output 
+from subprocess import PIPE, Popen, check_output
 import re
 from . import operators as Operators
 from .constraints import *
@@ -62,6 +62,7 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
+
 class SolverType(config.ConfigEnum):
     """Used as configuration constant for choosing solver flavor"""
 
@@ -72,27 +73,39 @@ class SolverType(config.ConfigEnum):
     portfolio = "portfolio"
     boolector = "boolector"
 
+
 consts.add(
     "solver",
     default=SolverType.auto,
     description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
 )
 
+
 class SolverInfo:
     def __init__(self):
         self.commands = dict()
         self.inits = dict()
 
-        self.commands["z3"] = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
-        self.inits["z3"] = ["(set-logic QF_AUFBV)", "(set-option :global-decls false)", "(set-option :tactic.solve_eqs.context_solve false)"]
+        self.commands[
+            "z3"
+        ] = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+        self.inits["z3"] = [
+            "(set-logic QF_AUFBV)",
+            "(set-option :global-decls false)",
+            "(set-option :tactic.solve_eqs.context_solve false)",
+        ]
         self.commands["yices"] = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
         self.inits["yices"] = ["(set-logic QF_AUFBV)"]
         self.commands["boolector"] = f"{consts.boolector_bin} --time={consts.timeout} -i"
         self.inits["boolector"] = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        self.commands["cvc4"] = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
+        self.commands[
+            "cvc4"
+        ] = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
         self.inits["cvc4"] = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
 
+
 info = SolverInfo()
+
 
 class SingletonMixin(object):
     __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
@@ -234,14 +247,14 @@ class SmtlibProc:
         assert self._proc
         assert self._proc.stdout
         buf = None
-        
+
         while buf is None:
-            try: 
+            try:
                 buf = self._proc.stdout.readline()
             except TypeError:
                 if not wait:
                     return None, None, None
-                #time.sleep(1)
+                # time.sleep(1)
 
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
@@ -262,10 +275,10 @@ class SmtlibProc:
         self._proc.stdout.flush()  # type: ignore
         self._proc.stdin.write(f"{cmd}\n")  # type: ignore
 
-    def recv(self, wait = True) -> str:
+    def recv(self, wait=True) -> str:
         """Reads the response from the smtlib solver"""
         buf, left, right = self.__readline_and_count(wait)
-        if buf is None and left is None and right is None: # timeout
+        if buf is None and left is None and right is None:  # timeout
             return None
 
         bufl = [buf]
@@ -289,6 +302,7 @@ class SmtlibProc:
 
     def is_started(self):
         return self._proc is not None
+
 
 class SMTLIBSolver(Solver):
     def __init__(
@@ -757,10 +771,11 @@ class CVC4Solver(SMTLIBSolver):
 
 
 class BoolectorSolver(SMTLIBSolver):
-    def __init__(self,  args: List[str] = []):
+    def __init__(self, args: List[str] = []):
         init = info.inits["boolector"]
         command = info.commands["boolector"]
         super().__init__(command=command, init=init)
+
 
 class SmtlibPortfolio:
     def __init__(self, solvers: List[str], debug: bool = False):
@@ -797,7 +812,7 @@ class SmtlibPortfolio:
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         assert len(self._procs) > 0
-        #print(cmd)
+        # print(cmd)
         for proc in self._procs:
             proc.send(cmd)
 
@@ -806,9 +821,9 @@ class SmtlibPortfolio:
         while True:
             for proc in self._procs:
                 buf = proc.recv()
-                #print("busy waiting..")
+                # print("busy waiting..")
                 if buf is not None:
-                    #print(proc._command, "finished!")
+                    # print(proc._command, "finished!")
                     return buf
 
     def _restart(self) -> None:
@@ -831,7 +846,7 @@ class Portfolio(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
-        #if shutil.which(consts.z3_bin):
+        # if shutil.which(consts.z3_bin):
         #    solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
@@ -842,7 +857,7 @@ class Portfolio(SMTLIBSolver):
                 f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
             )
 
-        #print("Creating portfolio with solvers", solvers)
+        # print("Creating portfolio with solvers", solvers)
         assert len(solvers) > 0
         support_reset: bool = False
         support_minmax: bool = False
