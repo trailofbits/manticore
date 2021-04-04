@@ -841,7 +841,7 @@ class SmtlibPortfolio:
                 proc.send(cfg)
 
 
-class Portfolio(SMTLIBSolver):
+class PortfolioSolver(SMTLIBSolver):
     def __init__(self):
 
         solvers = []
@@ -924,6 +924,6 @@ class SelectedSolver:
             "boolector": BoolectorSolver,
             "yices": YicesSolver,
             "z3": Z3Solver,
-            "portfolio": Portfolio,
+            "portfolio": PortfolioSolver,
         }[cls.choice.name]
         return SelectedSolver.instance()
