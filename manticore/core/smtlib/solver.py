@@ -275,7 +275,7 @@ class SmtlibProc:
         self._proc.stdout.flush()  # type: ignore
         self._proc.stdin.write(f"{cmd}\n")  # type: ignore
 
-    def recv(self, wait=True) -> str:
+    def recv(self, wait=True) -> Optional[str]:
         """Reads the response from the smtlib solver"""
         buf, left, right = self.__readline_and_count(wait)
         if buf is None and left is None and right is None:  # timeout
@@ -388,6 +388,7 @@ class SMTLIBSolver(Solver):
     def __getvalue_bv(self, expression_str: str) -> int:
         self._smtlib.send(f"(get-value ({expression_str}))")
         t = self._smtlib.recv()
+        assert t is not None
         base = 2
         m = RE_GET_EXPR_VALUE_FMT_BIN.match(t)
         if m is None:
@@ -784,7 +785,7 @@ class SmtlibPortfolio:
         :param command: the shell command to execute
         :param debug: log all messaging
         """
-        self._procs: List[Optional[SmtlibProc]] = []
+        self._procs: List[SmtlibProc] = []
         self._solvers = solvers
         self._debug = debug
 
