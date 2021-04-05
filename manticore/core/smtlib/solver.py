@@ -25,6 +25,7 @@ import time
 from functools import lru_cache
 from typing import Dict, Tuple, Sequence, Optional, List
 from subprocess import PIPE, Popen, check_output
+from random import shuffle
 import re
 from . import operators as Operators
 from .constraints import *
@@ -371,7 +372,11 @@ class SMTLIBSolver(Solver):
         start = time.time()
         self._smtlib.send("(check-sat)")
         status = self._smtlib.recv()
+        assert status is not None
         logger.debug("Check took %s seconds (%s)", time.time() - start, status)
+        if "ALARM TRIGGERED" in status:
+            return False
+
         if status not in ("sat", "unsat", "unknown"):
             raise SolverError(status)
         if consts.defaultunsat:
@@ -822,8 +827,12 @@ class SmtlibPortfolio:
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         assert len(self._procs) > 0
+        inds = list(range(len(self._procs)))
+        shuffle(inds)
+
         # print(cmd)
-        for proc in self._procs:
+        for i in inds:
+            proc = self._procs[i]
             if not proc.is_started():
                 continue
 
@@ -836,10 +845,14 @@ class SmtlibPortfolio:
         """Reads the response from the smtlib solver"""
         tries = 0
         timeout = 0.0
+        inds = list(range(len(self._procs)))
         # print(self._procs)
         while True:
-            for proc in self._procs:
+            shuffle(inds)
+            for i in inds:
+                proc = self._procs[i]
                 if not proc.is_started():
+                    # print(proc._command, "is stopped")
                     continue
                 buf = proc.recv(wait=False)
                 if buf is not None:
@@ -876,8 +889,8 @@ class PortfolioSolver(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
-        # if shutil.which(consts.z3_bin):
-        #    solvers.append(consts.solver.z3.name)
+        if shutil.which(consts.z3_bin):
+            solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
         if shutil.which(consts.boolector_bin):
