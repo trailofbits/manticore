@@ -305,6 +305,8 @@ class SmtlibProc:
 
 
 class SMTLIBSolver(Solver):
+    ncores: Optional[int] = None
+
     def __init__(
         self,
         command: str,
@@ -699,6 +701,7 @@ class Z3Solver(SMTLIBSolver):
         See https://github.com/Z3Prover/z3
         """
         command = info.commands["z3"]
+        self.ncores = 1
 
         init, support_minmax, support_reset, multiple_check = self.__autoconfig()
         super().__init__(
@@ -755,6 +758,7 @@ class YicesSolver(SMTLIBSolver):
     def __init__(self):
         init = info.inits["yices"]
         command = info.commands["yices"]
+        self.ncores = 1
         super().__init__(
             command=command,
             init=init,
@@ -768,6 +772,7 @@ class CVC4Solver(SMTLIBSolver):
     def __init__(self):
         init = info.inits["cvc4"]
         command = info.commands["cvc4"]
+        self.ncores = 1
         super().__init__(command=command, init=init)
 
 
@@ -775,6 +780,7 @@ class BoolectorSolver(SMTLIBSolver):
     def __init__(self, args: List[str] = []):
         init = info.inits["boolector"]
         command = info.commands["boolector"]
+        self.ncores = 1
         super().__init__(command=command, init=init)
 
 
@@ -870,8 +876,8 @@ class PortfolioSolver(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
-        if shutil.which(consts.z3_bin):
-            solvers.append(consts.solver.z3.name)
+        # if shutil.which(consts.z3_bin):
+        #    solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
         if shutil.which(consts.boolector_bin):
@@ -903,6 +909,7 @@ class PortfolioSolver(SMTLIBSolver):
             setattr(self, "optimize", self._optimize_fancy)
         else:
             setattr(self, "optimize", self._optimize_generic)
+        self.ncores = len(solvers)
 
     def _reset(self, constraints: Optional[str] = None) -> None:
         """Auxiliary method to reset the smtlib external solver to initial defaults"""
