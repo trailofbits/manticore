@@ -788,6 +788,7 @@ class SmtlibPortfolio:
         self._procs: List[SmtlibProc] = []
         self._solvers = solvers
         self._debug = debug
+        self._check_sat = False 
 
     def start(self):
         if len(self._procs) == 0:
@@ -806,6 +807,8 @@ class SmtlibPortfolio:
         for proc in self._procs:
             proc.stop()
 
+        self._check_sat = False
+
     def send(self, cmd: str) -> None:
         """
         Send a string to the solver.
@@ -813,19 +816,40 @@ class SmtlibPortfolio:
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         assert len(self._procs) > 0
-        # print(cmd)
+        #print(cmd)
         for proc in self._procs:
+            if not proc.is_started():
+                continue
+ 
             proc.send(cmd)
+
+        if '(check-sat)' in cmd:
+            self._check_sat = True
 
     def recv(self) -> str:
         """Reads the response from the smtlib solver"""
+        tries = 0
+        timeout = 0
+        #print(self._procs)
         while True:
             for proc in self._procs:
-                buf = proc.recv()
-                # print("busy waiting..")
+                if not proc.is_started():
+                    continue
+                buf = proc.recv(wait=False)
                 if buf is not None:
-                    # print(proc._command, "finished!")
+                    #print(proc._command, self._check_sat, "finished!")
+                    if self._check_sat: # if we are testing for sat
+                        for oproc in self._procs: # iterate on all the procs
+                            if oproc is not proc: # and stop all the other ones
+                                oproc.stop()
                     return buf
+                elif tries > 10*len(self._procs):
+                    time.sleep(timeout)
+                    timeout += 0.1
+                else:
+                    tries += 1
+
+
 
     def _restart(self) -> None:
         """Auxiliary to start or restart the external solver"""
@@ -836,6 +860,7 @@ class SmtlibPortfolio:
         return len(self._procs) > 0
 
     def init(self):
+        assert len(self._solvers) == len(self._procs)
         for solver, proc in zip(self._solvers, self._procs):
             for cfg in info.inits[solver]:
                 proc.send(cfg)
@@ -847,8 +872,8 @@ class PortfolioSolver(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
-        # if shutil.which(consts.z3_bin):
-        #    solvers.append(consts.solver.z3.name)
+        if shutil.which(consts.z3_bin):
+            solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
         if shutil.which(consts.boolector_bin):
@@ -858,7 +883,7 @@ class PortfolioSolver(SMTLIBSolver):
                 f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
             )
 
-        # print("Creating portfolio with solvers", solvers)
+        print("Creating portfolio with solvers", solvers)
         assert len(solvers) > 0
         support_reset: bool = False
         support_minmax: bool = False
