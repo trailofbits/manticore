@@ -829,7 +829,7 @@ class SmtlibPortfolio:
     def recv(self) -> str:
         """Reads the response from the smtlib solver"""
         tries = 0
-        timeout = 0
+        timeout = 0.0
         # print(self._procs)
         while True:
             for proc in self._procs:
