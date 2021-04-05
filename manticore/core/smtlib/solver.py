@@ -788,7 +788,7 @@ class SmtlibPortfolio:
         self._procs: List[SmtlibProc] = []
         self._solvers = solvers
         self._debug = debug
-        self._check_sat = False 
+        self._check_sat = False
 
     def start(self):
         if len(self._procs) == 0:
@@ -816,40 +816,38 @@ class SmtlibPortfolio:
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         assert len(self._procs) > 0
-        #print(cmd)
+        # print(cmd)
         for proc in self._procs:
             if not proc.is_started():
                 continue
- 
+
             proc.send(cmd)
 
-        if '(check-sat)' in cmd:
+        if "(check-sat)" in cmd:
             self._check_sat = True
 
     def recv(self) -> str:
         """Reads the response from the smtlib solver"""
         tries = 0
         timeout = 0
-        #print(self._procs)
+        # print(self._procs)
         while True:
             for proc in self._procs:
                 if not proc.is_started():
                     continue
                 buf = proc.recv(wait=False)
                 if buf is not None:
-                    #print(proc._command, self._check_sat, "finished!")
-                    if self._check_sat: # if we are testing for sat
-                        for oproc in self._procs: # iterate on all the procs
-                            if oproc is not proc: # and stop all the other ones
+                    # print(proc._command, self._check_sat, "finished!")
+                    if self._check_sat:  # if we are testing for sat
+                        for oproc in self._procs:  # iterate on all the procs
+                            if oproc is not proc:  # and stop all the other ones
                                 oproc.stop()
                     return buf
-                elif tries > 10*len(self._procs):
+                elif tries > 10 * len(self._procs):
                     time.sleep(timeout)
                     timeout += 0.1
                 else:
                     tries += 1
-
-
 
     def _restart(self) -> None:
         """Auxiliary to start or restart the external solver"""
