@@ -78,7 +78,7 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
-SOLVER_STATS = dict({"unknown": 0, "timeout": 0})
+SOLVER_STATS = {"unknown": 0, "timeout": 0}
 
 
 class SingletonMixin(object):
