@@ -344,8 +344,7 @@ class SMTLIBSolver(Solver):
             raise SolverUnknown(status)
         else:
             assert self.sname is not None
-            if self.sname not in SOLVER_STATS:
-                SOLVER_STATS[self.sname] = 0
+            SOLVER_STATS.setdefault(self.sname, 0)
             SOLVER_STATS[self.sname] += 1
 
         return status == "sat"
@@ -605,8 +604,7 @@ class SMTLIBSolver(Solver):
             _status = self._smtlib.recv()
 
             assert self.sname is not None
-            if self.sname not in SOLVER_STATS:
-                SOLVER_STATS[self.sname] = 0
+            SOLVER_STATS.setdefault(self.sname, 0)
             SOLVER_STATS[self.sname] += 1
 
             if _status == "sat":

@@ -1228,8 +1228,8 @@ class ManticoreBase(Eventful):
                 f.write("%s: %d\n" % (s, n))
 
         if SOLVER_STATS["timeout"] > 0 or SOLVER_STATS["unknown"] > 0:
-            logger.info(
-                "Warning: the SMT solvers returned timeout or unknown for certain program paths. Results could not cover the entire set of possible paths"
+            logger.warning(
+                "The SMT solvers returned timeout or unknown for certain program paths. Results could not cover the entire set of possible paths"
             )
 
         logger.info("Results in %s", self._output.store.uri)
@@ -1243,7 +1243,7 @@ class ManticoreBase(Eventful):
                 context["time_ended"] = time_ended
                 context["time_elapsed"] = time_elapsed
             else:
-                logger.info("Warning: manticore failed to run")
+                logger.warning("Manticore failed to run")
 
         self.wait_for_log_purge()
 
