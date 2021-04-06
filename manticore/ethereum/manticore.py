@@ -391,6 +391,7 @@ class ManticoreEVM(ManticoreBase):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
+        self._lazy_evaluation = True
         super().__init__(initial_state, **kwargs)
         if plugins is not None:
             for p in plugins:
@@ -1947,3 +1948,105 @@ class ManticoreEVM(ManticoreBase):
 
         for proc in report_workers:
             proc.join()
+
+
+    def enable_lazy_evaluation(self):
+        """
+        Enable lazy evaluation (only EVM support)
+        :return:
+        """
+        self._lazy_evaluation = True
+
+    def disable_lazy_evaluation(self):
+        """
+        Disable lazy evaluation (only EVM support)
+        :return:
+        """
+        self._lazy_evaluation = False
+
+    def lazy_evaluation(self) -> bool:
+        return self._lazy_evaluation
+
+
+    def _fork(self, state, expression, policy="ALL", setstate=None):
+        """
+        Fork state on expression concretizations.
+        Using policy build a list of solutions for expression.
+        For the state on each solution setting the new state with setstate
+        For example if expression is a Bool it may have 2 solutions. True or False.
+                                 Parent
+                            (expression = ??)
+                   Child1                         Child2
+            (expression = True)             (expression = False)
+               setstate(True)                   setstate(False)
+        The optional setstate() function is supposed to set the concrete value
+        in the child state.
+        Parent state is removed from the busy list and the child states are added
+        to the ready list.
+        """
+        assert isinstance(expression, Expression), f"{type(expression)} is not an Expression"
+
+        if setstate is None:
+
+            def setstate(x, y):
+                pass
+
+        if (
+            self._lazy_evaluation
+            and state.platform.current_vm
+            and state.platform.current_vm.jumpi_false_branch()
+        ):
+
+            solutions = [
+                (state.platform.current_vm.jumpi_false_branch(), False),
+                (state.platform.current_vm.jumpi_true_branch(), True),
+            ]
+        else:
+
+            if state.platform.current_vm and isinstance(state.platform.current_vm.need_check_jumpdest(), (Expression, bool)):
+                print('checkjumpdst')
+                solutions = state.concretize(expression, policy, additional_symbolics=[state.platform.current_vm.need_check_jumpdest()])
+            else:
+                print('normal')
+                solutions = [(s, False) for s in state.concretize(expression, policy)]
+
+        if not solutions:
+            raise ManticoreError("Forking on unfeasible constraint set")
+
+        print(solutions)
+        logger.debug(
+            "Forking. Policy: %s. Values: %s", policy, ", ".join(f"0x{sol:x}" for sol,_ in solutions)
+        )
+
+        self._publish("will_fork_state", state, expression, solutions, policy)
+
+        # Build and enqueue a state for each solution
+        children = []
+        for solution in solutions:
+            with state as new_state:
+                new_value, jump_cond = solution
+                new_state.constrain(expression == new_value)
+
+                # and set the PC of the new state to the concrete pc-dest
+                # (or other register or memory address to concrete)
+                setstate(new_state, new_value)
+                # TODO: Ideally "jump_cond" should be in the VM and not the platform
+                # However, platform.current_vm is not yet created
+                # So not sure how to do it
+                new_state.platform.set_last_ins_was_true_jumpi(jump_cond)
+                #print(f'{hex(new_value)} -> {jump_cond}')
+
+                # enqueue new_state, assign new state id
+                new_state_id = self._put_state(new_state)
+
+                # maintain a list of children for logging purpose
+                children.append(new_state_id)
+
+        self._publish("did_fork_state", state, expression, solutions, policy, children)
+        logger.debug("Forking current state %r into states %r", state.id, children)
+
+        with self._lock:
+            self._busy_states.remove(state.id)
+            self._remove(state.id)
+            state._id = None
+            self._lock.notify_all()
