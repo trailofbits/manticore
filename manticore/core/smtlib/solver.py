@@ -796,17 +796,18 @@ class SmtlibPortfolio:
         :param command: the shell command to execute
         :param debug: log all messaging
         """
-        self._procs: List[SmtlibProc] = []
-        self._solvers = solvers
+        self._procs: Dict[str, SmtlibProc] = {}
+        self._solvers: List[str] = solvers
         self._debug = debug
-        self._check_sat = False
+        self._skips: Dict[str, int] = {}
 
     def start(self):
         if len(self._procs) == 0:
             for solver in self._solvers:
-                self._procs.append(SmtlibProc(info.commands[solver], self._debug))
+                self._procs[solver] = SmtlibProc(info.commands[solver], self._debug)
+                self._skips[solver] = 0
 
-        for proc in self._procs:
+        for _, proc in self._procs.items():
             proc.start()
 
     def stop(self):
@@ -815,10 +816,9 @@ class SmtlibPortfolio:
         - sending a SIGKILL signal,
         - waiting till the process terminates (so we don't leave a zombie process)
         """
-        for proc in self._procs:
+        for solver, proc in self._procs.items():
             proc.stop()
-
-        self._check_sat = False
+            self._skips[solver] = 0
 
     def send(self, cmd: str) -> None:
         """
@@ -832,35 +832,45 @@ class SmtlibPortfolio:
 
         # print(cmd)
         for i in inds:
-            proc = self._procs[i]
+            solver = self._solvers[i]
+            proc = self._procs[solver]
             if not proc.is_started():
                 continue
 
             proc.send(cmd)
-
-        if "(check-sat)" in cmd:
-            self._check_sat = True
 
     def recv(self) -> str:
         """Reads the response from the smtlib solver"""
         tries = 0
         timeout = 0.0
         inds = list(range(len(self._procs)))
-        # print(self._procs)
+        # print(self._solvers)
         while True:
             shuffle(inds)
             for i in inds:
-                proc = self._procs[i]
-                if not proc.is_started():
-                    # print(proc._command, "is stopped")
-                    continue
+
+                solver = self._solvers[i]
+                proc = self._procs[solver]
+
+                # if not proc.is_started():
+                # print(proc._command, "is stopped")
+                # continue
+
                 buf = proc.recv(wait=False)
                 if buf is not None:
+
+                    if self._skips[solver] > 0:  # we got a result, but it is no longer needed
+                        # print("found a result from", solver, "but it should be skipped")
+                        self._skips[solver] -= 1  # one less result to wait
+                        continue
+
                     # print(proc._command, self._check_sat, "finished!")
-                    if self._check_sat:  # if we are testing for sat
-                        for oproc in self._procs:  # iterate on all the procs
-                            if oproc is not proc:  # and stop all the other ones
-                                oproc.stop()
+                    for osolver in self._solvers:  # iterate on all the solvers
+                        if osolver != solver:  # check for the other ones
+                            self._skips[osolver] += 1  # there is one more result to wait
+                            # print("next result from", osolver, "should be skipped")
+
+                    # print("recv", buf, "by", proc._command, "with skips", self._skips[solver])
                     return buf
                 elif tries > 10 * len(self._procs):
                     time.sleep(timeout)
@@ -878,7 +888,7 @@ class SmtlibPortfolio:
 
     def init(self):
         assert len(self._solvers) == len(self._procs)
-        for solver, proc in zip(self._solvers, self._procs):
+        for solver, proc in self._procs.items():
             for cfg in info.inits[solver]:
                 proc.send(cfg)
 
