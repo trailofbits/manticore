@@ -822,7 +822,7 @@ class EVM(Eventful):
 
         # Use to keep track of the jumpi destination
         # Only save PUSH X values
-        #self._concrete_stack: List[Optional[int]] = []
+        # self._concrete_stack: List[Optional[int]] = []
         # Save the JUMPI false branch, or None if it was not a JUMPI
         self._jumpi_false_branch: Optional[int] = None
         self._jumpi_true_branch: Optional[int] = None
@@ -882,7 +882,6 @@ class EVM(Eventful):
         Return the JUMPI false branch. Return None if the last instruction was not a JUMPI
         """
         return self._jumpi_true_branch
-
 
     def __getstate__(self):
         state = super().__getstate__()

@@ -1949,7 +1949,6 @@ class ManticoreEVM(ManticoreBase):
         for proc in report_workers:
             proc.join()
 
-
     def enable_lazy_evaluation(self):
         """
         Enable lazy evaluation (only EVM support)
@@ -1966,7 +1965,6 @@ class ManticoreEVM(ManticoreBase):
 
     def lazy_evaluation(self) -> bool:
         return self._lazy_evaluation
-
 
     def _fork(self, state, expression, policy="ALL", setstate=None):
         """
@@ -2003,11 +2001,17 @@ class ManticoreEVM(ManticoreBase):
             ]
         else:
 
-            if state.platform.current_vm and isinstance(state.platform.current_vm.need_check_jumpdest(), (Expression, bool)):
-                print('checkjumpdst')
-                solutions = state.concretize(expression, policy, additional_symbolics=[state.platform.current_vm.need_check_jumpdest()])
+            if state.platform.current_vm and isinstance(
+                state.platform.current_vm.need_check_jumpdest(), (Expression, bool)
+            ):
+                print("checkjumpdst")
+                solutions = state.concretize(
+                    expression,
+                    policy,
+                    additional_symbolics=[state.platform.current_vm.need_check_jumpdest()],
+                )
             else:
-                print('normal')
+                print("normal")
                 solutions = [(s, False) for s in state.concretize(expression, policy)]
 
         if not solutions:
@@ -2015,7 +2019,9 @@ class ManticoreEVM(ManticoreBase):
 
         print(solutions)
         logger.debug(
-            "Forking. Policy: %s. Values: %s", policy, ", ".join(f"0x{sol:x}" for sol,_ in solutions)
+            "Forking. Policy: %s. Values: %s",
+            policy,
+            ", ".join(f"0x{sol:x}" for sol, _ in solutions),
         )
 
         self._publish("will_fork_state", state, expression, solutions, policy)
@@ -2034,7 +2040,7 @@ class ManticoreEVM(ManticoreBase):
                 # However, platform.current_vm is not yet created
                 # So not sure how to do it
                 new_state.platform.set_last_ins_was_true_jumpi(jump_cond)
-                #print(f'{hex(new_value)} -> {jump_cond}')
+                # print(f'{hex(new_value)} -> {jump_cond}')
 
                 # enqueue new_state, assign new state id
                 new_state_id = self._put_state(new_state)
