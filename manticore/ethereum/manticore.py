@@ -57,6 +57,11 @@ consts.add(
     True,
     "Only call the solver when it is absolutely necessary to generate testcases.",
 )
+consts.add(
+    "events",
+    False,
+    "Show EVM events in the testcases.",
+)
 
 
 def flagged(flag):
@@ -1682,27 +1687,28 @@ class ManticoreEVM(ManticoreBase):
                 json.dump(txlist, txjson)
 
         # logs
-        with testcase.open_stream("logs") as logs_summary:
-            is_something_symbolic = False
-            for log_item in blockchain.logs:
-                is_log_symbolic = issymbolic(log_item.memlog)
-                is_something_symbolic = is_log_symbolic or is_something_symbolic
-                solved_memlog = state.solve_one(log_item.memlog)
+        if consts.events:
+            with testcase.open_stream("logs") as logs_summary:
+                is_something_symbolic = False
+                for log_item in blockchain.logs:
+                    is_log_symbolic = issymbolic(log_item.memlog)
+                    is_something_symbolic = is_log_symbolic or is_something_symbolic
+                    solved_memlog = state.solve_one(log_item.memlog)
 
-                logs_summary.write("Address: %x\n" % log_item.address)
-                logs_summary.write(
-                    "Memlog: %s (%s) %s\n"
-                    % (
-                        binascii.hexlify(solved_memlog).decode(),
-                        printable_bytes(solved_memlog),
-                        flagged(is_log_symbolic),
-                    )
-                )
-                logs_summary.write("Topics:\n")
-                for i, topic in enumerate(log_item.topics):
+                    logs_summary.write("Address: %x\n" % log_item.address)
                     logs_summary.write(
-                        "\t%d) %x %s" % (i, state.solve_one(topic), flagged(issymbolic(topic)))
+                        "Memlog: %s (%s) %s\n"
+                        % (
+                            binascii.hexlify(solved_memlog).decode(),
+                            printable_bytes(solved_memlog),
+                            flagged(is_log_symbolic),
+                        )
                     )
+                    logs_summary.write("Topics:\n")
+                    for i, topic in enumerate(log_item.topics):
+                        logs_summary.write(
+                            "\t%d) %x %s" % (i, state.solve_one(topic), flagged(issymbolic(topic)))
+                        )
 
         with testcase.open_stream("constraints") as smt_summary:
             smt_summary.write(str(state.constraints))
