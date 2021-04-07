@@ -1421,7 +1421,7 @@ class ManticoreEVM(ManticoreBase):
         return state.can_be_true(True)
 
     def fix_unsound_lazy(self, state):
-         return state.can_be_true(True)
+        return state.can_be_true(True)
 
     def is_sound(self, state):
         soundcheck = state.context.get("soundcheck", None)
@@ -1432,7 +1432,7 @@ class ManticoreEVM(ManticoreBase):
             state.context["soundcheck"] = self.fix_unsound_lazy(state)
 
         if not state.context["soundcheck"]:
-            return state.context["soundcheck"] # no need to keep checking
+            return state.context["soundcheck"]  # no need to keep checking
 
         if consts.sha3 is consts.sha3.symbolicate:
             state.context["soundcheck"] = self.fix_unsound_symbolication_sound(state)
