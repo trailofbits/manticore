@@ -58,7 +58,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         for st in m.all_states:
             if not m.is_sound(st):
                 m.kill_state(st)
-                continue 
+                continue
             found += len(st.platform.logs)
 
         self.assertEqual(found, 0)  # log is not reachable
