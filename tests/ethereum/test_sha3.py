@@ -56,9 +56,9 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
-                continue
+                continue 
             found += len(st.platform.logs)
 
         self.assertEqual(found, 0)  # log is not reachable
@@ -87,7 +87,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -118,7 +118,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -153,7 +153,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -190,7 +190,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -226,7 +226,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -263,7 +263,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -300,7 +300,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -335,7 +335,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             m.generate_testcase(st)
@@ -368,7 +368,7 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
         contract.foo(x)
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
 
@@ -407,7 +407,7 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
         contract.foo(x2)
 
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
 
@@ -459,7 +459,7 @@ class EthSha3TestConcrete(unittest.TestCase):
 
         found = 0
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
             found += len(st.platform.logs)
@@ -514,7 +514,7 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
         contract.foo(x2)
 
         for st in m.all_states:
-            if not m.fix_unsound_symbolication(st):
+            if not m.is_sound(st):
                 m.kill_state(st)
                 continue
 

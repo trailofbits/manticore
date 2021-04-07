@@ -52,6 +52,11 @@ consts.add(
     60 * 60,
     "Default timeout for matching sha3 for unsound states (see unsound symbolication).",
 )
+consts.add(
+    "lazymode",
+    True,
+    "Only call the solver when it is absolutely necessary to generate testcases.",
+)
 
 
 def flagged(flag):
@@ -391,7 +396,7 @@ class ManticoreEVM(ManticoreBase):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        self._lazy_evaluation = True
+        self._lazy_evaluation = consts.lazymode
         super().__init__(initial_state, **kwargs)
         if plugins is not None:
             for p in plugins:
@@ -1415,10 +1420,20 @@ class ManticoreEVM(ManticoreBase):
         # Ok all functions had a match for current state
         return state.can_be_true(True)
 
-    def fix_unsound_symbolication(self, state):
+    def fix_unsound_lazy(self, state):
+         return state.can_be_true(True)
+
+    def is_sound(self, state):
         soundcheck = state.context.get("soundcheck", None)
         if soundcheck is not None:
             return soundcheck
+
+        if consts.lazymode:
+            state.context["soundcheck"] = self.fix_unsound_lazy(state)
+
+        if not state.context["soundcheck"]:
+            return state.context["soundcheck"] # no need to keep checking
+
         if consts.sha3 is consts.sha3.symbolicate:
             state.context["soundcheck"] = self.fix_unsound_symbolication_sound(state)
         elif consts.sha3 is consts.sha3.fake:
@@ -1591,7 +1606,7 @@ class ManticoreEVM(ManticoreBase):
         :rtype: bool
         """
         # Refuse to generate a testcase from an unsound state
-        if not self.fix_unsound_symbolication(state):
+        if not self.is_sound(state):
             raise ManticoreError("Trying to generate a testcase out of an unsound state path")
 
         blockchain = state.platform
@@ -1729,7 +1744,7 @@ class ManticoreEVM(ManticoreBase):
 
         def finalizer(state_id):
             st = self._load(state_id)
-            if self.fix_unsound_symbolication(st):
+            if self.is_sound(st):
                 last_tx = st.platform.last_transaction
                 # Do not generate killed state if only_alive_states is True
                 if only_alive_states and last_tx.result in {"REVERT", "THROW", "TXERROR"}:
@@ -1760,7 +1775,7 @@ class ManticoreEVM(ManticoreBase):
 
         global_findings = set()
         for state in self.all_states:
-            if not self.fix_unsound_symbolication(state):
+            if not self.is_sound(state):
                 continue
             for detector in self.detectors.values():
                 for address, pc, finding, at_init, constraint in detector.get_findings(state):
@@ -1889,7 +1904,7 @@ class ManticoreEVM(ManticoreBase):
         _ready_states = self._ready_states
         for state_id in _ready_states:
             state = self._load(state_id)
-            if self.fix_unsound_symbolication(state):
+            if self.is_sound(state):
                 yield state
                 # Re-save the state in case the user changed its data
                 self._save(state, state_id=state_id)
@@ -1911,7 +1926,7 @@ class ManticoreEVM(ManticoreBase):
         _ready_states = self._ready_states
         for state_id in _ready_states:
             state = self._load(state_id)
-            if self.fix_unsound_symbolication(state):
+            if self.is_sound(state):
                 yield state
                 # Re-save the state in case the user changed its data
                 self._save(state, state_id=state_id)
@@ -1926,7 +1941,7 @@ class ManticoreEVM(ManticoreBase):
         # Fix unsoundness in all states
         def finalizer(state_id):
             state = self._load(state_id)
-            self.fix_unsound_symbolication(state)
+            self.is_sound(state)
             self._save(state, state_id=state_id)
 
         def worker_finalize(q):
