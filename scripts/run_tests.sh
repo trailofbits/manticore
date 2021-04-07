@@ -56,7 +56,7 @@ make_vmtests(){
     if  [ ! -f ethereum_vm/.done ]; then
         echo "Automaking VMTests" `pwd`
         cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
-        rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
+        rm -Rf vmtests; git clone https://github.com/ethereum/tests -b 0.8.2 --depth=1 vmtests
         for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -o ethereum_vm/VMTests_concrete; done
         rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
         rm -rf ./vmtests
