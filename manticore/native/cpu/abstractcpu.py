@@ -567,7 +567,7 @@ class Cpu(Eventful):
         return self._icount
 
     @property
-    def last_executed_pc(self) -> int:
+    def last_executed_pc(self) -> Optional[int]:
         return self._last_executed_pc
 
     @property
