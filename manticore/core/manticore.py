@@ -380,7 +380,7 @@ class ManticoreBase(Eventful):
             raise TypeError(f"Invalid initial_state type: {type(initial_state).__name__}")
         self._put_state(initial_state)
 
-        nworkers = min(consts.procs / initial_state._solver.ncores, 1)
+        nworkers = max(consts.procs / initial_state._solver.ncores, 1)
         nworkers = int(nworkers)
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(nworkers)]
