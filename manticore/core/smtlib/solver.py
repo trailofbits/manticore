@@ -77,7 +77,7 @@ class SolverType(config.ConfigEnum):
 
 consts.add(
     "solver",
-    default=SolverType.portfolio,
+    default=SolverType.auto,
     description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
 )
 
