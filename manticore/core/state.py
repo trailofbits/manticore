@@ -360,7 +360,7 @@ class StateBase(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=7):
+    def concretize(self, symbolic, policy, maxcount=7, additional_symbolics=None):
         """This finds a set of solutions for symbolic using policy.
 
         This limits the number of solutions returned to `maxcount` to avoid
@@ -412,9 +412,19 @@ class StateBase(Eventful):
                 vals = (True,)
         else:
             assert policy == "ALL"
-            vals = self._solver.get_all_values(
-                self._constraints, symbolic, maxcnt=maxcount, silent=True
-            )
+            if additional_symbolics is not None:
+                print(symbolic, additional_symbolics)
+                val_1 = self._solver.get_all_values(
+                    self._constraints, symbolic, maxcnt=maxcount, silent=True
+                )
+                val_2 = self._solver.get_all_values(
+                    self._constraints, additional_symbolics, maxcnt=maxcount, silent=True
+                )
+                return [val_1 + val_2]
+            else:
+                vals = self._solver.get_all_values(
+                    self._constraints, symbolic, maxcnt=maxcount, silent=True
+                )
 
         return tuple(set(vals))
 

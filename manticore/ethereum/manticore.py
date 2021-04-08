@@ -1970,21 +1970,14 @@ class ManticoreEVM(ManticoreBase):
         for proc in report_workers:
             proc.join()
 
-    def enable_lazy_evaluation(self):
+    def set_lazy_evaluation(self, flag):
         """
-        Enable lazy evaluation (only EVM support)
+        Set lazy evaluation flag (only EVM support)
         :return:
         """
-        self._lazy_evaluation = True
+        self._lazy_evaluation = flag
 
-    def disable_lazy_evaluation(self):
-        """
-        Disable lazy evaluation (only EVM support)
-        :return:
-        """
-        self._lazy_evaluation = False
-
-    def lazy_evaluation(self) -> bool:
+    def get_lazy_evaluation(self) -> bool:
         return self._lazy_evaluation
 
     def _fork(self, state, expression, policy="ALL", setstate=None):
@@ -2029,7 +2022,7 @@ class ManticoreEVM(ManticoreBase):
                 solutions = state.concretize(
                     expression,
                     policy,
-                    additional_symbolics=[state.platform.current_vm.need_check_jumpdest()],
+                    additional_symbolics=state.platform.current_vm.need_check_jumpdest(),
                 )
             else:
                 print("normal")

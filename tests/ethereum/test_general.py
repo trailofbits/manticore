@@ -73,7 +73,7 @@ class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
         smtcfg = config.get_group("smt")
         with smtcfg.temp_vals():
-            smtcfg.solver = smtcfg.solver.yices
+            smtcfg.solver = smtcfg.solver.cvc4
 
             filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
             f = io.StringIO()
@@ -726,6 +726,7 @@ class EthTests(unittest.TestCase):
 
         This test checks the fix for this issue.
         """
+        self.mevm.set_lazy_evaluation(False)
         self.mevm.register_detector(DetectIntegerOverflow())
         c = self.mevm.solidity_create_contract(
             """
@@ -819,7 +820,7 @@ class EthTests(unittest.TestCase):
             self.mevm.make_symbolic_value(),
             signature="(uint256,uint256)",
         )
-        for st in self.mevm.all_states:
+        for st in self.mevm.all_sound_states:
             z = st.solve_one(st.platform.transactions[1].return_data)
             break
         self.assertEqual(ABI.deserialize("(uint256)", z)[0], 2)
