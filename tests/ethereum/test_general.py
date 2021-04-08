@@ -753,6 +753,7 @@ class EthTests(unittest.TestCase):
             }
         }
         """
+        self.mevm.set_lazy_evaluation(False)
         consts = config.get_group("evm")
         consts.events = True
         user_account = self.mevm.create_account(balance=10 ** 10)
@@ -1341,7 +1342,7 @@ class EthTests(unittest.TestCase):
         )
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
 
-        results = [state.platform.all_transactions[-1].result for state in m.all_states]
+        results = [state.platform.all_transactions[-1].result for state in m.all_sound_states]
         self.assertListEqual(sorted(results), ["STOP", "STOP"])
 
     def test_plugins_enable(self):
@@ -1364,6 +1365,7 @@ class EthTests(unittest.TestCase):
         aplug = examplePlugin()
 
         m: ManticoreEVM = ManticoreEVM()
+        m.set_lazy_evaluation(False)
         m.register_plugin(aplug)
 
         creator_account = m.create_account(balance=10000000000)

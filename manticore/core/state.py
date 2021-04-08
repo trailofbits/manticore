@@ -420,7 +420,7 @@ class StateBase(Eventful):
                 val_2 = self._solver.get_all_values(
                     self._constraints, additional_symbolics, maxcnt=maxcount, silent=True
                 )
-                return [val_1 + val_2]
+                return list(zip(val_1, val_2))
             else:
                 vals = self._solver.get_all_values(
                     self._constraints, symbolic, maxcnt=maxcount, silent=True
