@@ -247,6 +247,8 @@ class SmtlibProc:
     def __readline_and_count(self, wait):
         assert self._proc
         assert self._proc.stdout
+        tries = 0
+        timeout = 0.0
         buf = None
 
         while buf is None:
@@ -255,7 +257,11 @@ class SmtlibProc:
             except TypeError:
                 if not wait:
                     return None, None, None
-                # time.sleep(1)
+                elif tries > 10:
+                    time.sleep(timeout)
+                    timeout += 0.1
+                else:
+                    tries += 1
 
         # If debug is enabled check if the solver reports a syntax error
         # Error messages may contain an unbalanced parenthesis situation
@@ -285,6 +291,9 @@ class SmtlibProc:
         bufl = [buf]
         while left != right:
             buf, l, r = self.__readline_and_count(wait)
+            if buf is None and l is None and r is None:  # timeout
+                return None
+
             bufl.append(buf)
             left += l
             right += r
