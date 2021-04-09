@@ -2018,20 +2018,17 @@ class ManticoreEVM(ManticoreBase):
             if state.platform.current_vm and isinstance(
                 state.platform.current_vm.need_check_jumpdest(), (Expression, bool)
             ):
-                print("checkjumpdst")
                 solutions = state.concretize(
                     expression,
                     policy,
                     additional_symbolics=state.platform.current_vm.need_check_jumpdest(),
                 )
             else:
-                print("normal")
                 solutions = [(s, False) for s in state.concretize(expression, policy)]
 
         if not solutions:
             raise ManticoreError("Forking on unfeasible constraint set")
 
-        print(solutions)
         logger.debug(
             "Forking. Policy: %s. Values: %s",
             policy,
@@ -2054,7 +2051,6 @@ class ManticoreEVM(ManticoreBase):
                 # However, platform.current_vm is not yet created
                 # So not sure how to do it
                 new_state.platform.set_last_ins_was_true_jumpi(jump_cond)
-                # print(f'{hex(new_value)} -> {jump_cond}')
 
                 # enqueue new_state, assign new state id
                 new_state_id = self._put_state(new_state)

@@ -73,7 +73,7 @@ class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
         smtcfg = config.get_group("smt")
         with smtcfg.temp_vals():
-            smtcfg.solver = smtcfg.solver.cvc4
+            smtcfg.solver = smtcfg.solver.yices
 
             filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
             f = io.StringIO()
