@@ -123,6 +123,7 @@ def manticore_verifier(
     print("# Welcome to manticore-verifier")
     # Main manticore manager object
     m = ManticoreEVM()
+    m.set_lazy_evaluation(False)
     # avoid all human level tx that are marked as constant (have no effect on the storage)
     filter_out_human_constants = FilterFunctions(
         regexp=r".*", depth="human", mutability="constant", include=False
