@@ -207,6 +207,7 @@ class SmtlibProc:
         self._proc: Optional[Popen] = None
         self._command = command
         self._debug = debug
+        self._last_buf = ""
 
     def start(self):
         """Spawns POpen solver process"""
@@ -224,6 +225,7 @@ class SmtlibProc:
         # stdout should be non-blocking
         fl = fcntl.fcntl(self._proc.stdout, fcntl.F_GETFL)
         fcntl.fcntl(self._proc.stdout, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        self._last_buf = ""
 
     def stop(self):
         """
@@ -244,33 +246,6 @@ class SmtlibProc:
             # No need to wait for termination, zombies avoided.
         self._proc = None
 
-    def __readline_and_count(self, wait):
-        assert self._proc
-        assert self._proc.stdout
-        tries = 0
-        timeout = 0.0
-        buf = None
-
-        while buf is None:
-            try:
-                buf = self._proc.stdout.readline()
-            except TypeError:
-                if not wait:
-                    return None, None, None
-                elif tries > 10:
-                    time.sleep(timeout)
-                    timeout += 0.1
-                else:
-                    tries += 1
-
-        # If debug is enabled check if the solver reports a syntax error
-        # Error messages may contain an unbalanced parenthesis situation
-        if self._debug:
-            if "(error" in buf:
-                raise SolverException(f"Error in smtlib: {buf}")
-        lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
-        return buf, lparen, rparen
-
     def send(self, cmd: str) -> None:
         """
         Send a string to the solver.
@@ -284,21 +259,45 @@ class SmtlibProc:
 
     def recv(self, wait=True) -> Optional[str]:
         """Reads the response from the smtlib solver"""
-        buf, left, right = self.__readline_and_count(wait)
-        if buf is None and left is None and right is None:  # timeout
-            return None
+        tries = 0
+        timeout = 0.0
 
-        bufl = [buf]
-        while left != right:
-            buf, l, r = self.__readline_and_count(wait)
-            if buf is None and l is None and r is None:  # timeout
-                return None
+        buf = ""
+        if self._last_buf != "":
+            print("restoring state", self._last_buf)
+            buf = buf + self._last_buf
 
-            bufl.append(buf)
-            left += l
-            right += r
+        while True:
+            try:
+                buf = buf + self._proc.stdout.read()  # type: ignore
+                buf = buf.strip()
+                # print(buf)
+            except TypeError:
+                if not wait:
+                    print("saving state", buf)
+                    self._last_buf = buf
+                    return None
+                else:
+                    tries += 1
 
-        buf = "".join(bufl).strip()
+            if buf == "":
+                continue
+
+            lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
+            if lparen == rparen and buf != "":
+                break
+
+            if tries > 3:
+                print("sleeping waiting for recv solver", timeout)
+                time.sleep(timeout)
+                timeout += 0.1
+
+        # print("recv", buf)
+        buf = buf.strip()
+        self._last_buf = ""
+
+        if "(error" in buf:
+            raise SolverException(f"Error in smtlib: {buf}")
 
         if self._debug:
             logger.debug("<%s", buf)
@@ -808,13 +807,12 @@ class SmtlibPortfolio:
         self._procs: Dict[str, SmtlibProc] = {}
         self._solvers: List[str] = solvers
         self._debug = debug
-        self._skips: Dict[str, int] = {}
 
     def start(self):
         if len(self._procs) == 0:
             for solver in self._solvers:
                 self._procs[solver] = SmtlibProc(info.commands[solver], self._debug)
-                self._skips[solver] = 0
+                self._skips[solver] = False
 
         for _, proc in self._procs.items():
             proc.start()
@@ -827,7 +825,7 @@ class SmtlibPortfolio:
         """
         for solver, proc in self._procs.items():
             proc.stop()
-            self._skips[solver] = 0
+            self._skips[solver] = False
 
     def send(self, cmd: str) -> None:
         """
@@ -839,7 +837,7 @@ class SmtlibPortfolio:
         inds = list(range(len(self._procs)))
         shuffle(inds)
 
-        # print(cmd)
+        # print("send:", cmd)
         for i in inds:
             solver = self._solvers[i]
             proc = self._procs[solver]
@@ -861,31 +859,30 @@ class SmtlibPortfolio:
                 solver = self._solvers[i]
                 proc = self._procs[solver]
 
-                # if not proc.is_started():
-                # print(proc._command, "is stopped")
-                # continue
+                if not proc.is_started():
+                    # print(proc._command, "is stopped")
+                    continue
 
                 buf = proc.recv(wait=False)
                 if buf is not None:
 
-                    if self._skips[solver] > 0:  # we got a result, but it is no longer needed
-                        # print("found a result from", solver, "but it should be skipped")
-                        self._skips[solver] -= 1  # one less result to wait
-                        continue
-
                     # print(proc._command, self._check_sat, "finished!")
                     for osolver in self._solvers:  # iterate on all the solvers
                         if osolver != solver:  # check for the other ones
-                            self._skips[osolver] += 1  # there is one more result to wait
-                            # print("next result from", osolver, "should be skipped")
+                            self._procs[osolver].stop()  # stop them
 
                     # print("recv", buf, "by", proc._command, "with skips", self._skips[solver])
+                    # print("recv", buf)
                     return buf
-                elif tries > 10 * len(self._procs):
-                    time.sleep(timeout)
-                    timeout += 0.1
                 else:
                     tries += 1
+
+            if tries > 10 * len(self._procs):
+                # print("sleeping", timeout)
+                time.sleep(timeout)
+                timeout += 0.1
+                # if (timeout >= 4.5):
+                #    assert False
 
     def _restart(self) -> None:
         """Auxiliary to start or restart the external solver"""
@@ -908,8 +905,8 @@ class PortfolioSolver(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
-        if shutil.which(consts.z3_bin):
-            solvers.append(consts.solver.z3.name)
+        # if shutil.which(consts.z3_bin):
+        #    solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
         if shutil.which(consts.boolector_bin):
