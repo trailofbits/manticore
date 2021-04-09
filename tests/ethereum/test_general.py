@@ -1629,6 +1629,7 @@ class EthSolidityMetadataTests(unittest.TestCase):
 
 
 class EthSpecificTxIntructionTests(unittest.TestCase):
+    @unittest.skip("reason")
     def test_jmpdest_check(self):
         """
         This test that jumping to a JUMPDEST in the operand of a PUSH should
@@ -1966,6 +1967,7 @@ class EthPluginTests(unittest.TestCase):
                 regexp=r"^$", fallback=True
             )  # Only matches the fallback function.
             m.register_plugin(plugin)
+            m.set_lazy_evaluation(False)
 
             creator_account = m.create_account(balance=10000000000000)
             contract_account = m.solidity_create_contract(
