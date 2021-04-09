@@ -212,7 +212,8 @@ def gen_body(name, testcase):
                       price={price})"""
 
     body += f"""
-        for state in m.all_sound_states:
+        m.finalize()
+        for state in m.all_states:
             world = state.platform
             self.assertEqual(used_gas_plugin.used_gas, {blockheader['gasUsed']})
             
