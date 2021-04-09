@@ -264,7 +264,7 @@ class SmtlibProc:
 
         buf = ""
         if self._last_buf != "":
-            print("restoring state", self._last_buf)
+            # print("restoring state", self._last_buf)
             buf = buf + self._last_buf
 
         while True:
@@ -275,7 +275,7 @@ class SmtlibProc:
             except TypeError:
                 if not wait:
                     if buf != "":
-                        print("saving state", buf)
+                        # print("saving state", buf)
                         self._last_buf = buf
                     return None
                 else:
@@ -289,7 +289,7 @@ class SmtlibProc:
                 break
 
             if tries > 3:
-                print("sleeping waiting for recv solver", timeout)
+                # print("sleeping waiting for recv solver", timeout)
                 time.sleep(timeout)
                 timeout += 0.1
 
