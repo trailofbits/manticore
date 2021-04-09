@@ -274,8 +274,9 @@ class SmtlibProc:
                 # print(buf)
             except TypeError:
                 if not wait:
-                    print("saving state", buf)
-                    self._last_buf = buf
+                    if buf != "":
+                        print("saving state", buf)
+                        self._last_buf = buf
                     return None
                 else:
                     tries += 1
@@ -812,7 +813,6 @@ class SmtlibPortfolio:
         if len(self._procs) == 0:
             for solver in self._solvers:
                 self._procs[solver] = SmtlibProc(info.commands[solver], self._debug)
-                self._skips[solver] = False
 
         for _, proc in self._procs.items():
             proc.start()
@@ -825,7 +825,6 @@ class SmtlibPortfolio:
         """
         for solver, proc in self._procs.items():
             proc.stop()
-            self._skips[solver] = False
 
     def send(self, cmd: str) -> None:
         """
