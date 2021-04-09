@@ -264,18 +264,15 @@ class SmtlibProc:
 
         buf = ""
         if self._last_buf != "":
-            # print("restoring state", self._last_buf)
             buf = buf + self._last_buf
 
         while True:
             try:
                 buf = buf + self._proc.stdout.read()  # type: ignore
                 buf = buf.strip()
-                # print(buf)
             except TypeError:
                 if not wait:
                     if buf != "":
-                        # print("saving state", buf)
                         self._last_buf = buf
                     return None
                 else:
@@ -289,11 +286,9 @@ class SmtlibProc:
                 break
 
             if tries > 3:
-                # print("sleeping waiting for recv solver", timeout)
                 time.sleep(timeout)
                 timeout += 0.1
 
-        # print("recv", buf)
         buf = buf.strip()
         self._last_buf = ""
 
@@ -836,7 +831,6 @@ class SmtlibPortfolio:
         inds = list(range(len(self._procs)))
         shuffle(inds)
 
-        # print("send:", cmd)
         for i in inds:
             solver = self._solvers[i]
             proc = self._procs[solver]
@@ -859,29 +853,22 @@ class SmtlibPortfolio:
                 proc = self._procs[solver]
 
                 if not proc.is_started():
-                    # print(proc._command, "is stopped")
                     continue
 
                 buf = proc.recv(wait=False)
                 if buf is not None:
 
-                    # print(proc._command, self._check_sat, "finished!")
                     for osolver in self._solvers:  # iterate on all the solvers
                         if osolver != solver:  # check for the other ones
                             self._procs[osolver].stop()  # stop them
 
-                    # print("recv", buf, "by", proc._command, "with skips", self._skips[solver])
-                    # print("recv", buf)
                     return buf
                 else:
                     tries += 1
 
             if tries > 10 * len(self._procs):
-                # print("sleeping", timeout)
                 time.sleep(timeout)
                 timeout += 0.1
-                # if (timeout >= 4.5):
-                #    assert False
 
     def _restart(self) -> None:
         """Auxiliary to start or restart the external solver"""
@@ -904,6 +891,7 @@ class PortfolioSolver(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
+        # not sure we want z3 here, since it tends to be slower
         # if shutil.which(consts.z3_bin):
         #    solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
