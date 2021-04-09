@@ -910,7 +910,7 @@ class PortfolioSolver(SMTLIBSolver):
             solvers.append(consts.solver.cvc4.name)
         if shutil.which(consts.boolector_bin):
             solvers.append(consts.solver.boolector.name)
-        else:
+        if solvers == []:
             raise SolverException(
                 f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
             )
