@@ -48,6 +48,7 @@ class ManticornTest(unittest.TestCase):
 
         should_match = {
             "RAX",
+            "RCX",
             "RDX",
             "RBX",
             "RSP",
@@ -100,12 +101,10 @@ class ManticornTest(unittest.TestCase):
             for reg in should_match:
                 concrete_regs[reg] = getattr(st.platform.current, reg)
 
-        for reg in should_match:
-            self.assertEqual(
-                concrete_regs[reg],
-                normal_regs[reg],
-                f"Mismatch in {reg}: {concrete_regs[reg]} != {normal_regs[reg]}",
-            )
+        concrete_regs_vals = {reg: val for reg, val in concrete_regs.items() if reg in should_match}
+        normal_regs_vals = {reg: val for reg, val in normal_regs.items() if reg in should_match}
+        self.maxDiff = None
+        self.assertDictEqual(concrete_regs_vals, normal_regs_vals)
 
     def test_integration_basic_stdout(self):
         self.m.run()
