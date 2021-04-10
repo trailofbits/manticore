@@ -191,7 +191,7 @@ class ConcreteUnicornEmulator:
         self._emu.mem_protect(start, size, convert_permissions(perms))
 
     def get_unicorn_pc(self):
-        """ Get the program counter from Unicorn regardless of architecture.
+        """Get the program counter from Unicorn regardless of architecture.
         Legacy method, since this module only works on x86."""
         if self._cpu.arch == CS_ARCH_ARM:
             return self._emu.reg_read(UC_ARM_REG_R15)

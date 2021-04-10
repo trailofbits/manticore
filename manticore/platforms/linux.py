@@ -1758,17 +1758,17 @@ class Linux(Platform):
         return len(data)
 
     def sys_write(self, fd: int, buf, count) -> int:
-        """ write - send bytes through a file descriptor
-          The write system call writes up to count bytes from the buffer pointed
-          to by buf to the file descriptor fd. If count is zero, write returns 0
-          and optionally sets *tx_bytes to zero.
+        """write - send bytes through a file descriptor
+        The write system call writes up to count bytes from the buffer pointed
+        to by buf to the file descriptor fd. If count is zero, write returns 0
+        and optionally sets *tx_bytes to zero.
 
-          :param fd            a valid file descriptor
-          :param buf           a memory buffer
-          :param count         number of bytes to send
-          :return: 0          Success
-                    EBADF      fd is not a valid file descriptor or is not open.
-                    EFAULT     buf or tx_bytes points to an invalid address.
+        :param fd            a valid file descriptor
+        :param buf           a memory buffer
+        :param count         number of bytes to send
+        :return: 0          Success
+                  EBADF      fd is not a valid file descriptor or is not open.
+                  EFAULT     buf or tx_bytes points to an invalid address.
         """
         data: bytes = bytes()
         cpu = self.current
@@ -2773,10 +2773,10 @@ class Linux(Platform):
         return 0
 
     def sched(self) -> None:
-        """ Yield CPU.
-            This will choose another process from the running list and change
-            current running process. May give the same cpu if only one running
-            process.
+        """Yield CPU.
+        This will choose another process from the running list and change
+        current running process. May give the same cpu if only one running
+        process.
         """
         if len(self.procs) > 1:
             logger.debug("SCHED:")
@@ -2803,9 +2803,9 @@ class Linux(Platform):
         self._current = next_running_idx
 
     def wait(self, readfds, writefds, timeout) -> None:
-        """ Wait for file descriptors or timeout.
-            Adds the current process in the correspondent waiting list and
-            yield the cpu to another running process.
+        """Wait for file descriptors or timeout.
+        Adds the current process in the correspondent waiting list and
+        yield the cpu to another running process.
         """
         logger.debug("WAIT:")
         logger.debug(
@@ -2849,7 +2849,7 @@ class Linux(Platform):
             self._current = procid
 
     def connections(self, fd: int) -> Optional[int]:
-        """ File descriptors are connected to each other like pipes, except
+        """File descriptors are connected to each other like pipes, except
         for 0, 1, and 2. If you write to FD(N) for N >=3, then that comes
         out from FD(N+1) and vice-versa
         """
@@ -2909,13 +2909,15 @@ class Linux(Platform):
                 self.check_timers()
                 self.sched()
         except (Interruption, Syscall) as e:
+            index: int = self._syscall_abi.syscall_number()
+            self._syscall_abi._cpu._publish("will_invoke_syscall", index)
             try:
                 self.syscall()
                 if hasattr(e, "on_handled"):
                     e.on_handled()
+                self._syscall_abi._cpu._publish("did_invoke_syscall", index)
             except RestartSyscall:
                 pass
-
         return True
 
     # 64bit syscalls

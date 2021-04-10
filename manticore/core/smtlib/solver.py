@@ -40,6 +40,7 @@ class SolverType(config.ConfigEnum):
     cvc4 = "cvc4"
     yices = "yices"
     auto = "auto"
+    boolector = "boolector"
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ consts.add(
 consts.add("z3_bin", default="z3", description="Z3 solver binary to use")
 consts.add("cvc4_bin", default="cvc4", description="CVC4 solver binary to use")
 consts.add("yices_bin", default="yices-smt2", description="Yices solver binary to use")
+consts.add("boolector_bin", default="boolector", description="Boolector solver binary to use")
 
 
 consts.add("defaultunsat", default=True, description="Consider solver timeouts as unsat core")
@@ -63,8 +65,8 @@ consts.add(
 
 consts.add(
     "solver",
-    default=SolverType.z3,
-    description="Choose default smtlib2 solver (z3, yices, cvc4, auto)",
+    default=SolverType.auto,
+    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
 )
 
 # Regular expressions used by the solver
@@ -168,7 +170,7 @@ Version = collections.namedtuple("Version", "major minor patch")
 
 class SmtlibProc:
     def __init__(self, command: str, debug: bool = False):
-        """ Single smtlib interactive process
+        """Single smtlib interactive process
 
         :param command: the shell command to execute
         :param debug: log all messaging
@@ -263,7 +265,6 @@ class SMTLIBSolver(Solver):
         self,
         command: str,
         init: Sequence[str] = None,
-        value_fmt: int = 16,
         support_reset: bool = False,
         support_minmax: bool = False,
         support_pushpop: bool = False,
@@ -282,15 +283,6 @@ class SMTLIBSolver(Solver):
         if init is None:
             init = tuple()
         self._init = init
-        self._get_value_fmt = (
-            {
-                2: RE_GET_EXPR_VALUE_FMT_BIN,
-                10: RE_GET_EXPR_VALUE_FMT_DEC,
-                16: RE_GET_EXPR_VALUE_FMT_HEX,
-            }[value_fmt],
-            value_fmt,
-        )
-
         self._support_minmax = support_minmax
         self._support_reset = support_reset
         self._support_pushpop = support_pushpop
@@ -351,15 +343,25 @@ class SMTLIBSolver(Solver):
 
     def __getvalue_bv(self, expression_str: str) -> int:
         self._smtlib.send(f"(get-value ({expression_str}))")
-        pattern, base = self._get_value_fmt
-        m = pattern.match(self._smtlib.recv())
+        t = self._smtlib.recv()
+        base = 2
+        m = RE_GET_EXPR_VALUE_FMT_BIN.match(t)
+        if m is None:
+            m = RE_GET_EXPR_VALUE_FMT_DEC.match(t)
+            base = 10
+        if m is None:
+            m = RE_GET_EXPR_VALUE_FMT_HEX.match(t)
+            base = 16
+        if m is None:
+            raise SolverError(f"I don't know how to parse the value {str(t)} from {expression_str}")
+
         expr, value = m.group("expr"), m.group("value")  # type: ignore
         return int(value, base)
 
     def __getvalue_bool(self, expression_str):
         self._smtlib.send(f"(get-value ({expression_str}))")
         ret = self._smtlib.recv()
-        return {"true": True, "false": False}[ret[2:-2].split(" ")[1]]
+        return {"true": True, "false": False, "#b0": False, "#b1": True}[ret[2:-2].split(" ")[1]]
 
     def _getvalue(self, expression) -> Union[int, bool, bytes]:
         """
@@ -657,7 +659,6 @@ class Z3Solver(SMTLIBSolver):
         super().__init__(
             command=command,
             init=init,
-            value_fmt=16,
             support_minmax=support_minmax,
             support_reset=support_reset,
             multiple_check=multiple_check,
@@ -722,11 +723,10 @@ class Z3Solver(SMTLIBSolver):
 class YicesSolver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)"]
-        command = f"{consts.yices_bin} --timeout={consts.timeout * 1000}  --incremental"
+        command = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
         super().__init__(
             command=command,
             init=init,
-            value_fmt=2,
             debug=False,
             support_minmax=False,
             support_reset=False,
@@ -736,8 +736,15 @@ class YicesSolver(SMTLIBSolver):
 class CVC4Solver(SMTLIBSolver):
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"{consts.cvc4_bin} --lang=smt2 --incremental"
-        super().__init__(command=command, value_fmt=10, init=init)
+        command = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
+        super().__init__(command=command, init=init)
+
+
+class BoolectorSolver(SMTLIBSolver):
+    def __init__(self):
+        init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+        command = f"{consts.boolector_bin} --time={consts.timeout} -i"
+        super().__init__(command=command, init=init)
 
 
 class SelectedSolver:
@@ -753,12 +760,19 @@ class SelectedSolver:
                     cls.choice = consts.solver.z3
                 elif shutil.which(consts.cvc4_bin):
                     cls.choice = consts.solver.cvc4
+                elif shutil.which(consts.boolector_bin):
+                    cls.choice = consts.solver.boolector
                 else:
                     raise SolverException(
-                        f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin})."
+                        f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
                     )
         else:
             cls.choice = consts.solver
 
-        SelectedSolver = {"cvc4": CVC4Solver, "yices": YicesSolver, "z3": Z3Solver}[cls.choice.name]
+        SelectedSolver = {
+            "cvc4": CVC4Solver,
+            "boolector": BoolectorSolver,
+            "yices": YicesSolver,
+            "z3": Z3Solver,
+        }[cls.choice.name]
         return SelectedSolver.instance()

@@ -1,5 +1,7 @@
 import unittest
 import os
+import sys
+from typing import Set, Type
 
 from manticore.core.smtlib import (
     ConstraintSet,
@@ -14,7 +16,7 @@ from manticore.core.smtlib import (
     replace,
     BitVecConstant,
 )
-from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver
+from manticore.core.smtlib.solver import Z3Solver, YicesSolver, CVC4Solver, BoolectorSolver
 from manticore.core.smtlib.expression import *
 from manticore.utils.helpers import pickle_dumps
 from manticore import config
@@ -24,43 +26,6 @@ from manticore import config
 #                level = logging.DEBUG)
 
 DIRPATH = os.path.dirname(__file__)
-
-
-class RegressionTest(unittest.TestCase):
-    def test_related_to(self):
-        import gzip
-        import pickle, sys
-
-        filename = os.path.abspath(os.path.join(DIRPATH, "data", "ErrRelated.pkl.gz"))
-
-        # A constraint set and a contraint caught in the act of making related_to fail
-        constraints, constraint = pickle.loads(gzip.open(filename, "rb").read())
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        ground_truth = Z3Solver.instance().can_be_true(constraints, constraint)
-        self.assertEqual(ground_truth, False)
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(
-            ground_truth,
-            Z3Solver.instance().can_be_true(constraints.related_to(constraints), constraint),
-        )
-
-        # Replace
-        new_constraint = Operators.UGE(
-            Operators.SEXTEND(BitVecConstant(256, 0x1A), 256, 512) * BitVecConstant(512, 1),
-            0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000,
-        )
-        self.assertEqual(translate_to_smtlib(constraint), translate_to_smtlib(new_constraint))
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(ground_truth, Z3Solver.instance().can_be_true(constraints, new_constraint))
-
-        Z3Solver.instance().can_be_true.cache_clear()
-        self.assertEqual(
-            ground_truth,
-            Z3Solver.instance().can_be_true(constraints.related_to(new_constraint), new_constraint),
-        )
 
 
 """
@@ -100,6 +65,185 @@ class Z3Specific(unittest.TestCase):
 """
 
 
+class ExpressionPropertiesTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
+    def test_xslotted(self):
+        """Test that XSlotted multi inheritance classes uses same amount
+        of memory than a single class object with slots
+        """
+
+        class Base(object, metaclass=XSlotted, abstract=True):
+            __xslots__ = ("t",)
+            pass
+
+        class A(Base, abstract=True):
+            __xslots__ = ("a",)
+            pass
+
+        class B(Base, abstract=True):
+            __xslots__ = ("b",)
+            pass
+
+        class C(A, B):
+            pass
+
+        class X(object):
+            __slots__ = ("t", "a", "b")
+
+        c = C()
+        c.a = 1
+        c.b = 2
+        c.t = 10
+
+        x = X()
+        x.a = 1
+        x.b = 2
+        x.t = 20
+
+        self.assertEqual(sys.getsizeof(c), sys.getsizeof(x))
+
+    def test_Expression(self):
+        # Used to check if all Expression have test
+        checked = set()
+
+        def check(ty: Type, pickle_size=None, sizeof=None, **kwargs):
+            x = ty(**kwargs)
+            """
+            print(
+                type(x),
+                "\n  Pickle size:",
+                len(pickle_dumps(x)),
+                "\n  GetSizeOf:",
+                sys.getsizeof(x),
+                "\n  Slotted:",
+                not hasattr(x, "__dict__"),
+            )
+            """
+            self.assertEqual(len(pickle_dumps(x)), pickle_size)
+            if sys.version_info[1] == 6:  # Python 3.6
+                self.assertEqual(sys.getsizeof(x), sizeof)
+            elif sys.version_info[1] == 7:  # Python 3.7
+                self.assertEqual(sys.getsizeof(x), sizeof + 8)
+            elif sys.version_info[1] >= 8:  # Python 3.8+
+                self.assertEqual(sys.getsizeof(x), sizeof - 8)
+            self.assertFalse(hasattr(x, "__dict__"))  # slots!
+            self.assertTrue(hasattr(x, "_taint"))  # taint!
+            checked.add(ty)
+
+        # Can not instantiate an Expression
+        for ty in (
+            Expression,
+            # Constant,  # These are actually tuples of types
+            # Variable,
+            # Operation,
+            BoolOperation,
+            BitVecOperation,
+            ArrayOperation,
+            BitVec,
+            Bool,
+            Array,
+        ):
+            self.assertRaises(Exception, ty, ())
+            self.assertTrue(hasattr(ty, "__doc__"))
+            self.assertTrue(ty.__doc__, ty)
+            checked.add(ty)
+
+        # The test numbers are taken from Python 3.6.13 (the oldest supported version)
+        # New pythons could use a different number of bytes. Look at the 'check' function
+        check(BitVecVariable, size=32, name="name", pickle_size=113, sizeof=64)
+        check(BoolVariable, name="name", pickle_size=102, sizeof=56)
+        check(
+            ArrayVariable,
+            index_bits=32,
+            value_bits=8,
+            index_max=100,
+            name="name",
+            pickle_size=150,
+            sizeof=80,
+        )
+        check(BitVecConstant, size=32, value=10, pickle_size=109, sizeof=64)
+        check(BoolConstant, value=False, pickle_size=97, sizeof=56)
+
+        # But you can instantiate a BoolOr
+        x = BoolVariable(name="x")
+        y = BoolVariable(name="y")
+        z = BoolVariable(name="z")
+        check(BoolEqual, a=x, b=y, pickle_size=168, sizeof=56)
+        check(BoolAnd, a=x, b=y, pickle_size=166, sizeof=56)
+        check(BoolOr, a=x, b=y, pickle_size=165, sizeof=56)
+        check(BoolXor, a=x, b=y, pickle_size=166, sizeof=56)
+        check(BoolNot, value=x, pickle_size=143, sizeof=56)
+        check(BoolITE, cond=z, true=x, false=y, pickle_size=189, sizeof=56)
+
+        bvx = BitVecVariable(size=32, name="bvx")
+        bvy = BitVecVariable(size=32, name="bvy")
+
+        check(UnsignedGreaterThan, a=bvx, b=bvy, pickle_size=197, sizeof=56)
+        check(GreaterThan, a=bvx, b=bvy, pickle_size=189, sizeof=56)
+        check(UnsignedGreaterOrEqual, a=bvx, b=bvy, pickle_size=200, sizeof=56)
+        check(GreaterOrEqual, a=bvx, b=bvy, pickle_size=192, sizeof=56)
+        check(UnsignedLessThan, a=bvx, b=bvy, pickle_size=194, sizeof=56)
+        check(LessThan, a=bvx, b=bvy, pickle_size=186, sizeof=56)
+        check(UnsignedLessOrEqual, a=bvx, b=bvy, pickle_size=197, sizeof=56)
+        check(LessOrEqual, a=bvx, b=bvy, pickle_size=189, sizeof=56)
+
+        check(BitVecOr, a=bvx, b=bvy, pickle_size=190, sizeof=64)
+        check(BitVecXor, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecAnd, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecNot, a=bvx, pickle_size=162, sizeof=64)
+        check(BitVecNeg, a=bvx, pickle_size=162, sizeof=64)
+        check(BitVecAdd, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecMul, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecSub, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecDiv, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecMod, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecUnsignedDiv, a=bvx, b=bvy, pickle_size=199, sizeof=64)
+        check(BitVecRem, a=bvx, b=bvy, pickle_size=191, sizeof=64)
+        check(BitVecUnsignedRem, a=bvx, b=bvy, pickle_size=199, sizeof=64)
+
+        check(BitVecShiftLeft, a=bvx, b=bvy, pickle_size=197, sizeof=64)
+        check(BitVecShiftRight, a=bvx, b=bvy, pickle_size=198, sizeof=64)
+        check(BitVecArithmeticShiftLeft, a=bvx, b=bvy, pickle_size=207, sizeof=64)
+        check(BitVecArithmeticShiftRight, a=bvx, b=bvy, pickle_size=208, sizeof=64)
+
+        check(BitVecZeroExtend, operand=bvx, size_dest=122, pickle_size=180, sizeof=72)
+        check(BitVecSignExtend, operand=bvx, size_dest=122, pickle_size=180, sizeof=72)
+        check(BitVecExtract, operand=bvx, offset=0, size=8, pickle_size=189, sizeof=80)
+        check(
+            BitVecConcat,
+            operands=(bvx, bvy),
+            size_dest=(bvx.size + bvy.size),
+            pickle_size=194,
+            sizeof=64,
+        )
+        check(
+            BitVecITE,
+            size=bvx.size,
+            condition=x,
+            true_value=bvx,
+            false_value=bvy,
+            pickle_size=231,
+            sizeof=64,
+        )
+
+        a = ArrayVariable(index_bits=32, value_bits=32, index_max=324, name="name")
+        check(ArraySlice, array=a, offset=0, size=10, pickle_size=326, sizeof=136)
+        check(ArraySelect, array=a, index=bvx, pickle_size=255, sizeof=64)
+        check(ArrayStore, array=a, index=bvx, value=bvy, pickle_size=286, sizeof=120)
+        check(ArrayProxy, array=a, default=0, pickle_size=222, sizeof=120)
+
+        def all_subclasses(cls) -> Set[Type]:
+            return {cls}.union(
+                set(cls.__subclasses__()).union(
+                    [s for c in cls.__subclasses__() for s in all_subclasses(c)]
+                )
+            )
+
+        all_types = all_subclasses(Expression)
+        self.assertSetEqual(checked, all_types)
+
+
 class ExpressionTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -118,7 +262,7 @@ class ExpressionTest(unittest.TestCase):
         Tests if solver.can_be_true is correct when the expression has no nodes that subclass
         from Variable (e.g. BitVecConstant)
         """
-        x = BitVecConstant(32, 10)
+        x = BitVecConstant(size=32, value=10)
         cs = ConstraintSet()
         self.assertFalse(self.solver.can_be_true(cs, x == False))
 
@@ -126,12 +270,12 @@ class ExpressionTest(unittest.TestCase):
         """
         Tests if higher bits are masked out
         """
-        x = BitVecConstant(32, 0xFF00000000)
+        x = BitVecConstant(size=32, value=0xFF00000000)
         self.assertTrue(x.value == 0)
 
     def testBasicAST_001(self):
         """ Can't build abstract classes """
-        a = BitVecConstant(32, 100)
+        a = BitVecConstant(size=32, value=100)
 
         self.assertRaises(TypeError, Expression, ())
         self.assertRaises(TypeError, Constant, 123)
@@ -140,16 +284,16 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicOperation(self):
         """ Add """
-        a = BitVecConstant(32, 100)
-        b = BitVecVariable(32, "VAR")
+        a = BitVecConstant(size=32, value=100)
+        b = BitVecVariable(size=32, name="VAR")
         c = a + b
         self.assertIsInstance(c, BitVecAdd)
         self.assertIsInstance(c, Operation)
         self.assertIsInstance(c, Expression)
 
     def testBasicTaint(self):
-        a = BitVecConstant(32, 100, taint=("SOURCE1",))
-        b = BitVecConstant(32, 200, taint=("SOURCE2",))
+        a = BitVecConstant(size=32, value=100, taint=("SOURCE1",))
+        b = BitVecConstant(size=32, value=200, taint=("SOURCE2",))
         c = a + b
         self.assertIsInstance(c, BitVecAdd)
         self.assertIsInstance(c, Operation)
@@ -158,10 +302,10 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue("SOURCE2" in c.taint)
 
     def testBasicITETaint(self):
-        a = BitVecConstant(32, 100, taint=("SOURCE1",))
-        b = BitVecConstant(32, 200, taint=("SOURCE2",))
-        c = BitVecConstant(32, 300, taint=("SOURCE3",))
-        d = BitVecConstant(32, 400, taint=("SOURCE4",))
+        a = BitVecConstant(size=32, value=100, taint=("SOURCE1",))
+        b = BitVecConstant(size=32, value=200, taint=("SOURCE2",))
+        c = BitVecConstant(size=32, value=300, taint=("SOURCE3",))
+        d = BitVecConstant(size=32, value=400, taint=("SOURCE4",))
         x = Operators.ITEBV(32, a > b, c, d)
         self.assertTrue("SOURCE1" in x.taint)
         self.assertTrue("SOURCE2" in x.taint)
@@ -195,29 +339,29 @@ class ExpressionTest(unittest.TestCase):
 
     def testBool1(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.AND(bf, bt))
         self.assertFalse(self.solver.check(cs))
 
     def testBool2(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.AND(bf, bt, bt, bt))
         self.assertFalse(self.solver.check(cs))
 
     def testBool3(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.AND(bt, bt, bf, bt))
         self.assertFalse(self.solver.check(cs))
 
     def testBool4(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         cs.add(Operators.OR(True, bf))
         cs.add(Operators.OR(bt, bt, False))
         self.assertTrue(self.solver.check(cs))
@@ -422,7 +566,7 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArrayProxySymbIdx(self):
         cs = ConstraintSet()
-        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name="array"), default=0)
+        array = cs.new_array(index_bits=32, value_bits=32, name="array", default=0)
         key = cs.new_bitvec(32, name="key")
         index = cs.new_bitvec(32, name="index")
 
@@ -437,7 +581,7 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArrayProxySymbIdx2(self):
         cs = ConstraintSet()
-        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name="array"))
+        array = cs.new_array(index_bits=32, value_bits=32, name="array")
         key = cs.new_bitvec(32, name="key")
         index = cs.new_bitvec(32, name="index")
 
@@ -552,8 +696,8 @@ class ExpressionTest(unittest.TestCase):
         consts.optimize = True
 
     def testBool_nonzero(self):
-        self.assertTrue(BoolConstant(True).__bool__())
-        self.assertFalse(BoolConstant(False).__bool__())
+        self.assertTrue(BoolConstant(value=True).__bool__())
+        self.assertFalse(BoolConstant(value=False).__bool__())
 
     def test_visitors(self):
         solver = Z3Solver.instance()
@@ -601,8 +745,8 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertEqual(pretty_print(a, depth=2), "VAR\n")
 
-        x = BitVecConstant(32, 100, taint=("important",))
-        y = BitVecConstant(32, 200, taint=("stuff",))
+        x = BitVecConstant(size=32, value=100, taint=("important",))
+        y = BitVecConstant(size=32, value=200, taint=("stuff",))
         z = constant_folder(x + y)
         self.assertItemsEqual(z.taint, ("important", "stuff"))
         self.assertEqual(z.value, 300)
@@ -640,11 +784,11 @@ class ExpressionTest(unittest.TestCase):
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
         self.assertEqual(
-            translate_to_smtlib(exp), "(bvor (bvand (bvor BV #x00000000) #x00000001) #x00000000)"
+            translate_to_smtlib(exp), "(bvor (bvand (bvor BIVEC #x00000000) #x00000001) #x00000000)"
         )
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
-        self.assertEqual(translate_to_smtlib(exp), "(bvand BV #x00000001)")
+        self.assertEqual(translate_to_smtlib(exp), "(bvand BIVEC #x00000001)")
 
     def test_arithmetic_simplify_extract(self):
         cs = ConstraintSet()
@@ -672,26 +816,26 @@ class ExpressionTest(unittest.TestCase):
     def test_arithmetic_simplify_udiv(self):
         cs = ConstraintSet()
         a = cs.new_bitvec(32, name="VARA")
-        b = a + Operators.UDIV(BitVecConstant(32, 0), BitVecConstant(32, 2))
+        b = a + Operators.UDIV(BitVecConstant(size=32, value=0), BitVecConstant(size=32, value=2))
         self.assertEqual(translate_to_smtlib(b), "(bvadd VARA (bvudiv #x00000000 #x00000002))")
         self.assertEqual(translate_to_smtlib(simplify(b)), "VARA")
 
-        c = a + Operators.UDIV(BitVecConstant(32, 2), BitVecConstant(32, 2))
+        c = a + Operators.UDIV(BitVecConstant(size=32, value=2), BitVecConstant(size=32, value=2))
         self.assertEqual(translate_to_smtlib(c), "(bvadd VARA (bvudiv #x00000002 #x00000002))")
         self.assertEqual(translate_to_smtlib(simplify(c)), "(bvadd VARA #x00000001)")
 
     def test_constant_folding_udiv(self):
         cs = ConstraintSet()
-        x = BitVecConstant(32, 0xFFFFFFFF, taint=("important",))
-        y = BitVecConstant(32, 2, taint=("stuff",))
+        x = BitVecConstant(size=32, value=0xFFFFFFFF, taint=("important",))
+        y = BitVecConstant(size=32, value=2, taint=("stuff",))
         z = constant_folder(x.udiv(y))
         self.assertItemsEqual(z.taint, ("important", "stuff"))
         self.assertEqual(z.value, 0x7FFFFFFF)
 
     def test_simplify_OR(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         var = cs.new_bool()
         cs.add(simplify(Operators.OR(var, var)) == var)
         cs.add(simplify(Operators.OR(var, bt)) == bt)
@@ -699,9 +843,9 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicReplace(self):
         """ Add """
-        a = BitVecConstant(32, 100)
-        b1 = BitVecVariable(32, "VAR1")
-        b2 = BitVecVariable(32, "VAR2")
+        a = BitVecConstant(size=32, value=100)
+        b1 = BitVecVariable(size=32, name="VAR1")
+        b2 = BitVecVariable(size=32, name="VAR2")
 
         c = a + b1
 
@@ -1144,6 +1288,11 @@ class ExpressionTestYices(ExpressionTest):
 class ExpressionTestCVC4(ExpressionTest):
     def setUp(self):
         self.solver = CVC4Solver.instance()
+
+
+class ExpressionTestBoolector(ExpressionTest):
+    def setUp(self):
+        self.solver = BoolectorSolver.instance()
 
 
 if __name__ == "__main__":

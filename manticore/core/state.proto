@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package mserialize;
+
+message LogMessage{
+	string content = 1;
+}
+
+message State{
+
+    enum StateType{
+        READY = 0;
+        BUSY = 1;
+        KILLED = 2;
+        TERMINATED = 3;
+    }
+    
+    int32 id = 2; // state ID
+    StateType type = 3; // Type of state
+    string reason = 4; // Reason for execution stopping
+    int32 num_executing = 5; // number of executing instructions
+    int32 wait_time = 6; 
+}
+
+message StateList{
+    repeated State states = 7; 
+}
+
+message MessageList{
+    repeated LogMessage messages = 8; 
+}
