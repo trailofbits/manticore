@@ -666,6 +666,8 @@ class Cpu(Eventful):
         self._concrete = True
         self._break_unicorn_at = target
         if self.emu:
+            self.emu.write_backs_disabled = False
+            self.emu.load_state_from_manticore()
             self.emu._stop_at = target
 
     #############################
@@ -696,12 +698,13 @@ class Cpu(Eventful):
 
         self._publish("did_write_memory", where, expression, size)
 
-    def _raw_read(self, where: int, size=1) -> bytes:
+    def _raw_read(self, where: int, size: int = 1, force: bool = False) -> bytes:
         """
         Selects bytes from memory. Attempts to do so faster than via read_bytes.
 
         :param where: address to read from
         :param size: number of bytes to read
+        :param force: whether to ignore memory permissions
         :return: the bytes in memory
         """
         map = self.memory.map_containing(where)
@@ -727,7 +730,7 @@ class Cpu(Eventful):
         elif isinstance(map, AnonMap):
             data = bytes(map._data[start : start + size])
         else:
-            data = b"".join(self.memory[where : where + size])
+            data = b"".join(self.memory.read(where, size, force=force))
         assert len(data) == size, "Raw read resulted in wrong data read which should never happen"
         return data
 

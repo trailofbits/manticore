@@ -1936,7 +1936,6 @@ class Linux(Platform):
             raise NotImplementedError(
                 "Manticore supports only arch_prctl with code=ARCH_SET_FS (0x1002) for now"
             )
-        self.current.FS = 0x63
         self.current.set_descriptor(self.current.FS, addr, 0x4000, "rw")
         return 0
 
