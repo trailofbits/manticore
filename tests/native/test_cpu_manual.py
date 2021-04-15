@@ -1312,7 +1312,7 @@ class SymCPUTest(unittest.TestCase):
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
         # 37 AAA
-        mem[code] = BitVecConstant(8, 0x37)
+        mem[code] = BitVecConstant(size=8, value=0x37)
         cpu.EIP = code
         AL = 10
         AH = 0x41
@@ -1337,7 +1337,7 @@ class SymCPUTest(unittest.TestCase):
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
         # 37 AAA
-        mem[code] = BitVecConstant(8, 0x37)
+        mem[code] = BitVecConstant(size=8, value=0x37)
         cpu.EIP = code
         AL = 18
         AH = 0x41
@@ -1363,7 +1363,7 @@ class SymCPUTest(unittest.TestCase):
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
         # 3F AAS
-        mem[code] = BitVecConstant(8, 0x3F)
+        mem[code] = BitVecConstant(size=8, value=0x3F)
         cpu.EIP = code
         AL = 10
         AH = 0x41
@@ -1388,7 +1388,7 @@ class SymCPUTest(unittest.TestCase):
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
         # 3F AAS
-        mem[code] = BitVecConstant(8, 0x3F)
+        mem[code] = BitVecConstant(size=8, value=0x3F)
         cpu.EIP = code
         AL = 18
         AH = 0x41
@@ -1413,7 +1413,7 @@ class SymCPUTest(unittest.TestCase):
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
         # 27 DAA
-        mem[code] = BitVecConstant(8, 0x27)
+        mem[code] = BitVecConstant(size=8, value=0x27)
         cpu.EIP = code
 
         cpu.AL = 0xAE
@@ -1445,7 +1445,7 @@ class SymCPUTest(unittest.TestCase):
         stack = mem.mmap(0xF000, 0x1000, "rw")
 
         # 2F DAS
-        mem[code] = BitVecConstant(8, 0x2F)
+        mem[code] = BitVecConstant(size=8, value=0x2F)
         cpu.EIP = code
 
         cpu.AL = 0xAE
