@@ -46,9 +46,6 @@ class ManticoreWASM(ManticoreBase):
 
         :param timeout: number of seconds after which to kill execution
         """
-        with self.locked_context() as context:
-            context["time_started"] = time.time()
-
         with self.kill_timeout(timeout):
             super().run()
 
@@ -62,16 +59,6 @@ class ManticoreWASM(ManticoreBase):
 
     def save_run_data(self):
         super().save_run_data()
-
-        time_ended = time.time()
-
-        with self.locked_context() as context:
-            time_elapsed = time_ended - context["time_started"]
-
-            logger.info("Total time: %s", time_elapsed)
-
-            context["time_ended"] = time_ended
-            context["time_elapsed"] = time_elapsed
 
     def __getattr__(self, item):
         """

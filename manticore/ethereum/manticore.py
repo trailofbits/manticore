@@ -1786,8 +1786,6 @@ class ManticoreEVM(ManticoreBase):
                     global_findings_stream.write("    ".join(source_code_snippet.splitlines(True)))
                     global_findings_stream.write("\n")
 
-        self.save_run_data()
-
         with self._output.save_stream("global.summary") as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
@@ -1855,6 +1853,7 @@ class ManticoreEVM(ManticoreBase):
                 for o in sorted(visited):
                     f.write("0x%x\n" % o)
 
+        self.save_run_data()
         self.remove_all()
 
     def global_coverage(self, account):
