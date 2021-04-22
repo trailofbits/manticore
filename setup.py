@@ -67,7 +67,7 @@ setup(
         "pysha3",
         "prettytable",
         "ply",
-        "rlp",
+        "rusty-rlp",
         "crytic-compile>=0.1.8",
         "wasm",
         "dataclasses; python_version < '3.7'",
