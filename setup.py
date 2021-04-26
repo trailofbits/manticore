@@ -68,7 +68,8 @@ setup(
         "prettytable",
         "ply",
         "rlp",
-        "crytic-compile>=0.1.8",
+        # "crytic-compile>=0.1.8",
+        "crytic-compile",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
@@ -81,5 +82,8 @@ setup(
             "manticore-verifier = manticore.ethereum.verifier:main",
         ]
     },
+    dependency_links=[
+        "git+https://github.com/crytic/crytic-compile.git@dev-compilation-units#egg=crytic-compile"
+    ],
     classifiers=["License :: OSI Approved :: GNU Affero General Public License v3"],
 )
