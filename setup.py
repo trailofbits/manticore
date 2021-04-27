@@ -17,7 +17,7 @@ def rtd_dependent_deps():
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = [
-    "crytic-compile @ git+https://github.com/crytic/crytic-compile.git@dev-compilation-units#egg=crytic-compile",
+    "crytic-compile @ git+https://github.com/crytic/crytic-compile.git@master#egg=crytic-compile",
     "capstone==4.0.1",
     "pyelftools",
     "unicorn==1.0.2rc2",
