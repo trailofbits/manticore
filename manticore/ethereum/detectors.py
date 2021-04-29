@@ -706,7 +706,7 @@ class DetectUninitializedStorage(Detector):
     CONFIDENCE = DetectorClassification.HIGH
 
     def did_evm_read_storage_callback(self, state, address, offset, value):
-        if not state.can_be_true(value != 0):
+        if state.can_be_true(value != 0):
             # Not initialized memory should be zero
             return
         # check if offset is known
