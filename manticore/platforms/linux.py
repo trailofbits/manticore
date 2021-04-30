@@ -3329,6 +3329,21 @@ class Linux(Platform):
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
+    @staticmethod
+    def implemented_syscalls() -> Iterable[str]:
+        import inspect
+
+        return (
+            x[0].split("sys_", 1)[1]
+            for x in inspect.getmembers(Linux, predicate=inspect.isfunction)
+            if x[0].startswith("sys_")
+        )
+
+    @staticmethod
+    def print_implemented_syscalls() -> None:
+        for syscall in Linux.implemented_syscalls():
+            print(syscall)
+
 
 ############################################################################
 # Symbolic versions follows
