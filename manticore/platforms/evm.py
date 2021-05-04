@@ -871,12 +871,14 @@ class EVM(Eventful):
     def gas(self):
         return Operators.EXTRACT(self._gas, 0, 256)
 
+    @property
     def jumpi_false_branch(self) -> Optional[int]:
         """
         Return the JUMPI false branch. Return None if the last instruction was not a JUMPI
         """
         return self._jumpi_false_branch
 
+    @property
     def jumpi_true_branch(self) -> Optional[int]:
         """
         Return the JUMPI false branch. Return None if the last instruction was not a JUMPI

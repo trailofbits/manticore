@@ -413,7 +413,9 @@ class StateBase(Eventful):
         else:
             assert policy == "ALL"
             if additional_symbolics is not None:
-                print(symbolic, additional_symbolics)
+                logger.debug(
+                    "Additinal symbolics", additional_symbolics, "used with expression", symbolic
+                )
                 val_1 = self._solver.get_all_values(
                     self._constraints, symbolic, maxcnt=maxcount, silent=True
                 )

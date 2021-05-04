@@ -1970,12 +1970,19 @@ class ManticoreEVM(ManticoreBase):
         for proc in report_workers:
             proc.join()
 
-    def set_lazy_evaluation(self, flag):
+    def enable_lazy_evaluation(self):
         """
-        Set lazy evaluation flag (only EVM support)
+        Enable lazy evaluation
         :return:
         """
-        self._lazy_evaluation = flag
+        self._lazy_evaluation = True
+
+    def disable_lazy_evaluation(self):
+        """
+        Enable lazy evaluation
+        :return:
+        """
+        self._lazy_evaluation = False
 
     def get_lazy_evaluation(self) -> bool:
         return self._lazy_evaluation
@@ -2006,12 +2013,12 @@ class ManticoreEVM(ManticoreBase):
         if (
             self._lazy_evaluation
             and state.platform.current_vm
-            and state.platform.current_vm.jumpi_false_branch()
+            and state.platform.current_vm.jumpi_false_branch
         ):
 
             solutions = [
-                (state.platform.current_vm.jumpi_false_branch(), False),
-                (state.platform.current_vm.jumpi_true_branch(), True),
+                (state.platform.current_vm.jumpi_false_branch, False),
+                (state.platform.current_vm.jumpi_true_branch, True),
             ]
         else:
 
