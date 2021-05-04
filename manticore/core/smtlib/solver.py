@@ -631,8 +631,6 @@ class SMTLIBSolver(Solver):
         Ask the solver for one possible result of given expressions using
         given set of constraints.
         """
-        # print(''.join(traceback.format_stack()))
-        # print()
         values: List[Any] = [None] * len(expressions)
         start = time.time()
         with constraints.related_to(*expressions) as temp_cs:
@@ -689,9 +687,6 @@ class SMTLIBSolver(Solver):
                 return values
 
             values_returned, sol = self.__getvalue_all(values_to_ask, is_bv)
-            # print(values_returned)
-            # print(values_returned.keys())
-            # print(values_returned)
             for idx, expression in enumerate(expressions):
                 if not issymbolic(expression):
                     continue
@@ -700,12 +695,7 @@ class SMTLIBSolver(Solver):
                     values[idx] = values_returned[var.name]
                 if isinstance(expression, BitVec):
                     if var.name not in values_returned:
-                        print("Error")
-                        print(values_returned)
-                        print(values_returned.keys())
-                        print(values_to_ask)
-                        print(sol)
-                        # print(temp_cs.to_string())
+                        logger.error("var.name", var.name, "not in values_returned", values_returned)
 
                     values[idx] = values_returned[var.name]
                 if isinstance(expression, Array):
@@ -717,9 +707,6 @@ class SMTLIBSolver(Solver):
             if time.time() - start > consts.timeout:
                 raise SolverError("Timeout")
 
-        # if len(expressions) == 1:
-        #    return values[0]
-        # else:
         return values
 
 
