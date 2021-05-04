@@ -1263,11 +1263,11 @@ class EVM(Eventful):
         # If pc is already pointing to a JUMPDEST thre is no need to check.
         self._need_check_jumpdest = False
 
-        if self._world.last_ins_was_true_jumpi():
+        if self._world.last_ins_was_true_jumpi:
             pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
             if pc not in self._valid_jumpdests:
                 self._throw()
-        self._world.set_last_ins_was_true_jumpi(False)
+        self._world.last_ins_was_true_jumpi = False
         return
 
     def _advance(self, result=None, exception=False):
@@ -2550,11 +2550,13 @@ class EVMWorld(Platform):
         if self.current_vm:
             self.current_vm.constraints = constraints
 
+    @property
     def last_ins_was_true_jumpi(self) -> Optional[bool]:
         return self._last_ins_was_true_jumpi
 
-    def set_last_ins_was_true_jumpi(self, jump_cond: Optional[bool]):
-        self._last_ins_was_true_jumpi = jump_cond
+    @last_ins_was_true_jumpi.setter
+    def last_ins_was_true_jumpi(self, value):
+        self._last_ins_was_true_jumpi = value
 
     @property
     def evmfork(self):

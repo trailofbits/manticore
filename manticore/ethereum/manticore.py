@@ -2057,7 +2057,7 @@ class ManticoreEVM(ManticoreBase):
                 # TODO: Ideally "jump_cond" should be in the VM and not the platform
                 # However, platform.current_vm is not yet created
                 # So not sure how to do it
-                new_state.platform.set_last_ins_was_true_jumpi(jump_cond)
+                new_state.platform.last_ins_was_true_jumpi = jump_cond
 
                 # enqueue new_state, assign new state id
                 new_state_id = self._put_state(new_state)
