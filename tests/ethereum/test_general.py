@@ -726,7 +726,7 @@ class EthTests(unittest.TestCase):
 
         This test checks the fix for this issue.
         """
-        self.mevm.set_lazy_evaluation(False)
+        self.mevm.disable_lazy_evaluation()
         self.mevm.register_detector(DetectIntegerOverflow())
         c = self.mevm.solidity_create_contract(
             """
@@ -753,7 +753,7 @@ class EthTests(unittest.TestCase):
             }
         }
         """
-        self.mevm.set_lazy_evaluation(False)
+        self.mevm.disable_lazy_evaluation()
         consts = config.get_group("evm")
         consts.events = True
         user_account = self.mevm.create_account(balance=10 ** 10)
@@ -1365,7 +1365,7 @@ class EthTests(unittest.TestCase):
         aplug = examplePlugin()
 
         m: ManticoreEVM = ManticoreEVM()
-        m.set_lazy_evaluation(False)
+        m.disable_lazy_evaluation()
         m.register_plugin(aplug)
 
         creator_account = m.create_account(balance=10000000000)
@@ -1967,7 +1967,7 @@ class EthPluginTests(unittest.TestCase):
                 regexp=r"^$", fallback=True
             )  # Only matches the fallback function.
             m.register_plugin(plugin)
-            m.set_lazy_evaluation(False)
+            m.disable_lazy_evaluation()
 
             creator_account = m.create_account(balance=10000000000000)
             contract_account = m.solidity_create_contract(
