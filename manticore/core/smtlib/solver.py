@@ -695,7 +695,9 @@ class SMTLIBSolver(Solver):
                     values[idx] = values_returned[var.name]
                 if isinstance(expression, BitVec):
                     if var.name not in values_returned:
-                        logger.error("var.name", var.name, "not in values_returned", values_returned)
+                        logger.error(
+                            "var.name", var.name, "not in values_returned", values_returned
+                        )
 
                     values[idx] = values_returned[var.name]
                 if isinstance(expression, Array):
