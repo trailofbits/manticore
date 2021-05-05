@@ -287,6 +287,7 @@ class SmtlibProc:
             if buf == "":
                 continue
 
+            # this verifies if the response from the solver is complete (it has balanced brackets)
             lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
             if lparen == rparen and buf != "":
                 break
