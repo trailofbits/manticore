@@ -78,7 +78,7 @@ class SolverType(config.ConfigEnum):
 consts.add(
     "solver",
     default=SolverType.auto,
-    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
+    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, portfolio, auto)",
 )
 
 
@@ -258,12 +258,18 @@ class SmtlibProc:
         self._proc.stdin.write(f"{cmd}\n")  # type: ignore
 
     def recv(self, wait=True) -> Optional[str]:
-        """Reads the response from the smtlib solver"""
+        """Reads the response from the smtlib solver
+
+        :param wait: a boolean that indicate to wait with a blocking call
+        until the results are available. Otherwise, it returns None if the solver
+        does not respond.
+
+        """
         tries = 0
         timeout = 0.0
 
         buf = ""
-        if self._last_buf != "":
+        if self._last_buf != "":  # we got a partial response last time, let's use it
             buf = buf + self._last_buf
 
         while True:
@@ -272,7 +278,7 @@ class SmtlibProc:
                 buf = buf.strip()
             except TypeError:
                 if not wait:
-                    if buf != "":
+                    if buf != "":  # we got an error, but something was returned, let's save it
                         self._last_buf = buf
                     return None
                 else:
@@ -903,7 +909,7 @@ class PortfolioSolver(SMTLIBSolver):
                 f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
             )
 
-        print("Creating portfolio with solvers", solvers)
+        logger.info("Creating portfolio with solvers:", ",".join(solvers))
         assert len(solvers) > 0
         support_reset: bool = False
         support_minmax: bool = False
