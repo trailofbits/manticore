@@ -1,10 +1,21 @@
-from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass, field
 import json
+
+from dataclasses import dataclass, field
+from intervaltree import Interval, IntervalTree
+from typing import List, Dict, Tuple, Optional
 
 # Data Class to hold malloc_lib information
 # - This is added to state 0 pre-manticore execution and will be saving state specific information as manticore
 # forks and different program paths are found
+
+
+@dataclass
+class AllocationInformation:
+    """This class wraps information about an allocation"""
+
+    addr: int
+    requested_size: int
+    is_freed: bool
 
 
 @dataclass
@@ -17,6 +28,10 @@ class MallocLibData:
     sbrk_chunks: List[Tuple[int, int]] = field(default_factory=list)
     mmap_chunks: Dict[int, int] = field(default_factory=dict)
     munmap_chunks: Dict[int, int] = field(default_factory=dict)
+    malloc_lib_tree: IntervalTree = field(default_factory=IntervalTree)
+    system_heap_tree: IntervalTree = field(
+        default_factory=IntervalTree
+    )  # TODO(sonya): this needs support
 
     def __str__(self):
         # TODO(Sonya): This does not print address information in hexadecimal
@@ -46,10 +61,15 @@ class MallocLibData:
     def process_malloc(self, ret_addr: int, size: int):
         # should add malloc call information to list
         self.malloc_calls.append((ret_addr, size))
+        self.malloc_lib_tree[ret_addr : ret_addr + size] = AllocationInformation(
+            ret_addr, size, False
+        )
 
     def process_free(self, free_addr: int):
         # Maybe remove from malloc list and add to a used_and_free list
         self.free_calls.append(free_addr)
+        for allocation in sorted(self.malloc_lib_tree[free_addr]):
+            allocation.data.is_freed = True
 
     def process_calloc(self, nmemb: int, elem_size: int, ret_addr: int):
         # TODO(Sonya)
