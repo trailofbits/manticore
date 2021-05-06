@@ -14,7 +14,7 @@ import functools
 import shlex
 
 from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
-from ..core.smtlib import Expression
+from ..core.smtlib import Expression, SOLVER_STATS
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
@@ -1111,6 +1111,10 @@ class ManticoreBase(Eventful):
         """
         Runs analysis.
         """
+        # Start measuring the execution time
+        with self.locked_context() as context:
+            context["time_started"] = time.time()
+
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a
         # different process modifies the state
@@ -1224,7 +1228,28 @@ class ManticoreBase(Eventful):
         with self._output.save_stream("manticore.yml") as f:
             config.save(f)
 
+        with self._output.save_stream("global.solver_stats") as f:
+            for s, n in sorted(SOLVER_STATS.items()):
+                f.write("%s: %d\n" % (s, n))
+
+        if SOLVER_STATS["timeout"] > 0 or SOLVER_STATS["unknown"] > 0:
+            logger.warning(
+                "The SMT solvers returned timeout or unknown for certain program paths. Results could not cover the entire set of possible paths"
+            )
+
         logger.info("Results in %s", self._output.store.uri)
+
+        time_ended = time.time()
+
+        with self.locked_context() as context:
+            if "time_started" in context:
+                time_elapsed = time_ended - context["time_started"]
+                logger.info("Total time: %s", time_elapsed)
+                context["time_ended"] = time_ended
+                context["time_elapsed"] = time_elapsed
+            else:
+                logger.warning("Manticore failed to run")
+
         self.wait_for_log_purge()
 
     def introspect(self) -> typing.Dict[int, StateDescriptor]:
