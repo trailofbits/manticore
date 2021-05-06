@@ -834,8 +834,6 @@ class BoolectorSolver(SMTLIBSolver):
 
 
 class SmtlibPortfolio:
-    sname = "portfolio"
-
     def __init__(self, solvers: List[str], debug: bool = False):
         """Single smtlib interactive process
 
@@ -928,8 +926,9 @@ class SmtlibPortfolio:
 
 
 class PortfolioSolver(SMTLIBSolver):
-    def __init__(self):
+    sname = "portfolio"
 
+    def __init__(self):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
