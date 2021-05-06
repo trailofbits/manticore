@@ -2215,7 +2215,6 @@ class Linux(Platform):
             raise NotImplementedError(
                 "Manticore supports only arch_prctl with code=ARCH_SET_FS (0x1002) for now"
             )
-        self.current.FS = 0x63
         self.current.set_descriptor(self.current.FS, addr, 0x4000, "rw")
         return 0
 
@@ -3608,6 +3607,21 @@ class Linux(Platform):
         load_segs = [x for x in interp.iter_segments() if x.header.p_type == "PT_LOAD"]
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
+
+    @staticmethod
+    def implemented_syscalls() -> Iterable[str]:
+        import inspect
+
+        return (
+            x[0].split("sys_", 1)[1]
+            for x in inspect.getmembers(Linux, predicate=inspect.isfunction)
+            if x[0].startswith("sys_")
+        )
+
+    @staticmethod
+    def print_implemented_syscalls() -> None:
+        for syscall in Linux.implemented_syscalls():
+            print(syscall)
 
 
 ############################################################################

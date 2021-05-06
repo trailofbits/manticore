@@ -19,7 +19,7 @@ def rtd_dependent_deps():
 native_deps = [
     "capstone @ git+https://github.com/aquynh/capstone.git@1766485c0c32419e9a17d6ad31f9e218ef4f018f#subdirectory=bindings/python",
     "pyelftools",
-    "unicorn==1.0.2rc2",
+    "unicorn==1.0.2",
 ]
 
 lint_deps = ["black==20.8b1", "mypy==0.790"]
@@ -72,6 +72,7 @@ setup(
         "prettytable",
         "ply",
         "rlp",
+        "intervaltree",
         "crytic-compile>=0.1.8",
         "wasm",
         "dataclasses; python_version < '3.7'",

@@ -751,7 +751,7 @@ class Memory(object, metaclass=ABCMeta):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug("New file-memory map @%x size:%x", addr, size)
+        logger.debug(f"New file-memory map @{addr:#x} size:{size:#x}")
         self.cpu._publish("did_map_memory", addr, size, perms, filename, offset, addr)
         return addr
 
@@ -799,7 +799,7 @@ class Memory(object, metaclass=ABCMeta):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug("New memory map @%x size:%x", addr, size)
+        logger.debug(f"New memory map @{addr:#x} size:{size:#x}")
 
         self.cpu._publish("did_map_memory", addr, size, perms, None, None, addr)
         return addr
@@ -939,7 +939,7 @@ class Memory(object, metaclass=ABCMeta):
                 self._add(tail)
 
         self.cpu._publish("did_unmap_memory", start, size)
-        logger.debug(f"Unmap memory @{start:x} size:{size:x}")
+        logger.debug(f"Unmapped memory @{start:#x} size:{size:#x}")
 
     def mprotect(self, start, size, perms):
         assert size > 0
@@ -1205,7 +1205,7 @@ class SMemory(Memory):
             except TooManySolutions as e:
                 m, M = self._solver.minmax(self.constraints, address)
                 logger.debug(
-                    f"Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!"
+                    f"Got TooManySolutions on a symbolic read. Range [{m:#x}, {M:#x}]. Not crashing!"
                 )
 
                 # The force param shouldn't affect this, as this is checking for unmapped reads, not bad perms
@@ -1436,7 +1436,7 @@ class LazySMemory(SMemory):
         for i in range(size):
             Memory.write(self, addr + i, chr(fdata[i]), force=True)
 
-        logger.debug("New file-memory map @%x size:%x", addr, size)
+        logger.debug("New file-memory map @{addr:#x} size:{size:#x}")
         self.cpu._publish("did_map_memory", addr, size, perms, filename, offset, addr)
 
         return addr
@@ -1460,9 +1460,7 @@ class LazySMemory(SMemory):
         :return:
         """
         logger.debug(
-            "Importing concrete memory: {:x} - {:x} ({} bytes)".format(
-                from_addr, to_addr, to_addr - from_addr
-            )
+            f"Importing concrete memory: {from_addr:#x} - {to_addr:#x} ({to_addr - from_addr} bytes)"
         )
 
         for m in self.maps:
