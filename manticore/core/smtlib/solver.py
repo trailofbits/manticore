@@ -834,6 +834,8 @@ class BoolectorSolver(SMTLIBSolver):
 
 
 class SmtlibPortfolio:
+    sname = "portfolio"
+
     def __init__(self, solvers: List[str], debug: bool = False):
         """Single smtlib interactive process
 
