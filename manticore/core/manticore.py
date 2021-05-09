@@ -1146,7 +1146,7 @@ class ManticoreBase(Eventful):
 
         last_id = self._workers[-1].id
         killed_states = self.count_killed_states()
-        #assert killed_states == 0
+        # assert killed_states == 0
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
             with self._lock:
