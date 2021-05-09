@@ -69,6 +69,7 @@ setup(
         "ply",
         "rlp",
         "crytic-compile>=0.1.8",
+        "crytic-compile<0.2.0",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
