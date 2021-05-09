@@ -1144,10 +1144,24 @@ class ManticoreBase(Eventful):
                 self._daemon_threads[dt.id] = dt
                 dt.start(cb)
 
+        last_id = self._workers[-1].id
+        killed_states = self.count_killed_states()
+        assert killed_states == 0
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
             with self._lock:
                 while (self._busy_states or self._ready_states) and not self._killed.value:
+                    ks = self.count_killed_states()
+                    new_killed_states = ks - killed_states
+                    if new_killed_states > 0:
+                        killed_states = ks
+                        logger.warning("Found %d new killed states" % new_killed_states)
+                        for _ in range(new_killed_states):
+                            last_id = last_id + 1
+                            w = self._worker_type(id=last_id, manticore=self)
+                            self._workers.append(w)
+                            w.start()
+
                     self._lock.wait()
 
         # Join all the workers!
