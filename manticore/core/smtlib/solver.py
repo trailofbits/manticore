@@ -944,7 +944,7 @@ class PortfolioSolver(SMTLIBSolver):
                 f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
             )
 
-        logger.info("Creating portfolio with solvers:", ",".join(solvers))
+        logger.info("Creating portfolio with solvers: " + ",".join(solvers))
         assert len(solvers) > 0
         support_reset: bool = False
         support_minmax: bool = False
