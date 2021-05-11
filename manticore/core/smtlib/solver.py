@@ -85,6 +85,10 @@ consts.add(
 
 
 class SolverInfo:
+    """This class holds the specific command lines and config from every solver. It should be
+    initialized and used inside each solver __init__ function to make sure the consts from the manticore
+    command line are properly updated"""
+
     def __init__(self):
         self.commands = dict()
         self.inits = dict()
@@ -105,9 +109,6 @@ class SolverInfo:
             "cvc4"
         ] = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
         self.inits["cvc4"] = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-
-
-info = SolverInfo()
 
 
 class SingletonMixin(object):
@@ -743,6 +744,7 @@ class Z3Solver(SMTLIBSolver):
         This is implemented using an external z3 solver (via a subprocess).
         See https://github.com/Z3Prover/z3
         """
+        info = SolverInfo()
         command = info.commands["z3"]
         self.ncores = 1
 
@@ -801,6 +803,7 @@ class YicesSolver(SMTLIBSolver):
     sname = "yices"
 
     def __init__(self):
+        info = SolverInfo()
         init = info.inits["yices"]
         command = info.commands["yices"]
         self.ncores = 1
@@ -817,6 +820,7 @@ class CVC4Solver(SMTLIBSolver):
     sname = "cvc4"
 
     def __init__(self):
+        info = SolverInfo()
         init = info.inits["cvc4"]
         command = info.commands["cvc4"]
         self.ncores = 1
@@ -827,6 +831,7 @@ class BoolectorSolver(SMTLIBSolver):
     sname = "boolector"
 
     def __init__(self, args: List[str] = []):
+        info = SolverInfo()
         init = info.inits["boolector"]
         command = info.commands["boolector"]
         self.ncores = 1
