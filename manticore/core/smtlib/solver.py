@@ -848,11 +848,12 @@ class SmtlibPortfolio:
         self._procs: Dict[str, SmtlibProc] = {}
         self._solvers: List[str] = solvers
         self._debug = debug
+        self._info = SolverInfo()
 
     def start(self):
         if len(self._procs) == 0:
             for solver in self._solvers:
-                self._procs[solver] = SmtlibProc(info.commands[solver], self._debug)
+                self._procs[solver] = SmtlibProc(self._info.commands[solver], self._debug)
 
         for _, proc in self._procs.items():
             proc.start()
@@ -926,7 +927,7 @@ class SmtlibPortfolio:
     def init(self):
         assert len(self._solvers) == len(self._procs)
         for solver, proc in self._procs.items():
-            for cfg in info.inits[solver]:
+            for cfg in self._info.inits[solver]:
                 proc.send(cfg)
 
 
