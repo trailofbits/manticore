@@ -78,6 +78,8 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
 
+SOLVER_STATS = {"unknown": 0, "timeout": 0}
+
 
 class SingletonMixin(object):
     __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
@@ -261,6 +263,8 @@ class SmtlibProc:
 
 
 class SMTLIBSolver(Solver):
+    sname: Optional[str] = None
+
     def __init__(
         self,
         command: str,
@@ -331,9 +335,18 @@ class SMTLIBSolver(Solver):
         if consts.defaultunsat:
             if status == "unknown":
                 logger.info("Found an unknown core, probably a solver timeout")
+                SOLVER_STATS["timeout"] += 1
                 status = "unsat"
+                raise SolverUnknown(status)
+
         if status == "unknown":
+            SOLVER_STATS["unknown"] += 1
             raise SolverUnknown(status)
+        else:
+            assert self.sname is not None
+            SOLVER_STATS.setdefault(self.sname, 0)
+            SOLVER_STATS[self.sname] += 1
+
         return status == "sat"
 
     def _assert(self, expression: Bool):
@@ -464,6 +477,7 @@ class SMTLIBSolver(Solver):
                     M = L
 
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["timeout"] += 1
                     raise SolverError("Timeout")
 
         # reset to before the dichotomic search
@@ -486,11 +500,15 @@ class SMTLIBSolver(Solver):
                 self._assert(X != last_value)
                 i = i + 1
                 if i > max_iter:
+                    SOLVER_STATS["unknown"] += 1
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["timeout"] += 1
                     raise SolverError("Timeout")
             if last_value is not None:
                 return last_value
+
+            SOLVER_STATS["unknown"] += 1
             raise SolverError("Optimizing error, unsat or unknown core")
 
     @lru_cache(maxsize=32)
@@ -547,6 +565,7 @@ class SMTLIBSolver(Solver):
                     else:
                         raise TooManySolutions(result)
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["timeout"] += 1
                     if silent:
                         logger.info("Timeout searching for all solutions")
                         return list(result)
@@ -583,6 +602,11 @@ class SMTLIBSolver(Solver):
             self._smtlib.send("(%s %s)" % (goal, aux.name))
             self._smtlib.send("(check-sat)")
             _status = self._smtlib.recv()
+
+            assert self.sname is not None
+            SOLVER_STATS.setdefault(self.sname, 0)
+            SOLVER_STATS[self.sname] += 1
+
             if _status == "sat":
                 return self._getvalue(aux)
             raise SolverError("Optimize failed")
@@ -621,6 +645,7 @@ class SMTLIBSolver(Solver):
                         result.append(self.__getvalue_bv(var[i].name))
                     values.append(bytes(result))
                     if time.time() - start > consts.timeout:
+                        SOLVER_STATS["timeout"] += 1
                         raise SolverError("Timeout")
                     continue
 
@@ -638,6 +663,7 @@ class SMTLIBSolver(Solver):
                 if isinstance(expression, BitVec):
                     values.append(self.__getvalue_bv(var.name))
             if time.time() - start > consts.timeout:
+                SOLVER_STATS["timeout"] += 1
                 raise SolverError("Timeout")
 
         if len(expressions) == 1:
@@ -647,6 +673,8 @@ class SMTLIBSolver(Solver):
 
 
 class Z3Solver(SMTLIBSolver):
+    sname = "z3"
+
     def __init__(self):
         """
         Build a Z3 solver instance.
@@ -721,6 +749,8 @@ class Z3Solver(SMTLIBSolver):
 
 
 class YicesSolver(SMTLIBSolver):
+    sname = "yices"
+
     def __init__(self):
         init = ["(set-logic QF_AUFBV)"]
         command = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
@@ -734,6 +764,8 @@ class YicesSolver(SMTLIBSolver):
 
 
 class CVC4Solver(SMTLIBSolver):
+    sname = "cvc4"
+
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
@@ -741,6 +773,8 @@ class CVC4Solver(SMTLIBSolver):
 
 
 class BoolectorSolver(SMTLIBSolver):
+    sname = "boolector"
+
     def __init__(self):
         init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
         command = f"{consts.boolector_bin} --time={consts.timeout} -i"
