@@ -474,6 +474,9 @@ class SymbolicFile(File):
         """
         super().__init__(path, flags)
 
+        # Convert to numeric value because we read the file as bytes
+        wildcard_val = ord(wildcard)
+
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
 
@@ -487,7 +490,7 @@ class SymbolicFile(File):
 
         symbols_cnt = 0
         for i in range(size):
-            if data[i] != wildcard:
+            if data[i] != wildcard_val:
                 self.array[i] = data[i]
             else:
                 symbols_cnt += 1
