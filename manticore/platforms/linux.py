@@ -475,6 +475,7 @@ class SymbolicFile(File):
         super().__init__(path, flags)
 
         # Convert to numeric value because we read the file as bytes
+        assert len(wildcard) == 1
         wildcard_val = ord(wildcard)
 
         # read the concrete data using the parent the read() form the File class
