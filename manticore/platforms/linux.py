@@ -475,8 +475,10 @@ class SymbolicFile(File):
         super().__init__(path, flags)
 
         # Convert to numeric value because we read the file as bytes
-        assert len(wildcard) == 1
-        wildcard_val = ord(wildcard)
+        wildcard_val = wildcard.encode()
+        assert (
+            len(wildcard_val) == 1
+        ), f"SymbolicFile wildcard needs to be a single byte, not {wildcard_val!r}"
 
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
