@@ -465,7 +465,9 @@ class StateBase(Eventful):
         """
         return self.solve_one_n_batched(exprs, constrain)
 
-    def solve_one_n_batched(self, exprs: Sequence[Expression], constrain: bool = False) -> List[int]:
+    def solve_one_n_batched(
+        self, exprs: Sequence[Expression], constrain: bool = False
+    ) -> List[int]:
         """
         Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         a list of solutions.
