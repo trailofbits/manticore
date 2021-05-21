@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from typing import List
+from typing import List, Tuple, Sequence
 
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from .smtlib.expression import Expression
@@ -454,7 +454,7 @@ class StateBase(Eventful):
         """
         return self.solve_one_n(expr, constrain=constrain)[0]
 
-    def solve_one_n(self, *exprs: List[Expression], constrain: bool = False) -> List[int]:
+    def solve_one_n(self, *exprs: Expression, constrain: bool = False) -> List[int]:
         """
         Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         a list of solutions.
@@ -465,7 +465,7 @@ class StateBase(Eventful):
         """
         return self.solve_one_n_batched(exprs, constrain)
 
-    def solve_one_n_batched(self, exprs: List[Expression], constrain: bool = False) -> List[int]:
+    def solve_one_n_batched(self, exprs: Sequence[Expression], constrain: bool = False) -> List[int]:
         """
         Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         a list of solutions.
