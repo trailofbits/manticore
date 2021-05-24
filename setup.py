@@ -57,7 +57,7 @@ setup(
     long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.5" + dev_extension,
+    version="0.3.6" + dev_extension,
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[

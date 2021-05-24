@@ -1,6 +1,27 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.5...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.6...HEAD)
+
+## 0.3.6 - 2021-05
+
+Thanks to our external contributors!
+ - [timgates42](https://github.com/trailofbits/manticore/commits?author=timgates42)
+
+### Ethereum
+* Allow symbolic balances from the beginning of execution [#1818](https://github.com/trailofbits/manticore/pull/1818)
+* Disable EVM Events in Testcases [#2417](https://github.com/trailofbits/manticore/pull/2417)
+
+### Native
+* **[Added API]** Syscall-specific hooks [#2389](https://github.com/trailofbits/manticore/pull/2389)
+* Bugfixes for control transfer between Manticore & Unicorn [#1796](https://github.com/trailofbits/manticore/pull/1796)
+
+### Other
+* Add socket for TUI [#1620](https://github.com/trailofbits/manticore/pull/1620)
+* Memory usage improvements in expression system [#2394](https://github.com/trailofbits/manticore/pull/2394)
+* Support for Boolector [#2410](https://github.com/trailofbits/manticore/pull/2410)
+* Solver Statistics API [#2415](https://github.com/trailofbits/manticore/pull/2415)
+* Allow duplicated config options [#2397](https://github.com/trailofbits/manticore/pull/2397)
+
 
 ## 0.3.5 - 2020-11-06
 
