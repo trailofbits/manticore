@@ -97,7 +97,7 @@ run_truffle_tests(){
     mkdir truffle_tests
     cd truffle_tests
     truffle unbox metacoin
-    coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic
+    coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --thorough-mode --evm.oog ignore --evm.txfail optimistic
     # Truffle smoke test. We test if manticore is able to generate states
     # from a truffle project.
     count=$(find output/ -name '*tx' -type f | wc -l)
