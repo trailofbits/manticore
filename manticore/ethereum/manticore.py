@@ -275,36 +275,43 @@ class ManticoreEVM(ManticoreBase):
             else:
                 crytic_compile = CryticCompile(filename)
 
-            if not contract_name:
-                if len(crytic_compile.contracts_names_without_libraries) > 1:
-                    raise EthereumError(
-                        f"Solidity file must contain exactly one contract or you must select one. Contracts found: {', '.join(crytic_compile.contracts_names)}"
-                    )
-                contract_name = list(crytic_compile.contracts_names_without_libraries)[0]
+            if crytic_compile.is_in_multiple_compilation_unit(contract_name):
+                raise EthereumError(
+                    f"{contract_name} is shared in multiple compilation units, please split the codebase to prevent the duplicate"
+                )
 
-            if contract_name not in crytic_compile.contracts_names:
-                raise ValueError(f"Specified contract not found: {contract_name}")
+            for compilation_unit in crytic_compile.compilation_units.values():
 
-            name = contract_name
+                if not contract_name:
+                    if len(compilation_unit.contracts_names_without_libraries) > 1:
+                        raise EthereumError(
+                            f"Solidity file must contain exactly one contract or you must select one. Contracts found: {', '.join(compilation_unit.contracts_names)}"
+                        )
+                    contract_name = list(compilation_unit.contracts_names_without_libraries)[0]
 
-            libs = crytic_compile.libraries_names(name)
-            if libraries:
-                libs = [l for l in libs if l not in libraries]
-            if libs:
-                raise DependencyError(libs)
+                if contract_name not in compilation_unit.contracts_names:
+                    raise ValueError(f"Specified contract not found: {contract_name}")
 
-            bytecode = bytes.fromhex(crytic_compile.bytecode_init(name, libraries))
-            runtime = bytes.fromhex(crytic_compile.bytecode_runtime(name, libraries))
-            srcmap = crytic_compile.srcmap_init(name)
-            srcmap_runtime = crytic_compile.srcmap_runtime(name)
-            hashes = crytic_compile.hashes(name)
-            abi = crytic_compile.abi(name)
+                name = contract_name
 
-            filename = crytic_compile.filename_of_contract(name).absolute
-            with open(filename) as f:
-                source_code = f.read()
+                libs = compilation_unit.libraries_names(name)
+                if libraries:
+                    libs = [l for l in libs if l not in libraries]
+                if libs:
+                    raise DependencyError(libs)
 
-            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
+                bytecode = bytes.fromhex(compilation_unit.bytecode_init(name, libraries))
+                runtime = bytes.fromhex(compilation_unit.bytecode_runtime(name, libraries))
+                srcmap = compilation_unit.srcmap_init(name)
+                srcmap_runtime = compilation_unit.srcmap_runtime(name)
+                hashes = compilation_unit.hashes(name)
+                abi = compilation_unit.abi(name)
+
+                filename = compilation_unit.filename_of_contract(name).absolute
+                with open(filename) as f:
+                    source_code = f.read()
+
+                return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
 
         except InvalidCompilation as e:
             raise EthereumError(
@@ -1802,8 +1809,6 @@ class ManticoreEVM(ManticoreBase):
                     global_findings_stream.write("    ".join(source_code_snippet.splitlines(True)))
                     global_findings_stream.write("\n")
 
-        self.save_run_data()
-
         with self._output.save_stream("global.summary") as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
@@ -1871,6 +1876,7 @@ class ManticoreEVM(ManticoreBase):
                 for o in sorted(visited):
                     f.write("0x%x\n" % o)
 
+        self.save_run_data()
         self.remove_all()
 
     def global_coverage(self, account):
