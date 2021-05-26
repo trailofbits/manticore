@@ -54,7 +54,7 @@ consts.add(
 )
 consts.add(
     "lazymode",
-    True,
+    False,  # Experimental, so disabled by default for now
     "Only call the solver when it is absolutely necessary to generate testcases.",
 )
 consts.add(
@@ -1984,7 +1984,8 @@ class ManticoreEVM(ManticoreBase):
         """
         self._lazy_evaluation = False
 
-    def get_lazy_evaluation(self) -> bool:
+    @property
+    def lazy_evaluation(self) -> bool:
         return self._lazy_evaluation
 
     def _fork(self, state, expression, policy="ALL", setstate=None):
