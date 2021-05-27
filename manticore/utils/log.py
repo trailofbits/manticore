@@ -2,16 +2,16 @@ import logging
 import sys
 import io
 
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Final, Optional
 
 manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
-all_loggers: Set[str] = set()
-default_factory = logging.getLogRecordFactory()
 logfmt = "%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s"
-handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(logfmt)
-handler.setFormatter(formatter)
+
+
+def get_manticore_logger_names() -> List[str]:
+    return [name for name in logging.root.manager.loggerDict if name.startswith("manticore")]
 
 
 class CallbackStream(io.TextIOBase):
@@ -23,15 +23,15 @@ class CallbackStream(io.TextIOBase):
 
 
 def register_log_callback(cb):
-    for name in all_loggers:
+    for name in get_manticore_logger_names():
         logger = logging.getLogger(name)
         handler_internal = logging.StreamHandler(CallbackStream(cb))
         if name.startswith("manticore"):
             handler_internal.setFormatter(formatter)
-        logger.addHandler(handler_internal)
+        # logger.addHandler(handler_internal)
 
 
-class ContextFilter(logging.Filter):
+class ManticoreContextFilter(logging.Filter):
     """
     This is a filter which injects contextual information into the log.
     """
@@ -71,39 +71,21 @@ class ContextFilter(logging.Filter):
         else:
             return self.colored_levelname_format.format(self.color_map[levelname], levelname)
 
-    def filter(self, record) -> bool:
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not record.name.startswith("manticore"):
+            return True
+
         record.name = self.summarized_name(record.name)
         record.levelname = self.colored_level_name(record.levelname)
         return True
 
 
-ctxfilter = ContextFilter()
-
-
-class CustomLogger(logging.Logger):
-    """
-    Custom Logger class that can grab the correct verbosity level from this module
-    """
-
-    def __init__(self, name: str, level=DEFAULT_LOG_LEVEL, *args) -> None:
-        super().__init__(name, min(get_verbosity(name), level), *args)
-        all_loggers.add(name)
-        self.initialized = False
-
-        if name.startswith("manticore"):
-            self.addHandler(handler)
-            self.addFilter(ctxfilter)
-            self.propagate = False
-
-
-logging.setLoggerClass(CustomLogger)
-
-
 def disable_colors() -> None:
-    ContextFilter.colors_disabled = True
+    ManticoreContextFilter.colors_disabled = True
 
 
 def get_levels() -> List[List[Tuple[str, int]]]:
+    all_loggers = get_manticore_logger_names()
     return [
         # 0
         [(x, DEFAULT_LOG_LEVEL) for x in all_loggers],
@@ -171,9 +153,32 @@ def set_verbosity(setting: int) -> None:
     """Set the global verbosity (0-5)."""
     global manticore_verbosity
     manticore_verbosity = min(max(setting, 0), len(get_levels()) - 1)
-    for logger_name in all_loggers:
+    for logger_name in get_manticore_logger_names():
         logger = logging.getLogger(logger_name)
         # min because more verbosity == lower numbers
         # This means if you explicitly call setLevel somewhere else in the source, and it's *more*
         # verbose, it'll stay that way even if manticore_verbosity is 0.
         logger.setLevel(min(get_verbosity(logger_name), logger.getEffectiveLevel()))
+
+
+def init_default_logging(handler: Optional[logging.Handler] = None) -> None:
+    """
+    Initialize logging for Manticore, given a handler or by default use stdout
+    """
+    logger = logging.getLogger("manticore")
+    # Reset handlers to avoid double-printing if there's another handler registered to root
+    logger.handlers = []
+    # Explicitly set the level so that we don't use root's. If root is at DEBUG,
+    # then _a lot_ of logs will be printed if the user forgets to set
+    # manticore's logger
+    logger.setLevel(DEFAULT_LOG_LEVEL)
+
+    if handler is None:
+        handler = logging.StreamHandler(sys.stdout)
+
+    # Always add our formatter and filter
+    handler.setFormatter(formatter)
+    handler.addFilter(ManticoreContextFilter())
+
+    # Finally attach to Manticore
+    logger.addHandler(handler)
