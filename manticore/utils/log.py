@@ -161,24 +161,28 @@ def set_verbosity(setting: int) -> None:
         logger.setLevel(min(get_verbosity(logger_name), logger.getEffectiveLevel()))
 
 
-def init_default_logging(handler: Optional[logging.Handler] = None) -> None:
+def default_handler() -> logging.Handler:
+    """Return a default Manticore logger with a nice formatter and filter."""
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    handler.addFilter(ManticoreContextFilter())
+    return handler
+
+
+def init_logging(handler: Optional[logging.Handler] = None) -> None:
     """
-    Initialize logging for Manticore, given a handler or by default use stdout
+    Initialize logging for Manticore, given a handler or by default use `default_logger()`
     """
     logger = logging.getLogger("manticore")
-    # Reset handlers to avoid double-printing if there's another handler registered to root
-    logger.handlers = []
+    logger.parent = None
+
     # Explicitly set the level so that we don't use root's. If root is at DEBUG,
     # then _a lot_ of logs will be printed if the user forgets to set
     # manticore's logger
     logger.setLevel(DEFAULT_LOG_LEVEL)
 
     if handler is None:
-        handler = logging.StreamHandler(sys.stdout)
-
-    # Always add our formatter and filter
-    handler.setFormatter(formatter)
-    handler.addFilter(ManticoreContextFilter())
+        handler = default_handler()
 
     # Finally attach to Manticore
     logger.addHandler(handler)

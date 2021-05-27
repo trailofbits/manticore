@@ -31,7 +31,7 @@ def main() -> None:
     """
     # Only print with Manticore's logger
     logging.getLogger().handlers = []
-    log.init_default_logging()
+    log.init_logging()
     args = parse_arguments()
 
     if args.no_colors:
