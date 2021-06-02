@@ -287,12 +287,6 @@ class NativeIntegrationTest(unittest.TestCase):
         """
         self._test_no_crash("fclose_linux_amd64", "+++++++")
 
-    def test_fileio_linux_amd64(self) -> None:
-        """
-        Tests that the `fileio` example for amd64 linux doesn't crash.
-        """
-        self._test_no_crash("fileio_linux_amd64", "+")
-
     def test_ioctl_bogus(self) -> None:
         """
         Tests that the `ioctl_bogus_linux_amd64` example for amd64 linux doesn't crash.
