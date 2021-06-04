@@ -23,9 +23,9 @@ MUNMAP_SYS_NUM: int
 
 def read_arg(cpu, arg: Union[str, int]):
     if isinstance(arg, int):
-        return cpu.read_register(arg)
-    else:
         return cpu.read_int(arg)
+    else:
+        return cpu.read_register(arg)
 
 
 def load_ret_addr(state: State) -> int:
