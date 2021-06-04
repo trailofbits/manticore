@@ -235,6 +235,7 @@ class StateBase(Eventful):
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
         new_state._id = None
+        new_state.manticore = self.manticore
         new_state._total_exec = self._total_exec
         self.copy_eventful_state(new_state)
 
