@@ -2583,7 +2583,9 @@ class Linux(Platform):
             logger.warning("sys_recvfrom: Unimplemented non-NULL addrlen")
 
         if not self.current.memory.access_ok(slice(buf, buf + count), "w"):
-            logger.info("RECV: buf within invalid memory. Returning -errno.EFAULT")
+            logger.info(
+                f"RECV: buf access within invalid memory ({buf:#x}--{buf+count:#x}, size={count}). Returning -errno.EFAULT"
+            )
             return -errno.EFAULT
 
         try:
