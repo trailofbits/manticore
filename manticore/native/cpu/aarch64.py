@@ -5255,6 +5255,9 @@ class Aarch64CdeclAbi(Abi):
         for address in self.values_from(self._cpu.STACK):
             yield address
 
+    def get_return_reg(self):
+        return "X0"
+
     def write_result(self, result):
         self._cpu.X0 = result
 
