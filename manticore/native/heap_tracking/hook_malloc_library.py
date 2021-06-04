@@ -3,7 +3,7 @@ from manticore.native import Manticore
 from manticore.native.heap_tracking.malloc_lib_data import MallocLibData
 
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 logger = logging.getLogger(__name__)
 logger.setLevel(2)
@@ -19,6 +19,13 @@ HOOK_REALLOC_RETURN: bool
 BRK_SYS_NUM: int
 MMAP_SYS_NUM: int
 MUNMAP_SYS_NUM: int
+
+
+def read_arg(cpu, arg: Union[str, int]):
+    if isinstance(arg, int):
+        return cpu.read_register(arg)
+    else:
+        return cpu.read_int(arg)
 
 
 def load_ret_addr(state: State) -> int:
@@ -147,12 +154,12 @@ def hook_mmap(state: State):
     """
     args = []
     args_gen = state._platform._function_abi.get_arguments()
-    args.append(state.cpu.read_register(next(args_gen)))  # void *addr
-    args.append(state.cpu.read_register(next(args_gen)))  # size_t length
-    args.append(state.cpu.read_register(next(args_gen)))  # int prot
-    args.append(state.cpu.read_register(next(args_gen)))  # int flags
-    args.append(state.cpu.read_register(next(args_gen)))  # int fd
-    args.append(state.cpu.read_register(next(args_gen)))  # off_t offset
+    args.append(read_arg(state.cpu, next(args_gen)))  # void *addr
+    args.append(read_arg(state.cpu, next(args_gen)))  # size_t length
+    args.append(read_arg(state.cpu, next(args_gen)))  # int prot
+    args.append(read_arg(state.cpu, next(args_gen)))  # int flags
+    args.append(read_arg(state.cpu, next(args_gen)))  # int fd
+    args.append(read_arg(state.cpu, next(args_gen)))  # off_t offset
     logger.info(f"Invoking mmap in malloc. Args {args}")
     state.context["mmap_args"] = args
 
@@ -185,7 +192,7 @@ def hook_brk(state: State):
     int brk(void *addr);
     """
     # Get request size from arg1
-    addr = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
+    addr = read_arg(state.cpu, next(state._platform._function_abi.get_arguments()))
     increment = addr - state.platform.brk
     logger.info(
         f"Invoking brk. Request address: {addr} for an increment of {increment}. Old brk: {state.platform.brk}"
@@ -219,7 +226,7 @@ def hook_malloc(state: State):
     void *malloc(size_t size);
     """
     # Get request size
-    malloc_size = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
+    malloc_size = read_arg(state.cpu, next(state._platform._function_abi.get_arguments()))
     logger.info(f"Invoking malloc for size: {malloc_size}")
     state.context["malloc_size"] = malloc_size
 
@@ -250,8 +257,8 @@ def hook_munmap(state: State):
     int munmap(void *addr, size_t length);
     """
     args_gen = state._platform._function_abi.get_arguments()
-    addr = state.cpu.read_register(next(args_gen))  # void *addr
-    length = state.cpu.read_register(next(args_gen))  # size_t length
+    addr = read_arg(state.cpu, next(args_gen))  # void *addr
+    length = read_arg(state.cpu, next(args_gen))  # size_t length
     logger.info(f"Invoking munmap in malloc. Args {addr}, {length}")
 
     state.context["malloc_lib"].process_munmap(addr, length)
@@ -278,7 +285,7 @@ def hook_free(state: State):
     void free(void *ptr);
     """
     # Get free address
-    free_address = state.cpu.read_register(next(state._platform._function_abi.get_arguments()))
+    free_address = read_arg(state.cpu, next(state._platform._function_abi.get_arguments()))
     logger.info(f"Attempting to free: {hex(free_address)}")
     state.context["malloc_lib"].process_free(free_address)
 
@@ -315,8 +322,8 @@ def hook_calloc(state: State):
     void *calloc(size_t nmemb, size_t size);
     """
     args_gen = state._platform._function_abi.get_arguments()
-    nmemb = state.cpu.read_register(next(args_gen))
-    elem_size = state.cpu.read_register(next(args_gen))
+    nmemb = read_arg(state.cpu, next(args_gen))
+    elem_size = read_arg(state.cpu, next(args_gen))
     logger.info(f"Invoking calloc for {nmemb} element(s) of size: {elem_size}")
     state.context["calloc_request"] = (nmemb, elem_size)
 
@@ -354,8 +361,8 @@ def hook_realloc(state: State):
     void *realloc(void *ptr, size_t size);
     """
     args_gen = state._platform._function_abi.get_arguments()
-    ptr = state.cpu.read_register(next(args_gen))
-    new_size = state.cpu.read_register(next(args_gen))
+    ptr = read_arg(state.cpu, next(args_gen))
+    new_size = read_arg(state.cpu, next(args_gen))
     logger.info(f"Attempting to realloc: {hex(ptr)} to a requested size of {new_size}")
     state.context["realloc_request"] = (ptr, new_size)
 
