@@ -6,7 +6,7 @@ import logging
 from typing import Callable, Optional, Union
 
 logger = logging.getLogger(__name__)
-logger.setLevel(2)
+logger.setLevel(logging.DEBUG)
 
 
 HOOK_BRK_INFO: bool
