@@ -446,12 +446,10 @@ class SMTLIBSolver(Solver):
         ret = self._smtlib.recv()
         return {"true": True, "false": False, "#b0": False, "#b1": True}[ret[2:-2].split(" ")[1]]
 
-    def __getvalue_all(
-        self, expressions_str: List[str], is_bv: List[bool]
-    ) -> Dict[str, int]:
+    def __getvalue_all(self, expressions_str: List[str], is_bv: List[bool]) -> Dict[str, int]:
         all_expressions_str = " ".join(expressions_str)
         self._smtlib.send(f"(get-value ({all_expressions_str}))")
-        ret_solver : Optional[str] = self._smtlib.recv()
+        ret_solver: Optional[str] = self._smtlib.recv()
         assert ret_solver is not None
         return_values = re.findall(RE_GET_EXPR_VALUE_ALL, ret_solver)
         return {value[0]: _convert(value[1]) for value in return_values}
