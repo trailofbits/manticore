@@ -1442,6 +1442,8 @@ class ManticoreEVM(ManticoreBase):
 
         if consts.lazymode:
             state.context["soundcheck"] = self.fix_unsound_lazy(state)
+        else:
+            state.context["soundcheck"] = True
 
         if not state.context["soundcheck"]:
             return state.context["soundcheck"]  # no need to keep checking
