@@ -448,12 +448,13 @@ class SMTLIBSolver(Solver):
 
     def __getvalue_all(
         self, expressions_str: List[str], is_bv: List[bool]
-    ) -> Tuple[Dict[str, int], str]:
+    ) -> Dict[str, int]:
         all_expressions_str = " ".join(expressions_str)
         self._smtlib.send(f"(get-value ({all_expressions_str}))")
-        ret_solver = self._smtlib.recv()
+        ret_solver : Optional[str] = self._smtlib.recv()
+        assert ret_solver is not None
         return_values = re.findall(RE_GET_EXPR_VALUE_ALL, ret_solver)
-        return {value[0]: _convert(value[1]) for value in return_values}, ret_solver
+        return {value[0]: _convert(value[1]) for value in return_values}
 
     def _getvalue(self, expression) -> Union[int, bool, bytes]:
         """
@@ -755,7 +756,7 @@ class SMTLIBSolver(Solver):
             if values_to_ask == []:
                 return values
 
-            values_returned, sol = self.__getvalue_all(values_to_ask, is_bv)
+            values_returned = self.__getvalue_all(values_to_ask, is_bv)
             for idx, expression in enumerate(expressions):
                 if not issymbolic(expression):
                     continue
