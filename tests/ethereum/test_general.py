@@ -946,6 +946,7 @@ class EthTests(unittest.TestCase):
                         d.add(instruction.name)
 
         mevm = self.mevm
+        mevm.disable_lazy_evaluation()
         p = TestDetector()
         mevm.register_detector(p)
 
