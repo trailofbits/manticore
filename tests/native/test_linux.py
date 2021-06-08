@@ -1,4 +1,5 @@
 import errno
+import logging
 import unittest
 from binascii import hexlify
 
@@ -10,11 +11,11 @@ import re
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.smtlib.solver import Z3Solver
-from manticore.core.smtlib import BitVecVariable, issymbolic
+from manticore.core.smtlib import BitVecVariable, issymbolic, ConstraintSet
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.utils.helpers import pickle_dumps
-from manticore.platforms.linux import EnvironmentError
+from manticore.platforms.linux import EnvironmentError, logger as linux_logger, SymbolicFile
 
 
 class LinuxTest(unittest.TestCase):
@@ -55,6 +56,44 @@ class LinuxTest(unittest.TestCase):
 
         for i, env in enumerate(envp):
             self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i * 8)), env)
+
+    def test_symbolic_file_wildcard(self) -> None:
+        with tempfile.NamedTemporaryFile("w") as fp:
+            # Write mixed symbolic and concrete data to our file
+            fp.write("++concrete++")
+            fp.flush()
+
+            # setup logger for our assertion
+            prev_log_level = linux_logger.getEffectiveLevel()
+            linux_logger.setLevel(logging.DEBUG)
+
+            with self.assertLogs(linux_logger, logging.DEBUG) as cm:
+                _ = SymbolicFile(ConstraintSet(), fp.name)
+            dmsg = "Found 4 free symbolic values"
+            self.assertIn(dmsg, "\n".join(cm.output))
+
+            with self.assertLogs(linux_logger, logging.DEBUG) as cm:
+                _ = SymbolicFile(ConstraintSet(), fp.name, wildcard="+", max_size=4)
+            dmsg = "Found 4 free symbolic values"
+            self.assertIn(dmsg, "\n".join(cm.output))
+
+            with self.assertLogs(linux_logger, logging.DEBUG) as cm:
+                _ = SymbolicFile(ConstraintSet(), fp.name, wildcard="+", max_size=2)
+            dmsg = "Found 4 free symbolic values"
+            wmsg = "Found more wildcards in the file than free symbolic values allowed (4 > 2)"
+            self.assertIn(wmsg, "\n".join(cm.output))
+
+            with self.assertLogs(linux_logger, logging.DEBUG) as cm:
+                _ = SymbolicFile(ConstraintSet(), fp.name, wildcard="|")
+            dmsg = "Found 0 free symbolic values"
+            self.assertIn(dmsg, "\n".join(cm.output))
+
+            with self.assertRaises(AssertionError) as ex:
+                _ = SymbolicFile(ConstraintSet(), fp.name, wildcard="Æ")
+            emsg = "needs to be a single byte"
+            self.assertIn(emsg, repr(ex.exception))
+
+            linux_logger.setLevel(prev_log_level)
 
     def test_load_maps(self) -> None:
         mappings = self.linux.current.memory.mappings()

@@ -1,12 +1,29 @@
 import logging
 import time
+from typing import Any, Tuple, Dict
 
-from capstone import *
+from capstone import CS_ARCH_ARM, CS_ARCH_X86, CS_MODE_32, CS_MODE_64
 
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
 # no emulator by default
-from unicorn import *
+from intervaltree import IntervalTree, Interval
+from unicorn.unicorn_const import (
+    UC_ARCH_X86,
+    UC_MODE_64,
+    UC_MODE_32,
+    UC_PROT_NONE,
+    UC_PROT_READ,
+    UC_PROT_WRITE,
+    UC_PROT_EXEC,
+    UC_HOOK_MEM_READ_UNMAPPED,
+    UC_HOOK_MEM_WRITE_UNMAPPED,
+    UC_HOOK_MEM_FETCH_UNMAPPED,
+    UC_HOOK_MEM_WRITE,
+    UC_HOOK_INTR,
+    UC_HOOK_INSN,
+)
+from unicorn import Uc, UcError
 from unicorn.arm_const import *
 from unicorn.x86_const import *
 
@@ -16,7 +33,7 @@ from ..native.memory import MemoryException
 logger = logging.getLogger(__name__)
 
 
-def convert_permissions(m_perms):
+def convert_permissions(m_perms: str):
     """
     Converts a Manticore permission string into a Unicorn permission
     :param m_perms: Manticore perm string ('rwx')
@@ -73,6 +90,9 @@ class ConcreteUnicornEmulator:
         self.flag_registers = {"CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"}
         self.write_backs_disabled = False
         self._stop_at = None
+        # Holds key of range (addr, addr + size) and value of permissions
+        # Key doesn't include permissions because unmap doesn't care about permissions
+        self.already_mapped: IntervalTree = IntervalTree()
 
         cpu.subscribe("did_write_memory", self.write_back_memory)
         cpu.subscribe("did_write_register", self.write_back_register)
@@ -99,35 +119,15 @@ class ConcreteUnicornEmulator:
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
         self.registers -= self.flag_registers
-        # TODO(eric_k): unicorn@1.0.2rc1 doesn't like writing to
-        # the FS register, and it will segfault or hang.
-        self.registers -= {"FS"}
         self.registers.add("EFLAGS")
 
-        for reg in self.registers:
-            val = self._cpu.read_register(reg)
-
-            if reg in {"FS", "GS"}:
-                self.msr_write(reg, val)
-                continue
-
-            if issymbolic(val):
-                from ..native.cpu.abstractcpu import ConcretizeRegister
-
-                raise ConcretizeRegister(
-                    self._cpu, reg, "Concretizing for emulation.", policy="ONE"
-                )
-            logger.debug("Writing %s into %s", val, reg)
-            self._emu.reg_write(self._to_unicorn_id(reg), val)
-
-        for m in cpu.memory.maps:
-            self.map_memory_callback(m.start, len(m), m.perms, m.name, 0, m.start)
+        self.load_state_from_manticore()
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
         self._to_raise = None
 
-    def copy_memory(self, address, size):
+    def copy_memory(self, address: int, size: int):
         """
         Copy the bytes from address to address+size into Unicorn
         Used primarily for copying memory maps
@@ -135,52 +135,124 @@ class ConcreteUnicornEmulator:
         :param size: How many bytes to copy
         """
         start_time = time.time()
-        map_bytes = self._cpu._raw_read(address, size)
+        map_bytes = self._cpu._raw_read(address, size, force=True)
         self._emu.mem_write(address, map_bytes)
         if time.time() - start_time > 3:
             logger.info(
-                f"Copying {hr_size(size)} map at {hex(address)} took {time.time() - start_time} seconds"
+                f"Copying {hr_size(size)} map at {address:#x} took {time.time() - start_time} seconds"
             )
 
-    def map_memory_callback(self, address, size, perms, name, offset, result):
+    def load_state_from_manticore(self) -> None:
+        for reg in self.registers:
+            val = self._cpu.read_register(reg)
+            if issymbolic(val):
+                from ..native.cpu.abstractcpu import ConcretizeRegister
+
+                raise ConcretizeRegister(
+                    self._cpu, reg, "Concretizing for emulation.", policy="ONE"
+                )
+
+            if reg in {"FS", "GS"}:
+                if reg == "FS" and val in self._cpu._segments:
+                    base, limit, perms = self._cpu._segments[val]
+                    self.update_segment(val, base, limit, perms)
+                    continue
+                logger.debug("Writing {val} into {reg}")
+                self.msr_write(reg, val)
+                continue
+
+            logger.debug("Writing {val} into {reg}")
+            self._emu.reg_write(self._to_unicorn_id(reg), val)
+
+        for m in self._cpu.memory.maps:
+            self.map_memory_callback(m.start, len(m), m.perms, m.name, 0, m.start)
+
+    def map_memory_callback(
+        self, address: int, size: int, perms: str, name: str, offset: int, result: int
+    ) -> None:
         """
         Catches did_map_memory and copies the mapping into Manticore
         """
-        logger.info(
+        begin = address
+        end = address + size
+        perms_value = convert_permissions(perms)
+        # Check for exact match
+        # Overlap match
+        if (
+            Interval(begin, end, perms_value) not in self.already_mapped
+            and not self.already_mapped.overlaps(begin, end)
+            and not self.already_mapped.envelop(begin, end)
+        ):
+            logger.info(
+                " ".join(
+                    (
+                        "Mapping Memory @",
+                        hex(address),
+                        ":",
+                        hex(address + size),
+                        hr_size(size),
+                        "-",
+                        perms,
+                        "-",
+                        f"{name}:{offset:#x}" if name else "",
+                        "->",
+                        hex(result),
+                    )
+                )
+            )
+            self._emu.mem_map(begin, size, perms_value)
+            self.already_mapped[begin:end] = perms_value
+        logger.debug(
             " ".join(
                 (
-                    "Mapping Memory @",
-                    hex(address) if type(address) is int else "0x??",
+                    "Copying Memory @",
+                    hex(address),
                     hr_size(size),
                     "-",
                     perms,
                     "-",
-                    f"{name}:{hex(offset) if name else ''}",
+                    f"{name}:{offset:#x}" if name else "",
                     "->",
                     hex(result),
                 )
             )
         )
-        self._emu.mem_map(address, size, convert_permissions(perms))
         self.copy_memory(address, size)
+        self.protect_memory_callback(address, size, perms)
 
     def unmap_memory_callback(self, start, size):
         """Unmap Unicorn maps when Manticore unmaps them"""
-        logger.info(f"Unmapping memory from {hex(start)} to {hex(start + size)}")
 
-        mask = (1 << 12) - 1
-        if (start & mask) != 0:
-            logger.error("Memory to be unmapped is not aligned to a page")
+        # Need this check because our memory events are leaky to internal implementation details
+        end = start + size
+        parent_map = self.already_mapped.overlap(start, end)
+        # Only unmap whole original maps
+        if (
+            len(parent_map) == 1
+            and list(parent_map)[0].begin == start
+            and list(parent_map)[0].end == end
+        ):
+            mask = (1 << 12) - 1
+            if (start & mask) != 0:
+                logger.error("Memory to be unmapped is not aligned to a page")
 
-        if (size & mask) != 0:
-            size = ((size >> 12) + 1) << 12
-            logger.warning("Forcing unmap size to align to a page")
+            if (size & mask) != 0:
+                size = ((size >> 12) + 1) << 12
+                logger.warning("Forcing unmap size to align to a page")
 
-        self._emu.mem_unmap(start, size)
+            logger.info(f"Unmapping memory from {start:#x} to {start+size:#x}")
+
+            self._emu.mem_unmap(start, size)
+            self.already_mapped.remove_overlap(start, start + size)
+        else:
+            logger.debug(
+                f"Not unmapping because bounds ({start:#x} - {start+size:#x}) are enveloped in existing map:"
+            )
+            logger.debug(f"\tParent map(s) {parent_map}")
 
     def protect_memory_callback(self, start, size, perms):
         """ Set memory protections in Unicorn correctly """
-        logger.info(f"Changing permissions on {hex(start)}:{hex(start + size)} to {perms}")
+        logger.debug(f"Changing permissions on {start:#x}:{start+size:#x} to '{perms}'")
         self._emu.mem_protect(start, size, convert_permissions(perms))
 
     def get_unicorn_pc(self):
@@ -199,7 +271,7 @@ class ConcreteUnicornEmulator:
         Unicorn hook that transfers control to Manticore so it can execute the syscall
         """
         logger.debug(
-            f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall"
+            f"Stopping emulation at {uc.reg_read(self._to_unicorn_id('RIP')):#x} to perform syscall"
         )
         self.sync_unicorn_to_manticore()
         from ..native.cpu.abstractcpu import Syscall
@@ -207,28 +279,24 @@ class ConcreteUnicornEmulator:
         self._to_raise = Syscall()
         uc.emu_stop()
 
-    def _hook_write_mem(self, uc, access, address, size, value, data):
+    def _hook_write_mem(self, uc, _access, address: int, size: int, value: int, _data) -> bool:
         """
         Captures memory written by Unicorn
         """
         self._mem_delta[address] = (value, size)
         return True
 
-    def _hook_unmapped(self, uc, access, address, size, value, data):
+    def _hook_unmapped(self, uc, access, address, size, value, _data) -> bool:
         """
         We hit an unmapped region; map it into unicorn.
         """
         try:
             self.sync_unicorn_to_manticore()
-            logger.warning(f"Encountered an operation on unmapped memory at {hex(address)}")
+            logger.warning(f"Encountered an operation on unmapped memory at {address:#x}")
             m = self._cpu.memory.map_containing(address)
             self.copy_memory(m.start, m.end - m.start)
         except MemoryException as e:
-            logger.error(
-                "Failed to map memory {}-{}, ({}): {}".format(
-                    hex(address), hex(address + size), access, e
-                )
-            )
+            logger.error(f"Failed to map memory {address:#x}-{address+size:#x}, ({access}): {e}")
             self._to_raise = e
             self._should_try_again = False
             return False
@@ -236,22 +304,22 @@ class ConcreteUnicornEmulator:
         self._should_try_again = True
         return False
 
-    def _interrupt(self, uc, number, data):
+    def _interrupt(self, uc, number: int, _data) -> bool:
         """
         Handle software interrupt (SVC/INT)
         """
-        logger.info("Caught interrupt: %s" % number)
+        logger.info(f"Caught interrupt: {number}")
         from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
 
         self._to_raise = Interruption(number)
         return True
 
-    def _to_unicorn_id(self, reg_name):
+    def _to_unicorn_id(self, reg_name: str) -> int:
         if self._cpu.arch == CS_ARCH_ARM:
             return globals()["UC_ARM_REG_" + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
-            custom_mapping = {"PC": "RIP", "STACK": "RSP", "FRAME": "RBP"}
+            custom_mapping = {"PC": "RIP", "STACK": "RSP", "FRAME": "RBP", "FS_BASE": "FS_BASE"}
             try:
                 return globals()["UC_X86_REG_" + custom_mapping.get(reg_name, reg_name)]
             except KeyError:
@@ -262,7 +330,7 @@ class ConcreteUnicornEmulator:
             # TODO(yan): raise a more appropriate exception
             raise TypeError
 
-    def emulate(self, instruction):
+    def emulate(self, instruction) -> None:
         """
         Wrapper that runs the _step function in a loop while handling exceptions
         """
@@ -280,7 +348,7 @@ class ConcreteUnicornEmulator:
             if not self._should_try_again:
                 break
 
-    def _step(self, instruction, chunksize=0):
+    def _step(self, instruction, chunksize: int = 0) -> None:
         """
         Execute a chunk fo instructions starting from instruction
         :param instruction: Where to start
@@ -291,7 +359,7 @@ class ConcreteUnicornEmulator:
             pc = self._cpu.PC
             m = self._cpu.memory.map_containing(pc)
             if self._stop_at:
-                logger.info(f"Emulating from {hex(pc)} to  {hex(self._stop_at)}")
+                logger.info(f"Emulating from {pc:#x} to  {self._stop_at:#x}")
             self._emu.emu_start(pc, m.end if not self._stop_at else self._stop_at, count=chunksize)
         except UcError:
             # We request re-execution by signaling error; if we we didn't set
@@ -308,16 +376,21 @@ class ConcreteUnicornEmulator:
             logger.info("Reached emulation target, switching to Manticore mode")
             self.sync_unicorn_to_manticore()
             self._stop_at = None
+            self.write_backs_disabled = True
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
             from ..native.cpu.abstractcpu import Syscall
 
-            if type(self._to_raise) is not Syscall:
-                logger.info("Raising %s", self._to_raise)
+            if type(self._to_raise) is Syscall:
+                # NOTE: raises Syscall within sem_SYSCALL
+                # NOTE: Need to call syscall semantic function due to
+                # @instruction around SYSCALL
+                self._cpu.sem_SYSCALL()
+            logger.info(f"Raising {self._to_raise}")
             raise self._to_raise
 
-        logger.info(f"Exiting Unicorn Mode at {hex(self._cpu.PC)}")
+        logger.info(f"Exiting Unicorn Mode at {self._cpu.PC:#x}")
         return
 
     def sync_unicorn_to_manticore(self):
@@ -377,25 +450,21 @@ class ConcreteUnicornEmulator:
         if reg in self.flag_registers:
             self._emu.reg_write(self._to_unicorn_id("EFLAGS"), self._cpu.read_register("EFLAGS"))
             return
-        # TODO(eric_k): unicorn@1.0.2rc1 doesn't like writing to
-        # the FS register, and it will segfault or hang.
-        if reg in {"FS"}:
-            logger.warning(f"Skipping {reg} write. Unicorn unsupported register write.")
-            return
         self._emu.reg_write(self._to_unicorn_id(reg), val)
 
     def update_segment(self, selector, base, size, perms):
         """ Only useful for setting FS right now. """
-        logger.info("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
-        if selector == 99:
-            self.msr_write("FS", base)
-        else:
-            logger.error("No way to write segment: %d", selector)
+        logger.debug("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
+        self.write_back_register("FS", selector)
+        self.write_back_register("FS_BASE", base)
+        self.msr_write("FS", base)
 
     def msr_write(self, reg, data):
         """
         set the hidden descriptor-register fields to the given address.
         This enables referencing the fs segment on x86-64.
+
+        https://wiki.osdev.org/SWAPGS
         """
         magic = {"FS": 0xC0000100, "GS": 0xC0000101}
         return self._emu.msr_write(magic[reg], data)
