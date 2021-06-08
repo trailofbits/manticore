@@ -48,6 +48,12 @@ launch_examples() {
         return 1
     fi
 
+    echo "Running fileio symbolic file test..."
+    coverage run --append ./symbolic_file.py
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     return 0
 }
 
