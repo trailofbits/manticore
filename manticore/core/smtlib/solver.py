@@ -22,6 +22,7 @@ from queue import Queue
 import collections
 import shlex
 import time
+from abc import abstractmethod
 from functools import lru_cache
 from typing import Any, Dict, Tuple, Sequence, Optional, List
 from subprocess import PIPE, Popen, check_output
@@ -87,32 +88,6 @@ consts.add(
 )
 
 
-class SolverInfo:
-    """This class holds the specific command lines and config from every solver. It should be
-    initialized and used inside each solver __init__ function to make sure the consts from the manticore
-    command line are properly updated"""
-
-    def __init__(self):
-        self.commands = dict()
-        self.inits = dict()
-
-        self.commands[
-            "z3"
-        ] = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
-        self.inits["z3"] = [
-            "(set-logic QF_AUFBV)",
-            "(set-option :global-decls false)",
-            "(set-option :tactic.solve_eqs.context_solve false)",
-        ]
-        self.commands["yices"] = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
-        self.inits["yices"] = ["(set-logic QF_AUFBV)"]
-        self.commands["boolector"] = f"{consts.boolector_bin} --time={consts.timeout} -i"
-        self.inits["boolector"] = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        self.commands[
-            "cvc4"
-        ] = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
-        self.inits["cvc4"] = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-
 def _convert(v):
     r = None
     if v == "true":
@@ -131,6 +106,7 @@ def _convert(v):
 
     assert r is not None
     return r
+
 
 class SingletonMixin(object):
     __singleton_instances: Dict[Tuple[int, int], "SingletonMixin"] = {}
@@ -343,6 +319,16 @@ class SmtlibProc:
 class SMTLIBSolver(Solver):
     ncores: Optional[int] = None
     sname: Optional[str] = None
+
+    @classmethod
+    @abstractmethod
+    def command(self) -> str:
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def inits(self) -> List[str]:
+        raise NotImplementedError()
 
     def __init__(
         self,
@@ -799,14 +785,25 @@ class SMTLIBSolver(Solver):
 class Z3Solver(SMTLIBSolver):
     sname = "z3"
 
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return [
+            "(set-logic QF_AUFBV)",
+            "(set-option :global-decls false)",
+            "(set-option :tactic.solve_eqs.context_solve false)",
+        ]
+
     def __init__(self):
         """
         Build a Z3 solver instance.
         This is implemented using an external z3 solver (via a subprocess).
         See https://github.com/Z3Prover/z3
         """
-        info = SolverInfo()
-        command = info.commands["z3"]
+        command = self.command()
         self.ncores = 1
 
         init, support_minmax, support_reset, multiple_check = self.__autoconfig()
@@ -821,7 +818,7 @@ class Z3Solver(SMTLIBSolver):
         )
 
     def __autoconfig(self):
-        init = info.inits["z3"]
+        init = self.inits()
 
         # To cache what get-info returned; can be directly set when writing tests
         self.version = self._solver_version()
@@ -863,10 +860,17 @@ class Z3Solver(SMTLIBSolver):
 class YicesSolver(SMTLIBSolver):
     sname = "yices"
 
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return ["(set-logic QF_AUFBV)"]
+
     def __init__(self):
-        info = SolverInfo()
-        init = info.inits["yices"]
-        command = info.commands["yices"]
+        init = self.inits()
+        command = self.command()
         self.ncores = 1
         super().__init__(
             command=command,
@@ -880,10 +884,17 @@ class YicesSolver(SMTLIBSolver):
 class CVC4Solver(SMTLIBSolver):
     sname = "cvc4"
 
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+
     def __init__(self):
-        info = SolverInfo()
-        init = info.inits["cvc4"]
-        command = info.commands["cvc4"]
+        init = self.inits()
+        command = self.command()
         self.ncores = 1
         super().__init__(command=command, init=init)
 
@@ -891,10 +902,17 @@ class CVC4Solver(SMTLIBSolver):
 class BoolectorSolver(SMTLIBSolver):
     sname = "boolector"
 
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.boolector_bin} --time={consts.timeout} -i"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+
     def __init__(self, args: List[str] = []):
-        info = SolverInfo()
-        init = info.inits["boolector"]
-        command = info.commands["boolector"]
+        init = self.inits()
+        command = self.command()
         self.ncores = 1
         super().__init__(command=command, init=init)
 
@@ -909,12 +927,11 @@ class SmtlibPortfolio:
         self._procs: Dict[str, SmtlibProc] = {}
         self._solvers: List[str] = solvers
         self._debug = debug
-        self._info = SolverInfo()
 
     def start(self):
         if len(self._procs) == 0:
             for solver in self._solvers:
-                self._procs[solver] = SmtlibProc(self._info.commands[solver], self._debug)
+                self._procs[solver] = SmtlibProc(solver_selector[solver].command(), self._debug)
 
         for _, proc in self._procs.items():
             proc.start()
@@ -988,7 +1005,7 @@ class SmtlibPortfolio:
     def init(self):
         assert len(self._solvers) == len(self._procs)
         for solver, proc in self._procs.items():
-            for cfg in self._info.inits[solver]:
+            for cfg in solver_selector[solver].inits():
                 proc.send(cfg)
 
 
@@ -1050,6 +1067,15 @@ class PortfolioSolver(SMTLIBSolver):
             self._smtlib.send(constraints)
 
 
+solver_selector = {
+    "cvc4": CVC4Solver,
+    "boolector": BoolectorSolver,
+    "yices": YicesSolver,
+    "z3": Z3Solver,
+    "portfolio": PortfolioSolver,
+}
+
+
 class SelectedSolver:
     choice = None
 
@@ -1073,11 +1099,5 @@ class SelectedSolver:
         else:
             cls.choice = consts.solver
 
-        SelectedSolver = {
-            "cvc4": CVC4Solver,
-            "boolector": BoolectorSolver,
-            "yices": YicesSolver,
-            "z3": Z3Solver,
-            "portfolio": PortfolioSolver,
-        }[cls.choice.name]
+        SelectedSolver = solver_selector[cls.choice.name]
         return SelectedSolver.instance()
