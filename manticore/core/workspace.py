@@ -658,7 +658,7 @@ class ManticoreOutput:
     @staticmethod
     def save_input_symbols(testcase, state: StateBase):
         with testcase.open_stream("input") as f:
-            for symbol in state.input_symbols:
+            bufs = state.solve_one_n_batched(state.input_symbols)
+            for symbol, buf in zip(state.input_symbols, bufs):
                 # TODO - constrain=False here, so the extra migration shouldn't cause problems, right?
-                buf = state.solve_one(symbol)
                 f.write(f"{symbol.name}: {buf!r}\n")

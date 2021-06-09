@@ -182,13 +182,24 @@ class Transaction:
         :param state: a manticore state
         :param bool constrain: If True, constrain expr to concretized value
         """
-        conc_caller = state.solve_one(self.caller, constrain=constrain)
-        conc_address = state.solve_one(self.address, constrain=constrain)
-        conc_value = state.solve_one(self.value, constrain=constrain)
-        conc_gas = state.solve_one(self.gas, constrain=constrain)
-        conc_data = state.solve_one(self.data, constrain=constrain)
-        conc_return_data = state.solve_one(self.return_data, constrain=constrain)
-        conc_used_gas = state.solve_one(self.used_gas, constrain=constrain)
+        all_elems = [
+            self.caller,
+            self.address,
+            self.value,
+            self.gas,
+            self.data,
+            self._return_data,
+            self.used_gas,
+        ]
+        values = state.solve_one_n_batched(all_elems, constrain=constrain)
+        conc_caller = values[0]
+        conc_address = values[1]
+        conc_value = values[2]
+        conc_gas = values[3]
+        conc_data = values[4]
+        conc_return_data = values[5]
+        conc_used_gas = values[6]
+
         return Transaction(
             self.sort,
             conc_address,
@@ -291,9 +302,7 @@ class Transaction:
                 )  # is this redundant since arguments are all concrete?
                 stream.write("Function call:\n")
                 stream.write("Constructor(")
-                stream.write(
-                    ",".join(map(repr, map(state.solve_one, arguments)))
-                )  # is this redundant since arguments are all concrete?
+                stream.write(",".join(map(repr, arguments)))
                 stream.write(") -> %s %s\n" % (self.result, flagged(is_argument_symbolic)))
 
         if self.sort == "CALL":
@@ -3435,14 +3444,18 @@ class EVMWorld(Platform):
                 stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain.get_storage(account_address)
-            concrete_indexes = set()
-            for sindex in storage.written:
-                concrete_indexes.add(state.solve_one(sindex, constrain=True))
+            concrete_indexes = []
+            if len(storage.written) > 0:
+                concrete_indexes = state.solve_one_n_batched(storage.written, constrain=True)
 
-            for index in concrete_indexes:
-                stream.write(
-                    f"storage[{index:x}] = {state.solve_one(storage[index], constrain=True):x}\n"
-                )
+            concrete_values = []
+            if len(concrete_indexes) > 0:
+                concrete_values = state.solve_one_n_batched(concrete_indexes, constrain=True)
+
+            assert len(concrete_indexes) == len(concrete_values)
+            for index, value in zip(concrete_indexes, concrete_values):
+                stream.write(f"storage[{index:x}] = {value:x}\n")
+
             storage = blockchain.get_storage(account_address)
             stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 
