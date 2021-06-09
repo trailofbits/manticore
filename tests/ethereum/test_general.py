@@ -1626,7 +1626,6 @@ class EthSolidityMetadataTests(unittest.TestCase):
 
 
 class EthSpecificTxIntructionTests(unittest.TestCase):
-    @unittest.skip("reason")
     def test_jmpdest_check(self):
         """
         This test that jumping to a JUMPDEST in the operand of a PUSH should
