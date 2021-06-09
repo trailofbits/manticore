@@ -45,9 +45,11 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 
 # https://stackoverflow.com/a/4792601 grumble grumble
-dev_extension = ""
+version = "0.3.6"
 if "--dev_release" in sys.argv:
-    dev_extension = ".dev" + date.today().strftime("%y%m%d")
+    major, minor, point = tuple(int(t) for t in version.split("."))
+    dev_extension = f"dev{date.today().strftime('%y%m%d')}"
+    version = f"{major}.{minor}.{point + 1}.{dev_extension}"
     sys.argv.remove("--dev_release")
 
 setup(
@@ -57,7 +59,7 @@ setup(
     long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.6" + dev_extension,
+    version=version,
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
