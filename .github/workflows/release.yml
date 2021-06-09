@@ -58,12 +58,6 @@ jobs:
       run: |
         cp scripts/run_tests.sh .
         ./run_tests.sh
-    - name: Coveralls Parallel
-      run: |
-        coveralls --service=github
-      env:
-        COVERALLS_PARALLEL: true
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   upload:
     runs-on: ubuntu-18.04
