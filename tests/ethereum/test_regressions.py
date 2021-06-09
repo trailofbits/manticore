@@ -235,7 +235,9 @@ class IntegrationTest(unittest.TestCase):
 
     def test_1102(self):
         with tempfile.TemporaryDirectory() as workspace:
-            self._simple_cli_run("1102.sol", workspace=workspace, testcases=True)
+            self._simple_cli_run(
+                "1102.sol", workspace=workspace, testcases=True, args=["--thorough-mode"]
+            )
 
             with open(os.path.join(workspace, "global.findings")) as gf:
                 global_findings = gf.read().splitlines()
