@@ -398,10 +398,10 @@ def main():
     eth_flags = parser.add_argument_group("Ethereum flags")
 
     eth_flags.add_argument(
-        "--quick-mode",
+        "--thorough-mode",
         action="store_true",
-        help="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
-        "do not explore constant functions. Disable all detectors.",
+        help="Configure Manticore for more exhaustive exploration. Evaluate gas, generate testcases for dead states, "
+        "explore constant functions, and run a small suite of detectors.",
     )
     eth_flags.add_argument(
         "--contract_name", type=str, help="The target contract name defined in the source code"
