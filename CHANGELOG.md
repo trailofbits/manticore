@@ -18,6 +18,7 @@ Thanks to our external contributors!
 * Bugfixes for control transfer between Manticore & Unicorn [#1796](https://github.com/trailofbits/manticore/pull/1796)
 
 ### Other
+* Run multiple SMT solvers in parallel, take the fastest response [#2420](https://github.com/trailofbits/manticore/pull/2420)
 * Add socket for TUI [#1620](https://github.com/trailofbits/manticore/pull/1620)
 * Memory usage improvements in expression system [#2394](https://github.com/trailofbits/manticore/pull/2394)
 * Support for Boolector [#2410](https://github.com/trailofbits/manticore/pull/2410)
