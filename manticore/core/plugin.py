@@ -467,6 +467,10 @@ class IntrospectionAPIPlugin(Plugin):
 
     NAME = "introspector"
 
+    @property
+    def name(self) -> str:
+        return "IntrospectionAPIPlugin"
+
     def create_state(self, state_id: int):
         """
         Adds a StateDescriptor to the context in the READY state list
