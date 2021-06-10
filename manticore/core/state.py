@@ -1,7 +1,10 @@
 import copy
 import logging
 
+from typing import List, Tuple, Sequence
+
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
+from .smtlib.expression import Expression
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils import config
@@ -451,30 +454,41 @@ class StateBase(Eventful):
         """
         return self.solve_one_n(expr, constrain=constrain)[0]
 
-    def solve_one_n(self, *exprs, constrain=False):
+    def solve_one_n(self, *exprs: Expression, constrain: bool = False) -> List[int]:
         """
-        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        one solution.
+        Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        a list of solutions.
 
         :param exprs: An iterable of manticore.core.smtlib.Expression
         :param bool constrain: If True, constrain expr to solved solution value
-        :return: Concrete value or a tuple of concrete values
-        :rtype: int
+        :return: List of concrete value or a tuple of concrete values
         """
-        values = []
-        for expr in exprs:
-            if not issymbolic(expr):
-                values.append(expr)
-            else:
-                expr = self.migrate_expression(expr)
-                value = self._solver.get_value(self._constraints, expr)
-                if constrain:
-                    self.constrain(expr == value)
-                # Include forgiveness here
-                if isinstance(value, bytearray):
-                    value = bytes(value)
-                values.append(value)
-        return values
+        return self.solve_one_n_batched(exprs, constrain)
+
+    def solve_one_n_batched(
+        self, exprs: Sequence[Expression], constrain: bool = False
+    ) -> List[int]:
+        """
+        Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        a list of solutions.
+        :param exprs: An iterable of manticore.core.smtlib.Expression
+        :param bool constrain: If True, constrain expr to solved solution value
+        :return: List of concrete value or a tuple of concrete values
+        """
+        # Return ret instead of value, to allow the bytearray/bytes conversion
+        ret = []
+        exprs = [self.migrate_expression(x) for x in exprs]
+        values = self._solver.get_value_in_batch(self._constraints, exprs)
+        assert len(values) == len(exprs)
+        for idx, expr in enumerate(exprs):
+            value = values[idx]
+            if constrain:
+                self.constrain(expr == values[idx])
+            # Include forgiveness here
+            if isinstance(value, bytearray):
+                value = bytes(value)
+            ret.append(value)
+        return ret
 
     def solve_n(self, expr, nsolves):
         """
