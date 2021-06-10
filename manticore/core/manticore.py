@@ -49,7 +49,11 @@ consts.add(
     default=False,
     description="If True enables to run workers over the network UNIMPLEMENTED",
 )
-consts.add("procs", default=10, description="Number of parallel processes to spawn")
+consts.add(
+    "procs",
+    default=12,
+    description="Number of parallel processes to spawn in order to run every task, including solvers",
+)
 
 proc_type = MProcessingType.threading
 if sys.platform != "linux":
@@ -380,8 +384,9 @@ class ManticoreBase(Eventful):
             raise TypeError(f"Invalid initial_state type: {type(initial_state).__name__}")
         self._put_state(initial_state)
 
+        nworkers = max(consts.procs // initial_state._solver.ncores, 1)
         # Workers will use manticore __dict__ So lets spawn them last
-        self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+        self._workers = [self._worker_type(id=i, manticore=self) for i in range(nworkers)]
 
         # Create log capture worker. We won't create the rest of the daemons until .run() is called
         self._daemon_threads: typing.Dict[int, DaemonThread] = {
