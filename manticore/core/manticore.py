@@ -394,6 +394,8 @@ class ManticoreBase(Eventful):
 
         # Make sure terminated workers are restarted
         self.subscribe("did_terminate_worker", self.did_terminate_worker_callback)
+        self.last_id = self._workers[-1].id
+        self.number_killed_states = self.count_killed_states()
 
     def is_main(self):
         """True if called from the main process/script
@@ -1147,8 +1149,6 @@ class ManticoreBase(Eventful):
                 self._daemon_threads[dt.id] = dt
                 dt.start(cb)
 
-        self.last_id = self._workers[-1].id
-        self.number_killed_states = self.count_killed_states()
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
             with self._lock:
