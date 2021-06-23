@@ -16,6 +16,8 @@ class AllocationInformation:
     addr: int
     requested_size: int
     is_freed: bool
+    allocation_location: Optional[int] = None
+    deallocation_location: Optional[int] = None
 
 
 @dataclass
