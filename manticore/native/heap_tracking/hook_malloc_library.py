@@ -39,39 +39,32 @@ def load_ret_addr(state: State) -> int:
 
 def add_ret_hook(func: str, state: State, ret_hook: Callable[[State], None]) -> None:
     ret_addr = load_ret_addr(state)
-    logger.debug(f"Adding a hook for {func} callsite in state: {state.id}")
     state.add_hook(ret_addr, ret_hook, after=False)
 
 
 def add_sys_freeing_hooks(state: State):
     if HOOK_MMAP_INFO:
-        logger.debug(f"Adding hook for munmap in state: {state.id}")
         state.add_hook(MUNMAP_SYS_NUM, hook_munmap, after=False, syscall=True)
 
 
 def remove_sys_freeing_hooks(state: State):
     if HOOK_MMAP_INFO:
-        logger.debug(f"Unhooking munmap in state: {state.id}")
         state.remove_hook(MUNMAP_SYS_NUM, hook_munmap, syscall=True)
 
 
 def add_sys_allocing_hooks(state: State):
     if HOOK_BRK_INFO:
-        logger.debug(f"Adding hook for brk in state: {state.id}")
         state.add_hook(BRK_SYS_NUM, hook_brk, after=False, syscall=True)
 
     if HOOK_MMAP_INFO:
-        logger.debug(f"Adding hook for mmap in state: {state.id}")
         state.add_hook(MMAP_SYS_NUM, hook_mmap, after=False, syscall=True)
 
 
 def remove_sys_allocing_hooks(state: State):
     if HOOK_BRK_INFO:
-        logger.debug(f"Unhooking brk in state: {state.id}")
         state.remove_hook(BRK_SYS_NUM, hook_brk, syscall=True)
 
     if HOOK_MMAP_INFO:
-        logger.debug(f"Unhooking mmap in state: {state.id}")
         state.remove_hook(MMAP_SYS_NUM, hook_mmap, syscall=True)
 
 
@@ -142,7 +135,6 @@ def hook_mmap_return(state: State):
     state.context["malloc_lib"].process_mmap(ret_val, state.context["mmap_args"])
     del state.context["mmap_args"]
 
-    logger.debug(f"Unhooking mmap return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_mmap_return)
 
 
@@ -177,7 +169,6 @@ def hook_brk_return(state: State):
     state.context["malloc_lib"].process_brk(ret_val, state.context["brk_increment"])
     del state.context["brk_increment"]
 
-    logger.debug(f"Unhooking brk return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_brk_return)
 
 
@@ -215,7 +206,6 @@ def hook_malloc_return(state: State):
 
     remove_sys_allocing_hooks(state)
 
-    logger.debug(f"Unhooking malloc return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_malloc_return)
     logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
@@ -246,7 +236,6 @@ def hook_munmap_return(state: State):
     ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
     logger.info(f"munmap ret val: {hex(ret_val)}")
 
-    logger.debug(f"Unhooking munmap return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_munmap_return)
 
 
@@ -274,7 +263,6 @@ def hook_free_return(state: State):
     logger.info(f"Free has no return value")
 
     remove_sys_freeing_hooks(state)
-    logger.debug(f"Unhooking free return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_free_return)
     logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
@@ -311,7 +299,6 @@ def hook_calloc_return(state: State):
 
     remove_sys_allocing_hooks(state)
 
-    logger.debug(f"Unhooking calloc return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_calloc_return)
     logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
@@ -350,7 +337,6 @@ def hook_realloc_return(state: State):
     remove_sys_allocing_hooks(state)
     remove_sys_freeing_hooks(state)
 
-    logger.debug(f"Unhooking realloc return in state: {state.id}")
     state.remove_hook(state.cpu.read_register("PC"), hook_realloc_return)
     logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
