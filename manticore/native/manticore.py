@@ -107,6 +107,8 @@ class Manticore(ManticoreBase):
         entry_symbol=None,
         symbolic_files=None,
         concrete_start="",
+        symbolic_start="",
+        symbolic_start_constraints={},
         pure_symbolic=False,
         stdin_size=None,
         **kwargs,
@@ -141,6 +143,8 @@ class Manticore(ManticoreBase):
                     entry_symbol,
                     symbolic_files,
                     concrete_start,
+                    symbolic_start,
+                    symbolic_start_constraints,
                     pure_symbolic,
                     stdin_size,
                 ),
@@ -461,6 +465,8 @@ def _make_linux(
     entry_symbol=None,
     symbolic_files=None,
     concrete_start="",
+    symbolic_start="",
+    symbolic_start_constraints={},
     pure_symbolic=False,
     stdin_size=None,
     *args,
@@ -496,6 +502,11 @@ def _make_linux(
     if concrete_start != "":
         logger.info("Starting with concrete input: %s", concrete_start)
 
+    if symbolic_start != "":
+        logger.info(
+            f"Starting with constrained input: {symbolic_start}, using constraints: {symbolic_start_constraints}"
+        )
+
     if pure_symbolic:
         logger.warning("[EXPERIMENTAL] Using purely symbolic memory.")
 
@@ -511,6 +522,13 @@ def _make_linux(
         platform.setup_stack([program] + argv, env)
 
     platform.input.write(concrete_start)
+    platform.input.write(
+        initial_state.constrain_and_symbolicate_buffer(
+            symbolic_start,
+            label="CONSTRAINED_STDIN",
+            constraints=symbolic_start_constraints
+        )
+    )
 
     # set stdin input...
     platform.input.write(initial_state.symbolicate_buffer("+" * stdin_size, label="STDIN"))

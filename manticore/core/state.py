@@ -594,3 +594,38 @@ class StateBase(Eventful):
                 else:
                     assert b != 0
         return data
+
+    def constrain_and_symbolicate_buffer(
+        self, data, label="INPUT", constraints={}, string=False, taint=frozenset()
+    ):
+        # NOTE(sonya): this constraint dict should expanded to accommodate regex
+        # constraints is of the form {'wildcard char': [list of 'not' chars]}
+        # this function should be very useful for constraining input patterns in polling loops and other program arguments
+
+        if constraints:
+            size = len(data)
+            symb = self._constraints.new_array(
+                name=label, index_max=size, taint=taint, avoid_collisions=True
+            )
+            self._input_symbols.append(symb)
+
+            tmp = []
+            for i in range(size):
+                if data[i] in constraints:
+                    tmp.append(symb[i])
+                    logger.error(f"Constraint{constraints[data[i]]}")
+                    for c in constraints[data[i]]:
+                        logger.error(f"Constraint {c}")
+                        self._constraints.add(tmp[i] != c)
+                else:
+                    tmp.append(data[i])
+
+            data = tmp
+
+        if string:
+            for b in data:
+                if issymbolic(b):
+                    self._constraints.add(b != 0)
+                else:
+                    assert b != 0
+        return data
