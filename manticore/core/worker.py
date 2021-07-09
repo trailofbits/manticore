@@ -188,6 +188,9 @@ class Worker:
                         m._kill_state(current_state.id)
                         m._publish("did_kill_state", current_state, exc)
                         current_state = None
+                    # Kill Manticore if _any_ state encounters unrecoverable
+                    # exception/assertion
+                    m.kill()
                     break
 
             # Getting out.
