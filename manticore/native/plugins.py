@@ -1,5 +1,7 @@
 from ..core.plugin import Plugin
 from .state_merging import merge_constraints, is_merge_possible, merge
+from heap_tracking.hook_malloc_library import hook_malloc_lib
+from manticore.native.state import State
 import logging
 
 logger = logging.getLogger(__name__)
@@ -125,3 +127,56 @@ class Merger(Plugin):
             # UGLY we are replacing a state_id. This may be breaking caches in
             # the future
             self.replace_state(current_state_id, merged_state)
+
+
+class TrackHeapInformation(Plugin):
+    """
+    Enables tracking heap information given that a user has access to the malloc library addresses.
+
+    This feature is only supported in X86 mode.
+
+    TODO(sonya): make this queryable in some way
+    TODO(sonya): context for a given state
+    TODO(sonya): list (or dict) of context for all manticore states
+    TODO(sonya): plugin function to dump the results somewhere
+
+    """
+
+    def __init__(
+        self,
+        m: Manticore,
+        malloc: int = 0x0,
+        free: int = 0x0,
+        calloc: int = 0x0,
+        realloc: int = 0x0,
+        hook_brk_info: bool = True,
+        hook_mmap_info: bool = True,
+        hook_malloc_ret_info: bool = True,
+        hook_free_ret_info: bool = True,
+        hook_calloc_ret_info: bool = True,
+        hook_realloc_ret_info: bool = True,
+    ):
+        super().__init__()
+
+        assert malloc or free or calloc or realloc, (
+            "No malloc library addresses provided. Please specify the address of at least one malloc library function"
+            " to track it's corresponding heap information"
+        )
+
+        def init_heap_tracking(initial_state: State):
+            hook_malloc_lib(
+                initial_state,
+                malloc=malloc,
+                free=free,
+                calloc=calloc,
+                realloc=realloc,
+                workspace=m._workspace._store.uri,
+                hook_brk_info=hook_brk_info,
+                hook_mmap_info=hook_mmap_info,
+                hook_malloc_ret_info=hook_malloc_ret_info,
+                hook_free_ret_info=hook_free_ret_info,
+                hook_calloc_ret_info=hook_calloc_ret_info,
+                hook_realloc_ret_info=hook_realloc_ret_info,
+            )
+
+        m.init(init_heap_tracking)

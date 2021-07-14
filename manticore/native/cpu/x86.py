@@ -6427,6 +6427,9 @@ class I386CdeclAbi(Abi):
         for address in self.values_from(base):
             yield address
 
+    def get_return_reg(self):
+        return "EAX"
+
     def write_result(self, result):
         self._cpu.EAX = result
 
@@ -6478,6 +6481,9 @@ class SystemVAbi(Abi):
         word_bytes = self._cpu.address_bit_size // 8
         for address in self.values_from(self._cpu.RSP + word_bytes):
             yield address
+
+    def get_return_reg(self):
+        return "RAX"
 
     def write_result(self, result):
         # XXX(yan): Can also return in rdx for wide values.
