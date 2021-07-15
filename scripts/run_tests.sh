@@ -48,6 +48,12 @@ launch_examples() {
         return 1
     fi
 
+    echo "Running fileio symbolic file test..."
+    coverage run --append ./symbolic_file.py
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     return 0
 }
 
@@ -89,7 +95,7 @@ make_wasm_sym_tests(){
 }
 
 install_truffle(){
-    npm install -g truffle
+    npm install -g truffle@5.3.13
 }
 
 run_truffle_tests(){
@@ -97,7 +103,7 @@ run_truffle_tests(){
     mkdir truffle_tests
     cd truffle_tests
     truffle unbox metacoin
-    coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic
+    coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --thorough-mode --evm.oog ignore --evm.txfail optimistic --smt.solver portfolio
     # Truffle smoke test. We test if manticore is able to generate states
     # from a truffle project.
     count=$(find output/ -name '*tx' -type f | wc -l)

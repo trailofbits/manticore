@@ -14,7 +14,7 @@ import functools
 import shlex
 
 from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
-from ..core.smtlib import Expression
+from ..core.smtlib import Expression, SOLVER_STATS
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
@@ -49,7 +49,11 @@ consts.add(
     default=False,
     description="If True enables to run workers over the network UNIMPLEMENTED",
 )
-consts.add("procs", default=10, description="Number of parallel processes to spawn")
+consts.add(
+    "procs",
+    default=12,
+    description="Number of parallel processes to spawn in order to run every task, including solvers",
+)
 
 proc_type = MProcessingType.threading
 if sys.platform != "linux":
@@ -380,8 +384,9 @@ class ManticoreBase(Eventful):
             raise TypeError(f"Invalid initial_state type: {type(initial_state).__name__}")
         self._put_state(initial_state)
 
+        nworkers = max(consts.procs // initial_state._solver.ncores, 1)
         # Workers will use manticore __dict__ So lets spawn them last
-        self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+        self._workers = [self._worker_type(id=i, manticore=self) for i in range(nworkers)]
 
         # Create log capture worker. We won't create the rest of the daemons until .run() is called
         self._daemon_threads: typing.Dict[int, DaemonThread] = {
@@ -1106,6 +1111,10 @@ class ManticoreBase(Eventful):
         """
         Runs analysis.
         """
+        # Start measuring the execution time
+        with self.locked_context() as context:
+            context["time_started"] = time.time()
+
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a
         # different process modifies the state
@@ -1219,7 +1228,28 @@ class ManticoreBase(Eventful):
         with self._output.save_stream("manticore.yml") as f:
             config.save(f)
 
+        with self._output.save_stream("global.solver_stats") as f:
+            for s, n in sorted(SOLVER_STATS.items()):
+                f.write("%s: %d\n" % (s, n))
+
+        if SOLVER_STATS["timeout"] > 0 or SOLVER_STATS["unknown"] > 0:
+            logger.warning(
+                "The SMT solvers returned timeout or unknown for certain program paths. Results could not cover the entire set of possible paths"
+            )
+
         logger.info("Results in %s", self._output.store.uri)
+
+        time_ended = time.time()
+
+        with self.locked_context() as context:
+            if "time_started" in context:
+                time_elapsed = time_ended - context["time_started"]
+                logger.info("Total time: %s", time_elapsed)
+                context["time_ended"] = time_ended
+                context["time_elapsed"] = time_elapsed
+            else:
+                logger.warning("Manticore failed to run")
+
         self.wait_for_log_purge()
 
     def introspect(self) -> typing.Dict[int, StateDescriptor]:

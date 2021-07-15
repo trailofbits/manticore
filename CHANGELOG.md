@@ -1,6 +1,30 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.5...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.6...HEAD)
+
+## 0.3.6 - 2021-06-09
+
+Thanks to our external contributors!
+ - [timgates42](https://github.com/trailofbits/manticore/commits?author=timgates42)
+
+### Ethereum
+* **[Changed API]** Default to quick mode: disable detectors and gas [#2457](https://github.com/trailofbits/manticore/pull/2457)
+* Allow symbolic balances from the beginning of execution [#1818](https://github.com/trailofbits/manticore/pull/1818)
+* Disable EVM Events in Testcases [#2417](https://github.com/trailofbits/manticore/pull/2417)
+
+### Native
+* **[Added API]** Syscall-specific hooks [#2389](https://github.com/trailofbits/manticore/pull/2389)
+* Fix wildcard behavior in symbolic files [#2454](https://github.com/trailofbits/manticore/pull/2454)
+* Bugfixes for control transfer between Manticore & Unicorn [#1796](https://github.com/trailofbits/manticore/pull/1796)
+
+### Other
+* Run multiple SMT solvers in parallel, take the fastest response [#2420](https://github.com/trailofbits/manticore/pull/2420)
+* Add socket for TUI [#1620](https://github.com/trailofbits/manticore/pull/1620)
+* Memory usage improvements in expression system [#2394](https://github.com/trailofbits/manticore/pull/2394)
+* Support for Boolector [#2410](https://github.com/trailofbits/manticore/pull/2410)
+* Solver Statistics API [#2415](https://github.com/trailofbits/manticore/pull/2415)
+* Allow duplicated config options [#2397](https://github.com/trailofbits/manticore/pull/2397)
+
 
 ## 0.3.5 - 2020-11-06
 
