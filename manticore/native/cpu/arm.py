@@ -555,6 +555,9 @@ class Armv7LinuxSyscallAbi(SyscallAbi):
         for i in range(6):
             yield f"R{i}"
 
+    def get_return_reg(self):
+        return "R0"
+
     def write_result(self, result):
         self._cpu.R0 = result
 
