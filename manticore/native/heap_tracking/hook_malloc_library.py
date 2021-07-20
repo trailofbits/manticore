@@ -129,7 +129,7 @@ def hook_mmap_return(state: State):
     munmap call.
     mmap() returns a pointer to the mapped area
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
+    ret_val = state.cpu.read_register(state.platform.function_abi.get_result_reg())
     logger.info(f"mmap ret val: {hex(ret_val)}, state: {state.id}")
 
     state.context["malloc_lib"].process_mmap(ret_val, state.context["mmap_args"])
@@ -145,7 +145,7 @@ def hook_mmap(state: State):
     void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
     """
     args = []
-    args_gen = state._platform._function_abi.get_arguments()
+    args_gen = state.platform.function_abi.get_arguments()
     args.append(read_arg(state.cpu, next(args_gen)))  # void *addr
     args.append(read_arg(state.cpu, next(args_gen)))  # size_t length
     args.append(read_arg(state.cpu, next(args_gen)))  # int prot
@@ -163,7 +163,7 @@ def hook_brk_return(state: State):
     post execution of the brk function.
     brk() returns 0 - on error, -1 is returned
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
+    ret_val = state.cpu.read_register(state.platform.function_abi.get_result_reg())
     logger.info(f"brk ret val: {hex(ret_val)}, state: {state.id}")
 
     state.context["malloc_lib"].process_brk(ret_val, state.context["brk_increment"])
@@ -183,7 +183,7 @@ def hook_brk(state: State):
     int brk(void *addr);
     """
     # Get request size from arg1
-    addr = read_arg(state.cpu, next(state._platform._function_abi.get_arguments()))
+    addr = read_arg(state.cpu, next(state.platform.function_abi.get_arguments()))
     increment = addr - state.platform.brk
     logger.info(
         f"Invoking brk. Request address: {addr} for an increment of {increment}. Old brk: {state.platform.brk}, state: {state.id}"
@@ -199,7 +199,7 @@ def hook_malloc_return(state: State):
     post execution of the malloc function.
     malloc() returns a pointer to the allocated memory
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
+    ret_val = state.cpu.read_register(state.platform.function_abi.get_result_reg())
     logger.info(f"malloc ret val: {hex(ret_val)}, state: {state.id}")
     state.context["malloc_lib"].process_malloc(ret_val, state.context["malloc_size"])
     del state.context["malloc_size"]
@@ -216,7 +216,7 @@ def hook_malloc(state: State):
     void *malloc(size_t size);
     """
     # Get request size
-    malloc_size = read_arg(state.cpu, next(state._platform._function_abi.get_arguments()))
+    malloc_size = read_arg(state.cpu, next(state.platform.function_abi.get_arguments()))
     logger.info(f"Invoking malloc for size: {malloc_size}, state: {state.id}")
     state.context["malloc_size"] = malloc_size
 
@@ -233,7 +233,7 @@ def hook_munmap_return(state: State):
     munmap call.
     munmap() returns 0, on failure -1
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
+    ret_val = state.cpu.read_register(state.platform.function_abi.get_result_reg())
     logger.info(f"munmap ret val: {hex(ret_val)}, state: {state.id}")
 
     state.remove_hook(state.cpu.read_register("PC"), hook_munmap_return)
@@ -245,7 +245,7 @@ def hook_munmap(state: State):
     munmap call.
     int munmap(void *addr, size_t length);
     """
-    args_gen = state._platform._function_abi.get_arguments()
+    args_gen = state.platform.function_abi.get_arguments()
     addr = read_arg(state.cpu, next(args_gen))  # void *addr
     length = read_arg(state.cpu, next(args_gen))  # size_t length
     logger.info(f"Invoking munmap in malloc. Args {addr}, {length}. State: {state.id}")
@@ -273,7 +273,7 @@ def hook_free(state: State):
     void free(void *ptr);
     """
     # Get free address
-    free_address = read_arg(state.cpu, next(state._platform._function_abi.get_arguments()))
+    free_address = read_arg(state.cpu, next(state.platform.function_abi.get_arguments()))
     logger.info(f"Attempting to free: {hex(free_address)}, state: {state.id}")
     state.context["malloc_lib"].process_free(free_address)
 
@@ -290,7 +290,7 @@ def hook_calloc_return(state: State):
     calloc() returns a pointer to the allocated memory
     """
 
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
+    ret_val = state.cpu.read_register(state.platform.function_abi.get_result_reg())
     logger.info(f"calloc ret val: {hex(ret_val)}, state: {state.id}")
     state.context["malloc_lib"].process_calloc(
         state.context["calloc_request"][0], state.context["calloc_request"][1], ret_val
@@ -308,7 +308,7 @@ def hook_calloc(state: State):
     pre-execution of the calloc function.
     void *calloc(size_t nmemb, size_t size);
     """
-    args_gen = state._platform._function_abi.get_arguments()
+    args_gen = state.platform.function_abi.get_arguments()
     nmemb = read_arg(state.cpu, next(args_gen))
     elem_size = read_arg(state.cpu, next(args_gen))
     logger.info(f"Invoking calloc for {nmemb} element(s) of size: {elem_size}, state: {state.id}")
@@ -327,7 +327,7 @@ def hook_realloc_return(state: State):
     realloc() returns a pointer to the newly allocated memory
     """
 
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
+    ret_val = state.cpu.read_register(state.platform.function_abi.get_result_reg())
     logger.info(f"realloc ret val: {hex(ret_val)}, state: {state.id}")
     state.context["malloc_lib"].process_realloc(
         state.context["realloc_request"][0], ret_val, state.context["realloc_request"][1]
@@ -346,7 +346,7 @@ def hook_realloc(state: State):
     pre-execution of the realloc function.
     void *realloc(void *ptr, size_t size);
     """
-    args_gen = state._platform._function_abi.get_arguments()
+    args_gen = state.platform.function_abi.get_arguments()
     ptr = read_arg(state.cpu, next(args_gen))
     new_size = read_arg(state.cpu, next(args_gen))
     logger.info(f"Attempting to realloc: {hex(ptr)} to a requested size of {new_size}, state: {state.id}")
