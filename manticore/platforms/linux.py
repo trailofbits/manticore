@@ -31,7 +31,7 @@ from ..core.state import TerminateState, Concretize
 from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
-from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
+from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption, Abi, SyscallAbi
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import (
     SMemory32,
@@ -1001,12 +1001,12 @@ class Linux(Platform):
         return self.procs[self._current]
 
     @property
-    def function_abi(self) -> Cpu:
+    def function_abi(self) -> Abi:
         assert self._function_abi is not None
         return self._function_abi
 
     @property
-    def syscall_abi(self) -> Cpu:
+    def syscall_abi(self) -> SyscallAbi:
         assert self._syscall_abi is not None
         return self._syscall_abi
 
