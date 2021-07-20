@@ -270,6 +270,13 @@ class State(StateBase):
         return self._platform.current
 
     @property
+    def function_abi(self):
+        """
+        Current cpu state
+        """
+        return self._platform._function_abi
+
+    @property
     def mem(self):
         """
         Current virtual memory mappings
