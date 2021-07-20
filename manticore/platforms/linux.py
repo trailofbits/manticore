@@ -1000,6 +1000,16 @@ class Linux(Platform):
         assert self._current is not None
         return self.procs[self._current]
 
+    @property
+    def function_abi(self) -> Cpu:
+        assert self._function_abi is not None
+        return self._function_abi
+
+    @property
+    def syscall_abi(self) -> Cpu:
+        assert self._syscall_abi is not None
+        return self._syscall_abi
+
     def __getstate__(self):
         state = super().__getstate__()
         state["clocks"] = self.clocks
