@@ -1,6 +1,6 @@
 from manticore.native.state import State
 from manticore.native import Manticore
-from manticore.native.heap_tracking.malloc_lib_data import MallocLibData
+from manticore.native.heap_tracking.heap_data import MallocLibData
 
 import logging
 from typing import Callable, Optional, Union
