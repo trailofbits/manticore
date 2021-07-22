@@ -442,6 +442,8 @@ class StateDescriptor:
     own_execs: typing.Optional[int] = None
     #: Last program counter (if set)
     pc: typing.Optional[typing.Any] = None
+    #: Last concrete program counter, useful when a state forks and the program counter becomes symbolic
+    last_pc: typing.Optional[typing.Any] = None
     #: Dict mapping field names to the time that field was last updated
     field_updated_at: typing.Dict[str, datetime] = field(default_factory=dict)
     #: Message attached to the TerminateState exception that ended this state
