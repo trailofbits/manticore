@@ -60,13 +60,18 @@ jobs:
         #install utils
         pip install coveralls
         pip install -e ".[dev-noks]"
+        # Get version info
+        pip freeze
+        z3 --version
         #install cvc4
         sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
+        cvc4 --version
         #install yices
         sudo add-apt-repository ppa:sri-csl/formal-methods
         sudo apt-get update
         sudo apt-get install yices2
+        yices --version
         #install boolector
         mkdir -p /tmp/build
         cd /tmp/build
