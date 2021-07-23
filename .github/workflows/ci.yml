@@ -70,7 +70,8 @@ jobs:
         #install yices
         sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
         sudo tar -xzf yices.tar.gz
-        sudo yices-2.6.2/install-yices
+        cd yices-2.6.2
+        sudo ./install-yices
         yices --version
         #install boolector
         mkdir -p /tmp/build
