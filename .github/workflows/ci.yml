@@ -68,9 +68,9 @@ jobs:
         sudo chmod +x /usr/bin/cvc4
         cvc4 --version
         #install yices
-        sudo add-apt-repository ppa:sri-csl/formal-methods
-        sudo apt-get update
-        sudo apt-get install yices2
+        sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
+        sudo tar -xzf yices.tar.gz
+        sudo yices-2.6.2/install-yices
         yices --version
         #install boolector
         mkdir -p /tmp/build
