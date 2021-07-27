@@ -29,9 +29,9 @@ class CPUTest(unittest.TestCase):
             return self.value
 
     def test_MOVHPD_1(self):
-        """ Instruction MOVHPD_1
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_1
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -56,9 +56,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_10(self):
-        """ Instruction MOVHPD_10
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_10
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -82,9 +82,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_11(self):
-        """ Instruction MOVHPD_11
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_11
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -108,9 +108,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_12(self):
-        """ Instruction MOVHPD_12
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_12
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -134,9 +134,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_13(self):
-        """ Instruction MOVHPD_13
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_13
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -160,9 +160,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_14(self):
-        """ Instruction MOVHPD_14
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_14
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -187,9 +187,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_15(self):
-        """ Instruction MOVHPD_15
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_15
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -213,9 +213,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_16(self):
-        """ Instruction MOVHPD_16
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_16
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -239,9 +239,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_17(self):
-        """ Instruction MOVHPD_17
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_17
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -265,9 +265,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_18(self):
-        """ Instruction MOVHPD_18
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_18
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -291,9 +291,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_19(self):
-        """ Instruction MOVHPD_19
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_19
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -317,9 +317,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_2(self):
-        """ Instruction MOVHPD_2
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_2
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -343,9 +343,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_20(self):
-        """ Instruction MOVHPD_20
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_20
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -369,9 +369,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_21(self):
-        """ Instruction MOVHPD_21
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_21
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -395,9 +395,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_3(self):
-        """ Instruction MOVHPD_3
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_3
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -421,9 +421,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_4(self):
-        """ Instruction MOVHPD_4
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_4
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -447,9 +447,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_5(self):
-        """ Instruction MOVHPD_5
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_5
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -474,9 +474,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_MOVHPD_6(self):
-        """ Instruction MOVHPD_6
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_6
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -500,9 +500,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_7(self):
-        """ Instruction MOVHPD_7
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_7
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -526,9 +526,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_8(self):
-        """ Instruction MOVHPD_8
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_8
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -552,9 +552,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496)
 
     def test_MOVHPD_9(self):
-        """ Instruction MOVHPD_9
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_9
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -578,9 +578,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491)
 
     def test_PSLLDQ_1(self):
-        """ Instruction PSLLDQ_1
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_1
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -597,9 +597,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_10(self):
-        """ Instruction PSLLDQ_10
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_10
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -616,9 +616,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_11(self):
-        """ Instruction PSLLDQ_11
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_11
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -635,9 +635,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_12(self):
-        """ Instruction PSLLDQ_12
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_12
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -654,9 +654,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_13(self):
-        """ Instruction PSLLDQ_13
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_13
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -673,9 +673,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_14(self):
-        """ Instruction PSLLDQ_14
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_14
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -692,9 +692,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_15(self):
-        """ Instruction PSLLDQ_15
-            Groups: sse2
-            0x7ffff7df389d:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_15
+        Groups: sse2
+        0x7ffff7df389d:     pslldq  xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -711,9 +711,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989410)
 
     def test_PSLLDQ_16(self):
-        """ Instruction PSLLDQ_16
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_16
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -730,9 +730,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_17(self):
-        """ Instruction PSLLDQ_17
-            Groups: sse2
-            0x7ffff7df39dd:	pslldq	xmm2, 3
+        """Instruction PSLLDQ_17
+        Groups: sse2
+        0x7ffff7df39dd:     pslldq  xmm2, 3
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -749,9 +749,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989730)
 
     def test_PSLLDQ_18(self):
-        """ Instruction PSLLDQ_18
-            Groups: sse2
-            0x7ffff7df389d:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_18
+        Groups: sse2
+        0x7ffff7df389d:     pslldq  xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -768,9 +768,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989410)
 
     def test_PSLLDQ_19(self):
-        """ Instruction PSLLDQ_19
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_19
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -787,9 +787,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_2(self):
-        """ Instruction PSLLDQ_2
-            Groups: sse2
-            0x7ffff7df2f70:	pslldq	xmm2, 0xb
+        """Instruction PSLLDQ_2
+        Groups: sse2
+        0x7ffff7df2f70:     pslldq  xmm2, 0xb
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -806,9 +806,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351987061)
 
     def test_PSLLDQ_20(self):
-        """ Instruction PSLLDQ_20
-            Groups: sse2
-            0x7ffff7df3970:	pslldq	xmm2, 3
+        """Instruction PSLLDQ_20
+        Groups: sse2
+        0x7ffff7df3970:     pslldq  xmm2, 3
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -825,9 +825,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989621)
 
     def test_PSLLDQ_21(self):
-        """ Instruction PSLLDQ_21
-            Groups: sse2
-            0x7ffff7df3830:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_21
+        Groups: sse2
+        0x7ffff7df3830:     pslldq  xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -844,9 +844,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989301)
 
     def test_PSLLDQ_3(self):
-        """ Instruction PSLLDQ_3
-            Groups: sse2
-            0x7ffff7df3ab0:	pslldq	xmm2, 2
+        """Instruction PSLLDQ_3
+        Groups: sse2
+        0x7ffff7df3ab0:     pslldq  xmm2, 2
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -863,9 +863,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989941)
 
     def test_PSLLDQ_4(self):
-        """ Instruction PSLLDQ_4
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_4
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -882,9 +882,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_5(self):
-        """ Instruction PSLLDQ_5
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_5
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -901,9 +901,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_6(self):
-        """ Instruction PSLLDQ_6
-            Groups: sse2
-            0x7ffff7df389d:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_6
+        Groups: sse2
+        0x7ffff7df389d:     pslldq  xmm2, 4
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -920,9 +920,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989410)
 
     def test_PSLLDQ_7(self):
-        """ Instruction PSLLDQ_7
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_7
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -939,9 +939,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341)
 
     def test_PSLLDQ_8(self):
-        """ Instruction PSLLDQ_8
-            Groups: sse2
-            0x7ffff7df39dd:	pslldq	xmm2, 3
+        """Instruction PSLLDQ_8
+        Groups: sse2
+        0x7ffff7df39dd:     pslldq  xmm2, 3
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -958,9 +958,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989730)
 
     def test_PSLLDQ_9(self):
-        """ Instruction PSLLDQ_9
-            Groups: sse2
-            0x7ffff7df3c5d:	pslldq	xmm2, 1
+        """Instruction PSLLDQ_9
+        Groups: sse2
+        0x7ffff7df3c5d:     pslldq  xmm2, 1
         """
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -977,9 +977,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351990370)
 
     def test_MOVHPD_1_symbolic(self):
-        """ Instruction MOVHPD_1
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_1
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1071,9 +1071,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_10_symbolic(self):
-        """ Instruction MOVHPD_10
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_10
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1164,9 +1164,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_11_symbolic(self):
-        """ Instruction MOVHPD_11
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_11
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1257,9 +1257,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_12_symbolic(self):
-        """ Instruction MOVHPD_12
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_12
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1350,9 +1350,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_13_symbolic(self):
-        """ Instruction MOVHPD_13
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_13
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1443,9 +1443,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_14_symbolic(self):
-        """ Instruction MOVHPD_14
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_14
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1536,9 +1536,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_15_symbolic(self):
-        """ Instruction MOVHPD_15
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_15
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1629,9 +1629,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_16_symbolic(self):
-        """ Instruction MOVHPD_16
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_16
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1722,9 +1722,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_17_symbolic(self):
-        """ Instruction MOVHPD_17
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_17
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1815,9 +1815,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_18_symbolic(self):
-        """ Instruction MOVHPD_18
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_18
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -1908,9 +1908,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_19_symbolic(self):
-        """ Instruction MOVHPD_19
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_19
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2002,9 +2002,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_2_symbolic(self):
-        """ Instruction MOVHPD_2
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_2
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2095,9 +2095,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_20_symbolic(self):
-        """ Instruction MOVHPD_20
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_20
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2188,9 +2188,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_21_symbolic(self):
-        """ Instruction MOVHPD_21
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_21
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2281,9 +2281,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_3_symbolic(self):
-        """ Instruction MOVHPD_3
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_3
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2374,9 +2374,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_4_symbolic(self):
-        """ Instruction MOVHPD_4
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_4
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2467,9 +2467,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_5_symbolic(self):
-        """ Instruction MOVHPD_5
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_5
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2563,9 +2563,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_6_symbolic(self):
-        """ Instruction MOVHPD_6
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_6
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2656,9 +2656,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_7_symbolic(self):
-        """ Instruction MOVHPD_7
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_7
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2749,9 +2749,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_8_symbolic(self):
-        """ Instruction MOVHPD_8
-            Groups: sse2
-            0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
+        """Instruction MOVHPD_8
+        Groups: sse2
+        0x7ffff7df2953:     movhpd  xmm2, qword ptr [rsi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2842,9 +2842,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_MOVHPD_9_symbolic(self):
-        """ Instruction MOVHPD_9
-            Groups: sse2
-            0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
+        """Instruction MOVHPD_9
+        Groups: sse2
+        0x7ffff7df294e:     movhpd  xmm1, qword ptr [rdi + 8]
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2935,9 +2935,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_1_symbolic(self):
-        """ Instruction PSLLDQ_1
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_1
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -2976,9 +2976,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_10_symbolic(self):
-        """ Instruction PSLLDQ_10
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_10
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3017,9 +3017,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_11_symbolic(self):
-        """ Instruction PSLLDQ_11
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_11
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3058,9 +3058,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_12_symbolic(self):
-        """ Instruction PSLLDQ_12
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_12
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3099,9 +3099,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_13_symbolic(self):
-        """ Instruction PSLLDQ_13
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_13
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3140,9 +3140,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_14_symbolic(self):
-        """ Instruction PSLLDQ_14
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_14
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3181,9 +3181,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_15_symbolic(self):
-        """ Instruction PSLLDQ_15
-            Groups: sse2
-            0x7ffff7df389d:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_15
+        Groups: sse2
+        0x7ffff7df389d:     pslldq  xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3222,9 +3222,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_16_symbolic(self):
-        """ Instruction PSLLDQ_16
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_16
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3263,9 +3263,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_17_symbolic(self):
-        """ Instruction PSLLDQ_17
-            Groups: sse2
-            0x7ffff7df39dd:	pslldq	xmm2, 3
+        """Instruction PSLLDQ_17
+        Groups: sse2
+        0x7ffff7df39dd:     pslldq  xmm2, 3
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3304,9 +3304,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_18_symbolic(self):
-        """ Instruction PSLLDQ_18
-            Groups: sse2
-            0x7ffff7df389d:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_18
+        Groups: sse2
+        0x7ffff7df389d:     pslldq  xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3345,9 +3345,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_19_symbolic(self):
-        """ Instruction PSLLDQ_19
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_19
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3386,9 +3386,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_2_symbolic(self):
-        """ Instruction PSLLDQ_2
-            Groups: sse2
-            0x7ffff7df2f70:	pslldq	xmm2, 0xb
+        """Instruction PSLLDQ_2
+        Groups: sse2
+        0x7ffff7df2f70:     pslldq  xmm2, 0xb
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3427,9 +3427,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_20_symbolic(self):
-        """ Instruction PSLLDQ_20
-            Groups: sse2
-            0x7ffff7df3970:	pslldq	xmm2, 3
+        """Instruction PSLLDQ_20
+        Groups: sse2
+        0x7ffff7df3970:     pslldq  xmm2, 3
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3468,9 +3468,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_21_symbolic(self):
-        """ Instruction PSLLDQ_21
-            Groups: sse2
-            0x7ffff7df3830:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_21
+        Groups: sse2
+        0x7ffff7df3830:     pslldq  xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3509,9 +3509,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_3_symbolic(self):
-        """ Instruction PSLLDQ_3
-            Groups: sse2
-            0x7ffff7df3ab0:	pslldq	xmm2, 2
+        """Instruction PSLLDQ_3
+        Groups: sse2
+        0x7ffff7df3ab0:     pslldq  xmm2, 2
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3550,9 +3550,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_4_symbolic(self):
-        """ Instruction PSLLDQ_4
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_4
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3591,9 +3591,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_5_symbolic(self):
-        """ Instruction PSLLDQ_5
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_5
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3632,9 +3632,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_6_symbolic(self):
-        """ Instruction PSLLDQ_6
-            Groups: sse2
-            0x7ffff7df389d:	pslldq	xmm2, 4
+        """Instruction PSLLDQ_6
+        Groups: sse2
+        0x7ffff7df389d:     pslldq  xmm2, 4
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3673,9 +3673,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_7_symbolic(self):
-        """ Instruction PSLLDQ_7
-            Groups: sse2
-            0x7ffff7df3470:	pslldq	xmm2, 7
+        """Instruction PSLLDQ_7
+        Groups: sse2
+        0x7ffff7df3470:     pslldq  xmm2, 7
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3714,9 +3714,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_8_symbolic(self):
-        """ Instruction PSLLDQ_8
-            Groups: sse2
-            0x7ffff7df39dd:	pslldq	xmm2, 3
+        """Instruction PSLLDQ_8
+        Groups: sse2
+        0x7ffff7df39dd:     pslldq  xmm2, 3
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -3755,9 +3755,9 @@ class CPUTest(unittest.TestCase):
             self.assertFalse(solver.check(temp_cs))
 
     def test_PSLLDQ_9_symbolic(self):
-        """ Instruction PSLLDQ_9
-            Groups: sse2
-            0x7ffff7df3c5d:	pslldq	xmm2, 1
+        """Instruction PSLLDQ_9
+        Groups: sse2
+        0x7ffff7df3c5d:     pslldq  xmm2, 1
         """
         cs = ConstraintSet()
         mem = SMemory64(cs)

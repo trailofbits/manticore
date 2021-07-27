@@ -103,6 +103,10 @@ class _Group:
 
         """
         if name in self._vars:
+            # Be kind when double-adding the same exact config
+            existing = self._vars[name]
+            if default == existing.default and description == existing.description:
+                return
             raise ConfigError(f"{self.name}.{name} already defined.")
 
         if name == "name":

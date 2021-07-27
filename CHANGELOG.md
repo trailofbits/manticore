@@ -1,6 +1,61 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.4...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.6...HEAD)
+
+## 0.3.6 - 2021-06-09
+
+Thanks to our external contributors!
+ - [timgates42](https://github.com/trailofbits/manticore/commits?author=timgates42)
+
+### Ethereum
+* **[Changed API]** Default to quick mode: disable detectors and gas [#2457](https://github.com/trailofbits/manticore/pull/2457)
+* Allow symbolic balances from the beginning of execution [#1818](https://github.com/trailofbits/manticore/pull/1818)
+* Disable EVM Events in Testcases [#2417](https://github.com/trailofbits/manticore/pull/2417)
+
+### Native
+* **[Added API]** Syscall-specific hooks [#2389](https://github.com/trailofbits/manticore/pull/2389)
+* Fix wildcard behavior in symbolic files [#2454](https://github.com/trailofbits/manticore/pull/2454)
+* Bugfixes for control transfer between Manticore & Unicorn [#1796](https://github.com/trailofbits/manticore/pull/1796)
+
+### Other
+* Run multiple SMT solvers in parallel, take the fastest response [#2420](https://github.com/trailofbits/manticore/pull/2420)
+* Add socket for TUI [#1620](https://github.com/trailofbits/manticore/pull/1620)
+* Memory usage improvements in expression system [#2394](https://github.com/trailofbits/manticore/pull/2394)
+* Support for Boolector [#2410](https://github.com/trailofbits/manticore/pull/2410)
+* Solver Statistics API [#2415](https://github.com/trailofbits/manticore/pull/2415)
+* Allow duplicated config options [#2397](https://github.com/trailofbits/manticore/pull/2397)
+
+
+## 0.3.5 - 2020-11-06
+
+Thanks to our external contributors!
+ - [wolfo](https://github.com/trailofbits/manticore/commits?author=wolfo)
+ - [geohot](https://github.com/trailofbits/manticore/commits?author=geohot)
+ - [romits800](https://github.com/trailofbits/manticore/commits?author=romits800)
+
+### Ethereum
+* Made EVM module ignore runtime gas calculations by default [#1816](https://github.com/trailofbits/manticore/pull/1816)
+* Updated gas calculations for calls to empty accounts [#1774](https://github.com/trailofbits/manticore/pull/1774)
+* Fixed account existence checks for `selfdestruct` and `call` [#1801](https://github.com/trailofbits/manticore/pull/1801)
+
+### Native
+* **[Added API]** new `strlen` models [#1725](https://github.com/trailofbits/manticore/pull/1725)
+* **[Added API]** State-specific hooks [#1777](https://github.com/trailofbits/manticore/pull/1777)
+* Improved system call argument handling [#1785](https://github.com/trailofbits/manticore/pull/1785)
+* Improved `stat` support for file descriptors [#1780](https://github.com/trailofbits/manticore/pull/1780)
+* Support symbolic-length reads from sockets [#1786](https://github.com/trailofbits/manticore/pull/1786)
+* Add stubs for `sendto` [#1791](https://github.com/trailofbits/manticore/pull/1791)
+
+### WASM
+* Fix type confusion when importing external functions [#1803](https://github.com/trailofbits/manticore/pull/1803)
+
+### Other
+* Made [Yices2](https://yices.csl.sri.com/) the default SMT Solver [#1820](https://github.com/trailofbits/manticore/pull/1820)
+* **[Added API]** Added an API for introspecting live states [#1775](https://github.com/trailofbits/manticore/pull/1775)
+* Changed default multiprocessing type to threading [#1779](https://github.com/trailofbits/manticore/pull/1779)
+* Improved array serialization performance [#1756](https://github.com/trailofbits/manticore/pull/1756)
+* Fix name collisions in SMT variables [#1792](https://github.com/trailofbits/manticore/pull/1792)
+
 
 ## 0.3.4 - 2020-06-26
 

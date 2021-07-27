@@ -44,7 +44,7 @@ class CpuException(Exception):
 
 class DecodeException(CpuException):
     """
-    Raised when trying to decode an unknown or invalid instruction """
+    Raised when trying to decode an unknown or invalid instruction"""
 
     def __init__(self, pc, bytes):
         super().__init__("Error decoding instruction @ 0x{:x}".format(pc))
@@ -90,7 +90,11 @@ class ConcretizeRegister(CpuException):
     """
 
     def __init__(
-        self, cpu: "Cpu", reg_name: str, message: Optional[str] = None, policy: str = "MINMAX",
+        self,
+        cpu: "Cpu",
+        reg_name: str,
+        message: Optional[str] = None,
+        policy: str = "MINMAX",
     ):
         self.message = message if message else f"Concretizing {reg_name}"
 
@@ -177,11 +181,11 @@ class Operand:
 
     @property
     def type(self):
-        """ This property encapsulates the operand type.
-            It may be one of the following:
-                register
-                memory
-                immediate
+        """This property encapsulates the operand type.
+        It may be one of the following:
+            register
+            memory
+            immediate
         """
         raise NotImplementedError
 
@@ -287,6 +291,15 @@ class Abi:
 
         :return: iterable returning syscall arguments.
         :rtype: iterable
+        """
+        raise NotImplementedError
+
+    def get_result_reg(self) -> str:
+        """
+        Extract the location a return value will be written to. Produces
+        a string describing a register where the return value is written to.
+        :return: return register name
+        :rtype: string
         """
         raise NotImplementedError
 
@@ -499,6 +512,7 @@ class Cpu(Eventful):
         "read_memory",
         "decode_instruction",
         "execute_instruction",
+        "invoke_syscall",
         "set_descriptor",
         "map_memory",
         "protect_memory",
@@ -650,6 +664,8 @@ class Cpu(Eventful):
         self._concrete = True
         self._break_unicorn_at = target
         if self.emu:
+            self.emu.write_backs_disabled = False
+            self.emu.load_state_from_manticore()
             self.emu._stop_at = target
 
     #############################
@@ -680,12 +696,13 @@ class Cpu(Eventful):
 
         self._publish("did_write_memory", where, expression, size)
 
-    def _raw_read(self, where: int, size=1) -> bytes:
+    def _raw_read(self, where: int, size: int = 1, force: bool = False) -> bytes:
         """
         Selects bytes from memory. Attempts to do so faster than via read_bytes.
 
         :param where: address to read from
         :param size: number of bytes to read
+        :param force: whether to ignore memory permissions
         :return: the bytes in memory
         """
         map = self.memory.map_containing(where)
@@ -711,7 +728,7 @@ class Cpu(Eventful):
         elif isinstance(map, AnonMap):
             data = bytes(map._data[start : start + size])
         else:
-            data = b"".join(self.memory[where : where + size])
+            data = b"".join(self.memory.read(where, size, force=force))
         assert len(data) == size, "Raw read resulted in wrong data read which should never happen"
         return data
 
@@ -1063,7 +1080,10 @@ class Cpu(Eventful):
 
         if not self.emu:
             self.emu = ConcreteUnicornEmulator(self)
+        if self.emu._stop_at is None:
+            self.emu.write_backs_disabled = False
             self.emu._stop_at = self._break_unicorn_at
+            self.emu.load_state_from_manticore()
         try:
             self.emu.emulate(insn)
         except unicorn.UcError as e:

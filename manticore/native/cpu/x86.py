@@ -645,8 +645,8 @@ class AMD64RegFile(RegisterFile):
             return Operators.ITEBV(
                 register_size,
                 value,
-                BitVecConstant(register_size, 1 << offset),
-                BitVecConstant(register_size, 0),
+                BitVecConstant(size=register_size, value=1 << offset),
+                BitVecConstant(size=register_size, value=0),
             )
 
         flags = []
@@ -827,7 +827,7 @@ class X86Cpu(Cpu):
 
     # Segments
     def set_descriptor(self, selector, base, limit, perms):
-        assert selector > 0 and selector < 0xFFFF
+        assert selector >= 0 and selector < 0xFFFF
         assert base >= 0 and base < (1 << self.address_bit_size)
         assert limit >= 0 and limit < 0xFFFF or limit & 0xFFF == 0
         # perms ? not used yet Also is not really perms but rather a bunch of attributes
@@ -942,8 +942,11 @@ class X86Cpu(Cpu):
         """
         # FIXME Choose conservative values and consider returning some default when eax not here
         conf = {
-            0x0: (0x0000000D, 0x756E6547, 0x6C65746E, 0x49656E69),
-            0x1: (0x000306C3, 0x05100800, 0x7FFAFBFF, 0xBFEBFBFF),
+            # Taken from comparison against Unicorn@v1.0.2
+            0x0: (0x00000004, 0x68747541, 0x444D4163, 0x69746E65),
+            # Taken from comparison against Unicorn@v1.0.2
+            0x1: (0x663, 0x800, 0x2182200, 0x7088100),
+            # TODO: Check against Unicorn
             0x2: (0x76035A01, 0x00F0B5FF, 0x00000000, 0x00C10000),
             0x4: {
                 0x0: (0x1C004121, 0x01C0003F, 0x0000003F, 0x00000000),
@@ -1061,6 +1064,7 @@ class X86Cpu(Cpu):
         cpu.PF = cpu._calculate_parity_flag(temp)
         cpu.CF = False
         cpu.OF = False
+        cpu.AF = False  # Undefined, but ends up being `0` in emulator
 
     @instruction
     def NOT(cpu, dest):
@@ -2506,7 +2510,12 @@ class X86Cpu(Cpu):
 
         def make_flag(val, offset):
             if is_expression:
-                return Operators.ITEBV(8, val, BitVecConstant(8, 1 << offset), BitVecConstant(8, 0))
+                return Operators.ITEBV(
+                    size=8,
+                    cond=val,
+                    true_value=BitVecConstant(size=8, value=1 << offset),
+                    false_value=BitVecConstant(size=8, value=0),
+                )
             else:
                 return val << offset
 
@@ -2744,7 +2753,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-         """
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF) == False, 1, 0))
 
     @instruction
@@ -4120,8 +4129,8 @@ class X86Cpu(Cpu):
     #
     ########################################################################################
     def _getMemoryBit(cpu, bitbase, bitoffset):
-        """ Calculate address and bit offset given a base address and a bit offset
-            relative to that address (in the form of asm operands) """
+        """Calculate address and bit offset given a base address and a bit offset
+        relative to that address (in the form of asm operands)"""
         assert bitbase.type == "memory"
         assert bitbase.size >= bitoffset.size
         addr = bitbase.address()
@@ -4668,14 +4677,14 @@ class X86Cpu(Cpu):
     @instruction
     def ANDN(cpu, dest, src1, src2):
         """Performs a bitwise logical AND of inverted second operand (the first source operand)
-           with the third operand (the second source operand). The result is stored in the first
-           operand (destination operand).
+        with the third operand (the second source operand). The result is stored in the first
+        operand (destination operand).
 
-                DEST <- (NOT SRC1) bitwiseAND SRC2;
-                SF <- DEST[OperandSize -1];
-                ZF <- (DEST = 0);
-           Flags Affected
-                SF and ZF are updated based on result. OF and CF flags are cleared. AF and PF flags are undefined.
+             DEST <- (NOT SRC1) bitwiseAND SRC2;
+             SF <- DEST[OperandSize -1];
+             ZF <- (DEST = 0);
+        Flags Affected
+             SF and ZF are updated based on result. OF and CF flags are cleared. AF and PF flags are undefined.
         """
         value = ~src1.read() & src2.read()
         dest.write(value)
@@ -4942,7 +4951,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         """
+        """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -4996,7 +5005,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         """
+        """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -5643,6 +5652,14 @@ class X86Cpu(Cpu):
         """
         cpu.write_int(dest.address(), cpu.FPCW, 16)
 
+    def sem_SYSCALL(cpu):
+        """
+        Syscall semantics without @instruction for use in emulator
+        """
+        cpu.RCX = cpu.RIP
+        cpu.R11 = cpu.RFLAGS
+        raise Syscall()
+
     @instruction
     def SYSCALL(cpu):
         """
@@ -5657,9 +5674,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         """
-        cpu.RCX = cpu.RIP
-        cpu.R11 = cpu.RFLAGS
-        raise Syscall()
+        cpu.sem_SYSCALL()
 
     @instruction
     def MOVLPD(cpu, dest, src):
@@ -5796,12 +5811,12 @@ class X86Cpu(Cpu):
 
     @instruction
     def PTEST(cpu, dest, src):
-        """ PTEST
-         PTEST set the ZF flag if all bits in the result are 0 of the bitwise AND
-         of the first source operand (first operand) and the second source operand
-         (second operand). Also this sets the CF flag if all bits in the result
-         are 0 of the bitwise AND of the second source operand (second operand)
-         and the logical NOT of the destination operand.
+        """PTEST
+        PTEST set the ZF flag if all bits in the result are 0 of the bitwise AND
+        of the first source operand (first operand) and the second source operand
+        (second operand). Also this sets the CF flag if all bits in the result
+        are 0 of the bitwise AND of the second source operand (second operand)
+        and the logical NOT of the destination operand.
         """
         cpu.OF = False
         cpu.AF = False
@@ -6086,9 +6101,9 @@ class X86Cpu(Cpu):
     @instruction
     def PALIGNR(cpu, dest, src, offset):
         """ALIGNR concatenates the destination operand (the first operand) and the source
-            operand (the second operand) into an intermediate composite, shifts the composite
-            at byte granularity to the right by a constant immediate, and extracts the right-
-            aligned result into the destination."""
+        operand (the second operand) into an intermediate composite, shifts the composite
+        at byte granularity to the right by a constant immediate, and extracts the right-
+        aligned result into the destination."""
         dest.write(
             Operators.EXTRACT(
                 Operators.CONCAT(dest.size * 2, dest.read(), src.read()),
@@ -6099,7 +6114,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSLLDQ(cpu, dest, src):
-        """ Packed Shift Left Logical Double Quadword
+        """Packed Shift Left Logical Double Quadword
         Shifts the destination operand (first operand) to the left by the number
          of bytes specified in the count operand (second operand). The empty low-order
          bytes are cleared (set to all 0s). If the value specified by the count
@@ -6232,7 +6247,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         """
+        """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -6371,6 +6386,9 @@ class I386LinuxSyscallAbi(SyscallAbi):
         for reg in ("EBX", "ECX", "EDX", "ESI", "EDI", "EBP"):
             yield reg
 
+    def get_result_reg(self):
+        return "EAX"
+
     def write_result(self, result):
         self._cpu.EAX = result
 
@@ -6390,6 +6408,9 @@ class AMD64LinuxSyscallAbi(SyscallAbi):
         for reg in ("RDI", "RSI", "RDX", "R10", "R8", "R9"):
             yield reg
 
+    def get_result_reg(self):
+        return "RAX"
+
     def write_result(self, result):
         self._cpu.RAX = result
 
@@ -6403,6 +6424,9 @@ class I386CdeclAbi(Abi):
         base = self._cpu.STACK + self._cpu.address_bit_size // 8
         for address in self.values_from(base):
             yield address
+
+    def get_result_reg(self):
+        return "EAX"
 
     def write_result(self, result):
         self._cpu.EAX = result
@@ -6425,6 +6449,9 @@ class I386StdcallAbi(Abi):
         for address in self.values_from(base):
             self._arguments += 1
             yield address
+
+    def get_result_reg(self):
+        return "EAX"
 
     def write_result(self, result):
         self._cpu.EAX = result
@@ -6455,6 +6482,9 @@ class SystemVAbi(Abi):
         word_bytes = self._cpu.address_bit_size // 8
         for address in self.values_from(self._cpu.RSP + word_bytes):
             yield address
+
+    def get_result_reg(self):
+        return "RAX"
 
     def write_result(self, result):
         # XXX(yan): Can also return in rdx for wide values.

@@ -14,9 +14,8 @@ import tempfile
 
 from manticore import ManticoreError
 from manticore.core.plugin import Plugin
-from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib import Z3Solver
-from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib import ConstraintSet, operators, PortfolioSolver, SolverType
+from manticore.core.smtlib.expression import BitVec, BitVecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import (
@@ -41,7 +40,9 @@ import io
 import contextlib
 
 
-solver = Z3Solver.instance()
+solver = PortfolioSolver.instance()
+consts = config.get_group("smt")
+consts.solver = SolverType.portfolio
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -73,7 +74,7 @@ class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
         smtcfg = config.get_group("smt")
         with smtcfg.temp_vals():
-            smtcfg.solver = smtcfg.solver.yices
+            smtcfg.solver = smtcfg.solver.portfolio
 
             filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
             f = io.StringIO()
@@ -752,6 +753,8 @@ class EthTests(unittest.TestCase):
             }
         }
         """
+        consts = config.get_group("evm")
+        consts.events = True
         user_account = self.mevm.create_account(balance=10 ** 10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         input_sym = self.mevm.make_symbolic_value()
@@ -1382,7 +1385,7 @@ class EthTests(unittest.TestCase):
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
-        self.bv = BitVec(256)
+        self.bv = BitVecVariable(size=256, name="BVV")
 
     def test_concretizer(self):
         policy = "SOME_NONSTANDARD_POLICY"
@@ -1626,9 +1629,9 @@ class EthSolidityMetadataTests(unittest.TestCase):
 class EthSpecificTxIntructionTests(unittest.TestCase):
     def test_jmpdest_check(self):
         """
-            This test that jumping to a JUMPDEST in the operand of a PUSH should
-            be treated as an INVALID instruction.
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that jumping to a JUMPDEST in the operand of a PUSH should
+        be treated as an INVALID instruction.
+        https://github.com/trailofbits/manticore/issues/1169
         """
 
         constraints = ConstraintSet()
@@ -1663,8 +1666,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_delegatecall_env(self):
         """
-            This test that the delegatecalled environment is identicall to the caller
-            https://github.com/trailofbits/manticore/issues/1169
+        This test that the delegatecalled environment is identicall to the caller
+        https://github.com/trailofbits/manticore/issues/1169
         """
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)

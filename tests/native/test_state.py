@@ -79,27 +79,27 @@ class StateTest(unittest.TestCase):
 
     def test_solve_one(self):
         val = 42
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr == val)
         solved = self.state.solve_one(expr)
         self.assertEqual(solved, val)
 
     def test_solve_n(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 7)
         solved = sorted(self.state.solve_n(expr, 2))
         self.assertEqual(solved, [5, 6])
 
     def test_solve_n2(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 100)
         solved = self.state.solve_n(expr, 5)
         self.assertEqual(len(solved), 5)
 
     def test_solve_min_max(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 4)
         self.state.constrain(expr < 7)
         self.assertEqual(self.state.solve_min(expr), 5)
@@ -107,7 +107,7 @@ class StateTest(unittest.TestCase):
         self.assertEqual(self.state.solve_minmax(expr), (5, 6))
 
     def test_policy_one(self):
-        expr = BitVecVariable(32, "tmp")
+        expr = BitVecVariable(size=32, name="tmp")
         self.state.constrain(expr > 0)
         self.state.constrain(expr < 100)
         solved = self.state.concretize(expr, "ONE")
@@ -313,6 +313,30 @@ class StateHooks(unittest.TestCase):
 
         for state in self.m.ready_states:
             self.m.add_hook(None, do_nothing, after=True, state=state)
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            self.m.run()
+        self.assertIn("Reached fin callback", f.getvalue())
+
+    def test_state_sys_hooks(self):
+        @self.m.hook(12, after=False, syscall=True)
+        def process_hook(state: State) -> None:
+            # We can't remove because the globally applied hooks are stored in
+            # the Manticore class, not State
+            self.assertFalse(state.remove_hook(12, process_hook, after=True, syscall=True))
+            # We can remove this one because it was applied specifically to this
+            # State (or its parent)
+            self.assertTrue(state.remove_hook(None, do_nothing, after=True, syscall=True))
+
+            state.add_hook(None, do_nothing, after=False, syscall=True)
+            state.add_hook(None, do_nothing, after=True, syscall=True)
+
+            # Should execute directly after sys_brk invocation
+            state.add_hook("sys_brk", fin, after=True, syscall=True)
+
+        for state in self.m.ready_states:
+            self.m.add_hook(None, do_nothing, after=True, state=state, syscall=True)
 
         f = io.StringIO()
         with redirect_stdout(f):

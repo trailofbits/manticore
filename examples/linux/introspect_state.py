@@ -9,7 +9,11 @@ parser = argparse.ArgumentParser(
     description="Explore a binary with Manticore and print the tree of states"
 )
 parser.add_argument(
-    "binary", type=str, nargs="?", default="binaries/multiple-styles", help="The program to run",
+    "binary",
+    type=str,
+    nargs="?",
+    default="binaries/multiple-styles",
+    help="The program to run",
 )
 args = parser.parse_args()
 

@@ -31,7 +31,7 @@ from ..core.state import TerminateState, Concretize
 from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
-from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
+from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption, Abi, SyscallAbi
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import (
     SMemory32,
@@ -474,6 +474,13 @@ class SymbolicFile(File):
         """
         super().__init__(path, flags)
 
+        # Convert to numeric value because we read the file as bytes
+        wildcard_buf: bytes = wildcard.encode()
+        assert (
+            len(wildcard_buf) == 1
+        ), f"SymbolicFile wildcard needs to be a single byte, not {wildcard_buf!r}"
+        wildcard_val = wildcard_buf[0]
+
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
 
@@ -487,7 +494,7 @@ class SymbolicFile(File):
 
         symbols_cnt = 0
         for i in range(size):
-            if data[i] != wildcard:
+            if data[i] != wildcard_val:
                 self.array[i] = data[i]
             else:
                 symbols_cnt += 1
@@ -992,6 +999,16 @@ class Linux(Platform):
     def current(self) -> Cpu:
         assert self._current is not None
         return self.procs[self._current]
+
+    @property
+    def function_abi(self) -> Abi:
+        assert self._function_abi is not None
+        return self._function_abi
+
+    @property
+    def syscall_abi(self) -> SyscallAbi:
+        assert self._syscall_abi is not None
+        return self._syscall_abi
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -1758,17 +1775,17 @@ class Linux(Platform):
         return len(data)
 
     def sys_write(self, fd: int, buf, count) -> int:
-        """ write - send bytes through a file descriptor
-          The write system call writes up to count bytes from the buffer pointed
-          to by buf to the file descriptor fd. If count is zero, write returns 0
-          and optionally sets *tx_bytes to zero.
+        """write - send bytes through a file descriptor
+        The write system call writes up to count bytes from the buffer pointed
+        to by buf to the file descriptor fd. If count is zero, write returns 0
+        and optionally sets *tx_bytes to zero.
 
-          :param fd            a valid file descriptor
-          :param buf           a memory buffer
-          :param count         number of bytes to send
-          :return: 0          Success
-                    EBADF      fd is not a valid file descriptor or is not open.
-                    EFAULT     buf or tx_bytes points to an invalid address.
+        :param fd            a valid file descriptor
+        :param buf           a memory buffer
+        :param count         number of bytes to send
+        :return: 0          Success
+                  EBADF      fd is not a valid file descriptor or is not open.
+                  EFAULT     buf or tx_bytes points to an invalid address.
         """
         data: bytes = bytes()
         cpu = self.current
@@ -1906,7 +1923,6 @@ class Linux(Platform):
             raise NotImplementedError(
                 "Manticore supports only arch_prctl with code=ARCH_SET_FS (0x1002) for now"
             )
-        self.current.FS = 0x63
         self.current.set_descriptor(self.current.FS, addr, 0x4000, "rw")
         return 0
 
@@ -2773,10 +2789,10 @@ class Linux(Platform):
         return 0
 
     def sched(self) -> None:
-        """ Yield CPU.
-            This will choose another process from the running list and change
-            current running process. May give the same cpu if only one running
-            process.
+        """Yield CPU.
+        This will choose another process from the running list and change
+        current running process. May give the same cpu if only one running
+        process.
         """
         if len(self.procs) > 1:
             logger.debug("SCHED:")
@@ -2803,9 +2819,9 @@ class Linux(Platform):
         self._current = next_running_idx
 
     def wait(self, readfds, writefds, timeout) -> None:
-        """ Wait for file descriptors or timeout.
-            Adds the current process in the correspondent waiting list and
-            yield the cpu to another running process.
+        """Wait for file descriptors or timeout.
+        Adds the current process in the correspondent waiting list and
+        yield the cpu to another running process.
         """
         logger.debug("WAIT:")
         logger.debug(
@@ -2849,7 +2865,7 @@ class Linux(Platform):
             self._current = procid
 
     def connections(self, fd: int) -> Optional[int]:
-        """ File descriptors are connected to each other like pipes, except
+        """File descriptors are connected to each other like pipes, except
         for 0, 1, and 2. If you write to FD(N) for N >=3, then that comes
         out from FD(N+1) and vice-versa
         """
@@ -2909,13 +2925,15 @@ class Linux(Platform):
                 self.check_timers()
                 self.sched()
         except (Interruption, Syscall) as e:
+            index: int = self._syscall_abi.syscall_number()
+            self._syscall_abi._cpu._publish("will_invoke_syscall", index)
             try:
                 self.syscall()
                 if hasattr(e, "on_handled"):
                     e.on_handled()
+                self._syscall_abi._cpu._publish("did_invoke_syscall", index)
             except RestartSyscall:
                 pass
-
         return True
 
     # 64bit syscalls

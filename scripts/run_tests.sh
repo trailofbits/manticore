@@ -48,6 +48,12 @@ launch_examples() {
         return 1
     fi
 
+    echo "Running fileio symbolic file test..."
+    coverage run --append ./symbolic_file.py
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
     return 0
 }
 
@@ -56,7 +62,8 @@ make_vmtests(){
     if  [ ! -f ethereum_vm/.done ]; then
         echo "Automaking VMTests" `pwd`
         cd ./tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir -p ethereum_vm/VMTests_symbolic
-        rm -Rf vmtests; git clone https://github.com/ethereum/tests --depth=1 vmtests
+        # March 27, 2021. Newer commits move files around
+        rm -Rf vmtests; git clone https://github.com/ethereum/tests vmtests ; cd vmtests ; git checkout ff68495eb56c382b2ddcea4020259e106353b874 ; cd ..
         for i in ./vmtests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python ./auto_generators/make_VMTests.py -f istanbul -i $i -o ethereum_vm/VMTests_concrete; done
         rm ethereum_vm/VMTests_concrete/test_loop*.py #too slow
         rm -rf ./vmtests
@@ -88,7 +95,7 @@ make_wasm_sym_tests(){
 }
 
 install_truffle(){
-    npm install -g truffle
+    npm install -g truffle@5.3.13
 }
 
 run_truffle_tests(){
@@ -96,7 +103,7 @@ run_truffle_tests(){
     mkdir truffle_tests
     cd truffle_tests
     truffle unbox metacoin
-    coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --evm.oog ignore --evm.txfail optimistic
+    coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --thorough-mode --evm.oog ignore --evm.txfail optimistic --smt.solver portfolio
     # Truffle smoke test. We test if manticore is able to generate states
     # from a truffle project.
     count=$(find output/ -name '*tx' -type f | wc -l)

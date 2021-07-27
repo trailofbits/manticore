@@ -157,8 +157,8 @@ class SolidityMetadata:
         return self._without_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
-        """ Solidity source code snippet related to `asm_pos` evm bytecode offset.
-            If runtime is False, initialization bytecode source map is used
+        """Solidity source code snippet related to `asm_pos` evm bytecode offset.
+        If runtime is False, initialization bytecode source map is used
         """
         srcmap = self.get_srcmap(runtime)
 

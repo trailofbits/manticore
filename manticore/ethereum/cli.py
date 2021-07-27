@@ -89,7 +89,7 @@ def choose_detectors(args):
 def ethereum_main(args, logger):
     m = ManticoreEVM(workspace_url=args.workspace)
 
-    if args.quick_mode:
+    if not args.thorough_mode:
         args.avoid_constant = True
         args.exclude_all = True
         args.only_alive_testcases = True

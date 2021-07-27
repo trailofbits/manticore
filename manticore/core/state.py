@@ -1,7 +1,10 @@
 import copy
 import logging
 
+from typing import List, Tuple, Sequence
+
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
+from .smtlib.expression import Expression
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils import config
@@ -30,8 +33,8 @@ class TerminateState(StateException):
 
 
 class AbandonState(TerminateState):
-    """ Exception returned for abandoned states when
-        execution is finished
+    """Exception returned for abandoned states when
+    execution is finished
     """
 
     def __init__(self, message="Abandoned state"):
@@ -39,12 +42,12 @@ class AbandonState(TerminateState):
 
 
 class Concretize(StateException):
-    """ Base class for all exceptions that trigger the concretization
-        of a symbolic expression
+    """Base class for all exceptions that trigger the concretization
+    of a symbolic expression
 
-        This will fork the state using a pre-set concretization policy
-        Optional `setstate` function set the state to the actual concretized value.
-        #Fixme Doc.
+    This will fork the state using a pre-set concretization policy
+    Optional `setstate` function set the state to the actual concretized value.
+    #Fixme Doc.
 
     """
 
@@ -65,8 +68,8 @@ class Concretize(StateException):
 
 
 class SerializeState(Concretize):
-    """ Allows the user to save a copy of the current state somewhere on the
-        disk so that analysis can later be resumed from this point.
+    """Allows the user to save a copy of the current state somewhere on the
+    disk so that analysis can later be resumed from this point.
     """
 
     def _setstate(self, state, _value):
@@ -76,7 +79,7 @@ class SerializeState(Concretize):
     def __init__(self, filename, **kwargs):
         super().__init__(
             f"Saving state to {filename}",
-            BitVecConstant(32, 0),
+            BitVecConstant(size=32, value=0),
             setstate=self._setstate,
             policy="ONE",
             **kwargs,
@@ -85,12 +88,12 @@ class SerializeState(Concretize):
 
 
 class ForkState(Concretize):
-    """ Specialized concretization class for Bool expressions.
-        It tries True and False as concrete solutions. /
+    """Specialized concretization class for Bool expressions.
+    It tries True and False as concrete solutions. /
 
-        Note: as setstate is None the concrete value is not written back
-        to the state. So the expression could still by symbolic(but constrained)
-        in forked states.
+    Note: as setstate is None the concrete value is not written back
+    to the state. So the expression could still by symbolic(but constrained)
+    in forked states.
     """
 
     def __init__(self, message, expression: Bool, **kwargs):
@@ -271,12 +274,12 @@ class StateBase(Eventful):
 
     def _update_state_descriptor(self, descriptor: StateDescriptor, *args, **kwargs):
         """
-         Called on execution_intermittent to update the descriptor for this state. This is intended for information
-         like the PC or instruction count, where updating after each instruction would be a waste of cycles.
-         This one updates the execution counts
+        Called on execution_intermittent to update the descriptor for this state. This is intended for information
+        like the PC or instruction count, where updating after each instruction would be a waste of cycles.
+        This one updates the execution counts
 
-         :param descriptor: StateDescriptor for this state
-         """
+        :param descriptor: StateDescriptor for this state
+        """
         descriptor.total_execs = self._total_exec
         descriptor.own_execs = self._own_exec
 
@@ -451,30 +454,41 @@ class StateBase(Eventful):
         """
         return self.solve_one_n(expr, constrain=constrain)[0]
 
-    def solve_one_n(self, *exprs, constrain=False):
+    def solve_one_n(self, *exprs: Expression, constrain: bool = False) -> List[int]:
         """
-        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        one solution.
+        Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        a list of solutions.
 
         :param exprs: An iterable of manticore.core.smtlib.Expression
         :param bool constrain: If True, constrain expr to solved solution value
-        :return: Concrete value or a tuple of concrete values
-        :rtype: int
+        :return: List of concrete value or a tuple of concrete values
         """
-        values = []
-        for expr in exprs:
-            if not issymbolic(expr):
-                values.append(expr)
-            else:
-                expr = self.migrate_expression(expr)
-                value = self._solver.get_value(self._constraints, expr)
-                if constrain:
-                    self.constrain(expr == value)
-                # Include forgiveness here
-                if isinstance(value, bytearray):
-                    value = bytes(value)
-                values.append(value)
-        return values
+        return self.solve_one_n_batched(exprs, constrain)
+
+    def solve_one_n_batched(
+        self, exprs: Sequence[Expression], constrain: bool = False
+    ) -> List[int]:
+        """
+        Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        a list of solutions.
+        :param exprs: An iterable of manticore.core.smtlib.Expression
+        :param bool constrain: If True, constrain expr to solved solution value
+        :return: List of concrete value or a tuple of concrete values
+        """
+        # Return ret instead of value, to allow the bytearray/bytes conversion
+        ret = []
+        exprs = [self.migrate_expression(x) for x in exprs]
+        values = self._solver.get_value_in_batch(self._constraints, exprs)
+        assert len(values) == len(exprs)
+        for idx, expr in enumerate(exprs):
+            value = values[idx]
+            if constrain:
+                self.constrain(expr == values[idx])
+            # Include forgiveness here
+            if isinstance(value, bytearray):
+                value = bytes(value)
+            ret.append(value)
+        return ret
 
     def solve_n(self, expr, nsolves):
         """

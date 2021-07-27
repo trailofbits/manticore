@@ -58,7 +58,7 @@ def manticore_verifier(
     outputspace_url=None,
     timeout=100,
 ):
-    """ Verify solidity properties
+    """Verify solidity properties
     The results are dumped to stdout and to the workspace folder.
 
         $manticore-verifier property.sol  --contract TestToken --smt.solver yices --maxt 4
@@ -366,7 +366,11 @@ def main():
     cryticparser.init(parser)
 
     parser.add_argument(
-        "source_code", type=str, nargs="*", default=[], help="Contract source code",
+        "source_code",
+        type=str,
+        nargs="*",
+        default=[],
+        help="Contract source code",
     )
     parser.add_argument(
         "-v", action="count", default=0, help="Specify verbosity level from -v to -vvvv"
@@ -387,15 +391,17 @@ def main():
         help="Show program version information",
     )
     parser.add_argument(
-        "--propconfig", type=str, help="Solidity property accounts config file (.yml)",
+        "--propconfig",
+        type=str,
+        help="Solidity property accounts config file (.yml)",
     )
     eth_flags = parser.add_argument_group("Ethereum flags")
 
     eth_flags.add_argument(
-        "--quick-mode",
+        "--thorough-mode",
         action="store_true",
-        help="Configure Manticore for quick exploration. Disable gas, generate testcase only for alive states, "
-        "do not explore constant functions. Disable all detectors.",
+        help="Configure Manticore for more exhaustive exploration. Evaluate gas, generate testcases for dead states, "
+        "explore constant functions, and run a small suite of detectors.",
     )
     eth_flags.add_argument(
         "--contract_name", type=str, help="The target contract name defined in the source code"

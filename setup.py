@@ -19,10 +19,10 @@ def rtd_dependent_deps():
 native_deps = [
     "capstone @ git+https://github.com/aquynh/capstone.git@1766485c0c32419e9a17d6ad31f9e218ef4f018f#subdirectory=bindings/python",
     "pyelftools",
-    "unicorn==1.0.2rc2",
+    "unicorn==1.0.2",
 ]
 
-lint_deps = ["black==19.10b0", "mypy==0.770"]
+lint_deps = ["black==20.8b1", "mypy==0.790"]
 
 auto_test_deps = ["py-evm"]
 
@@ -49,9 +49,11 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 
 # https://stackoverflow.com/a/4792601 grumble grumble
-dev_extension = ""
+version = "0.3.6"
 if "--dev_release" in sys.argv:
-    dev_extension = ".dev" + date.today().strftime("%y%m%d")
+    major, minor, point = tuple(int(t) for t in version.split("."))
+    dev_extension = f"dev{date.today().strftime('%y%m%d')}"
+    version = f"{major}.{minor}.{point + 1}.{dev_extension}"
     sys.argv.remove("--dev_release")
 
 setup(
@@ -61,16 +63,19 @@ setup(
     long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.4" + dev_extension,
+    version=version,
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.6",
     install_requires=[
         "pyyaml",
+        "protobuf",
+        # evm dependencies
         "pysha3",
         "prettytable",
         "ply",
         "rlp",
-        "crytic-compile>=0.1.8",
+        "intervaltree",
+        "crytic-compile>=0.2.0",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
