@@ -1353,7 +1353,7 @@ class Linux(Platform):
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != "PT_INTERP":
                 continue
-            interpreter_filename = elf_segment.data()[:-1]
+            interpreter_filename = elf_segment.data()[:-1].rstrip(b'\x00')
             logger.info(f"Interpreter filename: {interpreter_filename}")
             if os.path.exists(interpreter_filename.decode("utf-8")):
                 _clean_interp_stream()
