@@ -8,7 +8,7 @@ from itertools import islice
 
 import unicorn
 
-from .disasm import init_disassembler
+from .disasm import init_disassembler, Instruction
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory, Memory
 from ...core.smtlib import Operators, Constant, issymbolic, BitVec, Expression
@@ -533,7 +533,7 @@ class Cpu(Eventful):
         super().__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
-        self._instruction_cache: Dict[int, Any] = {}
+        self._instruction_cache: Dict[int, Instruction] = {}
         self._icount = 0
         self._last_pc = None
         self._last_executed_pc = None
@@ -582,11 +582,13 @@ class Cpu(Eventful):
         return self._icount
 
     @property
-    def last_executed_pc(self) -> int:
+    def last_executed_pc(self) -> Optional[int]:
         return self._last_executed_pc
 
     @property
-    def last_executed_insn(self):
+    def last_executed_insn(self) -> Optional[Instruction]:
+        if not self.last_executed_pc:
+            return None
         return self.decode_instruction(self.last_executed_pc)
 
     ##############################
@@ -924,7 +926,7 @@ class Cpu(Eventful):
         """
         raise NotImplementedError
 
-    def decode_instruction(self, pc: int):
+    def decode_instruction(self, pc: int) -> Instruction:
         """
         This will decode an instruction from memory pointed by `pc`
 
