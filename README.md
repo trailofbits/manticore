@@ -217,7 +217,7 @@ for idx, val_list in enumerate(m.collect_returns()):
 </details>
 
 ## Requirements
-* Manticore requires Python 3.6 or greater 
+* Manticore requires Python 3.7 or greater 
 * Manticore officially supports the latest LTS version of Ubuntu provided by Github Actions
   * Manticore has experimental support for EVM and WASM (but not native Linux binaries) on MacOS 
 * We recommend running with increased stack size. This can be done by running `ulimit -s 100000` or by passing `--ulimit stack=100000000:100000000` to `docker run`
