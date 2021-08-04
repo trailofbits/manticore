@@ -1,6 +1,6 @@
 import sys
 
-if sys.version_info < (3, 6):
+if sys.version_info < (3, 7):
     print("Manticore requires Python 3.7 or higher.")
     sys.exit(-1)
 
