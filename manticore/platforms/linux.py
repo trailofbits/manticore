@@ -1353,12 +1353,10 @@ class Linux(Platform):
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != "PT_INTERP":
                 continue
-            interpreter_filename = elf_segment.data()[:-1].rstrip(b"\x00")
+            interpreter_filename = elf_segment.data()[:-1].rstrip(b"\x00").decode("utf-8")
             logger.info(f"Interpreter filename: {interpreter_filename}")
-            if os.path.exists(interpreter_filename.decode("utf-8")):
-                _clean_interp_stream()
-                interpreter = ELFFile(open(interpreter_filename, "rb"))
-            elif "LD_LIBRARY_PATH" in env:
+
+            if "LD_LIBRARY_PATH" in env:
                 for mpath in env["LD_LIBRARY_PATH"].split(":"):
                     interpreter_path_filename = os.path.join(
                         mpath, os.path.basename(interpreter_filename)
@@ -1368,6 +1366,10 @@ class Linux(Platform):
                         _clean_interp_stream()
                         interpreter = ELFFile(open(interpreter_path_filename, "rb"))
                         break
+            elif os.path.exists(interpreter_filename):
+                _clean_interp_stream()
+                interpreter = ELFFile(open(interpreter_filename, "rb"))
+
             break
 
         if interpreter is not None:
@@ -1499,9 +1501,7 @@ class Linux(Platform):
                 if hint == 0:
                     hint = None
 
-                base = cpu.memory.mmapFile(
-                    hint, memsz, perms, elf_segment.stream.name.decode("utf-8"), offset
-                )
+                base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset)
                 base -= vaddr
                 logger.debug(
                     f"Loading interpreter offset: {offset:08x} "
