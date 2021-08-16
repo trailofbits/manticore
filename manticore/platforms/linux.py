@@ -1366,8 +1366,8 @@ class Linux(Platform):
                         _clean_interp_stream()
                         interpreter = ELFFile(open(interpreter_path_filename, "rb"))
                         break
-            elif os.path.exists(interpreter_filename):
-                _clean_interp_stream()
+
+            if interpreter is None and os.path.exists(interpreter_filename):
                 interpreter = ELFFile(open(interpreter_filename, "rb"))
 
             break
