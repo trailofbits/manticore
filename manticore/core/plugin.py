@@ -426,6 +426,8 @@ class StateDescriptor:
     state_list: typing.Optional[StateLists] = None
     #: State IDs of any states that forked from this one
     children: set = field(default_factory=set)
+    #: State ID of zero or one forked state that created this one
+    parent: typing.Optional[int] = None
     #: The time that any field of this Descriptor was last updated
     last_update: datetime = field(default_factory=datetime.now)
     #: The time at which the on_execution_intermittent callback was last applied to this state. This is when the PC and exec count get updated.
@@ -579,6 +581,8 @@ class IntrospectionAPIPlugin(Plugin):
             context.setdefault(state_id, StateDescriptor(state_id=state_id)).children.update(
                 children
             )
+            for child_id in children:
+                context.setdefault(child_id, StateDescriptor(state_id=child_id)).parent = state_id
 
     def will_solve_callback(self, state, constraints, expr, solv_func: str):
         """
