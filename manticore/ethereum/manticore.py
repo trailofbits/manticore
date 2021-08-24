@@ -3,6 +3,7 @@ import json
 import logging
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
+import threading
 from typing import Dict, Optional, Union
 import io
 import pyevmasm as EVMAsm
@@ -1757,13 +1758,34 @@ class ManticoreEVM(ManticoreBase):
             except EmptyQueue:
                 pass
 
+        class ReportWorkerSingle:
+            """Run task in the current process and current thread"""
+
+            def __init__(self, target, args):
+                self.target = target
+                self.args = args
+
+            def start(self):
+                self.target(*self.args)
+
+            def join(self):
+                pass
+
         # Generate testcases for all but killed states
         q = Queue()
         for state_id in self._all_states:
             # we need to remove -1 state before forking because it may be in memory
             q.put(state_id)
 
-        report_workers = [Process(target=worker_finalize, args=(q,)) for _ in range(procs)]
+        core_consts = config.get_group("core")
+        report_workers = [
+            {
+                core_consts.mprocessing.single: ReportWorkerSingle,
+                core_consts.mprocessing.threading: threading.Thread,
+                core_consts.mprocessing.multiprocessing: Process,
+            }[core_consts.mprocessing](target=worker_finalize, args=(q,))
+            for _ in range(procs)
+        ]
         for proc in report_workers:
             proc.start()
 
