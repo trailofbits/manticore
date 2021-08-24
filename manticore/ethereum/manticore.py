@@ -4,7 +4,7 @@ import logging
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 import threading
-from typing import Dict, Optional, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 import io
 import pyevmasm as EVMAsm
 import random
@@ -1761,14 +1761,14 @@ class ManticoreEVM(ManticoreBase):
         class ReportWorkerSingle:
             """Run task in the current process and current thread"""
 
-            def __init__(self, target, args):
+            def __init__(self, target: Callable, args: Tuple) -> None:
                 self.target = target
                 self.args = args
 
-            def start(self):
+            def start(self) -> None:
                 self.target(*self.args)
 
-            def join(self):
+            def join(self) -> None:
                 pass
 
         # Generate testcases for all but killed states
