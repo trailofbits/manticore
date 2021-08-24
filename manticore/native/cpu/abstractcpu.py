@@ -1031,7 +1031,7 @@ class Cpu(Eventful):
         # FIXME (theo) why just return here?
         # hook changed PC, so we trust that there is nothing more to do
         if insn.address != self.PC:
-            self._last_executed_pc = self.PC
+            self._last_executed_pc = insn.address
             return
 
         name = self.canonicalize_instruction_name(insn)
