@@ -1,3 +1,5 @@
+from copy import copy
+
 from ...core.smtlib import Operators, BitVec, Bool
 
 

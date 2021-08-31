@@ -220,6 +220,7 @@ class RegisterFile:
         # dict mapping from alias register name ('PC') to actual register
         # name ('RIP')
         self._aliases = aliases if aliases is not None else {}
+        self._registers = {}
 
     def _alias(self, register):
         """
@@ -266,6 +267,11 @@ class RegisterFile:
         :param register: a register name
         """
         return self._alias(register) in self.all_registers
+
+    def __copy__(self) -> "RegisterFile":
+        """Custom shallow copy to create a snapshot of the register state.
+        Should be used as read-only"""
+        ...
 
 
 class Abi:

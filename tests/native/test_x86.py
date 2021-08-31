@@ -1,7 +1,11 @@
+import copy
 import unittest
 import functools
+
+from manticore.core.smtlib import BitVecConstant, BitVecVariable, operators
 from manticore.native.cpu.x86 import *
 from manticore.core.smtlib import *
+from manticore.native.cpu.x86 import AMD64RegFile
 from manticore.native.memory import *
 from manticore.core.smtlib.solver import Z3Solver
 
@@ -31,6 +35,34 @@ def forAllTests(decorator):
         return cls
 
     return decorate
+
+
+def testRegisterFileCopy():
+    regfile = AMD64RegFile(aliases={"PC": "RIP", "STACK": "RSP", "FRAME": "RBP"})
+    regfile.write("PC", 1234)
+    regfile.write("RAX", BitVecConstant(size=64, value=24))
+    regfile.write("RBX", BitVecVariable(size=64, name="b"))
+
+    new_regfile = copy.copy(regfile)
+
+    assert new_regfile.read("PC") == 1234
+    assert new_regfile.read("RAX") is regfile.read("RAX")
+    assert new_regfile.read("RAX") == regfile.read("RAX")
+    assert new_regfile.read("RBX") is regfile.read("RBX")
+    assert new_regfile.read("RBX") == regfile.read("RBX")
+
+    rax_val = regfile.read("RAX")
+    regfile.write("PC", Operators.ITEBV(64, rax_val == 0, 4321, 1235))
+    regfile.write("RAX", rax_val * 2)
+
+    assert new_regfile.read("PC") is not regfile.read("PC")
+    assert new_regfile.read("PC") != regfile.read("PC")
+    assert new_regfile.read("PC") == 1234
+
+    assert new_regfile.read("RAX") is not regfile.read("RAX")
+    assert new_regfile.read("RAX") != regfile.read("RAX")
+    assert new_regfile.read("RAX") is rax_val
+    assert new_regfile.read("RAX") == rax_val
 
 
 @forAllTests(skipIfNotImplemented)
