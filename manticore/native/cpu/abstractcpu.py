@@ -11,7 +11,7 @@ import unicorn
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory, Memory
-from ...core.smtlib import Operators, Constant, issymbolic
+from ...core.smtlib import Operators, Constant, issymbolic, BitVec, Expression
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import SelectedSolver
 from ...utils.emulate import ConcreteUnicornEmulator
@@ -732,26 +732,28 @@ class Cpu(Eventful):
         assert len(data) == size, "Raw read resulted in wrong data read which should never happen"
         return data
 
-    def read_int(self, where, size=None, force=False):
+    def read_int(self, where: int, size: int = None, force: bool = False, publish: bool = True):
         """
         Reads int from memory
 
-        :param int where: address to read from
+        :param where: address to read from
         :param size: number of bits to read
-        :return: the value read
-        :rtype: int or BitVec
         :param force: whether to ignore memory permissions
+        :param publish: whether to publish an event
+        :return: the value read
         """
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self._publish("will_read_memory", where, size)
+        if publish:
+            self._publish("will_read_memory", where, size)
 
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
-        self._publish("did_read_memory", where, value, size)
+        if publish:
+            self._publish("did_read_memory", where, value, size)
         return value
 
     def write_bytes(self, where: int, data, force: bool = False) -> None:
@@ -786,19 +788,19 @@ class Cpu(Eventful):
             for i in range(len(data)):
                 self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
-    def read_bytes(self, where: int, size: int, force: bool = False):
+    def read_bytes(self, where: int, size: int, force: bool = False, publish: bool = True):
         """
         Read from memory.
 
         :param where: address to read data from
         :param size: number of bytes
         :param force: whether to ignore memory permissions
+        :param publish: whether to publish events
         :return: data
-        :rtype: list[int or Expression]
         """
         result = []
         for i in range(size):
-            result.append(Operators.CHR(self.read_int(where + i, 8, force)))
+            result.append(Operators.CHR(self.read_int(where + i, 8, force, publish=publish)))
         return result
 
     def write_string(
