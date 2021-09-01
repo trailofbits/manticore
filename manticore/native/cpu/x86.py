@@ -6396,6 +6396,9 @@ class I386LinuxSyscallAbi(SyscallAbi):
         for reg in ("EBX", "ECX", "EDX", "ESI", "EDI", "EBP"):
             yield reg
 
+    def get_result_reg(self):
+        return "EAX"
+
     def write_result(self, result):
         self._cpu.EAX = result
 
@@ -6415,6 +6418,9 @@ class AMD64LinuxSyscallAbi(SyscallAbi):
         for reg in ("RDI", "RSI", "RDX", "R10", "R8", "R9"):
             yield reg
 
+    def get_result_reg(self):
+        return "RAX"
+
     def write_result(self, result):
         self._cpu.RAX = result
 
@@ -6428,6 +6434,9 @@ class I386CdeclAbi(Abi):
         base = self._cpu.STACK + self._cpu.address_bit_size // 8
         for address in self.values_from(base):
             yield address
+
+    def get_result_reg(self):
+        return "EAX"
 
     def write_result(self, result):
         self._cpu.EAX = result
@@ -6451,7 +6460,7 @@ class I386StdcallAbi(Abi):
             self._arguments += 1
             yield address
 
-    def get_return_reg(self):
+    def get_result_reg(self):
         return "EAX"
 
     def write_result(self, result):
@@ -6484,7 +6493,7 @@ class SystemVAbi(Abi):
         for address in self.values_from(self._cpu.RSP + word_bytes):
             yield address
 
-    def get_return_reg(self):
+    def get_result_reg(self):
         return "RAX"
 
     def write_result(self, result):

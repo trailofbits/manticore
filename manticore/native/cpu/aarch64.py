@@ -5255,7 +5255,7 @@ class Aarch64CdeclAbi(Abi):
         for address in self.values_from(self._cpu.STACK):
             yield address
 
-    def get_return_reg(self):
+    def get_result_reg(self):
         return "X0"
 
     def write_result(self, result):
@@ -5279,6 +5279,9 @@ class Aarch64LinuxSyscallAbi(SyscallAbi):
 
     def get_arguments(self):
         return ("X{}".format(i) for i in range(6))
+
+    def get_result_reg(self):
+        return "X0"
 
     def write_result(self, result):
         self._cpu.X0 = result

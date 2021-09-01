@@ -294,7 +294,7 @@ class Abi:
         """
         raise NotImplementedError
 
-    def get_return_reg(self):
+    def get_result_reg(self) -> str:
         """
         Extract the location a return value will be written to. Produces
         a string describing a register where the return value is written to.

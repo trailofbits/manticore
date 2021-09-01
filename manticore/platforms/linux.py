@@ -31,7 +31,7 @@ from ..core.state import TerminateState, Concretize
 from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
-from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
+from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption, Abi, SyscallAbi
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import (
     SMemory32,
@@ -1003,6 +1003,16 @@ class Linux(Platform):
         assert self._current is not None
         return self.procs[self._current]
 
+    @property
+    def function_abi(self) -> Abi:
+        assert self._function_abi is not None
+        return self._function_abi
+
+    @property
+    def syscall_abi(self) -> SyscallAbi:
+        assert self._syscall_abi is not None
+        return self._syscall_abi
+
     def __getstate__(self):
         state = super().__getstate__()
         state["clocks"] = self.clocks
@@ -1346,12 +1356,10 @@ class Linux(Platform):
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != "PT_INTERP":
                 continue
-            interpreter_filename = elf_segment.data()[:-1]
+            interpreter_filename = elf_segment.data()[:-1].rstrip(b"\x00").decode("utf-8")
             logger.info(f"Interpreter filename: {interpreter_filename}")
-            if os.path.exists(interpreter_filename.decode("utf-8")):
-                _clean_interp_stream()
-                interpreter = ELFFile(open(interpreter_filename, "rb"))
-            elif "LD_LIBRARY_PATH" in env:
+
+            if "LD_LIBRARY_PATH" in env:
                 for mpath in env["LD_LIBRARY_PATH"].split(":"):
                     interpreter_path_filename = os.path.join(
                         mpath, os.path.basename(interpreter_filename)
@@ -1361,6 +1369,10 @@ class Linux(Platform):
                         _clean_interp_stream()
                         interpreter = ELFFile(open(interpreter_path_filename, "rb"))
                         break
+
+            if interpreter is None and os.path.exists(interpreter_filename):
+                interpreter = ELFFile(open(interpreter_filename, "rb"))
+
             break
 
         if interpreter is not None:
@@ -1492,9 +1504,7 @@ class Linux(Platform):
                 if hint == 0:
                     hint = None
 
-                base = cpu.memory.mmapFile(
-                    hint, memsz, perms, elf_segment.stream.name.decode("utf-8"), offset
-                )
+                base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset)
                 base -= vaddr
                 logger.debug(
                     f"Loading interpreter offset: {offset:08x} "
