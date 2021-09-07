@@ -254,8 +254,17 @@ class SmtlibProc:
         """
         if self._debug:
             logger.debug(">%s", cmd)
-        self._proc.stdout.flush()  # type: ignore
-        self._proc.stdin.write(f"{cmd}\n")  # type: ignore
+        assert self._proc is not None
+        try:
+            self._proc.stdout.flush()  # type: ignore
+            self._proc.stdin.write(f"{cmd}\n")  # type: ignore
+        except (BrokenPipeError, IOError) as e:
+            logger.critical(
+                f"Solver encountered an error trying to send commands: {e}.\n"
+                f"\tOutput: {self._proc.stdout}\n\n"
+                f"\tStderr: {self._proc.stderr}"
+            )
+            raise e
 
     def recv(self, wait=True) -> Optional[str]:
         """Reads the response from the smtlib solver
