@@ -500,7 +500,6 @@ class AMD64RegFile(RegisterFile):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._registers = {}
         for reg in (
             "RAX",
             "RCX",
@@ -559,6 +558,7 @@ class AMD64RegFile(RegisterFile):
             self._registers[reg] = 0
 
         self._cache = {}
+
         for name in ("AF", "CF", "DF", "IF", "OF", "PF", "SF", "ZF"):
             self.write(name, False)
 
@@ -719,6 +719,14 @@ class AMD64RegFile(RegisterFile):
 
     def sizeof(self, reg):
         return self._table[reg].size
+
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        result._cache = self._cache.copy()
+        result._registers = self._registers.copy()
+        return result
 
 
 # Operand Wrapper

@@ -6,7 +6,7 @@ from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from functools import wraps
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
-from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
+from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption, Armv7RegisterFile
 from manticore.core.smtlib import *
 from manticore.core.state import Concretize
 from manticore.core.smtlib.solver import Z3Solver
@@ -286,6 +286,34 @@ def assemble(asm: str, mode=CS_MODE_ARM) -> bytes:
     if asm in assembly_cache[mode]:
         return binascii.unhexlify(assembly_cache[mode][asm])
     return binascii.unhexlify(_ks_assemble(asm, mode=mode))
+
+
+def testRegisterFileCopy():
+    regfile = Armv7RegisterFile()
+    regfile.write("PC", 1234)
+    regfile.write("R0", BitVecConstant(size=64, value=24))
+    regfile.write("R1", BitVecVariable(size=64, name="b"))
+
+    new_regfile = copy.copy(regfile)
+
+    assert new_regfile.read("PC") == 1234
+    assert new_regfile.read("R0") is regfile.read("R0")
+    assert new_regfile.read("R0") == regfile.read("R0")
+    assert new_regfile.read("R1") is regfile.read("R1")
+    assert new_regfile.read("R1") == regfile.read("R1")
+
+    rax_val = regfile.read("R0")
+    regfile.write("PC", Operators.ITEBV(64, rax_val == 0, 4321, 1235))
+    regfile.write("R0", rax_val * 2)
+
+    assert new_regfile.read("PC") is not regfile.read("PC")
+    assert new_regfile.read("PC") != regfile.read("PC")
+    assert new_regfile.read("PC") == 1234
+
+    assert new_regfile.read("R0") is not regfile.read("R0")
+    assert new_regfile.read("R0") != regfile.read("R0")
+    assert new_regfile.read("R0") is rax_val
+    assert new_regfile.read("R0") == rax_val
 
 
 class Armv7CpuTest(unittest.TestCase):

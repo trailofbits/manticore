@@ -1,12 +1,13 @@
 import binascii
+import copy
 import unittest
 
 from capstone import CS_MODE_ARM
 from functools import wraps
 
-from manticore.core.smtlib import ConstraintSet, Z3Solver
+from manticore.core.smtlib import ConstraintSet, Z3Solver, BitVecConstant, BitVecVariable, Operators
 from manticore.native.memory import SMemory64, Memory64
-from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
+from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu, Aarch64RegisterFile
 from manticore.native.cpu.abstractcpu import (
     Interruption,
     InstructionNotImplementedError,
@@ -146,6 +147,34 @@ NZCV_COND_MAP = {
     "al": (0xF0000000, None),
     "nv": (0, None),
 }
+
+
+def testRegisterFileCopy():
+    regfile = Aarch64RegisterFile()
+    regfile.write("PC", 1234)
+    regfile.write("X0", BitVecConstant(size=64, value=24))
+    regfile.write("X1", BitVecVariable(size=64, name="b"))
+
+    new_regfile = copy.copy(regfile)
+
+    assert new_regfile.read("PC") == 1234
+    assert new_regfile.read("X0") is regfile.read("X0")
+    assert new_regfile.read("X0") == regfile.read("X0")
+    assert new_regfile.read("X1") is regfile.read("X1")
+    assert new_regfile.read("X1") == regfile.read("X1")
+
+    rax_val = regfile.read("X0")
+    regfile.write("PC", Operators.ITEBV(64, rax_val == 0, 4321, 1235))
+    regfile.write("X0", rax_val * 2)
+
+    assert new_regfile.read("PC") is not regfile.read("PC")
+    assert new_regfile.read("PC") != regfile.read("PC")
+    assert new_regfile.read("PC") == 1234
+
+    assert new_regfile.read("X0") is not regfile.read("X0")
+    assert new_regfile.read("X0") != regfile.read("X0")
+    assert new_regfile.read("X0") is rax_val
+    assert new_regfile.read("X0") == rax_val
 
 
 # XXX: Armv7 also has these methods: stack_pop, stack_push, stack_peek.

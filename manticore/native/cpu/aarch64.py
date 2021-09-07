@@ -1,4 +1,5 @@
 import warnings
+from copy import copy
 
 import capstone as cs
 import collections
@@ -160,7 +161,6 @@ class Aarch64RegisterFile(RegisterFile):
         # Only the full registers are stored here (called "parents").
         # If a smaller register is used, it must find its "parent" in order to
         # be stored here.
-        self._registers = {}
         for name in self._table.keys():
             self._all_registers.add(name)
 
@@ -269,6 +269,13 @@ class Aarch64RegisterFile(RegisterFile):
 
         result = n | z | c | v
         self.write("NZCV", result)
+
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        result._registers = {k: copy(v) for k, v in self._registers.items()}
+        return result
 
 
 # XXX: Add more instructions.

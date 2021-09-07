@@ -1,6 +1,6 @@
 import unittest
 
-from manticore.core.smtlib import Bool, BoolVariable, BitVecConstant
+from manticore.core.smtlib import *
 from manticore.native.cpu.register import Register
 
 
