@@ -1006,14 +1006,7 @@ class Cpu(Eventful):
         """
         curpc = self.PC
         if self._delayed_event:
-            self._last_executed_pc = self._last_pc
-            self._icount += 1
-            self._publish(
-                "did_execute_instruction",
-                self._last_pc,
-                curpc,
-                self.decode_instruction(self._last_pc),
-            )
+            self._publish_instruction_as_executed(self.decode_instruction(self._last_pc))
             self._delayed_event = False
 
         if issymbolic(curpc):
