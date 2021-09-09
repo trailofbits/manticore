@@ -535,7 +535,12 @@ class Cpu(Eventful):
         self._memory = memory
         self._instruction_cache: Dict[int, Instruction] = {}
         self._icount = 0
+        # _last_pc represents the last PC that was going to be executed, but it
+        # might not have been due to user hooks, exceptions, etc. You probably
+        # want last_executed_pc() or last_executed_insn()
         self._last_pc = None
+        # _last_executed_pc represents the last PC that was executed and
+        # affected the state of the program
         self._last_executed_pc = None
         self._concrete = kwargs.pop("concrete", False)
         self.emu = None
@@ -583,10 +588,12 @@ class Cpu(Eventful):
 
     @property
     def last_executed_pc(self) -> Optional[int]:
+        """The last PC that was executed."""
         return self._last_executed_pc
 
     @property
     def last_executed_insn(self) -> Optional[Instruction]:
+        """The last instruction that was executed."""
         if not self.last_executed_pc:
             return None
         return self.decode_instruction(self.last_executed_pc)
