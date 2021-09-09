@@ -129,7 +129,7 @@ def hook_mmap_return(state: State):
     munmap call.
     mmap() returns a pointer to the mapped area
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
     logger.info(f"mmap ret val: {hex(ret_val)}, state: {state.id}")
 
     state.context["malloc_lib"].process_mmap(ret_val, state.context["mmap_args"])
@@ -163,7 +163,7 @@ def hook_brk_return(state: State):
     post execution of the brk function.
     brk() returns 0 - on error, -1 is returned
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
     logger.info(f"brk ret val: {hex(ret_val)}, state: {state.id}")
 
     state.context["malloc_lib"].process_brk(ret_val, state.context["brk_increment"])
@@ -199,7 +199,7 @@ def hook_malloc_return(state: State):
     post execution of the malloc function.
     malloc() returns a pointer to the allocated memory
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
     logger.info(f"malloc ret val: {hex(ret_val)}, state: {state.id}")
     state.context["malloc_lib"].process_malloc(ret_val, state.context["malloc_size"])
     del state.context["malloc_size"]
@@ -233,7 +233,7 @@ def hook_munmap_return(state: State):
     munmap call.
     munmap() returns 0, on failure -1
     """
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
     logger.info(f"munmap ret val: {hex(ret_val)}, state: {state.id}")
 
     state.remove_hook(state.cpu.read_register("PC"), hook_munmap_return)
@@ -290,7 +290,7 @@ def hook_calloc_return(state: State):
     calloc() returns a pointer to the allocated memory
     """
 
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
     logger.info(f"calloc ret val: {hex(ret_val)}, state: {state.id}")
     state.context["malloc_lib"].process_calloc(
         state.context["calloc_request"][0], state.context["calloc_request"][1], ret_val
@@ -327,7 +327,7 @@ def hook_realloc_return(state: State):
     realloc() returns a pointer to the newly allocated memory
     """
 
-    ret_val = state.cpu.read_register(state._platform._function_abi.get_return_reg())
+    ret_val = state.cpu.read_register(state._platform._function_abi.get_result_reg())
     logger.info(f"realloc ret val: {hex(ret_val)}, state: {state.id}")
     state.context["malloc_lib"].process_realloc(
         state.context["realloc_request"][0], ret_val, state.context["realloc_request"][1]

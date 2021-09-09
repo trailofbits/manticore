@@ -11,7 +11,7 @@ import unicorn
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 from ..memory import LazySMemory, Memory
-from ...core.smtlib import Operators, Constant, issymbolic
+from ...core.smtlib import Operators, Constant, issymbolic, BitVec, Expression
 from ...core.smtlib import visitors
 from ...core.smtlib.solver import SelectedSolver
 from ...utils.emulate import ConcreteUnicornEmulator
@@ -220,6 +220,7 @@ class RegisterFile:
         # dict mapping from alias register name ('PC') to actual register
         # name ('RIP')
         self._aliases = aliases if aliases is not None else {}
+        self._registers = {}
 
     def _alias(self, register):
         """
@@ -266,6 +267,11 @@ class RegisterFile:
         :param register: a register name
         """
         return self._alias(register) in self.all_registers
+
+    def __copy__(self) -> "RegisterFile":
+        """Custom shallow copy to create a snapshot of the register state.
+        Should be used as read-only"""
+        ...
 
 
 class Abi:
@@ -743,15 +749,15 @@ class Cpu(Eventful):
         assert len(data) == size, "Raw read resulted in wrong data read which should never happen"
         return data
 
-    def read_int(self, where, size=None, force=False, publish=True):
+    def read_int(self, where: int, size: int = None, force: bool = False, publish: bool = True):
         """
         Reads int from memory
 
-        :param int where: address to read from
+        :param where: address to read from
         :param size: number of bits to read
-        :return: the value read
-        :rtype: int or BitVec
         :param force: whether to ignore memory permissions
+        :param publish: whether to publish an event
+        :return: the value read
         """
         if size is None:
             size = self.address_bit_size
@@ -799,15 +805,15 @@ class Cpu(Eventful):
             for i in range(len(data)):
                 self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
-    def read_bytes(self, where: int, size: int, force: bool = False, publish=True):
+    def read_bytes(self, where: int, size: int, force: bool = False, publish: bool = True):
         """
         Read from memory.
 
         :param where: address to read data from
         :param size: number of bytes
         :param force: whether to ignore memory permissions
+        :param publish: whether to publish events
         :return: data
-        :rtype: list[int or Expression]
         """
         result = []
         for i in range(size):

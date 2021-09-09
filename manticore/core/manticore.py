@@ -613,6 +613,7 @@ class ManticoreBase(Eventful):
                       +-------+
 
         """
+        state.manticore = self
         self._publish("will_enqueue_state", state, can_raise=False)
         state_id = self._save(state, state_id=state.id)
         with self._lock:

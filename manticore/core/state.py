@@ -179,6 +179,7 @@ class StateBase(Eventful):
 
     def __init__(self, constraints, platform, **kwargs):
         super().__init__(**kwargs)
+        self.manticore = None
         self._platform = platform
         self._constraints = constraints
         self._platform.constraints = constraints
