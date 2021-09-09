@@ -207,7 +207,7 @@ def hook_malloc_return(state: State):
     remove_sys_allocing_hooks(state)
 
     state.remove_hook(state.cpu.read_register("PC"), hook_malloc_return)
-    #logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
+    # logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
 
 def hook_malloc(state: State):
@@ -264,7 +264,7 @@ def hook_free_return(state: State):
 
     remove_sys_freeing_hooks(state)
     state.remove_hook(state.cpu.read_register("PC"), hook_free_return)
-    #logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
+    # logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
 
 def hook_free(state: State):
@@ -300,7 +300,7 @@ def hook_calloc_return(state: State):
     remove_sys_allocing_hooks(state)
 
     state.remove_hook(state.cpu.read_register("PC"), hook_calloc_return)
-    #logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
+    # logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
 
 def hook_calloc(state: State):
@@ -338,7 +338,7 @@ def hook_realloc_return(state: State):
     remove_sys_freeing_hooks(state)
 
     state.remove_hook(state.cpu.read_register("PC"), hook_realloc_return)
-    #logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
+    # logger.debug(f"Remaining hooks in state {state.id}: {state._hooks}")
 
 
 def hook_realloc(state: State):
@@ -349,7 +349,9 @@ def hook_realloc(state: State):
     args_gen = state._platform._function_abi.get_arguments()
     ptr = read_arg(state.cpu, next(args_gen))
     new_size = read_arg(state.cpu, next(args_gen))
-    logger.info(f"Attempting to realloc: {hex(ptr)} to a requested size of {new_size}, state: {state.id}")
+    logger.info(
+        f"Attempting to realloc: {hex(ptr)} to a requested size of {new_size}, state: {state.id}"
+    )
     state.context["realloc_request"] = (ptr, new_size)
 
     add_sys_allocing_hooks(state)
