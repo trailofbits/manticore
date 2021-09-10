@@ -8,22 +8,22 @@ class Instruction:
 
     @property
     @abstractmethod
-    def address(self):
+    def address(self) -> int:
         pass
 
     @property
     @abstractmethod
-    def mnemonic(self):
+    def mnemonic(self) -> str:
         pass
 
     @property
     @abstractmethod
-    def op_str(self):
+    def op_str(self) -> str:
         pass
 
     @property
     @abstractmethod
-    def size(self):
+    def size(self) -> int:
         pass
 
     @property
@@ -34,12 +34,12 @@ class Instruction:
     # FIXME (theo) eliminate one of the two of insn_name, name
     @property
     @abstractmethod
-    def insn_name(self):
+    def insn_name(self) -> str:
         pass
 
     @property
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         pass
 
 
@@ -50,7 +50,7 @@ class Disasm:
         self.disasm = disasm
 
     @abstractmethod
-    def disassemble_instruction(self, code, pc):
+    def disassemble_instruction(self, code, pc) -> Instruction:
         """Get next instruction based on the disassembler in use
 
         :param str code: binary blob to be disassembled
@@ -68,7 +68,7 @@ class CapstoneDisasm(Disasm):
         cap.syntax = 0
         super().__init__(cap)
 
-    def disassemble_instruction(self, code, pc):
+    def disassemble_instruction(self, code: bytes, pc: int) -> Instruction:
         """Get next instruction using the Capstone disassembler
 
         :param str code: binary blob to be disassembled
