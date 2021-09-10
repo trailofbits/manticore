@@ -3333,6 +3333,27 @@ class Linux(Platform):
             getattr(inspect.getmodule(x[1]), x[1].__qualname__.rsplit(".", 1)[0], None) == cls
         )
 
+    @classmethod
+    def unimplemented_syscalls(cls, syscalls: Union[Set[str], Dict[int, str]]) -> Set[str]:
+        """
+        Get a listing of all unimplemented concrete system calls for a given
+        collection of Linux system calls. To get a listing of unimplemented
+        symbolic system calls, use the ``SLinux.unimplemented_syscalls()``
+        method.
+
+        Available system calls can be found at ``linux_syscalls.py`` or you may
+        pass your own as either a set of system calls or as a mapping of system
+        call number to system call name.
+
+        Note that passed system calls should follow the naming convention
+        located in ``linux_syscalls.py``.
+        """
+        implemented_syscalls = set(cls.implemented_syscalls())
+        if isinstance(syscalls, set):
+            return syscalls.difference(implemented_syscalls)
+        else:
+            return set(syscalls.values()).difference(implemented_syscalls)
+
 
 ############################################################################
 # Symbolic versions follows
