@@ -2,7 +2,7 @@ import logging
 import sys
 import io
 
-from typing import List, Set, Tuple, Final, Optional
+from typing import List, Set, Tuple, Optional
 
 manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
@@ -11,7 +11,7 @@ formatter = logging.Formatter(logfmt)
 
 
 def get_manticore_logger_names() -> List[str]:
-    return [name for name in logging.root.manager.loggerDict if name.startswith("manticore")]
+    return [name for name in logging.root.manager.loggerDict if name.startswith("manticore")]  # type: ignore
 
 
 class CallbackStream(io.TextIOBase):
@@ -174,7 +174,7 @@ def init_logging(handler: Optional[logging.Handler] = None) -> None:
     Initialize logging for Manticore, given a handler or by default use `default_logger()`
     """
     logger = logging.getLogger("manticore")
-    logger.parent = None
+    logger.parent = None  # type: ignore
 
     # Explicitly set the level so that we don't use root's. If root is at DEBUG,
     # then _a lot_ of logs will be printed if the user forgets to set
