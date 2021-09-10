@@ -3316,6 +3316,23 @@ class Linux(Platform):
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
+    @classmethod
+    def implemented_syscalls(cls) -> Iterable[str]:
+        """
+        Get a listing of all concretely implemented system calls for Linux. This
+        does not include whether a symbolic version exists. To get that listing,
+        use the SLinux.implemented_syscalls() method.
+        """
+        import inspect
+
+        return (
+            x[0]
+            for x in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if x[0].startswith("sys_") and
+            # Check that the class defining the method is exactly this one
+            getattr(inspect.getmodule(x[1]), x[1].__qualname__.rsplit(".", 1)[0], None) == cls
+        )
+
 
 ############################################################################
 # Symbolic versions follows
