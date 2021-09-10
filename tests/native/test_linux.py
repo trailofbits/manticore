@@ -428,8 +428,9 @@ class LinuxTest(unittest.TestCase):
         concrete_syscalls = set(Linux.implemented_syscalls())
         symbolic_syscalls = set(SLinux.implemented_syscalls())
 
-        # Make sure at least one known concrete syscall implementation appears
+        # Make sure at least one known syscall implementation appears in both
         assert "sys_read" in concrete_syscalls
+        assert "sys_read" in symbolic_syscalls
 
         # Make sure an unimplemented syscall (taken from linux_syscall_stubs)
         # does not appear in our list of concrete syscalls. This could change in
@@ -452,6 +453,7 @@ class LinuxTest(unittest.TestCase):
         unimplemented_symbolic_syscalls = set(SLinux.unimplemented_syscalls(set(amd64.values())))
 
         assert "sys_read" not in unimplemented_concrete_syscalls
+        assert "sys_read" not in unimplemented_symbolic_syscalls
 
         assert "sys_bpf" in unimplemented_concrete_syscalls
 
