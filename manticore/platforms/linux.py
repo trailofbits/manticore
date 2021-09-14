@@ -3326,11 +3326,11 @@ class Linux(Platform):
         import inspect
 
         return (
-            x[0]
-            for x in inspect.getmembers(cls, predicate=inspect.isfunction)
-            if x[0].startswith("sys_") and
+            name
+            for (name, obj) in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if name.startswith("sys_") and
             # Check that the class defining the method is exactly this one
-            getattr(inspect.getmodule(x[1]), x[1].__qualname__.rsplit(".", 1)[0], None) == cls
+            getattr(inspect.getmodule(obj), obj.__qualname__.rsplit(".", 1)[0], None) == cls
         )
 
     @classmethod
