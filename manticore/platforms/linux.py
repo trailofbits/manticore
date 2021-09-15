@@ -3316,6 +3316,44 @@ class Linux(Platform):
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
+    @classmethod
+    def implemented_syscalls(cls) -> Iterable[str]:
+        """
+        Get a listing of all concretely implemented system calls for Linux. This
+        does not include whether a symbolic version exists. To get that listing,
+        use the SLinux.implemented_syscalls() method.
+        """
+        import inspect
+
+        return (
+            name
+            for (name, obj) in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if name.startswith("sys_") and
+            # Check that the class defining the method is exactly this one
+            getattr(inspect.getmodule(obj), obj.__qualname__.rsplit(".", 1)[0], None) == cls
+        )
+
+    @classmethod
+    def unimplemented_syscalls(cls, syscalls: Union[Set[str], Dict[int, str]]) -> Set[str]:
+        """
+        Get a listing of all unimplemented concrete system calls for a given
+        collection of Linux system calls. To get a listing of unimplemented
+        symbolic system calls, use the ``SLinux.unimplemented_syscalls()``
+        method.
+
+        Available system calls can be found at ``linux_syscalls.py`` or you may
+        pass your own as either a set of system calls or as a mapping of system
+        call number to system call name.
+
+        Note that passed system calls should follow the naming convention
+        located in ``linux_syscalls.py``.
+        """
+        implemented_syscalls = set(cls.implemented_syscalls())
+        if isinstance(syscalls, set):
+            return syscalls.difference(implemented_syscalls)
+        else:
+            return set(syscalls.values()).difference(implemented_syscalls)
+
 
 ############################################################################
 # Symbolic versions follows
