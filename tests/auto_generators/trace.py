@@ -165,8 +165,7 @@ STACK_INSTRUCTIONS = [
 while True:
     try:
         stepped = False
-        pc = gdb.getR({"i386": "EIP", "amd64": "RIP"}[arch])
-        print(hex(pc))
+        print(hex(pc := gdb.getR({"i386": "EIP", "amd64": "RIP"}[arch])))
         gdb.stepi()
         print(gdb.correspond("info registers\n"))
     except Exception as e:
