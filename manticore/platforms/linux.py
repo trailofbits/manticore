@@ -870,8 +870,8 @@ class Linux(Platform):
         self.argv = argv
         self.stubs = SyscallStubs(parent=self)
         # Load addresses
-        self.interp_base = None
-        self.program_base = None
+        self.interp_base: Optional[int] = None
+        self.program_base: Optional[int] = None
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
