@@ -869,6 +869,9 @@ class Linux(Platform):
         self.envp = envp
         self.argv = argv
         self.stubs = SyscallStubs(parent=self)
+        # Load addresses
+        self.interp_base = None
+        self.program_base = None
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -1028,7 +1031,8 @@ class Linux(Platform):
         state["syscall_trace"] = self.syscall_trace
         state["argv"] = self.argv
         state["envp"] = self.envp
-        state["base"] = self.base
+        state["interp_base"] = self.interp_base
+        state["program_base"] = self.program_base
         state["elf_bss"] = self.elf_bss
         state["end_code"] = self.end_code
         state["end_data"] = self.end_data
@@ -1090,7 +1094,8 @@ class Linux(Platform):
         self.syscall_trace = state["syscall_trace"]
         self.argv = state["argv"]
         self.envp = state["envp"]
-        self.base = state["base"]
+        self.interp_base = state["interp_base"]
+        self.program_base = state["program_base"]
         self.elf_bss = state["elf_bss"]
         self.end_code = state["end_code"]
         self.end_data = state["end_data"]
@@ -1546,7 +1551,8 @@ class Linux(Platform):
         logger.debug(f"Mappings:")
         for m in str(cpu.memory).split("\n"):
             logger.debug(f"  {m}")
-        self.base = base
+        self.interp_base = base
+        self.program_base = self.load_addr
         self.elf_bss = elf_bss
         self.end_code = end_code
         self.end_data = end_data
@@ -2852,7 +2858,7 @@ class Linux(Platform):
             self.check_timers()
 
     def awake(self, procid) -> None:
-        """ Remove procid from waitlists and reestablish it in the running list """
+        """Remove procid from waitlists and reestablish it in the running list"""
         logger.debug(
             f"Remove procid:{procid} from waitlists and reestablish it in the running list"
         )
@@ -2877,7 +2883,7 @@ class Linux(Platform):
             return fd - 1
 
     def signal_receive(self, fd: int) -> None:
-        """ Awake one process waiting to receive data on fd """
+        """Awake one process waiting to receive data on fd"""
         connections = self.connections
         connection = connections(fd)
         if connection:
@@ -2887,7 +2893,7 @@ class Linux(Platform):
                 self.awake(procid)
 
     def signal_transmit(self, fd: int) -> None:
-        """ Awake one process waiting to transmit data on fd """
+        """Awake one process waiting to transmit data on fd"""
         connection = self.connections(fd)
         if connection is None or not self.fd_table.has_entry(connection):
             return
@@ -2898,7 +2904,7 @@ class Linux(Platform):
             self.awake(procid)
 
     def check_timers(self) -> None:
-        """ Awake process if timer has expired """
+        """Awake process if timer has expired"""
         if self._current is None:
             # Advance the clocks. Go to future!!
             advance = min([self.clocks] + [x for x in self.timers if x is not None]) + 1
