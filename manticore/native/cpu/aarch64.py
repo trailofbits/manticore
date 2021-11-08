@@ -41,7 +41,7 @@ OP_NAME_MAP = {
 
 
 # See "C1.2.4 Condition code".
-Condspec = collections.namedtuple("CondSpec", "inverse func")
+Condspec = collections.namedtuple("Condspec", "inverse func")
 COND_MAP = {
     cs.arm64.ARM64_CC_EQ: Condspec(cs.arm64.ARM64_CC_NE, lambda n, z, c, v: z == 1),
     cs.arm64.ARM64_CC_NE: Condspec(cs.arm64.ARM64_CC_EQ, lambda n, z, c, v: z == 0),
@@ -76,7 +76,7 @@ SYS_REG_MAP = {0xC082: "CPACR_EL1", 0xD807: "DCZID_EL0", 0xDE82: "TPIDR_EL0"}
 
 
 class Aarch64RegisterFile(RegisterFile):
-    Regspec = collections.namedtuple("RegSpec", "parent size")
+    Regspec = collections.namedtuple("Regspec", "parent size")
 
     # Register table.
     _table = {}
