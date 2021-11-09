@@ -18,6 +18,7 @@ import os
 import fcntl
 import shutil
 import threading
+from io import StringIO
 from queue import Queue
 import collections
 import shlex
@@ -197,6 +198,19 @@ class Solver(SingletonMixin):
 Version = collections.namedtuple("Version", "major minor patch")
 
 
+from collections import deque
+
+
+class CountingDeque(deque):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.input_counter = 0
+
+    def append(self, new_item):
+        super().append((self.input_counter, new_item))
+        self.input_counter += 1
+
+
 class SmtlibProc:
     def __init__(self, command: str, debug: bool = False):
         """Single smtlib interactive process
@@ -205,6 +219,7 @@ class SmtlibProc:
         :param debug: log all messaging
         """
         self._proc: Optional[Popen] = None
+        self._debug_buffer = CountingDeque(maxlen=5000)
         self._command = command
         self._debug = debug
         self._last_buf = ""
@@ -255,6 +270,7 @@ class SmtlibProc:
         if self._debug:
             logger.debug(">%s", cmd)
         assert self._proc is not None
+        self._debug_buffer.append(cmd)
         try:
             self._proc.stdout.flush()  # type: ignore
             self._proc.stdin.write(f"{cmd}\n")  # type: ignore
@@ -309,7 +325,13 @@ class SmtlibProc:
         self._last_buf = ""
 
         if "(error" in buf:
-            raise SolverException(f"Error in smtlib: {buf}")
+            logger.error(
+                "Invalid SMT Formula! Last 5000 lines of failing input:\n%s",
+                "\n".join(
+                    f"{str(line_num).ljust(4)}: {line}" for (line_num, line) in self._debug_buffer
+                ),
+            )
+            raise SolverException(f"Solver error: {buf}")
 
         if self._debug:
             logger.debug("<%s", buf)
