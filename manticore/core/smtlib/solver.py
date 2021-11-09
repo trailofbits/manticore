@@ -263,7 +263,8 @@ class SmtlibProc:
         if self._debug:
             logger.debug(">%s", cmd)
         assert self._proc is not None
-        self._debug_buffer.append(cmd)
+        for c in cmd.split("\n"):
+            self._debug_buffer.append(c)
         try:
             self._proc.stdout.flush()  # type: ignore
             self._proc.stdin.write(f"{cmd}\n")  # type: ignore
