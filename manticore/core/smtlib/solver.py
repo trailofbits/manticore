@@ -14,27 +14,23 @@
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
-import os
-import fcntl
-import shutil
-import threading
-from io import StringIO
-from queue import Queue
 import collections
+import fcntl
+import os
 import shlex
+import shutil
 import time
 from abc import abstractmethod
-from functools import lru_cache
-from typing import Any, Dict, Tuple, Sequence, Optional, List
-from subprocess import PIPE, Popen, check_output
+from collections import deque
 from random import shuffle
-import re
+from subprocess import PIPE, Popen, check_output
+from typing import Any, Sequence, List
+
 from . import operators as Operators
 from .constraints import *
 from .visitors import *
-from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
+from ...exceptions import SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
-from . import issymbolic
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -196,9 +192,6 @@ class Solver(SingletonMixin):
 
 
 Version = collections.namedtuple("Version", "major minor patch")
-
-
-from collections import deque
 
 
 class CountingDeque(deque):
