@@ -21,7 +21,6 @@ import shlex
 import shutil
 import time
 from abc import abstractmethod
-from collections import deque
 from random import shuffle
 from subprocess import PIPE, Popen, check_output
 from typing import Any, Sequence, List
@@ -194,20 +193,6 @@ class Solver(SingletonMixin):
 Version = collections.namedtuple("Version", "major minor patch")
 
 
-class CountingDeque(deque):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.input_counter = 0
-
-    def append(self, new_item):
-        super().append((self.input_counter, new_item))
-        self.input_counter += 1
-
-    def reset(self):
-        self.input_counter = 0
-        self.clear()
-
-
 class SmtlibProc:
     def __init__(self, command: str, debug: bool = False):
         """Single smtlib interactive process
@@ -216,7 +201,6 @@ class SmtlibProc:
         :param debug: log all messaging
         """
         self._proc: Optional[Popen] = None
-        self._debug_buffer = CountingDeque(maxlen=5000)
         self._command = command
         self._debug = debug
         self._last_buf = ""
@@ -229,12 +213,10 @@ class SmtlibProc:
             shlex.split(self._command),
             stdin=PIPE,
             stdout=PIPE,
-            # bufsize=0,
+            # bufsize=0,  # if we set input to unbuffered, we get syntax errors in large formulas
             universal_newlines=True,
             close_fds=True,
         )
-
-        self._debug_buffer.reset()
 
         # stdout should be non-blocking
         fl = fcntl.fcntl(self._proc.stdout, fcntl.F_GETFL)
@@ -269,8 +251,6 @@ class SmtlibProc:
         if self._debug:
             logger.debug(">%s", cmd)
         assert self._proc is not None
-        for c in cmd.split("\n"):
-            self._debug_buffer.append(c)
         try:
             self._proc.stdout.flush()  # type: ignore
             self._proc.stdin.write(f"{cmd}\n")  # type: ignore
@@ -326,12 +306,6 @@ class SmtlibProc:
         self._last_buf = ""
 
         if "(error" in buf:
-            logger.error(
-                "Invalid SMT Formula! Last 5000 lines of failing input:\n%s",
-                "\n".join(
-                    f"{str(line_num).ljust(4)}: {line}" for (line_num, line) in self._debug_buffer
-                ),
-            )
             raise SolverException(f"Solver error: {buf}")
 
         if self._debug:
@@ -347,10 +321,9 @@ class SmtlibProc:
     def is_started(self):
         return self._proc is not None
 
-    def _clear_buffers(self):
+    def clear_buffers(self):
         self._proc.stdout.flush()
         self._proc.stdin.flush()
-        self._debug_buffer.reset()
 
 
 class SMTLIBSolver(Solver):
@@ -414,8 +387,8 @@ class SMTLIBSolver(Solver):
         else:
             self._smtlib.stop()  # does not do anything if already stopped
             self._smtlib.start()
-            
-        self._smtlib._clear_buffers()
+
+        self._smtlib.clear_buffers()
 
         for cfg in self._init:
             self._smtlib.send(cfg)
