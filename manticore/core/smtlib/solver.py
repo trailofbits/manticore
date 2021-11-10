@@ -203,6 +203,10 @@ class CountingDeque(deque):
         super().append((self.input_counter, new_item))
         self.input_counter += 1
 
+    def reset(self):
+        self.input_counter = 0
+        self.clear()
+
 
 class SmtlibProc:
     def __init__(self, command: str, debug: bool = False):
@@ -229,6 +233,8 @@ class SmtlibProc:
             universal_newlines=True,
             close_fds=True,
         )
+
+        self._debug_buffer.reset()
 
         # stdout should be non-blocking
         fl = fcntl.fcntl(self._proc.stdout, fcntl.F_GETFL)
@@ -340,6 +346,11 @@ class SmtlibProc:
     def is_started(self):
         return self._proc is not None
 
+    def _clear_buffers(self):
+        self._proc.stdout.flush()
+        self._proc.stdin.flush()
+        self._debug_buffer.reset()
+
 
 class SMTLIBSolver(Solver):
     ncores: Optional[int] = None
@@ -404,6 +415,7 @@ class SMTLIBSolver(Solver):
             self._smtlib.start()
 
         for cfg in self._init:
+            self._smtlib._clear_buffers()
             self._smtlib.send(cfg)
 
         if constraints is not None:
