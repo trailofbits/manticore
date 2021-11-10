@@ -229,7 +229,7 @@ class SmtlibProc:
             shlex.split(self._command),
             stdin=PIPE,
             stdout=PIPE,
-            bufsize=0,
+            # bufsize=0,
             universal_newlines=True,
             close_fds=True,
         )
