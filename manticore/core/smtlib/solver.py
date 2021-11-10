@@ -274,6 +274,7 @@ class SmtlibProc:
         try:
             self._proc.stdout.flush()  # type: ignore
             self._proc.stdin.write(f"{cmd}\n")  # type: ignore
+            self._proc.stdin.flush()  # type: ignore
         except (BrokenPipeError, IOError) as e:
             logger.critical(
                 f"Solver encountered an error trying to send commands: {e}.\n"
