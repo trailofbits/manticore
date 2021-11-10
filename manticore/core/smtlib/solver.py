@@ -414,9 +414,10 @@ class SMTLIBSolver(Solver):
         else:
             self._smtlib.stop()  # does not do anything if already stopped
             self._smtlib.start()
+            
+        self._smtlib._clear_buffers()
 
         for cfg in self._init:
-            self._smtlib._clear_buffers()
             self._smtlib.send(cfg)
 
         if constraints is not None:
