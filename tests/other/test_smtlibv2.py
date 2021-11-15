@@ -790,11 +790,12 @@ class ExpressionTest(unittest.TestCase):
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
         self.assertEqual(
-            translate_to_smtlib(exp), "(bvor (bvand (bvor BIVEC #x00000000) #x00000001) #x00000000)"
+            translate_to_smtlib(exp),
+            "(bvor (bvand (bvor BITVEC #x00000000) #x00000001) #x00000000)",
         )
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
-        self.assertEqual(translate_to_smtlib(exp), "(bvand BIVEC #x00000001)")
+        self.assertEqual(translate_to_smtlib(exp), "(bvand BITVEC #x00000001)")
 
     def test_arithmetic_simplify_extract(self):
         cs = ConstraintSet()
