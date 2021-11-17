@@ -848,6 +848,13 @@ class ExpressionTest(unittest.TestCase):
         cs.add(simplify(Operators.OR(var, bt)) == bt)
         self.assertTrue(self.solver.check(cs))
 
+    def test_simplify_SUB(self):
+        cs = ConstraintSet()
+        var = cs.new_bitvec(size=32)
+        cs.add(simplify(Operators.SUB(var, var)) == 0)
+        cs.add(simplify(Operators.SUB(var, 0)) == var)
+        self.assertTrue(self.solver.check(cs))
+
     def testBasicReplace(self):
         """ Add """
         a = BitVecConstant(size=32, value=100)
