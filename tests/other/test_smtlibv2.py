@@ -803,11 +803,12 @@ class ExpressionTest(unittest.TestCase):
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
         self.assertEqual(
-            translate_to_smtlib(exp), "(bvor (bvand (bvor BIVEC #x00000000) #x00000001) #x00000000)"
+            translate_to_smtlib(exp),
+            "(bvor (bvand (bvor BITVEC #x00000000) #x00000001) #x00000000)",
         )
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
-        self.assertEqual(translate_to_smtlib(exp), "(bvand BIVEC #x00000001)")
+        self.assertEqual(translate_to_smtlib(exp), "(bvand BITVEC #x00000001)")
 
     def test_arithmetic_simplify_extract(self):
         cs = ConstraintSet()
@@ -858,6 +859,13 @@ class ExpressionTest(unittest.TestCase):
         var = cs.new_bool()
         cs.add(simplify(Operators.OR(var, var)) == var)
         cs.add(simplify(Operators.OR(var, bt)) == bt)
+        self.assertTrue(self.solver.check(cs))
+
+    def test_simplify_SUB(self):
+        cs = ConstraintSet()
+        var = cs.new_bitvec(size=32)
+        cs.add(simplify(var - var) == 0)
+        cs.add(simplify(var - 0) == var)
         self.assertTrue(self.solver.check(cs))
 
     def testBasicReplace(self):

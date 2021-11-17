@@ -14,26 +14,22 @@
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
-import os
-import fcntl
-import shutil
-import threading
-from queue import Queue
 import collections
+import fcntl
+import os
 import shlex
+import shutil
 import time
 from abc import abstractmethod
-from functools import lru_cache
-from typing import Any, Dict, Tuple, Sequence, Optional, List
-from subprocess import PIPE, Popen, check_output
 from random import shuffle
-import re
+from subprocess import PIPE, Popen, check_output
+from typing import Any, Sequence, List
+
 from . import operators as Operators
 from .constraints import *
 from .visitors import *
-from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
+from ...exceptions import SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
-from . import issymbolic
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -57,7 +53,7 @@ consts.add(
 
 # Regular expressions used by the solver
 RE_GET_EXPR_VALUE_ALL = re.compile(
-    "\(([a-zA-Z0-9_]*)[ \\n\\s]*(#b[0-1]*|#x[0-9a-fA-F]*|[\(]?_ bv[0-9]* [0-9]*|true|false)\\)"
+    r"\(([a-zA-Z0-9_]*)[ \n\s]*(#b[0-1]*|#x[0-9a-fA-F]*|[(]?_ bv[0-9]* [0-9]*|true|false)\)"
 )
 RE_GET_EXPR_VALUE_FMT_BIN = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
 RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r"\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)")
@@ -217,7 +213,7 @@ class SmtlibProc:
             shlex.split(self._command),
             stdin=PIPE,
             stdout=PIPE,
-            bufsize=0,
+            # bufsize=0,  # if we set input to unbuffered, we get syntax errors in large formulas
             universal_newlines=True,
             close_fds=True,
         )
@@ -258,6 +254,7 @@ class SmtlibProc:
         try:
             self._proc.stdout.flush()  # type: ignore
             self._proc.stdin.write(f"{cmd}\n")  # type: ignore
+            self._proc.stdin.flush()  # type: ignore
         except (BrokenPipeError, IOError) as e:
             logger.critical(
                 f"Solver encountered an error trying to send commands: {e}.\n"
@@ -309,7 +306,7 @@ class SmtlibProc:
         self._last_buf = ""
 
         if "(error" in buf:
-            raise SolverException(f"Error in smtlib: {buf}")
+            raise SolverException(f"Solver error: {buf}")
 
         if self._debug:
             logger.debug("<%s", buf)
@@ -323,6 +320,10 @@ class SmtlibProc:
 
     def is_started(self):
         return self._proc is not None
+
+    def clear_buffers(self):
+        self._proc.stdout.flush()
+        self._proc.stdin.flush()
 
 
 class SMTLIBSolver(Solver):
@@ -386,6 +387,8 @@ class SMTLIBSolver(Solver):
         else:
             self._smtlib.stop()  # does not do anything if already stopped
             self._smtlib.start()
+
+        self._smtlib.clear_buffers()
 
         for cfg in self._init:
             self._smtlib.send(cfg)

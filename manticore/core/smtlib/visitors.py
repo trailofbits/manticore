@@ -395,7 +395,7 @@ class ConstantFolderSimplifier(Visitor):
             return a
 
     def _visit_operation(self, expression, *operands):
-        """ constant folding, if all operands of an expression are a Constant do the math """
+        """constant folding, if all operands of an expression are a Constant do the math"""
         operation = self.operations.get(type(expression), None)
         if operation is not None and all(isinstance(o, Constant) for o in operands):
             value = operation(*(x.value for x in operands))
@@ -438,7 +438,7 @@ class ArithmeticSimplifier(Visitor):
         return any(operands[i] is not expression.operands[i] for i in range(arity))
 
     def _visit_operation(self, expression, *operands):
-        """ constant folding, if all operands of an expression are a Constant do the math """
+        """constant folding, if all operands of an expression are a Constant do the math"""
         if all(isinstance(o, Constant) for o in operands):
             expression = constant_folder(expression)
         if self._changed(expression, operands):
@@ -716,9 +716,10 @@ class ArithmeticSimplifier(Visitor):
                 return right
 
     def visit_BitVecSub(self, expression, *operands):
-        """a - 0 ==> 0
+        """a - 0 ==> a
         (a + b) - b  ==> a
         (b + a) - b  ==> a
+        a - a ==> 0
         """
         left = operands[0]
         right = operands[1]
@@ -739,6 +740,10 @@ class ArithmeticSimplifier(Visitor):
                         taint=subright.taint | right.taint,
                     ),
                 )
+        elif isinstance(right, Constant) and right.value == 0:
+            return left
+        elif left is right:
+            return BitVecConstant(size=left.size, value=0)
 
     def visit_BitVecOr(self, expression, *operands):
         """a | 0 => a
@@ -1007,7 +1012,7 @@ def translate_to_smtlib(expression, **kwargs):
 
 
 class Replace(Visitor):
-    """ Simple visitor to replaces expressions """
+    """Simple visitor to replaces expressions"""
 
     def __init__(self, bindings=None, **kwargs):
         super().__init__(**kwargs)
