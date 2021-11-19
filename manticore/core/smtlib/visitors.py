@@ -741,7 +741,7 @@ class ArithmeticSimplifier(Visitor):
                     ),
                 )
         elif isinstance(right, Constant) and right.value == 0:
-            return left 
+            return left
         elif left == right:
             return BitVecConstant(size=left.size, value=0)
 
