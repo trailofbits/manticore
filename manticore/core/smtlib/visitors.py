@@ -742,8 +742,14 @@ class ArithmeticSimplifier(Visitor):
                 )
         elif isinstance(right, Constant) and right.value == 0:
             return left
-        elif left == right:
-            return BitVecConstant(size=left.size, value=0)
+        else:
+            # If equality can not be computed because of symbolic
+            # variables '==' will raise an exception
+            try:
+                if left == right:
+                    return BitVecConstant(size=left.size, value=0)
+            except ExpressionEvalError:
+                pass
 
     def visit_BitVecOr(self, expression, *operands):
         """a | 0 => a
