@@ -248,6 +248,13 @@ class AMD64RegFile(RegisterFile):
         "TOP": Regspec("FPSW", int, 11, 3, False),
         "FPTAG": Regspec("FPTAG", int, 0, 16, False),
         "FPCW": Regspec("FPCW", int, 0, 16, False),
+        "FOP": Regspec("FOP", int, 0, 11, False),
+        "FIP": Regspec("FIP", int, 0, 64, False),
+        "FCS": Regspec("FCS", int, 0, 16, False),
+        "FDP": Regspec("FDP", int, 0, 64, False),
+        "FDS": Regspec("FDS", int, 0, 16, False),
+        "MXCSR": Regspec("MXCSR", int, 0, 32, False),
+        "MXCSR_MASK": Regspec("MXCSR_MASK", int, 0, 32, False),
         "CF": Regspec("CF", bool, 0, 1, False),
         "PF": Regspec("PF", bool, 0, 1, False),
         "AF": Regspec("AF", bool, 0, 1, False),
@@ -355,6 +362,13 @@ class AMD64RegFile(RegisterFile):
         "TOP": ("FPSW",),
         "FPCW": (),
         "FPTAG": (),
+        "FOP": (),
+        "FIP": (),
+        "FCS": (),
+        "FDP": (),
+        "FDS": (),
+        "MXCSR": (),
+        "MXCSR_MASK": (),
         "FP0": (),
         "FP1": (),
         "FP2": (),
@@ -495,6 +509,13 @@ class AMD64RegFile(RegisterFile):
         "FPSW",
         "FPCW",
         "FPTAG",
+        "FOP",
+        "FIP",
+        "FCS",
+        "FDP",
+        "FDS",
+        "MXCSR",
+        "MXCSR_MASK",
     )
 
     def __init__(self, *args, **kwargs):
@@ -554,7 +575,18 @@ class AMD64RegFile(RegisterFile):
         for reg in ("FP0", "FP1", "FP2", "FP3", "FP4", "FP5", "FP6", "FP7"):
             self._registers[reg] = (0, 0)
 
-        for reg in ("FPSW", "FPTAG", "FPCW"):
+        for reg in (
+            "FPSW",
+            "FPTAG",
+            "FPCW",
+            "FOP",
+            "FIP",
+            "FCS",
+            "FDP",
+            "FDS",
+            "MXCSR",
+            "MXCSR_MASK",
+        ):
             self._registers[reg] = 0
 
         self._cache = {}
@@ -637,7 +669,7 @@ class AMD64RegFile(RegisterFile):
         return self._registers[register_id]
 
     def _get_flags(self, reg):
-        """ Build EFLAGS/RFLAGS from flags """
+        """Build EFLAGS/RFLAGS from flags"""
 
         def make_symbolic(flag_expr):
             register_size = 32 if reg == "EFLAGS" else 64
@@ -662,7 +694,7 @@ class AMD64RegFile(RegisterFile):
         return res
 
     def _set_flags(self, reg, res):
-        """ Set individual flags from a EFLAGS/RFLAGS value """
+        """Set individual flags from a EFLAGS/RFLAGS value"""
         # assert sizeof (res) == 32 if reg == 'EFLAGS' else 64
         for flag, offset in self._flags.items():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
@@ -731,7 +763,7 @@ class AMD64RegFile(RegisterFile):
 
 # Operand Wrapper
 class AMD64Operand(Operand):
-    """ This class deals with capstone X86 operands """
+    """This class deals with capstone X86 operands"""
 
     def __init__(self, cpu: Cpu, op):
         super().__init__(cpu, op)
@@ -883,7 +915,7 @@ class X86Cpu(Cpu):
     # The instruction cache must be invalidated after an executable
     # page was changed or removed or added
     def invalidate_cache(cpu, address, size):
-        """ remove decoded instruction from instruction cache """
+        """remove decoded instruction from instruction cache"""
         cache = cpu.instruction_cache
         for offset in range(size):
             if address + offset in cache:
@@ -5676,6 +5708,37 @@ class X86Cpu(Cpu):
         cpu.R11 = cpu.RFLAGS
         raise Syscall()
 
+    def generic_FXSAVE(cpu, dest, reg_layout):
+        """
+        Saves the current state of the x87 FPU, MMX technology, XMM, and
+        MXCSR registers to a 512-byte memory location specified in the
+        destination operand.
+
+        The content layout of the 512 byte region depends
+        on whether the processor is operating in non-64-bit operating modes
+        or 64-bit sub-mode of IA-32e mode
+        """
+        addr = dest.address()
+        for offset, reg, size in reg_layout:
+            cpu.write_int(addr + offset, reg, size)
+
+    def generic_FXRSTOR(cpu, dest, reg_layout):
+        """
+        Reloads the x87 FPU, MMX technology, XMM, and MXCSR registers from
+        the 512-byte memory image specified in the source operand. This data should
+        have been written to memory previously using the FXSAVE instruction, and in
+        the same format as required by the operating modes. The first byte of the data
+        should be located on a 16-byte boundary.
+
+        There are three distinct layouts of the FXSAVE state map:
+        one for legacy and compatibility mode, a second
+        format for 64-bit mode FXSAVE/FXRSTOR with REX.W=0, and the third format is for
+        64-bit mode with FXSAVE64/FXRSTOR64
+        """
+        addr = dest.address()
+        for offset, reg, size in reg_layout:
+            cpu.setattr(reg, cpu.read_int(addr + offset, size))
+
     @instruction
     def SYSCALL(cpu):
         """
@@ -6518,6 +6581,44 @@ class AMD64Cpu(X86Cpu):
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_64
 
+    # CPU specific instruction behaviour
+    FXSAVE_layout = [
+        (0, "FPCW", 16),
+        (2, "FPSW", 16),
+        (4, "FPTAG", 8),
+        (6, "FOP", 16),
+        (8, "FIP", 32),
+        (12, "FCS", 16),
+        (16, "FDP", 32),
+        (20, "FDS", 16),
+        (24, "MXCSR", 32),
+        (28, "MXCSR_MASK", 32),
+        (32, "ST0", 80),
+        (48, "ST1", 80),
+        (64, "ST2", 80),
+        (80, "ST3", 80),
+        (96, "ST4", 80),
+        (112, "ST5", 80),
+        (128, "ST6", 80),
+        (144, "ST7", 80),
+        (160, "XMM0", 128),
+        (176, "XMM1", 128),
+        (192, "XMM2", 128),
+        (208, "XMM3", 128),
+        (224, "XMM4", 128),
+        (240, "XMM5", 128),
+        (256, "XMM6", 128),
+        (272, "XMM7", 128),
+        (288, "XMM8", 128),
+        (304, "XMM9", 128),
+        (320, "XMM10", 128),
+        (336, "XMM11", 128),
+        (352, "XMM12", 128),
+        (368, "XMM13", 128),
+        (384, "XMM14", 128),
+        (400, "XMM15", 128),
+    ]
+
     def __init__(self, memory: Memory, *args, **kwargs):
         """
         Builds a CPU model.
@@ -6633,6 +6734,14 @@ class AMD64Cpu(X86Cpu):
         """
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
+    @instruction
+    def FXSAVE(cpu, dest):
+        return self.generic_FXSAVE(cpu, dest, AMD64Cpu.FXSAVE_layout)
+
+    @instruction
+    def FXRSTOR(cpu, src):
+        return self.generic_FXRSTOR(cpu, src, AMD64Cpu.FXSAVE_layout)
+
 
 class I386Cpu(X86Cpu):
     # Config
@@ -6641,6 +6750,36 @@ class I386Cpu(X86Cpu):
     machine = "i386"
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_32
+
+    # CPU specific instruction behaviour
+    FXSAVE_layout = [
+        (0, "FPCW", 16),
+        (2, "FPSW", 16),
+        (4, "FPTAG", 8),
+        (6, "FOP", 16),
+        (8, "FIP", 32),
+        (12, "FCS", 16),
+        (16, "FDP", 32),
+        (20, "FDS", 16),
+        (24, "MXCSR", 32),
+        (28, "MXCSR_MASK", 32),
+        (32, "ST0", 80),
+        (48, "ST1", 80),
+        (64, "ST2", 80),
+        (80, "ST3", 80),
+        (96, "ST4", 80),
+        (112, "ST5", 80),
+        (128, "ST6", 80),
+        (144, "ST7", 80),
+        (160, "XMM0", 128),
+        (176, "XMM1", 128),
+        (192, "XMM2", 128),
+        (208, "XMM3", 128),
+        (224, "XMM4", 128),
+        (240, "XMM5", 128),
+        (256, "XMM6", 128),
+        (272, "XMM7", 128),
+    ]
 
     def __init__(self, memory: Memory, *args, **kwargs):
         """
@@ -6708,7 +6847,26 @@ class I386Cpu(X86Cpu):
         regs = ["EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "EIP"]
         regs.extend(["CS", "DS", "ES", "SS", "FS", "GS"])
         regs.extend(
-            ["FP0", "FP1", "FP2", "FP3", "FP4", "FP5", "FP6", "FP7", "FPCW", "FPSW", "FPTAG"]
+            [
+                "FP0",
+                "FP1",
+                "FP2",
+                "FP3",
+                "FP4",
+                "FP5",
+                "FP6",
+                "FP7",
+                "FPCW",
+                "FPSW",
+                "FPTAG",
+                "FOP",
+                "FIP",
+                "FCS",
+                "FDP",
+                "FDS",
+                "MXCSR",
+                "MXCSR_MASK",
+            ]
         )
         regs.extend(
             [
@@ -6760,3 +6918,11 @@ class I386Cpu(X86Cpu):
         :param dest: destination operand.
         """
         cpu.AL = cpu.read_int(cpu.EBX + Operators.ZEXTEND(cpu.AL, 32), 8)
+
+    @instruction
+    def FXSAVE(cpu, dest):
+        return self.generic_FXSAVE(cpu, dest, I386Cpu.FXSAVE_layout)
+
+    @instruction
+    def FXRSTOR(cpu, src):
+        return self.generic_FXRSTOR(cpu, src, I386Cpu.FXSAVE_layout)
