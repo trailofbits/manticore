@@ -76,7 +76,7 @@ class CPUTest(unittest.TestCase):
         return super().assertEqual(a, b)
 
     class ROOperand:
-        """ Mocking class for operand ronly """
+        """Mocking class for operand ronly"""
 
         def __init__(self, size, value):
             self.size = size
@@ -86,7 +86,7 @@ class CPUTest(unittest.TestCase):
             return self.value & ((1 << self.size) - 1)
 
     class RWOperand(ROOperand):
-        """ Mocking class for operand rw """
+        """Mocking class for operand rw"""
 
         def write(self, value):
             self.value = value & ((1 << self.size) - 1)
@@ -51351,13 +51351,13 @@ class CPUTest(unittest.TestCase):
         cpu.EIP = 0x805B9C0
         cpu.RAX = 0x1234
 
-        # Only test on some regs
+        # Only test on some regs
         reg_list = ["FIP", "FPCW", "MXCSR", "FP0", "FP7", "XMM0", "XMM7", "XMM15"]
-        # Set FP registers and execute FXSAVE
+        # Set FP registers and execute FXSAVE
         for i, reg in enumerate(reg_list):
             cpu.setattr(reg, i)
         cpu.execute()
-        # Clobber registers then execute FXRSTOR
+        # Clobber registers then execute FXRSTOR
         for i, reg in enumerate(reg_list):
             cpu.setattr(reg, -1)
         mem.write(0x805B9C3, "\x0f\xae\x08")
