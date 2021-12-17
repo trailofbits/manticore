@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class StateException(Exception):
-    """ All state related exceptions """
+    """All state related exceptions"""
 
 
 class TerminateState(StateException):
-    """ Terminates current state exploration """
+    """Terminates current state exploration"""
 
     def __init__(self, message, testcase=False):
         super().__init__(message)
@@ -51,7 +51,17 @@ class Concretize(StateException):
 
     """
 
-    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE", "PESSIMISTIC", "OPTIMISTIC", "EXPLICIT"]
+    _ValidPolicies = [
+        "MIN",
+        "MAX",
+        "MINMAX",
+        "ALL",
+        "SAMPLED",
+        "ONE",
+        "PESSIMISTIC",
+        "OPTIMISTIC",
+        "EXPLICIT",
+    ]
 
     def __init__(self, message, expression, setstate=None, policy=None, values=None, **kwargs):
         if policy is None:
