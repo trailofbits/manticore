@@ -51,9 +51,9 @@ class Concretize(StateException):
 
     """
 
-    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE", "PESSIMISTIC", "OPTIMISTIC"]
+    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE", "PESSIMISTIC", "OPTIMISTIC", "EXPLICIT"]
 
-    def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
+    def __init__(self, message, expression, setstate=None, policy=None, values=None, **kwargs):
         if policy is None:
             policy = "ALL"
         if policy not in self._ValidPolicies:
@@ -63,6 +63,7 @@ class Concretize(StateException):
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
+        self.values = values
         self.message = f"Concretize: {message} (Policy: {policy})"
         super().__init__(**kwargs)
 
@@ -365,7 +366,7 @@ class StateBase(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=7):
+    def concretize(self, symbolic, policy, maxcount=7, explicit_values=None):
         """This finds a set of solutions for symbolic using policy.
 
         This limits the number of solutions returned to `maxcount` to avoid
@@ -415,6 +416,8 @@ class StateBase(Eventful):
             else:
                 # We assume the path constraint was feasible to begin with
                 vals = (True,)
+        elif policy == "EXPLICIT":
+            vals = explicit_values[:maxcount]
         else:
             assert policy == "ALL"
             vals = self._solver.get_all_values(

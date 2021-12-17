@@ -480,7 +480,7 @@ class ManticoreBase(Eventful):
 
         return cls(deserialized, *args, **kwargs)
 
-    def _fork(self, state, expression, policy="ALL", setstate=None):
+    def _fork(self, state, expression, policy="ALL", setstate=None, values=None):
         """
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
@@ -510,7 +510,7 @@ class ManticoreBase(Eventful):
                 pass
 
         # Find a set of solutions for expression
-        solutions = state.concretize(expression, policy)
+        solutions = state.concretize(expression, policy, explicit_values=values)
 
         if not solutions:
             raise ManticoreError("Forking on unfeasible constraint set")
