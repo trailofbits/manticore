@@ -820,7 +820,7 @@ class EthTests(unittest.TestCase):
             self.mevm.make_symbolic_value(),
             signature="(uint256,uint256)",
         )
-        for st in self.mevm.all_states:
+        for st in self.mevm.all_sound_states:
             z = st.solve_one(st.platform.transactions[1].return_data)
             break
         self.assertEqual(ABI.deserialize("(uint256)", z)[0], 2)
@@ -1341,7 +1341,7 @@ class EthTests(unittest.TestCase):
         )
         m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
 
-        results = [state.platform.all_transactions[-1].result for state in m.all_states]
+        results = [state.platform.all_transactions[-1].result for state in m.all_sound_states]
         self.assertListEqual(sorted(results), ["STOP", "STOP"])
 
     def test_plugins_enable(self):

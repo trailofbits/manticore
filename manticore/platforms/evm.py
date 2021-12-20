@@ -6,7 +6,7 @@ import io
 import copy
 import inspect
 from functools import wraps
-from typing import List, Set, Tuple, Union
+from typing import List, Set, Tuple, Union, Optional
 from ..platforms.platform import *
 from ..core.smtlib import (
     SelectedSolver,
@@ -829,6 +829,14 @@ class EVM(Eventful):
         self._temp_call_gas = None
         self._failed = False
 
+        # Use to keep track of the jumpi destination
+        # Only save PUSH X values
+        # self._concrete_stack: List[Optional[int]] = []
+        # Save the JUMPI false branch, or None if it was not a JUMPI
+        self._jumpi_false_branch: Optional[int] = None
+        self._jumpi_true_branch: Optional[int] = None
+        self._jump_cond = False
+
     def fail_if(self, failed):
         self._failed = Operators.OR(self._failed, failed)
 
@@ -871,6 +879,20 @@ class EVM(Eventful):
     @property
     def gas(self):
         return Operators.EXTRACT(self._gas, 0, 256)
+
+    @property
+    def jumpi_false_branch(self) -> Optional[int]:
+        """
+        Return the JUMPI false branch. Return None if the last instruction was not a JUMPI
+        """
+        return self._jumpi_false_branch
+
+    @property
+    def jumpi_true_branch(self) -> Optional[int]:
+        """
+        Return the JUMPI false branch. Return None if the last instruction was not a JUMPI
+        """
+        return self._jumpi_true_branch
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -1187,6 +1209,9 @@ class EVM(Eventful):
         implementation = getattr(self, current.semantics, None)
         if implementation is None:
             raise TerminateState(f"Instruction not implemented {current.semantics}", testcase=True)
+
+        self._jumpi_false_branch = None
+        self._need_check_jumpdest = None
         return implementation(*arguments)
 
     def _checkpoint(self):
@@ -1224,6 +1249,9 @@ class EVM(Eventful):
         self._allocated = allocated
         self._checkpoint_data = None
 
+    def need_check_jumpdest(self):
+        return self._need_check_jumpdest
+
     def _set_check_jmpdest(self, flag=True):
         """
         Next instruction must be a JUMPDEST iff `flag` holds.
@@ -1242,37 +1270,14 @@ class EVM(Eventful):
         already constrained to a single concrete value.
         """
         # If pc is already pointing to a JUMPDEST thre is no need to check.
-        pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
-        if pc in self._valid_jumpdests:
-            self._need_check_jumpdest = False
-            return
-
-        should_check_jumpdest = simplify(self._need_check_jumpdest)
-        if isinstance(should_check_jumpdest, Constant):
-            should_check_jumpdest = should_check_jumpdest.value
-        elif issymbolic(should_check_jumpdest):
-            self._publish("will_solve", self.constraints, should_check_jumpdest, "get_all_values")
-            should_check_jumpdest_solutions = SelectedSolver.instance().get_all_values(
-                self.constraints, should_check_jumpdest
-            )
-            self._publish(
-                "did_solve",
-                self.constraints,
-                should_check_jumpdest,
-                "get_all_values",
-                should_check_jumpdest_solutions,
-            )
-            if len(should_check_jumpdest_solutions) != 1:
-                raise EthereumError("Conditional not concretized at JMPDEST check")
-            should_check_jumpdest = should_check_jumpdest_solutions[0]
-
-        # If it can be solved only to False just set it False. If it can be solved
-        # only to True, process it and also set it to False
         self._need_check_jumpdest = False
 
-        if should_check_jumpdest:
+        if self._world.last_ins_was_true_jumpi:
+            pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
             if pc not in self._valid_jumpdests:
                 self._throw()
+        self._world.last_ins_was_true_jumpi = False
+        return
 
     def _advance(self, result=None, exception=False):
         if self._checkpoint_data is None:
@@ -2091,6 +2096,8 @@ class EVM(Eventful):
         """Conditionally alter the program counter"""
         # TODO(feliam) If dest is Constant we do not need to 3 queries. There would
         # be only 2 options
+        self._jumpi_false_branch = self.pc + self.instruction.size
+        self._jumpi_true_branch = dest
 
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         # This set ups a check for JMPDEST in the next instruction if cond != 0
@@ -2438,6 +2445,8 @@ class EVMWorld(Platform):
         self._fork = fork
         self._block_header = None
         self.start_block()
+        # True if the last instruction was a JUMPI and the true branch was taken
+        self._last_ins_was_true_jumpi = False
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -2450,6 +2459,7 @@ class EVMWorld(Platform):
         state["_transactions"] = self._transactions
         state["_fork"] = self._fork
         state["_block_header"] = self._block_header
+        state["_last_ins_was_true_jumpi"] = self._last_ins_was_true_jumpi
 
         return state
 
@@ -2464,6 +2474,7 @@ class EVMWorld(Platform):
         self._transactions = state["_transactions"]
         self._fork = state["_fork"]
         self._block_header = state["_block_header"]
+        self._last_ins_was_true_jumpi = state["_last_ins_was_true_jumpi"]
 
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
@@ -2547,6 +2558,14 @@ class EVMWorld(Platform):
         self._constraints = constraints
         if self.current_vm:
             self.current_vm.constraints = constraints
+
+    @property
+    def last_ins_was_true_jumpi(self) -> Optional[bool]:
+        return self._last_ins_was_true_jumpi
+
+    @last_ins_was_true_jumpi.setter
+    def last_ins_was_true_jumpi(self, value):
+        self._last_ins_was_true_jumpi = value
 
     @property
     def evmfork(self):

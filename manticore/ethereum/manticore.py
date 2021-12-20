@@ -53,6 +53,11 @@ consts.add(
     "Default timeout for matching sha3 for unsound states (see unsound symbolication).",
 )
 consts.add(
+    "lazymode",
+    False,  # Experimental, so disabled by default for now
+    "Only call the solver when it is absolutely necessary to generate testcases.",
+)
+consts.add(
     "events",
     False,
     "Show EVM events in the testcases.",
@@ -403,6 +408,7 @@ class ManticoreEVM(ManticoreBase):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
+        self._lazy_evaluation = consts.lazymode
         super().__init__(initial_state, **kwargs)
         if plugins is not None:
             for p in plugins:
@@ -1426,10 +1432,22 @@ class ManticoreEVM(ManticoreBase):
         # Ok all functions had a match for current state
         return state.can_be_true(True)
 
-    def fix_unsound_symbolication(self, state):
+    def fix_unsound_lazy(self, state):
+        return state.can_be_true(True)
+
+    def is_sound(self, state):
         soundcheck = state.context.get("soundcheck", None)
         if soundcheck is not None:
             return soundcheck
+
+        if consts.lazymode:
+            state.context["soundcheck"] = self.fix_unsound_lazy(state)
+        else:
+            state.context["soundcheck"] = True
+
+        if not state.context["soundcheck"]:
+            return state.context["soundcheck"]  # no need to keep checking
+
         if consts.sha3 is consts.sha3.symbolicate:
             state.context["soundcheck"] = self.fix_unsound_symbolication_sound(state)
         elif consts.sha3 is consts.sha3.fake:
@@ -1602,7 +1620,7 @@ class ManticoreEVM(ManticoreBase):
         :rtype: bool
         """
         # Refuse to generate a testcase from an unsound state
-        if not self.fix_unsound_symbolication(state):
+        if not self.is_sound(state):
             raise ManticoreError("Trying to generate a testcase out of an unsound state path")
 
         blockchain = state.platform
@@ -1741,7 +1759,7 @@ class ManticoreEVM(ManticoreBase):
 
         def finalizer(state_id):
             st = self._load(state_id)
-            if self.fix_unsound_symbolication(st):
+            if self.is_sound(st):
                 last_tx = st.platform.last_transaction
                 # Do not generate killed state if only_alive_states is True
                 if only_alive_states and last_tx.result in {"REVERT", "THROW", "TXERROR"}:
@@ -1772,7 +1790,7 @@ class ManticoreEVM(ManticoreBase):
 
         global_findings = set()
         for state in self.all_states:
-            if not self.fix_unsound_symbolication(state):
+            if not self.is_sound(state):
                 continue
             for detector in self.detectors.values():
                 for address, pc, finding, at_init, constraint in detector.get_findings(state):
@@ -1900,7 +1918,7 @@ class ManticoreEVM(ManticoreBase):
         _ready_states = self._ready_states
         for state_id in _ready_states:
             state = self._load(state_id)
-            if self.fix_unsound_symbolication(state):
+            if self.is_sound(state):
                 yield state
                 # Re-save the state in case the user changed its data
                 self._save(state, state_id=state_id)
@@ -1922,7 +1940,7 @@ class ManticoreEVM(ManticoreBase):
         _ready_states = self._ready_states
         for state_id in _ready_states:
             state = self._load(state_id)
-            if self.fix_unsound_symbolication(state):
+            if self.is_sound(state):
                 yield state
                 # Re-save the state in case the user changed its data
                 self._save(state, state_id=state_id)
@@ -1937,7 +1955,7 @@ class ManticoreEVM(ManticoreBase):
         # Fix unsoundness in all states
         def finalizer(state_id):
             state = self._load(state_id)
-            self.fix_unsound_symbolication(state)
+            self.is_sound(state)
             self._save(state, state_id=state_id)
 
         def worker_finalize(q):
@@ -1959,3 +1977,108 @@ class ManticoreEVM(ManticoreBase):
 
         for proc in report_workers:
             proc.join()
+
+    def enable_lazy_evaluation(self):
+        """
+        Enable lazy evaluation
+        :return:
+        """
+        self._lazy_evaluation = True
+
+    def disable_lazy_evaluation(self):
+        """
+        Enable lazy evaluation
+        :return:
+        """
+        self._lazy_evaluation = False
+
+    @property
+    def lazy_evaluation(self) -> bool:
+        return self._lazy_evaluation
+
+    def _fork(self, state, expression, policy="ALL", setstate=None):
+        """
+        Fork state on expression concretizations.
+        Using policy build a list of solutions for expression.
+        For the state on each solution setting the new state with setstate
+        For example if expression is a Bool it may have 2 solutions. True or False.
+                                 Parent
+                            (expression = ??)
+                   Child1                         Child2
+            (expression = True)             (expression = False)
+               setstate(True)                   setstate(False)
+        The optional setstate() function is supposed to set the concrete value
+        in the child state.
+        Parent state is removed from the busy list and the child states are added
+        to the ready list.
+        """
+        assert isinstance(expression, Expression), f"{type(expression)} is not an Expression"
+
+        if setstate is None:
+
+            def setstate(x, y):
+                pass
+
+        if (
+            self._lazy_evaluation
+            and state.platform.current_vm
+            and state.platform.current_vm.jumpi_false_branch
+        ):
+
+            solutions = [
+                (state.platform.current_vm.jumpi_false_branch, False),
+                (state.platform.current_vm.jumpi_true_branch, True),
+            ]
+        else:
+
+            if state.platform.current_vm and isinstance(
+                state.platform.current_vm.need_check_jumpdest(), (Expression, bool)
+            ):
+                solutions = state.concretize(
+                    expression,
+                    policy,
+                    additional_symbolics=state.platform.current_vm.need_check_jumpdest(),
+                )
+            else:
+                solutions = [(s, False) for s in state.concretize(expression, policy)]
+
+        if not solutions:
+            raise ManticoreError("Forking on unfeasible constraint set")
+
+        logger.debug(
+            "Forking. Policy: %s. Values: %s",
+            policy,
+            ", ".join(f"0x{sol:x}" for sol, _ in solutions),
+        )
+
+        self._publish("will_fork_state", state, expression, solutions, policy)
+
+        # Build and enqueue a state for each solution
+        children = []
+        for solution in solutions:
+            with state as new_state:
+                new_value, jump_cond = solution
+                new_state.constrain(expression == new_value)
+
+                # and set the PC of the new state to the concrete pc-dest
+                # (or other register or memory address to concrete)
+                setstate(new_state, new_value)
+                # TODO: Ideally "jump_cond" should be in the VM and not the platform
+                # However, platform.current_vm is not yet created
+                # So not sure how to do it
+                new_state.platform.last_ins_was_true_jumpi = jump_cond
+
+                # enqueue new_state, assign new state id
+                new_state_id = self._put_state(new_state)
+
+                # maintain a list of children for logging purpose
+                children.append(new_state_id)
+
+        self._publish("did_fork_state", state, expression, solutions, policy, children)
+        logger.debug("Forking current state %r into states %r", state.id, children)
+
+        with self._lock:
+            self._busy_states.remove(state.id)
+            self._remove(state.id)
+            state._id = None
+            self._lock.notify_all()

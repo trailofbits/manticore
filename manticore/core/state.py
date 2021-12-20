@@ -1,14 +1,14 @@
 import copy
 import logging
+import typing
+from typing import List, Sequence
 
-from typing import List, Tuple, Sequence
-
-from .smtlib import solver, Bool, issymbolic, BitVecConstant
+from .plugin import StateDescriptor
+from .smtlib import Bool, issymbolic, BitVecConstant
 from .smtlib.expression import Expression
+from ..utils import config
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
-from ..utils import config
-from .plugin import StateDescriptor
 
 consts = config.get_group("core")
 consts.add(
@@ -365,7 +365,14 @@ class StateBase(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=7):
+    def concretize(
+        self,
+        symbolic: Expression,
+        policy: str,
+        maxcount: int = 7,
+        *,
+        additional_symbolics: typing.Optional[typing.List[Expression]] = None,
+    ):
         """This finds a set of solutions for symbolic using policy.
 
         This limits the number of solutions returned to `maxcount` to avoid
@@ -380,9 +387,9 @@ class StateBase(Eventful):
         if policy == "MINMAX":
             vals = self._solver.minmax(self._constraints, symbolic)
         elif policy == "MAX":
-            vals = (self._solver.max(self._constraints, symbolic),)
+            vals = [self._solver.max(self._constraints, symbolic)]
         elif policy == "MIN":
-            vals = (self._solver.min(self._constraints, symbolic),)
+            vals = [self._solver.min(self._constraints, symbolic)]
         elif policy == "SAMPLED":
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
@@ -404,22 +411,34 @@ class StateBase(Eventful):
         elif policy == "OPTIMISTIC":
             logger.info("Optimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic):
-                vals = (True,)
+                vals = [True]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (False,)
+                vals = [False]
         elif policy == "PESSIMISTIC":
             logger.info("Pessimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic == False):
-                vals = (False,)
+                vals = [False]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (True,)
+                vals = [True]
         else:
             assert policy == "ALL"
-            vals = self._solver.get_all_values(
-                self._constraints, symbolic, maxcnt=maxcount, silent=True
-            )
+            if additional_symbolics is not None:
+                logger.debug(
+                    "Additinal symbolics", additional_symbolics, "used with expression", symbolic
+                )
+                val_1 = self._solver.get_all_values(
+                    self._constraints, symbolic, maxcnt=maxcount, silent=True
+                )
+                val_2 = self._solver.get_all_values(
+                    self._constraints, additional_symbolics, maxcnt=maxcount, silent=True
+                )
+                return list(zip(val_1, val_2))
+            else:
+                vals = self._solver.get_all_values(
+                    self._constraints, symbolic, maxcnt=maxcount, silent=True
+                )
 
         return tuple(set(vals))
 
