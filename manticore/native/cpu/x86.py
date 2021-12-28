@@ -5739,7 +5739,7 @@ class X86Cpu(Cpu):
         """
         addr = dest.address()
         for offset, reg, size in reg_layout:
-            cpu.setattr(reg, cpu.read_int(addr + offset, size))
+            setattr(cpu, reg, cpu.read_int(addr + offset, size))
 
     @instruction
     def SYSCALL(cpu):
@@ -6738,11 +6738,11 @@ class AMD64Cpu(X86Cpu):
 
     @instruction
     def FXSAVE(cpu, dest):
-        return cpu.generic_FXSAVE(cpu, dest, AMD64Cpu.FXSAVE_layout)
+        return cpu.generic_FXSAVE(dest, AMD64Cpu.FXSAVE_layout)
 
     @instruction
     def FXRSTOR(cpu, src):
-        return cpu.generic_FXRSTOR(cpu, src, AMD64Cpu.FXSAVE_layout)
+        return cpu.generic_FXRSTOR(src, AMD64Cpu.FXSAVE_layout)
 
 
 class I386Cpu(X86Cpu):
