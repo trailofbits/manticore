@@ -6923,8 +6923,8 @@ class I386Cpu(X86Cpu):
 
     @instruction
     def FXSAVE(cpu, dest):
-        return cpu.generic_FXSAVE(cpu, dest, I386Cpu.FXSAVE_layout)
+        return cpu.generic_FXSAVE(dest, I386Cpu.FXSAVE_layout)
 
     @instruction
     def FXRSTOR(cpu, src):
-        return cpu.generic_FXRSTOR(cpu, src, I386Cpu.FXSAVE_layout)
+        return cpu.generic_FXRSTOR(src, I386Cpu.FXSAVE_layout)
