@@ -658,7 +658,9 @@ class AMD64RegFile(RegisterFile):
     def _set_float(self, register_id, register_size, offset, size, reset, value):
         assert size == 80
         assert offset == 0
-        if not isinstance(value, tuple):  # Add decimal here?
+        if isinstance(value, int):
+            value = float(value)
+        elif not isinstance(value, float):
             raise TypeError
         self._registers[register_id] = value
         return value
