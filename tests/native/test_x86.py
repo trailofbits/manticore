@@ -51355,17 +51355,17 @@ class CPUTest(unittest.TestCase):
         reg_list = ["FIP", "FPCW", "MXCSR", "FP0", "FP7", "XMM0", "XMM7", "XMM15"]
         # Set FP registers and execute FXSAVE
         for i, reg in enumerate(reg_list):
-            cpu.setattr(reg, i)
+            setattr(cpu, reg, i)
         cpu.execute()
         # Clobber registers then execute FXRSTOR
         for i, reg in enumerate(reg_list):
-            cpu.setattr(reg, -1)
+            setattr(cpu, reg, -1)
         mem.write(0x805B9C3, "\x0f\xae\x08")
         cpu.EIP = 0x805B9C3
         cpu.execute()
 
         for i, reg in enumerate(reg_list):
-            self.assertEqual(cpu.getattr(reg), i)
+            self.assertEqual(getattr(cpu, reg), i)
 
     def test_IMUL_1_symbolic(self):
         """Instruction IMUL_1
