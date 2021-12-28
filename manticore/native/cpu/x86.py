@@ -6738,11 +6738,11 @@ class AMD64Cpu(X86Cpu):
 
     @instruction
     def FXSAVE(cpu, dest):
-        return self.generic_FXSAVE(cpu, dest, AMD64Cpu.FXSAVE_layout)
+        return cpu.generic_FXSAVE(cpu, dest, AMD64Cpu.FXSAVE_layout)
 
     @instruction
     def FXRSTOR(cpu, src):
-        return self.generic_FXRSTOR(cpu, src, AMD64Cpu.FXSAVE_layout)
+        return cpu.generic_FXRSTOR(cpu, src, AMD64Cpu.FXSAVE_layout)
 
 
 class I386Cpu(X86Cpu):
@@ -6923,8 +6923,8 @@ class I386Cpu(X86Cpu):
 
     @instruction
     def FXSAVE(cpu, dest):
-        return self.generic_FXSAVE(cpu, dest, I386Cpu.FXSAVE_layout)
+        return cpu.generic_FXSAVE(cpu, dest, I386Cpu.FXSAVE_layout)
 
     @instruction
     def FXRSTOR(cpu, src):
-        return self.generic_FXRSTOR(cpu, src, I386Cpu.FXSAVE_layout)
+        return cpu.generic_FXRSTOR(cpu, src, I386Cpu.FXSAVE_layout)
