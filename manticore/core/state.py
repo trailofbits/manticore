@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from typing import List, Tuple, Sequence
+from typing import List, Tuple, Sequence, Optional, Any
 
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from .smtlib.expression import Expression
@@ -63,7 +63,15 @@ class Concretize(StateException):
         "EXPLICIT",
     ]
 
-    def __init__(self, message, expression, setstate=None, policy=None, values=None, **kwargs):
+    def __init__(
+        self,
+        message,
+        expression,
+        setstate=None,
+        policy=None,
+        values: Optional[List[Any]] = None,
+        **kwargs,
+    ):
         if policy is None:
             policy = "ALL"
         if policy not in self._ValidPolicies:
@@ -376,7 +384,7 @@ class StateBase(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=7, explicit_values=None):
+    def concretize(self, symbolic, policy, maxcount=7, explicit_values: Optional[List[Any]] = None):
         """This finds a set of solutions for symbolic using policy.
 
         This limits the number of solutions returned to `maxcount` to avoid
@@ -427,11 +435,12 @@ class StateBase(Eventful):
                 # We assume the path constraint was feasible to begin with
                 vals = (True,)
         elif policy == "EXPLICIT":
-            for val in explicit_values:
-                if self._solver.can_be_true(self._constraints, val == symbolic):
-                    vals.append(val)
-                if len(vals) >= maxcount:
-                    break
+            if explicit_values:
+                for val in explicit_values:
+                    if self._solver.can_be_true(self._constraints, val == symbolic):
+                        vals.append(val)
+                    if len(vals) >= maxcount:
+                        break
         else:
             assert policy == "ALL"
             vals = self._solver.get_all_values(
