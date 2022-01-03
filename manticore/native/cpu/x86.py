@@ -5722,7 +5722,7 @@ class X86Cpu(Cpu):
         """
         addr = dest.address()
         for offset, reg, size in reg_layout:
-            cpu.write_int(addr + offset, cpu.read(reg), size)
+            cpu.write_int(addr + offset, getattr(cpu, reg), size)
 
     def generic_FXRSTOR(cpu, dest, reg_layout):
         """
@@ -5739,7 +5739,7 @@ class X86Cpu(Cpu):
         """
         addr = dest.address()
         for offset, reg, size in reg_layout:
-            cpu.write(reg, cpu.read_int(addr + offset, size))
+            setattr(cpu, reg, cpu.read_int(addr + offset, size))
 
     @instruction
     def SYSCALL(cpu):
