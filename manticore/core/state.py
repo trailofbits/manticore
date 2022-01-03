@@ -427,7 +427,11 @@ class StateBase(Eventful):
                 # We assume the path constraint was feasible to begin with
                 vals = (True,)
         elif policy == "EXPLICIT":
-            vals = explicit_values[:maxcount]
+            for val in explicit_values:
+                if self._solver.can_be_true(self._constraints, val == symbolic):
+                    vals.append(val)
+                if len(vals) >= maxcount:
+                    break
         else:
             assert policy == "ALL"
             vals = self._solver.get_all_values(
