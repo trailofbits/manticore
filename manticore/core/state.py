@@ -395,7 +395,7 @@ class StateBase(Eventful):
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)
 
-        vals = []
+        vals: Any = []
         if policy == "MINMAX":
             vals = self._solver.minmax(self._constraints, symbolic)
         elif policy == "MAX":
