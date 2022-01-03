@@ -83,7 +83,7 @@ class Concretize(StateException):
         self.policy = policy
         self.values = values
         self.message = f"Concretize: {message} (Policy: {policy})"
-        super().__init__(**kwargs)
+        super().__init__()
 
 
 class SerializeState(Concretize):
