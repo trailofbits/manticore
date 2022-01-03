@@ -5722,7 +5722,7 @@ class X86Cpu(Cpu):
         """
         addr = dest.address()
         for offset, reg, size in reg_layout:
-            cpu.write_int(addr + offset, getattr(cpu, reg), size)
+            cpu.write_int(addr + offset, cpu.read(reg), size)
 
     def generic_FXRSTOR(cpu, dest, reg_layout):
         """
@@ -5739,7 +5739,7 @@ class X86Cpu(Cpu):
         """
         addr = dest.address()
         for offset, reg, size in reg_layout:
-            setattr(cpu, reg, cpu.read_int(addr + offset, size))
+            cpu.write(reg, cpu.read_int(addr + offset, size))
 
     @instruction
     def SYSCALL(cpu):
@@ -6595,14 +6595,14 @@ class AMD64Cpu(X86Cpu):
         (20, "FDS", 16),
         (24, "MXCSR", 32),
         (28, "MXCSR_MASK", 32),
-        (32, "ST0", 80),
-        (48, "ST1", 80),
-        (64, "ST2", 80),
-        (80, "ST3", 80),
-        (96, "ST4", 80),
-        (112, "ST5", 80),
-        (128, "ST6", 80),
-        (144, "ST7", 80),
+        (32, "FP0", 80),
+        (48, "FP1", 80),
+        (64, "FP2", 80),
+        (80, "FP3", 80),
+        (96, "FP4", 80),
+        (112, "FP5", 80),
+        (128, "FP6", 80),
+        (144, "FP7", 80),
         (160, "XMM0", 128),
         (176, "XMM1", 128),
         (192, "XMM2", 128),
@@ -6765,14 +6765,14 @@ class I386Cpu(X86Cpu):
         (20, "FDS", 16),
         (24, "MXCSR", 32),
         (28, "MXCSR_MASK", 32),
-        (32, "ST0", 80),
-        (48, "ST1", 80),
-        (64, "ST2", 80),
-        (80, "ST3", 80),
-        (96, "ST4", 80),
-        (112, "ST5", 80),
-        (128, "ST6", 80),
-        (144, "ST7", 80),
+        (32, "FP0", 80),
+        (48, "FP1", 80),
+        (64, "FP2", 80),
+        (80, "FP3", 80),
+        (96, "FP4", 80),
+        (112, "FP5", 80),
+        (128, "FP6", 80),
+        (144, "FP7", 80),
         (160, "XMM0", 128),
         (176, "XMM1", 128),
         (192, "XMM2", 128),
