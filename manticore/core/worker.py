@@ -155,7 +155,7 @@ class Worker:
                         # Though, normally fork() saves the spawned childs,
                         # returns a None and let _get_state choose what to explore
                         # next
-                        m._fork(current_state, exc.expression, exc.policy, exc.setstate)
+                        m._fork(current_state, exc.expression, exc.policy, exc.setstate, exc.values)
                         current_state = None
 
                     except TerminateState as exc:

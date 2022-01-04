@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from typing import List, Tuple, Sequence
+from typing import List, Tuple, Sequence, Optional, Any
 
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
 from .smtlib.expression import Expression
@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class StateException(Exception):
-    """ All state related exceptions """
+    """All state related exceptions"""
 
 
 class TerminateState(StateException):
-    """ Terminates current state exploration """
+    """Terminates current state exploration"""
 
     def __init__(self, message, testcase=False):
         super().__init__(message)
@@ -51,9 +51,27 @@ class Concretize(StateException):
 
     """
 
-    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE", "PESSIMISTIC", "OPTIMISTIC"]
+    _ValidPolicies = [
+        "MIN",
+        "MAX",
+        "MINMAX",
+        "ALL",
+        "SAMPLED",
+        "ONE",
+        "PESSIMISTIC",
+        "OPTIMISTIC",
+        "EXPLICIT",
+    ]
 
-    def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
+    def __init__(
+        self,
+        message,
+        expression,
+        setstate=None,
+        policy=None,
+        values: Optional[List[Any]] = None,
+        **kwargs,
+    ):
         if policy is None:
             policy = "ALL"
         if policy not in self._ValidPolicies:
@@ -63,8 +81,9 @@ class Concretize(StateException):
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
+        self.values = values
         self.message = f"Concretize: {message} (Policy: {policy})"
-        super().__init__(**kwargs)
+        super().__init__()
 
 
 class SerializeState(Concretize):
@@ -365,7 +384,7 @@ class StateBase(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=7):
+    def concretize(self, symbolic, policy, maxcount=7, explicit_values: Optional[List[Any]] = None):
         """This finds a set of solutions for symbolic using policy.
 
         This limits the number of solutions returned to `maxcount` to avoid
@@ -376,13 +395,13 @@ class StateBase(Eventful):
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)
 
-        vals = []
+        vals: List[Any] = []
         if policy == "MINMAX":
-            vals = self._solver.minmax(self._constraints, symbolic)
+            vals = list(self._solver.minmax(self._constraints, symbolic))
         elif policy == "MAX":
-            vals = (self._solver.max(self._constraints, symbolic),)
+            vals = [self._solver.max(self._constraints, symbolic)]
         elif policy == "MIN":
-            vals = (self._solver.min(self._constraints, symbolic),)
+            vals = [self._solver.min(self._constraints, symbolic)]
         elif policy == "SAMPLED":
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
@@ -404,17 +423,24 @@ class StateBase(Eventful):
         elif policy == "OPTIMISTIC":
             logger.info("Optimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic):
-                vals = (True,)
+                vals = [True]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (False,)
+                vals = [False]
         elif policy == "PESSIMISTIC":
             logger.info("Pessimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic == False):
-                vals = (False,)
+                vals = [False]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (True,)
+                vals = [True]
+        elif policy == "EXPLICIT":
+            if explicit_values:
+                for val in explicit_values:
+                    if self._solver.can_be_true(self._constraints, val == symbolic):
+                        vals.append(val)
+                    if len(vals) >= maxcount:
+                        break
         else:
             assert policy == "ALL"
             vals = self._solver.get_all_values(
