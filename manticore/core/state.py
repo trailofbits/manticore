@@ -395,13 +395,13 @@ class StateBase(Eventful):
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)
 
-        vals: Any = []
+        vals: List[Any] = []
         if policy == "MINMAX":
-            vals = self._solver.minmax(self._constraints, symbolic)
+            vals = list(self._solver.minmax(self._constraints, symbolic))
         elif policy == "MAX":
-            vals = (self._solver.max(self._constraints, symbolic),)
+            vals = [self._solver.max(self._constraints, symbolic)]
         elif policy == "MIN":
-            vals = (self._solver.min(self._constraints, symbolic),)
+            vals = [self._solver.min(self._constraints, symbolic)]
         elif policy == "SAMPLED":
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
@@ -423,17 +423,17 @@ class StateBase(Eventful):
         elif policy == "OPTIMISTIC":
             logger.info("Optimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic):
-                vals = (True,)
+                vals = [True]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (False,)
+                vals = [False]
         elif policy == "PESSIMISTIC":
             logger.info("Pessimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic == False):
-                vals = (False,)
+                vals = [False]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (True,)
+                vals = [True]
         elif policy == "EXPLICIT":
             if explicit_values:
                 for val in explicit_values:
