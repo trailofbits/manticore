@@ -89,7 +89,7 @@ class ConcreteUnicornEmulator:
         self._mem_delta = {}
         self.flag_registers = {"CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"}
         # Registers to ignore when translating manticore context to unicorn
-        self.ignore_registers = {"FIP", "FOP", "FDS", "FCS", "FDP"}
+        self.ignore_registers = {"FIP", "FOP", "FDS", "FCS", "FDP", "MXCSR_MASK"}
         self.write_backs_disabled = False
         self._stop_at = None
         # Holds key of range (addr, addr + size) and value of permissions
