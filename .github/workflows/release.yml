@@ -31,9 +31,11 @@ jobs:
         sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
         #install yices
-        sudo add-apt-repository ppa:sri-csl/formal-methods
-        sudo apt-get update
-        sudo apt-get install yices2
+        sudo wget -O yices.tar.gz https://github.com/SRI-CSL/yices2/releases/download/Yices-2.6.4/yices-2.6.4-x86_64-pc-linux-gnu.tar.gz
+        sudo tar -xzf yices.tar.gz
+        cd yices-2.6.4
+        sudo ./install-yices
+        yices --version
         #install boolector
         mkdir -p /tmp/build
         cd /tmp/build

@@ -68,9 +68,9 @@ jobs:
         sudo chmod +x /usr/bin/cvc4
         cvc4 --version
         #install yices
-        sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
+        sudo wget -O yices.tar.gz https://github.com/SRI-CSL/yices2/releases/download/Yices-2.6.4/yices-2.6.4-x86_64-pc-linux-gnu.tar.gz
         sudo tar -xzf yices.tar.gz
-        cd yices-2.6.2
+        cd yices-2.6.4
         sudo ./install-yices
         yices --version
         #install boolector
