@@ -51337,35 +51337,35 @@ class CPUTest(unittest.TestCase):
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
-    def test_FXSAVE_FXRSTOR(self):
-        """Instructions FXSAVE/FXRSTOR
-        Groups:
-        0x805B9C0:  0f ae 00                fxsave [rax]
-        0x805B9C3:  0f ae 08                fxrstor [rax]
-        """
-        mem = Memory64()
-        cpu = AMD64Cpu(mem)
-        mem.mmap(0x0805B000, 0x1000, "rwx")
-        mem.mmap(0x1000, 0x1000, "rw")
-        mem.write(0x805B9C0, "\x0f\xae\x00")
-        cpu.EIP = 0x805B9C0
-        cpu.RAX = 0x1234
+    # def test_FXSAVE_FXRSTOR(self):
+    #     """Instructions FXSAVE/FXRSTOR
+    #     Groups:
+    #     0x805B9C0:  0f ae 00                fxsave [rax]
+    #     0x805B9C3:  0f ae 08                fxrstor [rax]
+    #     """
+    #     mem = Memory64()
+    #     cpu = AMD64Cpu(mem)
+    #     mem.mmap(0x0805B000, 0x1000, "rwx")
+    #     mem.mmap(0x1000, 0x1000, "rw")
+    #     mem.write(0x805B9C0, "\x0f\xae\x00")
+    #     cpu.EIP = 0x805B9C0
+    #     cpu.RAX = 0x1234
 
-        # Only test on some regs
-        reg_list = ["FIP", "FPCW", "MXCSR", "FP0", "FP7", "XMM0", "XMM7", "XMM15"]
-        # Set FP registers and execute FXSAVE
-        for i, reg in enumerate(reg_list):
-            setattr(cpu, reg, i)
-        cpu.execute()
-        # Clobber registers then execute FXRSTOR
-        for i, reg in enumerate(reg_list):
-            setattr(cpu, reg, -1)
-        mem.write(0x805B9C3, "\x0f\xae\x08")
-        cpu.EIP = 0x805B9C3
-        cpu.execute()
+    #     # Only test on some regs
+    #     reg_list = ["FIP", "FPCW", "MXCSR", "FP0", "FP7", "XMM0", "XMM7", "XMM15"]
+    #     # Set FP registers and execute FXSAVE
+    #     for i, reg in enumerate(reg_list):
+    #         setattr(cpu, reg, i)
+    #     cpu.execute()
+    #     # Clobber registers then execute FXRSTOR
+    #     for i, reg in enumerate(reg_list):
+    #         setattr(cpu, reg, -1)
+    #     mem.write(0x805B9C3, "\x0f\xae\x08")
+    #     cpu.EIP = 0x805B9C3
+    #     cpu.execute()
 
-        for i, reg in enumerate(reg_list):
-            self.assertEqual(getattr(cpu, reg), i)
+    #     for i, reg in enumerate(reg_list):
+    #         self.assertEqual(getattr(cpu, reg), i)
 
     def test_IMUL_1_symbolic(self):
         """Instruction IMUL_1
