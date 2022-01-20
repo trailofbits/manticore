@@ -384,7 +384,7 @@ class ConstantFolderSimplifier(Visitor):
             begining = expression.begining
             end = expression.end
             value = value >> begining
-            mask = (1 << (end - begining)) - 1
+            mask = (1 << (end - begining + 1)) - 1
             value = value & mask
             return BitVecConstant(size=expression.size, value=value, taint=expression.taint)
 
