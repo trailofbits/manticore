@@ -15,6 +15,7 @@ from manticore.core.smtlib import (
     constant_folder,
     replace,
     BitVecConstant,
+    BitVecExtract,
 )
 from manticore.core.smtlib.solver import (
     Z3Solver,
@@ -280,7 +281,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(x.value == 0)
 
     def testBasicAST_001(self):
-        """ Can't build abstract classes """
+        """Can't build abstract classes"""
         a = BitVecConstant(size=32, value=100)
 
         self.assertRaises(TypeError, Expression, ())
@@ -289,7 +290,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertRaises(TypeError, Operation, a)
 
     def testBasicOperation(self):
-        """ Add """
+        """Add"""
         a = BitVecConstant(size=32, value=100)
         b = BitVecVariable(size=32, name="VAR")
         c = a + b
@@ -833,6 +834,13 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
 
+    def test_constant_folding_extract(self):
+        cs = ConstraintSet()
+        x = BitVecConstant(size=32, value=0xAB123456, taint=("important",))
+        z = constant_folder(BitVecExtract(operand=x, offset=8, size=16))
+        self.assertItemsEqual(z.taint, ("important",))
+        self.assertEqual(z.value, 0x1234)
+
     def test_arithmetic_simplify_udiv(self):
         cs = ConstraintSet()
         a = cs.new_bitvec(32, name="VARA")
@@ -869,7 +877,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(self.solver.check(cs))
 
     def testBasicReplace(self):
-        """ Add """
+        """Add"""
         a = BitVecConstant(size=32, value=100)
         b1 = BitVecVariable(size=32, name="VAR1")
         b2 = BitVecVariable(size=32, name="VAR2")
