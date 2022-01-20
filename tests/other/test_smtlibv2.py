@@ -824,7 +824,7 @@ class ExpressionTest(unittest.TestCase):
     def test_constant_folding_extract(self):
         cs = ConstraintSet()
         x = BitVecConstant(size=32, value=0xAB123456, taint=("important",))
-        z = constant_folder(BitVecExtract(x, 8, 16))
+        z = constant_folder(BitVecExtract(operand=x, offset=8, size=16))
         self.assertItemsEqual(z.taint, ("important",))
         self.assertEqual(z.value, 0x1234)
 
