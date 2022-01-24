@@ -580,7 +580,7 @@ class ManticoreEVM(ManticoreBase):
                     constructor_types = md.get_constructor_arguments()
 
                     if constructor_types != "()":
-                        if args is None:
+                        if args is None or len(args) == 0:
                             args = self.make_symbolic_arguments(constructor_types)
 
                         constructor_data = ABI.serialize(constructor_types, *args)
