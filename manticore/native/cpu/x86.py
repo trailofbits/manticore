@@ -660,7 +660,7 @@ class AMD64RegFile(RegisterFile):
         assert offset == 0
         if isinstance(value, int):
             value = float(value)
-        elif not isinstance(value, float):
+        elif not isinstance(value, float) and not isinstance(value, tuple):
             raise TypeError
         self._registers[register_id] = value
         return value
