@@ -45,7 +45,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 
 # https://stackoverflow.com/a/4792601 grumble grumble
-version = "0.3.6"
+version = "0.3.7"
 if "--dev_release" in sys.argv:
     major, minor, point = tuple(int(t) for t in version.split("."))
     dev_extension = f"dev{date.today().strftime('%y%m%d')}"
