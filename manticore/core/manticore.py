@@ -523,30 +523,48 @@ class ManticoreBase(Eventful):
 
         self._publish("will_fork_state", state, expression, solutions, policy)
 
-        # Build and enqueue a state for each solution
+        # Create new states
         children = []
-        for new_value in solutions:
-            with state as new_state:
-                new_state.constrain(expression == new_value)
+        if len(solutions) == 1:
+            # If only one solution don't copy the state but update the current
+            # state instead
+            # Add state constraint
+            new_value = solutions[0]
+            state.constrain(expression == new_value)
+            setstate(state, new_value)
 
-                # and set the PC of the new state to the concrete pc-dest
-                # (or other register or memory address to concrete)
-                setstate(new_state, new_value)
+            # Put the state back in ready list
+            self._put_state(state)  # Doesn't change state id
+            self._publish("did_fork_state", state, expression, solutions, policy, [])
 
-                # enqueue new_state, assign new state id
-                new_state_id = self._put_state(new_state)
+            # Remove the state from busy list
+            with self._lock:
+                self._busy_states.remove(state.id)
+                self._lock.notify_all()
+        else:
+            # Build and enqueue a state for each solution
+            for new_value in solutions:
+                with state as new_state:
+                    new_state.constrain(expression == new_value)
 
-                # maintain a list of children for logging purpose
-                children.append(new_state_id)
+                    # and set the PC of the new state to the concrete pc-dest
+                    # (or other register or memory address to concrete)
+                    setstate(new_state, new_value)
 
-        self._publish("did_fork_state", state, expression, solutions, policy, children)
-        logger.debug("Forking current state %r into states %r", state.id, children)
+                    # enqueue new_state, assign new state id
+                    new_state_id = self._put_state(new_state)
 
-        with self._lock:
-            self._busy_states.remove(state.id)
-            self._remove(state.id)
-            state._id = None
-            self._lock.notify_all()
+                    # maintain a list of children for logging purpose
+                    children.append(new_state_id)
+
+            self._publish("did_fork_state", state, expression, solutions, policy, children)
+            logger.debug("Forking current state %r into states %r", state.id, children)
+
+            with self._lock:
+                self._busy_states.remove(state.id)
+                self._remove(state.id)
+                state._id = None
+                self._lock.notify_all()
 
     @staticmethod
     @deprecated("Use utils.log.set_verbosity instead.")
