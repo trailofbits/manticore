@@ -51365,7 +51365,7 @@ class CPUTest(unittest.TestCase):
         cpu.execute()
 
         for i, reg in enumerate(reg_list):
-            self.assertEqual(getattr(cpu, reg), i)
+            self.assertEqual(cpu.read_register_as_bitfield(reg), i)
 
     def test_IMUL_1_symbolic(self):
         """Instruction IMUL_1

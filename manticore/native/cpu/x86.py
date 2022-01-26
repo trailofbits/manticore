@@ -658,9 +658,14 @@ class AMD64RegFile(RegisterFile):
     def _set_float(self, register_id, register_size, offset, size, reset, value):
         assert size == 80
         assert offset == 0
+        # Translate int bitfield into a floating point value according
+        # to IEEE 754 standard, 80-bit double extended precision
         if isinstance(value, int):
-            value = float(value)
-        elif not isinstance(value, float) and not isinstance(value, tuple):
+            value &= 0xFFFFFFFFFFFFFFFFFFFF  # 80-bit mask
+            exponent = value >> 64  # Exponent is the 16 higher bits
+            mantissa = value & 0xFFFFFFFFFFFFFFFF  # Mantissa is the lower 64 bits
+            value = (mantissa, exponent)
+        elif not isinstance(value, tuple):
             raise TypeError
         self._registers[register_id] = value
         return value
@@ -932,6 +937,23 @@ class X86Cpu(Cpu):
         # Check if we already have an implementation...
         name = OP_NAME_MAP.get(name, name)
         return name
+
+    def read_register_as_bitfield(self, name):
+        """Read a register and return its value as a bitfield.
+        - if the register holds a bitvector, the bitvector object is returned.
+        - if the register holds a concrete value (int/float) it is returned as
+        a bitfield matching its representation in memory
+
+        This is mainly used to be able to write floating point registers to
+        memory.
+        """
+        value = self.read_register(name)
+        if isinstance(value, tuple):
+            # Convert floating point to bitfield according to IEEE 754
+            # (16-bits exponent).(64-bits mantissa)
+            mantissa, exponent = value
+            value = mantissa + (exponent << 64)
+        return value
 
     #
     # Instruction Implementations
@@ -5722,7 +5744,7 @@ class X86Cpu(Cpu):
         """
         addr = dest.address()
         for offset, reg, size in reg_layout:
-            cpu.write_int(addr + offset, getattr(cpu, reg), size)
+            cpu.write_int(addr + offset, cpu.read_register_as_bitfield(reg), size)
 
     def generic_FXRSTOR(cpu, dest, reg_layout):
         """
@@ -5739,7 +5761,7 @@ class X86Cpu(Cpu):
         """
         addr = dest.address()
         for offset, reg, size in reg_layout:
-            setattr(cpu, reg, cpu.read_int(addr + offset, size))
+            cpu.write_register(reg, cpu.read_int(addr + offset, size))
 
     @instruction
     def SYSCALL(cpu):
