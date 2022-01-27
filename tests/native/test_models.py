@@ -12,6 +12,7 @@ from manticore.core.smtlib import (
     issymbolic,
     ArraySelect,
     BitVecITE,
+    ArrayProxy,
 )
 from manticore.native.state import State
 from manticore.platforms import linux
@@ -251,6 +252,39 @@ class StrlenTest(ModelTest):
             "Length of string is: 4",
             "Length of string is: 5",
         }
+
+        # Make a list of the generated output states
+        outputs = f"{str(m.workspace)}/test_*.stdout"
+        stdouts = set()
+        for out in glob(outputs):
+            with open(out) as f:
+                stdouts.add(f.read())
+
+        # Assert that every expected stdout has a matching output
+        self.assertEqual(expected, stdouts)
+
+    def test_symbolic_fork_unique_solution(self):
+        # This binary is compiled using gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
+        # with flags: -g -static -fno-builtin
+        BIN_PATH = os.path.join(
+            os.path.dirname(__file__), "binaries/str_model_tests", "sym_strlen_test"
+        )
+        tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_sym_")
+        m = Manticore(BIN_PATH, stdin_size=10, workspace_url=str(tmp_dir.name))
+
+        addr_of_strlen = 0x04404D0
+
+        @m.hook(addr_of_strlen)
+        def strlen_model(state):
+            stdin_1 = ArrayProxy(array=state.constraints.get_variable("STDIN")).select(1)
+            state.constrain(stdin_1 == 0)
+            state.invoke_model(strlen_exact)
+
+        m.run()
+        m.finalize()
+
+        # Expected stdout outputs
+        expected = {"Length of string is: 0", "Length of string is: 1"}
 
         # Make a list of the generated output states
         outputs = f"{str(m.workspace)}/test_*.stdout"
