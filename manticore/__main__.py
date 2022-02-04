@@ -103,10 +103,10 @@ def parse_arguments() -> argparse.Namespace:
 
     current_version = pkg_resources.get_distribution("manticore").version
     parser.add_argument(
-       "--version",
-       action="version",
-       version=f"Manticore {current_version}",
-       help="Show program version information",
+        "--version",
+        action="version",
+        version=f"Manticore {current_version}",
+        help="Show program version information",
     )
     parser.add_argument(
         "--config",
