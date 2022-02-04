@@ -1,43 +1,10 @@
-name: CI
+name: Upload to PyPI
 
 on:
-  push:
-    branches:
-      - chess
-  pull_request:
-  schedule:
-    # run CI every day even if no PRs/merges occur
-    - cron:  '0 12 * * *'
+  release:
+    types: [published]
 
 jobs:
-  # needs to run only on pull_request
-  lint:
-    runs-on: ubuntu-18.04
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Lint
-      if: github.event_name == 'pull_request'
-      env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      run: |
-        pip install -e .[lint]
-        black --version
-        git fetch --depth=1 origin $BASE_SHA
-        echo "Files Changed:"
-        git diff --name-only $BASE_SHA... | tee .diff_names.txt
-        NAMES=$(cat .diff_names.txt | python scripts/pyfile_exists.py)
-        if test -z $NAMES
-        then
-          black --diff --check .
-        else
-          echo $NAMES | xargs black --diff --check
-        fi
-        mypy --version
-        mypy
   tests:
     runs-on: ubuntu-18.04
     strategy:
@@ -52,7 +19,7 @@ jobs:
     - name: Install NPM
       uses: actions/setup-node@v1
       with:
-        node-version: '16.x'
+        node-version: '13.x'
     - name: Install dependencies
       env:
         TEST_TYPE: ${{ matrix.type }}
@@ -60,19 +27,13 @@ jobs:
         #install utils
         pip install coveralls
         pip install -e ".[dev-noks]"
-        # Get version info
-        pip freeze
-        z3 --version
         #install cvc4
         sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
-        cvc4 --version
         #install yices
-        sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
-        sudo tar -xzf yices.tar.gz
-        cd yices-2.6.2
-        sudo ./install-yices
-        yices --version
+        sudo add-apt-repository ppa:sri-csl/formal-methods
+        sudo apt-get update
+        sudo apt-get install yices2
         #install boolector
         mkdir -p /tmp/build
         cd /tmp/build
@@ -97,25 +58,9 @@ jobs:
       run: |
         cp scripts/run_tests.sh .
         ./run_tests.sh
-    - name: Coveralls Parallel
-      run: |
-        coveralls --service=github
-      env:
-        COVERALLS_PARALLEL: true
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # Send notification when all tests have finished to combine coverage results
-  coverage-finish:
-    needs: tests
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@v1.1.2
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
+
   upload:
     runs-on: ubuntu-18.04
-    if: github.event_name == 'schedule'
     needs: tests
     steps:
     - uses: actions/checkout@v2
@@ -126,7 +71,7 @@ jobs:
     - name: Build Dist
       run: |
         python3 -m pip install wheel
-        python3 setup.py --dev_release sdist bdist_wheel
+        python3 setup.py sdist bdist_wheel
     - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@v1.2.2
       with:

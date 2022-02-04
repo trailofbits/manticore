@@ -14,8 +14,7 @@ import tempfile
 
 from manticore import ManticoreError
 from manticore.core.plugin import Plugin
-from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib import Z3Solver
+from manticore.core.smtlib import ConstraintSet, operators, PortfolioSolver, SolverType
 from manticore.core.smtlib.expression import BitVec, BitVecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
@@ -41,7 +40,9 @@ import io
 import contextlib
 
 
-solver = Z3Solver.instance()
+solver = PortfolioSolver.instance()
+consts = config.get_group("smt")
+consts.solver = SolverType.portfolio
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -73,7 +74,7 @@ class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
         smtcfg = config.get_group("smt")
         with smtcfg.temp_vals():
-            smtcfg.solver = smtcfg.solver.yices
+            smtcfg.solver = smtcfg.solver.portfolio
 
             filename = os.path.join(THIS_DIR, "contracts/prop_verifier.sol")
             f = io.StringIO()

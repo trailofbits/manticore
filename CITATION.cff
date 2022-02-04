@@ -1,0 +1,48 @@
+# YAML 1.2
+---
+abstract: "An effective way to maximize code coverage in software tests is through dynamic symbolic execution-a technique that uses constraint solving to systematically explore a program's state space. We introduce an open-source dynamic symbolic execution framework called Manticore for analyzing binaries and Ethereum smart contracts. Manticore's flexible architecture allows it to support both traditional and exotic execution environments, and its API allows users to customize their analysis. Here, we discuss Manticore's architecture and demonstrate the capabilities we have used to find bugs and verify the correctness of code for our commercial clients."
+authors: 
+  -
+    affiliation: "Trail of Bits"
+    family-names: Mossberg
+    given-names: Mark
+  -
+    affiliation: "Trail of Bits"
+    family-names: Manzano
+    given-names: Felipe
+  -
+    affiliation: "Trail of Bits"
+    family-names: Hennenfent
+    given-names: Eric
+  -
+    affiliation: "Trail of Bits"
+    family-names: Groce
+    given-names: Alex
+  -
+    affiliation: "Trail of Bits"
+    family-names: Greico
+    given-names: Gustavo
+  -
+    affiliation: "Trail of Bits"
+    family-names: Feist
+    given-names: Josselin
+  -
+    affiliation: "Trail of Bits"
+    family-names: Brunson
+    given-names: Trent
+  -
+    affiliation: "Trail of Bits"
+    family-names: Dinaburg
+    given-names: Artem
+cff-version: "1.1.0"
+date-released: 2019-11-11
+doi: "10.1109/ASE.2019.00133"
+keywords: 
+  - "symbolic execution"
+  - "binary analysis"
+  - ethereum
+license: "AGPL-3.0"
+message: "If you use this software in an academic work, please cite our paper."
+repository-code: "https://github.com/trailofbits/manticore"
+title: "Manticore: A User-Friendly Symbolic Execution Framework for Binaries and Smart Contracts"
+...

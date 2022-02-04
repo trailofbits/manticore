@@ -352,9 +352,10 @@ class State(StateBase):
     def _update_state_descriptor(self, descriptor, *args, **kwargs):
         """
         Called on execution_intermittent to update the descriptor for this state.
-        This one should apply any native-specific information to the descriptor. Right now, that's just the PC
+        This one should apply any native-specific information to the descriptor. Right now, that's just the PC and _last_pc
 
         :param descriptor: StateDescriptor for this state
         """
         super()._update_state_descriptor(descriptor, *args, **kwargs)
         descriptor.pc = self.cpu.PC
+        descriptor.last_pc = self.cpu._last_pc

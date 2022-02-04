@@ -16,11 +16,7 @@ def rtd_dependent_deps():
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
-native_deps = [
-    "capstone @ git+https://github.com/aquynh/capstone.git@1766485c0c32419e9a17d6ad31f9e218ef4f018f#subdirectory=bindings/python",
-    "pyelftools",
-    "unicorn==1.0.2",
-]
+native_deps = ["capstone==4.0.2", "pyelftools", "unicorn==1.0.2"]
 
 lint_deps = ["black==20.8b1", "mypy==0.790"]
 
@@ -49,9 +45,11 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 
 # https://stackoverflow.com/a/4792601 grumble grumble
-dev_extension = ""
+version = "0.3.6"
 if "--dev_release" in sys.argv:
-    dev_extension = ".dev" + date.today().strftime("%y%m%d")
+    major, minor, point = tuple(int(t) for t in version.split("."))
+    dev_extension = f"dev{date.today().strftime('%y%m%d')}"
+    version = f"{major}.{minor}.{point + 1}.{dev_extension}"
     sys.argv.remove("--dev_release")
 
 setup(
@@ -61,9 +59,9 @@ setup(
     long_description=long_description,
     url="https://github.com/trailofbits/manticore",
     author="Trail of Bits",
-    version="0.3.5" + dev_extension,
+    version=version,
     packages=find_packages(exclude=["tests", "tests.*"]),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
         "pyyaml",
         "protobuf",
@@ -73,7 +71,7 @@ setup(
         "ply",
         "rlp",
         "intervaltree",
-        "crytic-compile>=0.1.8",
+        "crytic-compile==0.2.1",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",

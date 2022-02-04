@@ -17,6 +17,11 @@ import typing
 consts = config.get_group("core")
 consts.add("HOST", "localhost", "Address to bind the log & state servers to")
 consts.add("PORT", 3214, "Port to use for the log server. State server runs one port higher.")
+consts.add(
+    "fast_fail",
+    False,
+    "Kill Manticore if _any_ state encounters an unrecoverable exception/assertion.",
+)
 
 logger = logging.getLogger(__name__)
 # logger.setLevel(9)
@@ -150,7 +155,7 @@ class Worker:
                         # Though, normally fork() saves the spawned childs,
                         # returns a None and let _get_state choose what to explore
                         # next
-                        m._fork(current_state, exc.expression, exc.policy, exc.setstate)
+                        m._fork(current_state, exc.expression, exc.policy, exc.setstate, exc.values)
                         current_state = None
 
                     except TerminateState as exc:
@@ -188,6 +193,10 @@ class Worker:
                         m._kill_state(current_state.id)
                         m._publish("did_kill_state", current_state, exc)
                         current_state = None
+                    if consts.fast_fail:
+                        # Kill Manticore if _any_ state encounters unrecoverable
+                        # exception/assertion
+                        m.kill()
                     break
 
             # Getting out.

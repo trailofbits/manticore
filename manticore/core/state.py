@@ -1,7 +1,10 @@
 import copy
 import logging
 
+from typing import List, Tuple, Sequence, Optional, Any
+
 from .smtlib import solver, Bool, issymbolic, BitVecConstant
+from .smtlib.expression import Expression
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils import config
@@ -18,11 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class StateException(Exception):
-    """ All state related exceptions """
+    """All state related exceptions"""
 
 
 class TerminateState(StateException):
-    """ Terminates current state exploration """
+    """Terminates current state exploration"""
 
     def __init__(self, message, testcase=False):
         super().__init__(message)
@@ -48,9 +51,27 @@ class Concretize(StateException):
 
     """
 
-    _ValidPolicies = ["MIN", "MAX", "MINMAX", "ALL", "SAMPLED", "ONE", "PESSIMISTIC", "OPTIMISTIC"]
+    _ValidPolicies = [
+        "MIN",
+        "MAX",
+        "MINMAX",
+        "ALL",
+        "SAMPLED",
+        "ONE",
+        "PESSIMISTIC",
+        "OPTIMISTIC",
+        "EXPLICIT",
+    ]
 
-    def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
+    def __init__(
+        self,
+        message,
+        expression,
+        setstate=None,
+        policy=None,
+        values: Optional[List[Any]] = None,
+        **kwargs,
+    ):
         if policy is None:
             policy = "ALL"
         if policy not in self._ValidPolicies:
@@ -60,8 +81,9 @@ class Concretize(StateException):
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
+        self.values = values
         self.message = f"Concretize: {message} (Policy: {policy})"
-        super().__init__(**kwargs)
+        super().__init__()
 
 
 class SerializeState(Concretize):
@@ -176,6 +198,7 @@ class StateBase(Eventful):
 
     def __init__(self, constraints, platform, **kwargs):
         super().__init__(**kwargs)
+        self.manticore = None
         self._platform = platform
         self._constraints = constraints
         self._platform.constraints = constraints
@@ -235,6 +258,7 @@ class StateBase(Eventful):
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
         new_state._id = None
+        new_state.manticore = self.manticore
         new_state._total_exec = self._total_exec
         self.copy_eventful_state(new_state)
 
@@ -360,7 +384,7 @@ class StateBase(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=7):
+    def concretize(self, symbolic, policy, maxcount=7, explicit_values: Optional[List[Any]] = None):
         """This finds a set of solutions for symbolic using policy.
 
         This limits the number of solutions returned to `maxcount` to avoid
@@ -371,13 +395,13 @@ class StateBase(Eventful):
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)
 
-        vals = []
+        vals: List[Any] = []
         if policy == "MINMAX":
-            vals = self._solver.minmax(self._constraints, symbolic)
+            vals = list(self._solver.minmax(self._constraints, symbolic))
         elif policy == "MAX":
-            vals = (self._solver.max(self._constraints, symbolic),)
+            vals = [self._solver.max(self._constraints, symbolic)]
         elif policy == "MIN":
-            vals = (self._solver.min(self._constraints, symbolic),)
+            vals = [self._solver.min(self._constraints, symbolic)]
         elif policy == "SAMPLED":
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
@@ -399,17 +423,24 @@ class StateBase(Eventful):
         elif policy == "OPTIMISTIC":
             logger.info("Optimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic):
-                vals = (True,)
+                vals = [True]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (False,)
+                vals = [False]
         elif policy == "PESSIMISTIC":
             logger.info("Pessimistic case when forking")
             if self._solver.can_be_true(self._constraints, symbolic == False):
-                vals = (False,)
+                vals = [False]
             else:
                 # We assume the path constraint was feasible to begin with
-                vals = (True,)
+                vals = [True]
+        elif policy == "EXPLICIT":
+            if explicit_values:
+                for val in explicit_values:
+                    if self._solver.can_be_true(self._constraints, val == symbolic):
+                        vals.append(val)
+                    if len(vals) >= maxcount:
+                        break
         else:
             assert policy == "ALL"
             vals = self._solver.get_all_values(
@@ -451,30 +482,41 @@ class StateBase(Eventful):
         """
         return self.solve_one_n(expr, constrain=constrain)[0]
 
-    def solve_one_n(self, *exprs, constrain=False):
+    def solve_one_n(self, *exprs: Expression, constrain: bool = False) -> List[int]:
         """
-        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        one solution.
+        Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        a list of solutions.
 
         :param exprs: An iterable of manticore.core.smtlib.Expression
         :param bool constrain: If True, constrain expr to solved solution value
-        :return: Concrete value or a tuple of concrete values
-        :rtype: int
+        :return: List of concrete value or a tuple of concrete values
         """
-        values = []
-        for expr in exprs:
-            if not issymbolic(expr):
-                values.append(expr)
-            else:
-                expr = self.migrate_expression(expr)
-                value = self._solver.get_value(self._constraints, expr)
-                if constrain:
-                    self.constrain(expr == value)
-                # Include forgiveness here
-                if isinstance(value, bytearray):
-                    value = bytes(value)
-                values.append(value)
-        return values
+        return self.solve_one_n_batched(exprs, constrain)
+
+    def solve_one_n_batched(
+        self, exprs: Sequence[Expression], constrain: bool = False
+    ) -> List[int]:
+        """
+        Concretize a list of symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        a list of solutions.
+        :param exprs: An iterable of manticore.core.smtlib.Expression
+        :param bool constrain: If True, constrain expr to solved solution value
+        :return: List of concrete value or a tuple of concrete values
+        """
+        # Return ret instead of value, to allow the bytearray/bytes conversion
+        ret = []
+        exprs = [self.migrate_expression(x) for x in exprs]
+        values = self._solver.get_value_in_batch(self._constraints, exprs)
+        assert len(values) == len(exprs)
+        for idx, expr in enumerate(exprs):
+            value = values[idx]
+            if constrain:
+                self.constrain(expr == values[idx])
+            # Include forgiveness here
+            if isinstance(value, bytearray):
+                value = bytes(value)
+            ret.append(value)
+        return ret
 
     def solve_n(self, expr, nsolves):
         """

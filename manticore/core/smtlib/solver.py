@@ -14,34 +14,22 @@
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
-import os
-import shutil
-import threading
-from queue import Queue
 import collections
+import fcntl
+import os
 import shlex
+import shutil
 import time
-from functools import lru_cache
-from typing import Dict, Tuple, Sequence, Optional
+from abc import abstractmethod
+from random import shuffle
 from subprocess import PIPE, Popen, check_output
-import re
+from typing import Any, Sequence, List
+
 from . import operators as Operators
 from .constraints import *
 from .visitors import *
-from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions, SmtlibError
+from ...exceptions import SolverError, SolverUnknown, TooManySolutions, SmtlibError
 from ...utils import config
-from . import issymbolic
-
-
-class SolverType(config.ConfigEnum):
-    """Used as configuration constant for choosing solver flavor"""
-
-    z3 = "z3"
-    cvc4 = "cvc4"
-    yices = "yices"
-    auto = "auto"
-    boolector = "boolector"
-
 
 logger = logging.getLogger(__name__)
 consts = config.get_group("smt")
@@ -63,13 +51,10 @@ consts.add(
     "optimize", default=True, description="Use smtlib command optimize to find min/max if available"
 )
 
-consts.add(
-    "solver",
-    default=SolverType.auto,
-    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, auto)",
-)
-
 # Regular expressions used by the solver
+RE_GET_EXPR_VALUE_ALL = re.compile(
+    r"\(([a-zA-Z0-9_]*)[ \n\s]*(#b[0-1]*|#x[0-9a-fA-F]*|[(]?_ bv[0-9]* [0-9]*|true|false)\)"
+)
 RE_GET_EXPR_VALUE_FMT_BIN = re.compile(r"\(\((?P<expr>(.*))[ \n\s]*#b(?P<value>([0-1]*))\)\)")
 RE_GET_EXPR_VALUE_FMT_DEC = re.compile(r"\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)")
 RE_GET_EXPR_VALUE_FMT_HEX = re.compile(r"\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)")
@@ -77,6 +62,46 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile(
     r"\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*", re.MULTILINE | re.DOTALL
 )
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile(r"(?P<expr>.*?)\s+\|->\s+(?P<value>.*)", re.DOTALL)
+
+SOLVER_STATS = {"unknown": 0, "timeout": 0}
+
+
+class SolverType(config.ConfigEnum):
+    """Used as configuration constant for choosing solver flavor"""
+
+    z3 = "z3"
+    cvc4 = "cvc4"
+    yices = "yices"
+    auto = "auto"
+    portfolio = "portfolio"
+    boolector = "boolector"
+
+
+consts.add(
+    "solver",
+    default=SolverType.auto,
+    description="Choose default smtlib2 solver (z3, yices, cvc4, boolector, portfolio, auto)",
+)
+
+
+def _convert(v):
+    r = None
+    if v == "true":
+        r = True
+    elif v == "false":
+        r = False
+    elif v.startswith("#b"):
+        r = int(v[2:], 2)
+    elif v.startswith("#x"):
+        r = int(v[2:], 16)
+    elif v.startswith("_ bv"):
+        r = int(v[len("_ bv") : -len(" 256")], 10)
+    elif v.startswith("(_ bv"):
+        v = v[len("(_ bv") :]
+        r = int(v[: v.find(" ")], 10)
+
+    assert r is not None
+    return r
 
 
 class SingletonMixin(object):
@@ -178,6 +203,7 @@ class SmtlibProc:
         self._proc: Optional[Popen] = None
         self._command = command
         self._debug = debug
+        self._last_buf = ""
 
     def start(self):
         """Spawns POpen solver process"""
@@ -187,10 +213,15 @@ class SmtlibProc:
             shlex.split(self._command),
             stdin=PIPE,
             stdout=PIPE,
-            bufsize=0,
+            # bufsize=0,  # if we set input to unbuffered, we get syntax errors in large formulas
             universal_newlines=True,
             close_fds=True,
         )
+
+        # stdout should be non-blocking
+        fl = fcntl.fcntl(self._proc.stdout, fcntl.F_GETFL)
+        fcntl.fcntl(self._proc.stdout, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        self._last_buf = ""
 
     def stop(self):
         """
@@ -211,18 +242,6 @@ class SmtlibProc:
             # No need to wait for termination, zombies avoided.
         self._proc = None
 
-    def __readline_and_count(self):
-        assert self._proc
-        assert self._proc.stdout
-        buf = self._proc.stdout.readline()  # No timeout enforced here
-        # If debug is enabled check if the solver reports a syntax error
-        # Error messages may contain an unbalanced parenthesis situation
-        if self._debug:
-            if "(error" in buf:
-                raise SolverException(f"Error in smtlib: {buf}")
-        lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
-        return buf, lparen, rparen
-
     def send(self, cmd: str) -> None:
         """
         Send a string to the solver.
@@ -231,20 +250,63 @@ class SmtlibProc:
         """
         if self._debug:
             logger.debug(">%s", cmd)
-        self._proc.stdout.flush()  # type: ignore
-        self._proc.stdin.write(f"{cmd}\n")  # type: ignore
+        assert self._proc is not None
+        try:
+            self._proc.stdout.flush()  # type: ignore
+            self._proc.stdin.write(f"{cmd}\n")  # type: ignore
+            self._proc.stdin.flush()  # type: ignore
+        except (BrokenPipeError, IOError) as e:
+            logger.critical(
+                f"Solver encountered an error trying to send commands: {e}.\n"
+                f"\tOutput: {self._proc.stdout}\n\n"
+                f"\tStderr: {self._proc.stderr}"
+            )
+            raise e
 
-    def recv(self) -> str:
-        """Reads the response from the smtlib solver"""
-        buf, left, right = self.__readline_and_count()
-        bufl = [buf]
-        while left != right:
-            buf, l, r = self.__readline_and_count()
-            bufl.append(buf)
-            left += l
-            right += r
+    def recv(self, wait=True) -> Optional[str]:
+        """Reads the response from the smtlib solver
 
-        buf = "".join(bufl).strip()
+        :param wait: a boolean that indicate to wait with a blocking call
+        until the results are available. Otherwise, it returns None if the solver
+        does not respond.
+
+        """
+        tries = 0
+        timeout = 0.0
+
+        buf = ""
+        if self._last_buf != "":  # we got a partial response last time, let's use it
+            buf = buf + self._last_buf
+
+        while True:
+            try:
+                buf = buf + self._proc.stdout.read()  # type: ignore
+                buf = buf.strip()
+            except TypeError:
+                if not wait:
+                    if buf != "":  # we got an error, but something was returned, let's save it
+                        self._last_buf = buf
+                    return None
+                else:
+                    tries += 1
+
+            if buf == "":
+                continue
+
+            # this verifies if the response from the solver is complete (it has balanced brackets)
+            lparen, rparen = map(sum, zip(*((c == "(", c == ")") for c in buf)))
+            if lparen == rparen and buf != "":
+                break
+
+            if tries > 3:
+                time.sleep(timeout)
+                timeout += 0.1
+
+        buf = buf.strip()
+        self._last_buf = ""
+
+        if "(error" in buf:
+            raise SolverException(f"Solver error: {buf}")
 
         if self._debug:
             logger.debug("<%s", buf)
@@ -259,8 +321,25 @@ class SmtlibProc:
     def is_started(self):
         return self._proc is not None
 
+    def clear_buffers(self):
+        self._proc.stdout.flush()
+        self._proc.stdin.flush()
+
 
 class SMTLIBSolver(Solver):
+    ncores: Optional[int] = None
+    sname: Optional[str] = None
+
+    @classmethod
+    @abstractmethod
+    def command(self) -> str:
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def inits(self) -> List[str]:
+        raise NotImplementedError()
+
     def __init__(
         self,
         command: str,
@@ -309,6 +388,8 @@ class SMTLIBSolver(Solver):
             self._smtlib.stop()  # does not do anything if already stopped
             self._smtlib.start()
 
+        self._smtlib.clear_buffers()
+
         for cfg in self._init:
             self._smtlib.send(cfg)
 
@@ -325,15 +406,28 @@ class SMTLIBSolver(Solver):
         start = time.time()
         self._smtlib.send("(check-sat)")
         status = self._smtlib.recv()
+        assert status is not None
         logger.debug("Check took %s seconds (%s)", time.time() - start, status)
+        if "ALARM TRIGGERED" in status:
+            return False
+
         if status not in ("sat", "unsat", "unknown"):
             raise SolverError(status)
         if consts.defaultunsat:
             if status == "unknown":
                 logger.info("Found an unknown core, probably a solver timeout")
+                SOLVER_STATS["timeout"] += 1
                 status = "unsat"
+                raise SolverUnknown(status)
+
         if status == "unknown":
+            SOLVER_STATS["unknown"] += 1
             raise SolverUnknown(status)
+        else:
+            assert self.sname is not None
+            SOLVER_STATS.setdefault(self.sname, 0)
+            SOLVER_STATS[self.sname] += 1
+
         return status == "sat"
 
     def _assert(self, expression: Bool):
@@ -344,6 +438,7 @@ class SMTLIBSolver(Solver):
     def __getvalue_bv(self, expression_str: str) -> int:
         self._smtlib.send(f"(get-value ({expression_str}))")
         t = self._smtlib.recv()
+        assert t is not None
         base = 2
         m = RE_GET_EXPR_VALUE_FMT_BIN.match(t)
         if m is None:
@@ -362,6 +457,14 @@ class SMTLIBSolver(Solver):
         self._smtlib.send(f"(get-value ({expression_str}))")
         ret = self._smtlib.recv()
         return {"true": True, "false": False, "#b0": False, "#b1": True}[ret[2:-2].split(" ")[1]]
+
+    def __getvalue_all(self, expressions_str: List[str], is_bv: List[bool]) -> Dict[str, int]:
+        all_expressions_str = " ".join(expressions_str)
+        self._smtlib.send(f"(get-value ({all_expressions_str}))")
+        ret_solver: Optional[str] = self._smtlib.recv()
+        assert ret_solver is not None
+        return_values = re.findall(RE_GET_EXPR_VALUE_ALL, ret_solver)
+        return {value[0]: _convert(value[1]) for value in return_values}
 
     def _getvalue(self, expression) -> Union[int, bool, bytes]:
         """
@@ -464,6 +567,7 @@ class SMTLIBSolver(Solver):
                     M = L
 
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["timeout"] += 1
                     raise SolverError("Timeout")
 
         # reset to before the dichotomic search
@@ -486,11 +590,15 @@ class SMTLIBSolver(Solver):
                 self._assert(X != last_value)
                 i = i + 1
                 if i > max_iter:
+                    SOLVER_STATS["unknown"] += 1
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["timeout"] += 1
                     raise SolverError("Timeout")
             if last_value is not None:
                 return last_value
+
+            SOLVER_STATS["unknown"] += 1
             raise SolverError("Optimizing error, unsat or unknown core")
 
     @lru_cache(maxsize=32)
@@ -547,6 +655,7 @@ class SMTLIBSolver(Solver):
                     else:
                         raise TooManySolutions(result)
                 if time.time() - start > consts.timeout:
+                    SOLVER_STATS["timeout"] += 1
                     if silent:
                         logger.info("Timeout searching for all solutions")
                         return list(result)
@@ -583,77 +692,130 @@ class SMTLIBSolver(Solver):
             self._smtlib.send("(%s %s)" % (goal, aux.name))
             self._smtlib.send("(check-sat)")
             _status = self._smtlib.recv()
+
+            assert self.sname is not None
+            SOLVER_STATS.setdefault(self.sname, 0)
+            SOLVER_STATS[self.sname] += 1
+
             if _status == "sat":
                 return self._getvalue(aux)
             raise SolverError("Optimize failed")
 
     def get_value(self, constraints: ConstraintSet, *expressions):
-        """
-        Ask the solver for one possible result of given expressions using
-        given set of constraints.
-        """
-        values = []
-        start = time.time()
-        with constraints.related_to(*expressions) as temp_cs:
-            for expression in expressions:
-                if not issymbolic(expression):
-                    values.append(expression)
-                    continue
-                assert isinstance(expression, (Bool, BitVec, Array))
-                if isinstance(expression, Bool):
-                    var = temp_cs.new_bool()
-                elif isinstance(expression, BitVec):
-                    var = temp_cs.new_bitvec(expression.size)
-                elif isinstance(expression, Array):
-                    var = []
-                    result = []
-                    for i in range(expression.index_max):
-                        subvar = temp_cs.new_bitvec(expression.value_bits)
-                        var.append(subvar)
-                        temp_cs.add(subvar == simplify(expression[i]))
-                    self._reset(temp_cs.to_string())
-                    if not self._is_sat():
-                        raise SolverError(
-                            "Solver could not find a value for expression under current constraint set"
-                        )
-
-                    for i in range(expression.index_max):
-                        result.append(self.__getvalue_bv(var[i].name))
-                    values.append(bytes(result))
-                    if time.time() - start > consts.timeout:
-                        raise SolverError("Timeout")
-                    continue
-
-                temp_cs.add(var == expression)
-
-                self._reset(temp_cs.to_string())
-
-                if not self._is_sat():
-                    raise SolverError(
-                        "Solver could not find a value for expression under current constraint set"
-                    )
-
-                if isinstance(expression, Bool):
-                    values.append(self.__getvalue_bool(var.name))
-                if isinstance(expression, BitVec):
-                    values.append(self.__getvalue_bv(var.name))
-            if time.time() - start > consts.timeout:
-                raise SolverError("Timeout")
-
+        values = self.get_value_in_batch(constraints, expressions)
         if len(expressions) == 1:
             return values[0]
         else:
             return values
 
+    def get_value_in_batch(self, constraints: ConstraintSet, expressions):
+        """
+        Ask the solver for one possible result of given expressions using
+        given set of constraints.
+        """
+        values: List[Any] = [None] * len(expressions)
+        start = time.time()
+        with constraints.related_to(*expressions) as temp_cs:
+            vars: List[Any] = []
+            for idx, expression in enumerate(expressions):
+                if not issymbolic(expression):
+                    values[idx] = expression
+                    vars.append(None)
+                    continue
+                assert isinstance(expression, (Bool, BitVec, Array))
+                if isinstance(expression, Bool):
+                    var = temp_cs.new_bool()
+                    vars.append(var)
+                    temp_cs.add(var == expression)
+                elif isinstance(expression, BitVec):
+                    var = temp_cs.new_bitvec(expression.size)
+                    vars.append(var)
+                    temp_cs.add(var == expression)
+                elif isinstance(expression, Array):
+                    var = []
+                    for i in range(expression.index_max):
+                        subvar = temp_cs.new_bitvec(expression.value_bits)
+                        var.append(subvar)
+                        temp_cs.add(subvar == simplify(expression[i]))
+                    vars.append(var)
+
+            self._reset(temp_cs.to_string())
+            if not self._is_sat():
+                raise SolverError(
+                    "Solver could not find a value for expression under current constraint set"
+                )
+
+            values_to_ask: List[str] = []
+            is_bv: List[bool] = []
+            for idx, expression in enumerate(expressions):
+                if not issymbolic(expression):
+                    continue
+                var = vars[idx]
+                if isinstance(expression, Bool):
+                    values_to_ask.append(var.name)
+                    is_bv.append(False)
+                if isinstance(expression, BitVec):
+                    values_to_ask.append(var.name)
+                    is_bv.append(True)
+                if isinstance(expression, Array):
+                    # result = []
+                    for i in range(expression.index_max):
+                        values_to_ask.append(var[i].name)
+                        is_bv.append(True)
+
+            if values_to_ask == []:
+                return values
+
+            values_returned = self.__getvalue_all(values_to_ask, is_bv)
+            for idx, expression in enumerate(expressions):
+                if not issymbolic(expression):
+                    continue
+                var = vars[idx]
+                if isinstance(expression, Bool):
+                    values[idx] = values_returned[var.name]
+                if isinstance(expression, BitVec):
+                    if var.name not in values_returned:
+                        logger.error(
+                            "var.name", var.name, "not in values_returned", values_returned
+                        )
+
+                    values[idx] = values_returned[var.name]
+                if isinstance(expression, Array):
+                    result = []
+                    for i in range(expression.index_max):
+                        result.append(values_returned[var[i].name])
+                    values[idx] = bytes(result)
+
+            if time.time() - start > consts.timeout:
+                SOLVER_STATS["timeout"] += 1
+                raise SolverError("Timeout")
+
+        return values
+
 
 class Z3Solver(SMTLIBSolver):
+    sname = "z3"
+
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return [
+            "(set-logic QF_AUFBV)",
+            "(set-option :global-decls false)",
+            "(set-option :tactic.solve_eqs.context_solve false)",
+        ]
+
     def __init__(self):
         """
         Build a Z3 solver instance.
         This is implemented using an external z3 solver (via a subprocess).
         See https://github.com/Z3Prover/z3
         """
-        command = f"{consts.z3_bin} -t:{consts.timeout * 1000} -memory:{consts.memory} -smt2 -in"
+        command = self.command()
+        self.ncores = 1
 
         init, support_minmax, support_reset, multiple_check = self.__autoconfig()
         super().__init__(
@@ -667,25 +829,11 @@ class Z3Solver(SMTLIBSolver):
         )
 
     def __autoconfig(self):
-        init = [
-            # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
-            # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
-            # free sort and function symbols.
-            "(set-logic QF_AUFBV)",
-            # The declarations and definitions will be scoped
-            "(set-option :global-decls false)",
-        ]
+        init = self.inits()
 
         # To cache what get-info returned; can be directly set when writing tests
         self.version = self._solver_version()
         support_reset = True
-
-        if self.version > Version(4, 8, 4):
-            # sam.moelius: Option "tactic.solve_eqs.context_solve" was turned on by this commit in z3:
-            #   https://github.com/Z3Prover/z3/commit/3e53b6f2dbbd09380cd11706cabbc7e14b0cc6a2
-            # Turning it off greatly improves Manticore's performance on test_integer_overflow_storageinvariant
-            # in test_consensys_benchmark.py.
-            init.append("(set-option :tactic.solve_eqs.context_solve false)")
 
         support_minmax = self.version >= Version(4, 4, 1)
 
@@ -721,9 +869,20 @@ class Z3Solver(SMTLIBSolver):
 
 
 class YicesSolver(SMTLIBSolver):
+    sname = "yices"
+
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return ["(set-logic QF_AUFBV)"]
+
     def __init__(self):
-        init = ["(set-logic QF_AUFBV)"]
-        command = f"{consts.yices_bin} --timeout={consts.timeout}  --incremental"
+        init = self.inits()
+        command = self.command()
+        self.ncores = 1
         super().__init__(
             command=command,
             init=init,
@@ -734,17 +893,198 @@ class YicesSolver(SMTLIBSolver):
 
 
 class CVC4Solver(SMTLIBSolver):
+    sname = "cvc4"
+
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+
     def __init__(self):
-        init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"{consts.cvc4_bin} --tlimit={consts.timeout * 1000} --lang=smt2 --incremental"
+        init = self.inits()
+        command = self.command()
+        self.ncores = 1
         super().__init__(command=command, init=init)
 
 
 class BoolectorSolver(SMTLIBSolver):
-    def __init__(self):
-        init = ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
-        command = f"{consts.boolector_bin} --time={consts.timeout} -i"
+    sname = "boolector"
+
+    @classmethod
+    def command(self) -> str:
+        return f"{consts.boolector_bin} --time={consts.timeout} -i"
+
+    @classmethod
+    def inits(self) -> List[str]:
+        return ["(set-logic QF_AUFBV)", "(set-option :produce-models true)"]
+
+    def __init__(self, args: List[str] = []):
+        init = self.inits()
+        command = self.command()
+        self.ncores = 1
         super().__init__(command=command, init=init)
+
+
+class SmtlibPortfolio:
+    def __init__(self, solvers: List[str], debug: bool = False):
+        """Single smtlib interactive process
+
+        :param command: the shell command to execute
+        :param debug: log all messaging
+        """
+        self._procs: Dict[str, SmtlibProc] = {}
+        self._solvers: List[str] = solvers
+        self._debug = debug
+
+    def start(self):
+        if len(self._procs) == 0:
+            for solver in self._solvers:
+                self._procs[solver] = SmtlibProc(solver_selector[solver].command(), self._debug)
+
+        for _, proc in self._procs.items():
+            proc.start()
+
+    def stop(self):
+        """
+        Stops the solver process by:
+        - sending a SIGKILL signal,
+        - waiting till the process terminates (so we don't leave a zombie process)
+        """
+        for solver, proc in self._procs.items():
+            proc.stop()
+
+    def send(self, cmd: str) -> None:
+        """
+        Send a string to the solver.
+
+        :param cmd: a SMTLIBv2 command (ex. (check-sat))
+        """
+        assert len(self._procs) > 0
+        inds = list(range(len(self._procs)))
+        shuffle(inds)
+
+        for i in inds:
+            solver = self._solvers[i]
+            proc = self._procs[solver]
+            if not proc.is_started():
+                continue
+
+            proc.send(cmd)
+
+    def recv(self) -> str:
+        """Reads the response from the smtlib solver"""
+        tries = 0
+        timeout = 0.0
+        inds = list(range(len(self._procs)))
+        # print(self._solvers)
+        while True:
+            shuffle(inds)
+            for i in inds:
+
+                solver = self._solvers[i]
+                proc = self._procs[solver]
+
+                if not proc.is_started():
+                    continue
+
+                buf = proc.recv(wait=False)
+                if buf is not None:
+
+                    for osolver in self._solvers:  # iterate on all the solvers
+                        if osolver != solver:  # check for the other ones
+                            self._procs[osolver].stop()  # stop them
+
+                    return buf
+                else:
+                    tries += 1
+
+            if tries > 10 * len(self._procs):
+                time.sleep(timeout)
+                timeout += 0.1
+
+    def _restart(self) -> None:
+        """Auxiliary to start or restart the external solver"""
+        self.stop()
+        self.start()
+
+    def is_started(self):
+        return len(self._procs) > 0
+
+    def init(self):
+        assert len(self._solvers) == len(self._procs)
+        for solver, proc in self._procs.items():
+            for cfg in solver_selector[solver].inits():
+                proc.send(cfg)
+
+
+class PortfolioSolver(SMTLIBSolver):
+    sname = "portfolio"
+
+    def __init__(self):
+        solvers = []
+        if shutil.which(consts.yices_bin):
+            solvers.append(consts.solver.yices.name)
+        # not sure we want z3 here, since it tends to be slower
+        # if shutil.which(consts.z3_bin):
+        #    solvers.append(consts.solver.z3.name)
+        if shutil.which(consts.cvc4_bin):
+            solvers.append(consts.solver.cvc4.name)
+        if shutil.which(consts.boolector_bin):
+            solvers.append(consts.solver.boolector.name)
+        if solvers == []:
+            raise SolverException(
+                f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
+            )
+
+        logger.info("Creating portfolio with solvers: " + ",".join(solvers))
+        assert len(solvers) > 0
+        support_reset: bool = False
+        support_minmax: bool = False
+        support_pushpop: bool = False
+        multiple_check: bool = True
+        debug: bool = False
+
+        self._smtlib: SmtlibPortfolio = SmtlibPortfolio(solvers, debug)
+        self._support_minmax = support_minmax
+        self._support_reset = support_reset
+        self._support_pushpop = support_pushpop
+        self._multiple_check = multiple_check
+
+        if not self._support_pushpop:
+            setattr(self, "_push", None)
+            setattr(self, "_pop", None)
+
+        if self._support_minmax and consts.optimize:
+            setattr(self, "optimize", self._optimize_fancy)
+        else:
+            setattr(self, "optimize", self._optimize_generic)
+        self.ncores = len(solvers)
+
+    def _reset(self, constraints: Optional[str] = None) -> None:
+        """Auxiliary method to reset the smtlib external solver to initial defaults"""
+        if self._support_reset:
+            self._smtlib.start()  # does not do anything if already started
+            self._smtlib.send("(reset)")
+        else:
+            self._smtlib.stop()  # does not do anything if already stopped
+            self._smtlib.start()
+
+        self._smtlib.init()
+
+        if constraints is not None:
+            self._smtlib.send(constraints)
+
+
+solver_selector = {
+    "cvc4": CVC4Solver,
+    "boolector": BoolectorSolver,
+    "yices": YicesSolver,
+    "z3": Z3Solver,
+    "portfolio": PortfolioSolver,
+}
 
 
 class SelectedSolver:
@@ -766,13 +1106,9 @@ class SelectedSolver:
                     raise SolverException(
                         f"No Solver not found. Install one ({consts.yices_bin}, {consts.z3_bin}, {consts.cvc4_bin}, {consts.boolector_bin})."
                     )
+
         else:
             cls.choice = consts.solver
 
-        SelectedSolver = {
-            "cvc4": CVC4Solver,
-            "boolector": BoolectorSolver,
-            "yices": YicesSolver,
-            "z3": Z3Solver,
-        }[cls.choice.name]
+        SelectedSolver = solver_selector[cls.choice.name]
         return SelectedSolver.instance()

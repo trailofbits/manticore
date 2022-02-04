@@ -32,7 +32,7 @@ from ..core.state import TerminateState, Concretize
 from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
-from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
+from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption, Abi, SyscallAbi
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import (
     SMemory32,
@@ -572,6 +572,13 @@ class SymbolicFile(File):
         """
         super().__init__(path, flags)
 
+        # Convert to numeric value because we read the file as bytes
+        wildcard_buf: bytes = wildcard.encode()
+        assert (
+            len(wildcard_buf) == 1
+        ), f"SymbolicFile wildcard needs to be a single byte, not {wildcard_buf!r}"
+        wildcard_val = wildcard_buf[0]
+
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
 
@@ -585,7 +592,7 @@ class SymbolicFile(File):
 
         symbols_cnt = 0
         for i in range(size):
-            if data[i] != wildcard:
+            if data[i] != wildcard_val:
                 self.array[i] = data[i]
             else:
                 symbols_cnt += 1
@@ -978,6 +985,9 @@ class Linux(Platform):
         self.envp = envp
         self.argv = argv
         self.stubs = SyscallStubs(parent=self)
+        # Load addresses
+        self.interp_base: Optional[int] = None
+        self.program_base: Optional[int] = None
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -1109,6 +1119,16 @@ class Linux(Platform):
         assert self._current is not None
         return self.procs[self._current]
 
+    @property
+    def function_abi(self) -> Abi:
+        assert self._function_abi is not None
+        return self._function_abi
+
+    @property
+    def syscall_abi(self) -> SyscallAbi:
+        assert self._syscall_abi is not None
+        return self._syscall_abi
+
     def __getstate__(self):
         state = super().__getstate__()
         state["clocks"] = self.clocks
@@ -1127,7 +1147,8 @@ class Linux(Platform):
         state["syscall_trace"] = self.syscall_trace
         state["argv"] = self.argv
         state["envp"] = self.envp
-        state["base"] = self.base
+        state["interp_base"] = self.interp_base
+        state["program_base"] = self.program_base
         state["elf_bss"] = self.elf_bss
         state["end_code"] = self.end_code
         state["end_data"] = self.end_data
@@ -1189,7 +1210,8 @@ class Linux(Platform):
         self.syscall_trace = state["syscall_trace"]
         self.argv = state["argv"]
         self.envp = state["envp"]
-        self.base = state["base"]
+        self.interp_base = state["interp_base"]
+        self.program_base = state["program_base"]
         self.elf_bss = state["elf_bss"]
         self.end_code = state["end_code"]
         self.end_data = state["end_data"]
@@ -1452,12 +1474,10 @@ class Linux(Platform):
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != "PT_INTERP":
                 continue
-            interpreter_filename = elf_segment.data()[:-1]
+            interpreter_filename = elf_segment.data()[:-1].rstrip(b"\x00").decode("utf-8")
             logger.info(f"Interpreter filename: {interpreter_filename}")
-            if os.path.exists(interpreter_filename.decode("utf-8")):
-                _clean_interp_stream()
-                interpreter = ELFFile(open(interpreter_filename, "rb"))
-            elif "LD_LIBRARY_PATH" in env:
+
+            if "LD_LIBRARY_PATH" in env:
                 for mpath in env["LD_LIBRARY_PATH"].split(":"):
                     interpreter_path_filename = os.path.join(
                         mpath, os.path.basename(interpreter_filename)
@@ -1467,6 +1487,10 @@ class Linux(Platform):
                         _clean_interp_stream()
                         interpreter = ELFFile(open(interpreter_path_filename, "rb"))
                         break
+
+            if interpreter is None and os.path.exists(interpreter_filename):
+                interpreter = ELFFile(open(interpreter_filename, "rb"))
+
             break
 
         if interpreter is not None:
@@ -1598,9 +1622,7 @@ class Linux(Platform):
                 if hint == 0:
                     hint = None
 
-                base = cpu.memory.mmapFile(
-                    hint, memsz, perms, elf_segment.stream.name.decode("utf-8"), offset
-                )
+                base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset)
                 base -= vaddr
                 logger.debug(
                     f"Loading interpreter offset: {offset:08x} "
@@ -1645,7 +1667,8 @@ class Linux(Platform):
         logger.debug(f"Mappings:")
         for m in str(cpu.memory).split("\n"):
             logger.debug(f"  {m}")
-        self.base = base
+        self.interp_base = base
+        self.program_base = self.load_addr
         self.elf_bss = elf_bss
         self.end_code = end_code
         self.end_data = end_data
@@ -3144,7 +3167,7 @@ class Linux(Platform):
             self.check_timers()
 
     def awake(self, procid) -> None:
-        """ Remove procid from waitlists and reestablish it in the running list """
+        """Remove procid from waitlists and reestablish it in the running list"""
         logger.debug(
             f"Remove procid:{procid} from waitlists and reestablish it in the running list"
         )
@@ -3169,7 +3192,7 @@ class Linux(Platform):
             return fd - 1
 
     def signal_receive(self, fd: int) -> None:
-        """ Awake one process waiting to receive data on fd """
+        """Awake one process waiting to receive data on fd"""
         connections = self.connections
         connection = connections(fd)
         if connection:
@@ -3179,7 +3202,7 @@ class Linux(Platform):
                 self.awake(procid)
 
     def signal_transmit(self, fd: int) -> None:
-        """ Awake one process waiting to transmit data on fd """
+        """Awake one process waiting to transmit data on fd"""
         connection = self.connections(fd)
         if connection is None or not self.fd_table.has_entry(connection):
             return
@@ -3190,7 +3213,7 @@ class Linux(Platform):
             self.awake(procid)
 
     def check_timers(self) -> None:
-        """ Awake process if timer has expired """
+        """Awake process if timer has expired"""
         if self._current is None:
             # Advance the clocks. Go to future!!
             advance = min([self.clocks] + [x for x in self.timers if x is not None]) + 1
@@ -3608,15 +3631,43 @@ class Linux(Platform):
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
-    @staticmethod
-    def implemented_syscalls() -> Iterable[str]:
+    @classmethod
+    def implemented_syscalls(cls) -> Iterable[str]:
+        """
+        Get a listing of all concretely implemented system calls for Linux. This
+        does not include whether a symbolic version exists. To get that listing,
+        use the SLinux.implemented_syscalls() method.
+        """
         import inspect
 
         return (
-            x[0].split("sys_", 1)[1]
-            for x in inspect.getmembers(Linux, predicate=inspect.isfunction)
-            if x[0].startswith("sys_")
+            name
+            for (name, obj) in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if name.startswith("sys_") and
+            # Check that the class defining the method is exactly this one
+            getattr(inspect.getmodule(obj), obj.__qualname__.rsplit(".", 1)[0], None) == cls
         )
+
+    @classmethod
+    def unimplemented_syscalls(cls, syscalls: Union[Set[str], Dict[int, str]]) -> Set[str]:
+        """
+        Get a listing of all unimplemented concrete system calls for a given
+        collection of Linux system calls. To get a listing of unimplemented
+        symbolic system calls, use the ``SLinux.unimplemented_syscalls()``
+        method.
+
+        Available system calls can be found at ``linux_syscalls.py`` or you may
+        pass your own as either a set of system calls or as a mapping of system
+        call number to system call name.
+
+        Note that passed system calls should follow the naming convention
+        located in ``linux_syscalls.py``.
+        """
+        implemented_syscalls = set(cls.implemented_syscalls())
+        if isinstance(syscalls, set):
+            return syscalls.difference(implemented_syscalls)
+        else:
+            return set(syscalls.values()).difference(implemented_syscalls)
 
     @staticmethod
     def print_implemented_syscalls() -> None:

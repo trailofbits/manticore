@@ -6,7 +6,7 @@ import time
 import typing
 import random
 import weakref
-from typing import Callable
+from typing import Callable, List, Any, Optional
 
 from contextlib import contextmanager
 
@@ -14,7 +14,7 @@ import functools
 import shlex
 
 from ..core.plugin import Plugin, IntrospectionAPIPlugin, StateDescriptor
-from ..core.smtlib import Expression
+from ..core.smtlib import Expression, SOLVER_STATS
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..exceptions import ManticoreError
@@ -49,7 +49,11 @@ consts.add(
     default=False,
     description="If True enables to run workers over the network UNIMPLEMENTED",
 )
-consts.add("procs", default=10, description="Number of parallel processes to spawn")
+consts.add(
+    "procs",
+    default=12,
+    description="Number of parallel processes to spawn in order to run every task, including solvers",
+)
 
 proc_type = MProcessingType.threading
 if sys.platform != "linux":
@@ -380,8 +384,9 @@ class ManticoreBase(Eventful):
             raise TypeError(f"Invalid initial_state type: {type(initial_state).__name__}")
         self._put_state(initial_state)
 
+        nworkers = max(consts.procs // initial_state._solver.ncores, 1)
         # Workers will use manticore __dict__ So lets spawn them last
-        self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+        self._workers = [self._worker_type(id=i, manticore=self) for i in range(nworkers)]
 
         # Create log capture worker. We won't create the rest of the daemons until .run() is called
         self._daemon_threads: typing.Dict[int, DaemonThread] = {
@@ -429,7 +434,7 @@ class ManticoreBase(Eventful):
     @sync
     @only_from_main_script
     def clear_snapshot(self):
-        """ Remove any saved states """
+        """Remove any saved states"""
         if self._snapshot:
             for state_id in self._snapshot:
                 self._remove(state_id)
@@ -438,7 +443,7 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def clear_terminated_states(self):
-        """ Remove all states from the terminated list """
+        """Remove all states from the terminated list"""
         terminated_states_ids = tuple(self._terminated_states)
         for state_id in terminated_states_ids:
             self._terminated_states.remove(state_id)
@@ -448,7 +453,7 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def clear_ready_states(self):
-        """ Remove all states from the ready list """
+        """Remove all states from the ready list"""
         ready_states_ids = tuple(self._ready_states)
         for state_id in ready_states_ids:
             self._ready_states.remove(state_id)
@@ -475,7 +480,9 @@ class ManticoreBase(Eventful):
 
         return cls(deserialized, *args, **kwargs)
 
-    def _fork(self, state, expression, policy="ALL", setstate=None):
+    def _fork(
+        self, state, expression, policy="ALL", setstate=None, values: Optional[List[Any]] = None
+    ):
         """
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
@@ -505,7 +512,7 @@ class ManticoreBase(Eventful):
                 pass
 
         # Find a set of solutions for expression
-        solutions = state.concretize(expression, policy)
+        solutions = state.concretize(expression, policy, explicit_values=values)
 
         if not solutions:
             raise ManticoreError("Forking on unfeasible constraint set")
@@ -608,6 +615,7 @@ class ManticoreBase(Eventful):
                       +-------+
 
         """
+        state.manticore = self
         self._publish("will_enqueue_state", state, can_raise=False)
         state_id = self._save(state, state_id=state.id)
         with self._lock:
@@ -620,7 +628,7 @@ class ManticoreBase(Eventful):
         return state_id
 
     def _get_state(self, wait=False) -> typing.Optional[StateBase]:
-        """ Dequeue a state form the READY list and add it to the BUSY list """
+        """Dequeue a state form the READY list and add it to the BUSY list"""
         with self._lock:
             # If wait is true do the conditional wait for states
             if wait:
@@ -854,32 +862,32 @@ class ManticoreBase(Eventful):
 
     @sync
     def count_states(self):
-        """ Total states count """
+        """Total states count"""
         return len(self._all_states)
 
     @sync
     def count_all_states(self):
-        """ Total states count """
+        """Total states count"""
         return self.count_states()
 
     @sync
     def count_ready_states(self):
-        """ Ready states count """
+        """Ready states count"""
         return len(self._ready_states)
 
     @sync
     def count_busy_states(self):
-        """ Busy states count """
+        """Busy states count"""
         return len(self._busy_states)
 
     @sync
     def count_killed_states(self):
-        """ Cancelled states count """
+        """Cancelled states count"""
         return len(self._killed_states)
 
     @sync
     def count_terminated_states(self):
-        """ Terminated states count """
+        """Terminated states count"""
         return len(self._terminated_states)
 
     def generate_testcase(self, state, message: str = "test", name: str = "test") -> Testcase:
@@ -972,7 +980,7 @@ class ManticoreBase(Eventful):
         plugin_inst.manticore = None
 
     def subscribe(self, name, callback):
-        """ Register a callback to an event"""
+        """Register a callback to an event"""
         from types import MethodType
 
         if not isinstance(callback, MethodType):
@@ -1039,7 +1047,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def wait(self, condition):
-        """ Waits for the condition callable to return True """
+        """Waits for the condition callable to return True"""
         self._lock.wait_for(condition)
 
     @sync
@@ -1059,7 +1067,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def is_running(self):
-        """ True if workers are exploring BUSY states or waiting for READY states """
+        """True if workers are exploring BUSY states or waiting for READY states"""
         # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a stop is requested
@@ -1067,7 +1075,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def is_killed(self):
-        """ True if workers are killed. It is safe to join them """
+        """True if workers are killed. It is safe to join them"""
         # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a kill is requested
@@ -1106,6 +1114,10 @@ class ManticoreBase(Eventful):
         """
         Runs analysis.
         """
+        # Start measuring the execution time
+        with self.locked_context() as context:
+            context["time_started"] = time.time()
+
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a
         # different process modifies the state
@@ -1219,7 +1231,28 @@ class ManticoreBase(Eventful):
         with self._output.save_stream("manticore.yml") as f:
             config.save(f)
 
+        with self._output.save_stream("global.solver_stats") as f:
+            for s, n in sorted(SOLVER_STATS.items()):
+                f.write("%s: %d\n" % (s, n))
+
+        if SOLVER_STATS["timeout"] > 0 or SOLVER_STATS["unknown"] > 0:
+            logger.warning(
+                "The SMT solvers returned timeout or unknown for certain program paths. Results could not cover the entire set of possible paths"
+            )
+
         logger.info("Results in %s", self._output.store.uri)
+
+        time_ended = time.time()
+
+        with self.locked_context() as context:
+            if "time_started" in context:
+                time_elapsed = time_ended - context["time_started"]
+                logger.info("Total time: %s", time_elapsed)
+                context["time_ended"] = time_ended
+                context["time_elapsed"] = time_elapsed
+            else:
+                logger.warning("Manticore failed to run")
+
         self.wait_for_log_purge()
 
     def introspect(self) -> typing.Dict[int, StateDescriptor]:
@@ -1246,5 +1279,5 @@ class ManticoreBase(Eventful):
         self._daemon_callbacks.append(callback)
 
     def pretty_print_states(self, *_args):
-        """ Calls pretty_print_state_descriptors on the current set of state descriptors """
+        """Calls pretty_print_state_descriptors on the current set of state descriptors"""
         pretty_print_state_descriptors(self.introspect())
