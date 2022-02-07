@@ -764,11 +764,14 @@ class Armv7Cpu(Cpu):
     @staticmethod
     def canonicalize_instruction_name(instr):
         name = instr.insn_name().upper()
-        # FIXME: Workaround https://github.com/aquynh/capstone/issues/1630
-        if instr.mnemonic == "addw":
-            return "ADDW"
-        elif instr.mnemonic == "subw":
-            return "SUBW"
+        # XXX bypass a capstone bug that incorrectly labels some insns as mov
+        if name == "MOV":
+            if instr.mnemonic.startswith("lsr"):
+                return "LSR"
+            elif instr.mnemonic.startswith("lsl"):
+                return "LSL"
+            elif instr.mnemonic.startswith("asr"):
+                return "ASR"
         return OP_NAME_MAP.get(name, name)
 
     def _wrap_operands(self, operands):

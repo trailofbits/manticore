@@ -1,9 +1,10 @@
-import collections
-import re
-import struct
+import warnings
 from copy import copy
 
 import capstone as cs
+import collections
+import re
+import struct
 
 from .abstractcpu import (
     Cpu,
@@ -16,6 +17,7 @@ from .abstractcpu import (
     Operand,
     instruction,
 )
+from .arm import HighBit, Armv7Operand
 from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR, Mask, GetNBits
 from .register import Register
 from ...core.smtlib import Operators
@@ -304,7 +306,45 @@ class Aarch64Cpu(Cpu):
         # work for B.cond.  Instead of being set to something like 'b.eq',
         # it just returns 'b'.
         name = insn.mnemonic.upper()
-        return OP_NAME_MAP.get(name, name)
+        name = OP_NAME_MAP.get(name, name)
+        ops = insn.operands
+        name_list = name.split(".")
+
+        # Make sure MOV (bitmask immediate) and MOV (register) go through 'MOV'.
+        if (
+            name == "ORR"
+            and len(ops) == 3
+            and ops[1].type == cs.arm64.ARM64_OP_REG
+            and ops[1].reg in ["WZR", "XZR"]
+            and not ops[2].is_shifted()
+        ):
+            name = "MOV"
+            insn._raw.mnemonic = name.lower().encode("ascii")
+            del ops[1]
+
+        # Map all B.cond variants to a single implementation.
+        elif len(name_list) == 2 and name_list[0] == "B" and insn.cc != cs.arm64.ARM64_CC_INVALID:
+            name = "B_cond"
+
+        # XXX: BFI is only valid when Rn != 11111:
+        # https://github.com/aquynh/capstone/issues/1441
+        elif (
+            name == "BFI"
+            and len(ops) == 4
+            and ops[1].type == cs.arm64.ARM64_OP_REG
+            and ops[1].reg in ["WZR", "XZR"]
+        ):
+            name = "BFC"
+            insn._raw.mnemonic = name.lower().encode("ascii")
+            del ops[1]
+
+        # XXX: CMEQ incorrectly sets the type to 'ARM64_OP_FP' for
+        # 'cmeq v0.16b, v1.16b, #0':
+        # https://github.com/aquynh/capstone/issues/1443
+        elif name == "CMEQ" and len(ops) == 3 and ops[2].type == cs.arm64.ARM64_OP_FP:
+            ops[2]._type = cs.arm64.ARM64_OP_IMM
+
+        return name
 
     @property
     def insn_bit_str(self):
@@ -2333,15 +2373,13 @@ class Aarch64Cpu(Cpu):
         cpu._cmeq(res_op, reg_op, imm_op, register=False)
 
     @instruction
-    def CMEQ(cpu, res_op, reg_op, reg_imm_op, _bug=0):
+    def CMEQ(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines CMEQ (register) and CMEQ (zero).
 
         :param res_op: destination register.
         :param reg_op: source register.
         :param reg_imm_op: source register or immediate (zero).
-
-        :param bug: Buggy extra operand https://github.com/aquynh/capstone/issues/1629
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
@@ -3617,6 +3655,17 @@ class Aarch64Cpu(Cpu):
 
         # XXX: Check if trapped.
 
+        # XXX: Capstone doesn't set 'vess' for this alias:
+        # https://github.com/aquynh/capstone/issues/1452
+        if res_op.size == 32:
+            reg_op.op.vess = cs.arm64.ARM64_VESS_S
+
+        elif res_op.size == 64:
+            reg_op.op.vess = cs.arm64.ARM64_VESS_D
+
+        else:
+            raise Aarch64InvalidInstruction
+
         # The 'instruction' decorator advances PC, so call the original
         # method.
         cpu.UMOV.__wrapped__(cpu, res_op, reg_op)
@@ -3809,7 +3858,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source system register.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert reg_op.type is cs.arm64.ARM64_OP_SYS
+        assert reg_op.type is cs.arm64.ARM64_OP_REG_MRS
 
         insn_rx = "1101010100"
         insn_rx += "1"  # L
@@ -3835,7 +3884,7 @@ class Aarch64Cpu(Cpu):
         :param res_op: destination system register.
         :param reg_op: source register.
         """
-        assert res_op.type is cs.arm64.ARM64_OP_SYS
+        assert res_op.type is cs.arm64.ARM64_OP_REG_MSR
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
         insn_rx = "1101010100"
@@ -5126,18 +5175,18 @@ class Aarch64Cpu(Cpu):
 
         reg = reg_op.read()
         index = reg_op.op.vector_index
-        vas = reg_op.op.vas
+        vess = reg_op.op.vess
 
-        if vas == cs.arm64.ARM64_VAS_1B:
+        if vess == cs.arm64.ARM64_VESS_B:
             elem_size = 8
 
-        elif vas == cs.arm64.ARM64_VAS_1H:
+        elif vess == cs.arm64.ARM64_VESS_H:
             elem_size = 16
 
-        elif vas == cs.arm64.ARM64_VAS_1S:
+        elif vess == cs.arm64.ARM64_VESS_S:
             elem_size = 32
 
-        elif vas == cs.arm64.ARM64_VAS_1D:
+        elif vess == cs.arm64.ARM64_VESS_D:
             elem_size = 64
 
         else:
@@ -5303,7 +5352,6 @@ class Aarch64Operand(Operand):
             cs.arm64.ARM64_OP_MEM,
             cs.arm64.ARM64_OP_IMM,
             cs.arm64.ARM64_OP_FP,
-            cs.arm64.ARM64_OP_SYS,
             cs.arm64.ARM64_OP_BARRIER,
         ):
             raise NotImplementedError(f"Unsupported operand type: '{self.op.type}'")
@@ -5351,7 +5399,7 @@ class Aarch64Operand(Operand):
     def read(self):
         if self.type == cs.arm64.ARM64_OP_REG:
             return self.cpu.regfile.read(self.reg)
-        elif self.type == cs.arm64.ARM64_OP_REG_MRS or self.type == cs.arm64.ARM64_OP_SYS:
+        elif self.type == cs.arm64.ARM64_OP_REG_MRS:
             name = SYS_REG_MAP.get(self.op.sys)
             if not name:
                 raise NotImplementedError(f"Unsupported system register: '0x{self.op.sys:x}'")
@@ -5364,7 +5412,7 @@ class Aarch64Operand(Operand):
     def write(self, value):
         if self.type == cs.arm64.ARM64_OP_REG:
             self.cpu.regfile.write(self.reg, value)
-        elif self.type == cs.arm64.ARM64_OP_REG_MSR or cs.arm64.ARM64_OP_SYS:
+        elif self.type == cs.arm64.ARM64_OP_REG_MSR:
             name = SYS_REG_MAP.get(self.op.sys)
             if not name:
                 raise NotImplementedError(f"Unsupported system register: '0x{self.op.sys:x}'")
