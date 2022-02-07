@@ -303,9 +303,11 @@ class ManticoreEVM(ManticoreBase):
                 abi = compilation_unit.abi(name)
 
                 filename = None
-                for filename, contracts in compilation_unit.filename_to_contracts.items():
+                for _fname, contracts in compilation_unit.filename_to_contracts.items():
                     if name in contracts:
-                        filename = filename.absolute
+                        filename = _fname.absolute
+                        break
+
                 if filename is None:
                     raise EthereumError(
                         f"Could not find a contract named {name}. Contracts found: {', '.join(compilation_unit.contracts_names)}"
