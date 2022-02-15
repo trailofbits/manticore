@@ -5494,6 +5494,21 @@ class X86Cpu(Cpu):
         pass
 
     @instruction
+    def ENDBR32(cpu):
+        """
+        The ENDBRANCH is a new instruction that is used to mark valid jump target
+        addresses of indirect calls and jumps in the program. This instruction
+        opcode is selected to be one that is a NOP on legacy machines such that
+        programs compiled with ENDBRANCH new instruction continue to function on
+        old machines without the CET enforcement. On processors that support CET
+        the ENDBRANCH is still a NOP and is primarily used as a marker instruction
+        by the processor pipeline to detect control flow violations.
+        This is the 32-bit variant.
+        :param cpu: current CPU.
+        """
+        pass
+
+    @instruction
     def ENDBR64(cpu):
         """
         The ENDBRANCH is a new instruction that is used to mark valid jump target
