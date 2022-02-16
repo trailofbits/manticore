@@ -27,7 +27,7 @@ class TestFork(unittest.TestCase):
         m.finalize()
 
         # Check that no additional state was created when forking
-        states = f"{str(m.workspace)}/state_*.pkl"
+        states = f"{str(m.workspace)}/test_*.pkl"
         self.assertEqual(len(glob(states)), 1)
 
 
