@@ -83,7 +83,7 @@ def write_findings(method, lead_space, address, pc, at_init=""):
 
 
 def calculate_coverage(runtime_bytecode, seen):
-    """ Calculates what percentage of runtime_bytecode has been seen """
+    """Calculates what percentage of runtime_bytecode has been seen"""
     count, total = 0, 0
     bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
     for i in EVMAsm.disassemble_all(bytecode):
@@ -302,7 +302,17 @@ class ManticoreEVM(ManticoreBase):
                 hashes = compilation_unit.hashes(name)
                 abi = compilation_unit.abi(name)
 
-                filename = compilation_unit.filename_of_contract(name).absolute
+                filename = None
+                for _fname, contracts in compilation_unit.filename_to_contracts.items():
+                    if name in contracts:
+                        filename = _fname.absolute
+                        break
+
+                if filename is None:
+                    raise EthereumError(
+                        f"Could not find a contract named {name}. Contracts found: {', '.join(compilation_unit.contracts_names)}"
+                    )
+
                 with open(filename) as f:
                     source_code = f.read()
 
@@ -425,7 +435,7 @@ class ManticoreEVM(ManticoreBase):
 
     @property
     def world(self):
-        """ The world instance or None if there is more than one state """
+        """The world instance or None if there is more than one state"""
         return self.get_world()
 
     # deprecate this 5 in favor of for state in m.all_states: do stuff?
@@ -437,7 +447,7 @@ class ManticoreEVM(ManticoreBase):
 
     @deprecated("You should use the `platform` member of a `state` instance instead.")
     def get_world(self, state_id=None):
-        """ Returns the evm world of `state_id` state. """
+        """Returns the evm world of `state_id` state."""
         if state_id is None:
             state_id = self._ready_states[0]
 
@@ -449,40 +459,40 @@ class ManticoreEVM(ManticoreBase):
 
     @deprecated("Instead, call `get_balance` on a state instance")
     def get_balance(self, address, state_id=None):
-        """ Balance for account `address` on state `state_id` """
+        """Balance for account `address` on state `state_id`"""
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_balance(address)
 
     @deprecated("Instead, call `get_storage_data` on a state instance")
     def get_storage_data(self, address, offset, state_id=None):
-        """ Storage data for `offset` on account `address` on state `state_id` """
+        """Storage data for `offset` on account `address` on state `state_id`"""
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_storage_data(address, offset)
 
     @deprecated("Instead, call `get_code` on a state instance")
     def get_code(self, address, state_id=None):
-        """ Storage data for `offset` on account `address` on state `state_id` """
+        """Storage data for `offset` on account `address` on state `state_id`"""
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_code(address)
 
     @deprecated("Instead, use `state.last_transaction.return_data` on a state instance")
     def last_return(self, state_id=None):
-        """ Last returned buffer for state `state_id` """
+        """Last returned buffer for state `state_id`"""
         state = self.load(state_id)
         return state.platform.last_transaction.return_data
 
     @deprecated("Instead, use `state.transactions` on a state instance")
     def transactions(self, state_id=None):
-        """ Transactions list for state `state_id` """
+        """Transactions list for state `state_id`"""
         state = self._load(state_id)
         return state.platform.transactions
 
     @deprecated("Instead, use `state.transactions` on a state instance")
     def human_transactions(self, state_id=None):
-        """ Transactions list for state `state_id` """
+        """Transactions list for state `state_id`"""
         state = self.load(state_id)
         return state.platform.human_transactions
 
@@ -495,7 +505,7 @@ class ManticoreEVM(ManticoreBase):
         return self._make_symbolic_arguments(abitypes.parse(types))
 
     def _make_symbolic_arguments(self, ty):
-        """ This makes a tuple of symbols to be used as arguments of type ty"""
+        """This makes a tuple of symbols to be used as arguments of type ty"""
 
         # If the types describe an string or an array this will produce strings
         # or arrays of a default size.
@@ -739,14 +749,14 @@ class ManticoreEVM(ManticoreBase):
         return name
 
     def _all_addresses(self):
-        """ Returns all addresses in all running states """
+        """Returns all addresses in all running states"""
         ret = set()
         for state in self.ready_states:
             ret |= set(state.platform.accounts)
         return ret
 
     def new_address(self):
-        """ Create a fresh 160bit address """
+        """Create a fresh 160bit address"""
         all_addresses = self._all_addresses()
         while True:
             new_address = random.randint(100, pow(2, 160))
@@ -1484,7 +1494,7 @@ class ManticoreEVM(ManticoreBase):
 
     # Callbacks
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-        """ INTERNAL USE """
+        """INTERNAL USE"""
         # logger.debug("%s", state.platform.current_vm)
         # TODO move to a plugin
         at_init = state.platform.current_transaction.sort == "CREATE"
