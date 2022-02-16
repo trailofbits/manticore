@@ -28,7 +28,7 @@ class TestFork(unittest.TestCase):
 
         # Check that no additional state was created when forking
         states = f"{str(m.workspace)}/state_*.pkl"
-        self.assertEqual(len(glob(outputs)), 1)
+        self.assertEqual(len(glob(states)), 1)
 
 
 if __name__ == "__main__":
