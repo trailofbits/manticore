@@ -3,6 +3,7 @@ import ctypes
 import errno
 import fcntl
 import logging
+import select
 import socket
 import struct
 import time
@@ -45,7 +46,20 @@ from ..native.memory import (
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import cast, Any, Deque, Dict, IO, Iterable, List, Optional, Set, Tuple, Union, Callable
+from typing import (
+    cast,
+    Any,
+    Deque,
+    Dict,
+    IO,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    Callable,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +211,15 @@ class FdLike(ABC):
     def stat(self) -> StatResult:
         ...
 
+    @abstractmethod
+    def poll(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def closed(self) -> bool:
+        ...
+
 
 @dataclass
 class FdTableEntry:
@@ -284,6 +307,59 @@ class FdTable:
         return self._lookup(fd).twaiters
 
 
+@dataclass
+class EPollEvent:
+    events: int  # Part of epoll_event
+    data: int  # Part of epoll_event
+
+
+@concreteclass
+class EventPoll(FdLike):
+    """
+    An EventPoll class for epoll support. Internal kernel object referenced by
+    a file descriptor
+    """
+
+    def __init__(self):
+        # List of file descriptor entries that are registered with this object
+        self.interest_list: Dict[FdLike, EPollEvent] = {}
+
+    def read(self, size: int):
+        raise NotImplemented
+
+    def write(self, buf) -> int:
+        raise NotImplemented
+
+    def sync(self) -> None:
+        raise NotImplemented
+
+    def close(self) -> None:
+        # Nothing really to do
+        pass
+
+    def seek(self, offset: int, whence: int) -> int:
+        raise NotImplemented
+
+    def is_full(self) -> bool:
+        raise NotImplemented
+
+    def ioctl(self, request, argp) -> int:
+        raise NotImplemented
+
+    def tell(self) -> int:
+        raise NotImplemented
+
+    def stat(self) -> StatResult:
+        raise NotImplemented
+
+    def poll(self) -> int:
+        # TODO(ekilmer): Look into how we could implement this
+        return select.POLLERR
+
+    def closed(self) -> bool:
+        return False
+
+
 @concreteclass
 class File(FdLike):
     def __init__(self, path: str, flags: int):
@@ -349,6 +425,9 @@ class File(FdLike):
     def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         return self.file.seek(offset, whence)
 
+    def pread(self, count, offset):
+        return os.pread(self.fileno(), count, offset)
+
     def write(self, buf):
         return self.file.write(buf)
 
@@ -366,6 +445,17 @@ class File(FdLike):
 
     def sync(self) -> None:
         pass
+
+    def poll(self) -> int:
+        """Return EPOLLIN or EPOLLOUT"""
+        # If opened with read, then should watch for reads
+        if "r" in self.mode:
+            # TODO
+            return select.POLLIN
+        elif "w" in self.mode:
+            return select.POLLOUT
+        else:
+            return select.POLLERR
 
 
 # TODO - we should consider refactoring File so that we don't have to mute these errors
@@ -412,6 +502,10 @@ class Directory(FdLike):
     def mode(self) -> str:
         return mode_from_flags(self.flags)
 
+    @property
+    def closed(self) -> bool:
+        return False
+
     def tell(self) -> int:
         return 0
 
@@ -447,6 +541,10 @@ class Directory(FdLike):
 
     def ioctl(self, request, argp):
         raise FdError("Invalid ioctl() operation on Directory", errno.ENOTTY)
+
+    def poll(self) -> int:
+        # TODO(ekilmer): Look into how we could implement this
+        return select.POLLERR
 
 
 @concreteclass
@@ -615,6 +713,15 @@ class SocketDesc(FdLike):
             8592, 11, 9, 1, 1000, 5, 0, 1378673920, 1378673920, 1378653796, 0x400, 0x8808, 0
         )
 
+    @property
+    def closed(self) -> bool:
+        return False
+
+    def poll(self) -> int:
+        # TODO(ekilmer): Look into how we could implement this
+        # POLLERR is same as EPOLLERR but mypy complains on Macs
+        return select.POLLERR
+
 
 @concreteclass
 class Socket(FdLike):
@@ -712,8 +819,17 @@ class Socket(FdLike):
         """
         pass
 
+    @property
+    def closed(self) -> bool:
+        return False
+
     def ioctl(self, request, argp):
         raise FdError("Invalid ioctl() operation on Socket", errno.ENOTTY)
+
+    def poll(self) -> int:
+        if self.is_empty():
+            return select.POLLOUT
+        return select.POLLIN
 
 
 @concreteclass
@@ -1780,6 +1896,33 @@ class Linux(Platform):
 
         return len(data)
 
+    def sys_pread64(self, fd: int, buf: int, count: int, offset: int) -> int:
+        """
+        read from a file descriptor at a given offset
+        """
+        data: bytes = bytes()
+        if count != 0:
+            if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
+                logger.info("sys_pread: buf points to invalid address. Returning -errno.EFAULT")
+                return -errno.EFAULT
+
+            try:
+                # Read the data and put it in memory
+                target_file = self._get_fdlike(fd)
+                if isinstance(target_file, File):
+                    data = target_file.pread(count, offset)
+                else:
+                    logger.error(f"Unsupported pread on {type(target_file)} at fd {fd}")
+            except FdError as e:
+                logger.info(
+                    f"sys_pread: Not valid file descriptor ({fd}). Returning -{errorcode(e.err)}"
+                )
+                return -e.err
+            self.syscall_trace.append(("_pread", fd, data))
+            self.current.write_bytes(buf, data)
+
+        return len(data)
+
     def sys_write(self, fd: int, buf, count) -> int:
         """write - send bytes through a file descriptor
         The write system call writes up to count bytes from the buffer pointed
@@ -1833,6 +1976,172 @@ class Linux(Platform):
         We don't support forking, but do return a valid error code to client binary.
         """
         return -errno.ENOSYS
+
+    # Epoll event masks
+    EPOLLIN = 0x00000001
+    EPOLLPRI = 0x00000002
+    EPOLLOUT = 0x00000004
+    EPOLLERR = 0x00000008
+    EPOLLHUP = 0x00000010
+    EPOLLNVAL = 0x00000020
+    EPOLLRDNORM = 0x00000040
+    EPOLLRDBAND = 0x00000080
+    EPOLLWRNORM = 0x00000100
+    EPOLLWRBAND = 0x00000200
+    EPOLLMSG = 0x00000400
+    EPOLLRDHUP = 0x00002000
+
+    def _do_epoll_create(self, flags: int):
+        # kernel - fs/eventpoll.c
+        EPOLL_CLOEXEC = os.O_CLOEXEC
+
+        if flags & ~EPOLL_CLOEXEC:
+            return -errno.EINVAL
+
+        # Create a minimal eventpoll file
+        return self.fd_table.add_entry(EventPoll())
+
+    def sys_epoll_create(self, size: int) -> int:
+        if size <= 0:
+            return -errno.EINVAL
+        return self._do_epoll_create(0)
+
+    def sys_epoll_create1(self, flags: int) -> int:
+        return self._do_epoll_create(flags)
+
+    def sys_epoll_ctl(self, epfd: int, op: int, fd: int, epds) -> int:
+        """Best effort implementation of what's found in fs/eventpoll.c"""
+        try:
+            epoll_file = self.fd_table.get_fdlike(epfd)
+        except FdError:
+            return -errno.EBADF
+        try:
+            target_file = self.fd_table.get_fdlike(fd)
+        except FdError:
+            return -errno.EBADF
+
+        # epoll_file must support poll functionality
+        pass  # TODO
+
+        if not isinstance(epoll_file, EventPoll) or epoll_file == target_file:
+            return -errno.EINVAL
+
+        # Valid opcodes to issue to sys_epoll_ctl()
+        EPOLL_CTL_ADD = 1
+        EPOLL_CTL_DEL = 2
+        EPOLL_CTL_MOD = 3
+
+        # 32 bit read of the events associated with this target
+        events = self.current.read_int(epds, size=32)
+        data = self.current.read_int(epds + 4, size=64)
+        if op == EPOLL_CTL_ADD:
+            if target_file in epoll_file.interest_list:
+                return -errno.EEXIST
+            # This skips a _lot_ of stuff in ep_insert dealing with other
+            # polling actions
+            epoll_file.interest_list[target_file] = EPollEvent(events=events, data=data)
+        elif op == EPOLL_CTL_DEL:
+            if target_file not in epoll_file.interest_list:
+                return -errno.ENOENT
+            del epoll_file.interest_list[target_file]
+        elif op == EPOLL_CTL_MOD:
+            if target_file not in epoll_file.interest_list:
+                return -errno.ENOENT
+            epoll_file.interest_list[target_file] = EPollEvent(events=events, data=data)
+
+        else:
+            return -errno.EINVAL
+
+        return 0
+
+    def _ep_poll(self, ep: EventPoll, events, maxevents: int, timeout) -> int:
+        """
+        Docs from fs/eventpoll.c@ep_poll
+
+        Retrieves ready events, and delivers them to the caller supplied
+        event buffer
+
+        @ep: eventpoll context.
+        @events: Pointer to the userspace buffer where the ready events should be
+                 stored.
+        @maxevents: Size (in terms of number of events) of the caller event buffer.
+        @timeout: Maximum timeout for the ready events fetch operation, in
+                  timespec. If the timeout is zero, the function will not block,
+                  while if the @timeout ptr is NULL, the function will block
+                  until at least one event has been retrieved (or an error
+                  occurred).
+
+        Returns: Returns the number of ready events which have been fetched, or an
+                  error code, in case of error.
+        """
+        # NOTE: There could be many forks in this syscall:
+        #  * Number of events returned
+        #  * Whether timeout is hit
+        res: int = 0
+        item: FdLike
+        einfo: EPollEvent
+        # Remove any files that have been closed
+        removal: Set[FdLike] = set()
+        # Get time in seconds before loop (this isn't a real poll)
+        start = time.monotonic()
+        # ep_send_events
+        while res == 0:
+            for item, einfo in ep.interest_list.items():
+                if item.closed:
+                    removal.add(item)
+                    continue
+
+                if res >= maxevents:
+                    break
+
+                # ep_item_poll in fs/eventpoll.c
+                # If the event mask intersect the caller - requested one, deliver
+                # the event to userspace.
+                revents: int = einfo.events & item.poll()
+                if not bool(revents):
+                    continue
+                # Write to userspace the kernel epoll_event struct
+                self.current.write_bytes(events, struct.pack("<LQ", revents, einfo.data))
+                res += 1
+                # 12 is sizeof epoll_event
+                events += res * 12
+
+            # timeout is milliseconds
+            if time.monotonic() - start > (timeout / 1000):
+                break
+
+        for remove in removal:
+            del ep.interest_list[remove]
+
+        return res
+
+    def _do_epoll_wait(self, epfd, events, maxevents, to) -> int:
+        # EP_MAX_EVENTS = (INT_MAX / sizeof(struct epoll_event))
+        sizeof_epoll_event = 12
+        EP_MAX_EVENTS = (2 ** 32 - 1) // sizeof_epoll_event
+        if maxevents <= 0 or maxevents > EP_MAX_EVENTS:
+            return -errno.EINVAL
+
+        if not self.current.memory.access_ok(slice(events, events + sizeof_epoll_event), "w"):
+            return -errno.EFAULT
+
+        try:
+            epoll_file = self.fd_table.get_fdlike(epfd)
+        except FdError:
+            return -errno.EBADF
+
+        if not isinstance(epoll_file, EventPoll):
+            return -errno.EINVAL
+
+        # Do the events
+        return self._ep_poll(epoll_file, events, maxevents, to)
+
+    def sys_epoll_pwait(self, epfd, events, maxevents, timeout, _sigmask, _sigsetsize) -> int:
+        # Ignore the signal mask stuff
+        return self._do_epoll_wait(epfd, events, maxevents, timeout)
+
+    def sys_epoll_wait(self, epfd, events, maxevents, timeout) -> int:
+        return self._do_epoll_wait(epfd, events, maxevents, timeout)
 
     def sys_access(self, buf: int, mode: int) -> int:
         """
@@ -3359,6 +3668,11 @@ class Linux(Platform):
             return syscalls.difference(implemented_syscalls)
         else:
             return set(syscalls.values()).difference(implemented_syscalls)
+
+    @staticmethod
+    def print_implemented_syscalls() -> None:
+        for syscall in Linux.implemented_syscalls():
+            print(syscall)
 
 
 ############################################################################

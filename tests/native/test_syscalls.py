@@ -9,11 +9,13 @@ import os
 import errno
 import re
 from glob import glob
+from pathlib import Path
 
 from manticore.core.smtlib import Solver
 from manticore.core.state import Concretize
 from manticore.native import Manticore
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.plugins import SyscallCounter
 
 from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.linux import SymbolicSocket, logger as linux_logger
@@ -617,6 +619,27 @@ class LinuxTest(unittest.TestCase):
         resultp = 0x1900
         res = self.linux.sys_llseek(fd, 0, -2 * len(buf), resultp, os.SEEK_END)
         self.assertTrue(res < 0)
+
+    class test_epoll(unittest.TestCase):
+        def test_fork_unique_solution(self):
+            binary = str(
+                Path(__file__).parent.parent.parent.joinpath("tests", "native", "binaries", "epoll")
+            )
+            tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_epoll")
+            m = Manticore(
+                binary, stdin_size=5, workspace_url=str(tmp_dir.name), concrete_start="stop\n"
+            )
+
+            counter = SyscallCounter()
+            m.register_plugin(counter)
+
+            m.run()
+            m.finalize()
+
+            syscall_counts = counter.get_counts()
+            self.assertEqual(syscall_counts["sys_epoll_create1"], 1)
+            self.assertEqual(syscall_counts["sys_epoll_ctl"], 1)
+            self.assertEqual(syscall_counts["sys_epoll_wait"], 1)
 
     def test_unimplemented_symbolic_syscall(self) -> None:
         # Load a symbolic argument (address)
