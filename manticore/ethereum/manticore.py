@@ -615,7 +615,7 @@ class ManticoreEVM(ManticoreBase):
                     )
                     if not must_have_balance:
                         # balance always != 0
-                        if not md.constructor_abi["payable"]:
+                        if "payable" not in md.constructor_abi:
                             raise EthereumError(
                                 f"Can't create solidity contract with balance ({balance}) "
                                 f"different than 0 because the contract's constructor is not payable."
