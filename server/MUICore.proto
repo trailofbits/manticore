@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package muicore;
+
+service ManticoreUI {
+    rpc Terminate(ManticoreInstance) returns (TerminateResponse) {}
+    rpc Start(CLIArguments) returns (ManticoreInstance) {}
+    rpc TargetAddress(AddressRequest) returns (TargetResponse) {}
+    rpc GetStateList(ManticoreInstance) returns (MUIStateList) {}
+    rpc GetMessageList(ManticoreInstance) returns (MUIMessageList) {}
+    rpc CheckManticoreRunning(ManticoreInstance) returns (ManticoreRunningStatus) {}
+}
+
+// LogMessage and StateList message types have "MUI" in their names to distinguish them from those in mserialize
+
+message MUILogMessage{ 
+	string content = 1;
+}
+
+message MUIMessageList{
+    repeated MUILogMessage messages = 2; 
+}
+
+message MUIState {
+	int32 state_id = 3;
+}
+
+message MUIStateList{
+
+	// state categories in MUI - based on manticore enums StateStatus and StateList
+	repeated MUIState active_states = 4;
+	repeated MUIState waiting_states = 5;
+	repeated MUIState forked_states = 6;
+	repeated MUIState errored_states = 7;
+	repeated MUIState complete_states = 8;
+}
+
+message ManticoreInstance {
+    string uuid = 9;
+}
+
+message TerminateResponse {
+    bool success = 10;
+}
+
+message CLIArguments {
+    string program_path = 11;
+    repeated string binary_args = 16;	
+    repeated string envp = 17;
+    repeated string symbolic_files = 18;
+    string concrete_start = 19;
+    string stdin_size = 20;
+    string additional_mcore_args = 21;
+}
+
+message AddressRequest {
+
+    enum TargetType {
+        FIND = 0;
+        AVOID = 1;
+        CLEAR = 2;
+    }
+
+    uint64 address = 12;
+    TargetType type = 13;
+}
+
+message TargetResponse {
+    bool success = 14;
+}
+
+message ManticoreRunningStatus {
+	bool is_running = 15;
+}
