@@ -18,7 +18,7 @@ def rtd_dependent_deps():
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = ["capstone==4.0.2", "pyelftools", "unicorn==1.0.2"]
 
-lint_deps = ["black==20.8b1", "mypy==0.790"]
+lint_deps = ["black~=22.0", "mypy==0.790"]
 
 auto_test_deps = ["py-evm"]
 
