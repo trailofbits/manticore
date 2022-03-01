@@ -155,7 +155,7 @@ def constraints_to_constraintset(constupl):
 
 
 def input_from_cons(constupl, datas):
-    " solve bytes in |datas| based on "
+    "solve bytes in |datas| based on"
 
     def make_chr(c):
         try:

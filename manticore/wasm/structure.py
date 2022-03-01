@@ -79,7 +79,7 @@ consts.add(
 )
 
 #: Size of a standard WASM memory page
-PAGESIZE = 2 ** 16
+PAGESIZE = 2**16
 
 
 # Wrappers around integers that we use for indexing the store.

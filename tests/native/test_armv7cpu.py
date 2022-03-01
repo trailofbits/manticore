@@ -557,7 +557,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("mov r0, r1")
     def test_mov_immreg1(self):
-        self.rf.write("R1", 2 ** 32)
+        self.rf.write("R1", 2**32)
         self.cpu.execute()
         self.assertEqual(self.rf.read("R0"), 0)
 
@@ -634,7 +634,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("movs r0, r1")
     def test_movs_reg1(self):
-        self.rf.write("R1", 2 ** 32)
+        self.rf.write("R1", 2**32)
         pre_c = self.rf.read("APSR_C")
         pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
@@ -643,11 +643,11 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("movs r0, r1")
     def test_movs_reg2(self):
-        self.rf.write("R1", 2 ** 32 - 1)
+        self.rf.write("R1", 2**32 - 1)
         pre_c = self.rf.read("APSR_C")
         pre_v = self.rf.read("APSR_V")
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R0"), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R0"), 2**32 - 1)
         self._checkFlagsNZCV(1, 0, pre_c, pre_v)
 
     @itest_custom("movs r0, r1")
@@ -699,7 +699,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("add r3, r1, 0x1")
     def test_add_imm_overflow(self):
-        self.rf.write("R1", (2 ** 31 - 1))
+        self.rf.write("R1", (2**31 - 1))
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 0x80000000)
 
@@ -733,7 +733,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("add r3, r1, r2")
     def test_add_reg_overflow(self):
-        self.rf.write("R1", (2 ** 31 - 1))
+        self.rf.write("R1", (2**31 - 1))
         self.rf.write("R2", 1)
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), (1 << 31))
@@ -820,17 +820,17 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_add_reg_sft_rrx(self):
         self.rf.write("APSR_C", 0x0)
         self.rf.write("R1", 0x0)
-        self.rf.write("R2", 2 ** 32 - 1)
+        self.rf.write("R2", 2**32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 2 ** 31 - 1)
+        self.assertEqual(self.rf.read("R3"), 2**31 - 1)
 
     @itest_custom("add r3, r1, r2, rrx")
     def test_add_reg_sft_rrx2(self):
         self.rf.write("APSR_C", 0x1)
         self.rf.write("R1", 0x0)
-        self.rf.write("R2", 2 ** 32 - 1)
+        self.rf.write("R2", 2**32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R3"), 2**32 - 1)
 
     @itest_custom("add r3, r1, r2, lsl r4")
     def test_add_reg_sft_lsl_reg(self):
@@ -884,17 +884,17 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_add_reg_sft_rrx_reg(self):
         self.rf.write("R1", 0x0)
         self.rf.write("APSR_C", 0x0)
-        self.rf.write("R2", 2 ** 32 - 1)
+        self.rf.write("R2", 2**32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 2 ** 31 - 1)
+        self.assertEqual(self.rf.read("R3"), 2**31 - 1)
 
     @itest_custom("add r3, r1, r2, rrx")
     def test_add_reg_sft_rrx2_reg(self):
         self.rf.write("R1", 0x0)
         self.rf.write("APSR_C", 0x1)
-        self.rf.write("R2", 2 ** 32 - 1)
+        self.rf.write("R2", 2**32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R3"), 2**32 - 1)
 
     # ADDS
 
@@ -935,7 +935,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("adds r3, r1, 0x1")
     def test_adds_imm_overflow(self):
-        self.rf.write("R1", (2 ** 31 - 1))
+        self.rf.write("R1", (2**31 - 1))
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), 0x80000000)
         self._checkFlagsNZCV(1, 0, 0, 1)
@@ -981,7 +981,7 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("adds r3, r1, r2")
     def test_adds_reg_overflow(self):
-        self.rf.write("R1", (2 ** 31 - 1))
+        self.rf.write("R1", (2**31 - 1))
         self.rf.write("R2", 1)
         self.cpu.execute()
         self.assertEqual(self.rf.read("R3"), (1 << 31))
@@ -1023,18 +1023,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_adds_reg_sft_rrx(self):
         self.rf.write("APSR_C", 0x0)
         self.rf.write("R1", 0x0)
-        self.rf.write("R2", 2 ** 32 - 1)
+        self.rf.write("R2", 2**32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 2 ** 31 - 1)
+        self.assertEqual(self.rf.read("R3"), 2**31 - 1)
         self._checkFlagsNZCV(0, 0, 0, 0)
 
     @itest_custom("adds r3, r1, r2, rrx")
     def test_adds_reg_sft_rrx2(self):
         self.rf.write("APSR_C", 0x1)
         self.rf.write("R1", 0x0)
-        self.rf.write("R2", 2 ** 32 - 1)
+        self.rf.write("R2", 2**32 - 1)
         self.cpu.execute()
-        self.assertEqual(self.rf.read("R3"), 2 ** 32 - 1)
+        self.assertEqual(self.rf.read("R3"), 2**32 - 1)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
     @itest_setregs("R0=0")
@@ -2240,7 +2240,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         // ovf should still be 1
         """
 
-        self.rf.write("R1", (2 ** 31 - 1))
+        self.rf.write("R1", (2**31 - 1))
         self._setupCpu("adds r2, r1, #0x1")
         self.cpu.execute()
         self.rf.write("R1", 1)
@@ -2321,7 +2321,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R1=0xfffffffe", "R2=0xfffffffe")
     @itest("UMULLS R1, R2, R1, R2")
     def test_umull_max(self):
-        mul = 0xFFFFFFFE ** 2
+        mul = 0xFFFFFFFE**2
         pre_c = self.rf.read("APSR_C")
         pre_v = self.rf.read("APSR_V")
         self.assertEqual(self.rf.read("R1"), mul & Mask(32))
