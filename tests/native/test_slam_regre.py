@@ -12,7 +12,7 @@ class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     class ROOperand:
-        """ Mocking class for operand ronly """
+        """Mocking class for operand ronly"""
 
         def __init__(self, size, value):
             self.size = size
@@ -22,7 +22,7 @@ class CPUTest(unittest.TestCase):
             return self.value & ((1 << self.size) - 1)
 
     class RWOperand(ROOperand):
-        """ Mocking class for operand rw """
+        """Mocking class for operand rw"""
 
         def write(self, value):
             self.value = value & ((1 << self.size) - 1)

@@ -21,7 +21,7 @@ config.get_group("core").mprocessing = "single"
 
 
 class EthBenchmark(unittest.TestCase):
-    """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
+    """https://consensys.net/diligence/evm-analyzer-benchmark-suite/"""
 
     def setUp(self):
         self.mevm = ManticoreEVM()

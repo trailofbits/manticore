@@ -2118,7 +2118,7 @@ class Linux(Platform):
     def _do_epoll_wait(self, epfd, events, maxevents, to) -> int:
         # EP_MAX_EVENTS = (INT_MAX / sizeof(struct epoll_event))
         sizeof_epoll_event = 12
-        EP_MAX_EVENTS = (2 ** 32 - 1) // sizeof_epoll_event
+        EP_MAX_EVENTS = (2**32 - 1) // sizeof_epoll_event
         if maxevents <= 0 or maxevents > EP_MAX_EVENTS:
             return -errno.EINVAL
 
@@ -3095,9 +3095,9 @@ class Linux(Platform):
         error: Returns -1
         """
         if tv != 0:
-            microseconds = int(time.time() * 10 ** 6)
+            microseconds = int(time.time() * 10**6)
             self.current.write_bytes(
-                tv, struct.pack("L", microseconds // (10 ** 6)) + struct.pack("L", microseconds)
+                tv, struct.pack("L", microseconds // (10**6)) + struct.pack("L", microseconds)
             )
         if tz != 0:
             logger.warning("No support for time zones in sys_gettimeofday")

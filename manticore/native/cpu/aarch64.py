@@ -193,7 +193,7 @@ class Aarch64RegisterFile(RegisterFile):
         name = self._alias(register)
         parent, size = self._table[name]
         if isinstance(value, int):
-            assert value <= 2 ** size - 1
+            assert value <= 2**size - 1
         else:
             assert value.size == size
 

@@ -39,7 +39,7 @@ def _sig_is_varargs(sig: inspect.Signature) -> bool:
 
 
 class CpuException(Exception):
-    """ Base cpu exception """
+    """Base cpu exception"""
 
 
 class DecodeException(CpuException):
@@ -66,11 +66,11 @@ class InstructionEmulationError(CpuException):
 
 
 class DivideByZeroError(CpuException):
-    """ A division by zero """
+    """A division by zero"""
 
 
 class Interruption(CpuException):
-    """ A software interrupt. """
+    """A software interrupt."""
 
     def __init__(self, N):
         super().__init__("CPU Software Interruption %08x" % N)
@@ -191,7 +191,7 @@ class Operand:
 
     @property
     def size(self):
-        """ Return bit size of operand """
+        """Return bit size of operand"""
         raise NotImplementedError
 
     @property
@@ -199,15 +199,15 @@ class Operand:
         return self._reg_name(self.op.reg)
 
     def address(self):
-        """ On a memory operand it returns the effective address """
+        """On a memory operand it returns the effective address"""
         raise NotImplementedError
 
     def read(self):
-        """ It reads the operand value from the registers or memory """
+        """It reads the operand value from the registers or memory"""
         raise NotImplementedError
 
     def write(self, value):
-        """ It writes the value of specific type to the registers or memory """
+        """It writes the value of specific type to the registers or memory"""
         raise NotImplementedError
 
 
@@ -252,12 +252,12 @@ class RegisterFile:
 
     @property
     def all_registers(self):
-        """ Lists all possible register names (Including aliases) """
+        """Lists all possible register names (Including aliases)"""
         return tuple(self._aliases)
 
     @property
     def canonical_registers(self):
-        """ List the minimal most beautiful set of registers needed """
+        """List the minimal most beautiful set of registers needed"""
         raise NotImplementedError
 
     def __contains__(self, register):
@@ -602,7 +602,7 @@ class Cpu(Eventful):
     # Register access
     @property
     def regfile(self):
-        """ The RegisterFile of this cpu """
+        """The RegisterFile of this cpu"""
         return self._regfile
 
     @property

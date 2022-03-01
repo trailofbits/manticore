@@ -744,7 +744,7 @@ class Array(Expression, abstract=True):
     def __init__(self, *, index_bits: int, index_max: Optional[int], value_bits: int, **kwargs):
         assert index_bits in (32, 64, 256)
         assert value_bits in (8, 16, 32, 64, 256)
-        assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
+        assert index_max is None or index_max >= 0 and index_max < 2**index_bits
         self._index_bits = index_bits
         self._index_max = index_max
         self._value_bits = value_bits

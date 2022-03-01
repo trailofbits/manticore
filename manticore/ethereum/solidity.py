@@ -42,7 +42,7 @@ class SolidityMetadata:
         abi,
         warnings,
     ):
-        """ Contract metadata for Solidity-based contracts """
+        """Contract metadata for Solidity-based contracts"""
         self.name = name
         if isinstance(source_code, bytes):
             source_code = source_code.decode()
