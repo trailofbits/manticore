@@ -1,0 +1,8 @@
+generate:
+  python3 setup.py generate
+
+build: generate
+  shiv -c muicore -o dist/muicore_server --reproducible --no-modify --python '/usr/bin/env python3.9' --compressed .
+
+install: build
+  cp dist/muicore_server ../MUI/os/linux_x86_64/

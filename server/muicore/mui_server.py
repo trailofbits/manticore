@@ -3,9 +3,9 @@ from threading import Thread
 
 import grpc
 from grpc._server import _Context
-from MUICore_pb2 import *
-import MUICore_pb2_grpc
-from introspect_plugin import MUIIntrospectionPlugin
+from .MUICore_pb2 import *
+from .MUICore_pb2_grpc import ManticoreUIServicer, add_ManticoreUIServicer_to_server
+from .introspect_plugin import MUIIntrospectionPlugin
 
 from manticore.core.state import StateBase
 from manticore.native import Manticore
@@ -21,10 +21,10 @@ from manticore.utils.enums import StateStatus, StateLists
 import uuid
 from manticore.core.state_pb2 import MessageList
 
-from utils import parse_additional_arguments
+from .utils import parse_additional_arguments
 
 
-class MUIServicer(MUICore_pb2_grpc.ManticoreUIServicer):
+class MUIServicer(ManticoreUIServicer):
     """Provides functionality for the methods set out in the protobuf spec"""
 
     def __init__(self):
@@ -215,7 +215,7 @@ class MUIServicer(MUICore_pb2_grpc.ManticoreUIServicer):
 
 def main():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    MUICore_pb2_grpc.add_ManticoreUIServicer_to_server(MUIServicer(), server)
+    add_ManticoreUIServicer_to_server(MUIServicer(), server)
     server.add_insecure_port("[::]:50010")
     server.start()
     server.wait_for_termination()
