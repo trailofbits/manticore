@@ -22,7 +22,7 @@ native_deps = [
     "unicorn==1.0.2",
 ]
 
-lint_deps = ["black==20.8b1", "mypy==0.790"]
+lint_deps = ["black~=22.0", "mypy==0.790"]
 
 auto_test_deps = ["py-evm"]
 
@@ -49,7 +49,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 
 # https://stackoverflow.com/a/4792601 grumble grumble
-version = "0.3.6"
+version = "0.3.7"
 if "--dev_release" in sys.argv:
     major, minor, point = tuple(int(t) for t in version.split("."))
     dev_extension = f"dev{date.today().strftime('%y%m%d')}"
@@ -65,7 +65,7 @@ setup(
     author="Trail of Bits",
     version=version,
     packages=find_packages(exclude=["tests", "tests.*"]),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
         "pyyaml",
         "protobuf",
@@ -75,7 +75,7 @@ setup(
         "ply",
         "rlp",
         "intervaltree",
-        "crytic-compile>=0.2.0",
+        "crytic-compile==0.2.2",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",

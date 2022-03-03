@@ -3,7 +3,7 @@ from manticore.core.plugin import Plugin
 
 
 def getchar(state):
-    """ Symbolic `getchar` implementation. Returns an arbitrary single byte """
+    """Symbolic `getchar` implementation. Returns an arbitrary single byte"""
     res = state.new_symbolic_value(32, "getchar_res")
     state.constrain(0 < res)
     state.constrain(res < 256)
@@ -11,7 +11,7 @@ def getchar(state):
 
 
 class PrintRetPlugin(Plugin):
-    """ A plugin that looks for states that returned zero and solves for their inputs """
+    """A plugin that looks for states that returned zero and solves for their inputs"""
 
     def will_terminate_state_callback(self, state, *args):
         retval = state.stack.peek()

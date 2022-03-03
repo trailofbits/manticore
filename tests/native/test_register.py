@@ -1,6 +1,6 @@
 import unittest
 
-from manticore.core.smtlib import Bool, BoolVariable, BitVecConstant
+from manticore.core.smtlib import *
 from manticore.native.cpu.register import Register
 
 
@@ -18,7 +18,7 @@ class RegisterTest(unittest.TestCase):
 
     def test_truncate(self):
         r = Register(32)
-        r.write(2 ** 32)
+        r.write(2**32)
         self.assertEqual(r.read(), 0)
 
     def test_largest_write(self):

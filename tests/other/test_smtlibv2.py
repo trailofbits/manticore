@@ -15,6 +15,7 @@ from manticore.core.smtlib import (
     constant_folder,
     replace,
     BitVecConstant,
+    BitVecExtract,
 )
 from manticore.core.smtlib.solver import (
     Z3Solver,
@@ -280,7 +281,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(x.value == 0)
 
     def testBasicAST_001(self):
-        """ Can't build abstract classes """
+        """Can't build abstract classes"""
         a = BitVecConstant(size=32, value=100)
 
         self.assertRaises(TypeError, Expression, ())
@@ -289,7 +290,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertRaises(TypeError, Operation, a)
 
     def testBasicOperation(self):
-        """ Add """
+        """Add"""
         a = BitVecConstant(size=32, value=100)
         b = BitVecVariable(size=32, name="VAR")
         c = a + b
@@ -803,11 +804,12 @@ class ExpressionTest(unittest.TestCase):
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
         self.assertEqual(
-            translate_to_smtlib(exp), "(bvor (bvand (bvor BIVEC #x00000000) #x00000001) #x00000000)"
+            translate_to_smtlib(exp),
+            "(bvor (bvand (bvor BITVEC #x00000000) #x00000001) #x00000000)",
         )
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
-        self.assertEqual(translate_to_smtlib(exp), "(bvand BIVEC #x00000001)")
+        self.assertEqual(translate_to_smtlib(exp), "(bvand BITVEC #x00000001)")
 
     def test_arithmetic_simplify_extract(self):
         cs = ConstraintSet()
@@ -831,6 +833,13 @@ class ExpressionTest(unittest.TestCase):
             translate_to_smtlib(c), "(concat ((_ extract 23 16) VARA) ((_ extract 15 8) VARA))"
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
+
+    def test_constant_folding_extract(self):
+        cs = ConstraintSet()
+        x = BitVecConstant(size=32, value=0xAB123456, taint=("important",))
+        z = constant_folder(BitVecExtract(operand=x, offset=8, size=16))
+        self.assertItemsEqual(z.taint, ("important",))
+        self.assertEqual(z.value, 0x1234)
 
     def test_arithmetic_simplify_udiv(self):
         cs = ConstraintSet()
@@ -860,8 +869,15 @@ class ExpressionTest(unittest.TestCase):
         cs.add(simplify(Operators.OR(var, bt)) == bt)
         self.assertTrue(self.solver.check(cs))
 
+    def test_simplify_SUB(self):
+        cs = ConstraintSet()
+        var = cs.new_bitvec(size=32)
+        cs.add(simplify(var - var) == 0)
+        cs.add(simplify(var - 0) == var)
+        self.assertTrue(self.solver.check(cs))
+
     def testBasicReplace(self):
-        """ Add """
+        """Add"""
         a = BitVecConstant(size=32, value=100)
         b1 = BitVecVariable(size=32, name="VAR1")
         b2 = BitVecVariable(size=32, name="VAR2")

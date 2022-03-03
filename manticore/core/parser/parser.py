@@ -202,7 +202,7 @@ def p_expression_or(p):
 
 
 def p_expression_neg(p):
-    "expression : NEG expression "
+    "expression : NEG expression"
     p[0] = ~p[1]
 
 

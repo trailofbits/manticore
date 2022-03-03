@@ -80,7 +80,7 @@ env = Environment(loader=FileSystemLoader("."))
 
 
 def escape_null(in_str: str):
-    """ Base-64 encode non-printable characters in test names so we can handle that obnoxious names module """
+    """Base-64 encode non-printable characters in test names so we can handle that obnoxious names module"""
     if in_str.isprintable() and not any((c in in_str) for c in {'"', "'", ";"}):
         return f'"{in_str}"'
     else:

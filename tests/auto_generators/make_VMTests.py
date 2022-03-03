@@ -30,7 +30,7 @@ real_open = open
 
 
 def fake_open(filename, mode="r", *args, **kwargs):
-    """ Replace normal global open with this for a wuick dry run """
+    """Replace normal global open with this for a wuick dry run"""
     from io import StringIO
 
     logging.info("Fake openning %r", (filename, mode) + args)

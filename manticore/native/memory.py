@@ -145,7 +145,7 @@ class Map(object, metaclass=ABCMeta):
         self._name = name
 
     def _get_perms(self) -> str:
-        """ Gets the access permissions of the map. """
+        """Gets the access permissions of the map."""
         return self._perms
 
     def _set_perms(self, perms: str) -> None:
@@ -165,7 +165,7 @@ class Map(object, metaclass=ABCMeta):
     perms = property(_get_perms, _set_perms)
 
     def access_ok(self, access) -> bool:
-        """ Check if there is enough permissions for access """
+        """Check if there is enough permissions for access"""
         for c in access:
             if c not in self.perms:
                 return False
@@ -184,7 +184,7 @@ class Map(object, metaclass=ABCMeta):
         return self._name
 
     def __len__(self):
-        """Returns the current size in bytes. """
+        """Returns the current size in bytes."""
         return self._end - self._start
 
     def __repr__(self):
@@ -223,7 +223,7 @@ class Map(object, metaclass=ABCMeta):
         return object.__hash__(self)
 
     def _in_range(self, index) -> bool:
-        """ Returns True if index is in range """
+        """Returns True if index is in range"""
         if isinstance(index, slice):
             in_range = (
                 index.start < index.stop and index.start >= self.start and index.stop <= self.end
@@ -278,7 +278,7 @@ class Map(object, metaclass=ABCMeta):
 
 
 class AnonMap(Map):
-    """ A concrete anonymous memory map """
+    """A concrete anonymous memory map"""
 
     def __init__(self, start: int, size: int, perms: str, data_init=None, name=None):
         """
@@ -1350,7 +1350,7 @@ class SMemory(Memory):
             from ..core.state import Concretize
 
             def setstate(state, _value):
-                """ Roll back PC to redo last instruction """
+                """Roll back PC to redo last instruction"""
                 state.cpu.PC = state.cpu._last_pc
 
             raise Concretize(
