@@ -375,8 +375,8 @@ class ExpressionTest(unittest.TestCase):
 
     def testBool5(self):
         cs = ConstraintSet()
-        bf = BoolConstant(False)
-        bt = BoolConstant(True)
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
         x = cs.new_bool()
         y = cs.new_bool()
         self.assertRaises(Exception, bool, x == y)
