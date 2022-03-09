@@ -2,7 +2,10 @@ generate:
   python3 setup.py generate
 
 build: generate
+  mkdir -p dist
   shiv -c muicore -o dist/muicore_server --reproducible --no-modify --python '/usr/bin/env python3.9' --compressed .
+  wget https://github.com/ethereum/solc-bin/raw/gh-pages/linux-amd64/solc-linux-amd64-v0.8.9%2Bcommit.e5eed63a -O dist/solc
+  chmod 775 dist/solc
 
 install: build
-  cp dist/muicore_server ../MUI/os/linux_x86_64/
+  cp dist/* ../MUI/os/linux_x86_64/

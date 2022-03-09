@@ -3,11 +3,12 @@ import pkg_resources
 import shlex
 
 from manticore.utils import config
-from crytic_compile import cryticparser
 from manticore.utils.log import set_verbosity
 
 
-def parse_additional_arguments(additional_args: str) -> argparse.Namespace:
+def parse_native_arguments(additional_args: str) -> argparse.Namespace:
+    """parse additional arguments for manticore native execution, CLI-style"""
+
     def positive(value):
         ivalue = int(value)
         if ivalue <= 0:
@@ -19,10 +20,6 @@ def parse_additional_arguments(additional_args: str) -> argparse.Namespace:
         prog="manticore",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-
-    # Add crytic compile arguments
-    # See https://github.com/crytic/crytic-compile/wiki/Configuration
-    cryticparser.init(parser)
 
     parser.add_argument("--context", type=str, default=None, help=argparse.SUPPRESS)
     parser.add_argument(
@@ -108,106 +105,6 @@ def parse_additional_arguments(additional_args: str) -> argparse.Namespace:
         help="Treat all writable memory as symbolic",
     )
 
-    eth_flags = parser.add_argument_group("Ethereum flags")
-    eth_flags.add_argument(
-        "--verbose-trace",
-        action="store_true",
-        help="Dump an extra verbose trace for each state",
-    )
-    eth_flags.add_argument(
-        "--txlimit",
-        type=positive,
-        help="Maximum number of symbolic transactions to run (positive integer)",
-    )
-
-    eth_flags.add_argument(
-        "--txnocoverage",
-        action="store_true",
-        help="Do not use coverage as stopping criteria",
-    )
-
-    eth_flags.add_argument(
-        "--txnoether",
-        action="store_true",
-        help="Do not attempt to send ether to contract",
-    )
-
-    eth_flags.add_argument(
-        "--txaccount",
-        type=str,
-        default="attacker",
-        help='Account used as caller in the symbolic transactions, either "attacker" or '
-        '"owner" or "combo1" (uses both)',
-    )
-
-    eth_flags.add_argument(
-        "--txpreconstrain",
-        action="store_true",
-        help="Constrain human transactions to avoid exceptions in the contract function dispatcher",
-    )
-
-    eth_flags.add_argument(
-        "--contract",
-        type=str,
-        help="Contract name to analyze in case of multiple contracts",
-    )
-
-    eth_detectors = parser.add_argument_group("Ethereum detectors")
-
-    eth_detectors.add_argument(
-        "--list-detectors",
-        help="List available detectors",
-        action=ListEthereumDetectors,
-        nargs=0,
-        default=False,
-    )
-
-    eth_detectors.add_argument(
-        "--exclude",
-        help="Comma-separated list of detectors that should be excluded",
-        action="store",
-        dest="detectors_to_exclude",
-        default="",
-    )
-
-    eth_detectors.add_argument(
-        "--exclude-all",
-        help="Excludes all detectors",
-        action="store_true",
-        default=False,
-    )
-
-    eth_flags.add_argument(
-        "--avoid-constant",
-        action="store_true",
-        help="Avoid exploring constant functions for human transactions",
-    )
-
-    eth_flags.add_argument(
-        "--limit-loops",
-        action="store_true",
-        help="Limit loops depth",
-    )
-
-    eth_flags.add_argument(
-        "--no-testcases",
-        action="store_true",
-        help="Do not generate testcases for discovered states when analysis finishes",
-    )
-
-    eth_flags.add_argument(
-        "--only-alive-testcases",
-        action="store_true",
-        help="Do not generate testcases for invalid/throwing states when analysis finishes",
-    )
-
-    eth_flags.add_argument(
-        "--thorough-mode",
-        action="store_true",
-        help="Configure Manticore for more exhaustive exploration. Evaluate gas, generate testcases for dead states, "
-        "explore constant functions, and run a small suite of detectors.",
-    )
-
     config_flags = parser.add_argument_group("Constants")
     config.add_config_vars_to_argparse(config_flags)
 
@@ -222,12 +119,3 @@ def parse_additional_arguments(additional_args: str) -> argparse.Namespace:
     set_verbosity(parsed.v)
 
     return parsed
-
-
-class ListEthereumDetectors(argparse.Action):
-    def __call__(self, parser, *args, **kwargs):
-        from manticore.ethereum.cli import get_detectors_classes
-        from manticore.utils.command_line import output_detectors
-
-        output_detectors(get_detectors_classes())
-        parser.exit()

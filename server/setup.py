@@ -32,6 +32,7 @@ setup(
     install_requires=[
         "manticore @ git+https://github.com/trailofbits/manticore.git@chess",
         "grpcio",
+        "crytic-compile==0.2.1",
     ]
     + native_deps,
     extras_require = {

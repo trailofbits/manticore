@@ -1,5 +1,7 @@
 from concurrent import futures
 from threading import Thread
+import argparse
+from pathlib import Path
 
 import grpc
 from grpc._server import _Context
@@ -9,6 +11,7 @@ from .introspect_plugin import MUIIntrospectionPlugin
 
 from manticore.core.state import StateBase
 from manticore.native import Manticore
+from manticore.ethereum import ManticoreEVM
 from manticore.core.plugin import (
     InstructionCounter,
     Visited,
@@ -19,9 +22,11 @@ from manticore.core.plugin import (
 from manticore.utils.enums import StateStatus, StateLists
 
 import uuid
-from manticore.core.state_pb2 import MessageList
+import shutil
+from inspect import currentframe, getframeinfo
 
-from .utils import parse_additional_arguments
+from .native_utils import parse_native_arguments
+from .evm_utils import setup_detectors_flags
 
 
 class MUIServicer(ManticoreUIServicer):
@@ -34,33 +39,34 @@ class MUIServicer(ManticoreUIServicer):
         self.avoid = set()
         self.find = set()
 
-    def Start(
-        self, cli_arguments: CLIArguments, context: _Context
+    def StartNative(
+        self, native_arguments: NativeArguments, context: _Context
     ) -> ManticoreInstance:
-        """Starts a singular Manticore instance with the given CLI Arguments"""
+        """Starts a singular Manticore instance to analyze a native binary"""
         id = uuid.uuid4().hex
         try:
 
-            parsed = parse_additional_arguments(cli_arguments.additional_mcore_args)
+            parsed = parse_native_arguments(native_arguments.additional_mcore_args)
             m = Manticore.linux(
-                cli_arguments.program_path,
+                native_arguments.program_path,
                 argv=None
-                if not cli_arguments.binary_args
-                else list(cli_arguments.binary_args),
+                if not native_arguments.binary_args
+                else list(native_arguments.binary_args),
                 envp=None
-                if not cli_arguments.envp
+                if not native_arguments.envp
                 else {
-                    key: val for key, val in [e.split("=") for e in cli_arguments.envp]
+                    key: val
+                    for key, val in [e.split("=") for e in native_arguments.envp]
                 },
                 symbolic_files=None
-                if not cli_arguments.symbolic_files
-                else list(cli_arguments.symbolic_files),
+                if not native_arguments.symbolic_files
+                else list(native_arguments.symbolic_files),
                 concrete_start=""
-                if not cli_arguments.concrete_start
-                else cli_arguments.concrete_start,
+                if not native_arguments.concrete_start
+                else native_arguments.concrete_start,
                 stdin_size=265
-                if not cli_arguments.stdin_size
-                else int(cli_arguments.stdin_size),
+                if not native_arguments.stdin_size
+                else int(native_arguments.stdin_size),
                 workspace_url=parsed.workspace,
                 introspection_plugin_type=MUIIntrospectionPlugin,
             )
@@ -93,11 +99,11 @@ class MUIServicer(ManticoreUIServicer):
             for addr in self.find:
                 m.add_hook(addr, find_f)
 
-            def manticore_runner(mcore: Manticore):
+            def manticore_native_runner(mcore: Manticore):
                 mcore.run()
                 mcore.finalize()
 
-            mthread = Thread(target=manticore_runner, args=(m,), daemon=True)
+            mthread = Thread(target=manticore_native_runner, args=(m,), daemon=True)
             mthread.start()
             self.manticore_instances[id] = (m, mthread)
 
@@ -105,6 +111,64 @@ class MUIServicer(ManticoreUIServicer):
             print(e)
             raise e
             return ManticoreInstance()
+
+        return ManticoreInstance(uuid=id)
+
+    def StartEVM(
+        self, evm_arguments: EVMArguments, context: _Context
+    ) -> ManticoreInstance:
+        """Starts a singular Manticore instance to analyze a solidity contract"""
+        id = uuid.uuid4().hex
+        try:
+            m = ManticoreEVM()
+
+            args = setup_detectors_flags(
+                evm_arguments.detectors_to_exclude, evm_arguments.additional_flags, m
+            )
+
+            def manticore_evm_runner(m: ManticoreEVM, args: argparse.Namespace):
+                if evm_arguments.solc_bin:
+                    solc_bin_path = evm_arguments.solc_bin
+                elif shutil.which("solc"):
+                    solc_bin_path = shutil.which("solc")
+                else:
+                    raise Exception(
+                        "solc binary neither specified in EVMArguments nor found in PATH!"
+                    )
+
+                m.multi_tx_analysis(
+                    evm_arguments.contract_path,
+                    contract_name=evm_arguments.contract_name,
+                    tx_limit=-1
+                    if not evm_arguments.tx_limit
+                    else evm_arguments.tx_limit,
+                    tx_use_coverage=True
+                    if args.txnocoverage == None
+                    else args.txnocoverage,
+                    tx_send_ether=True if args.txnoether == None else args.txnoether,
+                    tx_account="attacker"
+                    if not evm_arguments.tx_account
+                    else evm_arguments.tx_account,
+                    tx_preconstrain=False
+                    if args.txpreconstrain == None
+                    else args.txpreconstrain,
+                    compile_args={"solc_solcs_bin": solc_bin_path},
+                )
+
+                if not args.no_testcases:
+                    m.finalize(only_alive_states=args.only_alive_testcases)
+                else:
+                    m.kill()
+
+            mthread = Thread(target=manticore_evm_runner, args=(m, args), daemon=True)
+            mthread.start()
+            self.manticore_instances[id] = (m, mthread)
+
+        except Exception as e:
+            print(e)
+            raise e
+            return ManticoreInstance()
+
         return ManticoreInstance(uuid=id)
 
     def Terminate(
@@ -121,7 +185,7 @@ class MUIServicer(ManticoreUIServicer):
         m.kill()
         return TerminateResponse(success=True)
 
-    def TargetAddress(
+    def TargetAddressNative(
         self, address_request: AddressRequest, context: _Context
     ) -> TargetResponse:
         """Sets addresses in the binary to find/avoid, or clears address status.
@@ -187,7 +251,7 @@ class MUIServicer(ManticoreUIServicer):
         Currently, implementation is based on TUI."""
         if mcore_instance.uuid not in self.manticore_instances:
             return MUIMessageList(
-                messages=[LogMessage(content="Manticore instance not found!")]
+                messages=[MUILogMessage(content="Manticore instance not found!")]
             )
         m = self.manticore_instances[mcore_instance.uuid][0]
         q = m._log_queue

@@ -3,12 +3,13 @@ syntax = "proto3";
 package muicore;
 
 service ManticoreUI {
+    rpc StartNative(NativeArguments) returns (ManticoreInstance) {}
+    rpc StartEVM(EVMArguments) returns (ManticoreInstance) {}
     rpc Terminate(ManticoreInstance) returns (TerminateResponse) {}
-    rpc Start(CLIArguments) returns (ManticoreInstance) {}
-    rpc TargetAddress(AddressRequest) returns (TargetResponse) {}
     rpc GetStateList(ManticoreInstance) returns (MUIStateList) {}
     rpc GetMessageList(ManticoreInstance) returns (MUIMessageList) {}
     rpc CheckManticoreRunning(ManticoreInstance) returns (ManticoreRunningStatus) {}
+    rpc TargetAddressNative(AddressRequest) returns (TargetResponse) {}
 }
 
 // LogMessage and StateList message types have "MUI" in their names to distinguish them from those in mserialize
@@ -43,7 +44,7 @@ message TerminateResponse {
     bool success = 10;
 }
 
-message CLIArguments {
+message NativeArguments {
     string program_path = 11;
     repeated string binary_args = 16;	
     repeated string envp = 17;
@@ -51,6 +52,16 @@ message CLIArguments {
     string concrete_start = 19;
     string stdin_size = 20;
     string additional_mcore_args = 21;
+}
+
+message EVMArguments {
+	string contract_path = 12;
+	string contract_name = 13;
+	string solc_bin = 14;
+	string tx_limit = 22;
+	string tx_account = 23;
+	repeated string detectors_to_exclude = 24;
+	string additional_flags = 25;
 }
 
 message AddressRequest {
@@ -61,12 +72,12 @@ message AddressRequest {
         CLEAR = 2;
     }
 
-    uint64 address = 12;
-    TargetType type = 13;
+    uint64 address = 26;
+    TargetType type = 27;
 }
 
 message TargetResponse {
-    bool success = 14;
+    bool success = 28;
 }
 
 message ManticoreRunningStatus {
