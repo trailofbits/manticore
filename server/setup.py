@@ -28,16 +28,14 @@ native_deps = [
 setup(
     name="muicore",
     version="0.0.1",
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
         "manticore @ git+https://github.com/trailofbits/manticore.git@chess",
         "grpcio",
         "crytic-compile==0.2.1",
     ]
     + native_deps,
-    extras_require = {
-        "dev": ["grpcio-tools"]
-    },
+    extras_require={"dev": ["grpcio-tools"]},
     entry_points={
         "console_scripts": [
             "muicore=muicore.mui_server:main",

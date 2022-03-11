@@ -118,6 +118,23 @@ class MUIServicer(ManticoreUIServicer):
         self, evm_arguments: EVMArguments, context: _Context
     ) -> ManticoreInstance:
         """Starts a singular Manticore instance to analyze a solidity contract"""
+
+        if evm_arguments.contract_path == "":
+            raise FileNotFoundError("Contract path not specified!")
+        if not Path(evm_arguments.contract_path).is_file():
+            raise FileNotFoundError(
+                f"Contract path invalid: '{evm_arguments.contract_path}'"
+            )
+
+        if evm_arguments.solc_bin:
+            solc_bin_path = evm_arguments.solc_bin
+        elif shutil.which("solc"):
+            solc_bin_path = shutil.which("solc")
+        else:
+            raise Exception(
+                "solc binary neither specified in EVMArguments nor found in PATH!"
+            )
+
         id = uuid.uuid4().hex
         try:
             m = ManticoreEVM()
@@ -127,14 +144,6 @@ class MUIServicer(ManticoreUIServicer):
             )
 
             def manticore_evm_runner(m: ManticoreEVM, args: argparse.Namespace):
-                if evm_arguments.solc_bin:
-                    solc_bin_path = evm_arguments.solc_bin
-                elif shutil.which("solc"):
-                    solc_bin_path = shutil.which("solc")
-                else:
-                    raise Exception(
-                        "solc binary neither specified in EVMArguments nor found in PATH!"
-                    )
 
                 m.multi_tx_analysis(
                     evm_arguments.contract_path,
@@ -180,7 +189,7 @@ class MUIServicer(ManticoreUIServicer):
 
         m, mthread = self.manticore_instances[mcore_instance.uuid]
 
-        if m.is_killed() or not mthread.is_alive():
+        if not (m.is_running() and mthread.is_alive()):
             return TerminateResponse(success=True)
         m.kill()
         return TerminateResponse(success=True)
@@ -273,7 +282,7 @@ class MUIServicer(ManticoreUIServicer):
         m, mthread = self.manticore_instances[mcore_instance.uuid]
 
         return ManticoreRunningStatus(
-            is_running=(not m.is_killed() and mthread.is_alive())
+            is_running=(m.is_running() and mthread.is_alive())
         )
 
 

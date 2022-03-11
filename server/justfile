@@ -9,3 +9,7 @@ build: generate
 
 install: build
   cp dist/* ../MUI/os/linux_x86_64/
+
+test:
+  python3 -m unittest tests/test_*.py
+
