@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages, Command
+from setuptools import Command, find_packages, setup
 
 
 class GenerateCommand(Command):
@@ -14,9 +14,18 @@ class GenerateCommand(Command):
         pass
 
     def run(self):
-        from grpc.tools import command
+        from grpc.tools import protoc
 
-        command.build_package_protos(".")
+        protoc.main(
+            [
+                "grpc_tools.protoc",
+                "-I.",
+                "--python_out=.",
+                "--grpc_python_out=.",
+                "--mypy_out=.",
+                "./muicore/MUICore.proto",
+            ]
+        )
 
 
 native_deps = [

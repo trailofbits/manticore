@@ -1,3 +1,12 @@
+format:
+  black .
+  isort .
+
+lint:
+  black --check .
+  isort --check .
+  mypy
+
 generate:
   python3 setup.py generate
 

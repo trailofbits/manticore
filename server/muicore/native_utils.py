@@ -1,7 +1,7 @@
 import argparse
-import pkg_resources
 import shlex
 
+import pkg_resources
 from manticore.utils import config
 from manticore.utils.log import set_verbosity
 

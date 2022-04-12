@@ -1,16 +1,15 @@
+import glob
+import os
+import time
 import unittest
 import unittest.mock
+from inspect import currentframe, getframeinfo
+from pathlib import Path
+from shutil import rmtree, which
+from uuid import UUID, uuid4
 
 from muicore import mui_server
 from muicore.MUICore_pb2 import *
-
-from inspect import currentframe, getframeinfo
-from pathlib import Path
-from uuid import UUID, uuid4
-from shutil import rmtree, which
-import glob
-import time
-import os
 
 
 class MUICoreEVMTest(unittest.TestCase):
@@ -25,8 +24,9 @@ class MUICoreEVMTest(unittest.TestCase):
             mwrapper.manticore_object.kill()
             stime = time.time()
             while mwrapper.manticore_object.is_running():
+                time.sleep(1)
                 if (time.time() - stime) > 10:
-                    time.sleep(1)
+                    break
 
     @classmethod
     def tearDownClass(cls):
@@ -124,7 +124,7 @@ class MUICoreEVMTest(unittest.TestCase):
                 self.fail(
                     f"Manticore instance {mcore_instance.uuid} failed to stop running before timeout"
                 )
-                time.sleep(1)
+            time.sleep(1)
 
     def test_terminate_killed_manticore(self):
         mcore_instance = self.servicer.StartEVM(
@@ -139,7 +139,7 @@ class MUICoreEVMTest(unittest.TestCase):
                 self.fail(
                     f"Manticore instance {mcore_instance.uuid} failed to stop running before timeout"
                 )
-                time.sleep(1)
+            time.sleep(1)
 
         t_status = self.servicer.Terminate(mcore_instance, None)
 
@@ -180,7 +180,7 @@ class MUICoreEVMTest(unittest.TestCase):
                 self.fail(
                     f"Manticore instance {mcore_instance.uuid} failed to stop running before timeout"
                 )
-                time.sleep(1)
+            time.sleep(1)
 
         stime = time.time()
         while mwrapper.manticore_object._log_queue.empty() and time.time() - stime < 5:
@@ -240,7 +240,7 @@ class MUICoreEVMTest(unittest.TestCase):
                 self.fail(
                     f"Manticore instance {mcore_instance.uuid} failed to stop running before timeout"
                 )
-                time.sleep(1)
+            time.sleep(1)
 
         stime = time.time()
         for i in range(5):
@@ -285,7 +285,7 @@ class MUICoreEVMTest(unittest.TestCase):
                 self.fail(
                     f"Manticore instance {mcore_instance.uuid} failed to start running before timeout"
                 )
-                time.sleep(1)
+            time.sleep(1)
 
         self.assertTrue(
             self.servicer.CheckManticoreRunning(mcore_instance, None).is_running
@@ -299,7 +299,7 @@ class MUICoreEVMTest(unittest.TestCase):
                 self.fail(
                     f"Manticore instance {mcore_instance.uuid} failed to stop running before timeout"
                 )
-                time.sleep(1)
+            time.sleep(1)
 
         self.assertFalse(
             self.servicer.CheckManticoreRunning(mcore_instance, None).is_running

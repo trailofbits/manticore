@@ -1,7 +1,9 @@
 from datetime import datetime
+
 from manticore.core.plugin import IntrospectionAPIPlugin, StateDescriptor
 from manticore.core.state import StateBase
 from manticore.utils.enums import StateLists
+
 
 # from https://github.com/trailofbits/ManticoreUI/blob/master/mui/introspect_plugin.py
 class MUIIntrospectionPlugin(IntrospectionAPIPlugin):

@@ -1,42 +1,41 @@
-from concurrent import futures
-from threading import Thread
 import argparse
-from pathlib import Path
 import logging
+import shutil
+import uuid
+from concurrent import futures
+from inspect import currentframe, getframeinfo
+from pathlib import Path
+from threading import Thread
+from typing import Dict, Set
 
 import grpc
 from grpc._server import _Context
-from .MUICore_pb2 import *
-from .MUICore_pb2_grpc import ManticoreUIServicer, add_ManticoreUIServicer_to_server
-from .introspect_plugin import MUIIntrospectionPlugin
-
-from manticore.core.state import StateBase
-from manticore.native import Manticore
-from manticore.ethereum import ManticoreEVM
 from manticore.core.plugin import (
     InstructionCounter,
-    Visited,
-    Tracer,
     RecordSymbolicBranches,
+    Tracer,
+    Visited,
 )
-from manticore.core.worker import WorkerThread, WorkerProcess
-from manticore.utils.log import CallbackStream, ManticoreContextFilter
-from manticore.utils.enums import StateStatus, StateLists
+from manticore.core.state import StateBase
+from manticore.core.worker import WorkerProcess, WorkerThread
+from manticore.ethereum import ManticoreEVM
+from manticore.native import Manticore
+from manticore.utils.enums import StateLists, StateStatus
 from manticore.utils.helpers import deque
+from manticore.utils.log import CallbackStream, ManticoreContextFilter
 
-import uuid
-import shutil
-from inspect import currentframe, getframeinfo
-
-from .native_utils import parse_native_arguments
 from .evm_utils import setup_detectors_flags
+from .introspect_plugin import MUIIntrospectionPlugin
+from .MUICore_pb2 import *
+from .MUICore_pb2_grpc import ManticoreUIServicer, add_ManticoreUIServicer_to_server
+from .native_utils import parse_native_arguments
 
 
 class ManticoreWrapper:
-    def __init__(self, mcore_object, mthread):
-        self.uuid = uuid.uuid4().hex
-        self.manticore_object = mcore_object
-        self.thread = mthread
+    def __init__(self, mcore_object: Manticore, mthread: Thread):
+        self.uuid: str = uuid.uuid4().hex
+        self.manticore_object: Manticore = mcore_object
+        self.thread: Thread = mthread
         # mimics Manticore repository, reasoning for the queue size difference is provided in Manticore:
         # https://github.com/trailofbits/manticore/blob/5a258f499098394c0af25e2e3f00b1b603c2334d/manticore/core/manticore.py#L133-L135
         self.log_queue = (
@@ -45,7 +44,7 @@ class ManticoreWrapper:
             else deque(maxlen=5000)
         )
 
-    def append_log(self, msg):
+    def append_log(self, msg: str) -> None:
         q = self.log_queue
         try:
             q.append(msg)
@@ -56,12 +55,6 @@ class ManticoreWrapper:
                 q.get()
             q.put(msg)
 
-    def __hash__(self):
-        return hash(self.uuid)
-
-    def __eq__(self, other):
-        return self.uuid == other.uuid
-
 
 class MUIServicer(ManticoreUIServicer):
     """Provides functionality for the methods set out in the protobuf spec"""
@@ -69,10 +62,9 @@ class MUIServicer(ManticoreUIServicer):
     def __init__(self):
         """Initializes the dict that keeps track of all created manticore instances, as well as avoid/find address set"""
 
-        self.manticore_instances = {}
-        self.thread_ident_map = {}
-        self.avoid = set()
-        self.find = set()
+        self.manticore_instances: Dict[str, ManticoreWrapper] = {}
+        self.avoid: Set[int] = set()
+        self.find: Set[int] = set()
 
         manticore_logger = logging.getLogger("manticore")
         manticore_logger.parent = None
@@ -88,15 +80,16 @@ class MUIServicer(ManticoreUIServicer):
 
         manticore_logger.addHandler(custom_log_handler)
 
-    def log_callback(self, msg):
+    def log_callback(self, msg: str):
         print(msg, end="")
         msg_split = msg.split()
         thread_name = msg_split[0]
+        msg_content = " ".join(msg_split[1:])
 
         if thread_name in self.manticore_instances:
             # This will always be True if multiprocessing or single is used, since all WorkerProcess/WorkerSingle
             # instances will share the same Thread name as the ManticoreWrapper's mthread which is added on Start
-            self.manticore_instances[thread_name].append_log(" ".join(msg_split[1:]))
+            self.manticore_instances[thread_name].append_log(msg_content)
         else:
             for mwrapper in filter(
                 lambda x: x.manticore_object._worker_type == WorkerThread,
@@ -107,7 +100,7 @@ class MUIServicer(ManticoreUIServicer):
                 ):
                     if type(worker._t) == Thread and worker._t.name == thread_name:
                         worker._t.name = mwrapper.uuid
-                        mwrapper.append_log(" ".join(msg_split[1:]))
+                        mwrapper.append_log(msg_content)
                         return
 
     def StartNative(
@@ -115,7 +108,6 @@ class MUIServicer(ManticoreUIServicer):
     ) -> ManticoreInstance:
         """Starts a singular Manticore instance to analyze a native binary"""
         try:
-
             parsed = parse_native_arguments(native_arguments.additional_mcore_args)
             m = Manticore.linux(
                 native_arguments.program_path,
@@ -182,7 +174,6 @@ class MUIServicer(ManticoreUIServicer):
         except Exception as e:
             print(e)
             raise e
-            return ManticoreInstance()
 
         return ManticoreInstance(uuid=manticore_wrapper.uuid)
 
@@ -201,7 +192,7 @@ class MUIServicer(ManticoreUIServicer):
         if evm_arguments.solc_bin:
             solc_bin_path = evm_arguments.solc_bin
         elif shutil.which("solc"):
-            solc_bin_path = shutil.which("solc")
+            solc_bin_path = str(shutil.which("solc"))
         else:
             raise Exception(
                 "solc binary neither specified in EVMArguments nor found in PATH!"
@@ -211,7 +202,9 @@ class MUIServicer(ManticoreUIServicer):
             m = ManticoreEVM()
 
             args = setup_detectors_flags(
-                evm_arguments.detectors_to_exclude, evm_arguments.additional_flags, m
+                list(evm_arguments.detectors_to_exclude),
+                evm_arguments.additional_flags,
+                m,
             )
 
             def manticore_evm_runner(m: ManticoreEVM, args: argparse.Namespace):
@@ -249,7 +242,6 @@ class MUIServicer(ManticoreUIServicer):
         except Exception as e:
             print(e)
             raise e
-            return ManticoreInstance()
 
         return ManticoreInstance(uuid=manticore_wrapper.uuid)
 

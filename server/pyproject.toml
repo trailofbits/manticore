@@ -1,0 +1,17 @@
+[tool.mypy]
+files = ["muicore", "tests"]
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 88
+extend-exclude = '''
+    MUICore_pb2_grpc\.py
+  | MUICore_pb2\.py
+  | MUICore_pb2\.pyi
+'''

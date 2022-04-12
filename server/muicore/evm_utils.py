@@ -1,35 +1,33 @@
 import argparse
-from typing import List, Type
 import shlex
-
-from manticore.ethereum import ManticoreEVM
-from manticore.utils import config
-
-from manticore.ethereum import (
-    Detector,
-    DetectInvalid,
-    DetectIntegerOverflow,
-    DetectUninitializedStorage,
-    DetectUninitializedMemory,
-    DetectReentrancySimple,
-    DetectReentrancyAdvanced,
-    DetectUnusedRetVal,
-    DetectSuicidal,
-    DetectDelegatecall,
-    DetectExternalCallAndLeak,
-    DetectEnvInstruction,
-    DetectManipulableBalance,
-)
-
-from manticore.ethereum.plugins import (
-    FilterFunctions,
-    LoopDepthLimiter,
-    VerboseTrace,
-    KeepOnlyIfStorageChanges,
-    SkipRevertBasicBlocks,
-)
+from typing import List, Type
 
 from crytic_compile import cryticparser
+from manticore.core.plugin import Profiler
+from manticore.ethereum import (
+    DetectDelegatecall,
+    DetectEnvInstruction,
+    DetectExternalCallAndLeak,
+    DetectIntegerOverflow,
+    DetectInvalid,
+    DetectManipulableBalance,
+    Detector,
+    DetectReentrancyAdvanced,
+    DetectReentrancySimple,
+    DetectSuicidal,
+    DetectUninitializedMemory,
+    DetectUninitializedStorage,
+    DetectUnusedRetVal,
+    ManticoreEVM,
+)
+from manticore.ethereum.plugins import (
+    FilterFunctions,
+    KeepOnlyIfStorageChanges,
+    LoopDepthLimiter,
+    SkipRevertBasicBlocks,
+    VerboseTrace,
+)
+from manticore.utils import config
 
 
 def get_detectors_classes() -> List[Type[Detector]]:
