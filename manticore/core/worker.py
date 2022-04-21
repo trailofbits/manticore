@@ -221,7 +221,7 @@ class WorkerSingle(Worker):
 
 
 class WorkerThread(Worker):
-    """ A worker thread """
+    """A worker thread"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -237,7 +237,7 @@ class WorkerThread(Worker):
 
 
 class WorkerProcess(Worker):
-    """ A worker process """
+    """A worker process"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -278,21 +278,21 @@ class DaemonThread(WorkerThread):
 
 
 class DumpTCPHandler(socketserver.BaseRequestHandler):
-    """ TCP Handler that calls the `dump` method bound to the server """
+    """TCP Handler that calls the `dump` method bound to the server"""
 
     def handle(self):
         self.request.sendall(self.server.dump())
 
 
 class ReusableTCPServer(socketserver.TCPServer):
-    """ Custom socket server that gracefully allows the address to be reused """
+    """Custom socket server that gracefully allows the address to be reused"""
 
     allow_reuse_address = True
     dump: typing.Optional[typing.Callable] = None
 
 
 class LogCaptureWorker(DaemonThread):
-    """ Extended DaemonThread that runs a TCP server that dumps the captured logs """
+    """Extended DaemonThread that runs a TCP server that dumps the captured logs"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

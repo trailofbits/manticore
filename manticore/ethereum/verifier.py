@@ -149,10 +149,10 @@ def manticore_verifier(
     user_accounts = []
     for n, address_i in enumerate(senders):
         user_accounts.append(
-            m.create_account(balance=10 ** 10, address=address_i, name=f"sender_{n}")
+            m.create_account(balance=10**10, address=address_i, name=f"sender_{n}")
         )
     # the address used for deployment
-    owner_account = m.create_account(balance=10 ** 10, address=deployer, name="deployer")
+    owner_account = m.create_account(balance=10**10, address=deployer, name="deployer")
     # the target contract account
     contract_account = m.solidity_create_contract(
         source_code,
@@ -162,7 +162,7 @@ def manticore_verifier(
         name="contract_account",
     )
     # the address used for checking porperties
-    checker_account = m.create_account(balance=10 ** 10, address=psender, name="psender")
+    checker_account = m.create_account(balance=10**10, address=psender, name="psender")
 
     print(f"# Owner account: 0x{int(owner_account):x}")
     print(f"# Contract account: 0x{int(contract_account):x}")

@@ -112,7 +112,7 @@ class ConstraintSet:
         self._constraints.append(constraint)
 
     def _get_sid(self) -> int:
-        """ Returns a unique id. """
+        """Returns a unique id."""
         assert self._child is None
         self._sid += 1
         return self._sid
@@ -232,23 +232,23 @@ class ConstraintSet:
         return result
 
     def _declare(self, var):
-        """ Declare the variable `var` """
+        """Declare the variable `var`"""
         if var.name in self._declarations:
             raise ValueError("Variable already declared")
         self._declarations[var.name] = var
         return var
 
     def get_declared_variables(self):
-        """ Returns the variable expressions of this constraint set """
+        """Returns the variable expressions of this constraint set"""
         return self._declarations.values()
 
     def get_variable(self, name):
-        """ Returns the variable declared under name or None if it does not exists """
+        """Returns the variable declared under name or None if it does not exists"""
         return self._declarations.get(name)
 
     @property
     def declarations(self):
-        """ Returns the variable expressions of this constraint set """
+        """Returns the variable expressions of this constraint set"""
         declarations = GetDeclarations()
         for a in self.constraints:
             try:
@@ -279,11 +279,11 @@ class ConstraintSet:
         return iter(self.constraints)
 
     def __str__(self):
-        """ Returns a smtlib representation of the current state """
+        """Returns a smtlib representation of the current state"""
         return self.to_string()
 
     def _make_unique_name(self, name="VAR"):
-        """ Makes a unique variable name"""
+        """Makes a unique variable name"""
         # the while loop is necessary because appending the result of _get_sid()
         # is not guaranteed to make a unique name on the first try; a colliding
         # name could have been added previously
@@ -292,7 +292,7 @@ class ConstraintSet:
         return name
 
     def is_declared(self, expression_var) -> bool:
-        """ True if expression_var is declared in this constraint set """
+        """True if expression_var is declared in this constraint set"""
         if not isinstance(expression_var, Variable):
             raise ValueError(f"Expression must be a Variable (not a {type(expression_var)})")
         return any(expression_var is x for x in self.get_declared_variables())

@@ -2,11 +2,11 @@ import unittest
 
 from manticore.native.cpu.aarch64 import Aarch64RegisterFile as RF
 
-MAX_128 = 2 ** 128 - 1
-MAX_64 = 2 ** 64 - 1
-MAX_32 = 2 ** 32 - 1
-MAX_16 = 2 ** 16 - 1
-MAX_8 = 2 ** 8 - 1
+MAX_128 = 2**128 - 1
+MAX_64 = 2**64 - 1
+MAX_32 = 2**32 - 1
+MAX_16 = 2**16 - 1
+MAX_8 = 2**8 - 1
 
 MAGIC_128 = 0x41424344454647484950515253545556
 MAGIC_64 = MAGIC_128 & MAX_64

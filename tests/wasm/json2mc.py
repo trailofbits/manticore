@@ -37,7 +37,7 @@ class Module:
 
 
 def convert_types(to_convert):
-    """ Convert unsigned ints from JSON into WASM Types (I32, F64, etc) """
+    """Convert unsigned ints from JSON into WASM Types (I32, F64, etc)"""
     out = []
     for item in to_convert:
         out.append(f"{item['type'].upper()}({item.get('value', 0)})")
