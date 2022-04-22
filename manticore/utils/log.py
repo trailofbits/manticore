@@ -22,13 +22,11 @@ class CallbackStream(io.TextIOBase):
         self.callback(log_str)
 
 
-def register_log_callback(cb):
-    for name in get_manticore_logger_names():
-        logger = logging.getLogger(name)
-        handler_internal = logging.StreamHandler(CallbackStream(cb))
-        if name.startswith("manticore"):
-            handler_internal.setFormatter(formatter)
-        # logger.addHandler(handler_internal)
+def register_log_callback(cb) -> None:
+    callback_handler = logging.StreamHandler(CallbackStream(cb))
+    callback_handler.setFormatter(formatter)
+    callback_handler.addFilter(ManticoreContextFilter())
+    init_logging(callback_handler)
 
 
 class ManticoreContextFilter(logging.Filter):
