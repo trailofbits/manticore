@@ -251,7 +251,7 @@ class ConcreteUnicornEmulator:
             logger.debug(f"\tParent map(s) {parent_map}")
 
     def protect_memory_callback(self, start, size, perms):
-        """ Set memory protections in Unicorn correctly """
+        """Set memory protections in Unicorn correctly"""
         logger.debug(f"Changing permissions on {start:#x}:{start+size:#x} to '{perms}'")
         self._emu.mem_protect(start, size, convert_permissions(perms))
 
@@ -410,7 +410,7 @@ class ConcreteUnicornEmulator:
         self._mem_delta = {}
 
     def write_back_memory(self, where, expr, size):
-        """ Copy memory writes from Manticore back into Unicorn in real-time """
+        """Copy memory writes from Manticore back into Unicorn in real-time"""
         if self.write_backs_disabled:
             return
         if type(expr) is bytes:
@@ -441,7 +441,7 @@ class ConcreteUnicornEmulator:
             )
 
     def write_back_register(self, reg, val):
-        """ Sync register state from Manticore -> Unicorn"""
+        """Sync register state from Manticore -> Unicorn"""
         if self.write_backs_disabled:
             return
         if issymbolic(val):
@@ -453,7 +453,7 @@ class ConcreteUnicornEmulator:
         self._emu.reg_write(self._to_unicorn_id(reg), val)
 
     def update_segment(self, selector, base, size, perms):
-        """ Only useful for setting FS right now. """
+        """Only useful for setting FS right now."""
         logger.debug("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
         self.write_back_register("FS", selector)
         self.write_back_register("FS_BASE", base)

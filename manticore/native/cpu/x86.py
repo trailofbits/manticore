@@ -637,7 +637,7 @@ class AMD64RegFile(RegisterFile):
         return self._registers[register_id]
 
     def _get_flags(self, reg):
-        """ Build EFLAGS/RFLAGS from flags """
+        """Build EFLAGS/RFLAGS from flags"""
 
         def make_symbolic(flag_expr):
             register_size = 32 if reg == "EFLAGS" else 64
@@ -662,7 +662,7 @@ class AMD64RegFile(RegisterFile):
         return res
 
     def _set_flags(self, reg, res):
-        """ Set individual flags from a EFLAGS/RFLAGS value """
+        """Set individual flags from a EFLAGS/RFLAGS value"""
         # assert sizeof (res) == 32 if reg == 'EFLAGS' else 64
         for flag, offset in self._flags.items():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
@@ -731,7 +731,7 @@ class AMD64RegFile(RegisterFile):
 
 # Operand Wrapper
 class AMD64Operand(Operand):
-    """ This class deals with capstone X86 operands """
+    """This class deals with capstone X86 operands"""
 
     def __init__(self, cpu: Cpu, op):
         super().__init__(cpu, op)
@@ -883,7 +883,7 @@ class X86Cpu(Cpu):
     # The instruction cache must be invalidated after an executable
     # page was changed or removed or added
     def invalidate_cache(cpu, address, size):
-        """ remove decoded instruction from instruction cache """
+        """remove decoded instruction from instruction cache"""
         cache = cpu.instruction_cache
         for offset in range(size):
             if address + offset in cache:
