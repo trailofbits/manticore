@@ -29,7 +29,7 @@ class GenerateCommand(Command):
 
 
 native_deps = [
-    "capstone @ git+https://github.com/aquynh/capstone.git@1766485c0c32419e9a17d6ad31f9e218ef4f018f#subdirectory=bindings/python",
+    "capstone==5.0.0rc2",
     "pyelftools",
     "unicorn==1.0.2",
 ]
@@ -41,7 +41,7 @@ setup(
     install_requires=[
         "manticore @ git+https://github.com/trailofbits/manticore.git@chess",
         "grpcio",
-        "crytic-compile==0.2.1",
+        "crytic-compile==0.2.2",
     ]
     + native_deps,
     extras_require={"dev": ["grpcio-tools"]},

@@ -10,6 +10,7 @@ service ManticoreUI {
     rpc GetMessageList(ManticoreInstance) returns (MUIMessageList) {}
     rpc CheckManticoreRunning(ManticoreInstance) returns (ManticoreRunningStatus) {}
     rpc TargetAddressNative(AddressRequest) returns (TargetResponse) {}
+    rpc StopServer(StopServerRequest) returns (StopServerResponse) {}
 }
 
 // LogMessage and StateList message types have "MUI" in their names to distinguish them from those in mserialize
@@ -83,3 +84,7 @@ message TargetResponse {
 message ManticoreRunningStatus {
 	bool is_running = 15;
 }
+
+message StopServerRequest {}
+
+message StopServerResponse {}

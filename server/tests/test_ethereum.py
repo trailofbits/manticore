@@ -1,5 +1,6 @@
 import glob
 import os
+import threading
 import time
 import unittest
 import unittest.mock
@@ -16,7 +17,8 @@ class MUICoreEVMTest(unittest.TestCase):
     def setUp(self):
         self.dirname = str(Path(getframeinfo(currentframe()).filename).resolve().parent)
         self.contract_path = str(self.dirname / Path("contracts") / Path("adder.sol"))
-        self.servicer = mui_server.MUIServicer()
+        self.test_event = threading.Event()
+        self.servicer = mui_server.MUIServicer(self.test_event)
         self.solc_path = str(self.dirname / Path("solc"))
 
     def tearDown(self):
@@ -311,3 +313,19 @@ class MUICoreEVMTest(unittest.TestCase):
                 ManticoreInstance(uuid=uuid4().hex), None
             ).is_running
         )
+
+    def test_stop_server(self):
+        self.servicer.StartEVM(
+            EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
+            None,
+        )
+        self.servicer.StartEVM(
+            EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
+            None,
+        )
+
+        self.servicer.StopServer(StopServerRequest(), None)
+
+        self.assertTrue(self.test_event.is_set())
+        for mwrapper in self.servicer.manticore_instances.values():
+            self.assertFalse(mwrapper.manticore_object.is_running())

@@ -1,11 +1,12 @@
 import argparse
 import logging
 import shutil
+import time
 import uuid
 from concurrent import futures
 from inspect import currentframe, getframeinfo
 from pathlib import Path
-from threading import Thread
+from threading import Event, Thread
 from typing import Dict, Set
 
 import grpc
@@ -59,12 +60,13 @@ class ManticoreWrapper:
 class MUIServicer(ManticoreUIServicer):
     """Provides functionality for the methods set out in the protobuf spec"""
 
-    def __init__(self):
+    def __init__(self, stop_event: Event):
         """Initializes the dict that keeps track of all created manticore instances, as well as avoid/find address set"""
 
         self.manticore_instances: Dict[str, ManticoreWrapper] = {}
         self.avoid: Set[int] = set()
         self.find: Set[int] = set()
+        self.stop_event: Event = stop_event
 
         manticore_logger = logging.getLogger("manticore")
         manticore_logger.parent = None
@@ -181,7 +183,6 @@ class MUIServicer(ManticoreUIServicer):
         self, evm_arguments: EVMArguments, context: _Context
     ) -> ManticoreInstance:
         """Starts a singular Manticore instance to analyze a solidity contract"""
-
         if evm_arguments.contract_path == "":
             raise FileNotFoundError("Contract path not specified!")
         if not Path(evm_arguments.contract_path).is_file():
@@ -354,13 +355,38 @@ class MUIServicer(ManticoreUIServicer):
             )
         )
 
+    def StopServer(
+        self, request: StopServerRequest, context: _Context
+    ) -> StopServerResponse:
+        to_warn = False
+        for mwrapper in self.manticore_instances.values():
+            mwrapper.manticore_object.kill()
+            stime = time.time()
+            while mwrapper.manticore_object.is_running():
+                time.sleep(1)
+                if (time.time() - stime) > 10:
+                    to_warn = True
+                    break
+
+        if to_warn:
+            warning_message = "WARNING: Not all Manticore processes were shut down successfully before timeout. There may be extra processes running even after the server has stopped."
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(warning_message)
+            print(warning_message)
+
+        self.stop_event.set()
+        return StopServerResponse()
+
 
 def main():
+    stop_event = Event()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    add_ManticoreUIServicer_to_server(MUIServicer(), server)
+    add_ManticoreUIServicer_to_server(MUIServicer(stop_event), server)
     server.add_insecure_port("[::]:50010")
     server.start()
-    server.wait_for_termination()
+    stop_event.wait()
+    server.stop(None)
+    print("shutdown gracefully!")
 
 
 if __name__ == "__main__":

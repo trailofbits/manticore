@@ -213,3 +213,15 @@ class ManticoreRunningStatus(google.protobuf.message.Message):
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["is_running",b"is_running"]) -> None: ...
 global___ManticoreRunningStatus = ManticoreRunningStatus
+
+class StopServerRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    def __init__(self,
+        ) -> None: ...
+global___StopServerRequest = StopServerRequest
+
+class StopServerResponse(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    def __init__(self,
+        ) -> None: ...
+global___StopServerResponse = StopServerResponse

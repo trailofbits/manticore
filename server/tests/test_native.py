@@ -1,4 +1,5 @@
 import glob
+import threading
 import time
 import unittest
 from inspect import currentframe, getframeinfo
@@ -16,7 +17,8 @@ class MUICoreNativeTest(unittest.TestCase):
         self.binary_path = str(
             self.dirname / Path("binaries") / Path("arguments_linux_amd64")
         )
-        self.servicer = mui_server.MUIServicer()
+        self.test_event = threading.Event()
+        self.servicer = mui_server.MUIServicer(self.test_event)
 
     def tearDown(self):
         for mwrapper in self.servicer.manticore_instances.values():
@@ -277,3 +279,13 @@ class MUICoreNativeTest(unittest.TestCase):
                 ManticoreInstance(uuid=uuid4().hex), None
             ).is_running
         )
+
+    def test_stop_server(self):
+        self.servicer.StartNative(NativeArguments(program_path=self.binary_path), None)
+        self.servicer.StartNative(NativeArguments(program_path=self.binary_path), None)
+
+        self.servicer.StopServer(StopServerRequest(), None)
+
+        self.assertTrue(self.test_event.is_set())
+        for mwrapper in self.servicer.manticore_instances.values():
+            self.assertFalse(mwrapper.manticore_object.is_running())
