@@ -14,7 +14,7 @@ def get_manticore_logger_names() -> List[str]:
     return [name for name in logging.root.manager.loggerDict if name.startswith("manticore")]  # type: ignore
 
 
-class CallbackStream(io.TextIOBase):
+class CallbackStream(io.StringIO):
     def __init__(self, callback):
         self.callback = callback
 
