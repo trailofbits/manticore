@@ -2,7 +2,7 @@ import logging
 import sys
 import io
 
-from typing import List, Set, Tuple, Optional
+from typing import List, Set, Tuple, Optional, Callable
 
 manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
@@ -14,21 +14,12 @@ def get_manticore_logger_names() -> List[str]:
     return [name for name in logging.root.manager.loggerDict if name.startswith("manticore")]  # type: ignore
 
 
-class CallbackStream(io.TextIOBase):
+class CallbackStream(io.StringIO):
     def __init__(self, callback):
         self.callback = callback
 
     def write(self, log_str):
         self.callback(log_str)
-
-
-def register_log_callback(cb):
-    for name in get_manticore_logger_names():
-        logger = logging.getLogger(name)
-        handler_internal = logging.StreamHandler(CallbackStream(cb))
-        if name.startswith("manticore"):
-            handler_internal.setFormatter(formatter)
-        # logger.addHandler(handler_internal)
 
 
 class ManticoreContextFilter(logging.Filter):
@@ -159,6 +150,13 @@ def set_verbosity(setting: int) -> None:
         # This means if you explicitly call setLevel somewhere else in the source, and it's *more*
         # verbose, it'll stay that way even if manticore_verbosity is 0.
         logger.setLevel(min(get_verbosity(logger_name), logger.getEffectiveLevel()))
+
+
+def register_log_callback(callback: Callable[[Optional[str]], None]) -> None:
+    callback_handler = logging.StreamHandler(CallbackStream(callback))
+    callback_handler.setFormatter(formatter)
+    callback_handler.addFilter(ManticoreContextFilter())
+    init_logging(callback_handler)
 
 
 def default_handler() -> logging.Handler:
