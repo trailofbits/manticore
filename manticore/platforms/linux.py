@@ -3282,11 +3282,19 @@ class Linux(Platform):
 
         bufstat = add(nw, stat.st_dev)  # long st_dev
         bufstat += add(nw, stat.st_ino)  # long st_ino
-        bufstat += add(nw, stat.st_nlink)  # long st_nlink
-        bufstat += add(4, stat.st_mode)  # 32 mode
-        bufstat += add(4, stat.st_uid)  # 32 uid
-        bufstat += add(4, stat.st_gid)  # 32 gid
-        bufstat += add(4, 0)  # 32 _pad
+
+        if self.current.address_bit_size == 64:
+            bufstat += add(nw, stat.st_nlink)  # long st_nlink
+            bufstat += add(4, stat.st_mode)  # 32 mode
+            bufstat += add(4, stat.st_uid)  # 32 uid
+            bufstat += add(4, stat.st_gid)  # 32 gid
+            bufstat += add(4, 0)  # 32 _pad
+        else:
+            bufstat += add(2, stat.st_mode)  # 16 mode
+            bufstat += add(2, stat.st_nlink)  # 16 st_nlink
+            bufstat += add(2, stat.st_uid)  # 16 uid
+            bufstat += add(2, stat.st_gid)  # 16 gid
+
         bufstat += add(nw, stat.st_rdev)  # long st_rdev
         bufstat += add(nw, stat.st_size)  # long st_size
         bufstat += add(nw, stat.st_blksize)  # long st_blksize
@@ -3384,11 +3392,12 @@ class Linux(Platform):
         self.current.write_bytes(buf, bufstat)
         return 0
 
-    def sys_newstat(self, fd, buf):
+    def sys_newstat(self, path, buf):
         """
-        Wrapper for stat64()
+        Wrapper for newfstat()
         """
-        return self.sys_stat64(fd, buf)
+        fd = self.sys_open(path, 0, "r")
+        return self.sys_newfstat(fd, buf)
 
     def sys_stat64(self, path, buf):
         """
