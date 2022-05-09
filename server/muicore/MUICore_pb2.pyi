@@ -92,13 +92,8 @@ global___ManticoreInstance = ManticoreInstance
 
 class TerminateResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    SUCCESS_FIELD_NUMBER: builtins.int
-    success: builtins.bool
     def __init__(self,
-        *,
-        success: builtins.bool = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["success",b"success"]) -> None: ...
 global___TerminateResponse = TerminateResponse
 
 class NativeArguments(google.protobuf.message.Message):
@@ -194,13 +189,8 @@ global___AddressRequest = AddressRequest
 
 class TargetResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    SUCCESS_FIELD_NUMBER: builtins.int
-    success: builtins.bool
     def __init__(self,
-        *,
-        success: builtins.bool = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["success",b"success"]) -> None: ...
 global___TargetResponse = TargetResponse
 
 class ManticoreRunningStatus(google.protobuf.message.Message):

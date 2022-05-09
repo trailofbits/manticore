@@ -39,7 +39,8 @@ setup(
     version="0.0.1",
     packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
-        "manticore @ git+https://github.com/trailofbits/manticore.git@chess",
+        # manticore from upstream chess branch with fixes not yet in master
+        "manticore @ git+https://github.com/trailofbits/manticore.git@634b6a4cdc295c93027b1dbe5037e574cf76200b",
         "grpcio",
         "crytic-compile==0.2.2",
     ]

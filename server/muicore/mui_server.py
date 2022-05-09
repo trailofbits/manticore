@@ -111,6 +111,12 @@ class MUIServicer(ManticoreUIServicer):
         """Starts a singular Manticore instance to analyze a native binary"""
         try:
             parsed = parse_native_arguments(native_arguments.additional_mcore_args)
+        except Exception as e:
+            print(e)
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details("Additional arguments could not be parsed!")
+            return ManticoreInstance()
+        try:
             m = Manticore.linux(
                 native_arguments.program_path,
                 argv=None
@@ -134,7 +140,13 @@ class MUIServicer(ManticoreUIServicer):
                 workspace_url=parsed.workspace,
                 introspection_plugin_type=MUIIntrospectionPlugin,
             )
+        except Exception as e:
+            print(e)
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details("Basic arguments are invalid!")
+            return ManticoreInstance()
 
+        try:
             m.register_plugin(InstructionCounter())
             m.register_plugin(Visited(parsed.coverage))
             m.register_plugin(Tracer())
@@ -163,6 +175,14 @@ class MUIServicer(ManticoreUIServicer):
             for addr in self.find:
                 m.add_hook(addr, find_f)
 
+        except Exception as e:
+            print(e)
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details("Hooks set are invalid!")
+            return ManticoreInstance()
+
+        try:
+
             def manticore_native_runner(mcore: Manticore):
                 mcore.run()
                 mcore.finalize()
@@ -175,7 +195,11 @@ class MUIServicer(ManticoreUIServicer):
 
         except Exception as e:
             print(e)
-            raise e
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(
+                "Manticore failed to start or crashed during execution!"
+            )
+            return ManticoreInstance()
 
         return ManticoreInstance(uuid=manticore_wrapper.uuid)
 
@@ -184,20 +208,26 @@ class MUIServicer(ManticoreUIServicer):
     ) -> ManticoreInstance:
         """Starts a singular Manticore instance to analyze a solidity contract"""
         if evm_arguments.contract_path == "":
-            raise FileNotFoundError("Contract path not specified!")
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details("Contract path not specified!")
+            return ManticoreInstance()
         if not Path(evm_arguments.contract_path).is_file():
-            raise FileNotFoundError(
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details(
                 f"Contract path invalid: '{evm_arguments.contract_path}'"
             )
+            return ManticoreInstance()
 
         if evm_arguments.solc_bin:
             solc_bin_path = evm_arguments.solc_bin
         elif shutil.which("solc"):
             solc_bin_path = str(shutil.which("solc"))
         else:
-            raise Exception(
-                "solc binary neither specified in EVMArguments nor found in PATH!"
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details(
+                f"solc binary neither specified in EVMArguments nor found in PATH!"
             )
+            return ManticoreInstance()
 
         try:
             m = ManticoreEVM()
@@ -242,7 +272,11 @@ class MUIServicer(ManticoreUIServicer):
 
         except Exception as e:
             print(e)
-            raise e
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(
+                "Manticore failed to start or crashed during execution!"
+            )
+            return ManticoreInstance()
 
         return ManticoreInstance(uuid=manticore_wrapper.uuid)
 
@@ -251,16 +285,18 @@ class MUIServicer(ManticoreUIServicer):
     ) -> TerminateResponse:
         """Terminates the specified Manticore instance."""
         if mcore_instance.uuid not in self.manticore_instances:
-            return TerminateResponse(success=False)
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("Specified Manticore instance not found!")
+            return TerminateResponse()
 
         m_wrapper = self.manticore_instances[mcore_instance.uuid]
 
         if not (
             m_wrapper.manticore_object.is_running() and m_wrapper.thread.is_alive()
         ):
-            return TerminateResponse(success=True)
+            return TerminateResponse()
         m_wrapper.manticore_object.kill()
-        return TerminateResponse(success=True)
+        return TerminateResponse()
 
     def TargetAddressNative(
         self, address_request: AddressRequest, context: _Context
@@ -276,7 +312,7 @@ class MUIServicer(ManticoreUIServicer):
         elif address_request.type == AddressRequest.TargetType.CLEAR:
             self.avoid.remove(address_request.address)
             self.find.remove(address_request.address)
-        return TargetResponse(success=True)
+        return TargetResponse()
 
     def GetStateList(
         self, mcore_instance: ManticoreInstance, context: _Context
@@ -289,6 +325,8 @@ class MUIServicer(ManticoreUIServicer):
         errored_states = []
         complete_states = []
         if mcore_instance.uuid not in self.manticore_instances:
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("Specified Manticore instance not found!")
             return MUIStateList()
 
         m = self.manticore_instances[mcore_instance.uuid].manticore_object
@@ -327,9 +365,9 @@ class MUIServicer(ManticoreUIServicer):
         """Returns any new log messages for given ManticoreInstance since the previous call.
         Currently, implementation is based on TUI."""
         if mcore_instance.uuid not in self.manticore_instances:
-            return MUIMessageList(
-                messages=[MUILogMessage(content="Manticore instance not found!")]
-            )
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("Specified Manticore instance not found!")
+            return MUIMessageList()
 
         q = self.manticore_instances[mcore_instance.uuid].log_queue
         i = 0
@@ -345,7 +383,9 @@ class MUIServicer(ManticoreUIServicer):
     ) -> ManticoreRunningStatus:
 
         if mcore_instance.uuid not in self.manticore_instances:
-            return ManticoreRunningStatus(is_running=False)
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("Specified Manticore instance not found!")
+            return ManticoreRunningStatus()
 
         m_wrapper = self.manticore_instances[mcore_instance.uuid]
 

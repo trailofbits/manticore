@@ -9,8 +9,11 @@ from pathlib import Path
 from shutil import rmtree, which
 from uuid import UUID, uuid4
 
+import grpc
+
 from muicore import mui_server
 from muicore.MUICore_pb2 import *
+from tests.mock_classes import MockContext
 
 
 class MUICoreEVMTest(unittest.TestCase):
@@ -20,6 +23,7 @@ class MUICoreEVMTest(unittest.TestCase):
         self.test_event = threading.Event()
         self.servicer = mui_server.MUIServicer(self.test_event)
         self.solc_path = str(self.dirname / Path("solc"))
+        self.context = MockContext()
 
     def tearDown(self):
         for mwrapper in self.servicer.manticore_instances.values():
@@ -37,27 +41,24 @@ class MUICoreEVMTest(unittest.TestCase):
                 rmtree(f, ignore_errors=True)
 
     def test_start_with_no_or_invalid_contract_path(self):
-        with self.assertRaises(FileNotFoundError) as e:
-            self.servicer.StartEVM(EVMArguments(solc_bin=self.solc_path), None)
+        self.servicer.StartEVM(EVMArguments(solc_bin=self.solc_path), self.context)
+        self.assertEqual(self.context.code, grpc.StatusCode.INVALID_ARGUMENT)
+        self.assertEqual(self.context.details, "Contract path not specified!")
 
-        expected_exception = "Contract path not specified!"
-
-        self.assertEqual(str(e.exception), expected_exception)
+        self.context.reset()
 
         invalid_contract_path = str(
             self.dirname / Path("contracts") / Path("invalid_contract")
         )
-        with self.assertRaises(FileNotFoundError) as e:
-            self.servicer.StartEVM(
-                EVMArguments(
-                    contract_path=invalid_contract_path, solc_bin=self.solc_path
-                ),
-                None,
-            )
+        self.servicer.StartEVM(
+            EVMArguments(contract_path=invalid_contract_path, solc_bin=self.solc_path),
+            self.context,
+        )
 
-        expected_exception = f"Contract path invalid: '{invalid_contract_path}'"
-
-        self.assertEqual(str(e.exception), expected_exception)
+        self.assertEqual(self.context.code, grpc.StatusCode.INVALID_ARGUMENT)
+        self.assertEqual(
+            self.context.details, f"Contract path invalid: '{invalid_contract_path}'"
+        )
 
     def test_start_with_no_solc_specified_or_in_path(self):
         path_to_use = os.environ["PATH"]
@@ -71,22 +72,22 @@ class MUICoreEVMTest(unittest.TestCase):
                 [dir for dir in cur_paths if dir != solc_dir]
             )
 
-        with self.assertRaises(Exception) as e:
-            with unittest.mock.patch.dict(os.environ, {"PATH": path_to_use}):
-                mcore_instance = self.servicer.StartEVM(
-                    EVMArguments(contract_path=self.contract_path),
-                    None,
-                )
+        with unittest.mock.patch.dict(os.environ, {"PATH": path_to_use}):
+            mcore_instance = self.servicer.StartEVM(
+                EVMArguments(contract_path=self.contract_path),
+                self.context,
+            )
 
+        self.assertEqual(self.context.code, grpc.StatusCode.INVALID_ARGUMENT)
         self.assertEqual(
-            str(e.exception),
+            self.context.details,
             "solc binary neither specified in EVMArguments nor found in PATH!",
         )
 
     def test_start(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
 
         try:
@@ -104,7 +105,7 @@ class MUICoreEVMTest(unittest.TestCase):
     def test_terminate_running_manticore(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
@@ -116,8 +117,10 @@ class MUICoreEVMTest(unittest.TestCase):
                 )
             time.sleep(1)
 
-        t_status = self.servicer.Terminate(mcore_instance, None)
-        self.assertTrue(t_status.success)
+        self.context.reset()
+
+        self.servicer.Terminate(mcore_instance, self.context)
+        self.assertEqual(self.context.code, grpc.StatusCode.OK)
         self.assertTrue(mwrapper.manticore_object.is_killed())
 
         stime = time.time()
@@ -131,8 +134,11 @@ class MUICoreEVMTest(unittest.TestCase):
     def test_terminate_killed_manticore(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
+
+        self.context.reset()
+
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
         mwrapper.manticore_object.kill()
         stime = time.time()
@@ -143,18 +149,19 @@ class MUICoreEVMTest(unittest.TestCase):
                 )
             time.sleep(1)
 
-        t_status = self.servicer.Terminate(mcore_instance, None)
-
-        self.assertTrue(t_status.success)
+        self.servicer.Terminate(mcore_instance, self.context)
+        self.assertEqual(self.context.code, grpc.StatusCode.OK)
 
     def test_terminate_invalid_manticore(self):
-        t_status = self.servicer.Terminate(ManticoreInstance(uuid=uuid4().hex), None)
-        self.assertFalse(t_status.success)
+        t_status = self.servicer.Terminate(
+            ManticoreInstance(uuid=uuid4().hex), self.context
+        )
+        self.assertEqual(self.context.code, grpc.StatusCode.FAILED_PRECONDITION)
 
     def test_get_message_list_running_manticore(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
@@ -163,7 +170,9 @@ class MUICoreEVMTest(unittest.TestCase):
             time.sleep(1)
             if not mwrapper.manticore_object._log_queue.empty():
                 deque_messages = list(mwrapper.manticore_object._log_queue)
-                messages = self.servicer.GetMessageList(mcore_instance, None).messages
+                messages = self.servicer.GetMessageList(
+                    mcore_instance, self.context
+                ).messages
                 for i in range(len(messages)):
                     self.assertEqual(messages[i].content, deque_messages[i])
                 break
@@ -171,7 +180,7 @@ class MUICoreEVMTest(unittest.TestCase):
     def test_get_message_list_stopped_manticore(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
@@ -189,30 +198,33 @@ class MUICoreEVMTest(unittest.TestCase):
             time.sleep(1)
             if not mwrapper.manticore_object._log_queue.empty():
                 deque_messages = list(mwrapper.manticore_object._log_queue)
-                messages = self.servicer.GetMessageList(mcore_instance, None).messages
+                messages = self.servicer.GetMessageList(
+                    mcore_instance, self.context
+                ).messages
                 for i in range(len(messages)):
                     self.assertEqual(messages[i].content, deque_messages[i])
                 break
 
     def test_get_message_list_invalid_manticore(self):
         message_list = self.servicer.GetMessageList(
-            ManticoreInstance(uuid=uuid4().hex), None
+            ManticoreInstance(uuid=uuid4().hex), self.context
         )
-        self.assertEqual(len(message_list.messages), 1)
+        self.assertEqual(self.context.code, grpc.StatusCode.FAILED_PRECONDITION)
         self.assertEqual(
-            message_list.messages[0].content, "Manticore instance not found!"
+            self.context.details, "Specified Manticore instance not found!"
         )
+        self.assertEqual(len(message_list.messages), 0)
 
     def test_get_state_list_running_manticore(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
         for i in range(5):
             time.sleep(1)
-            state_list = self.servicer.GetStateList(mcore_instance, None)
+            state_list = self.servicer.GetStateList(mcore_instance, self.context)
             all_states = list(
                 map(
                     lambda x: x.state_id,
@@ -231,7 +243,7 @@ class MUICoreEVMTest(unittest.TestCase):
     def test_get_state_list_stopped_manticore(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
@@ -247,7 +259,7 @@ class MUICoreEVMTest(unittest.TestCase):
         stime = time.time()
         for i in range(5):
             time.sleep(1)
-            state_list = self.servicer.GetStateList(mcore_instance, None)
+            state_list = self.servicer.GetStateList(mcore_instance, self.context)
             all_states = list(
                 map(
                     lambda x: x.state_id,
@@ -265,7 +277,7 @@ class MUICoreEVMTest(unittest.TestCase):
 
     def test_get_state_list_invalid_manticore(self):
         state_list = self.servicer.GetStateList(
-            ManticoreInstance(uuid=uuid4().hex), None
+            ManticoreInstance(uuid=uuid4().hex), self.context
         )
 
         self.assertFalse(state_list.active_states)
@@ -277,7 +289,7 @@ class MUICoreEVMTest(unittest.TestCase):
     def test_check_manticore_running(self):
         mcore_instance = self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
@@ -290,7 +302,7 @@ class MUICoreEVMTest(unittest.TestCase):
             time.sleep(1)
 
         self.assertTrue(
-            self.servicer.CheckManticoreRunning(mcore_instance, None).is_running
+            self.servicer.CheckManticoreRunning(mcore_instance, self.context).is_running
         )
 
         mwrapper.manticore_object.kill()
@@ -304,27 +316,27 @@ class MUICoreEVMTest(unittest.TestCase):
             time.sleep(1)
 
         self.assertFalse(
-            self.servicer.CheckManticoreRunning(mcore_instance, None).is_running
+            self.servicer.CheckManticoreRunning(mcore_instance, self.context).is_running
         )
 
     def test_check_manticore_running_invalid_manticore(self):
         self.assertFalse(
             self.servicer.CheckManticoreRunning(
-                ManticoreInstance(uuid=uuid4().hex), None
+                ManticoreInstance(uuid=uuid4().hex), self.context
             ).is_running
         )
 
     def test_stop_server(self):
         self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
         self.servicer.StartEVM(
             EVMArguments(contract_path=self.contract_path, solc_bin=self.solc_path),
-            None,
+            self.context,
         )
 
-        self.servicer.StopServer(StopServerRequest(), None)
+        self.servicer.StopServer(StopServerRequest(), self.context)
 
         self.assertTrue(self.test_event.is_set())
         for mwrapper in self.servicer.manticore_instances.values():
