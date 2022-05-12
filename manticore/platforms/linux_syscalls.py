@@ -688,6 +688,7 @@ amd64 = {
     330: "sys_pkey_alloc",
     331: "sys_pkey_free",
     332: "sys_statx",
+    334: "sys_rseq",
     512: "compat_sys_rt_sigaction",
     513: "sys32_x32_rt_sigreturn",
     514: "compat_sys_ioctl",

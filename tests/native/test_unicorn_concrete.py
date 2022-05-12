@@ -6,6 +6,7 @@ import contextlib
 from manticore.native import Manticore
 from manticore.native.state import State
 from manticore.core.plugin import Plugin
+from manticore.utils.log import set_verbosity, init_logging
 
 
 class ConcretePlugin(Plugin):
@@ -150,6 +151,7 @@ class UnicornResumeTest(unittest.TestCase):
 
     def setUp(self):
         dirname = os.path.dirname(__file__)
+        init_logging()
         self.concrete_instance = Manticore(os.path.join(dirname, "binaries", "rusticorn"))
         self.concrete_instance.register_plugin(ResumeUnicornPlugin())
         self.concrete_instance.add_hook(self.MAIN, callback=self.hook_main)
@@ -159,9 +161,9 @@ class UnicornResumeTest(unittest.TestCase):
 
     def test_integration_resume(self):
         f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            self.concrete_instance.run()
-            self.concrete_instance.finalize()
+        set_verbosity(2)
+        self.concrete_instance.run()
+        self.concrete_instance.finalize()
 
         output = f.getvalue()
         print(output)
