@@ -38,10 +38,8 @@ class ManticornTest(unittest.TestCase):
         )
 
         self.concrete_instance.register_plugin(ConcretePlugin())
-        """
         self.concrete_instance.register_plugin(RegisterCapturePlugin())
         self.m.register_plugin(RegisterCapturePlugin())
-        """
 
     def test_register_comparison(self):
         self.m.run()

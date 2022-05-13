@@ -950,10 +950,13 @@ class X86Cpu(Cpu):
         """
         # FIXME Choose conservative values and consider returning some default when eax not here
         conf = {
-            # Taken from comparison against Unicorn@v1.0.2
-            0x0: (0x00000004, 0x68747541, 0x444D4163, 0x69746E65),
-            # Taken from comparison against Unicorn@v1.0.2
-            0x1: (0x663, 0x800, 0x2182200, 0x7088100),
+            # Taken from comparison against local Intel machine with `cpuid` tool
+            0x0: (0x00000004, 0x756E6547, 0x6C65746E, 0x49656E69),
+            # Determined through initial Unicorn comparison and then fixed to
+            # support latest glibc 2.35
+            # * RDX Required bit 23 for MMX instructions on new glibc
+            # * RDX Required bit 0 for onboard x87 FPU
+            0x1: (0x00000663, 0x00000800, 0x02182200, 0x07888101),
             # TODO: Check against Unicorn
             0x2: (0x76035A01, 0x00F0B5FF, 0x00000000, 0x00C10000),
             0x4: {
