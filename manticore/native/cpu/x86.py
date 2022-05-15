@@ -2,6 +2,7 @@ import collections
 import logging
 
 from functools import wraps
+from typing import Tuple
 
 import capstone as cs
 
@@ -931,22 +932,11 @@ class X86Cpu(Cpu):
 
     #####################################################
     # Instructions
-    @instruction
-    def CPUID(cpu):
+    @staticmethod
+    def CPUID_helper(PC: int, EAX: int, ECX: int) -> Tuple[int, int, int, int]:
         """
-        CPUID instruction.
-
-        The ID flag (bit 21) in the EFLAGS register indicates support for the
-        CPUID instruction.  If a software procedure can set and clear this
-        flag, the processor executing the procedure supports the CPUID
-        instruction. This instruction operates the same in non-64-bit modes and
-        64-bit mode.  CPUID returns processor identification and feature
-        information in the EAX, EBX, ECX, and EDX registers.
-
-        The instruction's output is dependent on the contents of the EAX
-        register upon execution.
-
-        :param cpu: current CPU.
+        Takes values in eax and ecx to perform logic on what to return to (EAX,
+        EBX, ECX, EDX), in that order.
         """
         # FIXME Choose conservative values and consider returning some default when eax not here
         conf = {
@@ -981,21 +971,37 @@ class X86Cpu(Cpu):
             0x80000000: (0x80000000, 0x00000000, 0x00000000, 0x00000000),
         }
 
-        if cpu.EAX not in conf:
-            logger.warning("CPUID with EAX=%x not implemented @ %x", cpu.EAX, cpu.PC)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
-            return
+        if EAX not in conf:
+            logger.warning("CPUID with EAX=%x not implemented @ %x", EAX, PC)
+            return (0, 0, 0, 0)
 
-        if isinstance(conf[cpu.EAX], tuple):
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX]
-            return
+        if isinstance(conf[EAX], tuple):
+            return conf[EAX]  # type: ignore
 
-        if cpu.ECX not in conf[cpu.EAX]:
-            logger.warning("CPUID with EAX=%x ECX=%x not implemented", cpu.EAX, cpu.ECX)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
-            return
+        if ECX not in conf[EAX]:
+            logger.warning("CPUID with EAX=%x ECX=%x not implemented @ %x", EAX, ECX, PC)
+            return (0, 0, 0, 0)
 
-        cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX][cpu.ECX]
+        return conf[EAX][ECX]  # type: ignore
+
+    @instruction
+    def CPUID(cpu):
+        """
+        CPUID instruction.
+
+        The ID flag (bit 21) in the EFLAGS register indicates support for the
+        CPUID instruction.  If a software procedure can set and clear this
+        flag, the processor executing the procedure supports the CPUID
+        instruction. This instruction operates the same in non-64-bit modes and
+        64-bit mode.  CPUID returns processor identification and feature
+        information in the EAX, EBX, ECX, and EDX registers.
+
+        The instruction's output is dependent on the contents of the EAX
+        register upon execution.
+
+        :param cpu: current CPU.
+        """
+        cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = X86Cpu.CPUID_helper(cpu.PC, cpu.EAX, cpu.ECX)
 
     @instruction
     def XGETBV(cpu):
