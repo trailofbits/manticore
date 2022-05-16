@@ -3253,6 +3253,85 @@ class Linux(Platform):
 
     # 64bit syscalls
 
+    def sys_newfstatat(self, dfd, filename, buf, flag):
+        """
+        Determines information about a file based on a relative path and a directory file descriptor.
+        :rtype: int
+        :param dfd: directory file descriptor.
+        :param filename: relative path to file.
+        :param buf: a buffer where data about the file will be stored.
+        :param flag: flags to control the query.
+        :return: C{0} on success, negative on error
+        """
+
+        AT_SYMLINK_NOFOLLOW = 0x100  # Do not follow symbolic links.
+        AT_EMPTY_PATH = 0x1000  # Allow empty relative pathname
+        dfd = ctypes.c_int32(dfd).value
+        flag = ctypes.c_int32(flag).value
+        filename_addr = filename
+        filename = self.current.read_string(filename, 4096)
+
+        # Absolute path or relative to current working directory
+        if os.path.isabs(filename) or dfd == self.FCNTL_FDCWD:
+            return self.sys_newstat(filename_addr, buf)
+
+        # If pathname is an empty string, operate on the file referred to by dirfd
+        if not len(filename) and flag & AT_EMPTY_PATH:
+            return self.sys_newfstat(dfd, buf)
+
+        try:
+            f = self._get_fdlike(dfd)
+        except FdError as e:
+            logger.info(f"sys_newfstatat: invalid fd ({dfd}), returning -{errorcode(e.err)}")
+            return -e.err
+
+        if not isinstance(f, Directory):
+            return -errno.EISDIR
+
+        follow = not (flag & AT_SYMLINK_NOFOLLOW)
+        try:
+            stat = convert_os_stat(os.stat(filename, dir_fd=f.fileno(), follow_symlinks=follow))
+        except OSError as e:
+            return -e.errno
+
+        def add(width, val):
+            fformat = {2: "H", 4: "L", 8: "Q"}[width]
+            return struct.pack("<" + fformat, val)
+
+        def to_timespec(width, ts):
+            "Note: this is a platform-dependent timespec (8 or 16 bytes)"
+            return add(width, int(ts)) + add(width, int(ts % 1 * 1e9))
+
+        # From linux/arch/x86/include/uapi/asm/stat.h
+        # Numerous fields are native width-wide
+        nw = self.current.address_bit_size // 8
+
+        bufstat = add(nw, stat.st_dev)  # long st_dev
+        bufstat += add(nw, stat.st_ino)  # long st_ino
+
+        if self.current.address_bit_size == 64:
+            bufstat += add(nw, stat.st_nlink)  # long st_nlink
+            bufstat += add(4, stat.st_mode)  # 32 mode
+            bufstat += add(4, stat.st_uid)  # 32 uid
+            bufstat += add(4, stat.st_gid)  # 32 gid
+            bufstat += add(4, 0)  # 32 _pad
+        else:
+            bufstat += add(2, stat.st_mode)  # 16 mode
+            bufstat += add(2, stat.st_nlink)  # 16 st_nlink
+            bufstat += add(2, stat.st_uid)  # 16 uid
+            bufstat += add(2, stat.st_gid)  # 16 gid
+
+        bufstat += add(nw, stat.st_rdev)  # long st_rdev
+        bufstat += add(nw, stat.st_size)  # long st_size
+        bufstat += add(nw, stat.st_blksize)  # long st_blksize
+        bufstat += add(nw, stat.st_blocks)  # long st_blocks
+        bufstat += to_timespec(nw, stat.st_atime)  # long   st_atime, nsec;
+        bufstat += to_timespec(nw, stat.st_mtime)  # long   st_mtime, nsec;
+        bufstat += to_timespec(nw, stat.st_ctime)  # long   st_ctime, nsec;
+
+        self.current.write_bytes(buf, bufstat)
+        return 0
+
     def sys_newfstat(self, fd, buf):
         """
         Determines information about a file based on its file descriptor.
@@ -3282,11 +3361,19 @@ class Linux(Platform):
 
         bufstat = add(nw, stat.st_dev)  # long st_dev
         bufstat += add(nw, stat.st_ino)  # long st_ino
-        bufstat += add(nw, stat.st_nlink)  # long st_nlink
-        bufstat += add(4, stat.st_mode)  # 32 mode
-        bufstat += add(4, stat.st_uid)  # 32 uid
-        bufstat += add(4, stat.st_gid)  # 32 gid
-        bufstat += add(4, 0)  # 32 _pad
+
+        if self.current.address_bit_size == 64:
+            bufstat += add(nw, stat.st_nlink)  # long st_nlink
+            bufstat += add(4, stat.st_mode)  # 32 mode
+            bufstat += add(4, stat.st_uid)  # 32 uid
+            bufstat += add(4, stat.st_gid)  # 32 gid
+            bufstat += add(4, 0)  # 32 _pad
+        else:
+            bufstat += add(2, stat.st_mode)  # 16 mode
+            bufstat += add(2, stat.st_nlink)  # 16 st_nlink
+            bufstat += add(2, stat.st_uid)  # 16 uid
+            bufstat += add(2, stat.st_gid)  # 16 gid
+
         bufstat += add(nw, stat.st_rdev)  # long st_rdev
         bufstat += add(nw, stat.st_size)  # long st_size
         bufstat += add(nw, stat.st_blksize)  # long st_blksize
@@ -3384,11 +3471,12 @@ class Linux(Platform):
         self.current.write_bytes(buf, bufstat)
         return 0
 
-    def sys_newstat(self, fd, buf):
+    def sys_newstat(self, path, buf):
         """
-        Wrapper for stat64()
+        Wrapper for newfstat()
         """
-        return self.sys_stat64(fd, buf)
+        fd = self.sys_open(path, 0, "r")
+        return self.sys_newfstat(fd, buf)
 
     def sys_stat64(self, path, buf):
         """
