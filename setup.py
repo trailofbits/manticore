@@ -19,9 +19,8 @@ def rtd_dependent_deps():
 native_deps = [
     "capstone==5.0.0rc2",
     "pyelftools",
-    # branch: python-binding-hook-cpuid
-    # "unicorn==2.0.0-rc7",
-    "unicorn @ git+https://github.com/ekilmer/unicorn.git@a92bbd068faa6aef16cc4a31200e9ab2cf162d52#subdirectory=bindings/python",
+    # Fixes on top of "unicorn==2.0.0-rc7" for CPUID hook
+    "unicorn @ git+https://github.com/unicorn-engine/unicorn.git@2800561a969fb36edba36dfa1bbaa7586a0d9564#subdirectory=bindings/python",
 ]
 
 lint_deps = ["black~=22.0", "mypy==0.790"]
