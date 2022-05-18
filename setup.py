@@ -16,7 +16,11 @@ def rtd_dependent_deps():
 
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
-native_deps = ["capstone==4.0.2", "pyelftools", "unicorn==1.0.2"]
+native_deps = [
+    "capstone==5.0.0rc2",
+    "pyelftools",
+    "unicorn==1.0.2",
+]
 
 lint_deps = ["black~=22.0", "mypy==0.790"]
 
