@@ -373,19 +373,6 @@ class ExpressionTest(unittest.TestCase):
         cs.add(Operators.OR(bt, bt, False))
         self.assertTrue(self.solver.check(cs))
 
-    def testBool5(self):
-        cs = ConstraintSet()
-        bf = BoolConstant(value=False)
-        bt = BoolConstant(value=True)
-        x = cs.new_bool()
-        y = cs.new_bool()
-        self.assertRaises(Exception, bool, x == y)
-        cs.add(x == bf)
-        cs.add(y == bt)
-        cs.add(Operators.OR(True, x))
-        cs.add(Operators.OR(y, y, False))
-        self.assertTrue(self.solver.check(cs))
-
     def testBasicArray(self):
         cs = ConstraintSet()
         # make array of 32->8 bits
