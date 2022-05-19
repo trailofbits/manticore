@@ -16,7 +16,7 @@ service ManticoreUI {
 // LogMessage and StateList message types have "MUI" in their names to distinguish them from those in mserialize
 
 message MUILogMessage{ 
-	string content = 1;
+    string content = 1;
 }
 
 message MUIMessageList{
@@ -24,17 +24,18 @@ message MUIMessageList{
 }
 
 message MUIState {
-	int32 state_id = 3;
+    int32 state_id = 3;
+    uint64 pc = 10;
 }
 
 message MUIStateList{
 
-	// state categories in MUI - based on manticore enums StateStatus and StateList
-	repeated MUIState active_states = 4;
-	repeated MUIState waiting_states = 5;
-	repeated MUIState forked_states = 6;
-	repeated MUIState errored_states = 7;
-	repeated MUIState complete_states = 8;
+    // state categories in MUI - based on manticore enums StateStatus and StateList
+    repeated MUIState active_states = 4;
+    repeated MUIState waiting_states = 5;
+    repeated MUIState forked_states = 6;
+    repeated MUIState errored_states = 7;
+    repeated MUIState complete_states = 8;
 }
 
 message ManticoreInstance {
@@ -45,7 +46,7 @@ message TerminateResponse {}
 
 message NativeArguments {
     string program_path = 11;
-    repeated string binary_args = 16;	
+    repeated string binary_args = 16;    
     repeated string envp = 17;
     repeated string symbolic_files = 18;
     string concrete_start = 19;
@@ -54,13 +55,13 @@ message NativeArguments {
 }
 
 message EVMArguments {
-	string contract_path = 12;
-	string contract_name = 13;
-	string solc_bin = 14;
-	string tx_limit = 22;
-	string tx_account = 23;
-	repeated string detectors_to_exclude = 24;
-	string additional_flags = 25;
+    string contract_path = 12;
+    string contract_name = 13;
+    string solc_bin = 14;
+    string tx_limit = 22;
+    string tx_account = 23;
+    repeated string detectors_to_exclude = 24;
+    string additional_flags = 25;
 }
 
 message AddressRequest {
@@ -78,7 +79,7 @@ message AddressRequest {
 message TargetResponse {}
 
 message ManticoreRunningStatus {
-	bool is_running = 15;
+    bool is_running = 15;
 }
 
 message StopServerRequest {}

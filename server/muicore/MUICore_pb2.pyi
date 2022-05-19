@@ -41,12 +41,15 @@ global___MUIMessageList = MUIMessageList
 class MUIState(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
     STATE_ID_FIELD_NUMBER: builtins.int
+    PC_FIELD_NUMBER: builtins.int
     state_id: builtins.int
+    pc: builtins.int
     def __init__(self,
         *,
         state_id: builtins.int = ...,
+        pc: builtins.int = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["state_id",b"state_id"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["pc",b"pc","state_id",b"state_id"]) -> None: ...
 global___MUIState = MUIState
 
 class MUIStateList(google.protobuf.message.Message):

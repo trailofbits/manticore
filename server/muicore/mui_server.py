@@ -333,7 +333,14 @@ class MUIServicer(ManticoreUIServicer):
         states = m.introspect()
 
         for state_id, state_desc in states.items():
-            s = MUIState(state_id=state_id)
+
+            if isinstance(state_desc.pc, int):
+                s = MUIState(state_id=state_id, pc=state_desc.pc)
+            elif isinstance(state_desc.last_pc, int):
+                s = MUIState(state_id=state_id, pc=state_desc.last_pc)
+            else:
+                s = MUIState(state_id=state_id)
+
             if state_desc.status == StateStatus.running:
                 active_states.append(s)
             elif state_desc.status in (
