@@ -1,4 +1,4 @@
-import warnings
+from typing import NamedTuple
 from copy import copy
 
 import capstone as cs
