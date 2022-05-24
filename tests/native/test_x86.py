@@ -22318,7 +22318,7 @@ class CPUTest(unittest.TestCase):
         mem = Memory32()
         cpu = I386Cpu(mem)
         mem.mmap(0x08065000, 0x1000, "rwx")
-        
+
         # psubq xmm0, xmm1
         mem[0x08065000] = "\x66"
         mem[0x08065001] = "\x0f"
