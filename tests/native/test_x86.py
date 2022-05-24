@@ -22314,6 +22314,70 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.EBP, 4294948352)
 
+    def test_PSUBQ_1(self):
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, "rwx")
+        
+        # psubq xmm0, xmm1
+        mem[0x08065000] = "\x66"
+        mem[0x08065001] = "\x0f"
+        mem[0x08065002] = "\xfb"
+        mem[0x08065003] = "\xc1"
+        cpu.EIP = 0x8065000
+        cpu.XMM0 = 0xDEADBEEFCAFEBABE0000000000000000
+        cpu.XMM1 = 0xDEADBEEFCAFEBABE0000000000000001
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065000], "\x66")
+        self.assertEqual(mem[0x8065001], "\x0f")
+        self.assertEqual(mem[0x8065002], "\xfb")
+        self.assertEqual(mem[0x8065003], "\xc1")
+        self.assertEqual(cpu.EIP, 0x08065004)
+        self.assertEqual(cpu.XMM0, 0x0000000000000000FFFFFFFFFFFFFFFF)
+        self.assertEqual(cpu.XMM1, 0xDEADBEEFCAFEBABE0000000000000001)
+
+    def test_PSUBQ_2(self):
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, "rwx")
+        mem.mmap(0xFFFFB000, 0x1000, "rwx")
+
+        # psubq xmm0, xmmword ptr [ebp]
+        mem.write(0x08065000, "f\x0f\xfbE\x00")
+        mem.write(0xFFFFB600, (0xDEADBEEFCAFEBABE0000000000000001).to_bytes(16, "little"))
+
+        cpu.EIP = 0x08065000
+        cpu.XMM0 = 0xDEADBEEFCAFEBABE0000000000000000
+        cpu.EBP = 0xFFFFB600
+        cpu.execute()
+
+        self.assertEqual(mem[0x08065000:0x08065005], [b"f", b"\x0f", b"\xfb", b"E", b"\x00"])
+        self.assertEqual(
+            mem[0xFFFFB600:0xFFFFB610],
+            [
+                b"\x01",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\xBE",
+                b"\xBA",
+                b"\xFE",
+                b"\xCA",
+                b"\xEF",
+                b"\xBE",
+                b"\xAD",
+                b"\xDE",
+            ],
+        )
+        self.assertEqual(cpu.EIP, 0x08065005)
+        self.assertEqual(cpu.XMM0, 0x0000000000000000FFFFFFFFFFFFFFFF)
+        self.assertEqual(cpu.EBP, 0xFFFFB600)
+
     def test_PTEST_1(self):
         """Instruction PTEST_1
         Groups: sse41
