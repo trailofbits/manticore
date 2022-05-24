@@ -1,19 +1,20 @@
 import argparse
+import dataclasses
 import logging
 import shutil
 import time
 import uuid
 from concurrent import futures
-from inspect import currentframe, getframeinfo
 from pathlib import Path
 from threading import Event, Thread
-from typing import Dict, Set
+from typing import Any, Callable, Dict, Optional, Set
 
 import grpc
 from grpc._server import _Context
 from manticore.core.plugin import (
     InstructionCounter,
     RecordSymbolicBranches,
+    StateDescriptor,
     Tracer,
     Visited,
 )
@@ -33,10 +34,11 @@ from .native_utils import parse_native_arguments
 
 
 class ManticoreWrapper:
-    def __init__(self, mcore_object: Manticore, mthread: Thread):
+    def __init__(
+        self, mcore_object: Manticore, thread_target: Callable, *thread_args: Any
+    ):
         self.uuid: str = uuid.uuid4().hex
         self.manticore_object: Manticore = mcore_object
-        self.thread: Thread = mthread
         # mimics Manticore repository, reasoning for the queue size difference is provided in Manticore:
         # https://github.com/trailofbits/manticore/blob/5a258f499098394c0af25e2e3f00b1b603c2334d/manticore/core/manticore.py#L133-L135
         self.log_queue = (
@@ -44,6 +46,17 @@ class ManticoreWrapper:
             if mcore_object._worker_type == WorkerProcess
             else deque(maxlen=5000)
         )
+        # saves a copy of all state descriptors after analysis is complete or terminated
+        # but before the finalize() operation which destroys all states
+        self.final_states: Optional[Dict[int, StateDescriptor]] = None
+
+        self.thread: Thread = Thread(
+            target=thread_target,
+            args=(self,) + thread_args,
+            daemon=True,
+            name=self.uuid,
+        )
+        self.thread.start()
 
     def append_log(self, msg: str) -> None:
         q = self.log_queue
@@ -183,14 +196,15 @@ class MUIServicer(ManticoreUIServicer):
 
         try:
 
-            def manticore_native_runner(mcore: Manticore):
-                mcore.run()
-                mcore.finalize()
+            def manticore_native_runner(mcore_wrapper: ManticoreWrapper):
+                mcore_wrapper.manticore_object.run()
+                mcore_wrapper.final_states = {
+                    k: dataclasses.replace(v)
+                    for k, v in mcore_wrapper.manticore_object.introspect().items()
+                }
+                mcore_wrapper.manticore_object.finalize()
 
-            mthread = Thread(target=manticore_native_runner, args=(m,), daemon=True)
-            manticore_wrapper = ManticoreWrapper(m, mthread)
-            mthread.name = manticore_wrapper.uuid
-            mthread.start()
+            manticore_wrapper = ManticoreWrapper(m, manticore_native_runner)
             self.manticore_instances[manticore_wrapper.uuid] = manticore_wrapper
 
         except Exception as e:
@@ -238,9 +252,11 @@ class MUIServicer(ManticoreUIServicer):
                 m,
             )
 
-            def manticore_evm_runner(m: ManticoreEVM, args: argparse.Namespace):
+            def manticore_evm_runner(
+                mcore_wrapper: ManticoreWrapper, args: argparse.Namespace
+            ):
 
-                m.multi_tx_analysis(
+                mcore_wrapper.manticore_object.multi_tx_analysis(
                     evm_arguments.contract_path,
                     contract_name=evm_arguments.contract_name,
                     tx_limit=-1
@@ -259,15 +275,19 @@ class MUIServicer(ManticoreUIServicer):
                     compile_args={"solc_solcs_bin": solc_bin_path},
                 )
 
-                if not args.no_testcases:
-                    m.finalize(only_alive_states=args.only_alive_testcases)
-                else:
-                    m.kill()
+                mcore_wrapper.final_states = {
+                    k: dataclasses.replace(v)
+                    for k, v in mcore_wrapper.manticore_object.introspect().items()
+                }
 
-            mthread = Thread(target=manticore_evm_runner, args=(m, args), daemon=True)
-            manticore_wrapper = ManticoreWrapper(m, mthread)
-            mthread.name = manticore_wrapper.uuid
-            mthread.start()
+                if not args.no_testcases:
+                    mcore_wrapper.manticore_object.finalize(
+                        only_alive_states=args.only_alive_testcases
+                    )
+                else:
+                    mcore_wrapper.manticore_object.kill()
+
+            manticore_wrapper = ManticoreWrapper(m, manticore_evm_runner, args)
             self.manticore_instances[manticore_wrapper.uuid] = manticore_wrapper
 
         except Exception as e:
@@ -329,8 +349,12 @@ class MUIServicer(ManticoreUIServicer):
             context.set_details("Specified Manticore instance not found!")
             return MUIStateList()
 
-        m = self.manticore_instances[mcore_instance.uuid].manticore_object
-        states = m.introspect()
+        mcore_wrapper = self.manticore_instances[mcore_instance.uuid]
+        states = (
+            mcore_wrapper.final_states
+            if mcore_wrapper.final_states is not None
+            else mcore_wrapper.manticore_object.introspect()
+        )
 
         for state_id, state_desc in states.items():
 
@@ -396,11 +420,7 @@ class MUIServicer(ManticoreUIServicer):
 
         m_wrapper = self.manticore_instances[mcore_instance.uuid]
 
-        return ManticoreRunningStatus(
-            is_running=(
-                m_wrapper.manticore_object.is_running() and m_wrapper.thread.is_alive()
-            )
-        )
+        return ManticoreRunningStatus(is_running=(m_wrapper.thread.is_alive()))
 
     def StopServer(
         self, request: StopServerRequest, context: _Context
@@ -409,7 +429,7 @@ class MUIServicer(ManticoreUIServicer):
         for mwrapper in self.manticore_instances.values():
             mwrapper.manticore_object.kill()
             stime = time.time()
-            while mwrapper.manticore_object.is_running():
+            while mwrapper.thread.is_alive():
                 time.sleep(1)
                 if (time.time() - stime) > 10:
                     to_warn = True

@@ -41,7 +41,7 @@ setup(
     install_requires=[
         # manticore from upstream chess branch with fixes not yet in master
         "manticore @ git+https://github.com/trailofbits/manticore.git@634b6a4cdc295c93027b1dbe5037e574cf76200b",
-        "grpcio",
+        "grpcio==1.46.3",
         "crytic-compile==0.2.2",
     ]
     + native_deps,

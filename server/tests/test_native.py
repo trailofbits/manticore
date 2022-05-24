@@ -28,9 +28,9 @@ class MUICoreNativeTest(unittest.TestCase):
         for mwrapper in self.servicer.manticore_instances.values():
             mwrapper.manticore_object.kill()
             stime = time.time()
-            while mwrapper.manticore_object.is_running():
+            while mwrapper.thread.is_alive():
                 time.sleep(1)
-                if (time.time() - stime) > 10:
+                if (time.time() - stime) > 15:
                     break
 
     @classmethod
@@ -272,10 +272,10 @@ class MUICoreNativeTest(unittest.TestCase):
         mwrapper.manticore_object.kill()
 
         stime = time.time()
-        while mwrapper.manticore_object.is_running():
-            if (time.time() - stime) > 10:
+        while mwrapper.thread.is_alive():
+            if (time.time() - stime) > 45:
                 self.fail(
-                    f"Manticore instance {mcore_instance.uuid} failed to stop running before timeout"
+                    f"Manticore instance {mcore_instance.uuid} failed to stop running and finish generating reports before timeout"
                 )
             time.sleep(1)
 

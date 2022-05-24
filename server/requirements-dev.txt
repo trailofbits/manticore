@@ -3,3 +3,5 @@ isort==5.10.1
 mypy==0.942
 types-setuptools==57.4.12
 mypy-protobuf==3.2.0
+grpcio==1.46.3
+grpcio-tools==1.46.3
