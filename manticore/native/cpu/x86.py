@@ -5882,6 +5882,31 @@ class X86Cpu(Cpu):
         dest.write(Operators.CONCAT(8 * len(result), *result))
 
     @instruction
+    def PSUBQ(cpu, dest, src):
+        """
+        PSUBQ: Packed add with quadruple words
+        Packed subtract with quad
+
+        Subtracts the second operand (source operand) from the first operand (destination operand) and stores
+        the result in the destination operand. When packed quadword operands are used, a SIMD subtract is performed.
+        When a quadword result is too large to be represented in 64 bits (overflow), the result is wrapped around
+        and the low 64 bits are written to the destination element (that is, the carry is ignored).
+
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
+        """
+        result = []
+        value_a = dest.read()
+        value_b = src.read()
+
+        for i in reversed(range(0, dest.size, 64)):
+            a = Operators.EXTRACT(value_a, i, 64)
+            b = Operators.EXTRACT(value_b, i, 64)
+            result.append(a - b)
+        dest.write(Operators.CONCAT(dest.size, *result))
+
+    @instruction
     def POR(cpu, dest, src):
         """
         Performs a bitwise logical OR operation on the source operand (second operand) and the destination operand
