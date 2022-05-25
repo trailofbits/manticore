@@ -5903,7 +5903,7 @@ class X86Cpu(Cpu):
         for i in reversed(range(0, dest.size, 64)):
             a = Operators.EXTRACT(value_a, i, 64)
             b = Operators.EXTRACT(value_b, i, 64)
-            result.append((a - b) & 0xFFFFFFFFFFFFFFFF)
+            result.append(a - b)
         dest.write(Operators.CONCAT(dest.size, *result))
 
     @instruction
