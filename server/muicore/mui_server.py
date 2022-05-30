@@ -367,6 +367,10 @@ class MUIServicer(ManticoreUIServicer):
 
             if isinstance(state_desc.parent, int):
                 state_args["parent_id"] = state_desc.parent
+            else:
+                state_args["parent_id"] = -1
+
+            state_args["children_ids"] = list(state_desc.children)
 
             s = MUIState(**state_args)
 
