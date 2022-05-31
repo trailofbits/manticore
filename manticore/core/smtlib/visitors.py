@@ -61,7 +61,7 @@ class Visitor:
                 return value
         return self._rebuild(expression, args)
 
-    @functools.lru_cache
+    @functools.lru_cache(maxsize=None)
     def _methods(self, ecls):
         methods = []
         for cls in ecls.__mro__[:-1]:
@@ -70,7 +70,6 @@ class Visitor:
             if hasattr(self, methodname):
                 methods.append(getattr(self, methodname))
         return tuple(methods)
-
 
     def visit(self, node, use_fixed_point=False):
         """
