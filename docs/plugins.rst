@@ -6,7 +6,7 @@ Core
 
 .. py:function:: will_fork_state_callback(self, state, expression, solutions, policy)
 
-.. py:function:: did_fork_state_callback(self, new_state, expression, new_value,policy)
+.. py:function:: did_fork_state_callback(self, new_state, expression, solutions, policy, children)
 
 .. py:function:: will_load_state_callback(self, state_id)
 
