@@ -1,3 +1,5 @@
+import functools
+
 from ...utils.helpers import CacheDict
 from ...exceptions import SmtlibError
 from .expression import *
@@ -53,14 +55,22 @@ class Visitor:
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        for cls in expression.__class__.__mro__[:-1]:
+        for method in self._methods(expression.__class__):
+            value = method(expression, *args)
+            if value is not None:
+                return value
+        return self._rebuild(expression, args)
+
+    @functools.lru_cache
+    def _methods(self, ecls):
+        methods = []
+        for cls in ecls.__mro__[:-1]:
             sort = cls.__name__
             methodname = "visit_%s" % sort
             if hasattr(self, methodname):
-                value = getattr(self, methodname)(expression, *args)
-                if value is not None:
-                    return value
-        return self._rebuild(expression, args)
+                methods.append(getattr(self, methodname))
+        return tuple(methods)
+
 
     def visit(self, node, use_fixed_point=False):
         """
