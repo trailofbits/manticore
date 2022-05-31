@@ -40,9 +40,9 @@ EVM
 
 .. py:function:: did_evm_execute_instruction_callback(self, last_unstruction, last_arguments, result)
 
-.. py:function:: did_evm_read_memory_callback(self, offset, operators)
+.. py:function:: did_evm_read_memory_callback(self, offset, value, size)
 
-.. py:function:: did_evm_write_memory_callback(self, offset, operators)
+.. py:function:: did_evm_write_memory_callback(self, offset, value, size)
 
 .. py:function:: on_symbolic_sha3_callback(self, data, know_sha3)
 
