@@ -68,7 +68,7 @@ setup(
     python_requires=">=3.7",
     install_requires=[
         "pyyaml",
-        "protobuf",
+        "protobuf~=3.20",
         # evm dependencies
         "pysha3",
         "prettytable",
