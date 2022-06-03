@@ -77,8 +77,6 @@ class MUIServicer(ManticoreUIServicer):
         """Initializes the dict that keeps track of all created manticore instances, as well as avoid/find address set"""
 
         self.manticore_instances: Dict[str, ManticoreWrapper] = {}
-        self.avoid: Set[int] = set()
-        self.find: Set[int] = set()
         self.stop_event: Event = stop_event
 
         manticore_logger = logging.getLogger("manticore")
@@ -171,12 +169,6 @@ class MUIServicer(ManticoreUIServicer):
             if parsed.assertions:
                 m.load_assertions(parsed.assertions)
 
-            def avoid_f(state: StateBase):
-                state.abandon()
-
-            for addr in self.avoid:
-                m.add_hook(addr, avoid_f)
-
             def find_f(state: StateBase):
                 bufs = state.solve_one_n_batched(state.input_symbols)
                 for symbol, buf in zip(state.input_symbols, bufs):
@@ -185,8 +177,18 @@ class MUIServicer(ManticoreUIServicer):
                     m.kill()
                 state.abandon()
 
-            for addr in self.find:
-                m.add_hook(addr, find_f)
+            def avoid_f(state: StateBase):
+                state.abandon()
+
+            for hook in native_arguments.hooks:
+                if hook.type == Hook.HookType.FIND:
+                    m.add_hook(hook.address, find_f)
+                elif hook.type == Hook.HookType.AVOID:
+                    m.add_hook(hook.address, avoid_f)
+                elif hook.type == Hook.HookType.CUSTOM:
+                    exec(hook.func_text, {"addr": hook.address, "m": m})
+                elif hook.type == Hook.HookType.GLOBAL:
+                    exec(hook.func_text, {"m": m})
 
         except Exception as e:
             print(e)
@@ -317,22 +319,6 @@ class MUIServicer(ManticoreUIServicer):
             return TerminateResponse()
         m_wrapper.manticore_object.kill()
         return TerminateResponse()
-
-    def TargetAddressNative(
-        self, address_request: AddressRequest, context: _Context
-    ) -> TargetResponse:
-        """Sets addresses in the binary to find/avoid, or clears address status.
-        Values set will be used for subsequent Start calls.
-        Currently, implementation is based on MUI's Binary Ninja plugin."""
-
-        if address_request.type == AddressRequest.TargetType.FIND:
-            self.find.add(address_request.address)
-        elif address_request.type == AddressRequest.TargetType.AVOID:
-            self.avoid.add(address_request.address)
-        elif address_request.type == AddressRequest.TargetType.CLEAR:
-            self.avoid.remove(address_request.address)
-            self.find.remove(address_request.address)
-        return TargetResponse()
 
     def GetStateList(
         self, mcore_instance: ManticoreInstance, context: _Context

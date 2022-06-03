@@ -44,11 +44,6 @@ class ManticoreUIStub(object):
                 request_serializer=muicore_dot_MUICore__pb2.ManticoreInstance.SerializeToString,
                 response_deserializer=muicore_dot_MUICore__pb2.ManticoreRunningStatus.FromString,
                 )
-        self.TargetAddressNative = channel.unary_unary(
-                '/muicore.ManticoreUI/TargetAddressNative',
-                request_serializer=muicore_dot_MUICore__pb2.AddressRequest.SerializeToString,
-                response_deserializer=muicore_dot_MUICore__pb2.TargetResponse.FromString,
-                )
         self.StopServer = channel.unary_unary(
                 '/muicore.ManticoreUI/StopServer',
                 request_serializer=muicore_dot_MUICore__pb2.StopServerRequest.SerializeToString,
@@ -95,12 +90,6 @@ class ManticoreUIServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def TargetAddressNative(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def StopServer(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -139,11 +128,6 @@ def add_ManticoreUIServicer_to_server(servicer, server):
                     servicer.CheckManticoreRunning,
                     request_deserializer=muicore_dot_MUICore__pb2.ManticoreInstance.FromString,
                     response_serializer=muicore_dot_MUICore__pb2.ManticoreRunningStatus.SerializeToString,
-            ),
-            'TargetAddressNative': grpc.unary_unary_rpc_method_handler(
-                    servicer.TargetAddressNative,
-                    request_deserializer=muicore_dot_MUICore__pb2.AddressRequest.FromString,
-                    response_serializer=muicore_dot_MUICore__pb2.TargetResponse.SerializeToString,
             ),
             'StopServer': grpc.unary_unary_rpc_method_handler(
                     servicer.StopServer,
@@ -259,23 +243,6 @@ class ManticoreUI(object):
         return grpc.experimental.unary_unary(request, target, '/muicore.ManticoreUI/CheckManticoreRunning',
             muicore_dot_MUICore__pb2.ManticoreInstance.SerializeToString,
             muicore_dot_MUICore__pb2.ManticoreRunningStatus.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def TargetAddressNative(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/muicore.ManticoreUI/TargetAddressNative',
-            muicore_dot_MUICore__pb2.AddressRequest.SerializeToString,
-            muicore_dot_MUICore__pb2.TargetResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

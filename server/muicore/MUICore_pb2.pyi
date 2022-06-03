@@ -106,6 +106,40 @@ class TerminateResponse(google.protobuf.message.Message):
         ) -> None: ...
 global___TerminateResponse = TerminateResponse
 
+class Hook(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class _HookType:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _HookTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[Hook._HookType.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+        FIND: Hook._HookType.ValueType  # 0
+        AVOID: Hook._HookType.ValueType  # 1
+        CUSTOM: Hook._HookType.ValueType  # 2
+        GLOBAL: Hook._HookType.ValueType  # 3
+    class HookType(_HookType, metaclass=_HookTypeEnumTypeWrapper):
+        pass
+
+    FIND: Hook.HookType.ValueType  # 0
+    AVOID: Hook.HookType.ValueType  # 1
+    CUSTOM: Hook.HookType.ValueType  # 2
+    GLOBAL: Hook.HookType.ValueType  # 3
+
+    ADDRESS_FIELD_NUMBER: builtins.int
+    TYPE_FIELD_NUMBER: builtins.int
+    FUNC_TEXT_FIELD_NUMBER: builtins.int
+    address: builtins.int
+    type: global___Hook.HookType.ValueType
+    func_text: typing.Text
+    def __init__(self,
+        *,
+        address: builtins.int = ...,
+        type: global___Hook.HookType.ValueType = ...,
+        func_text: typing.Text = ...,
+        ) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["address",b"address","func_text",b"func_text","type",b"type"]) -> None: ...
+global___Hook = Hook
+
 class NativeArguments(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
     PROGRAM_PATH_FIELD_NUMBER: builtins.int
@@ -115,6 +149,7 @@ class NativeArguments(google.protobuf.message.Message):
     CONCRETE_START_FIELD_NUMBER: builtins.int
     STDIN_SIZE_FIELD_NUMBER: builtins.int
     ADDITIONAL_MCORE_ARGS_FIELD_NUMBER: builtins.int
+    HOOKS_FIELD_NUMBER: builtins.int
     program_path: typing.Text
     @property
     def binary_args(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
@@ -125,6 +160,8 @@ class NativeArguments(google.protobuf.message.Message):
     concrete_start: typing.Text
     stdin_size: typing.Text
     additional_mcore_args: typing.Text
+    @property
+    def hooks(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Hook]: ...
     def __init__(self,
         *,
         program_path: typing.Text = ...,
@@ -134,8 +171,9 @@ class NativeArguments(google.protobuf.message.Message):
         concrete_start: typing.Text = ...,
         stdin_size: typing.Text = ...,
         additional_mcore_args: typing.Text = ...,
+        hooks: typing.Optional[typing.Iterable[global___Hook]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["additional_mcore_args",b"additional_mcore_args","binary_args",b"binary_args","concrete_start",b"concrete_start","envp",b"envp","program_path",b"program_path","stdin_size",b"stdin_size","symbolic_files",b"symbolic_files"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["additional_mcore_args",b"additional_mcore_args","binary_args",b"binary_args","concrete_start",b"concrete_start","envp",b"envp","hooks",b"hooks","program_path",b"program_path","stdin_size",b"stdin_size","symbolic_files",b"symbolic_files"]) -> None: ...
 global___NativeArguments = NativeArguments
 
 class EVMArguments(google.protobuf.message.Message):
@@ -167,41 +205,6 @@ class EVMArguments(google.protobuf.message.Message):
         ) -> None: ...
     def ClearField(self, field_name: typing_extensions.Literal["additional_flags",b"additional_flags","contract_name",b"contract_name","contract_path",b"contract_path","detectors_to_exclude",b"detectors_to_exclude","solc_bin",b"solc_bin","tx_account",b"tx_account","tx_limit",b"tx_limit"]) -> None: ...
 global___EVMArguments = EVMArguments
-
-class AddressRequest(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    class _TargetType:
-        ValueType = typing.NewType('ValueType', builtins.int)
-        V: typing_extensions.TypeAlias = ValueType
-    class _TargetTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[AddressRequest._TargetType.ValueType], builtins.type):
-        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
-        FIND: AddressRequest._TargetType.ValueType  # 0
-        AVOID: AddressRequest._TargetType.ValueType  # 1
-        CLEAR: AddressRequest._TargetType.ValueType  # 2
-    class TargetType(_TargetType, metaclass=_TargetTypeEnumTypeWrapper):
-        pass
-
-    FIND: AddressRequest.TargetType.ValueType  # 0
-    AVOID: AddressRequest.TargetType.ValueType  # 1
-    CLEAR: AddressRequest.TargetType.ValueType  # 2
-
-    ADDRESS_FIELD_NUMBER: builtins.int
-    TYPE_FIELD_NUMBER: builtins.int
-    address: builtins.int
-    type: global___AddressRequest.TargetType.ValueType
-    def __init__(self,
-        *,
-        address: builtins.int = ...,
-        type: global___AddressRequest.TargetType.ValueType = ...,
-        ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["address",b"address","type",b"type"]) -> None: ...
-global___AddressRequest = AddressRequest
-
-class TargetResponse(google.protobuf.message.Message):
-    DESCRIPTOR: google.protobuf.descriptor.Descriptor
-    def __init__(self,
-        ) -> None: ...
-global___TargetResponse = TargetResponse
 
 class ManticoreRunningStatus(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
