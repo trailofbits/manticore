@@ -9,7 +9,6 @@ service ManticoreUI {
     rpc GetStateList(ManticoreInstance) returns (MUIStateList) {}
     rpc GetMessageList(ManticoreInstance) returns (MUIMessageList) {}
     rpc CheckManticoreRunning(ManticoreInstance) returns (ManticoreRunningStatus) {}
-    rpc TargetAddressNative(AddressRequest) returns (TargetResponse) {}
     rpc StopServer(StopServerRequest) returns (StopServerResponse) {}
 }
 
@@ -26,6 +25,8 @@ message MUIMessageList{
 message MUIState {
     int32 state_id = 3;
     uint64 pc = 10;
+    int32 parent_id = 28;
+    repeated int32 children_ids = 29;
 }
 
 message MUIStateList{
@@ -44,6 +45,20 @@ message ManticoreInstance {
 
 message TerminateResponse {}
 
+message Hook {
+
+    enum HookType {
+        FIND = 0;
+        AVOID = 1;
+        CUSTOM = 2;
+        GLOBAL = 3;
+    }
+
+    uint64 address = 26;
+    HookType type = 27;
+    string func_text = 31;
+}
+
 message NativeArguments {
     string program_path = 11;
     repeated string binary_args = 16;    
@@ -52,6 +67,7 @@ message NativeArguments {
     string concrete_start = 19;
     string stdin_size = 20;
     string additional_mcore_args = 21;
+    repeated Hook hooks = 30;
 }
 
 message EVMArguments {
@@ -63,20 +79,6 @@ message EVMArguments {
     repeated string detectors_to_exclude = 24;
     string additional_flags = 25;
 }
-
-message AddressRequest {
-
-    enum TargetType {
-        FIND = 0;
-        AVOID = 1;
-        CLEAR = 2;
-    }
-
-    uint64 address = 26;
-    TargetType type = 27;
-}
-
-message TargetResponse {}
 
 message ManticoreRunningStatus {
     bool is_running = 15;
