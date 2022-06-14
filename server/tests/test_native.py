@@ -75,6 +75,128 @@ class MUICoreNativeTest(unittest.TestCase):
         mcore = self.servicer.manticore_instances[mcore_instance.uuid].manticore_object
         self.assertTrue(Path(mcore.workspace).is_dir())
 
+    def test_start_with_find_avoid_hooks(self):
+        mcore_instance = self.servicer.StartNative(
+            NativeArguments(
+                program_path=str(self.binary_path),
+                hooks=[
+                    Hook(type=Hook.HookType.FIND, address=0x40100C),
+                    Hook(type=Hook.HookType.AVOID, address=0x401018),
+                ],
+            ),
+            self.context,
+        )
+        self.assertTrue(mcore_instance.uuid in self.servicer.manticore_instances)
+        # TODO: Once logging is improved, check that find_f outputs successful stdin. Might require different test binary.
+
+    def test_start_with_global_hook(self):
+        mcore_instance = self.servicer.StartNative(
+            NativeArguments(
+                program_path=str(self.binary_path),
+                hooks=[
+                    Hook(
+                        type=Hook.HookType.GLOBAL,
+                        func_text="\n".join(
+                            (
+                                "global m",
+                                "def hook(state):",
+                                "    m.test_attribute = True",
+                                "    m.kill()",
+                                "m.hook(None)(hook)",
+                            )
+                        ),
+                    ),
+                ],
+            ),
+            self.context,
+        )
+
+        self.assertTrue(mcore_instance.uuid in self.servicer.manticore_instances)
+        m = self.servicer.manticore_instances[mcore_instance.uuid].manticore_object
+
+        stime = time.time()
+        while not hasattr(m, "test_attribute"):
+            if (time.time() - stime) > 10:
+                self.fail(
+                    f"Global hook failed to trigger on {mcore_instance.uuid} before timeout"
+                )
+            time.sleep(1)
+
+        self.assertTrue(m.test_attribute)
+
+    def test_start_with_custom_hook(self):
+        mcore_instance = self.servicer.StartNative(
+            NativeArguments(
+                program_path=str(self.binary_path),
+                hooks=[
+                    Hook(
+                        type=Hook.HookType.CUSTOM,
+                        func_text="\n".join(
+                            (
+                                "global m, addr",
+                                "def hook(state):",
+                                "    m.test_attribute = addr",
+                                "    m.kill()",
+                                "m.hook(addr)(hook)",
+                            )
+                        ),
+                        address=0x400FDC,
+                    ),
+                ],
+            ),
+            self.context,
+        )
+
+        self.assertTrue(mcore_instance.uuid in self.servicer.manticore_instances)
+        m = self.servicer.manticore_instances[mcore_instance.uuid].manticore_object
+
+        stime = time.time()
+        while not hasattr(m, "test_attribute"):
+            if (time.time() - stime) > 10:
+                self.fail(
+                    f"Custom hook failed to trigger on {mcore_instance.uuid} before timeout"
+                )
+            time.sleep(1)
+
+        self.assertTrue(m.test_attribute == 0x400FDC)
+
+    def test_start_with_invalid_custom_and_global_hook(self):
+
+        self.servicer.StartNative(
+            NativeArguments(
+                program_path=str(self.binary_path),
+                hooks=[
+                    Hook(
+                        type=Hook.HookType.CUSTOM,
+                        func_text="this is an invalid hook",
+                        address=0x400FDC,
+                    ),
+                ],
+            ),
+            self.context,
+        )
+
+        self.assertEquals(self.context.code, grpc.StatusCode.INVALID_ARGUMENT)
+        self.assertEquals(self.context.details, "Hooks set are invalid!")
+
+        self.context.reset()
+
+        self.servicer.StartNative(
+            NativeArguments(
+                program_path=str(self.binary_path),
+                hooks=[
+                    Hook(
+                        type=Hook.HookType.GLOBAL,
+                        func_text="this is another invalid hook",
+                    ),
+                ],
+            ),
+            self.context,
+        )
+
+        self.assertEquals(self.context.code, grpc.StatusCode.INVALID_ARGUMENT)
+        self.assertEquals(self.context.details, "Hooks set are invalid!")
+
     def test_terminate_running_manticore(self):
         mcore_instance = self.servicer.StartNative(
             NativeArguments(program_path=self.binary_path), self.context
