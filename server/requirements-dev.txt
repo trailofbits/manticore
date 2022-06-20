@@ -5,3 +5,4 @@ types-setuptools==57.4.12
 mypy-protobuf==3.2.0
 grpcio==1.46.3
 grpcio-tools==1.46.3
+protobuf~=3.20
