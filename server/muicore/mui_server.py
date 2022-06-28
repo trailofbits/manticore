@@ -30,6 +30,7 @@ from .evm_utils import setup_detectors_flags
 from .introspect_plugin import MUIIntrospectionPlugin
 from .MUICore_pb2 import *
 from .MUICore_pb2_grpc import ManticoreUIServicer, add_ManticoreUIServicer_to_server
+from .native_plugin import UnicornEmulatePlugin
 from .native_utils import parse_native_arguments
 
 
@@ -162,6 +163,9 @@ class MUIServicer(ManticoreUIServicer):
             m.register_plugin(Visited(parsed.coverage))
             m.register_plugin(Tracer())
             m.register_plugin(RecordSymbolicBranches())
+
+            if native_arguments.emulate_until:
+                m.register_plugin(UnicornEmulatePlugin(native_arguments.emulate_until))
 
             if parsed.names is not None:
                 m.apply_model_hooks(parsed.names)

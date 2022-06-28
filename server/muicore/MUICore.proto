@@ -67,6 +67,7 @@ message NativeArguments {
     string concrete_start = 19;
     string stdin_size = 20;
     string additional_mcore_args = 21;
+    optional uint64 emulate_until = 22;
     repeated Hook hooks = 30;
 }
 

@@ -149,6 +149,7 @@ class NativeArguments(google.protobuf.message.Message):
     CONCRETE_START_FIELD_NUMBER: builtins.int
     STDIN_SIZE_FIELD_NUMBER: builtins.int
     ADDITIONAL_MCORE_ARGS_FIELD_NUMBER: builtins.int
+    EMULATE_UNTIL_FIELD_NUMBER: builtins.int
     HOOKS_FIELD_NUMBER: builtins.int
     program_path: typing.Text
     @property
@@ -160,6 +161,7 @@ class NativeArguments(google.protobuf.message.Message):
     concrete_start: typing.Text
     stdin_size: typing.Text
     additional_mcore_args: typing.Text
+    emulate_until: builtins.int
     @property
     def hooks(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Hook]: ...
     def __init__(self,
@@ -171,9 +173,12 @@ class NativeArguments(google.protobuf.message.Message):
         concrete_start: typing.Text = ...,
         stdin_size: typing.Text = ...,
         additional_mcore_args: typing.Text = ...,
+        emulate_until: typing.Optional[builtins.int] = ...,
         hooks: typing.Optional[typing.Iterable[global___Hook]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["additional_mcore_args",b"additional_mcore_args","binary_args",b"binary_args","concrete_start",b"concrete_start","envp",b"envp","hooks",b"hooks","program_path",b"program_path","stdin_size",b"stdin_size","symbolic_files",b"symbolic_files"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["_emulate_until",b"_emulate_until","emulate_until",b"emulate_until"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["_emulate_until",b"_emulate_until","additional_mcore_args",b"additional_mcore_args","binary_args",b"binary_args","concrete_start",b"concrete_start","emulate_until",b"emulate_until","envp",b"envp","hooks",b"hooks","program_path",b"program_path","stdin_size",b"stdin_size","symbolic_files",b"symbolic_files"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_emulate_until",b"_emulate_until"]) -> typing.Optional[typing_extensions.Literal["emulate_until"]]: ...
 global___NativeArguments = NativeArguments
 
 class EVMArguments(google.protobuf.message.Message):
