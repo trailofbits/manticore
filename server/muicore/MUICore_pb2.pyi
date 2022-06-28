@@ -53,10 +53,12 @@ class MUIState(google.protobuf.message.Message):
         *,
         state_id: builtins.int = ...,
         pc: builtins.int = ...,
-        parent_id: builtins.int = ...,
+        parent_id: typing.Optional[builtins.int] = ...,
         children_ids: typing.Optional[typing.Iterable[builtins.int]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["children_ids",b"children_ids","parent_id",b"parent_id","pc",b"pc","state_id",b"state_id"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["_parent_id",b"_parent_id","parent_id",b"parent_id"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["_parent_id",b"_parent_id","children_ids",b"children_ids","parent_id",b"parent_id","pc",b"pc","state_id",b"state_id"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_parent_id",b"_parent_id"]) -> typing.Optional[typing_extensions.Literal["parent_id"]]: ...
 global___MUIState = MUIState
 
 class MUIStateList(google.protobuf.message.Message):
@@ -133,11 +135,16 @@ class Hook(google.protobuf.message.Message):
     func_text: typing.Text
     def __init__(self,
         *,
-        address: builtins.int = ...,
+        address: typing.Optional[builtins.int] = ...,
         type: global___Hook.HookType.ValueType = ...,
-        func_text: typing.Text = ...,
+        func_text: typing.Optional[typing.Text] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["address",b"address","func_text",b"func_text","type",b"type"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["_address",b"_address","_func_text",b"_func_text","address",b"address","func_text",b"func_text"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["_address",b"_address","_func_text",b"_func_text","address",b"address","func_text",b"func_text","type",b"type"]) -> None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_address",b"_address"]) -> typing.Optional[typing_extensions.Literal["address"]]: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_func_text",b"_func_text"]) -> typing.Optional[typing_extensions.Literal["func_text"]]: ...
 global___Hook = Hook
 
 class NativeArguments(google.protobuf.message.Message):
@@ -149,8 +156,8 @@ class NativeArguments(google.protobuf.message.Message):
     CONCRETE_START_FIELD_NUMBER: builtins.int
     STDIN_SIZE_FIELD_NUMBER: builtins.int
     ADDITIONAL_MCORE_ARGS_FIELD_NUMBER: builtins.int
-    EMULATE_UNTIL_FIELD_NUMBER: builtins.int
     HOOKS_FIELD_NUMBER: builtins.int
+    EMULATE_UNTIL_FIELD_NUMBER: builtins.int
     program_path: typing.Text
     @property
     def binary_args(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[typing.Text]: ...
@@ -161,24 +168,31 @@ class NativeArguments(google.protobuf.message.Message):
     concrete_start: typing.Text
     stdin_size: typing.Text
     additional_mcore_args: typing.Text
-    emulate_until: builtins.int
     @property
     def hooks(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Hook]: ...
+    emulate_until: builtins.int
     def __init__(self,
         *,
         program_path: typing.Text = ...,
         binary_args: typing.Optional[typing.Iterable[typing.Text]] = ...,
         envp: typing.Optional[typing.Iterable[typing.Text]] = ...,
         symbolic_files: typing.Optional[typing.Iterable[typing.Text]] = ...,
-        concrete_start: typing.Text = ...,
-        stdin_size: typing.Text = ...,
-        additional_mcore_args: typing.Text = ...,
-        emulate_until: typing.Optional[builtins.int] = ...,
+        concrete_start: typing.Optional[typing.Text] = ...,
+        stdin_size: typing.Optional[typing.Text] = ...,
+        additional_mcore_args: typing.Optional[typing.Text] = ...,
         hooks: typing.Optional[typing.Iterable[global___Hook]] = ...,
+        emulate_until: typing.Optional[builtins.int] = ...,
         ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["_emulate_until",b"_emulate_until","emulate_until",b"emulate_until"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["_emulate_until",b"_emulate_until","additional_mcore_args",b"additional_mcore_args","binary_args",b"binary_args","concrete_start",b"concrete_start","emulate_until",b"emulate_until","envp",b"envp","hooks",b"hooks","program_path",b"program_path","stdin_size",b"stdin_size","symbolic_files",b"symbolic_files"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["_additional_mcore_args",b"_additional_mcore_args","_concrete_start",b"_concrete_start","_emulate_until",b"_emulate_until","_stdin_size",b"_stdin_size","additional_mcore_args",b"additional_mcore_args","concrete_start",b"concrete_start","emulate_until",b"emulate_until","stdin_size",b"stdin_size"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["_additional_mcore_args",b"_additional_mcore_args","_concrete_start",b"_concrete_start","_emulate_until",b"_emulate_until","_stdin_size",b"_stdin_size","additional_mcore_args",b"additional_mcore_args","binary_args",b"binary_args","concrete_start",b"concrete_start","emulate_until",b"emulate_until","envp",b"envp","hooks",b"hooks","program_path",b"program_path","stdin_size",b"stdin_size","symbolic_files",b"symbolic_files"]) -> None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_additional_mcore_args",b"_additional_mcore_args"]) -> typing.Optional[typing_extensions.Literal["additional_mcore_args"]]: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_concrete_start",b"_concrete_start"]) -> typing.Optional[typing_extensions.Literal["concrete_start"]]: ...
+    @typing.overload
     def WhichOneof(self, oneof_group: typing_extensions.Literal["_emulate_until",b"_emulate_until"]) -> typing.Optional[typing_extensions.Literal["emulate_until"]]: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_stdin_size",b"_stdin_size"]) -> typing.Optional[typing_extensions.Literal["stdin_size"]]: ...
 global___NativeArguments = NativeArguments
 
 class EVMArguments(google.protobuf.message.Message):
@@ -203,12 +217,19 @@ class EVMArguments(google.protobuf.message.Message):
         contract_path: typing.Text = ...,
         contract_name: typing.Text = ...,
         solc_bin: typing.Text = ...,
-        tx_limit: typing.Text = ...,
-        tx_account: typing.Text = ...,
+        tx_limit: typing.Optional[typing.Text] = ...,
+        tx_account: typing.Optional[typing.Text] = ...,
         detectors_to_exclude: typing.Optional[typing.Iterable[typing.Text]] = ...,
-        additional_flags: typing.Text = ...,
+        additional_flags: typing.Optional[typing.Text] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["additional_flags",b"additional_flags","contract_name",b"contract_name","contract_path",b"contract_path","detectors_to_exclude",b"detectors_to_exclude","solc_bin",b"solc_bin","tx_account",b"tx_account","tx_limit",b"tx_limit"]) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["_additional_flags",b"_additional_flags","_tx_account",b"_tx_account","_tx_limit",b"_tx_limit","additional_flags",b"additional_flags","tx_account",b"tx_account","tx_limit",b"tx_limit"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["_additional_flags",b"_additional_flags","_tx_account",b"_tx_account","_tx_limit",b"_tx_limit","additional_flags",b"additional_flags","contract_name",b"contract_name","contract_path",b"contract_path","detectors_to_exclude",b"detectors_to_exclude","solc_bin",b"solc_bin","tx_account",b"tx_account","tx_limit",b"tx_limit"]) -> None: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_additional_flags",b"_additional_flags"]) -> typing.Optional[typing_extensions.Literal["additional_flags"]]: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_tx_account",b"_tx_account"]) -> typing.Optional[typing_extensions.Literal["tx_account"]]: ...
+    @typing.overload
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["_tx_limit",b"_tx_limit"]) -> typing.Optional[typing_extensions.Literal["tx_limit"]]: ...
 global___EVMArguments = EVMArguments
 
 class ManticoreRunningStatus(google.protobuf.message.Message):

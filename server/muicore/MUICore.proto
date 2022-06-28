@@ -25,7 +25,7 @@ message MUIMessageList{
 message MUIState {
     int32 state_id = 3;
     uint64 pc = 10;
-    int32 parent_id = 28;
+    optional int32 parent_id = 28;
     repeated int32 children_ids = 29;
 }
 
@@ -54,9 +54,9 @@ message Hook {
         GLOBAL = 3;
     }
 
-    uint64 address = 26;
+    optional uint64 address = 26;
     HookType type = 27;
-    string func_text = 31;
+    optional string func_text = 31;
 }
 
 message NativeArguments {
@@ -64,21 +64,21 @@ message NativeArguments {
     repeated string binary_args = 16;    
     repeated string envp = 17;
     repeated string symbolic_files = 18;
-    string concrete_start = 19;
-    string stdin_size = 20;
-    string additional_mcore_args = 21;
-    optional uint64 emulate_until = 22;
+    optional string concrete_start = 19;
+    optional string stdin_size = 20;
+    optional string additional_mcore_args = 21;
     repeated Hook hooks = 30;
+    optional uint64 emulate_until = 32;
 }
 
 message EVMArguments {
     string contract_path = 12;
     string contract_name = 13;
     string solc_bin = 14;
-    string tx_limit = 22;
-    string tx_account = 23;
+    optional string tx_limit = 22;
+    optional string tx_account = 23;
     repeated string detectors_to_exclude = 24;
-    string additional_flags = 25;
+    optional string additional_flags = 25;
 }
 
 message ManticoreRunningStatus {
