@@ -52,5 +52,5 @@ manticore@8d456f662d0f:~/manticore/examples/linux$ cat mcore_*/*1.stdin | ./basi
 
 # Use the Manticore API
 manticore@8d456f662d0f:~/manticore/examples/linux$ cd ../script
-manticore@8d456f662d0f:~/manticore/examples/script$ python3 count_instructions.py ../linux/helloworld
+manticore@8d456f662d0f:~/manticore/examples/script$ python3.7 count_instructions.py ../linux/helloworld
 ```
