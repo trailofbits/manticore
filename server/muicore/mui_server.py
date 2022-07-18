@@ -4,6 +4,7 @@ import logging
 import shutil
 import time
 import uuid
+from collections import defaultdict
 from concurrent import futures
 from pathlib import Path
 from threading import Event, Thread
@@ -18,7 +19,7 @@ from manticore.core.plugin import (
     Tracer,
     Visited,
 )
-from manticore.core.state import StateBase
+from manticore.core.state import StateBase, TerminateState
 from manticore.core.worker import WorkerProcess, WorkerThread
 from manticore.ethereum import ManticoreEVM
 from manticore.native import Manticore
@@ -47,9 +48,15 @@ class ManticoreWrapper:
             if mcore_object._worker_type == WorkerProcess
             else deque(maxlen=5000)
         )
+
+        # contains the state ids of all states paused by the user through the ControlState rpc
+        self.paused_states: Set[int] = set()
+
         # saves a copy of all state descriptors after analysis is complete or terminated
         # but before the finalize() operation which destroys all states
         self.final_states: Optional[Dict[int, StateDescriptor]] = None
+
+        self.state_callbacks: Dict[int, Set[Callable]] = defaultdict(set)
 
         self.thread: Thread = Thread(
             target=thread_target,
@@ -57,6 +64,8 @@ class ManticoreWrapper:
             daemon=True,
             name=self.uuid,
         )
+
+    def start(self) -> None:
         self.thread.start()
 
     def append_log(self, msg: str) -> None:
@@ -213,6 +222,15 @@ class MUIServicer(ManticoreUIServicer):
             manticore_wrapper = ManticoreWrapper(m, manticore_native_runner)
             self.manticore_instances[manticore_wrapper.uuid] = manticore_wrapper
 
+            def state_callback_hook(state: StateBase):
+                callbacks = manticore_wrapper.state_callbacks[state.id]
+                for callback in callbacks:
+                    callback(state)
+
+            m.hook(None)(state_callback_hook)
+
+            manticore_wrapper.start()
+
         except Exception as e:
             print(e)
             context.set_code(grpc.StatusCode.INTERNAL)
@@ -295,6 +313,7 @@ class MUIServicer(ManticoreUIServicer):
 
             manticore_wrapper = ManticoreWrapper(m, manticore_evm_runner, args)
             self.manticore_instances[manticore_wrapper.uuid] = manticore_wrapper
+            manticore_wrapper.start()
 
         except Exception as e:
             print(e)
@@ -331,9 +350,11 @@ class MUIServicer(ManticoreUIServicer):
         Currently, implementation is based on MUI's Binary Ninja plugin."""
         active_states = []
         waiting_states = []
+        paused_states = []
         forked_states = []
         errored_states = []
         complete_states = []
+
         if mcore_instance.uuid not in self.manticore_instances:
             context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
             context.set_details("Specified Manticore instance not found!")
@@ -372,7 +393,9 @@ class MUIServicer(ManticoreUIServicer):
             elif state_desc.status == StateStatus.destroyed:
                 forked_states.append(s)
             elif state_desc.status == StateStatus.stopped:
-                if state_desc.state_list == StateLists.killed:
+                if state_id in mcore_wrapper.paused_states:
+                    paused_states.append(s)
+                elif state_desc.state_list == StateLists.killed:
                     errored_states.append(s)
                 else:
                     complete_states.append(s)
@@ -382,6 +405,7 @@ class MUIServicer(ManticoreUIServicer):
         return MUIStateList(
             active_states=active_states,
             waiting_states=waiting_states,
+            paused_states=paused_states,
             forked_states=forked_states,
             errored_states=errored_states,
             complete_states=complete_states,
@@ -440,6 +464,75 @@ class MUIServicer(ManticoreUIServicer):
 
         self.stop_event.set()
         return StopServerResponse()
+
+    def ControlState(
+        self, request: ControlStateRequest, context: _Context
+    ) -> ControlStateResponse:
+        if request.manticore_instance.uuid not in self.manticore_instances:
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("Specified Manticore instance not found!")
+            return ControlStateResponse()
+
+        mcore_wrapper = self.manticore_instances[request.manticore_instance.uuid]
+        mcore_object = mcore_wrapper.manticore_object
+        states = (
+            mcore_wrapper.final_states
+            if mcore_wrapper.final_states is not None
+            else mcore_object.introspect()
+        )
+
+        if request.state_id not in states:
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("Specified state not found!")
+            return ControlStateResponse()
+
+        # Pause / Resume / Kill should have no effect if Manticore is no longer running,
+        # but we do not raise an error to account for latency between CheckStatus() calls
+        if not mcore_object.is_running():
+            return ControlStateResponse()
+
+        # helper callbacks for state control
+        def state_pause_hook(state: StateBase) -> None:
+            mcore_wrapper.state_callbacks[state.id].discard(state_pause_hook)
+            raise TerminateState("Pausing state")
+
+        def state_kill_hook(state: StateBase) -> None:
+            mcore_wrapper.state_callbacks[state.id].discard(state_kill_hook)
+            state.abandon()
+
+        try:
+            if request.action == ControlStateRequest.StateAction.PAUSE:
+                if len(mcore_wrapper.paused_states) == 0:
+                    with mcore_object._lock:
+                        mcore_object._busy_states.append(-1)
+                        mcore_object._lock.notify_all()
+                mcore_wrapper.state_callbacks[request.state_id].add(state_pause_hook)
+                mcore_wrapper.paused_states.add(request.state_id)
+
+            elif request.action == ControlStateRequest.StateAction.RESUME:
+                mcore_wrapper.paused_states.discard(request.state_id)
+                with mcore_object._lock:
+                    mcore_object._revive_state(request.state_id)
+                    if len(mcore_wrapper.paused_states) == 0:
+                        mcore_object._busy_states.remove(-1)
+                    mcore_object._lock.notify_all()
+
+            elif request.action == ControlStateRequest.StateAction.KILL:
+                if request.state_id in mcore_wrapper.paused_states:
+                    mcore_wrapper.paused_states.remove(request.state_id)
+                    if len(mcore_wrapper.paused_states) == 0:
+                        with mcore_object._lock:
+                            mcore_object._busy_states.remove(-1)
+                            mcore_object._lock.notify_all()
+                else:
+                    mcore_wrapper.state_callbacks[request.state_id].add(state_kill_hook)
+        except:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(
+                f"Failed apply action {request.action} to state {request.state_id}"
+            )
+
+        return ControlStateResponse()
 
 
 def main():

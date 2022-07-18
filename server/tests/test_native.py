@@ -412,6 +412,195 @@ class MUICoreNativeTest(unittest.TestCase):
             ).is_running
         )
 
+    def test_control_state_invalid_manticore(self):
+        self.servicer.ControlState(
+            ControlStateRequest(
+                manticore_instance=ManticoreInstance(uuid=uuid4().hex),
+                state_id=1,
+                action=ControlStateRequest.StateAction.PAUSE,
+            ),
+            self.context,
+        )
+        self.assertEqual(self.context.code, grpc.StatusCode.FAILED_PRECONDITION)
+        self.assertEqual(
+            self.context.details, "Specified Manticore instance not found!"
+        )
+
+    def test_control_state_invalid_state(self):
+        mcore_instance = self.servicer.StartNative(
+            NativeArguments(program_path=self.binary_path), self.context
+        )
+
+        self.servicer.ControlState(
+            ControlStateRequest(
+                manticore_instance=mcore_instance,
+                state_id=-1,
+                action=ControlStateRequest.StateAction.PAUSE,
+            ),
+            self.context,
+        )
+        self.assertEqual(self.context.code, grpc.StatusCode.FAILED_PRECONDITION)
+        self.assertEqual(self.context.details, "Specified state not found!")
+
+    def test_control_state_pause_state(self):
+        mcore_instance = self.servicer.StartNative(
+            NativeArguments(program_path=self.binary_path), self.context
+        )
+        mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
+
+        stime = time.time()
+        while (
+            len(
+                active_states := self.servicer.GetStateList(
+                    mcore_instance, self.context
+                ).active_states
+            )
+            == 0
+        ):
+            time.sleep(1)
+            if (time.time() - stime) > 30:
+                self.fail("Manticore did not create an active state before timeout")
+        candidate_state_id = list(active_states)[0].state_id
+
+        self.servicer.ControlState(
+            ControlStateRequest(
+                manticore_instance=mcore_instance,
+                state_id=candidate_state_id,
+                action=ControlStateRequest.StateAction.PAUSE,
+            ),
+            self.context,
+        )
+        self.assertEqual(self.context.code, grpc.StatusCode.OK)
+        self.assertEqual(self.context.details, "")
+
+        self.assertTrue(candidate_state_id in mwrapper.paused_states)
+        self.assertTrue(-1 in mwrapper.manticore_object._busy_states)
+        stime = time.time()
+        while (
+            len(
+                paused_states := self.servicer.GetStateList(
+                    mcore_instance, self.context
+                ).paused_states
+            )
+            == 0
+        ):
+            time.sleep(1)
+            if (time.time() - stime) > 30:
+                self.fail(
+                    f"Manticore did not pause the state {candidate_state_id} before timeout"
+                )
+        self.assertTrue(candidate_state_id == list(paused_states)[0].state_id)
+
+    def test_control_state_resume_paused_state(self):
+        self.test_control_state_pause_state()
+        self.assertTrue(len(self.servicer.manticore_instances) == 1)
+
+        mwrapper = list(self.servicer.manticore_instances.values())[0]
+        paused_state_id = list(mwrapper.paused_states)[0]
+
+        self.servicer.ControlState(
+            ControlStateRequest(
+                manticore_instance=ManticoreInstance(uuid=mwrapper.uuid),
+                state_id=paused_state_id,
+                action=ControlStateRequest.StateAction.RESUME,
+            ),
+            self.context,
+        )
+
+        self.assertEqual(self.context.code, grpc.StatusCode.OK)
+        self.assertEqual(self.context.details, "")
+
+        self.assertTrue(len(mwrapper.paused_states) == 0)
+        self.assertTrue(-1 not in mwrapper.manticore_object._busy_states)
+
+        self.assertTrue(
+            paused_state_id
+            not in map(
+                lambda x: x.state_id,
+                self.servicer.GetStateList(
+                    ManticoreInstance(uuid=mwrapper.uuid), self.context
+                ).paused_states,
+            )
+        )
+
+    def test_control_state_kill_active_state(self):
+        mcore_instance = self.servicer.StartNative(
+            NativeArguments(program_path=self.binary_path), self.context
+        )
+        mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
+
+        stime = time.time()
+        while (
+            len(
+                active_states := self.servicer.GetStateList(
+                    mcore_instance, self.context
+                ).active_states
+            )
+            == 0
+        ):
+            time.sleep(1)
+            if (time.time() - stime) > 30:
+                self.fail("Manticore did not create an active state before timeout")
+        candidate_state_id = list(active_states)[0].state_id
+
+        self.servicer.ControlState(
+            ControlStateRequest(
+                manticore_instance=mcore_instance,
+                state_id=candidate_state_id,
+                action=ControlStateRequest.StateAction.KILL,
+            ),
+            self.context,
+        )
+        self.assertEqual(self.context.code, grpc.StatusCode.OK)
+        self.assertEqual(self.context.details, "")
+
+        stime = time.time()
+        while (
+            len(
+                active_states := self.servicer.GetStateList(
+                    mcore_instance, self.context
+                ).active_states
+            )
+            != 0
+        ):
+            time.sleep(1)
+            if (time.time() - stime) > 30:
+                self.fail(
+                    f"Manticore did not kill the state {candidate_state_id} before timeout"
+                )
+
+    def test_control_state_kill_paused_state(self):
+        self.test_control_state_pause_state()
+        self.assertTrue(len(self.servicer.manticore_instances) == 1)
+
+        mwrapper = list(self.servicer.manticore_instances.values())[0]
+        paused_state_id = list(mwrapper.paused_states)[0]
+
+        self.servicer.ControlState(
+            ControlStateRequest(
+                manticore_instance=ManticoreInstance(uuid=mwrapper.uuid),
+                state_id=paused_state_id,
+                action=ControlStateRequest.StateAction.KILL,
+            ),
+            self.context,
+        )
+
+        self.assertEqual(self.context.code, grpc.StatusCode.OK)
+        self.assertEqual(self.context.details, "")
+
+        self.assertTrue(len(mwrapper.paused_states) == 0)
+        self.assertTrue(-1 not in mwrapper.manticore_object._busy_states)
+
+        self.assertTrue(
+            paused_state_id
+            not in map(
+                lambda x: x.state_id,
+                self.servicer.GetStateList(
+                    ManticoreInstance(uuid=mwrapper.uuid), self.context
+                ).paused_states,
+            )
+        )
+
     def test_stop_server(self):
         self.servicer.StartNative(
             NativeArguments(program_path=self.binary_path), self.context

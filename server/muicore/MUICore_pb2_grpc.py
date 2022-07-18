@@ -49,6 +49,11 @@ class ManticoreUIStub(object):
                 request_serializer=muicore_dot_MUICore__pb2.StopServerRequest.SerializeToString,
                 response_deserializer=muicore_dot_MUICore__pb2.StopServerResponse.FromString,
                 )
+        self.ControlState = channel.unary_unary(
+                '/muicore.ManticoreUI/ControlState',
+                request_serializer=muicore_dot_MUICore__pb2.ControlStateRequest.SerializeToString,
+                response_deserializer=muicore_dot_MUICore__pb2.ControlStateResponse.FromString,
+                )
 
 
 class ManticoreUIServicer(object):
@@ -96,6 +101,12 @@ class ManticoreUIServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ControlState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ManticoreUIServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -133,6 +144,11 @@ def add_ManticoreUIServicer_to_server(servicer, server):
                     servicer.StopServer,
                     request_deserializer=muicore_dot_MUICore__pb2.StopServerRequest.FromString,
                     response_serializer=muicore_dot_MUICore__pb2.StopServerResponse.SerializeToString,
+            ),
+            'ControlState': grpc.unary_unary_rpc_method_handler(
+                    servicer.ControlState,
+                    request_deserializer=muicore_dot_MUICore__pb2.ControlStateRequest.FromString,
+                    response_serializer=muicore_dot_MUICore__pb2.ControlStateResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -260,5 +276,22 @@ class ManticoreUI(object):
         return grpc.experimental.unary_unary(request, target, '/muicore.ManticoreUI/StopServer',
             muicore_dot_MUICore__pb2.StopServerRequest.SerializeToString,
             muicore_dot_MUICore__pb2.StopServerResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ControlState(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/muicore.ManticoreUI/ControlState',
+            muicore_dot_MUICore__pb2.ControlStateRequest.SerializeToString,
+            muicore_dot_MUICore__pb2.ControlStateResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

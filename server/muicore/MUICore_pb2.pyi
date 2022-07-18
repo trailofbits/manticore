@@ -68,6 +68,7 @@ class MUIStateList(google.protobuf.message.Message):
     FORKED_STATES_FIELD_NUMBER: builtins.int
     ERRORED_STATES_FIELD_NUMBER: builtins.int
     COMPLETE_STATES_FIELD_NUMBER: builtins.int
+    PAUSED_STATES_FIELD_NUMBER: builtins.int
     @property
     def active_states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___MUIState]:
         """state categories in MUI - based on manticore enums StateStatus and StateList"""
@@ -80,6 +81,8 @@ class MUIStateList(google.protobuf.message.Message):
     def errored_states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___MUIState]: ...
     @property
     def complete_states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___MUIState]: ...
+    @property
+    def paused_states(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___MUIState]: ...
     def __init__(self,
         *,
         active_states: typing.Optional[typing.Iterable[global___MUIState]] = ...,
@@ -87,8 +90,9 @@ class MUIStateList(google.protobuf.message.Message):
         forked_states: typing.Optional[typing.Iterable[global___MUIState]] = ...,
         errored_states: typing.Optional[typing.Iterable[global___MUIState]] = ...,
         complete_states: typing.Optional[typing.Iterable[global___MUIState]] = ...,
+        paused_states: typing.Optional[typing.Iterable[global___MUIState]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["active_states",b"active_states","complete_states",b"complete_states","errored_states",b"errored_states","forked_states",b"forked_states","waiting_states",b"waiting_states"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["active_states",b"active_states","complete_states",b"complete_states","errored_states",b"errored_states","forked_states",b"forked_states","paused_states",b"paused_states","waiting_states",b"waiting_states"]) -> None: ...
 global___MUIStateList = MUIStateList
 
 class ManticoreInstance(google.protobuf.message.Message):
@@ -254,3 +258,43 @@ class StopServerResponse(google.protobuf.message.Message):
     def __init__(self,
         ) -> None: ...
 global___StopServerResponse = StopServerResponse
+
+class ControlStateRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class _StateAction:
+        ValueType = typing.NewType('ValueType', builtins.int)
+        V: typing_extensions.TypeAlias = ValueType
+    class _StateActionEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ControlStateRequest._StateAction.ValueType], builtins.type):
+        DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
+        RESUME: ControlStateRequest._StateAction.ValueType  # 0
+        PAUSE: ControlStateRequest._StateAction.ValueType  # 1
+        KILL: ControlStateRequest._StateAction.ValueType  # 2
+    class StateAction(_StateAction, metaclass=_StateActionEnumTypeWrapper):
+        pass
+
+    RESUME: ControlStateRequest.StateAction.ValueType  # 0
+    PAUSE: ControlStateRequest.StateAction.ValueType  # 1
+    KILL: ControlStateRequest.StateAction.ValueType  # 2
+
+    STATE_ID_FIELD_NUMBER: builtins.int
+    MANTICORE_INSTANCE_FIELD_NUMBER: builtins.int
+    ACTION_FIELD_NUMBER: builtins.int
+    state_id: builtins.int
+    @property
+    def manticore_instance(self) -> global___ManticoreInstance: ...
+    action: global___ControlStateRequest.StateAction.ValueType
+    def __init__(self,
+        *,
+        state_id: builtins.int = ...,
+        manticore_instance: typing.Optional[global___ManticoreInstance] = ...,
+        action: global___ControlStateRequest.StateAction.ValueType = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["manticore_instance",b"manticore_instance"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["action",b"action","manticore_instance",b"manticore_instance","state_id",b"state_id"]) -> None: ...
+global___ControlStateRequest = ControlStateRequest
+
+class ControlStateResponse(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    def __init__(self,
+        ) -> None: ...
+global___ControlStateResponse = ControlStateResponse

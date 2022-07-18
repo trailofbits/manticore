@@ -10,6 +10,7 @@ service ManticoreUI {
     rpc GetMessageList(ManticoreInstance) returns (MUIMessageList) {}
     rpc CheckManticoreRunning(ManticoreInstance) returns (ManticoreRunningStatus) {}
     rpc StopServer(StopServerRequest) returns (StopServerResponse) {}
+    rpc ControlState(ControlStateRequest) returns (ControlStateResponse) {}
 }
 
 // LogMessage and StateList message types have "MUI" in their names to distinguish them from those in mserialize
@@ -37,6 +38,7 @@ message MUIStateList{
     repeated MUIState forked_states = 6;
     repeated MUIState errored_states = 7;
     repeated MUIState complete_states = 8;
+    repeated MUIState paused_states = 33;
 }
 
 message ManticoreInstance {
@@ -88,3 +90,18 @@ message ManticoreRunningStatus {
 message StopServerRequest {}
 
 message StopServerResponse {}
+
+message ControlStateRequest {
+
+    enum StateAction {
+        RESUME = 0;
+        PAUSE = 1;
+        KILL = 2;
+    }
+
+    int32 state_id = 34;
+    ManticoreInstance manticore_instance = 35;
+    StateAction action = 36;
+}
+
+message ControlStateResponse {}
