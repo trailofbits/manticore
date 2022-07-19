@@ -841,42 +841,22 @@ class ExpressionTest(unittest.TestCase):
 
         x = Operators.BoolEqual(BoolConstant(value=False))
         self.assertEqual(
-            translate_to_smtlib(simplify(x)),
-            translate_to_smtlib(Operators.BoolNot(a))
+            translate_to_smtlib(simplify(x)), translate_to_smtlib(Operators.BoolNot(a))
         )
 
         x = Operators.BoolEqual(BoolConstant(value=True))
-        self.assertEqual(
-            translate_to_smtlib(simplify(x)),
-            translate_to_smtlib(a)
-        )
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
-        x = Operators.BoolNot(Operators.BoolAnd(a,b))
-        expected = Operators.BoolOr(
-            Operators.BoolNot(a),
-            Operators.BoolNot(b)
-        )
-        self.assertEqual(
-            translate_to_smtlib(simplify(x)),
-            translate_to_smtlib(expected)
-        )
+        x = Operators.BoolNot(Operators.BoolAnd(a, b))
+        expected = Operators.BoolOr(Operators.BoolNot(a), Operators.BoolNot(b))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
-        x = Operators.BoolNot(Operators.BoolOr(a,b))
-        expected = Operators.BoolAnd(
-            Operators.BoolNot(a),
-            Operators.BoolNot(b)
-        )
-        self.assertEqual(
-            translate_to_smtlib(simplify(x)),
-            translate_to_smtlib(expected)
-        )
+        x = Operators.BoolNot(Operators.BoolOr(a, b))
+        expected = Operators.BoolAnd(Operators.BoolNot(a), Operators.BoolNot(b))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
         x = Operators.BoolNot(Operators.BoolNot(a))
-        self.assertEqual(
-            translate_to_smtlib(simplify(x)),
-            translate_to_smtlib(a)
-        )
-
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
     def test_constant_folding_extract(self):
         cs = ConstraintSet()
