@@ -834,7 +834,7 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
 
-        def test_arithmetic_simplify_bool(self):
+    def test_arithmetic_simplify_bool(self):
         cs = ConstraintSet()
         a = cs.new_bool(name="A")
         b = cs.new_bool(name="B")
