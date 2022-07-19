@@ -2,6 +2,7 @@ import collections
 import logging
 
 from functools import wraps
+from typing import Tuple
 
 import capstone as cs
 
@@ -987,29 +988,21 @@ class X86Cpu(Cpu):
 
     #####################################################
     # Instructions
-    @instruction
-    def CPUID(cpu):
+    @staticmethod
+    def CPUID_helper(PC: int, EAX: int, ECX: int) -> Tuple[int, int, int, int]:
         """
-        CPUID instruction.
-
-        The ID flag (bit 21) in the EFLAGS register indicates support for the
-        CPUID instruction.  If a software procedure can set and clear this
-        flag, the processor executing the procedure supports the CPUID
-        instruction. This instruction operates the same in non-64-bit modes and
-        64-bit mode.  CPUID returns processor identification and feature
-        information in the EAX, EBX, ECX, and EDX registers.
-
-        The instruction's output is dependent on the contents of the EAX
-        register upon execution.
-
-        :param cpu: current CPU.
+        Takes values in eax and ecx to perform logic on what to return to (EAX,
+        EBX, ECX, EDX), in that order.
         """
         # FIXME Choose conservative values and consider returning some default when eax not here
         conf = {
-            # Taken from comparison against Unicorn@v1.0.2
-            0x0: (0x00000004, 0x68747541, 0x444D4163, 0x69746E65),
-            # Taken from comparison against Unicorn@v1.0.2
-            0x1: (0x663, 0x800, 0x2182200, 0x7088100),
+            # Taken from comparison against local Intel machine with `cpuid` tool
+            0x0: (0x00000004, 0x756E6547, 0x6C65746E, 0x49656E69),
+            # Determined through initial Unicorn comparison and then fixed to
+            # support latest glibc 2.35
+            # * RDX Required bit 23 for MMX instructions on new glibc
+            # * RDX Required bit 0 for onboard x87 FPU
+            0x1: (0x00000663, 0x00000800, 0x02182200, 0x07888101),
             # TODO: Check against Unicorn
             0x2: (0x76035A01, 0x00F0B5FF, 0x00000000, 0x00C10000),
             0x4: {
@@ -1034,21 +1027,37 @@ class X86Cpu(Cpu):
             0x80000000: (0x80000000, 0x00000000, 0x00000000, 0x00000000),
         }
 
-        if cpu.EAX not in conf:
-            logger.warning("CPUID with EAX=%x not implemented @ %x", cpu.EAX, cpu.PC)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
-            return
+        if EAX not in conf:
+            logger.warning("CPUID with EAX=%x not implemented @ %x", EAX, PC)
+            return (0, 0, 0, 0)
 
-        if isinstance(conf[cpu.EAX], tuple):
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX]
-            return
+        if isinstance(conf[EAX], tuple):
+            return conf[EAX]  # type: ignore
 
-        if cpu.ECX not in conf[cpu.EAX]:
-            logger.warning("CPUID with EAX=%x ECX=%x not implemented", cpu.EAX, cpu.ECX)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
-            return
+        if ECX not in conf[EAX]:
+            logger.warning("CPUID with EAX=%x ECX=%x not implemented @ %x", EAX, ECX, PC)
+            return (0, 0, 0, 0)
 
-        cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX][cpu.ECX]
+        return conf[EAX][ECX]  # type: ignore
+
+    @instruction
+    def CPUID(cpu):
+        """
+        CPUID instruction.
+
+        The ID flag (bit 21) in the EFLAGS register indicates support for the
+        CPUID instruction.  If a software procedure can set and clear this
+        flag, the processor executing the procedure supports the CPUID
+        instruction. This instruction operates the same in non-64-bit modes and
+        64-bit mode.  CPUID returns processor identification and feature
+        information in the EAX, EBX, ECX, and EDX registers.
+
+        The instruction's output is dependent on the contents of the EAX
+        register upon execution.
+
+        :param cpu: current CPU.
+        """
+        cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = X86Cpu.CPUID_helper(cpu.PC, cpu.EAX, cpu.ECX)
 
     @instruction
     def XGETBV(cpu):

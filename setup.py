@@ -19,7 +19,7 @@ def rtd_dependent_deps():
 native_deps = [
     "capstone==5.0.0rc2",
     "pyelftools",
-    "unicorn==1.0.2",
+    "unicorn~=2.0",
 ]
 
 lint_deps = ["black~=22.0", "mypy==0.790"]
