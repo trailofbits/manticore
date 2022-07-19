@@ -834,6 +834,50 @@ class ExpressionTest(unittest.TestCase):
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
 
+        def test_arithmetic_simplify_bool(self):
+        cs = ConstraintSet()
+        a = cs.new_bool(name="A")
+        b = cs.new_bool(name="B")
+
+        x = Operators.BoolEqual(BoolConstant(value=False))
+        self.assertEqual(
+            translate_to_smtlib(simplify(x)),
+            translate_to_smtlib(Operators.BoolNot(a))
+        )
+
+        x = Operators.BoolEqual(BoolConstant(value=True))
+        self.assertEqual(
+            translate_to_smtlib(simplify(x)),
+            translate_to_smtlib(a)
+        )
+
+        x = Operators.BoolNot(Operators.BoolAnd(a,b))
+        expected = Operators.BoolOr(
+            Operators.BoolNot(a),
+            Operators.BoolNot(b)
+        )
+        self.assertEqual(
+            translate_to_smtlib(simplify(x)),
+            translate_to_smtlib(expected)
+        )
+
+        x = Operators.BoolNot(Operators.BoolOr(a,b))
+        expected = Operators.BoolAnd(
+            Operators.BoolNot(a),
+            Operators.BoolNot(b)
+        )
+        self.assertEqual(
+            translate_to_smtlib(simplify(x)),
+            translate_to_smtlib(expected)
+        )
+
+        x = Operators.BoolNot(Operators.BoolNot(a))
+        self.assertEqual(
+            translate_to_smtlib(simplify(x)),
+            translate_to_smtlib(a)
+        )
+
+
     def test_constant_folding_extract(self):
         cs = ConstraintSet()
         x = BitVecConstant(size=32, value=0xAB123456, taint=("important",))
