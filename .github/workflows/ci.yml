@@ -98,8 +98,20 @@ jobs:
         cp scripts/run_tests.sh .
         ./run_tests.sh
     - name: Coveralls Parallel
+      shell: bash
       run: |
-        coveralls --service=github
+        set +e
+        counter=1
+        while [ "${counter}" -le 10 ] ; do
+          echo "Attempt ${counter} to upload"
+          $(coveralls --service=github)
+          if [ $? -eq 0 ] ; then
+              exit 0
+          fi
+          ((counter++))
+          sleep 1
+        done
+        exit 1
       env:
         COVERALLS_PARALLEL: true
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -109,7 +121,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Coveralls Finished
-      uses: coverallsapp/github-action@v1.1.2
+      uses: coverallsapp/github-action@1.1.3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
