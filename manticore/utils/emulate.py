@@ -88,6 +88,8 @@ class ConcreteUnicornEmulator:
         self._cpu = cpu
         self._mem_delta = {}
         self.flag_registers = {"CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"}
+        # Registers to ignore when translating manticore context to unicorn
+        self.ignore_registers = {"MXCSR_MASK"}
         self.write_backs_disabled = False
         self._stop_at = None
         # Holds key of range (addr, addr + size) and value of permissions
@@ -145,6 +147,9 @@ class ConcreteUnicornEmulator:
 
     def load_state_from_manticore(self) -> None:
         for reg in self.registers:
+            # Ignore registers that aren't supported by unicorn
+            if reg in self.ignore_registers:
+                continue
             val = self._cpu.read_register(reg)
             if issymbolic(val):
                 from ..native.cpu.abstractcpu import ConcretizeRegister
@@ -423,6 +428,9 @@ class ConcreteUnicornEmulator:
         """
         self.write_backs_disabled = True
         for reg in self.registers:
+            # Ignore registers that aren't supported by unicorn
+            if reg in self.ignore_registers:
+                continue
             val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
         if len(self._mem_delta) > 0:
@@ -466,6 +474,9 @@ class ConcreteUnicornEmulator:
 
     def write_back_register(self, reg, val):
         """Sync register state from Manticore -> Unicorn"""
+        # Ignore registers that aren't supported by unicorn
+        if reg in self.ignore_registers:
+            return
         if self.write_backs_disabled:
             return
         if issymbolic(val):
