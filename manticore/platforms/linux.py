@@ -3053,7 +3053,7 @@ class Linux(Platform):
                     implementation = partial(self._handle_unimplemented_syscall, implementation)
             else:
                 implementation = getattr(self.stubs, name)
-        except (AttributeError, KeyError):
+        except (TypeError, AttributeError, KeyError):
             if name is not None:
                 raise SyscallNotImplemented(index, name)
             else:

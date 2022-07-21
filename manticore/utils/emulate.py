@@ -89,7 +89,7 @@ class ConcreteUnicornEmulator:
         self._mem_delta = {}
         self.flag_registers = {"CF", "PF", "AF", "ZF", "SF", "IF", "DF", "OF"}
         # Registers to ignore when translating manticore context to unicorn
-        self.ignore_registers = {"FIP", "FOP", "FDS", "FCS", "FDP", "MXCSR_MASK"}
+        self.ignore_registers = {"MXCSR_MASK"}
         self.write_backs_disabled = False
         self._stop_at = None
         # Holds key of range (addr, addr + size) and value of permissions
@@ -117,6 +117,7 @@ class ConcreteUnicornEmulator:
         self._emu.hook_add(UC_HOOK_MEM_WRITE, self._hook_write_mem)
         self._emu.hook_add(UC_HOOK_INTR, self._interrupt)
         self._emu.hook_add(UC_HOOK_INSN, self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
+        self._emu.hook_add(UC_HOOK_INSN, self._hook_cpuid, arg1=UC_X86_INS_CPUID)
 
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
@@ -283,6 +284,29 @@ class ConcreteUnicornEmulator:
 
         self._to_raise = Syscall()
         uc.emu_stop()
+
+    def _hook_cpuid(self, uc, data):
+        """
+        Unicorn hook that uses Manticore's semantics for cpuid
+        """
+        logger.debug(f"Hooking CPUID instruction {uc.reg_read(self._to_unicorn_id('RIP')):#x}")
+        if self._cpu.mode == CS_MODE_32:
+            pc = uc.reg_read(UC_X86_REG_EIP)
+        elif self._cpu.mode == CS_MODE_64:
+            pc = uc.reg_read(UC_X86_REG_RIP)
+        eax = uc.reg_read(UC_X86_REG_EAX)
+        ecx = uc.reg_read(UC_X86_REG_ECX)
+
+        from ..native.cpu.x86 import X86Cpu
+
+        eax, ebx, ecx, edx = X86Cpu.CPUID_helper(pc, eax, ecx)
+
+        uc.reg_write(UC_X86_REG_EAX, eax)
+        uc.reg_write(UC_X86_REG_EBX, ebx)
+        uc.reg_write(UC_X86_REG_ECX, ecx)
+        uc.reg_write(UC_X86_REG_EDX, edx)
+
+        return 1
 
     def _hook_write_mem(self, uc, _access, address: int, size: int, value: int, _data) -> bool:
         """
