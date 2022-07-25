@@ -29,7 +29,7 @@ auto_test_deps = ["py-evm"]
 # Development dependencies without keystone
 dev_noks = (
     native_deps
-    + ["coverage", "Sphinx", "pytest==5.3.0", "pytest-xdist==1.30.0", "pytest-cov==2.8.1", "jinja2"]
+    + ["coverage", "Sphinx", "pytest>=5.3.0", "pytest-xdist>=1.30.0", "pytest-cov>=2.8.1", "jinja2"]
     + lint_deps
     + auto_test_deps
 )
@@ -75,7 +75,7 @@ setup(
         "ply",
         "rlp",
         "intervaltree",
-        "crytic-compile==0.2.2",
+        "crytic-compile>=0.2.2",
         "wasm",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
