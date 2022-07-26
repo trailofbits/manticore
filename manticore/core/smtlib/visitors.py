@@ -514,12 +514,12 @@ class ArithmeticSimplifier(Visitor):
 
         # if isinstance(operands[0], BoolAnd):
         #     return BoolOr(
-        #         BoolNot(value=operands[0].operands[0]), BoolNot(value=operands[0].operands[1])
+        #         a=BoolNot(value=operands[0].operands[0]), b=BoolNot(value=operands[0].operands[1])
         #     )
 
         # if isinstance(operands[0], BoolOr):
         #     return BoolAnd(
-        #         BoolNot(value=operands[0].operands[0]), BoolNot(value=operands[0].operands[1])
+        #         a=BoolNot(value=operands[0].operands[0]), b=BoolNot(value=operands[0].operands[1])
         #     )
 
     def visit_BoolEqual(self, expression, *operands):
