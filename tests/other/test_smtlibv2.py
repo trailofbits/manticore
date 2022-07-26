@@ -839,23 +839,23 @@ class ExpressionTest(unittest.TestCase):
         a = cs.new_bool(name="A")
         b = cs.new_bool(name="B")
 
-        x = BoolEqual(BoolConstant(value=False))
+        x = BoolEqual(a, BoolConstant(value=False))
         self.assertEqual(
-            translate_to_smtlib(simplify(x)), translate_to_smtlib(Operators.BoolNot(a))
+            translate_to_smtlib(simplify(x)), translate_to_smtlib(BoolNot(a))
         )
 
-        x = BoolEqual(BoolConstant(value=True))
+        x = BoolEqual(b, BoolConstant(value=True))
         self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
-        # x = Operators.BoolNot(Operators.BoolAnd(a, b))
-        # expected = Operators.BoolOr(Operators.BoolNot(a), Operators.BoolNot(b))
+        # x = BoolNot(Operators.BoolAnd(a, b))
+        # expected = Operators.BoolOr(BoolNot(a), BoolNot(b))
         # self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
-        # x = Operators.BoolNot(Operators.BoolOr(a, b))
-        # expected = Operators.BoolAnd(Operators.BoolNot(a), Operators.BoolNot(b))
+        # x = BoolNot(Operators.BoolOr(a, b))
+        # expected = Operators.BoolAnd(BoolNot(a), BoolNot(b))
         # self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
-        # x = Operators.BoolNot(Operators.BoolNot(a))
+        # x = BoolNot(BoolNot(a))
         # self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
         pass
 
