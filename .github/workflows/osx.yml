@@ -21,7 +21,7 @@ jobs:
     - name: Install NPM
       uses: actions/setup-node@v3
       with:
-        node-version: '13.x'
+        node-version: '16.x'
     - name: Install dependencies
       env:
         TEST_TYPE: ${{ matrix.type }}
