@@ -841,7 +841,7 @@ class ExpressionTest(unittest.TestCase):
 
         x = BoolEqual(a=a, b=BoolConstant(value=False))
         self.assertEqual(
-            translate_to_smtlib(simplify(x)), translate_to_smtlib(BoolNot(a))
+            translate_to_smtlib(simplify(x)), translate_to_smtlib(BoolNot(value=a))
         )
 
         x = BoolEqual(a=a, b=BoolConstant(value=True))
