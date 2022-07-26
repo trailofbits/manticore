@@ -556,8 +556,8 @@ class ArithmeticSimplifier(Visitor):
 
                 return BoolConstant(value=True, taint=expression.taint)
 
-        # if isinstance(operands[1], BoolConstant):
-        #     return operands[0] if operands[1].value else BoolNot(value=operands[0])
+        if isinstance(operands[1], BoolConstant):
+            return operands[0] if operands[1].value else BoolNot(value=operands[0])
 
     def visit_BoolOr(self, expression, a, b):
         if isinstance(a, Constant):
