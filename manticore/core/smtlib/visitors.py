@@ -508,18 +508,19 @@ class ArithmeticSimplifier(Visitor):
         !(a||b) -> !a && !b
         !(a&&b) -> !a || !b
         """
-        if isinstance(operands[0], BoolNot):
-            return operands[0].operands[0]
+        pass
+        # if isinstance(operands[0], BoolNot):
+        #     return operands[0].operands[0]
 
-        if isinstance(operands[0], BoolAnd):
-            return BoolOr(
-                BoolNot(value=operands[0].operands[0]), BoolNot(value=operands[0].operands[1])
-            )
+        # if isinstance(operands[0], BoolAnd):
+        #     return BoolOr(
+        #         BoolNot(value=operands[0].operands[0]), BoolNot(value=operands[0].operands[1])
+        #     )
 
-        if isinstance(operands[0], BoolOr):
-            return BoolAnd(
-                BoolNot(value=operands[0].operands[0]), BoolNot(value=operands[0].operands[1])
-            )
+        # if isinstance(operands[0], BoolOr):
+        #     return BoolAnd(
+        #         BoolNot(value=operands[0].operands[0]), BoolNot(value=operands[0].operands[1])
+        #     )
 
     def visit_BoolEqual(self, expression, *operands):
         """(EQ, ITE(cond, constant1, constant2), constant1) -> cond
@@ -555,8 +556,8 @@ class ArithmeticSimplifier(Visitor):
 
                 return BoolConstant(value=True, taint=expression.taint)
 
-        if isinstance(operands[1], BoolConstant):
-            return operands[0] if operands[1].value else BoolNot(value=operands[0])
+        # if isinstance(operands[1], BoolConstant):
+        #     return operands[0] if operands[1].value else BoolNot(value=operands[0])
 
     def visit_BoolOr(self, expression, a, b):
         if isinstance(a, Constant):
