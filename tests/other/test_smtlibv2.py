@@ -861,13 +861,14 @@ class ExpressionTest(unittest.TestCase):
     def test_arithmetic_simplify_mul(self):
         cs = ConstraintSet()
         a = cs.new_bitvec(32, name="A")
+        one = BitVecConstant(size=32, value=1)
 
-        x = BitVecMul(a=1, b=a)
+        x = BitVecMul(a=one, b=a)
         self.assertEqual(
             translate_to_smtlib(simplify(x)), translate_to_smtlib(a)
         )
 
-        x = BitVecMul(a=a, b=1)
+        x = BitVecMul(a=a, b=one)
         self.assertEqual(
             translate_to_smtlib(simplify(x)), translate_to_smtlib(a)
         )
