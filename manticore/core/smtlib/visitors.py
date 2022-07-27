@@ -505,8 +505,8 @@ class ArithmeticSimplifier(Visitor):
     def visit_BoolNot(self, expression, *operands):
         """
         !!a -> a
-        !(a||b) -> !a && !b
         !(a&&b) -> !a || !b
+        !(a||b) -> !a && !b
         """
         if isinstance(operands[0], BoolNot):
             return operands[0].operands[0]
@@ -737,7 +737,8 @@ class ArithmeticSimplifier(Visitor):
                 return right
 
     def visit_BitVecMul(self, expression, *operands):
-        """a * 1  ==> a
+        """
+        a * 1  ==> a
         1 * a  ==> a
         """
         left = operands[0]
