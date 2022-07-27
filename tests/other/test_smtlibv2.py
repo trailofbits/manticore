@@ -840,9 +840,7 @@ class ExpressionTest(unittest.TestCase):
         b = cs.new_bool(name="B")
 
         x = BoolEqual(a=a, b=BoolConstant(value=False))
-        self.assertEqual(
-            translate_to_smtlib(simplify(x)), translate_to_smtlib(BoolNot(value=a))
-        )
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(BoolNot(value=a)))
 
         x = BoolEqual(a=a, b=BoolConstant(value=True))
         self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
@@ -864,14 +862,10 @@ class ExpressionTest(unittest.TestCase):
         one = BitVecConstant(size=32, value=1)
 
         x = BitVecMul(a=one, b=a)
-        self.assertEqual(
-            translate_to_smtlib(simplify(x)), translate_to_smtlib(a)
-        )
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
         x = BitVecMul(a=a, b=one)
-        self.assertEqual(
-            translate_to_smtlib(simplify(x)), translate_to_smtlib(a)
-        )
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
     def test_constant_folding_extract(self):
         cs = ConstraintSet()

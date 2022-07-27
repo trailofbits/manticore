@@ -743,9 +743,9 @@ class ArithmeticSimplifier(Visitor):
         left = operands[0]
         right = operands[1]
         if isinstance(right, BitVecConstant) and right.value == 1:
-                return left
+            return left
         if isinstance(left, BitVecConstant) and left.value == 1:
-                return right
+            return right
 
     def visit_BitVecSub(self, expression, *operands):
         """a - 0 ==> a
