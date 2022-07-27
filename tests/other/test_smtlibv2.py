@@ -847,17 +847,16 @@ class ExpressionTest(unittest.TestCase):
         x = BoolEqual(a=a, b=BoolConstant(value=True))
         self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
-        # x = BoolNot(Operators.BoolAnd(a=a, b=b))
-        # expected = Operators.BoolOr(a=BoolNot(value=a), b=BoolNot(value=b))
-        # self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
+        x = BoolNot(Operators.BoolAnd(a=a, b=b))
+        expected = Operators.BoolOr(a=BoolNot(value=a), b=BoolNot(value=b))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
-        # x = BoolNot(Operators.BoolOr(a=a, b=b))
-        # expected = Operators.BoolAnd(a=BoolNot(value=a), b=BoolNot(value=b))
-        # self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
+        x = BoolNot(Operators.BoolOr(a=a, b=b))
+        expected = Operators.BoolAnd(a=BoolNot(value=a), b=BoolNot(value=b))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
-        # x = BoolNot(value=BoolNot(value=a))
-        # self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
-        pass
+        x = BoolNot(value=BoolNot(value=a))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
     def test_constant_folding_extract(self):
         cs = ConstraintSet()
