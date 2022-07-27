@@ -847,11 +847,11 @@ class ExpressionTest(unittest.TestCase):
         x = BoolEqual(a=a, b=BoolConstant(value=True))
         self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
-        x = BoolNot(BoolAnd(a=a, b=b))
+        x = BoolNot(value=BoolAnd(a=a, b=b))
         expected = BoolOr(a=BoolNot(value=a), b=BoolNot(value=b))
         self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
-        x = BoolNot(BoolOr(a=a, b=b))
+        x = BoolNot(value=BoolOr(a=a, b=b))
         expected = BoolAnd(a=BoolNot(value=a), b=BoolNot(value=b))
         self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
 
