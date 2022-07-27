@@ -67,6 +67,14 @@ logger = logging.getLogger(__name__)
 MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
 
+@dataclass
+class task_struct:
+    """Some of the task_struct in linux kernel 'include/linux/sched.h'"""
+
+    rseq: Any = None
+    rseq_sig: int = 0
+
+
 def errorcode(code: int) -> str:
     return f"errno.{errno.errorcode[code]}"
 
@@ -978,6 +986,7 @@ class Linux(Platform):
         # A cache for keeping state when reading directories { fd: dent_iter }
         self._getdents_c: Dict[int, Any] = {}
         self._closed_files: List[FdLike] = []
+        self._task_current = task_struct()
         self.syscall_trace: List[Tuple[str, int, bytes]] = []
         # Many programs to support SLinux
         self.programs = program
@@ -1138,6 +1147,7 @@ class Linux(Platform):
         state["fd_table"] = self.fd_table
         state["_getdents_c"] = self._getdents_c
         state["_closed_files"] = self._closed_files
+        state["_task_current"] = self._task_current
         state["_rlimits"] = self._rlimits
 
         state["procs"] = self.procs
@@ -1199,6 +1209,7 @@ class Linux(Platform):
 
         self._getdents_c = state["_getdents_c"]
         self._closed_files = state["_closed_files"]
+        self._task_current = state["_task_current"]
         self._rlimits = state["_rlimits"]
 
         self.procs = state["procs"]
@@ -2885,7 +2896,9 @@ class Linux(Platform):
             logger.warning("sys_recvfrom: Unimplemented non-NULL addrlen")
 
         if not self.current.memory.access_ok(slice(buf, buf + count), "w"):
-            logger.info("RECV: buf within invalid memory. Returning -errno.EFAULT")
+            logger.info(
+                f"RECV: buf access within invalid memory ({buf:#x}--{buf+count:#x}, size={count}). Returning -errno.EFAULT"
+            )
             return -errno.EFAULT
 
         try:
@@ -3006,6 +3019,89 @@ class Linux(Platform):
         self.current.write_bytes(buf, "\x00" * size)
 
         return size
+
+    def _rseq_reset_rseq_cpu_id(self, t: task_struct) -> int:
+        RSEQ_CPU_ID_UNINITIALIZED = -1
+
+        cpu_id_start = 0
+        cpu_id = RSEQ_CPU_ID_UNINITIALIZED
+
+        # Reset cpu_id_start to its initial state (0).
+        # if (put_user(cpu_id_start, &t.rseq.cpu_id_start)):
+        #     return -errno.EFAULT;
+        #
+        # Reset cpu_id to RSEQ_CPU_ID_UNINITIALIZED, so any user coming
+        # in after unregistration can figure out that rseq needs to be
+        # registered again.
+        # if (put_user(cpu_id, &t.rseq.cpu_id)):
+        #     return -errno.EFAULT;
+        self.current.write_bytes(t.rseq, struct.pack("<LL", cpu_id_start, cpu_id))
+
+        return 0
+
+    def _rseq_set_notify_resume(self, t: task_struct) -> None:
+        """TODO"""
+        return
+
+    def sys_rseq(self, rseq, rseq_len, flags, sig) -> int:
+        """
+        Restartable sequences system call
+
+        https://elixir.bootlin.com/linux/v5.17.6/source/include/uapi/linux/rseq.h
+        https://elixir.bootlin.com/linux/v5.17.6/source/kernel/rseq.c
+        """
+        RSEQ_FLAG_UNREGISTER = 1 << 0
+        # follow source code variable names
+        current = self._task_current
+
+        ret = 0
+        if flags & RSEQ_FLAG_UNREGISTER:
+            if flags & ~RSEQ_FLAG_UNREGISTER:
+                return -errno.EINVAL
+            # Unregister rseq for current thread.
+            if current.rseq != rseq or not current.rseq:
+                return -errno.EINVAL
+            # if (rseq_len != sizeof(*rseq)):
+            #     return -errno.EINVAL;
+            if current.rseq_sig != sig:
+                return -errno.EPERM
+            ret = self._rseq_reset_rseq_cpu_id(current)
+            if ret:
+                return ret
+            current.rseq = None
+            current.rseq_sig = 0
+            return 0
+
+        if flags:
+            return -errno.EINVAL
+
+        if current.rseq:
+            # If rseq is already registered, check whether
+            # the provided address differs from the prior
+            # one.
+            if current.rseq != rseq:  # or rseq_len != sizeof(*rseq)):
+                return -errno.EINVAL
+            if current.rseq_sig != sig:
+                return -errno.EPERM
+            # Already registered.
+            return -errno.EBUSY
+
+        # If there was no rseq previously registered,
+        # ensure the provided rseq is properly aligned and valid.
+        # if (not IS_ALIGNED((unsigned long)rseq, __alignof__(*rseq)) ||
+        #        rseq_len != sizeof(*rseq)):
+        #    return -errno.EINVAL;
+        if not self.current.memory.access_ok(slice(rseq, rseq + rseq_len), "w"):
+            return -errno.EFAULT
+        current.rseq = rseq
+        current.rseq_sig = sig
+
+        # If rseq was previously inactive, and has just been
+        # registered, ensure the cpu_id_start and cpu_id fields
+        # are updated before returning to user-space.
+        self._rseq_set_notify_resume(current)
+
+        return 0
 
     @unimplemented
     def sys_futex(self, uaddr, op, val, utime, uaddr2, val3) -> int:

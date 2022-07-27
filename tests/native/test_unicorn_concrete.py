@@ -6,6 +6,7 @@ import contextlib
 from manticore.native import Manticore
 from manticore.native.state import State
 from manticore.core.plugin import Plugin
+from manticore.utils.log import set_verbosity, init_logging
 
 
 class ConcretePlugin(Plugin):
@@ -46,9 +47,9 @@ class ManticornTest(unittest.TestCase):
 
         should_match = {
             "RAX",
+            "RBX",
             "RCX",
             "RDX",
-            "RBX",
             "RSP",
             "RBP",
             "RSI",

@@ -29,6 +29,9 @@ def main() -> None:
     """
     Dispatches execution into one of Manticore's engines: evm or native.
     """
+    # Only print with Manticore's logger
+    logging.getLogger().handlers = []
+    log.init_logging()
     args = parse_arguments()
 
     if args.no_colors:
@@ -101,13 +104,13 @@ def parse_arguments() -> argparse.Namespace:
         help=("A folder name for temporaries and results." "(default mcore_?????)"),
     )
 
-    current_version = pkg_resources.get_distribution("manticore").version
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"Manticore {current_version}",
-        help="Show program version information",
-    )
+    # current_version = pkg_resources.get_distribution("manticore").version
+    # parser.add_argument(
+    #    "--version",
+    #    action="version",
+    #    version=f"Manticore {current_version}",
+    #    help="Show program version information",
+    # )
     parser.add_argument(
         "--config",
         type=str,

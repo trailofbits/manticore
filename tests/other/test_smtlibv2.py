@@ -373,6 +373,19 @@ class ExpressionTest(unittest.TestCase):
         cs.add(Operators.OR(bt, bt, False))
         self.assertTrue(self.solver.check(cs))
 
+    def testBool5(self):
+        cs = ConstraintSet()
+        bf = BoolConstant(value=False)
+        bt = BoolConstant(value=True)
+        x = cs.new_bool()
+        y = cs.new_bool()
+        self.assertRaises(Exception, bool, x == y)
+        cs.add(x == bf)
+        cs.add(y == bt)
+        cs.add(Operators.OR(True, x))
+        cs.add(Operators.OR(y, y, False))
+        self.assertTrue(self.solver.check(cs))
+
     def testBasicArray(self):
         cs = ConstraintSet()
         # make array of 32->8 bits
@@ -820,6 +833,39 @@ class ExpressionTest(unittest.TestCase):
             translate_to_smtlib(c), "(concat ((_ extract 23 16) VARA) ((_ extract 15 8) VARA))"
         )
         self.assertEqual(translate_to_smtlib(simplify(c)), "((_ extract 23 8) VARA)")
+
+    def test_arithmetic_simplify_bool(self):
+        cs = ConstraintSet()
+        a = cs.new_bool(name="A")
+        b = cs.new_bool(name="B")
+
+        x = BoolEqual(a=a, b=BoolConstant(value=False))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(BoolNot(value=a)))
+
+        x = BoolEqual(a=a, b=BoolConstant(value=True))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
+
+        x = BoolNot(value=BoolAnd(a=a, b=b))
+        expected = BoolOr(a=BoolNot(value=a), b=BoolNot(value=b))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
+
+        x = BoolNot(value=BoolOr(a=a, b=b))
+        expected = BoolAnd(a=BoolNot(value=a), b=BoolNot(value=b))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(expected))
+
+        x = BoolNot(value=BoolNot(value=a))
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
+
+    def test_arithmetic_simplify_mul(self):
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32, name="A")
+        one = BitVecConstant(size=32, value=1)
+
+        x = BitVecMul(a=one, b=a)
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
+
+        x = BitVecMul(a=a, b=one)
+        self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
     def test_constant_folding_extract(self):
         cs = ConstraintSet()
