@@ -858,6 +858,20 @@ class ExpressionTest(unittest.TestCase):
         x = BoolNot(value=BoolNot(value=a))
         self.assertEqual(translate_to_smtlib(simplify(x)), translate_to_smtlib(a))
 
+    def test_arithmetic_simplify_mul(self):
+        cs = ConstraintSet()
+        a = cs.new_bitvec(32, name="A")
+
+        x = BitVecMul(a=1, b=a)
+        self.assertEqual(
+            translate_to_smtlib(simplify(x)), translate_to_smtlib(a)
+        )
+
+        x = BitVecMul(a=a, b=1)
+        self.assertEqual(
+            translate_to_smtlib(simplify(x)), translate_to_smtlib(a)
+        )
+
     def test_constant_folding_extract(self):
         cs = ConstraintSet()
         x = BitVecConstant(size=32, value=0xAB123456, taint=("important",))

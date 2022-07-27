@@ -736,6 +736,17 @@ class ArithmeticSimplifier(Visitor):
             if left.value == 0:
                 return right
 
+    def visit_BitVecMul(self, expression, *operands):
+        """a * 1  ==> a
+        1 * a  ==> a
+        """
+        left = operands[0]
+        right = operands[1]
+        if isinstance(right, BitVecConstant) and right.value == 1:
+                return left
+        if isinstance(left, BitVecConstant) and left.value == 1:
+                return right
+
     def visit_BitVecSub(self, expression, *operands):
         """a - 0 ==> a
         (a + b) - b  ==> a
