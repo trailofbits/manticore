@@ -727,7 +727,6 @@ class ManticoreEVM(ManticoreBase):
         if name in self._accounts:
             # Account name already used
             raise EthereumError("Name already used")
-
         self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
         if self.count_ready_states():
@@ -735,6 +734,8 @@ class ManticoreEVM(ManticoreBase):
                 address=address, manticore=self, default_caller=owner, name=name
             )
             return self.accounts[name]
+        else:
+            logger.warning("No ready states")
 
     def _get_uniq_name(self, stem):
         count = 0
@@ -930,24 +931,24 @@ class ManticoreEVM(ManticoreBase):
         if isinstance(data, str):
             data = bytes(data)
         if not isinstance(data, (bytes, Array)):
-            raise TypeError("code bad type")
+            raise TypeError(f"code bad type {type(data)}")
 
         # Check types
         if not isinstance(caller, (int, BitVec)):
-            raise TypeError("Caller invalid type")
+            raise TypeError(f"Caller invalid type {type(caller)}")
 
         if not isinstance(value, (int, BitVec)):
-            raise TypeError("Value invalid type")
+            raise TypeError(f"Value invalid type: {type(value)}")
 
         if not isinstance(address, (int, BitVec)):
-            raise TypeError("address invalid type")
+            raise TypeError(f"address invalid type: {type(address)}")
 
         if not isinstance(price, int):
-            raise TypeError("Price invalid type")
+            raise TypeError(f"Price invalid type: {type(price)}")
 
         # Check argument consistency and set defaults ...
         if sort not in ("CREATE", "CALL"):
-            raise ValueError("unsupported transaction type")
+            raise ValueError(f"unsupported transaction type: {sort}")
 
         if sort == "CREATE":
             # When creating data is the init_bytecode + arguments
