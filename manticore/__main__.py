@@ -29,6 +29,9 @@ def main() -> None:
     """
     Dispatches execution into one of Manticore's engines: evm or native.
     """
+    # Only print with Manticore's logger
+    logging.getLogger().handlers = []
+    log.init_logging()
     args = parse_arguments()
 
     if args.no_colors:
