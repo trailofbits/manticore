@@ -20,7 +20,6 @@ from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import (
     ManticoreEVM,
-    State,
     DetectExternalCallAndLeak,
     DetectIntegerOverflow,
     Detector,
@@ -29,11 +28,12 @@ from manticore.ethereum import (
     EthereumError,
     EVMContract,
     verifier,
+    TermCondCovType
 )
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
-from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
+from manticore.platforms.evm import ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 from manticore.utils import config
 import io
@@ -68,6 +68,45 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn("Unsigned integer overflow at SUB instruction", all_findings)
         self.assertIn("Unsigned integer overflow at ADD instruction", all_findings)
         self.assertIn("Unsigned integer overflow at MUL instruction", all_findings)
+
+    def test_multitx_term_cond_wide(self):
+
+        mevm = ManticoreEVM()
+        source_code = """
+         contract MotivatingExample {
+    event Log(string);
+    int private stateA = 0;
+    int private stateB = 0;
+    function f(int input) public {
+    	stateA=input;
+        }
+    function g() public {
+        stateB = stateA;
+        }
+    function h() payable public {
+        if(stateB == 61){
+          emit Log("Bug found");
+         }
+    }
+}"""
+        #This will stop before the bug is found
+        mevm.multi_tx_analysis(source_code, tx_use_coverage=TermCondCovType.wide )
+        found_log = 0
+        for state in mevm.all_states:
+            if state.platform.logs:
+                found_log += 1
+        self.assertEqual(found_log,0)
+
+
+        #This will never stop :joy:
+        mevm = ManticoreEVM()
+        with mevm.kill_timeout(timeout=600):
+            mevm.multi_tx_analysis(source_code, tx_limit=4, tx_use_coverage=TermCondCovType.local )
+        found_log = 0
+        for state in mevm.all_states:
+            if state.platform.logs:
+                found_log += 1
+        self.assertGreater(found_log,0)
 
 
 class EthVerifierIntegrationTest(unittest.TestCase):

@@ -118,7 +118,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_regressions_676(self):
         issue = {"number": 676, "contract": None, "txlimit": 1}
-        self._simple_cli_run(
+        self.   _simple_cli_run(
             f'{issue["number"]}.sol',
             contract=issue["contract"],
             tx_limit=issue["txlimit"],

@@ -1,6 +1,6 @@
 # Exports (for `from manticore.ethereum import ...`)
 from .abi import ABI
-from .manticore import ManticoreEVM, config
+from .manticore import ManticoreEVM, config, TermCondCovType
 from .state import State
 from .detectors import (
     Detector,

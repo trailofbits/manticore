@@ -7,7 +7,7 @@ if sys.version_info < (3, 7):
 from .utils import config, log
 from .utils.log import set_verbosity
 from .core.smtlib import issymbolic, istainted
-from .ethereum.manticore import ManticoreEVM
+from .ethereum.manticore import ManticoreEVM, TermCondCovType
 from .core.plugin import Plugin
 from .exceptions import ManticoreError
 
@@ -17,4 +17,5 @@ __all__ = [
     ManticoreEVM.__name__,
     set_verbosity.__name__,
     ManticoreError.__name__,
+    TermCondCovType.__name__
 ]
