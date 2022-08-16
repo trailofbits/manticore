@@ -51,7 +51,7 @@ Selecting a target contract
 **manticore-verifier** needs to be pointed to a the target contract containing any number of property methods.
 The target contract is the entry point of the exploration. It needs to initilize any internal structure or external contracts to a correct initial state. All methods of this contract matching the property name criteria will be tested. ::
 
-   --contract CONTRACT_NAME The target contract name defined in the source code
+   --contract_name CONTRACT_NAME The target contract name defined in the source code
 
 
 User accounts
@@ -166,7 +166,5 @@ We can design a property around the fact that the initial token count can not be
 
 And you can unleash the verifier like this::
 
-    $manticore-verifier testtoken.sol  --contract TestToken
+    $manticore-verifier testtoken.sol  --contract_name TestToken
 
-
-f/
