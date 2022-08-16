@@ -166,7 +166,5 @@ We can design a property around the fact that the initial token count can not be
 
 And you can unleash the verifier like this::
 
-    $manticore-verifier testtoken.sol  --contract TestToken
+    $manticore-verifier testtoken.sol  --contract_name TestToken
 
-
-f/
