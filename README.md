@@ -281,4 +281,3 @@ If you are using Manticore on an academic work, consider applying to the [Crytic
 - [MATE: Merged Analysis To prevent Exploits](https://github.com/GaloisInc/MATE)
   * [Mantiserve:](https://galoisinc.github.io/MATE/mantiserve.html) REST API interaction with Manticore to start, kill, and check Manticore instance
   * [Dwarfcore:](https://galoisinc.github.io/MATE/dwarfcore.html) Plugins and detectors for use within Mantiserve engine during exploration 
-  * 
