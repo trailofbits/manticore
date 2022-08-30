@@ -276,3 +276,6 @@ If you are using Manticore on an academic work, consider applying to the [Crytic
 ## Demo Video from ASE 2019
 [![Brief Manticore demo video](https://img.youtube.com/vi/o6pmBJZpKAc/1.jpg)](https://youtu.be/o6pmBJZpKAc)
 
+## Tool Integrations 
+
+- [MATE: Merged Analysis To prevent Exploits](https://github.com/GaloisInc/MATE)
