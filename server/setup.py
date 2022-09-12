@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from setuptools import Command, find_packages, setup
 
 
@@ -28,25 +30,29 @@ class GenerateCommand(Command):
         )
 
 
-native_deps = [
-    "capstone==5.0.0rc2",
-    "pyelftools",
-    "unicorn==1.0.2",
-]
-
 setup(
     name="muicore",
     version="0.0.1",
     packages=find_packages(exclude=["tests", "tests.*"]),
+    python_requires=">=3.7",
     install_requires=[
-        # manticore from upstream chess branch with fixes not yet in master
-        "manticore @ git+https://github.com/trailofbits/manticore.git@634b6a4cdc295c93027b1dbe5037e574cf76200b",
-        "protobuf==3.20.1",
-        "grpcio==1.46.3",
-        "crytic-compile==0.2.2",
-    ]
-    + native_deps,
-    extras_require={"dev": ["grpcio-tools"]},
+        f"manticore[native] @ file://{Path(__file__).parent.resolve()}/..",
+        "protobuf~=3.20",
+        "grpcio~=1.46",
+        "crytic-compile>=0.2.2",
+    ],
+    extras_require={
+        "dev": [
+            "grpcio-tools",
+            "mypy-protobuf",
+            "shiv~=1.0.1",
+            "types-setuptools",
+            "mypy-protobuf",
+            "black~=22.0",
+            "isort==5.10.1",
+            "mypy==0.942",
+        ]
+    },
     entry_points={
         "console_scripts": [
             "muicore=muicore.mui_server:main",

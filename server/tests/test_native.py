@@ -449,17 +449,16 @@ class MUICoreNativeTest(unittest.TestCase):
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
         stime = time.time()
-        while (
-            len(
-                active_states := self.servicer.GetStateList(
-                    mcore_instance, self.context
-                ).active_states
-            )
-            == 0
-        ):
+        active_states = self.servicer.GetStateList(
+            mcore_instance, self.context
+        ).active_states
+        while len(active_states) == 0:
             time.sleep(1)
             if (time.time() - stime) > 30:
                 self.fail("Manticore did not create an active state before timeout")
+            active_states = self.servicer.GetStateList(
+                mcore_instance, self.context
+            ).active_states
         candidate_state_id = list(active_states)[0].state_id
 
         self.servicer.ControlState(
@@ -476,19 +475,18 @@ class MUICoreNativeTest(unittest.TestCase):
         self.assertTrue(candidate_state_id in mwrapper.paused_states)
         self.assertTrue(-1 in mwrapper.manticore_object._busy_states)
         stime = time.time()
-        while (
-            len(
-                paused_states := self.servicer.GetStateList(
-                    mcore_instance, self.context
-                ).paused_states
-            )
-            == 0
-        ):
+        paused_states = self.servicer.GetStateList(
+            mcore_instance, self.context
+        ).paused_states
+        while len(paused_states) == 0:
             time.sleep(1)
             if (time.time() - stime) > 30:
                 self.fail(
                     f"Manticore did not pause the state {candidate_state_id} before timeout"
                 )
+            paused_states = self.servicer.GetStateList(
+                mcore_instance, self.context
+            ).paused_states
         self.assertTrue(candidate_state_id == list(paused_states)[0].state_id)
 
     def test_control_state_resume_paused_state(self):
@@ -530,17 +528,16 @@ class MUICoreNativeTest(unittest.TestCase):
         mwrapper = self.servicer.manticore_instances[mcore_instance.uuid]
 
         stime = time.time()
-        while (
-            len(
-                active_states := self.servicer.GetStateList(
-                    mcore_instance, self.context
-                ).active_states
-            )
-            == 0
-        ):
+        active_states = self.servicer.GetStateList(
+            mcore_instance, self.context
+        ).active_states
+        while len(active_states) == 0:
             time.sleep(1)
             if (time.time() - stime) > 30:
                 self.fail("Manticore did not create an active state before timeout")
+            active_states = self.servicer.GetStateList(
+                mcore_instance, self.context
+            ).active_states
         candidate_state_id = list(active_states)[0].state_id
 
         self.servicer.ControlState(
@@ -555,19 +552,18 @@ class MUICoreNativeTest(unittest.TestCase):
         self.assertEqual(self.context.details, "")
 
         stime = time.time()
-        while (
-            len(
-                active_states := self.servicer.GetStateList(
-                    mcore_instance, self.context
-                ).active_states
-            )
-            != 0
-        ):
+        active_states = self.servicer.GetStateList(
+            mcore_instance, self.context
+        ).active_states
+        while len(active_states) != 0:
             time.sleep(1)
             if (time.time() - stime) > 30:
                 self.fail(
                     f"Manticore did not kill the state {candidate_state_id} before timeout"
                 )
+            active_states = self.servicer.GetStateList(
+                mcore_instance, self.context
+            ).active_states
 
     def test_control_state_kill_paused_state(self):
         self.test_control_state_pause_state()

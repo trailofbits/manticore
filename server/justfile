@@ -1,14 +1,14 @@
 init:
   test -d venv || python3 -m venv venv
-  . venv/bin/activate; pip install -r requirements-dev.txt
+  . venv/bin/activate; pip install -U setuptools pip wheel; pip install -e .[dev]
 
 format:
   black .
   isort .
 
 lint:
-  black --check .
-  isort --check .
+  black .
+  isort .
   mypy
 
 generate:

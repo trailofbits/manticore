@@ -105,9 +105,7 @@ class MUIServicer(ManticoreUIServicer):
 
     def log_callback(self, msg: str):
         print(msg, end="")
-        msg_split = msg.split()
-        thread_name = msg_split[0]
-        msg_content = " ".join(msg_split[1:])
+        thread_name, msg_content = msg.split(" ", 1)
 
         if thread_name in self.manticore_instances:
             # This will always be True if multiprocessing or single is used, since all WorkerProcess/WorkerSingle

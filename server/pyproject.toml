@@ -7,7 +7,7 @@ warn_unreachable = true
 
 [tool.isort]
 profile = "black"
-skip = ["muicore/MUICore_pb2.py", "muicore/MUICore_pb2_grpc.py"]
+skip = ["venv", "muicore/MUICore_pb2.py", "muicore/MUICore_pb2_grpc.py"]
 
 [tool.black]
 line-length = 88
@@ -15,4 +15,5 @@ extend-exclude = '''
     MUICore_pb2_grpc\.py
   | MUICore_pb2\.py
   | MUICore_pb2\.pyi
+  | venv
 '''
