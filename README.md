@@ -276,3 +276,9 @@ If you are using Manticore on an academic work, consider applying to the [Crytic
 ## Demo Video from ASE 2019
 [![Brief Manticore demo video](https://img.youtube.com/vi/o6pmBJZpKAc/1.jpg)](https://youtu.be/o6pmBJZpKAc)
 
+## Tool Integrations 
+
+- [MATE: Merged Analysis To prevent Exploits](https://github.com/GaloisInc/MATE)
+  * [Mantiserve:](https://galoisinc.github.io/MATE/mantiserve.html) REST API interaction with Manticore to start, kill, and check Manticore instance
+  * [Dwarfcore:](https://galoisinc.github.io/MATE/dwarfcore.html) Plugins and detectors for use within Mantiserve engine during exploration 
+  * [Under-constrained symbolic execution](https://github.com/GaloisInc/MATE/blob/main/doc/under-constrained-manticore.rst) Interface for symbolically exploring single functions with Manticore
