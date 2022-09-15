@@ -1,11 +1,9 @@
-# MUI Server
-MUI Server is a gRPC service that acts as a wrapper around  [Manticore](https://github.com/trailofbits/manticore), which will serve as the future of the [Manticore User Interface (MUI)](https://github.com/trailofbits/ManticoreUI) project. MUI Server is designed to allow developers to create Manticore UI Plugins for different disassemblers easily, and to allow for Manticore itself to be done in the cloud/remotely.
+# Manticore Server
+Manticore Server is a gRPC service that acts as a wrapper around  [Manticore](https://github.com/trailofbits/manticore), to support projects like the [Manticore User Interface (MUI)](https://github.com/trailofbits/ManticoreUI). Manticore Server is designed to allow developers to more easily create tools around Manticore that aren't in Python or to allow for Manticore to be run and managed in the cloud/remotely.
 
 # Usage
-The MUI-Core server can be run via `python3 mui_server.py`. For most applications of MUI, in which a Python interpreter available or the required dependencies are not available, users can run the stand-alone `muicore_server` binary.
+The Manticore Server can be run via `python3 manticore_server.py` on port `50010`.
 
-Currently, MUI-Core communicates only on `localhost:50010`. 
+Your Manticore Server client will require the relevant gRPC client code. You can find out how to generate gRPC client code in your desired language from [the gRPC website](https://grpc.io/docs/languages/).
 
-Your MUI Plugin will require the relevant gRPC client code. You can find out how to generate gRPC client code in your desired language from [the gRPC website](https://grpc.io/docs/languages/).
-
-You may refer to the [Protobuf Specification](muicore/MUICore.proto) for information about the RPC services provided and the message types.
+You may refer to the [Protobuf Specification](manticore_server/ManticoreServer.proto) for information about the RPC services provided and the message types.

@@ -11,17 +11,17 @@ from uuid import UUID, uuid4
 
 import grpc
 
-from muicore import mui_server
-from muicore.MUICore_pb2 import *
+from manticore_server import manticore_server
+from manticore_server.ManticoreServer_pb2 import *
 from tests.mock_classes import MockContext
 
 
-class MUICoreEVMTest(unittest.TestCase):
+class ManticoreServerEVMTest(unittest.TestCase):
     def setUp(self):
         self.dirname = str(Path(getframeinfo(currentframe()).filename).resolve().parent)
         self.contract_path = str(self.dirname / Path("contracts") / Path("adder.sol"))
         self.test_event = threading.Event()
-        self.servicer = mui_server.MUIServicer(self.test_event)
+        self.servicer = manticore_server.ManticoreServicer(self.test_event)
         self.solc_path = str(self.dirname / Path("solc"))
         self.context = MockContext()
 

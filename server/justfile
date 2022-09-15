@@ -19,12 +19,9 @@ build: generate
   set -euo
   mkdir -p dist
   py_ver=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-  python3 -m shiv -c muicore -o dist/muicore_server --reproducible --no-modify --python "/usr/bin/env python${py_ver}" --compressed .
+  python3 -m shiv -c manticore_server -o dist/manticore_server --reproducible --no-modify --python "/usr/bin/env python${py_ver}" --compressed .
   wget https://github.com/ethereum/solc-bin/raw/gh-pages/linux-amd64/solc-linux-amd64-v0.8.9%2Bcommit.e5eed63a -O dist/solc
   chmod 775 dist/solc
-
-install: build
-  cp dist/* ../plugins/ghidra/MUI/os/linux_x86_64/
 
 test:
   python3 -m unittest tests/test_*.py

@@ -28,9 +28,12 @@ from manticore.utils.helpers import deque
 from manticore.utils.log import CallbackStream, ManticoreContextFilter
 
 from .evm_utils import setup_detectors_flags
-from .introspect_plugin import MUIIntrospectionPlugin
-from .MUICore_pb2 import *
-from .MUICore_pb2_grpc import ManticoreUIServicer, add_ManticoreUIServicer_to_server
+from .introspect_plugin import ManticoreServerIntrospectionPlugin
+from .ManticoreServer_pb2 import *
+from .ManticoreServer_pb2_grpc import (
+    ManticoreServerServicer,
+    add_ManticoreServerServicer_to_server,
+)
 from .native_plugin import UnicornEmulatePlugin
 from .native_utils import parse_native_arguments
 
@@ -80,7 +83,7 @@ class ManticoreWrapper:
             q.put(msg)
 
 
-class MUIServicer(ManticoreUIServicer):
+class ManticoreServicer(ManticoreServerServicer):
     """Provides functionality for the methods set out in the protobuf spec"""
 
     def __init__(self, stop_event: Event):
@@ -157,7 +160,7 @@ class MUIServicer(ManticoreUIServicer):
                 if not native_arguments.stdin_size
                 else int(native_arguments.stdin_size),
                 workspace_url=parsed.workspace,
-                introspection_plugin_type=MUIIntrospectionPlugin,
+                introspection_plugin_type=ManticoreServerIntrospectionPlugin,
             )
         except Exception as e:
             print(e)
@@ -343,9 +346,8 @@ class MUIServicer(ManticoreUIServicer):
 
     def GetStateList(
         self, mcore_instance: ManticoreInstance, context: _Context
-    ) -> MUIStateList:
-        """Returns full list of states for given ManticoreInstance.
-        Currently, implementation is based on MUI's Binary Ninja plugin."""
+    ) -> ManticoreStateList:
+        """Returns full list of states for given ManticoreInstance."""
         active_states = []
         waiting_states = []
         paused_states = []
@@ -356,7 +358,7 @@ class MUIServicer(ManticoreUIServicer):
         if mcore_instance.uuid not in self.manticore_instances:
             context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
             context.set_details("Specified Manticore instance not found!")
-            return MUIStateList()
+            return ManticoreStateList()
 
         mcore_wrapper = self.manticore_instances[mcore_instance.uuid]
         states = (
@@ -379,7 +381,7 @@ class MUIServicer(ManticoreUIServicer):
 
             state_args["children_ids"] = list(state_desc.children)
 
-            s = MUIState(**state_args)
+            s = ManticoreState(**state_args)
 
             if state_desc.status == StateStatus.running:
                 active_states.append(s)
@@ -400,7 +402,7 @@ class MUIServicer(ManticoreUIServicer):
             else:
                 raise ValueError(f"Unknown status {state_desc.status}")
 
-        return MUIStateList(
+        return ManticoreStateList(
             active_states=active_states,
             waiting_states=waiting_states,
             paused_states=paused_states,
@@ -411,22 +413,22 @@ class MUIServicer(ManticoreUIServicer):
 
     def GetMessageList(
         self, mcore_instance: ManticoreInstance, context: _Context
-    ) -> MUIMessageList:
+    ) -> ManticoreMessageList:
         """Returns any new log messages for given ManticoreInstance since the previous call.
         Currently, implementation is based on TUI."""
         if mcore_instance.uuid not in self.manticore_instances:
             context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
             context.set_details("Specified Manticore instance not found!")
-            return MUIMessageList()
+            return ManticoreMessageList()
 
         q = self.manticore_instances[mcore_instance.uuid].log_queue
         i = 0
         messages = []
         while not q.empty():
-            msg = MUILogMessage(content=q.get())
+            msg = ManticoreLogMessage(content=q.get())
             messages.append(msg)
             i += 1
-        return MUIMessageList(messages=messages)
+        return ManticoreMessageList(messages=messages)
 
     def CheckManticoreRunning(
         self, mcore_instance: ManticoreInstance, context: _Context
@@ -536,7 +538,7 @@ class MUIServicer(ManticoreUIServicer):
 def main():
     stop_event = Event()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    add_ManticoreUIServicer_to_server(MUIServicer(stop_event), server)
+    add_ManticoreServerServicer_to_server(ManticoreServicer(stop_event), server)
     server.add_insecure_port("[::]:50010")
     server.start()
     stop_event.wait()

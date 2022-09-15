@@ -4,9 +4,7 @@ from setuptools import Command, find_packages, setup
 
 
 class GenerateCommand(Command):
-    description = (
-        "generates muicore server protobuf + grpc code from protobuf specification file"
-    )
+    description = "generates manticore_server server protobuf + grpc code from protobuf specification file"
     user_options = []
 
     def initialize_options(self):
@@ -25,13 +23,13 @@ class GenerateCommand(Command):
                 "--python_out=.",
                 "--grpc_python_out=.",
                 "--mypy_out=.",
-                "./muicore/MUICore.proto",
+                "./manticore_server/ManticoreServer.proto",
             ]
         )
 
 
 setup(
-    name="muicore",
+    name="manticore_server",
     version="0.0.1",
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.7",
@@ -55,7 +53,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "muicore=muicore.mui_server:main",
+            "manticore_server=manticore_server.manticore_server:main",
         ],
         "distutils.commands": ["generate = GenerateCommand"],
     },

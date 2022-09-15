@@ -1,5 +1,5 @@
 [tool.mypy]
-files = ["muicore", "tests"]
+files = ["manticore_server", "tests"]
 ignore_missing_imports = true
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -7,13 +7,13 @@ warn_unreachable = true
 
 [tool.isort]
 profile = "black"
-skip = ["venv", "muicore/MUICore_pb2.py", "muicore/MUICore_pb2_grpc.py"]
+skip = ["venv", "manticore_server/ManticoreServer_pb2.py", "manticore_server/ManticoreServer_pb2_grpc.py"]
 
 [tool.black]
 line-length = 88
 extend-exclude = '''
-    MUICore_pb2_grpc\.py
-  | MUICore_pb2\.py
-  | MUICore_pb2\.pyi
+    ManticoreServer_pb2_grpc\.py
+  | ManticoreServer_pb2\.py
+  | ManticoreServer_pb2\.pyi
   | venv
 '''

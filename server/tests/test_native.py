@@ -9,19 +9,19 @@ from uuid import UUID, uuid4
 
 import grpc
 
-from muicore import mui_server
-from muicore.MUICore_pb2 import *
+from manticore_server import manticore_server
+from manticore_server.ManticoreServer_pb2 import *
 from tests.mock_classes import MockContext
 
 
-class MUICoreNativeTest(unittest.TestCase):
+class ManticoreServerCoreNativeTest(unittest.TestCase):
     def setUp(self):
         self.dirname = str(Path(getframeinfo(currentframe()).filename).resolve().parent)
         self.binary_path = str(
             self.dirname / Path("binaries") / Path("arguments_linux_amd64")
         )
         self.test_event = threading.Event()
-        self.servicer = mui_server.MUIServicer(self.test_event)
+        self.servicer = manticore_server.ManticoreServicer(self.test_event)
         self.context = MockContext()
 
     def tearDown(self):

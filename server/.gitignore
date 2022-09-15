@@ -1,4 +1,4 @@
-muicore.egg-info/**
+manticore_server.egg-info/**
 **/__pycache__
 dist/**
 .mypy_cache/**

@@ -5,13 +5,12 @@ from manticore.core.state import StateBase
 from manticore.utils.enums import StateLists
 
 
-# from https://github.com/trailofbits/ManticoreUI/blob/master/mui/introspect_plugin.py
-class MUIIntrospectionPlugin(IntrospectionAPIPlugin):
-    NAME = "MUIIntrospectionPlugin"
+class ManticoreServerIntrospectionPlugin(IntrospectionAPIPlugin):
+    NAME = "ManticoreServerIntrospectionPlugin"
 
     @property
     def name(self) -> str:
-        return "MUIIntrospectionPlugin"
+        return "ManticoreServerIntrospectionPlugin"
 
     def create_state(self, state_id: int):
         """Override create_state to force a state update right after creation.
