@@ -13,7 +13,7 @@
 [![Example Status](https://img.shields.io/github/workflow/status/trailofbits/manticore-examples/CI/master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
 [![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/manticore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/manticore/alerts/)
 
-Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
+Manticore is a symbolic execution tool for the analysis of smart contracts and binaries.
 
 ## Features
 
@@ -128,7 +128,7 @@ Manticore provides a Python programming interface which can be used to implement
 
 #### EVM
 For Ethereum smart contracts, the API can be used for detailed verification of arbitrary contract properties. Users can set the starting conditions, 
-execute symbolic transactions, then review discovered states to ensure invariants for a contract hold.
+execute symbolic transactions, and then review discovered states to ensure invariants for a contract hold.
 <details>
   <summary>Click to expand:</summary>
   
@@ -230,11 +230,11 @@ for idx, val_list in enumerate(m.collect_returns()):
 In a pinch, you can try compiling with Solidity 0.4.x to avoid generating those instructions. 
 
 ## Using a different solver (Yices, Z3, CVC4)
-Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via commandline or configuration settings.
+Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via command-line or configuration settings.
 If Yices is available, Manticore will use it by default. If not, it will fall back to Z3 or CVC4. If you want to manually choose which solver to use, you can do so like this:
 ```manticore --smt.solver Z3```
 ### Installing CVC4
-For more details go to https://cvc4.github.io/. Otherwise just get the binary and use it.
+For more details go to https://cvc4.github.io/. Otherwise, just get the binary and use it.
 
         sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
@@ -271,7 +271,7 @@ Manticore is licensed and distributed under the AGPLv3 license. [Contact us](mai
 ## Publications
 - [Manticore: A User-Friendly Symbolic Execution Framework for Binaries and Smart Contracts](https://arxiv.org/abs/1907.03890), Mark Mossberg, Felipe Manzano, Eric Hennenfent, Alex Groce, Gustavo Grieco, Josselin Feist, Trent Brunson, Artem Dinaburg - ASE 19
 
-If you are using Manticore on an academic work, consider applying to the [Crytic $10k Research Prize](https://blog.trailofbits.com/2019/11/13/announcing-the-crytic-10k-research-prize/).
+If you are using Manticore in academic work, consider applying to the [Crytic $10k Research Prize](https://blog.trailofbits.com/2019/11/13/announcing-the-crytic-10k-research-prize/).
 
 ## Demo Video from ASE 2019
 [![Brief Manticore demo video](https://img.youtube.com/vi/o6pmBJZpKAc/1.jpg)](https://youtu.be/o6pmBJZpKAc)
