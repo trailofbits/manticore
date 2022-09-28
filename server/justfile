@@ -7,8 +7,8 @@ format:
   isort .
 
 lint:
-  black .
-  isort .
+  black --check .
+  isort --check .
   mypy
 
 generate:
