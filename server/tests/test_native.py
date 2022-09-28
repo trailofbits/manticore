@@ -16,10 +16,16 @@ from tests.mock_classes import MockContext
 
 class ManticoreServerCoreNativeTest(unittest.TestCase):
     def setUp(self):
-        self.dirname = str(Path(getframeinfo(currentframe()).filename).resolve().parent)
+        this_dir = Path(getframeinfo(currentframe()).filename).resolve().parent
+        self.dirname = str(this_dir)
         self.binary_path = str(
-            self.dirname / Path("binaries") / Path("arguments_linux_amd64")
+            this_dir.parent.parent
+            / "tests"
+            / "native"
+            / "binaries"
+            / "arguments_linux_amd64"
         )
+        print(self.binary_path)
         self.test_event = threading.Event()
         self.servicer = manticore_server.ManticoreServicer(self.test_event)
         self.context = MockContext()

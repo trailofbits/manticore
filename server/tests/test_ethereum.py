@@ -22,7 +22,7 @@ class ManticoreServerEVMTest(unittest.TestCase):
         self.contract_path = str(self.dirname / Path("contracts") / Path("adder.sol"))
         self.test_event = threading.Event()
         self.servicer = manticore_server.ManticoreServicer(self.test_event)
-        self.solc_path = str(self.dirname / Path("solc"))
+        self.solc_path = which("solc")
         self.context = MockContext()
 
     def tearDown(self):
@@ -72,7 +72,7 @@ class ManticoreServerEVMTest(unittest.TestCase):
                 [dir for dir in cur_paths if dir != solc_dir]
             )
 
-        with unittest.mock.patch.dict(os.environ, {"PATH": path_to_use}):
+        with unittest.mock.patch.dict(os.environ, {"PATH": ""}):
             mcore_instance = self.servicer.StartEVM(
                 EVMArguments(contract_path=self.contract_path),
                 self.context,
