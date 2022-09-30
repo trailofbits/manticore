@@ -550,7 +550,3 @@ def main():
     stop_event.wait()
     server.stop(None)
     logger.info("shutdown gracefully!")
-
-
-if __name__ == "__main__":
-    main()
