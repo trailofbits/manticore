@@ -45,7 +45,6 @@ setup(
             "mypy-protobuf",
             "shiv~=1.0.1",
             "types-setuptools",
-            "mypy-protobuf",
             "black~=22.0",
             "isort==5.10.1",
             "mypy==0.942",
