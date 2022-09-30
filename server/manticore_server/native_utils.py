@@ -6,6 +6,8 @@ from manticore.utils import config
 from manticore.utils.log import set_verbosity
 
 
+# TODO(ekilmer): This should be refactored to reduce duplication in main
+# manticore package
 def parse_native_arguments(additional_args: str) -> argparse.Namespace:
     """parse additional arguments for manticore native execution, CLI-style"""
 
@@ -35,7 +37,6 @@ def parse_native_arguments(additional_args: str) -> argparse.Namespace:
         help="Disable ANSI color escape sequences in output",
     )
     parser.add_argument("--offset", type=int, default=16, help=argparse.SUPPRESS)
-    # FIXME (theo) Add some documentation on the different search policy options
     parser.add_argument(
         "--policy",
         type=str,

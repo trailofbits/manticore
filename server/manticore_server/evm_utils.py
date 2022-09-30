@@ -65,6 +65,7 @@ def parse_detectors(detectors_to_exclude: List[str]) -> List[Type[Detector]]:
     return [d for d in all_detector_classes if d.ARGUMENT not in detectors_to_exclude]
 
 
+# TODO(ekilmer): This could be refactored to reduce duplication in main manticore package
 def setup_detectors_flags(
     detectors_to_exclude: List[str], additional_flags: str, m: ManticoreEVM
 ) -> argparse.Namespace:
