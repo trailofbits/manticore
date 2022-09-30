@@ -1,8 +1,11 @@
+import logging
 from datetime import datetime
 
 from manticore.core.plugin import IntrospectionAPIPlugin, StateDescriptor
 from manticore.core.state import StateBase
 from manticore.utils.enums import StateLists
+
+logger = logging.getLogger(__name__)
 
 
 class ManticoreServerIntrospectionPlugin(IntrospectionAPIPlugin):
@@ -39,4 +42,4 @@ class ManticoreServerIntrospectionPlugin(IntrospectionAPIPlugin):
             context[state.id].last_intermittent_update = datetime.now()
 
     def did_terminate_worker_callback(self, worker_id: int):
-        print(f"worker exits (id: {worker_id})")
+        logger.debug(f"worker exits (id: {worker_id})")

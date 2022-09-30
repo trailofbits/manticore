@@ -37,6 +37,8 @@ from .ManticoreServer_pb2_grpc import (
 from .native_plugin import UnicornEmulatePlugin
 from .native_utils import parse_native_arguments
 
+logger = logging.getLogger(__name__)
+
 
 class ManticoreWrapper:
     def __init__(
@@ -107,7 +109,7 @@ class ManticoreServicer(ManticoreServerServicer):
         manticore_logger.addHandler(custom_log_handler)
 
     def log_callback(self, msg: str):
-        print(msg, end="")
+        logger.debug(msg)
         thread_name, msg_content = msg.split(" ", 1)
 
         if thread_name in self.manticore_instances:
@@ -134,7 +136,7 @@ class ManticoreServicer(ManticoreServerServicer):
         try:
             parsed = parse_native_arguments(native_arguments.additional_mcore_args)
         except Exception as e:
-            print(e)
+            logger.debug(e)
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details("Additional arguments could not be parsed!")
             return ManticoreInstance()
@@ -163,7 +165,7 @@ class ManticoreServicer(ManticoreServerServicer):
                 introspection_plugin_type=ManticoreServerIntrospectionPlugin,
             )
         except Exception as e:
-            print(e)
+            logger.warning(e)
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details("Basic arguments are invalid!")
             return ManticoreInstance()
@@ -186,7 +188,7 @@ class ManticoreServicer(ManticoreServerServicer):
             def find_f(state: StateBase):
                 bufs = state.solve_one_n_batched(state.input_symbols)
                 for symbol, buf in zip(state.input_symbols, bufs):
-                    print(f"{symbol.name}: {buf!r}\n")
+                    logger.info(f"{symbol.name}: {buf!r}\n")
                 with m.locked_context() as context:
                     m.kill()
                 state.abandon()
@@ -205,7 +207,7 @@ class ManticoreServicer(ManticoreServerServicer):
                     exec(hook.func_text, {"m": m})
 
         except Exception as e:
-            print(e)
+            logger.warning(e)
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details("Hooks set are invalid!")
             return ManticoreInstance()
@@ -233,7 +235,7 @@ class ManticoreServicer(ManticoreServerServicer):
             manticore_wrapper.start()
 
         except Exception as e:
-            print(e)
+            logger.warning(e)
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(
                 "Manticore failed to start or crashed during execution!"
@@ -317,7 +319,7 @@ class ManticoreServicer(ManticoreServerServicer):
             manticore_wrapper.start()
 
         except Exception as e:
-            print(e)
+            logger.warning(e)
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(
                 "Manticore failed to start or crashed during execution!"
@@ -460,7 +462,7 @@ class ManticoreServicer(ManticoreServerServicer):
             warning_message = "WARNING: Not all Manticore processes were shut down successfully before timeout. There may be extra processes running even after the server has stopped."
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(warning_message)
-            print(warning_message)
+            logger.warning(warning_message)
 
         self.stop_event.set()
         return StopServerResponse()
@@ -536,14 +538,18 @@ class ManticoreServicer(ManticoreServerServicer):
 
 
 def main():
+    logger.setLevel(logging.DEBUG)
+    port = "[::]:50010"
+    logger.info(f"server starting at '{port}' ...")
     stop_event = Event()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_ManticoreServerServicer_to_server(ManticoreServicer(stop_event), server)
-    server.add_insecure_port("[::]:50010")
+    server.add_insecure_port(port)
     server.start()
+    logger.info(f"server started.")
     stop_event.wait()
     server.stop(None)
-    print("shutdown gracefully!")
+    logger.info("shutdown gracefully!")
 
 
 if __name__ == "__main__":

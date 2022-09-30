@@ -1,4 +1,5 @@
 import argparse
+import logging
 import shlex
 from typing import List, Type
 
@@ -28,6 +29,8 @@ from manticore.ethereum.plugins import (
     VerboseTrace,
 )
 from manticore.utils import config
+
+logger = logging.getLogger(__name__)
 
 
 def get_detectors_classes() -> List[Type[Detector]]:
@@ -189,6 +192,8 @@ def setup_detectors_flags(
         m.register_plugin(filter_nohuman_constants)
 
     if m.plugins:
-        print(f'Registered plugins: {", ".join(d.name for d in m.plugins.values())}')
+        logger.info(
+            f'Registered plugins: {", ".join(d.name for d in m.plugins.values())}'
+        )
 
     return args
