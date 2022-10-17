@@ -396,6 +396,10 @@ class ManticoreBase(Eventful):
 
         self._snapshot = None
         self._main_id = os.getpid(), threading.current_thread().ident
+        #restarting the workers
+        self.subscribe("did_terminate_worker", self.did_terminate_worker_callback)
+        self.last_id = self._workers[-1].id
+        self.number_killed_states = self.count_killed_states()
 
     def is_main(self):
         """True if called from the main process/script
@@ -1234,6 +1238,31 @@ class ManticoreBase(Eventful):
                 if self._log_queue.empty():
                     break
                 time.sleep(0.25)
+
+    #Method to cehck for the workers termination after they have completed the tasks.
+    def did_terminate_worker_callback(self, id):
+        ks = self.count_killed_states()
+        new_number_killed_states = ks - self.number_killed_states
+        if new_number_killed_states > 0:
+            self.number_killed_states = ks
+            logger.warning("Found %d new killed states" % new_number_killed_states)
+            for _ in range(new_number_killed_states):
+                self.last_id = self.last_id + 1
+                w = self._worker_type(id=self.last_id, manticore=self)
+                self._workers.append(w)
+                w.start()
+
+    def initialize_terminated_workers(self) -> typing.Dict[int, StateDescriptor]:
+            """
+        Allows callers to view descriptors for each state
+
+        :return: the latest copy of the State Descriptor dict
+            """
+        key = IntrospectionAPIPlugin.NAME
+        if key in self.plugins:
+            plug: IntrospectionAPIPlugin = self.plugins[key]
+            return plug.get_state_descriptors()
+        return {}
 
     ############################################################################
     ############################################################################
