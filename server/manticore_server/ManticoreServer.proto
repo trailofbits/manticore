@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package manticore_server;
+
+service ManticoreServer {
+    rpc StartNative(NativeArguments) returns (ManticoreInstance) {}
+    rpc StartEVM(EVMArguments) returns (ManticoreInstance) {}
+    rpc Terminate(ManticoreInstance) returns (TerminateResponse) {}
+    rpc GetStateList(ManticoreInstance) returns (ManticoreStateList) {}
+    rpc GetMessageList(ManticoreInstance) returns (ManticoreMessageList) {}
+    rpc CheckManticoreRunning(ManticoreInstance) returns (ManticoreRunningStatus) {}
+    rpc StopServer(StopServerRequest) returns (StopServerResponse) {}
+    rpc ControlState(ControlStateRequest) returns (ControlStateResponse) {}
+}
+
+// LogMessage and StateList message types have "Manticore" in their names to distinguish them from those in mserialize
+
+message ManticoreLogMessage {
+    string content = 1;
+}
+
+message ManticoreMessageList {
+    repeated ManticoreLogMessage messages = 2;
+}
+
+message ManticoreState {
+    int32 state_id = 3;
+    uint64 pc = 10;
+    optional int32 parent_id = 28;
+    repeated int32 children_ids = 29;
+}
+
+message ManticoreStateList {
+
+    // state categories in Manticore - based on manticore enums StateStatus and StateList
+    repeated ManticoreState active_states = 4;
+    repeated ManticoreState waiting_states = 5;
+    repeated ManticoreState forked_states = 6;
+    repeated ManticoreState errored_states = 7;
+    repeated ManticoreState complete_states = 8;
+    repeated ManticoreState paused_states = 33;
+}
+
+message ManticoreInstance {
+    string uuid = 9;
+}
+
+message TerminateResponse {}
+
+message Hook {
+
+    enum HookType {
+        FIND = 0;
+        AVOID = 1;
+        CUSTOM = 2;
+        GLOBAL = 3;
+    }
+
+    optional uint64 address = 26;
+    HookType type = 27;
+    optional string func_text = 31;
+}
+
+message NativeArguments {
+    string program_path = 11;
+    repeated string binary_args = 16;
+    repeated string envp = 17;
+    repeated string symbolic_files = 18;
+    optional string concrete_start = 19;
+    optional string stdin_size = 20;
+    optional string additional_mcore_args = 21;
+    repeated Hook hooks = 30;
+    optional uint64 emulate_until = 32;
+}
+
+message EVMArguments {
+    string contract_path = 12;
+    string contract_name = 13;
+    string solc_bin = 14;
+    optional string tx_limit = 22;
+    optional string tx_account = 23;
+    repeated string detectors_to_exclude = 24;
+    optional string additional_flags = 25;
+}
+
+message ManticoreRunningStatus {
+    bool is_running = 15;
+}
+
+message StopServerRequest {}
+
+message StopServerResponse {}
+
+message ControlStateRequest {
+
+    enum StateAction {
+        RESUME = 0;
+        PAUSE = 1;
+        KILL = 2;
+    }
+
+    int32 state_id = 34;
+    ManticoreInstance manticore_instance = 35;
+    StateAction action = 36;
+}
+
+message ControlStateResponse {}

@@ -115,6 +115,36 @@ jobs:
       env:
         COVERALLS_PARALLEL: true
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  manticore-server:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
+
+      - name: 'Install tools'
+        run: |
+          # just command runner https://github.com/casey/just#pre-built-binaries
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
+          sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
+          sudo chmod +x /usr/bin/solc
+
+      - name: 'Lint MUI Server'
+        working-directory: server
+        run: |
+          just init
+          source venv/bin/activate
+          just lint
+
+      - name: 'Test MUI Server'
+        working-directory: server
+        run: |
+          source venv/bin/activate
+          just test
+
   # Send notification when all tests have finished to combine coverage results
   coverage-finish:
     needs: tests
