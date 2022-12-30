@@ -76,7 +76,8 @@ setup(
         "rlp",
         "intervaltree",
         "crytic-compile>=0.2.2",
-        "wasm",
+        # TODO: Change this when a release is published
+        "wasm-tob @ git+https://github.com/trail-of-forks/wasm-tob.git@ekilmer/init-fork#egg=wasm-tob",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
     ]
