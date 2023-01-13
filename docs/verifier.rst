@@ -6,7 +6,7 @@ Manticore installs a separated CLI tool to do property based symbolic execution 
 
 **manticore-verifier** initializes an emulated blockchain environment with a configurable set of
 accounts and then sends various symbolic transactions to the target contract containing property methods.
-If a way to break a property is found the full transaction trace to reproduce the behaivor is provided.
+If a way to break a property is found the full transaction trace to reproduce the behavior is provided.
 A configurable stopping condition bounds the exploration, properties not failing are considered to pass.
 
 
@@ -48,8 +48,8 @@ Reverting property are any property method that contains "revert". For example:
 
 Selecting a target contract
 ===========================
-**manticore-verifier** needs to be pointed to a the target contract containing any number of property methods.
-The target contract is the entry point of the exploration. It needs to initilize any internal structure or external contracts to a correct initial state. All methods of this contract matching the property name criteria will be tested. ::
+**manticore-verifier** needs to be pointed to the target contract containing any number of property methods.
+The target contract is the entry point of the exploration. It needs to initialize any internal structure or external contracts to a correct initial state. All methods of this contract matching the property name criteria will be tested. ::
 
    --contract_name CONTRACT_NAME The target contract name defined in the source code
 
@@ -57,7 +57,7 @@ The target contract is the entry point of the exploration. It needs to initilize
 User accounts
 =============
 You can specify what are the accounts used in the exploration.
-Normaly you do not want the owner or deployer of the contract to send the symbolic transaction and to use a separate unused account to actually check the property methods.
+Normally you do not want the owner or deployer of the contract to send the symbolic transaction and to use a separate unused account to actually check the property methods.
 There are 3 types of user accounts:
 
     - deployer:  The account used to create the target contract
@@ -90,12 +90,12 @@ The exploration will continue to send symbolic transactions until one of the sto
 
 Maximum number of transactions
 -----------------------------
-You can be interested only in what could happen under a number of transactions. After a maximun number of transactions is reached the explorations ends. Properties that had not be found to be breakable are considered a pass.
+You can be interested only in what could happen under a number of transactions. After a maximum number of transactions is reached the explorations ends. Properties that had not been found to be breakable are considered a pass.
 You can modify the max number of transactions to test vis a command line argument, otherwise it will stop at 3 transactions. ::
 
      --maxt MAXT           Max transaction count to explore
  
-Maximun coverage % attained
+Maximum coverage % attained
 ---------------------------
 By default, if a transaction does not produce new coverage, the exploration is stopped. But you can add a further constraint so that if the provided coverage percentage is obtained, stop. Note that this is the total % of runtime bytecode covered. By default, compilers add dead code, and also in this case the runtime contains the code of the properties methods. So use with care. ::
 
@@ -105,7 +105,7 @@ By default, if a transaction does not produce new coverage, the exploration is s
 
 Timeout
 -------
-Exploration will stop after the timeout seconds have pass. ::
+Exploration will stop after the timeout seconds have passed. ::
 
      --timeout TIMEOUT     Exploration timeout in seconds
 
