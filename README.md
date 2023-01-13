@@ -104,7 +104,7 @@ $ manticore examples/evm/umd_example.sol
 
 ##### Manticore-verifier
 
-An alternative CLI tool is provided that simplifys contract testing and 
+An alternative CLI tool is provided that simplifies contract testing and 
 allows writing properties methods in the same high-level language the contract uses.
 Checkout manticore-verifier [documentation](http://manticore.readthedocs.io/en/latest/verifier.html).
 See a [demo](https://asciinema.org/a/xd0XYe6EqHCibae0RP6c7sJVE)
