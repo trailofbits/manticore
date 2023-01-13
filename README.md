@@ -5,13 +5,15 @@
 <br />
 
 
-[![Build Status](https://img.shields.io/github/workflow/status/trailofbits/manticore/CI/master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore/ci.yml?branch=master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/trailofbits/manticore/badge.svg)](https://coveralls.io/github/trailofbits/manticore)
 [![PyPI Version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
-[![Example Status](https://img.shields.io/github/workflow/status/trailofbits/manticore-examples/CI/master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
+[![Example Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore-examples/ci.yml?branch=master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
 [![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/manticore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/manticore/alerts/)
+
+
 
 Manticore is a symbolic execution tool for the analysis of smart contracts and binaries.
 
