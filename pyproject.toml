@@ -31,7 +31,7 @@ dependencies = [
     "ply",
     "rlp",
     "intervaltree",
-    "crytic-compile>=0.2.2",
+    "crytic-compile<0.3,>=0.2.2",
     "wasm-tob @ git+https://github.com/trailofbits/wasm-tob.git",
     "pyevmasm>=0.2.3",
     "z3-solver",
