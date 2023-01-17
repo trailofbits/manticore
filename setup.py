@@ -75,7 +75,7 @@ setup(
         "ply",
         "rlp",
         "intervaltree",
-        "crytic-compile>=0.2.2",
+        "crytic-compile<0.3,>=0.2.2",
         "wasm-tob==1.0.0rc1",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
