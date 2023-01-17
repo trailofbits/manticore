@@ -76,8 +76,7 @@ setup(
         "rlp",
         "intervaltree",
         "crytic-compile>=0.2.2",
-        # TODO: Change this when a release is published
-        "wasm-tob @ git+https://github.com/trailofbits/wasm-tob.git",
+        "wasm-tob==1.0.0rc1",
         "dataclasses; python_version < '3.7'",
         "pyevmasm>=0.2.3",
     ]
