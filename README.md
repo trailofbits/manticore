@@ -1,3 +1,9 @@
+# :warning: Project is in Maintenance Mode :warning:
+
+This project is no longer internally developed and maintained. However, we are happy to review and accept small, well-written pull requests by the community. We will only consider bug fixes and minor enhancements.
+
+Any new or currently open issues and discussions shall be answered and supported by the community.
+
 # Manticore
 <p align="center">
   <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
