@@ -170,6 +170,6 @@ jobs:
         python3 -m pip install wheel
         python3 setup.py --dev_release sdist bdist_wheel
     - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.6.4
+      uses: pypa/gh-action-pypi-publish@v1.8.8
       with:
         password: ${{ secrets.PYPI_UPLOAD }}
