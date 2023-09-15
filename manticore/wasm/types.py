@@ -2,7 +2,7 @@ import typing
 from dataclasses import dataclass
 from ..core.smtlib import issymbolic, BitVec
 from ctypes import *
-import wasm
+import wasm_tob as wasm
 import struct
 from ..core.state import Concretize
 

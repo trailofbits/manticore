@@ -49,8 +49,8 @@ from ..core.state import Concretize
 from ..utils.event import Eventful
 from ..utils import config
 
-from wasm import decode_module, Section
-from wasm.wasmtypes import (
+from wasm_tob import decode_module, Section
+from wasm_tob.wasmtypes import (
     SEC_TYPE,
     SEC_IMPORT,
     SEC_FUNCTION,
