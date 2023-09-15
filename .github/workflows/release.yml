@@ -6,7 +6,7 @@ on:
 
 jobs:
   tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
@@ -60,7 +60,7 @@ jobs:
         ./run_tests.sh
 
   upload:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: tests
     steps:
     - uses: actions/checkout@v3

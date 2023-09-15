@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:20.04
 
 LABEL name=Manticore
 LABEL src="https://github.com/trailofbits/manticore"

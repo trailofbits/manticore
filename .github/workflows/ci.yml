@@ -12,7 +12,7 @@ on:
 jobs:
   # needs to run only on pull_request
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python: ['3.8', '3.10']
@@ -42,7 +42,7 @@ jobs:
         mypy --version
         mypy
   tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python: ['3.8', '3.10']
@@ -121,7 +121,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   manticore-server:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python: ['3.8', '3.10']
@@ -155,7 +155,7 @@ jobs:
   # Send notification when all tests have finished to combine coverage results
   coverage-finish:
     needs: tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
     - name: Coveralls Finished
       uses: coverallsapp/github-action@v2.1.0
@@ -163,7 +163,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
   upload:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     if: github.event_name == 'schedule'
     needs: tests
     strategy:
