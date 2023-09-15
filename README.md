@@ -1,3 +1,9 @@
+# :warning: Project is in Maintenance Mode :warning:
+
+This project is no longer internally developed and maintained. However, we are happy to review and accept small, well-written pull requests by the community. We will only consider bug fixes and minor enhancements.
+
+Any new or currently open issues and discussions shall be answered and supported by the community.
+
 # Manticore
 <p align="center">
   <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
@@ -5,13 +11,15 @@
 <br />
 
 
-[![Build Status](https://img.shields.io/github/workflow/status/trailofbits/manticore/CI/master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore/ci.yml?branch=master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/trailofbits/manticore/badge.svg)](https://coveralls.io/github/trailofbits/manticore)
 [![PyPI Version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
-[![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
+[![Slack Status](https://slack.empirehacking.nyc/badge.svg)](https://slack.empirehacking.nyc)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
-[![Example Status](https://img.shields.io/github/workflow/status/trailofbits/manticore-examples/CI/master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
+[![Example Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore-examples/ci.yml?branch=master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
 [![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/manticore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/manticore/alerts/)
+
+
 
 Manticore is a symbolic execution tool for the analysis of smart contracts and binaries.
 
@@ -102,7 +110,7 @@ $ manticore examples/evm/umd_example.sol
 
 ##### Manticore-verifier
 
-An alternative CLI tool is provided that simplifys contract testing and 
+An alternative CLI tool is provided that simplifies contract testing and 
 allows writing properties methods in the same high-level language the contract uses.
 Checkout manticore-verifier [documentation](http://manticore.readthedocs.io/en/latest/verifier.html).
 See a [demo](https://asciinema.org/a/xd0XYe6EqHCibae0RP6c7sJVE)
@@ -248,7 +256,7 @@ Yices is incredibly fast. More details here https://yices.csl.sri.com/
 
 ## Getting Help
 
-Feel free to stop by our #manticore slack channel in [Empire Hacking](https://empireslacking.herokuapp.com/) for help using or extending Manticore.
+Feel free to stop by our #manticore slack channel in [Empire Hacking](https://slack.empirehacking.nyc/) for help using or extending Manticore.
 
 Documentation is available in several places:
 
