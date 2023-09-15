@@ -12,10 +12,10 @@ on:
 jobs:
   # needs to run only on pull_request
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.7', '3.10']
+        python: ['3.8', '3.10']
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
@@ -42,10 +42,10 @@ jobs:
         mypy --version
         mypy
   tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.7', '3.10']
+        python: ['3.8', '3.10']
         type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v3
@@ -121,10 +121,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   manticore-server:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.7', '3.10']
+        python: ['3.8', '3.10']
     steps:
       - uses: actions/checkout@v3
 
@@ -155,7 +155,7 @@ jobs:
   # Send notification when all tests have finished to combine coverage results
   coverage-finish:
     needs: tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Coveralls Finished
       uses: coverallsapp/github-action@1.1.3
@@ -163,12 +163,12 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
   upload:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event_name == 'schedule'
     needs: tests
     strategy:
       matrix:
-        python: ['3.7', '3.10']
+        python: ['3.8', '3.10']
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
