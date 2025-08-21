@@ -122,6 +122,7 @@ addopts = "-n auto --durations=10"
 [tool.coverage.run]
 source = ["manticore"]
 omit = [
+    "*__init__.py",
     "*/tests/*",
     "*/test_*.py",
     "*/__main__.py",
@@ -132,16 +133,19 @@ omit = [
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
+    "@abstractmethod",
+    "logger.info",
+    "logger.debug",
     "raise NotImplementedError",
+    "raise AssertionError",
+    "raise Aarch64InvalidInstruction",
+    "def __repr__",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
 
 # Note: flake8 doesn't support pyproject.toml natively yet
-# These settings are kept in tox.ini for now but documented here
-# [tool.flake8]
+# These settings are kept in tox.ini but documented here for reference:
 # ignore = E265,E501,F403,F405,E266,E712,F841,E741,E722,E731
 # max-line-length = 100
 # exclude = .tox,.*.egg,.git,docs/,examples/,scripts/,tests/
