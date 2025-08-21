@@ -13,7 +13,7 @@ jobs:
       matrix:
         type: ["ethereum_truffle", "ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
