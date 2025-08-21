@@ -21,10 +21,10 @@ ETHEREUM_DATA = TESTS_DIR / "ethereum" / "data"
 
 def get_fixture_path(filename):
     """Get the full path to a fixture file.
-    
+
     Args:
         filename: Name of the fixture file
-        
+
     Returns:
         Path object to the fixture file
     """
@@ -33,10 +33,10 @@ def get_fixture_path(filename):
 
 def load_binary(binary_name):
     """Load a test binary from the native/binaries directory.
-    
+
     Args:
         binary_name: Name of the binary file
-        
+
     Returns:
         Bytes of the binary file
     """

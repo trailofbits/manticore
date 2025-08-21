@@ -268,7 +268,7 @@ class Decree(Platform):
         start_code = 0xFFFFFFFF
         end_code = start_data = end_data = 0
 
-        for (vaddr, memsz, perms, name, offset, filesz) in cgc.maps():
+        for vaddr, memsz, perms, name, offset, filesz in cgc.maps():
             if vaddr < start_code:
                 start_code = vaddr
             if start_data < vaddr:

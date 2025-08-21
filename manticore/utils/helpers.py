@@ -115,9 +115,11 @@ class PickleSerializer(StateSerializer):
         try:
             pickle_dump(
                 state,
-                GzipFile(fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL)
-                if consts.compress_states
-                else f,
+                (
+                    GzipFile(fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL)
+                    if consts.compress_states
+                    else f
+                ),
             )
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2

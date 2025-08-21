@@ -1868,7 +1868,7 @@ class ManticoreEVM(ManticoreBase):
                 "global_%s.runtime_visited" % md.name
             ) as f, self.locked_context("runtime_coverage") as seen:
                 visited = set()
-                for (a, o) in seen:
+                for a, o in seen:
                     if a == address:
                         visited.add(o)
                 for o in sorted(visited):

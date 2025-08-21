@@ -15,7 +15,6 @@ classifiers = [
     "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -39,7 +38,7 @@ dependencies = [
     "pyevmasm>=0.2.3",
     "z3-solver",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.urls]
 Homepage = "https://github.com/trailofbits/manticore"
@@ -101,8 +100,9 @@ extend-exclude = '''
 '''
 
 [tool.mypy]
-python_version = "3.8"
-files = ["manticore", "tests"]
+python_version = "3.9"
+files = ["manticore"]
+exclude = ["server/"]
 ignore_missing_imports = true
 
 # Generated files

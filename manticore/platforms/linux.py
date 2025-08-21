@@ -176,49 +176,38 @@ class FdLike(ABC):
     """
 
     @abstractmethod
-    def read(self, size: int):
-        ...
+    def read(self, size: int): ...
 
     @abstractmethod
-    def write(self, buf) -> int:
-        ...
+    def write(self, buf) -> int: ...
 
     @abstractmethod
-    def sync(self) -> None:
-        ...
+    def sync(self) -> None: ...
 
     @abstractmethod
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
     @abstractmethod
-    def seek(self, offset: int, whence: int) -> int:
-        ...
+    def seek(self, offset: int, whence: int) -> int: ...
 
     @abstractmethod
-    def is_full(self) -> bool:
-        ...
+    def is_full(self) -> bool: ...
 
     @abstractmethod
-    def ioctl(self, request, argp) -> int:
-        ...
+    def ioctl(self, request, argp) -> int: ...
 
     @abstractmethod
-    def tell(self) -> int:
-        ...
+    def tell(self) -> int: ...
 
     @abstractmethod
-    def stat(self) -> StatResult:
-        ...
+    def stat(self) -> StatResult: ...
 
     @abstractmethod
-    def poll(self) -> int:
-        ...
+    def poll(self) -> int: ...
 
     @property
     @abstractmethod
-    def closed(self) -> bool:
-        ...
+    def closed(self) -> bool: ...
 
 
 @dataclass
@@ -745,9 +734,9 @@ class Socket(FdLike):
         """
         from collections import deque
 
-        self.buffer: Deque[
-            Union[bytes, Expression]
-        ] = deque()  # current bytes received but not read
+        self.buffer: Deque[Union[bytes, Expression]] = (
+            deque()
+        )  # current bytes received but not read
         self.peer: Optional[Socket] = None
         self.net: bool = net
 

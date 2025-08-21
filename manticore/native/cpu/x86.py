@@ -5401,9 +5401,11 @@ class X86Cpu(Cpu):
                 return 0
             for i in range(len(haystack)):
                 subneedle = needle[
-                    : (xmmsize // stepsize - i)
-                    if len(needle) + i > xmmsize // stepsize
-                    else len(needle)
+                    : (
+                        (xmmsize // stepsize - i)
+                        if len(needle) + i > xmmsize // stepsize
+                        else len(needle)
+                    )
                 ]
                 res = Operators.ITEBV(
                     xmmsize, haystack[i : i + len(subneedle)] == subneedle, res | (1 << i), res

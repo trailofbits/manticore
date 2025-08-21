@@ -1,6 +1,7 @@
 """
 $python manticore-verifier.py property.sol TestToken
 """
+
 import os
 import re
 import sys

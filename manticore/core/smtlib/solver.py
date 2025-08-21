@@ -350,7 +350,6 @@ class SMTLIBSolver(Solver):
         multiple_check: bool = True,
         debug: bool = False,
     ):
-
         """
         Build a smtlib solver instance.
         This is implemented using an external solver (via a subprocess).

@@ -1,4 +1,5 @@
 """Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf"""
+
 import uuid
 import binascii
 import random
@@ -35,19 +36,23 @@ from ..exceptions import EthereumError
 import pyevmasm as EVMAsm
 import logging
 from collections import namedtuple
+
 try:
     # Older Python versions use pysha3
     import sha3
 except ImportError:
     # Python 3.11+ doesn't have pysha3, use pycryptodome as sha3
     from Crypto.Hash import keccak
+
     class sha3:
         @staticmethod
-        def keccak_256(data=b''):
+        def keccak_256(data=b""):
             k = keccak.new(digest_bits=256)
             if data:
                 k.update(data)
             return k
+
+
 import rlp
 
 logger = logging.getLogger(__name__)
@@ -486,7 +491,6 @@ class ConcretizeFee(EVMException):
 
 
 class ConcretizeGas(EVMException):
-
     """
     Raised when a symbolic gas needs to be concretized.
     """

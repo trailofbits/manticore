@@ -31,7 +31,7 @@ fast_test = pytest.mark.fast
 linux_only = pytest.mark.linux
 requires_network = pytest.mark.network
 
-# Component markers  
+# Component markers
 ethereum_test = pytest.mark.ethereum
 native_test = pytest.mark.native
 wasm_test = pytest.mark.wasm
@@ -43,11 +43,11 @@ benchmark = pytest.mark.benchmark
 
 def mark_generated_tests(test_class):
     """Decorator to mark all tests in a class as generated.
-    
+
     Use this for test classes containing auto-generated tests.
     """
     for attr_name in dir(test_class):
-        if attr_name.startswith('test_'):
+        if attr_name.startswith("test_"):
             attr = getattr(test_class, attr_name)
             setattr(test_class, attr_name, generated_test(attr))
     return test_class

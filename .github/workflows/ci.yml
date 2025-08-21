@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.8', '3.10']
+        python: ['3.9', '3.10']  # Updated to 3.9+ for mypy compatibility
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
@@ -28,24 +28,53 @@ jobs:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
       run: |
         pip install -e .[lint]
-        black --version
+        # Run ruff for fast linting
+        ruff --version
         git fetch --depth=1 origin $BASE_SHA
         echo "Files Changed:"
         git diff --name-only $BASE_SHA... | tee .diff_names.txt
         NAMES=$(cat .diff_names.txt | python scripts/pyfile_exists.py)
-        if test -z $NAMES
+        # Check with ruff (fast)
+        if test -z "$NAMES"
+        then
+          ruff check .
+        else
+          echo $NAMES | xargs ruff check
+        fi
+        # Check formatting with black
+        if test -z "$NAMES"
         then
           black --diff --check .
         else
           echo $NAMES | xargs black --diff --check
         fi
+        # Type checking with mypy
         mypy --version
         mypy
+  
+  # Fast tests for quick feedback on PRs (skip slow and generated tests)
+  fast-tests:
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        pip install -e ".[dev-noks]"
+    - name: Run fast tests
+      run: |
+        # Skip slow and generated tests for quick PR feedback
+        pytest -xvs tests/ -m "not slow_test and not generated_test" --durations=10
+        
   tests:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.8', '3.10']
+        python: ['3.9', '3.10']
         type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v3
@@ -124,7 +153,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.8', '3.10']
+        python: ['3.9', '3.10']
     steps:
       - uses: actions/checkout@v3
 
@@ -168,7 +197,7 @@ jobs:
     needs: tests
     strategy:
       matrix:
-        python: ['3.8', '3.10']
+        python: ['3.9', '3.10']
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python

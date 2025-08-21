@@ -8,6 +8,7 @@ def fixme():
 # Let's initialize the manticore control object
 m = Manticore("multiple-styles")
 
+
 # Now, we can hook the success state and figure out the flag! `fixme()` here
 # should be an address we'd like to get to
 @m.hook(fixme())

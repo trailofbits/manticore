@@ -14,6 +14,7 @@ python make_VMTest.py --help
 for i in  tests/BlockchainTests/ValidBlocks/VMTests/*/*json; do python make_VMTest.py -i $i --fork Istanbul -o ethereum_vm/VMTests_concrete; done
 
 """
+
 import argparse
 import sys
 import logging

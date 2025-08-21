@@ -296,9 +296,9 @@ class Module:
         self.globals: typing.List[Global] = []
         self.elem: typing.List[Elem] = []
         self.data: typing.List[Data] = []
-        self.start: typing.Optional[
-            FuncIdx
-        ] = None  #: https://www.w3.org/TR/wasm-core-1/#start-function%E2%91%A0
+        self.start: typing.Optional[FuncIdx] = (
+            None  #: https://www.w3.org/TR/wasm-core-1/#start-function%E2%91%A0
+        )
         self.imports: typing.List[Import] = []
         self.exports: typing.List[Export] = []
         self.function_names: typing.Dict[FuncAddr, str] = {}
@@ -489,9 +489,9 @@ class Module:
                             func_idx = func.index
                             for n in func.local_map.names:
                                 ty = n.get_decoder_meta()["types"]["name_str"]
-                                m.local_names.setdefault(FuncAddr(func_idx), {})[
-                                    n.index
-                                ] = strip_quotes(ty.to_string(n.name_str))
+                                m.local_names.setdefault(FuncAddr(func_idx), {})[n.index] = (
+                                    strip_quotes(ty.to_string(n.name_str))
+                                )
                 else:
                     logger.info("Encountered unknown section")
                     # TODO - other custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
@@ -543,7 +543,9 @@ class MemInst(Eventful):
 
     _pages: typing.Dict[int, typing.List[int]]
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
-    _current_size: int  # Tracks the theoretical size of the memory instance, including unmapped pages
+    _current_size: (
+        int  # Tracks the theoretical size of the memory instance, including unmapped pages
+    )
 
     def __init__(self, starting_data, max=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1715,7 +1717,9 @@ class Activation:
 
     arity: int  #: The expected number of return values from the function call associated with the underlying frame
     frame: Frame  #: The nested frame
-    expected_block_depth: int  #: Internal helper used to track the expected block depth when we exit this label
+    expected_block_depth: (
+        int  #: Internal helper used to track the expected block depth when we exit this label
+    )
 
     def __init__(self, arity, frame, expected_block_depth=0):
         self.arity = arity
@@ -1944,7 +1948,9 @@ class HostFunc(ProtoFuncInst):
     Instance type for native functions that have been provided via import
     """
 
-    hostcode: types.FunctionType  #: the native function. Should accept ConstraintSet as the first argument
+    hostcode: (
+        types.FunctionType
+    )  #: the native function. Should accept ConstraintSet as the first argument
 
     def allocate(
         self, store: Store, functype: FunctionType, host_func: types.FunctionType

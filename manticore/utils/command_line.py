@@ -2,6 +2,7 @@
 NOTE: Most of the code here is compatible/taken from Slither project ( https://github.com/trailofbits/slither ).
 to be compatible with it.
 """
+
 from prettytable import PrettyTable
 
 from .enums import DetectorClassification
@@ -35,7 +36,7 @@ def output_detectors(detector_classes):
         detectors_list, key=lambda element: (element[2], element[3], element[0])
     )
     idx = 1
-    for (argument, help_info, impact, confidence) in detectors_list:
+    for argument, help_info, impact, confidence in detectors_list:
         table.add_row([idx, argument, help_info, classification_txt[impact], confidence])
         idx = idx + 1
 

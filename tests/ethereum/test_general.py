@@ -44,6 +44,7 @@ import contextlib
 # This respects user configuration and doesn't hardcode any specific solver
 from manticore.utils.solver_utils import get_solver_instance
 from tests.markers import slow_test, ethereum_test
+
 solver = get_solver_instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))

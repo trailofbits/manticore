@@ -1,6 +1,7 @@
 """
 This is the Manticore's CLI `manticore` script.
 """
+
 import argparse
 import logging
 import sys
