@@ -2,6 +2,7 @@ import collections
 import logging
 
 from functools import wraps
+from typing import Tuple
 
 import capstone as cs
 
@@ -144,7 +145,7 @@ def repe(old_method):
 
 
 class AMD64RegFile(RegisterFile):
-    Regspec = collections.namedtuple("RegSpec", "register_id ty offset size reset")
+    Regspec = collections.namedtuple("Regspec", "register_id ty offset size reset")
     _flags = {"CF": 0, "PF": 2, "AF": 4, "ZF": 6, "SF": 7, "IF": 9, "DF": 10, "OF": 11}
     _table = {
         "CS": Regspec("CS", int, 0, 16, False),
@@ -248,6 +249,13 @@ class AMD64RegFile(RegisterFile):
         "TOP": Regspec("FPSW", int, 11, 3, False),
         "FPTAG": Regspec("FPTAG", int, 0, 16, False),
         "FPCW": Regspec("FPCW", int, 0, 16, False),
+        "FOP": Regspec("FOP", int, 0, 11, False),
+        "FIP": Regspec("FIP", int, 0, 64, False),
+        "FCS": Regspec("FCS", int, 0, 16, False),
+        "FDP": Regspec("FDP", int, 0, 64, False),
+        "FDS": Regspec("FDS", int, 0, 16, False),
+        "MXCSR": Regspec("MXCSR", int, 0, 32, False),
+        "MXCSR_MASK": Regspec("MXCSR_MASK", int, 0, 32, False),
         "CF": Regspec("CF", bool, 0, 1, False),
         "PF": Regspec("PF", bool, 0, 1, False),
         "AF": Regspec("AF", bool, 0, 1, False),
@@ -355,6 +363,13 @@ class AMD64RegFile(RegisterFile):
         "TOP": ("FPSW",),
         "FPCW": (),
         "FPTAG": (),
+        "FOP": (),
+        "FIP": (),
+        "FCS": (),
+        "FDP": (),
+        "FDS": (),
+        "MXCSR": (),
+        "MXCSR_MASK": (),
         "FP0": (),
         "FP1": (),
         "FP2": (),
@@ -495,12 +510,18 @@ class AMD64RegFile(RegisterFile):
         "FPSW",
         "FPCW",
         "FPTAG",
+        "FOP",
+        "FIP",
+        "FCS",
+        "FDP",
+        "FDS",
+        "MXCSR",
+        "MXCSR_MASK",
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._registers = {}
         for reg in (
             "RAX",
             "RCX",
@@ -555,10 +576,22 @@ class AMD64RegFile(RegisterFile):
         for reg in ("FP0", "FP1", "FP2", "FP3", "FP4", "FP5", "FP6", "FP7"):
             self._registers[reg] = (0, 0)
 
-        for reg in ("FPSW", "FPTAG", "FPCW"):
+        for reg in (
+            "FPSW",
+            "FPTAG",
+            "FPCW",
+            "FOP",
+            "FIP",
+            "FCS",
+            "FDP",
+            "FDS",
+            "MXCSR",
+            "MXCSR_MASK",
+        ):
             self._registers[reg] = 0
 
         self._cache = {}
+
         for name in ("AF", "CF", "DF", "IF", "OF", "PF", "SF", "ZF"):
             self.write(name, False)
 
@@ -626,7 +659,14 @@ class AMD64RegFile(RegisterFile):
     def _set_float(self, register_id, register_size, offset, size, reset, value):
         assert size == 80
         assert offset == 0
-        if not isinstance(value, tuple):  # Add decimal here?
+        # Translate int bitfield into a floating point value according
+        # to IEEE 754 standard, 80-bit double extended precision
+        if isinstance(value, int):
+            value &= 0xFFFFFFFFFFFFFFFFFFFF  # 80-bit mask
+            exponent = value >> 64  # Exponent is the 16 higher bits
+            mantissa = value & 0xFFFFFFFFFFFFFFFF  # Mantissa is the lower 64 bits
+            value = (mantissa, exponent)
+        elif not isinstance(value, tuple):
             raise TypeError
         self._registers[register_id] = value
         return value
@@ -637,7 +677,7 @@ class AMD64RegFile(RegisterFile):
         return self._registers[register_id]
 
     def _get_flags(self, reg):
-        """ Build EFLAGS/RFLAGS from flags """
+        """Build EFLAGS/RFLAGS from flags"""
 
         def make_symbolic(flag_expr):
             register_size = 32 if reg == "EFLAGS" else 64
@@ -662,7 +702,7 @@ class AMD64RegFile(RegisterFile):
         return res
 
     def _set_flags(self, reg, res):
-        """ Set individual flags from a EFLAGS/RFLAGS value """
+        """Set individual flags from a EFLAGS/RFLAGS value"""
         # assert sizeof (res) == 32 if reg == 'EFLAGS' else 64
         for flag, offset in self._flags.items():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
@@ -720,10 +760,18 @@ class AMD64RegFile(RegisterFile):
     def sizeof(self, reg):
         return self._table[reg].size
 
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        result._cache = self._cache.copy()
+        result._registers = self._registers.copy()
+        return result
+
 
 # Operand Wrapper
 class AMD64Operand(Operand):
-    """ This class deals with capstone X86 operands """
+    """This class deals with capstone X86 operands"""
 
     def __init__(self, cpu: Cpu, op):
         super().__init__(cpu, op)
@@ -875,7 +923,7 @@ class X86Cpu(Cpu):
     # The instruction cache must be invalidated after an executable
     # page was changed or removed or added
     def invalidate_cache(cpu, address, size):
-        """ remove decoded instruction from instruction cache """
+        """remove decoded instruction from instruction cache"""
         cache = cpu.instruction_cache
         for offset in range(size):
             if address + offset in cache:
@@ -890,6 +938,23 @@ class X86Cpu(Cpu):
         # Check if we already have an implementation...
         name = OP_NAME_MAP.get(name, name)
         return name
+
+    def read_register_as_bitfield(self, name):
+        """Read a register and return its value as a bitfield.
+        - if the register holds a bitvector, the bitvector object is returned.
+        - if the register holds a concrete value (int/float) it is returned as
+        a bitfield matching its representation in memory
+
+        This is mainly used to be able to write floating point registers to
+        memory.
+        """
+        value = self.read_register(name)
+        if isinstance(value, tuple):
+            # Convert floating point to bitfield according to IEEE 754
+            # (16-bits exponent).(64-bits mantissa)
+            mantissa, exponent = value
+            value = mantissa + (exponent << 64)
+        return value
 
     #
     # Instruction Implementations
@@ -923,29 +988,21 @@ class X86Cpu(Cpu):
 
     #####################################################
     # Instructions
-    @instruction
-    def CPUID(cpu):
+    @staticmethod
+    def CPUID_helper(PC: int, EAX: int, ECX: int) -> Tuple[int, int, int, int]:
         """
-        CPUID instruction.
-
-        The ID flag (bit 21) in the EFLAGS register indicates support for the
-        CPUID instruction.  If a software procedure can set and clear this
-        flag, the processor executing the procedure supports the CPUID
-        instruction. This instruction operates the same in non-64-bit modes and
-        64-bit mode.  CPUID returns processor identification and feature
-        information in the EAX, EBX, ECX, and EDX registers.
-
-        The instruction's output is dependent on the contents of the EAX
-        register upon execution.
-
-        :param cpu: current CPU.
+        Takes values in eax and ecx to perform logic on what to return to (EAX,
+        EBX, ECX, EDX), in that order.
         """
         # FIXME Choose conservative values and consider returning some default when eax not here
         conf = {
-            # Taken from comparison against Unicorn@v1.0.2
-            0x0: (0x00000004, 0x68747541, 0x444D4163, 0x69746E65),
-            # Taken from comparison against Unicorn@v1.0.2
-            0x1: (0x663, 0x800, 0x2182200, 0x7088100),
+            # Taken from comparison against local Intel machine with `cpuid` tool
+            0x0: (0x00000004, 0x756E6547, 0x6C65746E, 0x49656E69),
+            # Determined through initial Unicorn comparison and then fixed to
+            # support latest glibc 2.35
+            # * RDX Required bit 23 for MMX instructions on new glibc
+            # * RDX Required bit 0 for onboard x87 FPU
+            0x1: (0x00000663, 0x00000800, 0x02182200, 0x07888101),
             # TODO: Check against Unicorn
             0x2: (0x76035A01, 0x00F0B5FF, 0x00000000, 0x00C10000),
             0x4: {
@@ -970,21 +1027,37 @@ class X86Cpu(Cpu):
             0x80000000: (0x80000000, 0x00000000, 0x00000000, 0x00000000),
         }
 
-        if cpu.EAX not in conf:
-            logger.warning("CPUID with EAX=%x not implemented @ %x", cpu.EAX, cpu.PC)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
-            return
+        if EAX not in conf:
+            logger.warning("CPUID with EAX=%x not implemented @ %x", EAX, PC)
+            return (0, 0, 0, 0)
 
-        if isinstance(conf[cpu.EAX], tuple):
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX]
-            return
+        if isinstance(conf[EAX], tuple):
+            return conf[EAX]  # type: ignore
 
-        if cpu.ECX not in conf[cpu.EAX]:
-            logger.warning("CPUID with EAX=%x ECX=%x not implemented", cpu.EAX, cpu.ECX)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
-            return
+        if ECX not in conf[EAX]:
+            logger.warning("CPUID with EAX=%x ECX=%x not implemented @ %x", EAX, ECX, PC)
+            return (0, 0, 0, 0)
 
-        cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX][cpu.ECX]
+        return conf[EAX][ECX]  # type: ignore
+
+    @instruction
+    def CPUID(cpu):
+        """
+        CPUID instruction.
+
+        The ID flag (bit 21) in the EFLAGS register indicates support for the
+        CPUID instruction.  If a software procedure can set and clear this
+        flag, the processor executing the procedure supports the CPUID
+        instruction. This instruction operates the same in non-64-bit modes and
+        64-bit mode.  CPUID returns processor identification and feature
+        information in the EAX, EBX, ECX, and EDX registers.
+
+        The instruction's output is dependent on the contents of the EAX
+        register upon execution.
+
+        :param cpu: current CPU.
+        """
+        cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = X86Cpu.CPUID_helper(cpu.PC, cpu.EAX, cpu.ECX)
 
     @instruction
     def XGETBV(cpu):
@@ -1103,11 +1176,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         """
-        if dest == src:
-            # if the operands are the same write zero
-            res = dest.write(0)
-        else:
-            res = dest.write(dest.read() ^ src.read())
+        res = dest.write(dest.read() ^ src.read())
         # Defined Flags: szp
         cpu._calculate_logic_flags(dest.size, res)
 
@@ -1162,7 +1231,7 @@ class X86Cpu(Cpu):
         This instruction executes as described in compatibility mode and legacy mode.
         It is not valid in 64-bit mode.
         ::
-                IF ((AL AND 0FH) > 9) Operators.OR(AF  =  1)
+                IF ((AL AND 0FH) > 9) OR (AF  =  1)
                 THEN
                     AL  =  (AL + 6);
                     AH  =  AH + 1;
@@ -1179,20 +1248,10 @@ class X86Cpu(Cpu):
         cpu.CF = cpu.AF
         cpu.AH = Operators.ITEBV(8, cpu.AF, cpu.AH + 1, cpu.AH)
         cpu.AL = Operators.ITEBV(8, cpu.AF, cpu.AL + 6, cpu.AL)
-        """
-        if (cpu.AL & 0x0F > 9) or cpu.AF == 1:
-            cpu.AL = cpu.AL + 6
-            cpu.AH = cpu.AH + 1
-            cpu.AF = True
-            cpu.CF = True
-        else:
-            cpu.AF = False
-            cpu.CF = False
-        """
         cpu.AL = cpu.AL & 0x0F
 
     @instruction
-    def AAD(cpu, imm=None):
+    def AAD(cpu, imm):
         """
         ASCII adjust AX before division.
 
@@ -1218,12 +1277,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         """
-        if imm is None:
-            imm = 10
-        else:
-            imm = imm.read()
-
-        cpu.AL += cpu.AH * imm
+        cpu.AL += cpu.AH * imm.read()
         cpu.AH = 0
 
         # Defined flags: ...sz.p.
@@ -1253,11 +1307,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         """
-        if imm is None:
-            imm = 10
-        else:
-            imm = imm.read()
-
+        imm = imm.read()
         cpu.AH = Operators.UDIV(cpu.AL, imm)
         cpu.AL = Operators.UREM(cpu.AL, imm)
 
@@ -5506,6 +5556,36 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param arg0: this argument is ignored.
         """
+        pass
+
+    @instruction
+    def ENDBR32(cpu):
+        """
+        The ENDBRANCH is a new instruction that is used to mark valid jump target
+        addresses of indirect calls and jumps in the program. This instruction
+        opcode is selected to be one that is a NOP on legacy machines such that
+        programs compiled with ENDBRANCH new instruction continue to function on
+        old machines without the CET enforcement. On processors that support CET
+        the ENDBRANCH is still a NOP and is primarily used as a marker instruction
+        by the processor pipeline to detect control flow violations.
+        This is the 32-bit variant.
+        :param cpu: current CPU.
+        """
+        pass
+
+    @instruction
+    def ENDBR64(cpu):
+        """
+        The ENDBRANCH is a new instruction that is used to mark valid jump target
+        addresses of indirect calls and jumps in the program. This instruction
+        opcode is selected to be one that is a NOP on legacy machines such that
+        programs compiled with ENDBRANCH new instruction continue to function on
+        old machines without the CET enforcement. On processors that support CET
+        the ENDBRANCH is still a NOP and is primarily used as a marker instruction
+        by the processor pipeline to detect control flow violations.
+        :param cpu: current CPU.
+        """
+        pass
 
     @instruction
     def MOVD(cpu, op0, op1):
@@ -5668,6 +5748,37 @@ class X86Cpu(Cpu):
         cpu.R11 = cpu.RFLAGS
         raise Syscall()
 
+    def generic_FXSAVE(cpu, dest, reg_layout):
+        """
+        Saves the current state of the x87 FPU, MMX technology, XMM, and
+        MXCSR registers to a 512-byte memory location specified in the
+        destination operand.
+
+        The content layout of the 512 byte region depends
+        on whether the processor is operating in non-64-bit operating modes
+        or 64-bit sub-mode of IA-32e mode
+        """
+        addr = dest.address()
+        for offset, reg, size in reg_layout:
+            cpu.write_int(addr + offset, cpu.read_register_as_bitfield(reg), size)
+
+    def generic_FXRSTOR(cpu, dest, reg_layout):
+        """
+        Reloads the x87 FPU, MMX technology, XMM, and MXCSR registers from
+        the 512-byte memory image specified in the source operand. This data should
+        have been written to memory previously using the FXSAVE instruction, and in
+        the same format as required by the operating modes. The first byte of the data
+        should be located on a 16-byte boundary.
+
+        There are three distinct layouts of the FXSAVE state map:
+        one for legacy and compatibility mode, a second
+        format for 64-bit mode FXSAVE/FXRSTOR with REX.W=0, and the third format is for
+        64-bit mode with FXSAVE64/FXRSTOR64
+        """
+        addr = dest.address()
+        for offset, reg, size in reg_layout:
+            cpu.write_register(reg, cpu.read_int(addr + offset, size))
+
     @instruction
     def SYSCALL(cpu):
         """
@@ -5778,6 +5889,31 @@ class X86Cpu(Cpu):
             b = Operators.EXTRACT(value_b, i, 8)
             result.append((a - b) & 0xFF)
         dest.write(Operators.CONCAT(8 * len(result), *result))
+
+    @instruction
+    def PSUBQ(cpu, dest, src):
+        """
+        PSUBQ: Packed add with quadruple words
+        Packed subtract with quad
+
+        Subtracts the second operand (source operand) from the first operand (destination operand) and stores
+        the result in the destination operand. When packed quadword operands are used, a SIMD subtract is performed.
+        When a quadword result is too large to be represented in 64 bits (overflow), the result is wrapped around
+        and the low 64 bits are written to the destination element (that is, the carry is ignored).
+
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
+        """
+        result = []
+        value_a = dest.read()
+        value_b = src.read()
+
+        for i in reversed(range(0, dest.size, 64)):
+            a = Operators.EXTRACT(value_a, i, 64)
+            b = Operators.EXTRACT(value_b, i, 64)
+            result.append(a - b)
+        dest.write(Operators.CONCAT(dest.size, *result))
 
     @instruction
     def POR(cpu, dest, src):
@@ -6394,6 +6530,9 @@ class I386LinuxSyscallAbi(SyscallAbi):
         for reg in ("EBX", "ECX", "EDX", "ESI", "EDI", "EBP"):
             yield reg
 
+    def get_result_reg(self):
+        return "EAX"
+
     def write_result(self, result):
         self._cpu.EAX = result
 
@@ -6413,6 +6552,9 @@ class AMD64LinuxSyscallAbi(SyscallAbi):
         for reg in ("RDI", "RSI", "RDX", "R10", "R8", "R9"):
             yield reg
 
+    def get_result_reg(self):
+        return "RAX"
+
     def write_result(self, result):
         self._cpu.RAX = result
 
@@ -6426,6 +6568,9 @@ class I386CdeclAbi(Abi):
         base = self._cpu.STACK + self._cpu.address_bit_size // 8
         for address in self.values_from(base):
             yield address
+
+    def get_result_reg(self):
+        return "EAX"
 
     def write_result(self, result):
         self._cpu.EAX = result
@@ -6448,6 +6593,9 @@ class I386StdcallAbi(Abi):
         for address in self.values_from(base):
             self._arguments += 1
             yield address
+
+    def get_result_reg(self):
+        return "EAX"
 
     def write_result(self, result):
         self._cpu.EAX = result
@@ -6479,6 +6627,9 @@ class SystemVAbi(Abi):
         for address in self.values_from(self._cpu.RSP + word_bytes):
             yield address
 
+    def get_result_reg(self):
+        return "RAX"
+
     def write_result(self, result):
         # XXX(yan): Can also return in rdx for wide values.
         self._cpu.RAX = result
@@ -6494,6 +6645,44 @@ class AMD64Cpu(X86Cpu):
     machine = "amd64"
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_64
+
+    # CPU specific instruction behaviour
+    FXSAVE_layout = [
+        (0, "FPCW", 16),
+        (2, "FPSW", 16),
+        (4, "FPTAG", 8),
+        (6, "FOP", 16),
+        (8, "FIP", 32),
+        (12, "FCS", 16),
+        (16, "FDP", 32),
+        (20, "FDS", 16),
+        (24, "MXCSR", 32),
+        (28, "MXCSR_MASK", 32),
+        (32, "FP0", 80),
+        (48, "FP1", 80),
+        (64, "FP2", 80),
+        (80, "FP3", 80),
+        (96, "FP4", 80),
+        (112, "FP5", 80),
+        (128, "FP6", 80),
+        (144, "FP7", 80),
+        (160, "XMM0", 128),
+        (176, "XMM1", 128),
+        (192, "XMM2", 128),
+        (208, "XMM3", 128),
+        (224, "XMM4", 128),
+        (240, "XMM5", 128),
+        (256, "XMM6", 128),
+        (272, "XMM7", 128),
+        (288, "XMM8", 128),
+        (304, "XMM9", 128),
+        (320, "XMM10", 128),
+        (336, "XMM11", 128),
+        (352, "XMM12", 128),
+        (368, "XMM13", 128),
+        (384, "XMM14", 128),
+        (400, "XMM15", 128),
+    ]
 
     def __init__(self, memory: Memory, *args, **kwargs):
         """
@@ -6610,6 +6799,14 @@ class AMD64Cpu(X86Cpu):
         """
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
+    @instruction
+    def FXSAVE(cpu, dest):
+        return cpu.generic_FXSAVE(dest, AMD64Cpu.FXSAVE_layout)
+
+    @instruction
+    def FXRSTOR(cpu, src):
+        return cpu.generic_FXRSTOR(src, AMD64Cpu.FXSAVE_layout)
+
 
 class I386Cpu(X86Cpu):
     # Config
@@ -6618,6 +6815,36 @@ class I386Cpu(X86Cpu):
     machine = "i386"
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_32
+
+    # CPU specific instruction behaviour
+    FXSAVE_layout = [
+        (0, "FPCW", 16),
+        (2, "FPSW", 16),
+        (4, "FPTAG", 8),
+        (6, "FOP", 16),
+        (8, "FIP", 32),
+        (12, "FCS", 16),
+        (16, "FDP", 32),
+        (20, "FDS", 16),
+        (24, "MXCSR", 32),
+        (28, "MXCSR_MASK", 32),
+        (32, "FP0", 80),
+        (48, "FP1", 80),
+        (64, "FP2", 80),
+        (80, "FP3", 80),
+        (96, "FP4", 80),
+        (112, "FP5", 80),
+        (128, "FP6", 80),
+        (144, "FP7", 80),
+        (160, "XMM0", 128),
+        (176, "XMM1", 128),
+        (192, "XMM2", 128),
+        (208, "XMM3", 128),
+        (224, "XMM4", 128),
+        (240, "XMM5", 128),
+        (256, "XMM6", 128),
+        (272, "XMM7", 128),
+    ]
 
     def __init__(self, memory: Memory, *args, **kwargs):
         """
@@ -6685,7 +6912,26 @@ class I386Cpu(X86Cpu):
         regs = ["EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "EIP"]
         regs.extend(["CS", "DS", "ES", "SS", "FS", "GS"])
         regs.extend(
-            ["FP0", "FP1", "FP2", "FP3", "FP4", "FP5", "FP6", "FP7", "FPCW", "FPSW", "FPTAG"]
+            [
+                "FP0",
+                "FP1",
+                "FP2",
+                "FP3",
+                "FP4",
+                "FP5",
+                "FP6",
+                "FP7",
+                "FPCW",
+                "FPSW",
+                "FPTAG",
+                "FOP",
+                "FIP",
+                "FCS",
+                "FDP",
+                "FDS",
+                "MXCSR",
+                "MXCSR_MASK",
+            ]
         )
         regs.extend(
             [
@@ -6737,3 +6983,11 @@ class I386Cpu(X86Cpu):
         :param dest: destination operand.
         """
         cpu.AL = cpu.read_int(cpu.EBX + Operators.ZEXTEND(cpu.AL, 32), 8)
+
+    @instruction
+    def FXSAVE(cpu, dest):
+        return cpu.generic_FXSAVE(dest, I386Cpu.FXSAVE_layout)
+
+    @instruction
+    def FXRSTOR(cpu, src):
+        return cpu.generic_FXRSTOR(src, I386Cpu.FXSAVE_layout)

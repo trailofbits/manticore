@@ -15,7 +15,7 @@ warnings.simplefilter("default", category=ManticoreDeprecationWarning)
 
 
 def deprecated(message: str):
-    """A decorator for marking functions as deprecated. """
+    """A decorator for marking functions as deprecated."""
     assert isinstance(message, str), "The deprecated decorator requires a message string argument."
 
     def decorator(func):

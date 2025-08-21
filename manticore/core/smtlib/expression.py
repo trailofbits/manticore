@@ -15,6 +15,14 @@ class ExpressionException(SmtlibError):
     pass
 
 
+class ExpressionEvalError(SmtlibError):
+    """Exception raised when an expression can't be concretized, typically
+    when calling __bool__() fails to produce a True/False boolean result
+    """
+
+    pass
+
+
 class XSlotted(type):
     """
     Metaclass that will propagate slots on multi-inheritance classes
@@ -65,7 +73,7 @@ class XSlotted(type):
 
 
 class Expression(object, metaclass=XSlotted, abstract=True):
-    """ Abstract taintable Expression. """
+    """Abstract taintable Expression."""
 
     __xslots__: Tuple[str, ...] = ("_taint",)
 
@@ -214,7 +222,7 @@ class Bool(Expression, abstract=True):
         x = simplify(self)
         if isinstance(x, Constant):
             return x.value
-        raise NotImplementedError("__bool__ for Bool")
+        raise ExpressionEvalError("__bool__ for Bool")
 
 
 class BoolVariable(Bool):
@@ -259,7 +267,7 @@ class BoolConstant(Bool):
 
 
 class BoolOperation(Bool, abstract=True):
-    """ An operation that results in a Bool """
+    """An operation that results in a Bool"""
 
     __xslots__: Tuple[str, ...] = ("_operands",)
 
@@ -302,7 +310,7 @@ class BoolITE(BoolOperation):
 
 
 class BitVec(Expression, abstract=True):
-    """ BitVector expressions have a fixed bit size """
+    """BitVector expressions have a fixed bit size"""
 
     __xslots__: Tuple[str, ...] = ("size",)
 
@@ -564,7 +572,7 @@ class BitVecConstant(BitVec):
 
 
 class BitVecOperation(BitVec, abstract=True):
-    """ An operation that results in a BitVec """
+    """An operation that results in a BitVec"""
 
     __xslots__: Tuple[str, ...] = ("_operands",)
 
@@ -736,7 +744,7 @@ class Array(Expression, abstract=True):
     def __init__(self, *, index_bits: int, index_max: Optional[int], value_bits: int, **kwargs):
         assert index_bits in (32, 64, 256)
         assert value_bits in (8, 16, 32, 64, 256)
-        assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
+        assert index_max is None or index_max >= 0 and index_max < 2**index_bits
         self._index_bits = index_bits
         self._index_max = index_max
         self._value_bits = value_bits

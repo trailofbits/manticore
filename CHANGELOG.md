@@ -1,6 +1,36 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.6...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.3.7...HEAD)
+
+## 0.3.7 - 2022-02
+
+Thanks to our external contributors!
+ - [sobolevn](https://github.com/trailofbits/manticore/pulls?q=is%3Apr+author%3Asobolevn)
+ - [G-11-P](https://github.com/trailofbits/manticore/pulls?q=is%3Apr+author%3AG-11-P)
+
+### Ethereum
+* Use `crytic-compile` 0.2.2 [#2530](https://github.com/trailofbits/manticore/pull/2530)
+* Multi-transaction analysis now uses fixed attacker and owner contracts [#2464](https://github.com/trailofbits/manticore/pull/2464)
+
+### Native
+* **[Added API]** Retrieve list of unimplemented syscalls [#2491](https://github.com/trailofbits/manticore/pull/2491)
+* Add `FXSAVE`/`FXRSTOR` concrete support on x86 [#2511](https://github.com/trailofbits/manticore/pull/2511)
+* Add `last_executed_pc` property to CPU [#2475](https://github.com/trailofbits/manticore/pull/2475)
+* Support LD_LIBRARY_PATH [#2476](https://github.com/trailofbits/manticore/pull/2476)
+* Optional `will/did_read_memory` events [#2488](https://github.com/trailofbits/manticore/pull/2488) 
+* Fixed base address handling on Linux [#2500](https://github.com/trailofbits/manticore/pull/2500)
+* Add `ENDBR`-style NOPs [#2533](https://github.com/trailofbits/manticore/pull/2533)
+* Support `epoll`-related syscalls [#2529](https://github.com/trailofbits/manticore/pull/2529)
+
+### Other
+* **[Added API]** Add fork policy for providing explicit values [#2514](https://github.com/trailofbits/manticore/pull/2514)
+* Fixed Constant Folding [#2524](https://github.com/trailofbits/manticore/pull/2524)
+* Add simplifications for subtraction [#2504](https://github.com/trailofbits/manticore/pull/2504)
+* Parent state ID, last PC now available in state descriptors [#2479](https://github.com/trailofbits/manticore/pull/2479), [#2471](https://github.com/trailofbits/manticore/pull/2471)
+* States now contain a reference to the current manticore instance [#2486](https://github.com/trailofbits/manticore/pull/2486)
+* `fast_fail` config to exit after first state exception [#2487](https://github.com/trailofbits/manticore/pull/2487)
+* Scaling bugfix for large solver queries [#2502](https://github.com/trailofbits/manticore/pull/2502)
+* Don't fork when only one solution is found for `Concretize` [#2527](https://github.com/trailofbits/manticore/pull/2527)
 
 ## 0.3.6 - 2021-06-09
 

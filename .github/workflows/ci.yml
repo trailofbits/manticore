@@ -12,13 +12,13 @@ on:
 jobs:
   # needs to run only on pull_request
   lint:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v1
+    - uses: actions/checkout@v5
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.6
+        python-version: 3.7
     - name: Lint
       if: github.event_name == 'pull_request'
       env:
@@ -39,20 +39,20 @@ jobs:
         mypy --version
         mypy
   tests:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v1
+    - uses: actions/checkout@v5
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.6
+        python-version: 3.7
     - name: Install NPM
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
-        node-version: '13.x'
+        node-version: '16.x'
     - name: Install dependencies
       env:
         TEST_TYPE: ${{ matrix.type }}
@@ -60,13 +60,19 @@ jobs:
         #install utils
         pip install coveralls
         pip install -e ".[dev-noks]"
+        # Get version info
+        pip freeze
+        z3 --version
         #install cvc4
         sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
+        cvc4 --version
         #install yices
-        sudo add-apt-repository ppa:sri-csl/formal-methods
-        sudo apt-get update
-        sudo apt-get install yices2
+        sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
+        sudo tar -xzf yices.tar.gz
+        cd yices-2.6.2
+        sudo ./install-yices
+        yices --version
         #install boolector
         mkdir -p /tmp/build
         cd /tmp/build
@@ -92,36 +98,78 @@ jobs:
         cp scripts/run_tests.sh .
         ./run_tests.sh
     - name: Coveralls Parallel
+      shell: bash
       run: |
-        coveralls --service=github
+        set +e
+        counter=1
+        while [ "${counter}" -le 10 ] ; do
+          echo "Attempt ${counter} to upload"
+          $(coveralls --service=github)
+          if [ $? -eq 0 ] ; then
+              exit 0
+          fi
+          ((counter++))
+          sleep 1
+        done
+        exit 1
       env:
         COVERALLS_PARALLEL: true
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  manticore-server:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
+
+      - name: 'Install tools'
+        run: |
+          # just command runner https://github.com/casey/just#pre-built-binaries
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
+          sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
+          sudo chmod +x /usr/bin/solc
+
+      - name: 'Lint MUI Server'
+        working-directory: server
+        run: |
+          just init
+          source venv/bin/activate
+          just lint
+
+      - name: 'Test MUI Server'
+        working-directory: server
+        run: |
+          source venv/bin/activate
+          just test
+
   # Send notification when all tests have finished to combine coverage results
   coverage-finish:
     needs: tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
     - name: Coveralls Finished
-      uses: coverallsapp/github-action@v1.1.2
+      uses: coverallsapp/github-action@v2.3.6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
   upload:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     if: github.event_name == 'schedule'
     needs: tests
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v1
+    - uses: actions/checkout@v5
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.6
+        python-version: 3.7
     - name: Build Dist
       run: |
         python3 -m pip install wheel
         python3 setup.py --dev_release sdist bdist_wheel
     - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.2.2
+      uses: pypa/gh-action-pypi-publish@v1.12.4
       with:
         password: ${{ secrets.PYPI_UPLOAD }}

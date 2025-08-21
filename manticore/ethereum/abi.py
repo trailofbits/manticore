@@ -31,7 +31,7 @@ class ABI:
 
     @staticmethod
     def _type_size(ty):
-        """ Calculate `static` type size """
+        """Calculate `static` type size"""
         if ty[0] in ("int", "uint", "bytesM", "function"):
             return 32
         elif ty[0] in ("tuple"):

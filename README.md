@@ -1,3 +1,9 @@
+# :warning: Project is in Maintenance Mode :warning:
+
+This project is no longer internally developed and maintained. However, we are happy to review and accept small, well-written pull requests by the community. We will only consider bug fixes and minor enhancements.
+
+Any new or currently open issues and discussions shall be answered and supported by the community.
+
 # Manticore
 <p align="center">
   <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
@@ -5,15 +11,17 @@
 <br />
 
 
-[![Build Status](https://img.shields.io/github/workflow/status/trailofbits/manticore/CI/master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore/ci.yml?branch=master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/trailofbits/manticore/badge.svg)](https://coveralls.io/github/trailofbits/manticore)
 [![PyPI Version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
-[![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
+[![Slack Status](https://slack.empirehacking.nyc/badge.svg)](https://slack.empirehacking.nyc)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
-[![Example Status](https://img.shields.io/github/workflow/status/trailofbits/manticore-examples/CI/master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
+[![Example Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore-examples/ci.yml?branch=master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
 [![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/manticore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/manticore/alerts/)
 
-Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
+
+
+Manticore is a symbolic execution tool for the analysis of smart contracts and binaries.
 
 ## Features
 
@@ -102,7 +110,7 @@ $ manticore examples/evm/umd_example.sol
 
 ##### Manticore-verifier
 
-An alternative CLI tool is provided that simplifys contract testing and 
+An alternative CLI tool is provided that simplifies contract testing and 
 allows writing properties methods in the same high-level language the contract uses.
 Checkout manticore-verifier [documentation](http://manticore.readthedocs.io/en/latest/verifier.html).
 See a [demo](https://asciinema.org/a/xd0XYe6EqHCibae0RP6c7sJVE)
@@ -128,7 +136,7 @@ Manticore provides a Python programming interface which can be used to implement
 
 #### EVM
 For Ethereum smart contracts, the API can be used for detailed verification of arbitrary contract properties. Users can set the starting conditions, 
-execute symbolic transactions, then review discovered states to ensure invariants for a contract hold.
+execute symbolic transactions, and then review discovered states to ensure invariants for a contract hold.
 <details>
   <summary>Click to expand:</summary>
   
@@ -217,7 +225,7 @@ for idx, val_list in enumerate(m.collect_returns()):
 </details>
 
 ## Requirements
-* Manticore requires Python 3.6 or greater 
+* Manticore requires Python 3.7 or greater 
 * Manticore officially supports the latest LTS version of Ubuntu provided by Github Actions
   * Manticore has experimental support for EVM and WASM (but not native Linux binaries) on MacOS 
 * We recommend running with increased stack size. This can be done by running `ulimit -s 100000` or by passing `--ulimit stack=100000000:100000000` to `docker run`
@@ -230,11 +238,11 @@ for idx, val_list in enumerate(m.collect_returns()):
 In a pinch, you can try compiling with Solidity 0.4.x to avoid generating those instructions. 
 
 ## Using a different solver (Yices, Z3, CVC4)
-Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via commandline or configuration settings.
+Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via command-line or configuration settings.
 If Yices is available, Manticore will use it by default. If not, it will fall back to Z3 or CVC4. If you want to manually choose which solver to use, you can do so like this:
 ```manticore --smt.solver Z3```
 ### Installing CVC4
-For more details go to https://cvc4.github.io/. Otherwise just get the binary and use it.
+For more details go to https://cvc4.github.io/. Otherwise, just get the binary and use it.
 
         sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
@@ -248,7 +256,7 @@ Yices is incredibly fast. More details here https://yices.csl.sri.com/
 
 ## Getting Help
 
-Feel free to stop by our #manticore slack channel in [Empire Hacking](https://empireslacking.herokuapp.com/) for help using or extending Manticore.
+Feel free to stop by our #manticore slack channel in [Empire Hacking](https://slack.empirehacking.nyc/) for help using or extending Manticore.
 
 Documentation is available in several places:
 
@@ -271,8 +279,14 @@ Manticore is licensed and distributed under the AGPLv3 license. [Contact us](mai
 ## Publications
 - [Manticore: A User-Friendly Symbolic Execution Framework for Binaries and Smart Contracts](https://arxiv.org/abs/1907.03890), Mark Mossberg, Felipe Manzano, Eric Hennenfent, Alex Groce, Gustavo Grieco, Josselin Feist, Trent Brunson, Artem Dinaburg - ASE 19
 
-If you are using Manticore on an academic work, consider applying to the [Crytic $10k Research Prize](https://blog.trailofbits.com/2019/11/13/announcing-the-crytic-10k-research-prize/).
+If you are using Manticore in academic work, consider applying to the [Crytic $10k Research Prize](https://blog.trailofbits.com/2019/11/13/announcing-the-crytic-10k-research-prize/).
 
 ## Demo Video from ASE 2019
 [![Brief Manticore demo video](https://img.youtube.com/vi/o6pmBJZpKAc/1.jpg)](https://youtu.be/o6pmBJZpKAc)
 
+## Tool Integrations 
+
+- [MATE: Merged Analysis To prevent Exploits](https://github.com/GaloisInc/MATE)
+  * [Mantiserve:](https://galoisinc.github.io/MATE/mantiserve.html) REST API interaction with Manticore to start, kill, and check Manticore instance
+  * [Dwarfcore:](https://galoisinc.github.io/MATE/dwarfcore.html) Plugins and detectors for use within Mantiserve engine during exploration 
+  * [Under-constrained symbolic execution](https://github.com/GaloisInc/MATE/blob/main/doc/under-constrained-manticore.rst) Interface for symbolically exploring single functions with Manticore

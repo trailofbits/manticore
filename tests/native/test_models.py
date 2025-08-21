@@ -12,6 +12,7 @@ from manticore.core.smtlib import (
     issymbolic,
     ArraySelect,
     BitVecITE,
+    ArrayProxy,
 )
 from manticore.native.state import State
 from manticore.platforms import linux

@@ -3,6 +3,7 @@ import ctypes
 import errno
 import fcntl
 import logging
+import select
 import socket
 import struct
 import time
@@ -31,7 +32,7 @@ from ..core.state import TerminateState, Concretize
 from ..core.smtlib import ConstraintSet, Operators, Expression, issymbolic, ArrayProxy
 from ..core.smtlib.solver import SelectedSolver
 from ..exceptions import SolverError
-from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption
+from ..native.cpu.abstractcpu import Cpu, Syscall, ConcretizeArgument, Interruption, Abi, SyscallAbi
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import (
     SMemory32,
@@ -45,7 +46,20 @@ from ..native.memory import (
 from ..native.state import State
 from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 
-from typing import cast, Any, Deque, Dict, IO, Iterable, List, Optional, Set, Tuple, Union, Callable
+from typing import (
+    cast,
+    Any,
+    Deque,
+    Dict,
+    IO,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    Callable,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +211,15 @@ class FdLike(ABC):
     def stat(self) -> StatResult:
         ...
 
+    @abstractmethod
+    def poll(self) -> int:
+        ...
+
+    @property
+    @abstractmethod
+    def closed(self) -> bool:
+        ...
+
 
 @dataclass
 class FdTableEntry:
@@ -284,6 +307,59 @@ class FdTable:
         return self._lookup(fd).twaiters
 
 
+@dataclass
+class EPollEvent:
+    events: int  # Part of epoll_event
+    data: int  # Part of epoll_event
+
+
+@concreteclass
+class EventPoll(FdLike):
+    """
+    An EventPoll class for epoll support. Internal kernel object referenced by
+    a file descriptor
+    """
+
+    def __init__(self):
+        # List of file descriptor entries that are registered with this object
+        self.interest_list: Dict[FdLike, EPollEvent] = {}
+
+    def read(self, size: int):
+        raise NotImplemented
+
+    def write(self, buf) -> int:
+        raise NotImplemented
+
+    def sync(self) -> None:
+        raise NotImplemented
+
+    def close(self) -> None:
+        # Nothing really to do
+        pass
+
+    def seek(self, offset: int, whence: int) -> int:
+        raise NotImplemented
+
+    def is_full(self) -> bool:
+        raise NotImplemented
+
+    def ioctl(self, request, argp) -> int:
+        raise NotImplemented
+
+    def tell(self) -> int:
+        raise NotImplemented
+
+    def stat(self) -> StatResult:
+        raise NotImplemented
+
+    def poll(self) -> int:
+        # TODO(ekilmer): Look into how we could implement this
+        return select.POLLERR
+
+    def closed(self) -> bool:
+        return False
+
+
 @concreteclass
 class File(FdLike):
     def __init__(self, path: str, flags: int):
@@ -349,6 +425,9 @@ class File(FdLike):
     def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         return self.file.seek(offset, whence)
 
+    def pread(self, count, offset):
+        return os.pread(self.fileno(), count, offset)
+
     def write(self, buf):
         return self.file.write(buf)
 
@@ -366,6 +445,17 @@ class File(FdLike):
 
     def sync(self) -> None:
         pass
+
+    def poll(self) -> int:
+        """Return EPOLLIN or EPOLLOUT"""
+        # If opened with read, then should watch for reads
+        if "r" in self.mode:
+            # TODO
+            return select.POLLIN
+        elif "w" in self.mode:
+            return select.POLLOUT
+        else:
+            return select.POLLERR
 
 
 # TODO - we should consider refactoring File so that we don't have to mute these errors
@@ -412,6 +502,10 @@ class Directory(FdLike):
     def mode(self) -> str:
         return mode_from_flags(self.flags)
 
+    @property
+    def closed(self) -> bool:
+        return False
+
     def tell(self) -> int:
         return 0
 
@@ -447,6 +541,10 @@ class Directory(FdLike):
 
     def ioctl(self, request, argp):
         raise FdError("Invalid ioctl() operation on Directory", errno.ENOTTY)
+
+    def poll(self) -> int:
+        # TODO(ekilmer): Look into how we could implement this
+        return select.POLLERR
 
 
 @concreteclass
@@ -615,6 +713,15 @@ class SocketDesc(FdLike):
             8592, 11, 9, 1, 1000, 5, 0, 1378673920, 1378673920, 1378653796, 0x400, 0x8808, 0
         )
 
+    @property
+    def closed(self) -> bool:
+        return False
+
+    def poll(self) -> int:
+        # TODO(ekilmer): Look into how we could implement this
+        # POLLERR is same as EPOLLERR but mypy complains on Macs
+        return select.POLLERR
+
 
 @concreteclass
 class Socket(FdLike):
@@ -712,8 +819,17 @@ class Socket(FdLike):
         """
         pass
 
+    @property
+    def closed(self) -> bool:
+        return False
+
     def ioctl(self, request, argp):
         raise FdError("Invalid ioctl() operation on Socket", errno.ENOTTY)
+
+    def poll(self) -> int:
+        if self.is_empty():
+            return select.POLLOUT
+        return select.POLLIN
 
 
 @concreteclass
@@ -869,6 +985,9 @@ class Linux(Platform):
         self.envp = envp
         self.argv = argv
         self.stubs = SyscallStubs(parent=self)
+        # Load addresses
+        self.interp_base: Optional[int] = None
+        self.program_base: Optional[int] = None
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -1000,6 +1119,16 @@ class Linux(Platform):
         assert self._current is not None
         return self.procs[self._current]
 
+    @property
+    def function_abi(self) -> Abi:
+        assert self._function_abi is not None
+        return self._function_abi
+
+    @property
+    def syscall_abi(self) -> SyscallAbi:
+        assert self._syscall_abi is not None
+        return self._syscall_abi
+
     def __getstate__(self):
         state = super().__getstate__()
         state["clocks"] = self.clocks
@@ -1018,7 +1147,8 @@ class Linux(Platform):
         state["syscall_trace"] = self.syscall_trace
         state["argv"] = self.argv
         state["envp"] = self.envp
-        state["base"] = self.base
+        state["interp_base"] = self.interp_base
+        state["program_base"] = self.program_base
         state["elf_bss"] = self.elf_bss
         state["end_code"] = self.end_code
         state["end_data"] = self.end_data
@@ -1080,7 +1210,8 @@ class Linux(Platform):
         self.syscall_trace = state["syscall_trace"]
         self.argv = state["argv"]
         self.envp = state["envp"]
-        self.base = state["base"]
+        self.interp_base = state["interp_base"]
+        self.program_base = state["program_base"]
         self.elf_bss = state["elf_bss"]
         self.end_code = state["end_code"]
         self.end_data = state["end_data"]
@@ -1343,12 +1474,10 @@ class Linux(Platform):
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != "PT_INTERP":
                 continue
-            interpreter_filename = elf_segment.data()[:-1]
+            interpreter_filename = elf_segment.data()[:-1].rstrip(b"\x00").decode("utf-8")
             logger.info(f"Interpreter filename: {interpreter_filename}")
-            if os.path.exists(interpreter_filename.decode("utf-8")):
-                _clean_interp_stream()
-                interpreter = ELFFile(open(interpreter_filename, "rb"))
-            elif "LD_LIBRARY_PATH" in env:
+
+            if "LD_LIBRARY_PATH" in env:
                 for mpath in env["LD_LIBRARY_PATH"].split(":"):
                     interpreter_path_filename = os.path.join(
                         mpath, os.path.basename(interpreter_filename)
@@ -1358,6 +1487,10 @@ class Linux(Platform):
                         _clean_interp_stream()
                         interpreter = ELFFile(open(interpreter_path_filename, "rb"))
                         break
+
+            if interpreter is None and os.path.exists(interpreter_filename):
+                interpreter = ELFFile(open(interpreter_filename, "rb"))
+
             break
 
         if interpreter is not None:
@@ -1489,9 +1622,7 @@ class Linux(Platform):
                 if hint == 0:
                     hint = None
 
-                base = cpu.memory.mmapFile(
-                    hint, memsz, perms, elf_segment.stream.name.decode("utf-8"), offset
-                )
+                base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset)
                 base -= vaddr
                 logger.debug(
                     f"Loading interpreter offset: {offset:08x} "
@@ -1536,7 +1667,8 @@ class Linux(Platform):
         logger.debug(f"Mappings:")
         for m in str(cpu.memory).split("\n"):
             logger.debug(f"  {m}")
-        self.base = base
+        self.interp_base = base
+        self.program_base = self.load_addr
         self.elf_bss = elf_bss
         self.end_code = end_code
         self.end_data = end_data
@@ -1764,6 +1896,33 @@ class Linux(Platform):
 
         return len(data)
 
+    def sys_pread64(self, fd: int, buf: int, count: int, offset: int) -> int:
+        """
+        read from a file descriptor at a given offset
+        """
+        data: bytes = bytes()
+        if count != 0:
+            if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
+                logger.info("sys_pread: buf points to invalid address. Returning -errno.EFAULT")
+                return -errno.EFAULT
+
+            try:
+                # Read the data and put it in memory
+                target_file = self._get_fdlike(fd)
+                if isinstance(target_file, File):
+                    data = target_file.pread(count, offset)
+                else:
+                    logger.error(f"Unsupported pread on {type(target_file)} at fd {fd}")
+            except FdError as e:
+                logger.info(
+                    f"sys_pread: Not valid file descriptor ({fd}). Returning -{errorcode(e.err)}"
+                )
+                return -e.err
+            self.syscall_trace.append(("_pread", fd, data))
+            self.current.write_bytes(buf, data)
+
+        return len(data)
+
     def sys_write(self, fd: int, buf, count) -> int:
         """write - send bytes through a file descriptor
         The write system call writes up to count bytes from the buffer pointed
@@ -1817,6 +1976,172 @@ class Linux(Platform):
         We don't support forking, but do return a valid error code to client binary.
         """
         return -errno.ENOSYS
+
+    # Epoll event masks
+    EPOLLIN = 0x00000001
+    EPOLLPRI = 0x00000002
+    EPOLLOUT = 0x00000004
+    EPOLLERR = 0x00000008
+    EPOLLHUP = 0x00000010
+    EPOLLNVAL = 0x00000020
+    EPOLLRDNORM = 0x00000040
+    EPOLLRDBAND = 0x00000080
+    EPOLLWRNORM = 0x00000100
+    EPOLLWRBAND = 0x00000200
+    EPOLLMSG = 0x00000400
+    EPOLLRDHUP = 0x00002000
+
+    def _do_epoll_create(self, flags: int):
+        # kernel - fs/eventpoll.c
+        EPOLL_CLOEXEC = os.O_CLOEXEC
+
+        if flags & ~EPOLL_CLOEXEC:
+            return -errno.EINVAL
+
+        # Create a minimal eventpoll file
+        return self.fd_table.add_entry(EventPoll())
+
+    def sys_epoll_create(self, size: int) -> int:
+        if size <= 0:
+            return -errno.EINVAL
+        return self._do_epoll_create(0)
+
+    def sys_epoll_create1(self, flags: int) -> int:
+        return self._do_epoll_create(flags)
+
+    def sys_epoll_ctl(self, epfd: int, op: int, fd: int, epds) -> int:
+        """Best effort implementation of what's found in fs/eventpoll.c"""
+        try:
+            epoll_file = self.fd_table.get_fdlike(epfd)
+        except FdError:
+            return -errno.EBADF
+        try:
+            target_file = self.fd_table.get_fdlike(fd)
+        except FdError:
+            return -errno.EBADF
+
+        # epoll_file must support poll functionality
+        pass  # TODO
+
+        if not isinstance(epoll_file, EventPoll) or epoll_file == target_file:
+            return -errno.EINVAL
+
+        # Valid opcodes to issue to sys_epoll_ctl()
+        EPOLL_CTL_ADD = 1
+        EPOLL_CTL_DEL = 2
+        EPOLL_CTL_MOD = 3
+
+        # 32 bit read of the events associated with this target
+        events = self.current.read_int(epds, size=32)
+        data = self.current.read_int(epds + 4, size=64)
+        if op == EPOLL_CTL_ADD:
+            if target_file in epoll_file.interest_list:
+                return -errno.EEXIST
+            # This skips a _lot_ of stuff in ep_insert dealing with other
+            # polling actions
+            epoll_file.interest_list[target_file] = EPollEvent(events=events, data=data)
+        elif op == EPOLL_CTL_DEL:
+            if target_file not in epoll_file.interest_list:
+                return -errno.ENOENT
+            del epoll_file.interest_list[target_file]
+        elif op == EPOLL_CTL_MOD:
+            if target_file not in epoll_file.interest_list:
+                return -errno.ENOENT
+            epoll_file.interest_list[target_file] = EPollEvent(events=events, data=data)
+
+        else:
+            return -errno.EINVAL
+
+        return 0
+
+    def _ep_poll(self, ep: EventPoll, events, maxevents: int, timeout) -> int:
+        """
+        Docs from fs/eventpoll.c@ep_poll
+
+        Retrieves ready events, and delivers them to the caller supplied
+        event buffer
+
+        @ep: eventpoll context.
+        @events: Pointer to the userspace buffer where the ready events should be
+                 stored.
+        @maxevents: Size (in terms of number of events) of the caller event buffer.
+        @timeout: Maximum timeout for the ready events fetch operation, in
+                  timespec. If the timeout is zero, the function will not block,
+                  while if the @timeout ptr is NULL, the function will block
+                  until at least one event has been retrieved (or an error
+                  occurred).
+
+        Returns: Returns the number of ready events which have been fetched, or an
+                  error code, in case of error.
+        """
+        # NOTE: There could be many forks in this syscall:
+        #  * Number of events returned
+        #  * Whether timeout is hit
+        res: int = 0
+        item: FdLike
+        einfo: EPollEvent
+        # Remove any files that have been closed
+        removal: Set[FdLike] = set()
+        # Get time in seconds before loop (this isn't a real poll)
+        start = time.monotonic()
+        # ep_send_events
+        while res == 0:
+            for item, einfo in ep.interest_list.items():
+                if item.closed:
+                    removal.add(item)
+                    continue
+
+                if res >= maxevents:
+                    break
+
+                # ep_item_poll in fs/eventpoll.c
+                # If the event mask intersect the caller - requested one, deliver
+                # the event to userspace.
+                revents: int = einfo.events & item.poll()
+                if not bool(revents):
+                    continue
+                # Write to userspace the kernel epoll_event struct
+                self.current.write_bytes(events, struct.pack("<LQ", revents, einfo.data))
+                res += 1
+                # 12 is sizeof epoll_event
+                events += res * 12
+
+            # timeout is milliseconds
+            if time.monotonic() - start > (timeout / 1000):
+                break
+
+        for remove in removal:
+            del ep.interest_list[remove]
+
+        return res
+
+    def _do_epoll_wait(self, epfd, events, maxevents, to) -> int:
+        # EP_MAX_EVENTS = (INT_MAX / sizeof(struct epoll_event))
+        sizeof_epoll_event = 12
+        EP_MAX_EVENTS = (2**32 - 1) // sizeof_epoll_event
+        if maxevents <= 0 or maxevents > EP_MAX_EVENTS:
+            return -errno.EINVAL
+
+        if not self.current.memory.access_ok(slice(events, events + sizeof_epoll_event), "w"):
+            return -errno.EFAULT
+
+        try:
+            epoll_file = self.fd_table.get_fdlike(epfd)
+        except FdError:
+            return -errno.EBADF
+
+        if not isinstance(epoll_file, EventPoll):
+            return -errno.EINVAL
+
+        # Do the events
+        return self._ep_poll(epoll_file, events, maxevents, to)
+
+    def sys_epoll_pwait(self, epfd, events, maxevents, timeout, _sigmask, _sigsetsize) -> int:
+        # Ignore the signal mask stuff
+        return self._do_epoll_wait(epfd, events, maxevents, timeout)
+
+    def sys_epoll_wait(self, epfd, events, maxevents, timeout) -> int:
+        return self._do_epoll_wait(epfd, events, maxevents, timeout)
 
     def sys_access(self, buf: int, mode: int) -> int:
         """
@@ -2728,7 +3053,7 @@ class Linux(Platform):
                     implementation = partial(self._handle_unimplemented_syscall, implementation)
             else:
                 implementation = getattr(self.stubs, name)
-        except (AttributeError, KeyError):
+        except (TypeError, AttributeError, KeyError):
             if name is not None:
                 raise SyscallNotImplemented(index, name)
             else:
@@ -2770,9 +3095,9 @@ class Linux(Platform):
         error: Returns -1
         """
         if tv != 0:
-            microseconds = int(time.time() * 10 ** 6)
+            microseconds = int(time.time() * 10**6)
             self.current.write_bytes(
-                tv, struct.pack("L", microseconds // (10 ** 6)) + struct.pack("L", microseconds)
+                tv, struct.pack("L", microseconds // (10**6)) + struct.pack("L", microseconds)
             )
         if tz != 0:
             logger.warning("No support for time zones in sys_gettimeofday")
@@ -2842,7 +3167,7 @@ class Linux(Platform):
             self.check_timers()
 
     def awake(self, procid) -> None:
-        """ Remove procid from waitlists and reestablish it in the running list """
+        """Remove procid from waitlists and reestablish it in the running list"""
         logger.debug(
             f"Remove procid:{procid} from waitlists and reestablish it in the running list"
         )
@@ -2867,7 +3192,7 @@ class Linux(Platform):
             return fd - 1
 
     def signal_receive(self, fd: int) -> None:
-        """ Awake one process waiting to receive data on fd """
+        """Awake one process waiting to receive data on fd"""
         connections = self.connections
         connection = connections(fd)
         if connection:
@@ -2877,7 +3202,7 @@ class Linux(Platform):
                 self.awake(procid)
 
     def signal_transmit(self, fd: int) -> None:
-        """ Awake one process waiting to transmit data on fd """
+        """Awake one process waiting to transmit data on fd"""
         connection = self.connections(fd)
         if connection is None or not self.fd_table.has_entry(connection):
             return
@@ -2888,7 +3213,7 @@ class Linux(Platform):
             self.awake(procid)
 
     def check_timers(self) -> None:
-        """ Awake process if timer has expired """
+        """Awake process if timer has expired"""
         if self._current is None:
             # Advance the clocks. Go to future!!
             advance = min([self.clocks] + [x for x in self.timers if x is not None]) + 1
@@ -2928,6 +3253,85 @@ class Linux(Platform):
 
     # 64bit syscalls
 
+    def sys_newfstatat(self, dfd, filename, buf, flag):
+        """
+        Determines information about a file based on a relative path and a directory file descriptor.
+        :rtype: int
+        :param dfd: directory file descriptor.
+        :param filename: relative path to file.
+        :param buf: a buffer where data about the file will be stored.
+        :param flag: flags to control the query.
+        :return: C{0} on success, negative on error
+        """
+
+        AT_SYMLINK_NOFOLLOW = 0x100  # Do not follow symbolic links.
+        AT_EMPTY_PATH = 0x1000  # Allow empty relative pathname
+        dfd = ctypes.c_int32(dfd).value
+        flag = ctypes.c_int32(flag).value
+        filename_addr = filename
+        filename = self.current.read_string(filename, 4096)
+
+        # Absolute path or relative to current working directory
+        if os.path.isabs(filename) or dfd == self.FCNTL_FDCWD:
+            return self.sys_newstat(filename_addr, buf)
+
+        # If pathname is an empty string, operate on the file referred to by dirfd
+        if not len(filename) and flag & AT_EMPTY_PATH:
+            return self.sys_newfstat(dfd, buf)
+
+        try:
+            f = self._get_fdlike(dfd)
+        except FdError as e:
+            logger.info(f"sys_newfstatat: invalid fd ({dfd}), returning -{errorcode(e.err)}")
+            return -e.err
+
+        if not isinstance(f, Directory):
+            return -errno.EISDIR
+
+        follow = not (flag & AT_SYMLINK_NOFOLLOW)
+        try:
+            stat = convert_os_stat(os.stat(filename, dir_fd=f.fileno(), follow_symlinks=follow))
+        except OSError as e:
+            return -e.errno
+
+        def add(width, val):
+            fformat = {2: "H", 4: "L", 8: "Q"}[width]
+            return struct.pack("<" + fformat, val)
+
+        def to_timespec(width, ts):
+            "Note: this is a platform-dependent timespec (8 or 16 bytes)"
+            return add(width, int(ts)) + add(width, int(ts % 1 * 1e9))
+
+        # From linux/arch/x86/include/uapi/asm/stat.h
+        # Numerous fields are native width-wide
+        nw = self.current.address_bit_size // 8
+
+        bufstat = add(nw, stat.st_dev)  # long st_dev
+        bufstat += add(nw, stat.st_ino)  # long st_ino
+
+        if self.current.address_bit_size == 64:
+            bufstat += add(nw, stat.st_nlink)  # long st_nlink
+            bufstat += add(4, stat.st_mode)  # 32 mode
+            bufstat += add(4, stat.st_uid)  # 32 uid
+            bufstat += add(4, stat.st_gid)  # 32 gid
+            bufstat += add(4, 0)  # 32 _pad
+        else:
+            bufstat += add(2, stat.st_mode)  # 16 mode
+            bufstat += add(2, stat.st_nlink)  # 16 st_nlink
+            bufstat += add(2, stat.st_uid)  # 16 uid
+            bufstat += add(2, stat.st_gid)  # 16 gid
+
+        bufstat += add(nw, stat.st_rdev)  # long st_rdev
+        bufstat += add(nw, stat.st_size)  # long st_size
+        bufstat += add(nw, stat.st_blksize)  # long st_blksize
+        bufstat += add(nw, stat.st_blocks)  # long st_blocks
+        bufstat += to_timespec(nw, stat.st_atime)  # long   st_atime, nsec;
+        bufstat += to_timespec(nw, stat.st_mtime)  # long   st_mtime, nsec;
+        bufstat += to_timespec(nw, stat.st_ctime)  # long   st_ctime, nsec;
+
+        self.current.write_bytes(buf, bufstat)
+        return 0
+
     def sys_newfstat(self, fd, buf):
         """
         Determines information about a file based on its file descriptor.
@@ -2957,11 +3361,19 @@ class Linux(Platform):
 
         bufstat = add(nw, stat.st_dev)  # long st_dev
         bufstat += add(nw, stat.st_ino)  # long st_ino
-        bufstat += add(nw, stat.st_nlink)  # long st_nlink
-        bufstat += add(4, stat.st_mode)  # 32 mode
-        bufstat += add(4, stat.st_uid)  # 32 uid
-        bufstat += add(4, stat.st_gid)  # 32 gid
-        bufstat += add(4, 0)  # 32 _pad
+
+        if self.current.address_bit_size == 64:
+            bufstat += add(nw, stat.st_nlink)  # long st_nlink
+            bufstat += add(4, stat.st_mode)  # 32 mode
+            bufstat += add(4, stat.st_uid)  # 32 uid
+            bufstat += add(4, stat.st_gid)  # 32 gid
+            bufstat += add(4, 0)  # 32 _pad
+        else:
+            bufstat += add(2, stat.st_mode)  # 16 mode
+            bufstat += add(2, stat.st_nlink)  # 16 st_nlink
+            bufstat += add(2, stat.st_uid)  # 16 uid
+            bufstat += add(2, stat.st_gid)  # 16 gid
+
         bufstat += add(nw, stat.st_rdev)  # long st_rdev
         bufstat += add(nw, stat.st_size)  # long st_size
         bufstat += add(nw, stat.st_blksize)  # long st_blksize
@@ -3059,11 +3471,12 @@ class Linux(Platform):
         self.current.write_bytes(buf, bufstat)
         return 0
 
-    def sys_newstat(self, fd, buf):
+    def sys_newstat(self, path, buf):
         """
-        Wrapper for stat64()
+        Wrapper for newfstat()
         """
-        return self.sys_stat64(fd, buf)
+        fd = self.sys_open(path, 0, "r")
+        return self.sys_newfstat(fd, buf)
 
     def sys_stat64(self, path, buf):
         """
@@ -3305,6 +3718,49 @@ class Linux(Platform):
         load_segs = [x for x in interp.iter_segments() if x.header.p_type == "PT_LOAD"]
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
+
+    @classmethod
+    def implemented_syscalls(cls) -> Iterable[str]:
+        """
+        Get a listing of all concretely implemented system calls for Linux. This
+        does not include whether a symbolic version exists. To get that listing,
+        use the SLinux.implemented_syscalls() method.
+        """
+        import inspect
+
+        return (
+            name
+            for (name, obj) in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if name.startswith("sys_") and
+            # Check that the class defining the method is exactly this one
+            getattr(inspect.getmodule(obj), obj.__qualname__.rsplit(".", 1)[0], None) == cls
+        )
+
+    @classmethod
+    def unimplemented_syscalls(cls, syscalls: Union[Set[str], Dict[int, str]]) -> Set[str]:
+        """
+        Get a listing of all unimplemented concrete system calls for a given
+        collection of Linux system calls. To get a listing of unimplemented
+        symbolic system calls, use the ``SLinux.unimplemented_syscalls()``
+        method.
+
+        Available system calls can be found at ``linux_syscalls.py`` or you may
+        pass your own as either a set of system calls or as a mapping of system
+        call number to system call name.
+
+        Note that passed system calls should follow the naming convention
+        located in ``linux_syscalls.py``.
+        """
+        implemented_syscalls = set(cls.implemented_syscalls())
+        if isinstance(syscalls, set):
+            return syscalls.difference(implemented_syscalls)
+        else:
+            return set(syscalls.values()).difference(implemented_syscalls)
+
+    @staticmethod
+    def print_implemented_syscalls() -> None:
+        for syscall in Linux.implemented_syscalls():
+            print(syscall)
 
 
 ############################################################################

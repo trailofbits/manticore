@@ -1,3 +1,9 @@
 [tool.black]
 target-version = ['py36']
 line-length = 100
+extend-exclude = '''
+(
+  venv
+  | server # Has its own formatting
+)
+'''

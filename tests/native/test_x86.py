@@ -1,7 +1,11 @@
+import copy
 import unittest
 import functools
+
+from manticore.core.smtlib import BitVecConstant, BitVecVariable, operators
 from manticore.native.cpu.x86 import *
 from manticore.core.smtlib import *
+from manticore.native.cpu.x86 import AMD64RegFile
 from manticore.native.memory import *
 from manticore.core.smtlib.solver import Z3Solver
 
@@ -33,6 +37,34 @@ def forAllTests(decorator):
     return decorate
 
 
+def testRegisterFileCopy():
+    regfile = AMD64RegFile(aliases={"PC": "RIP", "STACK": "RSP", "FRAME": "RBP"})
+    regfile.write("PC", 1234)
+    regfile.write("RAX", BitVecConstant(size=64, value=24))
+    regfile.write("RBX", BitVecVariable(size=64, name="b"))
+
+    new_regfile = copy.copy(regfile)
+
+    assert new_regfile.read("PC") == 1234
+    assert new_regfile.read("RAX") is regfile.read("RAX")
+    assert new_regfile.read("RAX") == regfile.read("RAX")
+    assert new_regfile.read("RBX") is regfile.read("RBX")
+    assert new_regfile.read("RBX") == regfile.read("RBX")
+
+    rax_val = regfile.read("RAX")
+    regfile.write("PC", Operators.ITEBV(64, rax_val == 0, 4321, 1235))
+    regfile.write("RAX", rax_val * 2)
+
+    assert new_regfile.read("PC") is not regfile.read("PC")
+    assert new_regfile.read("PC") != regfile.read("PC")
+    assert new_regfile.read("PC") == 1234
+
+    assert new_regfile.read("RAX") is not regfile.read("RAX")
+    assert new_regfile.read("RAX") != regfile.read("RAX")
+    assert new_regfile.read("RAX") is rax_val
+    assert new_regfile.read("RAX") == rax_val
+
+
 @forAllTests(skipIfNotImplemented)
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -44,7 +76,7 @@ class CPUTest(unittest.TestCase):
         return super().assertEqual(a, b)
 
     class ROOperand:
-        """ Mocking class for operand ronly """
+        """Mocking class for operand ronly"""
 
         def __init__(self, size, value):
             self.size = size
@@ -54,7 +86,7 @@ class CPUTest(unittest.TestCase):
             return self.value & ((1 << self.size) - 1)
 
     class RWOperand(ROOperand):
-        """ Mocking class for operand rw """
+        """Mocking class for operand rw"""
 
         def write(self, value):
             self.value = value & ((1 << self.size) - 1)
@@ -22281,6 +22313,70 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.EIP, 134593439)
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.EBP, 4294948352)
+
+    def test_PSUBQ_1(self):
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, "rwx")
+
+        # psubq xmm0, xmm1
+        mem[0x08065000] = "\x66"
+        mem[0x08065001] = "\x0f"
+        mem[0x08065002] = "\xfb"
+        mem[0x08065003] = "\xc1"
+        cpu.EIP = 0x8065000
+        cpu.XMM0 = 0xDEADBEEFCAFEBABE0000000000000000
+        cpu.XMM1 = 0xDEADBEEFCAFEBABE0000000000000001
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065000], "\x66")
+        self.assertEqual(mem[0x8065001], "\x0f")
+        self.assertEqual(mem[0x8065002], "\xfb")
+        self.assertEqual(mem[0x8065003], "\xc1")
+        self.assertEqual(cpu.EIP, 0x08065004)
+        self.assertEqual(cpu.XMM0, 0x0000000000000000FFFFFFFFFFFFFFFF)
+        self.assertEqual(cpu.XMM1, 0xDEADBEEFCAFEBABE0000000000000001)
+
+    def test_PSUBQ_2(self):
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, "rwx")
+        mem.mmap(0xFFFFB000, 0x1000, "rwx")
+
+        # psubq xmm0, xmmword ptr [ebp]
+        mem.write(0x08065000, "f\x0f\xfbE\x00")
+        mem.write(0xFFFFB600, (0xDEADBEEFCAFEBABE0000000000000001).to_bytes(16, "little"))
+
+        cpu.EIP = 0x08065000
+        cpu.XMM0 = 0xDEADBEEFCAFEBABE0000000000000000
+        cpu.EBP = 0xFFFFB600
+        cpu.execute()
+
+        self.assertEqual(mem[0x08065000:0x08065005], [b"f", b"\x0f", b"\xfb", b"E", b"\x00"])
+        self.assertEqual(
+            mem[0xFFFFB600:0xFFFFB610],
+            [
+                b"\x01",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\x00",
+                b"\xBE",
+                b"\xBA",
+                b"\xFE",
+                b"\xCA",
+                b"\xEF",
+                b"\xBE",
+                b"\xAD",
+                b"\xDE",
+            ],
+        )
+        self.assertEqual(cpu.EIP, 0x08065005)
+        self.assertEqual(cpu.XMM0, 0x0000000000000000FFFFFFFFFFFFFFFF)
+        self.assertEqual(cpu.EBP, 0xFFFFB600)
 
     def test_PTEST_1(self):
         """Instruction PTEST_1
@@ -51304,6 +51400,36 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
+
+    def test_FXSAVE_FXRSTOR(self):
+        """Instructions FXSAVE/FXRSTOR
+        Groups:
+        0x805B9C0:  0f ae 00                fxsave [rax]
+        0x805B9C3:  0f ae 08                fxrstor [rax]
+        """
+        mem = Memory64()
+        cpu = AMD64Cpu(mem)
+        mem.mmap(0x0805B000, 0x1000, "rwx")
+        mem.mmap(0x1000, 0x1000, "rw")
+        mem.write(0x805B9C0, "\x0f\xae\x00")
+        cpu.EIP = 0x805B9C0
+        cpu.RAX = 0x1234
+
+        # Only test on some regs
+        reg_list = ["FIP", "FPCW", "MXCSR", "FP0", "FP7", "XMM0", "XMM7", "XMM15"]
+        # Set FP registers and execute FXSAVE
+        for i, reg in enumerate(reg_list):
+            setattr(cpu, reg, i)
+        cpu.execute()
+        # Clobber registers then execute FXRSTOR
+        for i, reg in enumerate(reg_list):
+            setattr(cpu, reg, -1)
+        mem.write(0x805B9C3, "\x0f\xae\x08")
+        cpu.EIP = 0x805B9C3
+        cpu.execute()
+
+        for i, reg in enumerate(reg_list):
+            self.assertEqual(cpu.read_register_as_bitfield(reg), i)
 
     def test_IMUL_1_symbolic(self):
         """Instruction IMUL_1
