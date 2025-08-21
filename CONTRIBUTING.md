@@ -64,3 +64,64 @@ Some pull request guidelines:
 
 Instructions for installing a development version of Manticore can be found in
 our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore#developer-installation).
+
+#### Quick Start
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run linters
+ruff check .       # Fast linting (replaces flake8)
+black --check .    # Check formatting
+mypy .            # Type checking
+
+# Run tests
+pytest tests/                                    # Run all tests
+pytest -m "not slow_test and not generated_test" # Skip slow/generated tests for quick feedback
+pytest -m ethereum_test                          # Run component-specific tests
+```
+
+#### Code Quality Tools
+
+We use several tools to maintain code quality, all configured in `pyproject.toml`:
+
+- **ruff**: Fast Python linter (replaces flake8)
+- **black**: Code formatter
+- **mypy**: Static type checker
+- **pytest**: Test framework with markers for test categorization
+
+#### SMT Solver Configuration
+
+Manticore uses SMT solvers for symbolic execution. Z3 is installed by default via pip, but other solvers can improve performance:
+
+```bash
+# macOS
+brew install SRI-CSL/sri-csl/yices2
+
+# Ubuntu/Debian  
+sudo add-apt-repository ppa:sri-csl/formal-methods
+sudo apt-get update
+sudo apt-get install yices2
+```
+
+Configure your preferred solver in `.manticore.yml`:
+```yaml
+smt:
+  solver: z3  # or yices, cvc4, boolector, portfolio
+```
+
+#### Docker Testing Environment
+
+For consistent Linux-based testing (recommended for macOS users):
+
+```bash
+# Build test image
+docker build -t manticore-test -f Dockerfile.test .
+
+# Run tests in Docker
+docker run --rm -v $(pwd):/manticore manticore-test pytest tests/
+
+# Interactive shell
+docker run --rm -it -v $(pwd):/manticore manticore-test bash
+```
