@@ -1,7 +1,7 @@
 import argparse
 import shlex
+from importlib import metadata
 
-import pkg_resources
 from manticore.utils import config
 from manticore.utils.log import set_verbosity
 
@@ -57,7 +57,7 @@ def parse_native_arguments(additional_args: str) -> argparse.Namespace:
         help=("A folder name for temporaries and results.(default mcore_?????)"),
     )
 
-    current_version = pkg_resources.get_distribution("manticore").version
+    current_version = metadata.version("manticore")
     parser.add_argument(
         "--version",
         action="version",
