@@ -369,19 +369,34 @@ class ManticoreServicer(ManticoreServerServicer):
         )
 
         for state_id, state_desc in states.items():
-            state_args = {"state_id": state_id}
-
+            # Build ManticoreState with explicit arguments
+            pc = None
             if isinstance(state_desc.pc, int):
-                state_args["pc"] = state_desc.pc
+                pc = state_desc.pc
             elif isinstance(state_desc.last_pc, int):
-                state_args["pc"] = state_desc.last_pc
+                pc = state_desc.last_pc
 
+            parent_id = None
             if isinstance(state_desc.parent, int):
-                state_args["parent_id"] = state_desc.parent
+                parent_id = state_desc.parent
 
-            state_args["children_ids"] = list(state_desc.children)
+            children_ids = list(state_desc.children)
 
-            s = ManticoreState(**state_args)
+            # Create ManticoreState with explicit keyword arguments
+            if pc is not None:
+                s = ManticoreState(
+                    state_id=state_id,
+                    pc=pc,
+                    parent_id=parent_id,
+                    children_ids=children_ids
+                )
+            else:
+                # If pc is None, only pass required arguments
+                s = ManticoreState(
+                    state_id=state_id,
+                    parent_id=parent_id,
+                    children_ids=children_ids
+                )
 
             if state_desc.status == StateStatus.running:
                 active_states.append(s)
