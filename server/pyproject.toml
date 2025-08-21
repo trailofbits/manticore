@@ -33,8 +33,6 @@ manticore_server = "manticore_server.manticore_server:main"
 include = ["manticore_server", "manticore_server.*"]
 exclude = ["tests", "tests.*"]
 
-[tool.setuptools.cmdclass]
-generate = "manticore_server.generate:GenerateCommand"
 
 [tool.mypy]
 files = ["manticore_server", "tests"]

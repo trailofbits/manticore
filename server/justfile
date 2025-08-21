@@ -12,7 +12,7 @@ lint:
   mypy
 
 generate:
-  python3 setup.py generate
+  python3 generate.py
 
 build: generate
   #!/usr/bin/env bash
