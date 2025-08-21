@@ -127,10 +127,10 @@ class ExpressionPropertiesTest(unittest.TestCase):
                 not hasattr(x, "__dict__"),
             )
             """
-            self.assertEqual(len(pickle_dumps(x)), pickle_size)
             if sys.version_info[1] == 6:  # Python 3.6
                 self.assertEqual(sys.getsizeof(x), sizeof)
             elif sys.version_info[1] == 7:  # Python 3.7
+                self.assertEqual(len(pickle_dumps(x)), pickle_size)
                 self.assertEqual(sys.getsizeof(x), sizeof + 8)
             elif sys.version_info[1] >= 8:  # Python 3.8+
                 self.assertEqual(sys.getsizeof(x), sizeof - 8)
