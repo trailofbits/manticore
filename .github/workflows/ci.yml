@@ -68,7 +68,7 @@ jobs:
     - name: Run fast tests
       run: |
         # Skip slow and generated tests for quick PR feedback
-        pytest -xvs tests/ -m "not slow_test and not generated_test" --durations=10
+        pytest -xvs tests/ -m "not slow and not generated" --durations=10
         
   tests:
     runs-on: ubuntu-22.04

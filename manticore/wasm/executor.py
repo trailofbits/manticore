@@ -285,7 +285,7 @@ class Executor(Eventful):
         v1 = stack.pop()
         assert isinstance(c, (I32, BitVec)), f"{type(c)} is not I32"
         if not issymbolic(v2) and not issymbolic(v1):
-            assert type(v2) == type(v1), f"{type(v2)} is not the same as {type(v1)}"
+            assert type(v2) is type(v1), f"{type(v2)} is not the same as {type(v1)}"
 
         if issymbolic(c):
             stack.push(Operators.ITEBV(getattr(v1, "size", 32), c != 0, v1, v2))
