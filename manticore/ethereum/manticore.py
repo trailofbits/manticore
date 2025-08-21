@@ -1119,7 +1119,7 @@ class ManticoreEVM(ManticoreBase):
                 logger.info("Starting symbolic transaction: %d", tx_no)
 
                 # run_symbolic_tx
-                symbolic_data = self.make_symbolic_buffer(320)
+                symbolic_data = self.make_symbolic_buffer(640)
                 if tx_send_ether:
                     value = self.make_symbolic_value()
                 else:
