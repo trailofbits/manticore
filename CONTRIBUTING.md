@@ -19,7 +19,7 @@ instead.
 ## Questions
 
 Questions can be submitted to the [discussion page](https://github.com/trailofbits/manticore/discussions), but you may get a faster
-response if you ask in our [chat room](https://empireslacking.herokuapp.com/)
+response if you ask in our [chat room](https://slack.empirehacking.nyc/)
 (in the #manticore channel).
 
 ## Legal
