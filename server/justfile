@@ -1,6 +1,6 @@
 init:
   test -d venv || python3 -m venv venv
-  . venv/bin/activate; pip install -U setuptools pip wheel; pip install -e .[dev]
+  . venv/bin/activate; pip install -U setuptools pip wheel; pip install -e ..[native]; pip install -e .[dev]
 
 format:
   ruff format .
