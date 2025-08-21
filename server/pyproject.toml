@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "manticore_server"
 version = "0.0.1"
 description = "Manticore server component for remote analysis"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "manticore[native] @ file://..",
     "protobuf>=3.20,<5",

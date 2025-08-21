@@ -1,6 +1,7 @@
 import binascii
 import json
 import logging
+import re
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from typing import Dict, Optional, Union
@@ -300,22 +301,35 @@ class ManticoreEVM(ManticoreBase):
                 # Get bytecode strings
                 bytecode_init_str = compilation_unit.bytecode_init(name, libraries)
                 bytecode_runtime_str = compilation_unit.bytecode_runtime(name, libraries)
-                
+
                 # Check for library placeholders and handle them
-                # Solidity uses __$<keccak256>$__ format for library placeholders
-                import re
-                placeholder_pattern = r'__\$[a-fA-F0-9]+\$__'
-                
+                # Solidity uses different formats for library placeholders:
+                # - Old format (0.4.x): __<filename>:<library>____ (exactly 40 chars)
+                # - New format (0.5+): __$<keccak256>$__
+                old_placeholder_pattern = r"__.{38}"  # __ + 38 chars = 40 total
+                new_placeholder_pattern = r"__\$[a-fA-F0-9]{64}\$__"  # New format
+
                 # Replace library placeholders with a dummy address for testing
                 # This is a workaround for contracts with library dependencies
                 # In production, proper library addresses should be provided
-                if '__$' in bytecode_init_str or '__$' in bytecode_runtime_str:
+                if "__" in bytecode_init_str or "__" in bytecode_runtime_str:
                     # For testing purposes, replace with a valid address
                     # This allows tests to proceed even with unlinked libraries
-                    dummy_address = '00' * 20  # 40 hex chars = 20 bytes
-                    bytecode_init_str = re.sub(placeholder_pattern, dummy_address, bytecode_init_str)
-                    bytecode_runtime_str = re.sub(placeholder_pattern, dummy_address, bytecode_runtime_str)
-                
+                    dummy_address = "00" * 20  # 40 hex chars = 20 bytes
+                    # Try both patterns
+                    bytecode_init_str = re.sub(
+                        old_placeholder_pattern, dummy_address, bytecode_init_str
+                    )
+                    bytecode_init_str = re.sub(
+                        new_placeholder_pattern, dummy_address, bytecode_init_str
+                    )
+                    bytecode_runtime_str = re.sub(
+                        old_placeholder_pattern, dummy_address, bytecode_runtime_str
+                    )
+                    bytecode_runtime_str = re.sub(
+                        new_placeholder_pattern, dummy_address, bytecode_runtime_str
+                    )
+
                 bytecode = bytes.fromhex(bytecode_init_str)
                 runtime = bytes.fromhex(bytecode_runtime_str)
                 srcmap = compilation_unit.srcmap_init(name)
