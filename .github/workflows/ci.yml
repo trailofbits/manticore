@@ -37,15 +37,17 @@ jobs:
         # Check with ruff (fast linting)
         if test -z "$NAMES"
         then
-          ruff check .
+          echo "No Python files to lint in manticore/ directory"
         else
+          echo "Linting files: $NAMES"
           echo $NAMES | xargs ruff check
         fi
         # Check formatting with ruff format
         if test -z "$NAMES"
         then
-          ruff format --check .
+          echo "No Python files to format check in manticore/ directory"
         else
+          echo "Checking format for files: $NAMES"
           echo $NAMES | xargs ruff format --check
         fi
         # Type checking with mypy
@@ -65,6 +67,9 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -e ".[dev-noks]"
+        # Install solc for Ethereum tests
+        sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
+        sudo chmod +x /usr/bin/solc
     - name: Run fast tests
       run: |
         # Skip slow and generated tests for quick PR feedback

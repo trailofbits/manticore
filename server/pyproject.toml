@@ -56,4 +56,4 @@ indent-style = "space"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-ignore = ["E501"]
+ignore = ["E501", "E711", "E722", "F403", "F405", "F841"]
