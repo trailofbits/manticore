@@ -85,7 +85,7 @@ jobs:
         pip freeze
         z3 --version
         #install cvc4
-        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
+        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4-archived/releases/download/1.8/cvc4-1.8-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
         cvc4 --version
         #install yices
