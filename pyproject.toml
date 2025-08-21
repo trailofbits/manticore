@@ -120,7 +120,7 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "-n auto --durations=10"
+addopts = "--durations=10"
 
 [tool.coverage.run]
 source = ["manticore"]
