@@ -37,7 +37,7 @@ mkdir _\$module
 touch _\$module/__init__.py
 ./wast2json --debug-names \$module.wast -o _\$module/\$module.json
 mv \$module.wast _\$module/
-python3 json2smc.py _\$module/\$module.json | black --quiet --fast - > _\$module/test_symbolic_\$module.py
+python3 json2smc.py _\$module/\$module.json | ruff format - > _\$module/test_symbolic_\$module.py 2>/dev/null
 EOF
 
 chmod +x gen.sh
