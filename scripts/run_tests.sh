@@ -1,6 +1,5 @@
 # Launches all examples; this assumes PWD is examples/script
 launch_examples() {
-    COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
     # concolic assumes presence of ../linux/simpleassert
     echo "Running concolic.py..."
     HW=../linux/helloworld
@@ -99,7 +98,6 @@ install_truffle(){
 }
 
 run_truffle_tests(){
-    COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
     mkdir truffle_tests
     cd truffle_tests
     truffle unbox metacoin
@@ -119,9 +117,8 @@ run_truffle_tests(){
 
 run_tests_from_dir() {
     DIR=$1
-    COVERAGE_RCFILE=$GITHUB_WORKSPACE/.coveragerc
     echo "Running only the tests from 'tests/$DIR' directory"
-    pytest --durations=100 --cov=manticore --cov-config=$GITHUB_WORKSPACE/.coveragerc -n auto "tests/$DIR"
+    pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
     RESULT=$?
     return $RESULT
 }
