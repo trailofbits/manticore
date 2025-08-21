@@ -1,5 +1,6 @@
 import glob
 import os
+import subprocess
 import threading
 import time
 import unittest
@@ -22,7 +23,20 @@ class ManticoreServerEVMTest(unittest.TestCase):
         self.contract_path = str(self.dirname / Path("contracts") / Path("adder.sol"))
         self.test_event = threading.Event()
         self.servicer = manticore_server.ManticoreServicer(self.test_event)
+        # Try to find solc 0.4.24 specifically
         self.solc_path = which("solc")
+        if self.solc_path:
+            try:
+                # Check if this is the right version
+                result = subprocess.run([self.solc_path, "--version"], capture_output=True, text=True)
+                if "0.4.24" not in result.stdout:
+                    # Try to find solc-select's 0.4.24
+                    home = os.path.expanduser("~")
+                    solc_select_path = os.path.join(home, ".solc-select", "artifacts", "solc-0.4.24", "solc-0.4.24")
+                    if os.path.exists(solc_select_path):
+                        self.solc_path = solc_select_path
+            except:
+                pass
         self.context = MockContext()
 
     def tearDown(self):
