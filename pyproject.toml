@@ -58,7 +58,6 @@ native = [
 ]
 redis = ["redis"]
 lint = [
-    "black~=24.0",
     "mypy~=1.0",
     "ruff>=0.1.0",
 ]
@@ -89,15 +88,6 @@ exclude = ["tests", "tests.*"]
 manticore = ["*.proto"]
 
 # Tool configurations consolidated from separate files
-
-[tool.black]
-line-length = 100
-extend-exclude = '''
-(
-  venv
-  | server # Has its own formatting
-)
-'''
 
 [tool.mypy]
 python_version = "3.9"
@@ -178,6 +168,14 @@ exclude = [
     "venv/",
     "server/",
 ]
+
+[tool.ruff.format]
+# Use single quotes for strings (like black's default)
+quote-style = "double"
+# Indent with spaces
+indent-style = "space"
+# Unix-style line endings
+line-ending = "auto"
 
 [tool.ruff.lint]
 # Converted from flake8 ignore rules in tox.ini

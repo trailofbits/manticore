@@ -570,7 +570,6 @@ class Decree(Platform):
         """
         data = []
         if count != 0:
-
             if not self._is_open(fd):
                 logger.error("TRANSMIT: Not valid file descriptor. Returning EBADFD %d", fd)
                 return Decree.CGC_EBADF
@@ -1094,7 +1093,6 @@ class SDecree(Decree):
 
 
 class DecreeEmu:
-
     RANDOM = 0
 
     @staticmethod

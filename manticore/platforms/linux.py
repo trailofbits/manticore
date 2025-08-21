@@ -563,9 +563,9 @@ class SymbolicFile(File):
 
         # Convert to numeric value because we read the file as bytes
         wildcard_buf: bytes = wildcard.encode()
-        assert (
-            len(wildcard_buf) == 1
-        ), f"SymbolicFile wildcard needs to be a single byte, not {wildcard_buf!r}"
+        assert len(wildcard_buf) == 1, (
+            f"SymbolicFile wildcard needs to be a single byte, not {wildcard_buf!r}"
+        )
         wildcard_val = wildcard_buf[0]
 
         # read the concrete data using the parent the read() form the File class
@@ -3720,7 +3720,8 @@ class Linux(Platform):
         return (
             name
             for (name, obj) in inspect.getmembers(cls, predicate=inspect.isfunction)
-            if name.startswith("sys_") and
+            if name.startswith("sys_")
+            and
             # Check that the class defining the method is exactly this one
             getattr(inspect.getmodule(obj), obj.__qualname__.rsplit(".", 1)[0], None) == cls
         )

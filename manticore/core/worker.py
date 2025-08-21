@@ -91,15 +91,12 @@ class Worker:
         # kill will set m._killed flag to true and then each worker will slowly
         # get out of its mainloop and quit.
         with WithKeyboardInterruptAs(m.kill):
-
             # The worker runs until the manticore is killed
             while not m._killed.value:
-
                 # STARTED - Will try to consume states until a STOP event is received
                 # Outer loop, Keep getting states until someone request us to STOP
                 try:  # handle fatal errors even exceptions in the exception handlers
                     try:  # handle Concretize and TerminateState
-
                         # At RUNNING
                         # The START has been requested, we operate with under the assumption
                         # that manticore we will let us stay at this phase for a _while_

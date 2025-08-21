@@ -887,9 +887,9 @@ class ModuleInstance(Eventful):
         #     assert isinstance(ext, ExternType.__args__)
 
         # #3 Assert the same number of imports and external values
-        assert len(module.imports) == len(
-            extern_vals
-        ), f"Expected {len(module.imports)} imports, got {len(extern_vals)}"
+        assert len(module.imports) == len(extern_vals), (
+            f"Expected {len(module.imports)} imports, got {len(extern_vals)}"
+        )
 
         # #4 TODO
 
@@ -1047,9 +1047,9 @@ class ModuleInstance(Eventful):
         assert funcaddr in range(len(store.funcs))
         funcinst = store.funcs[funcaddr]
         ty = funcinst.type
-        assert len(ty.param_types) == len(
-            argv
-        ), f"Function {funcaddr} expects {len(ty.param_types)} arguments"
+        assert len(ty.param_types) == len(argv), (
+            f"Function {funcaddr} expects {len(ty.param_types)} arguments"
+        )
         # for t, v in zip(ty.param_types, argv):
         #     assert type(v) == type(t)
 
@@ -1191,9 +1191,9 @@ class ModuleInstance(Eventful):
                 self._block_depths[-1],
                 vals,
             )
-            assert isinstance(
-                stack.peek(), Activation
-            ), f"Stack should have an activation on top, instead has {type(stack.peek())}"
+            assert isinstance(stack.peek(), Activation), (
+                f"Stack should have an activation on top, instead has {type(stack.peek())}"
+            )
 
             # Discard call frame
             self._block_depths.pop()
@@ -1806,9 +1806,9 @@ class Stack(Eventful):
         :return: True
         """
         for i in range(1, n + 1):
-            assert isinstance(
-                self.data[i * -1], (t, BitVec)
-            ), f"{type(self.data[i * -1])} is not an {t}!"
+            assert isinstance(self.data[i * -1], (t, BitVec)), (
+                f"{type(self.data[i * -1])} is not an {t}!"
+            )
         return True
 
     def find_type(self, t: type) -> typing.Optional[int]:

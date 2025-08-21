@@ -34,12 +34,11 @@ more documentation, look [here](https://guides.github.com/activities/forking/).
 
 Some pull request guidelines:
 
-- We use the [`black`](https://black.readthedocs.io/en/stable/index.html)
-  auto-formatter to enforce style conventions in Manticore. To ensure your code
-  is properly formatted, run `black .` in the Manticore directory before
-  committing. Although unlikely, if you are still having trouble with getting
-  your code to pass formatting, check that you have the same version of `black`
-  installed as what is used in the CI.
+- We use [`ruff`](https://docs.astral.sh/ruff/) for both linting and formatting
+  to enforce style conventions in Manticore. To ensure your code is properly
+  formatted and linted, run `ruff check .` and `ruff format .` in the Manticore
+  directory before committing. Ruff is significantly faster than traditional
+  Python linters and formatters.
 - We use the [`mypy`](https://github.com/python/mypy) static typing tool to
   catch inconsistencies in the code base. At the time of this writing, we
   only check the [manticore](./manticore) directory for inconsistencies and do
@@ -73,7 +72,7 @@ pip install -e ".[dev]"
 
 # Run linters
 ruff check .       # Fast linting (replaces flake8)
-black --check .    # Check formatting
+ruff format --check .  # Check formatting (replaces black)
 mypy .            # Type checking
 
 # Run tests
@@ -86,8 +85,7 @@ pytest -m ethereum_test                          # Run component-specific tests
 
 We use several tools to maintain code quality, all configured in `pyproject.toml`:
 
-- **ruff**: Fast Python linter (replaces flake8)
-- **black**: Code formatter
+- **ruff**: Fast Python linter and formatter (replaces flake8 and black)
 - **mypy**: Static type checker
 - **pytest**: Test framework with markers for test categorization
 

@@ -34,19 +34,19 @@ jobs:
         echo "Files Changed:"
         git diff --name-only $BASE_SHA... | tee .diff_names.txt
         NAMES=$(cat .diff_names.txt | python scripts/pyfile_exists.py)
-        # Check with ruff (fast)
+        # Check with ruff (fast linting)
         if test -z "$NAMES"
         then
           ruff check .
         else
           echo $NAMES | xargs ruff check
         fi
-        # Check formatting with black
+        # Check formatting with ruff format
         if test -z "$NAMES"
         then
-          black --diff --check .
+          ruff format --check .
         else
-          echo $NAMES | xargs black --diff --check
+          echo $NAMES | xargs ruff format --check
         fi
         # Type checking with mypy
         mypy --version

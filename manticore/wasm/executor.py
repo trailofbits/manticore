@@ -44,7 +44,6 @@ class Executor(Eventful):
     _published_events = {"set_global", "get_global", "set_local", "get_local"}
 
     def __init__(self, *args, **kwargs):
-
         self._mapping = {
             0x00: self.unreachable,
             0x01: self.nop,

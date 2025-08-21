@@ -261,7 +261,6 @@ class SkipRevertBasicBlocks(Plugin):
         world = state.platform
         if state.platform.current_transaction.sort != "CREATE":
             if instruction.semantics == "JUMPI":
-
                 # if the bb after the jumpi ends ina revert do not explore it.
                 if self._is_revert_bb(state, world.current_vm.pc + instruction.size):
                     state.constrain(arguments[1] == True)

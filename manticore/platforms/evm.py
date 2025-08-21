@@ -307,7 +307,6 @@ class Transaction:
         metadata = mevm.get_metadata(self.address)
         if self.sort == "CREATE":
             if metadata is not None:
-
                 conc_args_data = conc_tx.data[len(metadata._init_bytecode) :]
                 arguments = ABI.deserialize(metadata.get_constructor_arguments(), conc_args_data)
 

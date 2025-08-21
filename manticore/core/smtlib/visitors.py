@@ -481,7 +481,6 @@ class ArithmeticSimplifier(Visitor):
                 and isinstance(operand_1_0, BitVecExtract)
                 and isinstance(operand_1_1, BitVecExtract)
             ):
-
                 if (
                     operand_0_0.value is operand_1_0.value
                     and operand_0_1.value is operand_1_1.value
@@ -493,7 +492,6 @@ class ArithmeticSimplifier(Visitor):
                     if ((operand_0_0.end + 1) == operand_1_0.begining) or (
                         operand_0_0.begining == (operand_1_0.end + 1)
                     ):
-
                         value0 = operand_0_0.value
                         value1 = operand_0_1.value
                         beg = min(operand_0_0.begining, operand_1_0.begining)
@@ -534,7 +532,6 @@ class ArithmeticSimplifier(Visitor):
                 and operands[0].end == operands[1].end
                 and operands[0].begining == operands[1].begining
             ):
-
                 return BoolConstant(value=True, taint=expression.taint)
 
     def visit_BoolOr(self, expression, a, b):

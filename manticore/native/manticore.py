@@ -383,7 +383,6 @@ class Manticore(ManticoreBase):
         """
 
         with open(self.binary_path, "rb") as f:
-
             elffile = ELFFile(f)
 
             # iterate over sections and identify symbol table section

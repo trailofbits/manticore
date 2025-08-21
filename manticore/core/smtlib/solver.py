@@ -856,7 +856,8 @@ class Z3Solver(SMTLIBSolver):
             )
             m = Z3VERSION.match(received_version.decode("utf-8"))
             major, minor, patch = map(
-                int, (m.group("major"), m.group("minor"), m.group("patch"))  # type: ignore
+                int,
+                (m.group("major"), m.group("minor"), m.group("patch")),  # type: ignore
             )
             parsed_version = Version(major, minor, patch)
         except (ValueError, TypeError) as e:
@@ -982,7 +983,6 @@ class SmtlibPortfolio:
         while True:
             shuffle(inds)
             for i in inds:
-
                 solver = self._solvers[i]
                 proc = self._procs[solver]
 
@@ -991,7 +991,6 @@ class SmtlibPortfolio:
 
                 buf = proc.recv(wait=False)
                 if buf is not None:
-
                     for osolver in self._solvers:  # iterate on all the solvers
                         if osolver != solver:  # check for the other ones
                             self._procs[osolver].stop()  # stop them

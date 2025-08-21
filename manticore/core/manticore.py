@@ -374,9 +374,9 @@ class ManticoreBase(Eventful):
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
         self.plugins: typing.Dict[str, Plugin] = {}
-        assert issubclass(
-            introspection_plugin_type, IntrospectionAPIPlugin
-        ), "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
+        assert issubclass(introspection_plugin_type, IntrospectionAPIPlugin), (
+            "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
+        )
         self.register_plugin(introspection_plugin_type())
 
         # Set initial root state

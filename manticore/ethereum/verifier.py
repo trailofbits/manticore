@@ -180,7 +180,7 @@ def manticore_verifier(
 
     print(f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
     if not properties:
-        print("I am sorry I had to run the init bytecode for this.\n" "Good Bye.")
+        print("I am sorry I had to run the init bytecode for this.\nGood Bye.")
         return
     MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
     tx_num = 0  # transactions count
@@ -381,7 +381,7 @@ def main():
         "--workspace",
         type=str,
         default=None,
-        help=("A folder name for temporaries and results." "(default mcore_?????)"),
+        help=("A folder name for temporaries and results.(default mcore_?????)"),
     )
 
     current_version = pkg_resources.get_distribution("manticore").version

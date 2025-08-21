@@ -79,7 +79,7 @@ def write_findings(method, lead_space, address, pc, at_init=""):
     """
     method.write(f"{lead_space}Contract: {address:#x}")
     method.write(
-        f'{lead_space}EVM Program counter: {pc:#x}{" (at constructor)" if at_init else ""}\n'
+        f"{lead_space}EVM Program counter: {pc:#x}{' (at constructor)' if at_init else ''}\n"
     )
 
 
@@ -265,7 +265,6 @@ class ManticoreEVM(ManticoreBase):
         :return:
         """
         try:
-
             if crytic_compile_args:
                 crytic_compile = CryticCompile(filename, **crytic_compile_args)
             else:
@@ -1827,10 +1826,10 @@ class ManticoreEVM(ManticoreBase):
             with self._output.save_stream("global_%s.sol" % md.name) as global_src:
                 global_src.write(md.source_code)
 
-            with self._output.save_stream(
-                "global_%s.runtime_asm" % md.name
-            ) as global_runtime_asm, self.locked_context("runtime_coverage") as seen:
-
+            with (
+                self._output.save_stream("global_%s.runtime_asm" % md.name) as global_runtime_asm,
+                self.locked_context("runtime_coverage") as seen,
+            ):
                 runtime_bytecode = md.runtime_bytecode
                 count, total = 0, 0
                 for i in EVMAsm.disassemble_all(runtime_bytecode):
@@ -1843,9 +1842,10 @@ class ManticoreEVM(ManticoreBase):
                     global_runtime_asm.write("%4x: %s\n" % (i.pc, i))
                     total += 1
 
-            with self._output.save_stream(
-                "global_%s.init_asm" % md.name
-            ) as global_init_asm, self.locked_context("init_coverage") as seen:
+            with (
+                self._output.save_stream("global_%s.init_asm" % md.name) as global_init_asm,
+                self.locked_context("init_coverage") as seen,
+            ):
                 count, total = 0, 0
                 for i in EVMAsm.disassemble_all(md.init_bytecode):
                     if (address, i.pc) in seen:
@@ -1857,16 +1857,18 @@ class ManticoreEVM(ManticoreBase):
                     global_init_asm.write("%4x: %s\n" % (i.pc, i))
                     total += 1
 
-            with self._output.save_stream(
-                "global_%s.init_visited" % md.name
-            ) as f, self.locked_context("init_coverage") as seen:
+            with (
+                self._output.save_stream("global_%s.init_visited" % md.name) as f,
+                self.locked_context("init_coverage") as seen,
+            ):
                 visited = set((o for (a, o) in seen if a == address))
                 for o in sorted(visited):
                     f.write("0x%x\n" % o)
 
-            with self._output.save_stream(
-                "global_%s.runtime_visited" % md.name
-            ) as f, self.locked_context("runtime_coverage") as seen:
+            with (
+                self._output.save_stream("global_%s.runtime_visited" % md.name) as f,
+                self.locked_context("runtime_coverage") as seen,
+            ):
                 visited = set()
                 for a, o in seen:
                     if a == address:

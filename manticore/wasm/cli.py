@@ -9,7 +9,6 @@ consts.add("target_func", default="main", description="WASM Function to execute"
 
 
 def wasm_main(args, _logger):
-
     m = ManticoreWASM(
         args.argv[0],
         argv=args.argv[1:],
