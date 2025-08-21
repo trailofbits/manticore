@@ -1,3 +1,5 @@
+import types
+
 from ..core.plugin import Plugin
 from .state_merging import merge_constraints, is_merge_possible, merge
 import logging
@@ -125,3 +127,17 @@ class Merger(Plugin):
             # UGLY we are replacing a state_id. This may be breaking caches in
             # the future
             self.replace_state(current_state_id, merged_state)
+
+
+class SyscallCounter(Plugin):
+    def will_execute_syscall_callback(self, state, model):
+        name = model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__
+        with self.locked_context("syscall_counts", dict) as counts:
+            counts[name] = counts.get(name, 0) + 1
+
+    def get_counts(self):
+        with self.locked_context("syscall_counts", dict) as ctx:
+            return ctx
+
+    def did_run_callback(self):
+        logger.info("Syscalls executed: %s", self.get_counts())

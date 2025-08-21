@@ -1,0 +1,23 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools>=49.0.0", "wheel"]  # PEP 518 specifications.
+
+[tool.mypy]
+files = ["manticore_server", "tests"]
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+
+[tool.isort]
+profile = "black"
+skip = ["venv", "build", "manticore_server/ManticoreServer_pb2.py", "manticore_server/ManticoreServer_pb2_grpc.py"]
+
+[tool.black]
+line-length = 88
+extend-exclude = '''
+    ManticoreServer_pb2_grpc\.py
+  | ManticoreServer_pb2\.py
+  | ManticoreServer_pb2\.pyi
+  | venv
+'''

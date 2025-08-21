@@ -15,7 +15,13 @@ from manticore.core.smtlib import BitVecVariable, issymbolic, ConstraintSet
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.utils.helpers import pickle_dumps
-from manticore.platforms.linux import EnvironmentError, logger as linux_logger, SymbolicFile
+from manticore.platforms.linux import (
+    EnvironmentError,
+    logger as linux_logger,
+    SymbolicFile,
+    Linux,
+    SLinux,
+)
 
 
 class LinuxTest(unittest.TestCase):
@@ -417,3 +423,42 @@ class LinuxTest(unittest.TestCase):
 
         m.run()
         self.assertTrue(m.context["success"])
+
+    def test_implemented_syscall_report(self) -> None:
+        concrete_syscalls = set(Linux.implemented_syscalls())
+        symbolic_syscalls = set(SLinux.implemented_syscalls())
+
+        # Make sure at least one known syscall implementation appears in both
+        assert "sys_read" in concrete_syscalls
+        assert "sys_read" in symbolic_syscalls
+
+        # Make sure an unimplemented syscall (taken from linux_syscall_stubs)
+        # does not appear in our list of concrete syscalls. This could change in
+        # the future
+        assert "sys_bpf" not in concrete_syscalls
+
+        # Make sure that a concretely implemented syscall does not have a (at
+        # this time) symbolic equivalent. This could change in the future
+        assert "sys_tgkill" in concrete_syscalls
+        assert "sys_tgkill" not in symbolic_syscalls
+
+        # This doesn't _need_ to be true, but our design says it should be true
+        assert symbolic_syscalls.issubset(concrete_syscalls)
+
+    def test_unimplemented_syscall_report(self) -> None:
+        """This test is the inverse of test_implemented_syscall_report"""
+        from manticore.platforms.linux_syscalls import amd64
+
+        unimplemented_concrete_syscalls = set(Linux.unimplemented_syscalls(amd64))
+        unimplemented_symbolic_syscalls = set(SLinux.unimplemented_syscalls(set(amd64.values())))
+
+        assert "sys_read" not in unimplemented_concrete_syscalls
+        assert "sys_read" not in unimplemented_symbolic_syscalls
+
+        assert "sys_bpf" in unimplemented_concrete_syscalls
+
+        assert "sys_tgkill" not in unimplemented_concrete_syscalls
+        assert "sys_tgkill" in unimplemented_symbolic_syscalls
+
+        # This doesn't _need_ to be true, but our design says it should be true
+        assert unimplemented_concrete_syscalls.issubset(unimplemented_symbolic_syscalls)

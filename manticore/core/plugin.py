@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class DecorateAllMeta(type):
     @staticmethod
     def _if_enabled(f):
-        """ decorator used to guard callbacks """
+        """decorator used to guard callbacks"""
 
         @wraps(f)
         def g(self, *args, **kwargs):
@@ -44,17 +44,17 @@ class Plugin(metaclass=DecorateAllMeta):
         self._plugin_context_name = f"{classname}_context_{hex(hash(self))}"
 
     def enable(self):
-        """ Enable all callbacks """
+        """Enable all callbacks"""
         with self.manticore.locked_context() as context:
             context[self._enabled_key] = True
 
     def disable(self):
-        """ Disable all callbacks """
+        """Disable all callbacks"""
         with self.manticore.locked_context() as context:
             context[self._enabled_key] = False
 
     def is_enabled(self):
-        """ True if callbacks are enabled """
+        """True if callbacks are enabled"""
         with self.manticore.locked_context() as context:
             return context.get(self._enabled_key, True)
 
@@ -85,18 +85,18 @@ class Plugin(metaclass=DecorateAllMeta):
 
     @property
     def context(self):
-        """ Convenient access to shared context """
+        """Convenient access to shared context"""
         plugin_context_name = self._plugin_context_name
         if plugin_context_name not in self.manticore.context:
             self.manticore.context[plugin_context_name] = {}
         return self.manticore.context[plugin_context_name]
 
     def on_register(self):
-        """ Called by parent manticore on registration """
+        """Called by parent manticore on registration"""
         pass
 
     def on_unregister(self):
-        """ Called be parent manticore on un-registration """
+        """Called be parent manticore on un-registration"""
         pass
 
     def generate_testcase(self, state, testcase, message):
@@ -332,7 +332,7 @@ class Profiler(Plugin):
         return ps
 
     def save_profiling_data(self, stream=None):
-        """:param stream: an output stream to write the profiling data """
+        """:param stream: an output stream to write the profiling data"""
         ps = self.get_profiling_data()
         # XXX(yan): pstats does not support dumping to a file stream, only to a file
         # name. Below is essentially the implementation of pstats.dump_stats() without
@@ -426,6 +426,8 @@ class StateDescriptor:
     state_list: typing.Optional[StateLists] = None
     #: State IDs of any states that forked from this one
     children: set = field(default_factory=set)
+    #: State ID of zero or one forked state that created this one
+    parent: typing.Optional[int] = None
     #: The time that any field of this Descriptor was last updated
     last_update: datetime = field(default_factory=datetime.now)
     #: The time at which the on_execution_intermittent callback was last applied to this state. This is when the PC and exec count get updated.
@@ -442,6 +444,8 @@ class StateDescriptor:
     own_execs: typing.Optional[int] = None
     #: Last program counter (if set)
     pc: typing.Optional[typing.Any] = None
+    #: Last concrete program counter, useful when a state forks and the program counter becomes symbolic
+    last_pc: typing.Optional[typing.Any] = None
     #: Dict mapping field names to the time that field was last updated
     field_updated_at: typing.Dict[str, datetime] = field(default_factory=dict)
     #: Message attached to the TerminateState exception that ended this state
@@ -577,6 +581,8 @@ class IntrospectionAPIPlugin(Plugin):
             context.setdefault(state_id, StateDescriptor(state_id=state_id)).children.update(
                 children
             )
+            for child_id in children:
+                context.setdefault(child_id, StateDescriptor(state_id=child_id)).parent = state_id
 
     def will_solve_callback(self, state, constraints, expr, solv_func: str):
         """

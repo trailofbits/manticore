@@ -110,10 +110,10 @@ consts.add(
 
 
 # Auxiliary constants and functions
-TT256 = 2 ** 256
-TT256M1 = 2 ** 256 - 1
-MASK160 = 2 ** 160 - 1
-TT255 = 2 ** 255
+TT256 = 2**256
+TT256M1 = 2**256 - 1
+MASK160 = 2**160 - 1
+TT255 = 2**255
 TOOHIGHMEM = 0x1000
 DEFAULT_FORK = "istanbul"
 
@@ -2165,7 +2165,7 @@ class EVM(Eventful):
         return tx.return_value
 
     def CALL_gas(self, wanted_gas, address, value, in_offset, in_size, out_offset, out_size):
-        """ Dynamic gas for CALL instruction. _arguably turing complete in itself_   """
+        """Dynamic gas for CALL instruction. _arguably turing complete in itself_"""
         GCALLVALUE = 9000
         GCALLNEW = 25000
         wanted_gas = Operators.ZEXTEND(wanted_gas, 512)

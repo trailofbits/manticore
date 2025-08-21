@@ -29,7 +29,9 @@ from manticore.utils import config
 import copy
 from manticore.core.smtlib.expression import *
 
-prog = "../linux/simpleassert"
+from pathlib import Path
+
+prog = str(Path(__file__).parent.resolve().parent.joinpath("linux").joinpath("simpleassert"))
 VERBOSITY = 0
 
 
@@ -153,7 +155,7 @@ def constraints_to_constraintset(constupl):
 
 
 def input_from_cons(constupl, datas):
-    " solve bytes in |datas| based on "
+    "solve bytes in |datas| based on"
 
     def make_chr(c):
         try:

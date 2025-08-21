@@ -782,7 +782,7 @@ class Executor(Eventful):
         stack.has_type_on_top(I32, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I32.cast((c1 - c2 + 2 ** 32) & MASK_32))
+        stack.push(I32.cast((c1 - c2 + 2**32) & MASK_32))
 
     def i32_mul(self, store, stack):
         stack.has_type_on_top(I32, 2)
@@ -798,7 +798,7 @@ class Executor(Eventful):
         if self.check_zero_div(can_div_0):
             raise ZeroDivisionTrap()
         res = Operators.SDIV(c1, c2)
-        can_overflow = res == 2 ** 31
+        can_overflow = res == 2**31
         if self.check_overflow(can_overflow):
             raise OverflowDivisionTrap()
         stack.push(I32.cast(res))
@@ -939,7 +939,7 @@ class Executor(Eventful):
         stack.has_type_on_top(I64, 2)
         c2 = stack.pop()
         c1 = stack.pop()
-        stack.push(I64.cast((c1 - c2 + 2 ** 64) & MASK_64))
+        stack.push(I64.cast((c1 - c2 + 2**64) & MASK_64))
 
     def i64_mul(self, store, stack):
         stack.has_type_on_top(I64, 2)
@@ -958,7 +958,7 @@ class Executor(Eventful):
             res = Operators.SDIV(c1, c2)
         else:
             res = int(math.trunc(Decimal(c1) / Decimal(c2)))
-        can_overflow = res == 2 ** 63
+        can_overflow = res == 2**63
         if self.check_overflow(can_overflow):
             raise OverflowDivisionTrap()
         stack.push(I64.cast(res))
@@ -1075,7 +1075,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I32, "infinity")
-        if c1 >= 2 ** 31 or c1 <= -(2 ** 31) - 1:
+        if c1 >= 2**31 or c1 <= -(2**31) - 1:
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
@@ -1088,7 +1088,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I32, "infinity")
-        if c1 >= 2 ** 32 or c1 <= -1:
+        if c1 >= 2**32 or c1 <= -1:
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
@@ -1101,7 +1101,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I32, "infinity")
-        if c1 >= 2 ** 31 or c1 <= -(2 ** 31) - 1:
+        if c1 >= 2**31 or c1 <= -(2**31) - 1:
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
@@ -1114,7 +1114,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I32, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I32, "infinity")
-        if c1 >= 2 ** 32 or c1 <= -1:
+        if c1 >= 2**32 or c1 <= -1:
             raise InvalidConversionTrap(I32, c1)
         stack.push(I32.cast(c1))
 
@@ -1143,7 +1143,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I64, "infinity")
-        if c1 >= 2 ** 63 or c1 <= -(2 ** 63) - 1:
+        if c1 >= 2**63 or c1 <= -(2**63) - 1:
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 
@@ -1156,7 +1156,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I64, "infinity")
-        if c1 >= 2 ** 64 or c1 <= -1:
+        if c1 >= 2**64 or c1 <= -1:
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 
@@ -1169,7 +1169,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I64, "infinity")
-        if c1 >= 2 ** 63 or c1 <= -(2 ** 63) - 1:
+        if c1 >= 2**63 or c1 <= -(2**63) - 1:
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 
@@ -1182,7 +1182,7 @@ class Executor(Eventful):
             raise InvalidConversionTrap(I64, "NaN")
         if math.isinf(c1):
             raise InvalidConversionTrap(I64, "infinity")
-        if c1 >= 2 ** 64 or c1 <= -1:
+        if c1 >= 2**64 or c1 <= -1:
             raise InvalidConversionTrap(I64, c1)
         stack.push(I64.cast(c1))
 

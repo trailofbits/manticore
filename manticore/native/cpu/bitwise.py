@@ -60,7 +60,7 @@ def SInt(value, width):
     return Operators.ITEBV(
         width,
         Bit(value, width - 1) == 1,
-        GetNBits(value, width) - 2 ** width,
+        GetNBits(value, width) - 2**width,
         GetNBits(value, width),
     )
 

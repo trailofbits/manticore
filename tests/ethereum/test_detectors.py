@@ -90,7 +90,7 @@ class EthDetectorTest(unittest.TestCase):
 
 
 class EthRetVal(EthDetectorTest):
-    """ Detect when a return value of a low level transaction instruction is ignored """
+    """Detect when a return value of a low level transaction instruction is ignored"""
 
     DETECTOR_CLASS = DetectUnusedRetVal
 
@@ -263,7 +263,7 @@ class EthEnvInstruction(EthDetectorTest):
 
 
 class EthDelegatecall(EthDetectorTest):
-    """ Test the detection of funny delegatecalls """
+    """Test the detection of funny delegatecalls"""
 
     DETECTOR_CLASS = DetectDelegatecall
 
@@ -403,7 +403,7 @@ class EthRaceCondition(EthDetectorTest):
 
 
 class EthBalance(EthDetectorTest):
-    """ Test the detection of funny delegatecalls """
+    """Test the detection of funny delegatecalls"""
 
     DETECTOR_CLASS = DetectManipulableBalance
 
