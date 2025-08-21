@@ -130,7 +130,7 @@ class EthAbiTests(unittest.TestCase):
             }
         }
         """
-        user_account = m.create_account(balance=10 ** 10, name="user_account")
+        user_account = m.create_account(balance=10**10, name="user_account")
         contract_account = m.solidity_create_contract(
             source_code, owner=user_account, name="contract_account", gas=36225
         )
@@ -179,7 +179,7 @@ class EthAbiTests(unittest.TestCase):
         d = b"".join(d)
         funcname, dynargs = ABI.deserialize(type_spec="func(uint256,uint256)", data=d)
         # self.assertEqual(funcname, 'AAAA')
-        self.assertEqual(dynargs, (32, 2 ** 256 - 1))
+        self.assertEqual(dynargs, (32, 2**256 - 1))
 
     def test_simple_types1(self):
         d = [
@@ -192,7 +192,7 @@ class EthAbiTests(unittest.TestCase):
         d = b"".join(d)
         funcname, dynargs = ABI.deserialize(type_spec="func(uint256,uint256,bool,address)", data=d)
         # self.assertEqual(funcname, 'AAAA')
-        self.assertEqual(dynargs, (32, 2 ** 256 - 1, 0xFF, 0x424242))
+        self.assertEqual(dynargs, (32, 2**256 - 1, 0xFF, 0x424242))
 
     def test_simple_types_ints(self):
         d = [
@@ -203,7 +203,7 @@ class EthAbiTests(unittest.TestCase):
         d = b"".join(d)
         func_id, dynargs = ABI.deserialize(type_spec="func(int256,int256)", data=d)
         self.assertEqual(func_id, b"AAAA")
-        self.assertEqual(dynargs, (2 ** 255 - 1, -(2 ** 255)))
+        self.assertEqual(dynargs, (2**255 - 1, -(2**255)))
 
     def test_simple_types_ints_symbolic(self):
         cs = ConstraintSet()
@@ -335,11 +335,11 @@ class EthAbiTests(unittest.TestCase):
         data = b"\xFF" * 32
 
         parsed = ABI.deserialize("uint", data)
-        self.assertEqual(parsed, 2 ** 256 - 1)
+        self.assertEqual(parsed, 2**256 - 1)
 
         for i in range(8, 257, 8):
             parsed = ABI.deserialize(f"uint{i}", data)
-            self.assertEqual(parsed, 2 ** i - 1)
+            self.assertEqual(parsed, 2**i - 1)
 
     def test_empty_types(self):
         name, args = ABI.deserialize("func()", "\0" * 32)
@@ -487,7 +487,7 @@ class EthTests(unittest.TestCase):
 
     def test_solidity_create_contract_no_args(self):
         source_code = "contract A { constructor() {} }"
-        owner = self.mevm.create_account(balance=10 ** 10)
+        owner = self.mevm.create_account(balance=10**10)
 
         # The default `args=()` makes it pass no arguments
         contract1 = self.mevm.solidity_create_contract(source_code, owner=owner)
@@ -525,7 +525,7 @@ class EthTests(unittest.TestCase):
 
     def test_solidity_create_contract_with_payable_constructor(self):
         source_code = "contract A { constructor() public payable {} }"
-        owner = self.mevm.create_account(balance=10 ** 10)
+        owner = self.mevm.create_account(balance=10**10)
 
         contract = self.mevm.solidity_create_contract(source_code, owner=owner, balance=100)
 
@@ -613,7 +613,7 @@ class EthTests(unittest.TestCase):
 
         }
         """
-        user_account = self.mevm.create_account(balance=10 ** 10)
+        user_account = self.mevm.create_account(balance=10**10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         with self.assertRaises(EthereumError) as ctx:
             contract_account.ret(self.mevm.make_symbolic_value(), signature="(uint8)")
@@ -674,7 +674,7 @@ class EthTests(unittest.TestCase):
         """
         Tests issue 1325.
         """
-        owner = self.mevm.create_account(balance=10 ** 10)
+        owner = self.mevm.create_account(balance=10**10)
         A = self.mevm.solidity_create_contract(
             "contract A { function foo() { revert(); } }", owner=owner
         )
@@ -755,7 +755,7 @@ class EthTests(unittest.TestCase):
         """
         consts = config.get_group("evm")
         consts.events = True
-        user_account = self.mevm.create_account(balance=10 ** 10)
+        user_account = self.mevm.create_account(balance=10**10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         input_sym = self.mevm.make_symbolic_value()
         contract_account.f(input_sym)
@@ -779,7 +779,7 @@ class EthTests(unittest.TestCase):
             for ext in ("summary", "constraints", "pkl", "tx.json", "tx", "trace", "logs")
         }
 
-        expected_files.add("state_00000001.pkl")
+        expected_files.add("state_00000000.pkl")
 
         actual_files = set((fn for fn in os.listdir(self.mevm.workspace) if not fn.startswith(".")))
         self.assertEqual(actual_files, expected_files)
@@ -813,7 +813,7 @@ class EthTests(unittest.TestCase):
             }
         }
         """
-        user_account = self.mevm.create_account(balance=10 ** 10)
+        user_account = self.mevm.create_account(balance=10**10)
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         contract_account.ret(
             self.mevm.make_symbolic_value(),
@@ -838,8 +838,8 @@ class EthTests(unittest.TestCase):
         }
         """
 
-        owner_account = m.create_account(balance=10 ** 10)
-        attacker_account = m.create_account(balance=10 ** 10)
+        owner_account = m.create_account(balance=10**10)
+        attacker_account = m.create_account(balance=10**10)
         contract_account = m.solidity_create_contract(contract_src, owner=owner_account, balance=0)
 
         # Some global expression `sym_add1`
@@ -886,7 +886,7 @@ class EthTests(unittest.TestCase):
 
     def test_regression_internal_tx(self):
         m = self.mevm
-        owner_account = m.create_account(balance=10 ** 10)
+        owner_account = m.create_account(balance=10**10)
         c = """
         contract C1 {
           function g() returns (uint) {
@@ -971,7 +971,7 @@ class EthTests(unittest.TestCase):
         }
         """
 
-        owner = m.create_account(balance=20 ** 10)
+        owner = m.create_account(balance=20**10)
         contract = m.solidity_create_contract(contract_src, owner=owner)
         receiver = m.create_account(balance=0)
         symbolic_address = m.make_symbolic_address()
@@ -1169,7 +1169,7 @@ class EthTests(unittest.TestCase):
         """
 
         # Initiate the accounts
-        user_account = m.create_account(balance=10 ** 10)
+        user_account = m.create_account(balance=10**10)
         contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
 
         contract_account.f(1)  # it works
@@ -1331,7 +1331,7 @@ class EthTests(unittest.TestCase):
         """
         m: ManticoreEVM = self.mevm
 
-        creator_account = m.create_account(balance=10 ** 10)
+        creator_account = m.create_account(balance=10**10)
         contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
 
         data = m.make_symbolic_buffer(320)

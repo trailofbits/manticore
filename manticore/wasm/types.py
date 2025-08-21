@@ -325,7 +325,7 @@ ImmType = typing.Union[
 
 
 class Instruction:
-    """Internal instruction class that's pickle-friendly and works with the type system """
+    """Internal instruction class that's pickle-friendly and works with the type system"""
 
     __slots__ = ["opcode", "mnemonic", "imm"]
     opcode: int  #: Opcode, used for dispatching instructions
@@ -443,7 +443,7 @@ class TypeMismatchTrap(Trap):
 
 
 class ConcretizeStack(Concretize):
-    """Tells Manticore to concretize the value `depth` values from the end of the stack. """
+    """Tells Manticore to concretize the value `depth` values from the end of the stack."""
 
     def __init__(self, depth: int, ty: type, message: str, expression, policy=None, **kwargs):
         """

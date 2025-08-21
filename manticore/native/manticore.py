@@ -120,7 +120,7 @@ class Manticore(ManticoreBase):
         :param envp: Environment to provide to the binary
         :type envp: dict[str, str]
         :param entry_symbol: Entry symbol to resolve to start execution
-        :type envp: str
+        :type entry_symbol: str
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
         :param str concrete_start: Concrete stdin to use before symbolic input

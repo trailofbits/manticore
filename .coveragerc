@@ -17,3 +17,5 @@ exclude_lines =
 
     # We don't bother testing code that's explicitly unimplemented
     raise NotImplementedError
+    raise AssertionError
+    raise Aarch64InvalidInstruction

@@ -1,3 +1,4 @@
+from copy import copy
 from functools import wraps
 from inspect import signature as inspect_signature
 import logging
@@ -334,7 +335,6 @@ class Armv7RegisterFile(RegisterFile):
                 "PC": "R15",
             }
         )
-        self._regs = {}
         # 32 bit registers
         for reg_name in (
             "R0",
@@ -354,7 +354,7 @@ class Armv7RegisterFile(RegisterFile):
             "R14",
             "R15",
         ):
-            self._regs[reg_name] = Register(32)
+            self._registers[reg_name] = Register(32)
         # 64 bit registers
         for reg_name in (
             "D0",
@@ -390,16 +390,16 @@ class Armv7RegisterFile(RegisterFile):
             "D30",
             "D31",
         ):
-            self._regs[reg_name] = Register(64)
+            self._registers[reg_name] = Register(64)
         # Flags
-        self._regs["APSR_N"] = Register(1)
-        self._regs["APSR_Z"] = Register(1)
-        self._regs["APSR_C"] = Register(1)
-        self._regs["APSR_V"] = Register(1)
-        self._regs["APSR_GE"] = Register(4)
+        self._registers["APSR_N"] = Register(1)
+        self._registers["APSR_Z"] = Register(1)
+        self._registers["APSR_C"] = Register(1)
+        self._registers["APSR_V"] = Register(1)
+        self._registers["APSR_GE"] = Register(4)
 
         # MMU Coprocessor  -- to support MCR/MRC for TLS
-        self._regs["P15_C13"] = Register(32)
+        self._registers["P15_C13"] = Register(32)
 
     def _read_APSR(self):
         def make_apsr_flag(flag_expr, offset):
@@ -449,14 +449,14 @@ class Armv7RegisterFile(RegisterFile):
         if register == "APSR":
             return self._read_APSR()
         register = self._alias(register)
-        return self._regs[register].read()
+        return self._registers[register].read()
 
     def write(self, register, value):
         assert register in self
         if register == "APSR":
             return self._write_APSR(value)
         register = self._alias(register)
-        self._regs[register].write(value)
+        self._registers[register].write(value)
 
     @property
     def all_registers(self):
@@ -539,6 +539,13 @@ class Armv7RegisterFile(RegisterFile):
             "R15",
             "APSR",
         )
+
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        result._registers = {k: copy(v) for k, v in self._registers.items()}
+        return result
 
 
 class Armv7LinuxSyscallAbi(SyscallAbi):
@@ -757,14 +764,11 @@ class Armv7Cpu(Cpu):
     @staticmethod
     def canonicalize_instruction_name(instr):
         name = instr.insn_name().upper()
-        # XXX bypass a capstone bug that incorrectly labels some insns as mov
-        if name == "MOV":
-            if instr.mnemonic.startswith("lsr"):
-                return "LSR"
-            elif instr.mnemonic.startswith("lsl"):
-                return "LSL"
-            elif instr.mnemonic.startswith("asr"):
-                return "ASR"
+        # FIXME: Workaround https://github.com/aquynh/capstone/issues/1630
+        if instr.mnemonic == "addw":
+            return "ADDW"
+        elif instr.mnemonic == "subw":
+            return "SUBW"
         return OP_NAME_MAP.get(name, name)
 
     def _wrap_operands(self, operands):

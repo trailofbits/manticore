@@ -95,7 +95,7 @@ make_wasm_sym_tests(){
 }
 
 install_truffle(){
-    npm install -g truffle@5.3.13
+    npm install -g truffle
 }
 
 run_truffle_tests(){

@@ -215,7 +215,8 @@ class UnicornEmulator:
             "0x%x:\t%s\t%s" % (instruction.address, instruction.mnemonic, instruction.op_str)
         )
 
-        registers = set(self._cpu.canonical_registers)
+        ignore_registers = {"FIP", "FOP", "FDS", "FCS", "FDP", "MXCSR_MASK"}
+        registers = set(self._cpu.canonical_registers) - ignore_registers
 
         # Refer to EFLAGS instead of individual flags for x86
         if self._cpu.arch == CS_ARCH_X86:
@@ -279,7 +280,7 @@ class UnicornEmulator:
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("=" * 10)
-            for register in self._cpu.canonical_registers:
+            for register in registers:
                 logger.debug(
                     f"Register {register:3s}  "
                     f"Manticore: {self._cpu.read_register(register):08x}, "

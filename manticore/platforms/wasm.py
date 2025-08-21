@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def stub(arity, _state, *args):
-    """Default function used for hostfunc calls when a proper import wasn't provided """
+    """Default function used for hostfunc calls when a proper import wasn't provided"""
     logger.info("Called stub function with args: %s", args)
     return [0 for _ in range(arity)]  # TODO: Return symbolic values
 

@@ -865,7 +865,7 @@ class Decree(Platform):
             self.check_timers()
 
     def awake(self, procid):
-        """ Remove procid from waitlists and reestablish it in the running list """
+        """Remove procid from waitlists and reestablish it in the running list"""
         logger.info(
             "Remove procid:%d from waitlists and reestablish it in the running list", procid
         )
@@ -889,21 +889,21 @@ class Decree(Platform):
             return fd - 1
 
     def signal_receive(self, fd):
-        """ Awake one process waiting to receive data on fd """
+        """Awake one process waiting to receive data on fd"""
         connections = self.connections
         if connections(fd) and self.twait[connections(fd)]:
             procid = random.sample(self.twait[connections(fd)], 1)[0]
             self.awake(procid)
 
     def signal_transmit(self, fd):
-        """ Awake one process waiting to transmit data on fd """
+        """Awake one process waiting to transmit data on fd"""
         connections = self.connections
         if connections(fd) and self.rwait[connections(fd)]:
             procid = random.sample(self.rwait[connections(fd)], 1)[0]
             self.awake(procid)
 
     def check_timers(self):
-        """ Awake process if timer has expired """
+        """Awake process if timer has expired"""
         if self._current is None:
             # Advance the clocks. Go to future!!
             advance = min([x for x in self.timers if x is not None]) + 1
