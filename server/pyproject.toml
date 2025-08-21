@@ -8,7 +8,7 @@ version = "0.0.1"
 description = "Manticore server component for remote analysis"
 requires-python = ">=3.8"
 dependencies = [
-    "manticore[native] @ file:///..",
+    "manticore[native] @ file://..",
     "protobuf>=3.20,<5",
     "grpcio~=1.46",
     "crytic-compile>=0.2.2",
