@@ -3,7 +3,6 @@ pragma solidity ^0.4.24;
 A fair use of delegatecall instruction is inserted by the solidity compiler for
 implementing libraries. This is an ok use of delegatecall.
 */
-pragma solidity ^0.4.24;
 
 library Lib {
   
