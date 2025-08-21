@@ -21,8 +21,7 @@ dev = [
     "types-protobuf>=3.20,<5",
     "shiv~=1.0.1",
     "types-setuptools",
-    "black~=24.0",
-    "isort~=5.13",
+    "ruff>=0.1.0",
     "mypy~=1.0",
 ]
 
@@ -41,15 +40,20 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unreachable = true
 
-[tool.isort]
-profile = "black"
-skip = ["venv", "build", "manticore_server/ManticoreServer_pb2.py", "manticore_server/ManticoreServer_pb2_grpc.py"]
-
-[tool.black]
+[tool.ruff]
 line-length = 88
-extend-exclude = '''
-    ManticoreServer_pb2_grpc\.py
-  | ManticoreServer_pb2\.py
-  | ManticoreServer_pb2\.pyi
-  | venv
-'''
+exclude = [
+    "venv",
+    "build",
+    "manticore_server/ManticoreServer_pb2.py",
+    "manticore_server/ManticoreServer_pb2_grpc.py",
+    "manticore_server/ManticoreServer_pb2.pyi",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]

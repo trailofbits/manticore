@@ -33,7 +33,7 @@ jobs:
         git fetch --depth=1 origin $BASE_SHA
         echo "Files Changed:"
         git diff --name-only $BASE_SHA... | tee .diff_names.txt
-        NAMES=$(cat .diff_names.txt | python scripts/pyfile_exists.py)
+        NAMES=$(cat .diff_names.txt | python scripts/filter_lintable_files.py)
         # Check with ruff (fast linting)
         if test -z "$NAMES"
         then

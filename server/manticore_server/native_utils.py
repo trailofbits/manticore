@@ -54,7 +54,7 @@ def parse_native_arguments(additional_args: str) -> argparse.Namespace:
         "--workspace",
         type=str,
         default=None,
-        help=("A folder name for temporaries and results." "(default mcore_?????)"),
+        help=("A folder name for temporaries and results.(default mcore_?????)"),
     )
 
     current_version = pkg_resources.get_distribution("manticore").version

@@ -124,7 +124,7 @@ class ManticoreServicer(ManticoreServerServicer):
                 for worker in mwrapper.manticore_object._workers + list(
                     mwrapper.manticore_object._daemon_threads.values()
                 ):
-                    if type(worker._t) == Thread and worker._t.name == thread_name:
+                    if type(worker._t) is Thread and worker._t.name == thread_name:
                         worker._t.name = mwrapper.uuid
                         mwrapper.append_log(msg_content)
                         return
@@ -266,7 +266,7 @@ class ManticoreServicer(ManticoreServerServicer):
         else:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(
-                f"solc binary neither specified in EVMArguments nor found in PATH!"
+                "solc binary neither specified in EVMArguments nor found in PATH!"
             )
             return ManticoreInstance()
 
@@ -282,7 +282,6 @@ class ManticoreServicer(ManticoreServerServicer):
             def manticore_evm_runner(
                 mcore_wrapper: ManticoreWrapper, args: argparse.Namespace
             ):
-
                 mcore_wrapper.manticore_object.multi_tx_analysis(
                     evm_arguments.contract_path,
                     contract_name=evm_arguments.contract_name,
@@ -370,7 +369,6 @@ class ManticoreServicer(ManticoreServerServicer):
         )
 
         for state_id, state_desc in states.items():
-
             state_args = {"state_id": state_id}
 
             if isinstance(state_desc.pc, int):
@@ -435,7 +433,6 @@ class ManticoreServicer(ManticoreServerServicer):
     def CheckManticoreRunning(
         self, mcore_instance: ManticoreInstance, context: _Context
     ) -> ManticoreRunningStatus:
-
         if mcore_instance.uuid not in self.manticore_instances:
             context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
             context.set_details("Specified Manticore instance not found!")
@@ -546,7 +543,7 @@ def main():
     add_ManticoreServerServicer_to_server(ManticoreServicer(stop_event), server)
     server.add_insecure_port(port)
     server.start()
-    logger.info(f"server started.")
+    logger.info("server started.")
     stop_event.wait()
     server.stop(None)
     logger.info("shutdown gracefully!")

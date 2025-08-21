@@ -167,7 +167,6 @@ class ManticoreServerCoreNativeTest(unittest.TestCase):
         self.assertTrue(m.test_attribute == 0x400FDC)
 
     def test_start_with_invalid_custom_and_global_hook(self):
-
         self.servicer.StartNative(
             NativeArguments(
                 program_path=str(self.binary_path),
