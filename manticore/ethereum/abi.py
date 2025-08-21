@@ -3,7 +3,18 @@ import logging
 import uuid
 
 import re
-import sha3
+try:
+    # Python 3.11+ doesn't have pysha3, use pycryptodome
+    from Crypto.Hash import keccak
+    def keccak_256(data=b''):
+        k = keccak.new(digest_bits=256)
+        if data:
+            k.update(data)
+        return k
+except ImportError:
+    # Older Python versions use pysha3
+    import sha3
+    keccak_256 = sha3.keccak_256
 
 from . import abitypes
 from ..core.smtlib import (

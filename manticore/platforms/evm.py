@@ -36,7 +36,18 @@ from ..exceptions import EthereumError
 import pyevmasm as EVMAsm
 import logging
 from collections import namedtuple
-import sha3
+try:
+    # Python 3.11+ doesn't have pysha3, use pycryptodome
+    from Crypto.Hash import keccak
+    def keccak_256(data=b''):
+        k = keccak.new(digest_bits=256)
+        if data:
+            k.update(data)
+        return k
+    sha3 = type('sha3', (), {'keccak_256': keccak_256})()
+except ImportError:
+    # Older Python versions use pysha3
+    import sha3
 import rlp
 
 logger = logging.getLogger(__name__)

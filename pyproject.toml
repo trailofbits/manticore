@@ -18,6 +18,8 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Development Status :: 7 - Inactive",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -25,7 +27,8 @@ classifiers = [
 ]
 dependencies = [
     "pyyaml",
-    "pysha3",
+    "pysha3; python_version < '3.11'",
+    "pycryptodome>=3.15.0; python_version >= '3.11'",
     "protobuf>=3.20,<5",
     "prettytable",
     "ply",
@@ -36,7 +39,7 @@ dependencies = [
     "pyevmasm>=0.2.3",
     "z3-solver",
 ]
-requires-python = "<3.11,>=3.8"
+requires-python = ">=3.8"
 
 [project.urls]
 Homepage = "https://github.com/trailofbits/manticore"
