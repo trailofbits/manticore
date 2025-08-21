@@ -9,7 +9,7 @@ import os
 import shutil
 from manticore.platforms.evm import EVMWorld
 
-from manticore.core.smtlib import operators, ConstraintSet, SolverType
+from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import (
     DetectDelegatecall,
     DetectEnvInstruction,
@@ -32,8 +32,9 @@ from typing import Tuple, Type
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
 
+# Don't hardcode solver type - let configuration decide
+# If tests need portfolio solver, they should set it in test setup
 consts = config.get_group("smt")
-consts.solver = SolverType.portfolio
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

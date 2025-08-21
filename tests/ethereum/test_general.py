@@ -14,7 +14,7 @@ import tempfile
 
 from manticore import ManticoreError
 from manticore.core.plugin import Plugin
-from manticore.core.smtlib import ConstraintSet, operators, PortfolioSolver, SolverType
+from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec, BitVecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
@@ -40,15 +40,10 @@ import io
 import contextlib
 
 
-# Allow solver to be configured via config file or environment
-# Only use PortfolioSolver if explicitly configured or if multiple solvers available
-consts = config.get_group("smt")
-if consts.solver == SolverType.portfolio:
-    solver = PortfolioSolver.instance()
-else:
-    # Use the configured solver (auto, z3, yices, etc.)
-    from manticore.core.smtlib.solver import SelectedSolver
-    solver = SelectedSolver.instance()
+# Get solver instance based on configuration
+# This respects user configuration and doesn't hardcode any specific solver
+from manticore.utils.solver_utils import get_solver_instance
+solver = get_solver_instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
