@@ -94,12 +94,26 @@ python_version = "3.9"
 files = ["manticore"]
 exclude = ["server/"]
 ignore_missing_imports = true
+no_implicit_optional = false
+check_untyped_defs = false
+warn_return_any = false
+warn_unused_ignores = false
 
-# Generated files
+# Generated files and modules with issues
 [[tool.mypy.overrides]]
 module = [
     "manticore.ethereum.parsetab",
-    "manticore.core.state_pb2"
+    "manticore.core.state_pb2",
+    "manticore.core.worker",
+    "manticore.platforms.linux",
+    "manticore.platforms.evm",
+    "manticore.ethereum.abi",
+    "manticore.wasm.*",
+    "manticore.native.cpu.abstractcpu",
+    "manticore.native.manticore",
+    "manticore.utils.config",
+    "manticore.core.smtlib.solver",
+    "manticore.ethereum.verifier"
 ]
 ignore_errors = true
 

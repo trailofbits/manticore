@@ -24,32 +24,13 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: Lint
       if: github.event_name == 'pull_request'
-      env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
       run: |
         pip install -e .[lint]
-        # Run ruff for fast linting
+        # Run ruff for fast linting (respects exclude in pyproject.toml)
         ruff --version
-        git fetch --depth=1 origin $BASE_SHA
-        echo "Files Changed:"
-        git diff --name-only $BASE_SHA... | tee .diff_names.txt
-        NAMES=$(cat .diff_names.txt | python scripts/filter_lintable_files.py)
-        # Check with ruff (fast linting)
-        if test -z "$NAMES"
-        then
-          echo "No Python files to lint in manticore/ directory"
-        else
-          echo "Linting files: $NAMES"
-          echo $NAMES | xargs ruff check
-        fi
-        # Check formatting with ruff format
-        if test -z "$NAMES"
-        then
-          echo "No Python files to format check in manticore/ directory"
-        else
-          echo "Checking format for files: $NAMES"
-          echo $NAMES | xargs ruff format --check
-        fi
+        ruff check .
+        # Check formatting with ruff format (respects exclude in pyproject.toml)
+        ruff format --check .
         # Type checking with mypy
         mypy --version
         mypy
