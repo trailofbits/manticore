@@ -41,6 +41,8 @@ Manticore can analyze the following types of programs:
 
 > Note: We recommend installing Manticore in a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-virtualenv)
  to prevent conflicts with other projects or packages
+> 
+> **Requirements**: Python >= 3.8, pip >= 21.3 (for PEP 517 support)
 
 Option 1: Installing from PyPI:
 
