@@ -118,8 +118,27 @@ run_truffle_tests(){
 run_tests_from_dir() {
     DIR=$1
     echo "Running only the tests from 'tests/$DIR' directory"
-    pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
-    RESULT=$?
+    
+    # Special handling for ethereum tests - SHA3 tests need Solidity 0.5+
+    if [ "$DIR" = "ethereum" ]; then
+        # Run most ethereum tests with Solidity 0.4.24
+        solc-select use 0.4.24
+        echo "Running ethereum tests (excluding SHA3) with Solidity 0.4.24"
+        pytest --durations=100 --cov=manticore -n auto "tests/$DIR" --ignore="tests/$DIR/test_sha3.py"
+        RESULT=$?
+        
+        # Run SHA3 tests with Solidity 0.5.11
+        if [ $RESULT -eq 0 ]; then
+            solc-select use 0.5.11
+            echo "Running SHA3 tests with Solidity 0.5.11"
+            pytest --durations=100 --cov=manticore -n auto "tests/$DIR/test_sha3.py"
+            RESULT=$?
+        fi
+    else
+        pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+        RESULT=$?
+    fi
+    
     return $RESULT
 }
 

@@ -38,6 +38,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example1(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint input) payable public{
@@ -68,6 +69,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example2(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -99,6 +101,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example3(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -132,6 +135,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example4(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -169,6 +173,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example5(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -205,6 +210,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example6(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -242,6 +248,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example7(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -279,6 +286,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_example8(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -316,6 +324,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_essence1(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract I_Choose_Not_To_Run {
             event Log(string);
             function foo(bytes memory x) public {
@@ -347,6 +356,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
 
     def test_essence2(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract I_Choose_Not_To_Run {
             event Log(string);
             function foo(bytes memory x) public {
@@ -380,7 +390,8 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
         self.assertEqual(m.count_all_states(), 2)
 
     def test_essence3(self):
-        source_code = """contract Sha3_Multiple_tx{
+        source_code = """pragma solidity ^0.5.0;
+        contract Sha3_Multiple_tx{
             event Log(string);
             bytes32 val;
             function foo(uint x) public {
@@ -440,6 +451,7 @@ class EthSha3TestConcrete(unittest.TestCase):
 
     def test_example_concrete_1(self):
         source_code = """
+        pragma solidity ^0.5.0;
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
@@ -489,7 +501,8 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
         pass
 
     def test_essence3(self):
-        source_code = """contract Sha3_Multiple_tx{
+        source_code = """pragma solidity ^0.5.0;
+        contract Sha3_Multiple_tx{
             event Log(string);
             bytes32 val;
             function foo(uint x) public {

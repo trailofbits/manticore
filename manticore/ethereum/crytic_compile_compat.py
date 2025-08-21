@@ -81,6 +81,9 @@ class CompilationUnitWrapper:
     def hashes(self, contract_name):
         """Get function hashes"""
         if self._source_unit and hasattr(self._source_unit, "_hashes"):
+            # Compute hashes if they haven't been computed yet
+            if hasattr(self._source_unit, "_compute_hashes") and contract_name not in self._source_unit._hashes:
+                self._source_unit._compute_hashes(contract_name)
             return self._source_unit._hashes.get(contract_name, {})
         return {}
 
