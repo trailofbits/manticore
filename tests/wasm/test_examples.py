@@ -8,6 +8,7 @@ from pathlib import Path
 from collections import namedtuple
 import glob
 import os
+from tests.markers import wasm_test
 
 
 def getchar(state, addr):
@@ -40,6 +41,7 @@ if_check_file = str(
 )
 
 
+@wasm_test
 class TestCollatz(unittest.TestCase):
     def test_getchar(self):
         m = ManticoreWASM(collatz_file, env={"getchar": getchar})
@@ -137,6 +139,7 @@ def getchar2(state):
     return [res]
 
 
+@wasm_test
 class TestIfCheck(unittest.TestCase):
     def test_getchar(self):
         m = ManticoreWASM(if_check_file, env={"getchar": getchar2})

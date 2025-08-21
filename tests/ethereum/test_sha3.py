@@ -12,6 +12,7 @@ from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import ManticoreEVM
 from manticore.ethereum.plugins import KeepOnlyIfStorageChanges
 from manticore.utils import config
+from tests.markers import ethereum_test
 
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
@@ -19,6 +20,7 @@ consts.mprocessing = consts.mprocessing.single
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+@ethereum_test
 class EthSha3TestSymbolicate(unittest.TestCase):
     def setUp(self):
         evm_consts = config.get_group("evm")
@@ -420,6 +422,7 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
         self.assertEqual(found, 1)  # log is reachable
 
 
+@ethereum_test
 class EthSha3TestConcrete(unittest.TestCase):
     def setUp(self):
         evm_consts = config.get_group("evm")
@@ -468,6 +471,7 @@ class EthSha3TestConcrete(unittest.TestCase):
         self.assertEqual(m.count_all_states(), 1)  # Only 1 state concretized
 
 
+@ethereum_test
 class EthSha3TestFake(EthSha3TestSymbolicate):
     def setUp(self):
         evm_consts = config.get_group("evm")

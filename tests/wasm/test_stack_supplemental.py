@@ -5,6 +5,7 @@ from manticore.core.plugin import Plugin
 from manticore.wasm.structure import Stack, AtomicStack
 
 from pathlib import Path
+from tests.markers import wasm_test
 
 
 class StackTrackerPlugin(Plugin):
@@ -22,6 +23,7 @@ wasm_file = str(
 )
 
 
+@wasm_test
 class TestStack(unittest.TestCase):
     def test_trace(self):
         """

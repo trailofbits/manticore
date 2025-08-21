@@ -28,6 +28,7 @@ from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChange
 from manticore.utils import config, log
 
 from typing import Tuple, Type
+from tests.markers import ethereum_test
 
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
@@ -45,6 +46,7 @@ def make_mock_evm_state():
     return fakestate
 
 
+@ethereum_test
 class EthDetectorTest(unittest.TestCase):
     # Subclasses must assign this class variable to the class for the detector
     DETECTOR_CLASS: Type[Detector]

@@ -167,13 +167,13 @@ class DetectExternalCallAndLeak(Detector):
                 # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
                 self.add_finding_here(
                     state,
-                    f"Reachable ether leak to sender via argument",
-                    constraint=AND(msg_sender == dest_address, sent_value != 0),
+                    "Reachable ether leak to sender via argument",
+                    constraint=Operators.AND(msg_sender == dest_address, sent_value != 0),
                 )
                 self.add_finding_here(
                     state,
-                    f"Reachable external call to sender via argument",
-                    constraint=AND(msg_sender == dest_address, sent_value == 0),
+                    "Reachable external call to sender via argument",
+                    constraint=Operators.AND(msg_sender == dest_address, sent_value == 0),
                 )
 
                 # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
@@ -187,22 +187,22 @@ class DetectExternalCallAndLeak(Detector):
                     # useful/exploitable, even though it can be solved to more than 1 thing
                     self.add_finding_here(
                         state,
-                        f"Reachable ether leak to user controlled address via argument",
-                        constraint=AND(msg_sender != dest_address, sent_value != 0),
+                        "Reachable ether leak to user controlled address via argument",
+                        constraint=Operators.AND(msg_sender != dest_address, sent_value != 0),
                     )
                     self.add_finding_here(
                         state,
-                        f"Reachable external call to user controlled address via argument",
-                        constraint=AND(msg_sender != dest_address, sent_value == 0),
+                        "Reachable external call to user controlled address via argument",
+                        constraint=Operators.AND(msg_sender != dest_address, sent_value == 0),
                     )
 
             else:
                 if msg_sender == dest_address:
                     self.add_finding_here(
-                        state, f"Reachable ether leak to sender", constraint=sent_value != 0
+                        state, "Reachable ether leak to sender", constraint=sent_value != 0
                     )
                     self.add_finding_here(
-                        state, f"Reachable external call to sender", constraint=sent_value == 0
+                        state, "Reachable external call to sender", constraint=sent_value == 0
                     )
 
 

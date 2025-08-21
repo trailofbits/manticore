@@ -2,10 +2,14 @@ import unittest
 from manticore.native.cpu.x86 import *
 import manticore.core.smtlib
 from manticore.native.memory import *
+from tests.markers import generated_test, slow_test, native_test
 
 solver = manticore.core.smtlib.solver.Z3Solver.instance()
 
 
+@native_test
+@slow_test
+@generated_test
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

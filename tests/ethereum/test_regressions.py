@@ -6,6 +6,7 @@ import unittest
 import os
 import shutil
 import tempfile
+from tests.markers import ethereum_test
 
 DIRPATH = os.path.dirname(__file__)
 
@@ -15,6 +16,7 @@ DIRPATH = os.path.dirname(__file__)
 PYTHON_BIN = sys.executable
 
 
+@ethereum_test
 class IntegrationTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

@@ -111,7 +111,7 @@ class SingletonMixin(object):
     def instance(cls):
         tid = threading.get_ident()
         pid = os.getpid()
-        if not (pid, tid) in cls.__singleton_instances:
+        if (pid, tid) not in cls.__singleton_instances:
             cls.__singleton_instances[(pid, tid)] = cls()
         return cls.__singleton_instances[(pid, tid)]
 

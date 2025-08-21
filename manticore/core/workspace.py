@@ -24,7 +24,6 @@ except ImportError:
 
 
 import time
-import os
 import errno
 import threading
 from ..utils import config

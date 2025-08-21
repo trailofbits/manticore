@@ -8,6 +8,7 @@ from manticore.core.smtlib import *
 from manticore.native.cpu.x86 import AMD64RegFile
 from manticore.native.memory import *
 from manticore.core.smtlib.solver import Z3Solver
+from tests.markers import generated_test, slow_test, native_test
 
 solver = Z3Solver.instance()
 
@@ -66,6 +67,9 @@ def testRegisterFileCopy():
 
 
 @forAllTests(skipIfNotImplemented)
+@native_test
+@slow_test
+@generated_test
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

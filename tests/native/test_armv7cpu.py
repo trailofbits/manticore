@@ -17,6 +17,7 @@ ks = None
 ks_thumb = None
 
 import logging
+from tests.markers import slow_test, native_test
 
 logger = logging.getLogger("ARM_TESTS")
 solver = Z3Solver.instance()
@@ -316,6 +317,8 @@ def testRegisterFileCopy():
     assert new_regfile.read("R0") == rax_val
 
 
+@native_test
+@slow_test
 class Armv7CpuTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

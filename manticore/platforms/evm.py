@@ -31,7 +31,6 @@ from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..utils.helpers import printable_bytes
 from ..utils import config
-from ..core.smtlib.visitors import simplify
 from ..exceptions import EthereumError
 import pyevmasm as EVMAsm
 import logging

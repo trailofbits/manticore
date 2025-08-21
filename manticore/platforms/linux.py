@@ -325,32 +325,32 @@ class EventPoll(FdLike):
         self.interest_list: Dict[FdLike, EPollEvent] = {}
 
     def read(self, size: int):
-        raise NotImplemented
+        raise NotImplementedError
 
     def write(self, buf) -> int:
-        raise NotImplemented
+        raise NotImplementedError
 
     def sync(self) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
     def close(self) -> None:
         # Nothing really to do
         pass
 
     def seek(self, offset: int, whence: int) -> int:
-        raise NotImplemented
+        raise NotImplementedError
 
     def is_full(self) -> bool:
-        raise NotImplemented
+        raise NotImplementedError
 
     def ioctl(self, request, argp) -> int:
-        raise NotImplemented
+        raise NotImplementedError
 
     def tell(self) -> int:
-        raise NotImplemented
+        raise NotImplementedError
 
     def stat(self) -> StatResult:
-        raise NotImplemented
+        raise NotImplementedError
 
     def poll(self) -> int:
         # TODO(ekilmer): Look into how we could implement this
@@ -690,7 +690,7 @@ class SocketDesc(FdLike):
         raise FdError("Invalid write() operation on SocketDesc", errno.ESPIPE)  # EINVAL?  EBADF?
 
     def is_full(self):
-        raise IsSocketDescErr()
+        raise FdError("Invalid is_full() operation on SocketDesc", errno.EBADF)
 
     def read(self, count):
         raise FdError("Invalid write() operation on SocketDesc", errno.EBADF)  # EINVAL?
@@ -1664,7 +1664,7 @@ class Linux(Platform):
         logger.debug(f"Entry point: {entry:016x}")
         logger.debug(f"Stack start: {stack:016x}")
         logger.debug(f"Brk: {real_elf_brk:016x}")
-        logger.debug(f"Mappings:")
+        logger.debug("Mappings:")
         for m in str(cpu.memory).split("\n"):
             logger.debug(f"  {m}")
         self.interp_base = base
@@ -2383,7 +2383,7 @@ class Linux(Platform):
         return self.sys_sigprocmask(cpu, how, newset, oldset)
 
     def sys_sigprocmask(self, cpu, how, newset, oldset):
-        logger.warning(f"SIGACTION, Ignoring changing signal mask set cmd:%s", how)
+        logger.warning("SIGACTION, Ignoring changing signal mask set cmd:%s", how)
         return 0
 
     def sys_dup(self, fd: int) -> int:

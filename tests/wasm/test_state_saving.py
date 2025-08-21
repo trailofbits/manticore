@@ -4,6 +4,7 @@ from manticore.wasm.types import I32
 from manticore.core.plugin import Plugin
 from manticore.core.state import SerializeState, TerminateState
 from pathlib import Path
+from tests.markers import wasm_test
 
 
 class CallCounterPlugin(Plugin):
@@ -32,6 +33,7 @@ collatz_file = str(
 )
 
 
+@wasm_test
 class TestResume(unittest.TestCase):
     def test_resume(self):
         m = ManticoreWASM(collatz_file)

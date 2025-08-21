@@ -14,10 +14,10 @@ jobs:
         type: ["ethereum_truffle", "ethereum_bench", "ethereum", "ethereum_vm", "wasm", "wasm_sym", "other"]
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.7
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: 3.7
+        python-version: "3.10"
     - name: Install NPM
       uses: actions/setup-node@v3
       with:

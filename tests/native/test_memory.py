@@ -17,11 +17,14 @@ from manticore.native.memory import *
 from manticore.utils import config
 from manticore.utils.helpers import pickle_dumps
 from manticore import issymbolic
+from tests.markers import slow_test, native_test
 
 solver = Z3Solver.instance()
 consts = config.get_group("native")
 
 
+@native_test
+@slow_test
 class MemoryTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

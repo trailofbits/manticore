@@ -20,7 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Development Status :: 7 - Inactive",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
     "Topic :: Security",
@@ -53,7 +53,7 @@ manticore-verifier = "manticore.ethereum.verifier:main"
 
 [project.optional-dependencies]
 native = [
-    "capstone==5.0.0rc2",
+    "capstone==5.0.6",
     "pyelftools",
     "unicorn~=2.0",
 ]
@@ -61,6 +61,7 @@ redis = ["redis"]
 lint = [
     "black~=24.0",
     "mypy~=1.0",
+    "ruff>=0.1.0",
 ]
 dev-noks = [
     "build",
@@ -76,6 +77,9 @@ dev-noks = [
 dev = [
     "manticore[dev-noks]",
     "keystone-engine",
+]
+docs = [
+    "Sphinx==4.3.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -121,6 +125,19 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "--durations=10"
+markers = [
+    "unit: Unit tests - test individual components",
+    "integration: Integration tests - test multiple components",
+    "slow: Slow tests that take significant time",
+    "fast: Fast tests that run quickly",
+    "linux: Tests that only run on Linux",
+    "network: Tests that require network access",
+    "ethereum: Ethereum/smart contract tests",
+    "native: Native binary analysis tests",
+    "wasm: WebAssembly tests",
+    "generated: Auto-generated tests (do not edit)",
+    "benchmark: Performance benchmark tests",
+]
 
 [tool.coverage.run]
 source = ["manticore"]
@@ -147,8 +164,39 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
-# Note: flake8 doesn't support pyproject.toml natively yet
-# These settings are kept in tox.ini but documented here for reference:
-# ignore = E265,E501,F403,F405,E266,E712,F841,E741,E722,E731
-# max-line-length = 100
-# exclude = .tox,.*.egg,.git,docs/,examples/,scripts/,tests/
+[tool.ruff]
+line-length = 100
+exclude = [
+    ".tox",
+    "*.egg",
+    ".git",
+    "docs/",
+    "examples/",
+    "scripts/",
+    "tests/",
+    "iterpickle.py",
+    "venv/",
+    "server/",
+]
+
+[tool.ruff.lint]
+# Converted from flake8 ignore rules in tox.ini
+ignore = [
+    "E265",  # Block comment should start with '# '
+    "E501",  # Line too long (handled by line-length)
+    "F403",  # 'from module import *' used; unable to detect undefined names
+    "F405",  # Name may be undefined, or defined from star imports
+    "E266",  # Too many leading '#' for block comment
+    "E712",  # Comparison to True/False should be with is/is not
+    "F841",  # Local variable is assigned to but never used
+    "E741",  # Ambiguous variable name
+    "E722",  # Do not use bare except
+    "E731",  # Do not assign a lambda expression, use a def
+    "F401",  # Unused imports (common in __init__.py)
+    "E402",  # Module import not at top of file
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Unused imports in __init__ files are OK
+"manticore/ethereum/parsetab.py" = ["ALL"]  # Generated file
+"manticore/core/state_pb2.py" = ["ALL"]  # Generated file

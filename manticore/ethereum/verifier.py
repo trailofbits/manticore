@@ -225,7 +225,7 @@ def manticore_verifier(
 
             # check if we have made coverage progress in the last transaction
             if current_coverage == new_coverage:
-                print(f"No coverage progress. Stopping exploration.")
+                print("No coverage progress. Stopping exploration.")
                 break
             current_coverage = new_coverage
 
@@ -317,7 +317,7 @@ def manticore_verifier(
                         if tx.result != "REVERT":
                             testcase = m.generate_testcase(
                                 state,
-                                f"Some property is broken did not reverted.(MUST REVERTED)",
+                                "Some property is broken did not reverted.(MUST REVERTED)",
                                 only_if=tx.data[:4] == func_id,
                             )
                             if testcase:
