@@ -28,11 +28,15 @@ class ManticoreServerEVMTest(unittest.TestCase):
         if self.solc_path:
             try:
                 # Check if this is the right version
-                result = subprocess.run([self.solc_path, "--version"], capture_output=True, text=True)
+                result = subprocess.run(
+                    [self.solc_path, "--version"], capture_output=True, text=True
+                )
                 if "0.4.24" not in result.stdout:
                     # Try to find solc-select's 0.4.24
                     home = os.path.expanduser("~")
-                    solc_select_path = os.path.join(home, ".solc-select", "artifacts", "solc-0.4.24", "solc-0.4.24")
+                    solc_select_path = os.path.join(
+                        home, ".solc-select", "artifacts", "solc-0.4.24", "solc-0.4.24"
+                    )
                     if os.path.exists(solc_select_path):
                         self.solc_path = solc_select_path
             except:
