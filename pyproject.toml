@@ -77,15 +77,14 @@ dev = [
     "keystone-engine",
 ]
 
-[tool.setuptools]
-packages = ["manticore"]
-
 [tool.setuptools.packages.find]
 include = ["manticore", "manticore.*"]
 exclude = ["tests", "tests.*"]
 
 [tool.setuptools.package-data]
 manticore = ["*.proto"]
+
+# Tool configurations consolidated from separate files
 
 [tool.black]
 line-length = 100
@@ -95,3 +94,56 @@ extend-exclude = '''
   | server # Has its own formatting
 )
 '''
+
+[tool.mypy]
+python_version = "3.7"
+files = ["manticore", "tests"]
+ignore_missing_imports = true
+
+# Generated files
+[[tool.mypy.overrides]]
+module = [
+    "manticore.ethereum.parsetab",
+    "manticore.core.state_pb2"
+]
+ignore_errors = true
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_glob = ["*/parsetab.py", "*_pb2.py", "venv/*", "server/*"]
+
+[tool.pytest.ini_options]
+minversion = "5.3.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-n auto --durations=10"
+
+[tool.coverage.run]
+source = ["manticore"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__main__.py",
+    "*/parsetab.py",
+    "*_pb2.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+# Note: flake8 doesn't support pyproject.toml natively yet
+# These settings are kept in tox.ini for now but documented here
+# [tool.flake8]
+# ignore = E265,E501,F403,F405,E266,E712,F841,E741,E722,E731
+# max-line-length = 100
+# exclude = .tox,.*.egg,.git,docs/,examples/,scripts/,tests/
