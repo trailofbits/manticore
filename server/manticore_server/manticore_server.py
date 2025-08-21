@@ -388,14 +388,12 @@ class ManticoreServicer(ManticoreServerServicer):
                     state_id=state_id,
                     pc=pc,
                     parent_id=parent_id,
-                    children_ids=children_ids
+                    children_ids=children_ids,
                 )
             else:
                 # If pc is None, only pass required arguments
                 s = ManticoreState(
-                    state_id=state_id,
-                    parent_id=parent_id,
-                    children_ids=children_ids
+                    state_id=state_id, parent_id=parent_id, children_ids=children_ids
                 )
 
             if state_desc.status == StateStatus.running:
