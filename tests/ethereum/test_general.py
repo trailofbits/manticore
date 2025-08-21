@@ -40,9 +40,15 @@ import io
 import contextlib
 
 
-solver = PortfolioSolver.instance()
+# Allow solver to be configured via config file or environment
+# Only use PortfolioSolver if explicitly configured or if multiple solvers available
 consts = config.get_group("smt")
-consts.solver = SolverType.portfolio
+if consts.solver == SolverType.portfolio:
+    solver = PortfolioSolver.instance()
+else:
+    # Use the configured solver (auto, z3, yices, etc.)
+    from manticore.core.smtlib.solver import SelectedSolver
+    solver = SelectedSolver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

@@ -11,6 +11,7 @@ import tempfile
 import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
+from .crytic_compile_compat import wrap_compilation_unit
 
 from ..core.manticore import ManticoreBase, ManticoreError
 
@@ -275,7 +276,9 @@ class ManticoreEVM(ManticoreBase):
                     f"{contract_name} is shared in multiple compilation units, please split the codebase to prevent the duplicate"
                 )
 
-            for compilation_unit in crytic_compile.compilation_units.values():
+            for _compilation_unit in crytic_compile.compilation_units.values():
+                # Wrap the compilation unit for API compatibility
+                compilation_unit = wrap_compilation_unit(_compilation_unit)
 
                 if not contract_name:
                     if len(compilation_unit.contracts_names_without_libraries) > 1:

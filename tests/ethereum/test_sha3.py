@@ -39,7 +39,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint input) payable public{
-                if (sha3(input) == 0x12341234){
+                if (keccak256(abi.encodePacked(input)) == 0x12341234){
                     emit Log("Found a bug");
                 }
             }
@@ -69,7 +69,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (x == uint256(sha3(y))){
+                if (x == uint256(keccak256(abi.encodePacked(y)))){
                     emit Log("Found a bug");
                 }
             }
@@ -100,7 +100,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (sha3(x) == sha3(y)){
+                if (keccak256(abi.encodePacked(x)) == keccak256(abi.encodePacked(y))){
                     emit Log("Found a bug");
                 }
             }
@@ -133,7 +133,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (sha3(x) == sha3(y)){
+                if (keccak256(abi.encodePacked(x)) == keccak256(abi.encodePacked(y))){
                     if (x != 10) {
                         emit Log("Found a bug"); //Reachable 
                     }
@@ -170,7 +170,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (sha3(x) == sha3(y)){
+                if (keccak256(abi.encodePacked(x)) == keccak256(abi.encodePacked(y))){
                     if (x != 10 && y != 10) {
                         emit Log("Found a bug"); //Reachable 
                     }
@@ -206,7 +206,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (x == uint256(sha3(y))){
+                if (x == uint256(keccak256(abi.encodePacked(y)))){
                     if(y == 10){
                         emit Log("Found a bug");
                     }
@@ -243,7 +243,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (sha3(x) == sha3(y)){
+                if (keccak256(abi.encodePacked(x)) == keccak256(abi.encodePacked(y))){
                     if (x == 10) {
                         emit Log("Found a bug"); //Reachable 
                     }
@@ -280,7 +280,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (sha3(x) == sha3(y)){
+                if (keccak256(abi.encodePacked(x)) == keccak256(abi.encodePacked(y))){
                     if (x == 10) {
                         emit Log("Found a bug"); //Reachable 
                     }
@@ -316,7 +316,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         source_code = """
         contract I_Choose_Not_To_Run {
             event Log(string);
-            function foo(bytes x) public {
+            function foo(bytes memory x) public {
                 // x1 keccak
                 if (keccak256("tob") == keccak256(abi.encodePacked(x))){
                     emit Log("bug");
@@ -347,7 +347,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         source_code = """
         contract I_Choose_Not_To_Run {
             event Log(string);
-            function foo(bytes x) public {
+            function foo(bytes memory x) public {
                 //# x10 keccak
 //if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob"))))))))))==keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x))))))))))))
 if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob")))))))))) ==  keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)) ))))))))))
@@ -440,7 +440,7 @@ class EthSha3TestConcrete(unittest.TestCase):
         contract IsThisVulnerable {
             event Log(string);
             function foo(uint x, uint y) payable public{
-                if (sha3(x) == sha3(y)){
+                if (keccak256(abi.encodePacked(x)) == keccak256(abi.encodePacked(y))){
                     if (x != 10 && y != 10) {
                         emit Log("Found a bug"); //Reachable 
                     }
