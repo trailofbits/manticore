@@ -26,7 +26,7 @@ classifiers = [
 dependencies = [
     "pyyaml",
     "pysha3",
-    "protobuf~=3.20",
+    "protobuf>=3.20,<5",
     "prettytable",
     "ply",
     "rlp",
@@ -56,8 +56,8 @@ native = [
 ]
 redis = ["redis"]
 lint = [
-    "black~=22.0",
-    "mypy==0.790",
+    "black~=24.0",
+    "mypy~=1.0",
 ]
 dev-noks = [
     "build",
