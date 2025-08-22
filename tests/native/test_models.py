@@ -5,13 +5,12 @@ import tempfile
 from glob import glob
 import re
 
-from manticore.core.smtlib import (
 import pytest
 
 # Test markers for categorization
-pytestmark = pytest.mark.native
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.native, pytest.mark.unit]
 
+from manticore.core.smtlib import (
     ConstraintSet,
     Operators,
     Z3Solver,
