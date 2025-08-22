@@ -22,6 +22,16 @@ These aren't just theoretical demonstrations - they are actual solutions to chal
 - **Description**: Find the magic input bytes that satisfy a smart contract's checks
 - **Key Learning**: How to use symbolic execution to reverse engineer smart contract logic
 
+### 🖥️ Binary Reverse Engineering Challenges
+
+#### [Google CTF 2016: Unbreakable](./google2016_unbreakable/)
+- **Type**: Binary Reverse Engineering
+- **Platform**: Linux x86_64
+- **Difficulty**: Medium-Hard
+- **Techniques**: Symbolic execution, constraint solving, execution hooks
+- **Description**: Find the product activation key that passes complex validation
+- **Key Learning**: Bypassing complex algorithms without manual reverse engineering
+
 ## How to Use These Examples
 
 Each challenge directory contains:
@@ -53,8 +63,9 @@ python -m pytest test_real_world_ctf.py -v
 
 If you're new to Manticore, we recommend studying these examples in this order:
 
-1. **PolySwarm Challenge** - Start here for Ethereum/Smart contract analysis
-2. (More challenges will be added)
+1. **Google CTF 2016: Unbreakable** - Start here for binary symbolic execution basics
+2. **PolySwarm Challenge** - Move to smart contract analysis
+3. (More challenges will be added)
 
 ## Contributing
 
