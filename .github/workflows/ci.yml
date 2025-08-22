@@ -190,24 +190,3 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
-  upload:
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'schedule'
-    needs: tests
-    strategy:
-      matrix:
-        python: ['3.9', '3.10']
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Build Dist
-      run: |
-        python3 -m pip install wheel
-        python3 setup.py --dev_release sdist bdist_wheel
-    - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.6.4
-      with:
-        password: ${{ secrets.PYPI_UPLOAD }}
