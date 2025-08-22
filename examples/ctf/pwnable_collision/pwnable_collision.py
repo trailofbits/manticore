@@ -13,6 +13,7 @@ Source: pwnable.kr
 import os
 from manticore.native import Manticore
 from manticore.core.smtlib import operators
+from manticore.utils import log
 
 
 def solve_collision():
@@ -120,7 +121,7 @@ def solve_collision():
     # Run symbolic execution
     print("\n[*] Starting symbolic execution...")
     print("[*] Looking for 20-byte input that causes hash collision...")
-    m.verbosity(2)
+    log.set_verbosity(2)  # verbosity method is deprecated
     m.run()
     
     # Check result

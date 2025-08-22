@@ -119,7 +119,7 @@ The setup script handles:
   - [Smart contracts](examples/evm/) - Ethereum contract analysis  
   - [WebAssembly](examples/wasm/) - WASM module analysis
 
-- **[Real CTF Solutions](examples/real_world_ctf/)**: Actual security challenges solved with Manticore
+- **[Real CTF Solutions](examples/ctf/)**: Actual security challenges solved with Manticore
   - pwnable challenges
   - Smart contract exploits
   - Automated vulnerability discovery

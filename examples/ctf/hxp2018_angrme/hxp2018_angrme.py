@@ -15,6 +15,7 @@ CTF: HXP CTF 2018
 import os
 from manticore.native import Manticore
 from manticore.core.smtlib import operators
+from manticore.utils import log
 
 
 def solve_angrme():
@@ -109,7 +110,7 @@ def solve_angrme():
         m.kill()
     
     # Set verbosity for debugging
-    m.verbosity(1)
+    log.set_verbosity(1)  # verbosity method is deprecated
     
     # Run symbolic execution
     print("\n[*] Starting symbolic execution...")

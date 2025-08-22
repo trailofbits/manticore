@@ -12,6 +12,7 @@ Course: RPISEC MBE
 
 import os
 from manticore.native import Manticore
+from manticore.utils import log
 
 
 def solve_lab1B():
@@ -27,7 +28,7 @@ def solve_lab1B():
     
     # Initialize Manticore
     m = Manticore(binary_path)
-    m.verbosity(1)
+    log.set_verbosity(1)  # verbosity method is deprecated
     
     # This lab has 21 unique cases equivalent to:
     # switch(0x1337d00d - input):
@@ -86,7 +87,7 @@ def solve_lab1B():
     # Run symbolic execution
     print("\n[*] Starting symbolic execution...")
     print("[*] Testing switch cases to find correct password")
-    m.run(procs=10)
+    m.run()  # procs argument is no longer supported
 
 
 if __name__ == "__main__":

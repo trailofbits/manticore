@@ -12,6 +12,7 @@ Course: RPISEC MBE
 
 import os
 from manticore.native import Manticore
+from manticore.utils import log
 
 
 def solve_lab1A():
@@ -27,7 +28,7 @@ def solve_lab1A():
     
     # Initialize Manticore
     m = Manticore(binary_path)
-    m.verbosity(1)
+    log.set_verbosity(1)  # verbosity method is deprecated
     
     @m.hook(0x8048B69)
     def inject_user_name(state):
@@ -90,7 +91,7 @@ def solve_lab1A():
     # Run symbolic execution
     print("\n[*] Starting symbolic execution...")
     print("[*] Finding valid serial for username 'test123'")
-    m.run(procs=10)
+    m.run()  # procs argument is no longer supported
 
 
 if __name__ == "__main__":

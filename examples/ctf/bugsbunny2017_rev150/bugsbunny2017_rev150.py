@@ -10,11 +10,18 @@ Expected solution: 42813724579039578812
 Challenge Type: Password Cracking via Hook-based Injection
 Platform: Linux x86_64
 CTF: BugsBunny CTF 2017
+
+NOTE: The rev150 binary is not included in this repository. 
+      You need to obtain the original challenge binary to run this example.
+      The file 'rev150' in this directory is a placeholder HTML file.
+      
+      See issue #2675 for details: https://github.com/trailofbits/manticore/issues/2675
 """
 
 import os
 import sys
 from manticore.native import Manticore
+from manticore.utils import log
 
 
 def solve_rev150():
@@ -39,11 +46,31 @@ def solve_rev150():
         prog = sys.argv[1]
         params = sys.argv[2:] if len(sys.argv) > 2 else ["00000000000000000000"]
     else:
-        prog = binary_path
+        # Use the actual binary if it exists
+        if os.path.exists(os.path.join(script_dir, "rev150_binary")):
+            prog = os.path.join(script_dir, "rev150_binary")
+        else:
+            prog = binary_path
         params = ["00000000000000000000"]  # Initial dummy password
     
     print(f"[*] Binary: {prog}")
     print(f"[*] Initial params: {params}")
+    
+    # Check if binary exists and is valid
+    if not os.path.exists(prog):
+        print(f"\n❌ Error: Binary '{prog}' not found!")
+        print("Please download the actual rev150 binary from the CTF.")
+        return
+    
+    # Check if it's actually a binary (not HTML)
+    with open(prog, 'rb') as f:
+        header = f.read(4)
+        if header[:4] != b'\x7fELF':
+            print(f"\n❌ Error: '{prog}' is not a valid ELF binary!")
+            print("The file appears to be HTML or text. Please download the actual binary.")
+            print("\nNote: The rev150 file in this directory is a placeholder.")
+            print("You need to download the actual challenge binary.")
+            return
     
     # Initialize Manticore
     m = Manticore(prog, params)
@@ -90,12 +117,12 @@ def solve_rev150():
         with m.locked_context() as context:
             print("\n[+] Success!")
             print(f"[+] Password: {context['password']}")
-            print(f"[+] Flag: BugsBunny{{{context['password']}}}")
+            print(f"[+] Flag: BugsBunny{{context['password']}}")  # Note: f-string brace escaping
             context['found'] = True
             m.terminate()
     
     # Set verbosity and run
-    m.verbosity(1)
+    log.set_verbosity(1)  # verbosity method is deprecated
     
     print("\n[*] Starting symbolic execution...")
     print("[*] This may take several minutes (~9 minutes expected)")

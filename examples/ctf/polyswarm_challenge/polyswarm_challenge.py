@@ -13,6 +13,12 @@ Challenge Description:
 Original Author: Raz0r (me@raz0r.name)
 Writeup: https://raz0r.name/writeups/polyswarm-smart-contract-hacking-challenge-writeup/
 
+NOTE: This example currently fails due to invalid contract bytecode in winnerlog.bin.
+      The bytecode file appears to contain test data instead of actual EVM bytecode.
+      Use polyswarm_simplified.py for a working demonstration of the technique.
+      
+      See issue #2676 for details: https://github.com/trailofbits/manticore/issues/2676
+
 This example demonstrates:
 - Setting up accounts with specific addresses
 - Deploying contracts from bytecode
@@ -75,7 +81,12 @@ def solve_polyswarm_challenge():
     
     # Deploy the WinnerLog contract
     print("Deploying WinnerLog contract...")
+    print(f"Bytecode length: {len(bytecode)} bytes")
+    
     try:
+        # Check if we have any states before deployment
+        print(f"States before deployment: {m.count_ready_states()} ready, {m.count_terminated_states()} terminated")
+        
         winnerlog_address = m.create_contract(
             init=bytecode,
             owner=owner_account,
@@ -83,12 +94,16 @@ def solve_polyswarm_challenge():
             address=0x2E4D2A597A2FCBDF6CC55EB5C973E76AA19AC410
         )
         
+        # Check states after deployment
+        print(f"States after deployment: {m.count_ready_states()} ready, {m.count_terminated_states()} terminated")
+        
         # Handle different API versions - create_contract might return None or the address
         if winnerlog_address is None:
             winnerlog_address = 0x2E4D2A597A2FCBDF6CC55EB5C973E76AA19AC410
             
     except Exception as e:
         print(f"Note: Contract deployment had issues: {e}")
+        print(f"States on error: {m.count_ready_states()} ready, {m.count_terminated_states()} terminated")
         print("Using predefined address...")
         winnerlog_address = 0x2E4D2A597A2FCBDF6CC55EB5C973E76AA19AC410
     
@@ -106,11 +121,16 @@ def solve_polyswarm_challenge():
             caller=owner_account,
             address=winnerlog_address,
             data=auth_data,
-            value=0
+            value=0,
+            gas=1000000  # Add explicit gas limit
         )
     except Exception as e:
         print(f"Authorization transaction issue: {e}")
-        # Continue anyway as this might be expected
+        # If no states are alive, we need to handle this differently
+        if "NoAliveStates" in str(e):
+            print("\n⚠️  Contract deployment or authorization failed.")
+            print("This example may need contract bytecode updates.")
+            return None
     
     # Create symbolic buffer for the input we're trying to find
     print("\nCreating symbolic input buffer (64 bytes)...")
@@ -126,13 +146,19 @@ def solve_polyswarm_challenge():
         symbolic_data
     )
     
-    m.transaction(
-        caller=cashmoney_account,
-        address=winnerlog_address,
-        data=calldata,
-        value=0,
-        gas=10000000
-    )
+    try:
+        m.transaction(
+            caller=cashmoney_account,
+            address=winnerlog_address,
+            data=calldata,
+            value=0,
+            gas=10000000
+        )
+    except Exception as e:
+        print(f"\n❌ Transaction failed: {e}")
+        print("\n⚠️  This example requires specific contract setup.")
+        print("The PolySwarm challenge contract may need to be updated.")
+        return None
     
     # Run symbolic execution
     print("\nRunning symbolic execution...")

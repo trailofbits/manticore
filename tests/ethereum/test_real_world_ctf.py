@@ -23,7 +23,7 @@ class TestRealWorldCTF(unittest.TestCase):
         """Set up paths to example scripts"""
         # Find the examples directory
         manticore_root = Path(__file__).parent.parent.parent
-        cls.examples_dir = manticore_root / "examples" / "real_world_ctf"
+        cls.examples_dir = manticore_root / "examples" / "ctf"
         
         if not cls.examples_dir.exists():
             raise unittest.SkipTest(f"Examples directory not found: {cls.examples_dir}")
