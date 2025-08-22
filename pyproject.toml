@@ -134,11 +134,6 @@ module = [
 ]
 ignore_errors = true
 
-[tool.isort]
-profile = "black"
-line_length = 100
-skip_glob = ["*/parsetab.py", "*_pb2.py", "venv/*", "server/*"]
-
 [tool.pytest.ini_options]
 minversion = "5.3.0"
 testpaths = ["tests"]
