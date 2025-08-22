@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "manticore"
 version = "0.3.7"
 description = "Manticore is a symbolic execution tool for analysis of binaries and smart contracts."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "AGPL-3.0-only"
 authors = [
     { name = "Trail of Bits", email = "opensource@trailofbits.com" }
 ]
@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -79,12 +80,29 @@ docs = [
     "Sphinx==4.3.0",
 ]
 
-[tool.setuptools.packages.find]
-include = ["manticore", "manticore.*"]
-exclude = ["tests", "tests.*"]
+[tool.hatch.metadata]
+allow-direct-references = true
 
-[tool.setuptools.package-data]
-manticore = ["*.proto"]
+[tool.hatch.build.targets.wheel]
+packages = ["manticore"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/manticore",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
+
+[tool.hatch.build]
+include = [
+    "manticore/**/*.py",
+    "manticore/**/*.proto",
+]
+exclude = [
+    "tests",
+]
 
 # Tool configurations consolidated from separate files
 
