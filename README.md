@@ -222,6 +222,9 @@ contract = m.solidity_create_contract(source_code)
 
 - **[manticore-verifier](http://manticore.readthedocs.io/en/latest/verifier.html)** - Property-based testing for smart contracts
 - **[MATE](https://github.com/GaloisInc/MATE)** - Binary analysis platform integration
+  - [MantiServe](https://galoisinc.github.io/MATE/mantiserve.html) - REST API for running Manticore analyses
+  - [DwarfCore](https://galoisinc.github.io/MATE/dwarfcore.html) - Enhanced program exploration using DWARF debug info
+  - [Under-constrained Manticore](https://github.com/GaloisInc/MATE/blob/main/doc/under-constrained-manticore.rst) - Analyze individual functions without full program context
 
 ### Research
 
