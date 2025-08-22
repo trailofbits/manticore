@@ -79,7 +79,7 @@ if sys.platform != "linux":
             "You can try 'multiprocessing' mode with: --core.mprocessing=multiprocessing",
             sys.platform,
         )
-        logger._macos_warning_shown = True
+        logger._macos_warning_shown = True  # type: ignore[attr-defined]
 
 consts.add(
     "mprocessing",

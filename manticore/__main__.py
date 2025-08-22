@@ -6,11 +6,7 @@ import argparse
 import logging
 import sys
 
-try:
-    from importlib.metadata import version, PackageNotFoundError
-except ImportError:
-    # Python < 3.8
-    from importlib_metadata import version, PackageNotFoundError
+from importlib.metadata import version, PackageNotFoundError
 
 from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity

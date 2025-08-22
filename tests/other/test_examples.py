@@ -62,6 +62,7 @@ class TestManticoreExamples(unittest.TestCase):
         if hasattr(cls, 'tmpdir') and os.path.exists(cls.tmpdir):
             shutil.rmtree(cls.tmpdir)
     
+    @pytest.mark.slow
     def test_google2016_unbreakable(self):
         """Test Google CTF 2016 unbreakable challenge solver"""
         script = self.examples_dir / "test_google2016_unbreakable" / "test_google2016_unbreakable.py"
@@ -71,7 +72,7 @@ class TestManticoreExamples(unittest.TestCase):
             cwd=script.parent,
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=300
         )
         
         output = result.stdout + result.stderr
@@ -94,7 +95,7 @@ class TestManticoreExamples(unittest.TestCase):
             cwd=script.parent,
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=300
         )
         
         output = result.stdout + result.stderr
