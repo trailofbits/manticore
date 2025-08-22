@@ -22,10 +22,20 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python }}
+    - name: Cache uv packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/uv
+        key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
     - name: Lint
       if: github.event_name == 'pull_request'
       run: |
-        pip install -e .[lint]
+        # Install uv for faster package management
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $HOME/.cargo/env
+        uv pip install --system -e .[lint]
         # Run ruff for fast linting (respects exclude in pyproject.toml)
         ruff --version
         ruff check .
@@ -45,6 +55,13 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+    - name: Cache uv packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/uv
+        key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
     - name: Cache Solidity Compilers
       uses: actions/cache@v3
       with:
@@ -52,7 +69,10 @@ jobs:
         key: ${{ runner.os }}-solc-0.4.24-0.5.11
     - name: Install dependencies
       run: |
-        pip install -e ".[dev-noks]"
+        # Install uv for faster package management
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $HOME/.cargo/env
+        uv pip install --system -e ".[dev-noks]"
         # Install multiple Solidity versions
         # 0.4.24 for legacy tests, 0.5.11 for modern syntax tests
         solc-select install 0.4.24
@@ -90,6 +110,13 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python }}
+    - name: Cache uv packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/uv
+        key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
     - name: Install NPM
       uses: actions/setup-node@v3
       with:
@@ -114,11 +141,14 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
+        # Install uv for faster package management
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $HOME/.cargo/env
         #install utils
-        pip install coveralls
-        pip install -e ".[dev-noks]"
+        uv pip install --system coveralls
+        uv pip install --system -e ".[dev-noks]"
         # Get version info
-        pip freeze
+        uv pip freeze
         z3 --version
         #install cvc4
         if [ ! -f /usr/bin/cvc4 ]; then
@@ -183,6 +213,14 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Cache uv packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
       - name: Cache SMT Solvers
         uses: actions/cache@v3
         with:
@@ -203,10 +241,13 @@ jobs:
 
       - name: 'Install tools'
         run: |
+          # Install uv for faster package management
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
           # just command runner https://github.com/casey/just#pre-built-binaries
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
           # Install solc-select first
-          pip install solc-select
+          uv pip install --system solc-select
           # Install multiple Solidity versions for server tests
           solc-select install 0.4.24
           solc-select install 0.5.11
