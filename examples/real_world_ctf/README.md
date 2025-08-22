@@ -47,6 +47,11 @@ These examples showcase how Manticore can be used to:
 - Educational labs from Modern Binary Exploitation course
 - Serial validation and switch case analysis
 
+#### 9. **bugsbunny2017_rev150** - BugsBunny CTF 2017
+- 20-digit password cracking via incremental search
+- Hook-based injection and retry logic
+- Expected solution: `42813724579039578812`
+
 ### Ethereum Challenges
 
 #### 1. **polyswarm_challenge** - PolySwarm Smart Contract
@@ -88,6 +93,7 @@ These examples teach:
 real_world_ctf/
 ├── README.md                    # This file
 ├── ais3_crackme/               # AIS3 CTF challenge
+├── bugsbunny2017_rev150/       # BugsBunny CTF 2017
 ├── google2016_unbreakable/     # Google CTF 2016
 ├── hxp2018_angrme/            # HXP CTF 2018
 ├── internetwache15_re60/       # Internetwache CTF 2015
@@ -116,6 +122,7 @@ Challenges sourced from various CTF competitions and educational materials:
 - HXP CTF
 - Internetwache CTF
 - AIS3 CTF
+- BugsBunny CTF
 - Pwnable.kr
 - PolySwarm
 - RPISEC MBE Course
