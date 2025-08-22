@@ -68,7 +68,11 @@ jobs:
         # Skip slow and generated tests for quick PR feedback
         # No coverage collection - this is for quick feedback only
         # Exclude SHA3 tests that need Solidity 0.5+
-        pytest -xvs tests/ -m "not slow and not generated" --durations=10 --no-cov --ignore=tests/ethereum/test_sha3.py -n auto
+        # Exclude native tests since they have their own matrix job
+        pytest -xvs tests/ -m "not slow and not generated" --durations=10 --no-cov \
+          --ignore=tests/ethereum/test_sha3.py \
+          --ignore=tests/native/ \
+          -n auto
         
         # Now run SHA3 tests with Solidity 0.5.11
         solc-select use 0.5.11
