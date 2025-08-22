@@ -47,7 +47,10 @@ launch_examples() {
         return 1
     fi
 
-    # Skip symbolic_file test in CI - it's flaky and requires specific setup
+    # DISABLED: symbolic_file test - Known limitation with libc buffered I/O
+    # The test fails because Manticore's SymbolicFile objects are incompatible 
+    # with libc functions like getline(). See issue #2672 for details.
+    # To re-enable: Either model getline() in Manticore or rewrite fileio.c to use syscalls.
     # echo "Running fileio symbolic file test..."
     # coverage run --append ./symbolic_file.py
     # if [ $? -ne 0 ]; then

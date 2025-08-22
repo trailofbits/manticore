@@ -123,6 +123,13 @@ To provide symbolic input from a file, first create the files that will be opene
 analyzed program, and fill them with wildcard bytes where you would like symbolic data
 to be.
 
+.. warning::
+   **Known Limitation**: Symbolic files currently only work with programs that read files using 
+   direct syscalls (``read``, ``write``, etc.). Programs using libc buffered I/O functions 
+   (``fopen``, ``fread``, ``getline``, etc.) are not supported due to incompatibility between 
+   Manticore's SymbolicFile objects and libc's FILE* structures. See `issue #2672 
+   <https://github.com/trailofbits/manticore/issues/2672>`_ for technical details.
+
 For command line use, invoke Manticore with the ``--file`` argument.::
 
     $ manticore ./binary --file my_symbolic_file1.txt --file my_symbolic_file2.txt

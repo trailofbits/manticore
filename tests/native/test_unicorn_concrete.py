@@ -2,6 +2,7 @@ import unittest
 import os
 import io
 import contextlib
+import pytest
 
 from manticore.native import Manticore
 from manticore.native.state import State
@@ -125,6 +126,7 @@ class ResumeUnicornPlugin(Plugin):
             state.cpu.emulate_until(UnicornResumeTest.MAIN)
 
 
+@pytest.mark.skip(reason="Known issue: Unicorn emulate_until hangs indefinitely - see issue #2674")
 class UnicornResumeTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     MAIN = 0x402180

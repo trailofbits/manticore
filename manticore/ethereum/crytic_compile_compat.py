@@ -96,6 +96,9 @@ class CompilationUnitWrapper:
         # Handle library linking if needed
         if libraries and bytecode:
             for lib_name, lib_addr in libraries.items():
+                # Convert integer address to hex string for replacement
+                if isinstance(lib_addr, int):
+                    lib_addr = f"{lib_addr:040x}"  # 40 hex chars = 160 bits = 20 bytes
                 # Simple placeholder replacement - may need more sophisticated linking
                 bytecode = bytecode.replace(f"__{lib_name}__", lib_addr)
 
@@ -115,6 +118,9 @@ class CompilationUnitWrapper:
         # Handle library linking if needed
         if libraries and bytecode:
             for lib_name, lib_addr in libraries.items():
+                # Convert integer address to hex string for replacement
+                if isinstance(lib_addr, int):
+                    lib_addr = f"{lib_addr:040x}"  # 40 hex chars = 160 bits = 20 bytes
                 bytecode = bytecode.replace(f"__{lib_name}__", lib_addr)
 
         return bytecode
