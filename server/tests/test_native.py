@@ -272,7 +272,7 @@ class ManticoreServerCoreNativeTest(unittest.TestCase):
                 # Put messages back for GetMessageList to retrieve
                 for msg in deque_messages:
                     q.put(msg)
-                
+
                 messages = self.servicer.GetMessageList(
                     mcore_instance, self.context
                 ).messages
@@ -307,7 +307,7 @@ class ManticoreServerCoreNativeTest(unittest.TestCase):
                 # Put messages back for GetMessageList to retrieve
                 for msg in deque_messages:
                     q.put(msg)
-                
+
                 messages = self.servicer.GetMessageList(
                     mcore_instance, self.context
                 ).messages
