@@ -1,6 +1,12 @@
 import binascii
 import unittest
 import subprocess
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.ethereum
+pytestmark = pytest.mark.integration
+
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:

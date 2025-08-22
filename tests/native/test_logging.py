@@ -4,6 +4,12 @@ import logging
 from manticore.utils.log import get_verbosity, set_verbosity, DEFAULT_LOG_LEVEL
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 class ManticoreLogger(unittest.TestCase):
     """Make sure we set the logging levels correctly"""
 

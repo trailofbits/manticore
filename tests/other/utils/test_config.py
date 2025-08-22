@@ -6,6 +6,11 @@ import unittest
 from manticore.utils import config
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.unit
+
 class ConfigTest(unittest.TestCase):
     def setUp(self):
         config._groups = {}

@@ -23,6 +23,11 @@ from manticore.platforms.platform import SyscallNotImplemented, logger as platfo
 from tests.markers import linux_only, native_test
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.integration, pytest.mark.linux]
+
 def test_symbolic_syscall_arg() -> None:
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
     tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")

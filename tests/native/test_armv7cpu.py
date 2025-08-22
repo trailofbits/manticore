@@ -13,6 +13,11 @@ from manticore.core.smtlib.solver import Z3Solver
 from manticore.native.memory import SMemory32
 from manticore.utils.helpers import pickle_dumps
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.integration, pytest.mark.slow]
+
 ks = None
 ks_thumb = None
 

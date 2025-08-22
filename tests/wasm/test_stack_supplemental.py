@@ -8,6 +8,11 @@ from pathlib import Path
 from tests.markers import wasm_test
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.wasm, pytest.mark.unit]
+
 class StackTrackerPlugin(Plugin):
     def will_pop_item_callback(self, state, depth):
         with self.locked_context("push_pop_seq", list) as seq:

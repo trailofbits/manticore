@@ -11,6 +11,11 @@ import os
 from tests.markers import wasm_test
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.wasm, pytest.mark.integration]
+
 def getchar(state, addr):
     res = state.new_symbolic_value(32, "getchar_res")
     state.constrain(res > 0)

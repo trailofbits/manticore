@@ -77,7 +77,7 @@ dev = [
     "keystone-engine",
 ]
 docs = [
-    "Sphinx==4.3.0",
+    "Sphinx>=4.3.0,<7",
 ]
 
 [tool.hatch.metadata]

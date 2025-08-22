@@ -7,6 +7,12 @@ from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.core.smtlib.solver import Z3Solver
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 def skipIfNotImplemented(f):
     # XXX(yan) the inner function name must start with test_
     @functools.wraps(f)

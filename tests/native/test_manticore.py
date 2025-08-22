@@ -9,6 +9,12 @@ from manticore.utils.log import get_verbosity, set_verbosity
 from manticore.core.plugin import Profiler
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.integration
+
 class ManticoreTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

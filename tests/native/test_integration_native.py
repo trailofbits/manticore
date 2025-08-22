@@ -14,6 +14,11 @@ from typing import List, Set
 from tests.markers import integration_test, native_test
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.integration, pytest.mark.slow]
+
 DIRPATH: str = os.path.dirname(__file__)
 
 PYTHON_BIN: str = sys.executable

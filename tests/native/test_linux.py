@@ -16,6 +16,11 @@ from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.utils.helpers import pickle_dumps
 from tests.markers import linux_only, native_test
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.integration, pytest.mark.linux]
+
 from manticore.platforms.linux import (
     EnvironmentError,
     logger as linux_logger,

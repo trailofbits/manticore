@@ -1,3 +1,8 @@
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.ethereum, pytest.mark.integration, pytest.mark.slow]
+
 """
 Test suite for real-world CTF challenge examples.
 

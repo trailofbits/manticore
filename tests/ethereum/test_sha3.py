@@ -1,3 +1,8 @@
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.ethereum, pytest.mark.unit]
+
 """
 File name is purposefully not test_* to run this test separately.
 """

@@ -5,6 +5,11 @@ from pathlib import Path
 from tests.markers import wasm_test
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.wasm, pytest.mark.unit]
+
 test_if_file = str(Path(__file__).parent.joinpath("inputs", "if.wasm"))
 test_br_if_file = str(Path(__file__).parent.joinpath("inputs", "br_if.wasm"))
 test_br_table_file = str(Path(__file__).parent.joinpath("inputs", "br_table.wasm"))

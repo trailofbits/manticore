@@ -7,6 +7,12 @@ from manticore.platforms import linux
 from manticore.utils.event import Eventful
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 class FakeMemory:
     def __init__(self):
         self._constraints = None

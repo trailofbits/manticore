@@ -7,6 +7,11 @@ from manticore.utils.enums import StateLists
 import io
 import contextlib
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.unit
+
 ms_file = str(
     Path(__file__).parent.parent.parent.joinpath("examples", "linux", "binaries", "multiple-styles")
 )

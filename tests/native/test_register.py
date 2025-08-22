@@ -4,6 +4,12 @@ from manticore.core.smtlib import *
 from manticore.native.cpu.register import Register
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 class RegisterTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

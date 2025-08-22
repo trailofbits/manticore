@@ -3,6 +3,11 @@ import unittest
 from manticore.utils.event import Eventful
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.unit
+
 class A(Eventful):
     _published_events = {"eventA"}
 

@@ -6,6 +6,11 @@ from pathlib import Path
 from glob import glob
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.unit
+
 class TestFork(unittest.TestCase):
     def test_fork_unique_solution(self):
         binary = str(

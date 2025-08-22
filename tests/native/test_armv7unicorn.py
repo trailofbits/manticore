@@ -16,6 +16,12 @@ from manticore.platforms import linux
 from manticore.utils.fallback_emulator import UnicornEmulator
 import binascii
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.integration
+
 ks = None
 ks_thumb = None
 

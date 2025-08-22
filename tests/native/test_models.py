@@ -6,6 +6,12 @@ from glob import glob
 import re
 
 from manticore.core.smtlib import (
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
     ConstraintSet,
     Operators,
     Z3Solver,

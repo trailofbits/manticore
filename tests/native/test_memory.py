@@ -19,6 +19,11 @@ from manticore.utils.helpers import pickle_dumps
 from manticore import issymbolic
 from tests.markers import slow_test, native_test
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.unit]
+
 solver = Z3Solver.instance()
 consts = config.get_group("native")
 

@@ -8,6 +8,11 @@ import shutil
 import tempfile
 from tests.markers import ethereum_test
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.ethereum, pytest.mark.integration]
+
 DIRPATH = os.path.dirname(__file__)
 
 # TLDR: when we launch `python -m manticore` and one uses PyCharm remote interpreter

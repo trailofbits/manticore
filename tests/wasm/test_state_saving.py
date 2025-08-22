@@ -7,6 +7,11 @@ from pathlib import Path
 from tests.markers import wasm_test
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.wasm, pytest.mark.integration]
+
 class CallCounterPlugin(Plugin):
     def did_execute_instruction_callback(self, state, instruction):
         with self.locked_context("counter", dict) as ctx:
