@@ -45,6 +45,11 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+    - name: Cache Solidity Compilers
+      uses: actions/cache@v3
+      with:
+        path: ~/.solcx
+        key: ${{ runner.os }}-solc-0.4.24-0.5.11
     - name: Install dependencies
       run: |
         pip install -e ".[dev-noks]"
@@ -85,6 +90,22 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '16.x'
+    - name: Cache SMT Solvers
+      uses: actions/cache@v3
+      with:
+        path: |
+          /usr/bin/cvc4
+          /usr/local/bin/yices
+          /usr/local/bin/yices-smt2
+          /usr/local/bin/yices-sat
+          /usr/local/bin/yices-smt
+          /usr/local/lib/libyices.so*
+        key: ${{ runner.os }}-smt-solvers-cvc4-1.8-yices-2.6.2
+    - name: Cache Solidity Compilers
+      uses: actions/cache@v3
+      with:
+        path: ~/.solcx
+        key: ${{ runner.os }}-solc-0.4.24-0.5.11
     - name: Install dependencies
       env:
         TEST_TYPE: ${{ matrix.type }}
@@ -96,14 +117,21 @@ jobs:
         pip freeze
         z3 --version
         #install cvc4
-        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4-archived/releases/download/1.8/cvc4-1.8-x86_64-linux-opt
-        sudo chmod +x /usr/bin/cvc4
+        if [ ! -f /usr/bin/cvc4 ]; then
+          echo "Installing CVC4..."
+          sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4-archived/releases/download/1.8/cvc4-1.8-x86_64-linux-opt
+          sudo chmod +x /usr/bin/cvc4
+        fi
         cvc4 --version
         #install yices
-        sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
-        sudo tar -xzf yices.tar.gz
-        cd yices-2.6.2
-        sudo ./install-yices
+        if [ ! -f /usr/local/bin/yices ]; then
+          echo "Installing Yices..."
+          sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
+          sudo tar -xzf yices.tar.gz
+          cd yices-2.6.2
+          sudo ./install-yices
+          cd ..
+        fi
         yices --version
         # Note: Boolector removed - it's archived/unmaintained upstream
         # Consider using Bitwuzla (its successor) in the future
@@ -150,6 +178,24 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Cache SMT Solvers
+        uses: actions/cache@v3
+        with:
+          path: |
+            /usr/bin/cvc4
+            /usr/local/bin/yices
+            /usr/local/bin/yices-smt2
+            /usr/local/bin/yices-sat
+            /usr/local/bin/yices-smt
+            /usr/local/lib/libyices.so*
+          key: ${{ runner.os }}-smt-solvers-cvc4-1.8-yices-2.6.2
+
+      - name: Cache Solidity Compilers
+        uses: actions/cache@v3
+        with:
+          path: ~/.solcx
+          key: ${{ runner.os }}-solc-0.4.24-0.5.11
 
       - name: 'Install tools'
         run: |
