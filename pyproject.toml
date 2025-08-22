@@ -70,6 +70,7 @@ dev-noks = [
     "pytest>=5.3.0",
     "pytest-xdist>=1.30.0",
     "pytest-cov>=2.8.1",
+    "pytest-timeout>=2.1.0",
     "jinja2"
 ]
 dev = [

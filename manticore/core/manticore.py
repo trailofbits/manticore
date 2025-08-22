@@ -57,7 +57,10 @@ consts.add(
 
 proc_type = MProcessingType.threading
 if sys.platform != "linux":
-    logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
+    # Only show warning once per session using a module-level flag
+    if not getattr(logger, '_macos_warning_shown', False):
+        logger.info("Note: Running on %s. Linux is recommended for best performance.", sys.platform)
+        logger._macos_warning_shown = True
     proc_type = MProcessingType.threading
 
 consts.add(

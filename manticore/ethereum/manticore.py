@@ -354,8 +354,18 @@ class ManticoreEVM(ManticoreBase):
                 return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
 
         except InvalidCompilation as e:
+            error_msg = str(e)
+            # Provide helpful hints for common Solidity version issues
+            if "No visibility specified" in error_msg or "visibility" in error_msg.lower():
+                error_msg += "\n\nHint: This looks like a Solidity version mismatch. Older contracts may need:"
+                error_msg += "\n  - Function visibility specifiers (public, external, etc.) for Solidity 0.5+"
+                error_msg += "\n  - Consider using solc-select to install an older compiler version"
+                error_msg += "\n  - Or update the contract to modern Solidity syntax"
+            elif "SPDX license identifier" in error_msg:
+                error_msg += "\n\nHint: Add 'pragma solidity ^0.4.24;' and optionally '// SPDX-License-Identifier: MIT' to your contract"
+            
             raise EthereumError(
-                f"Errors : {e}\n. Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented. "
+                f"Solidity compilation failed:\n{error_msg}\n\nCheck if all abstract functions are implemented."
             )
 
     @staticmethod
