@@ -129,6 +129,8 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "--durations=10"
+# To skip slow tests, run: pytest -m "not slow"
+# To run only slow tests: pytest -m slow
 markers = [
     "unit: Unit tests - test individual components",
     "integration: Integration tests - test multiple components",

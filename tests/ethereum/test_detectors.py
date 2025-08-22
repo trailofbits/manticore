@@ -4,6 +4,7 @@ File name is purposefully not test_* to run this test separately.
 
 import inspect
 import unittest
+import pytest
 
 import os
 import shutil
@@ -121,7 +122,7 @@ class EthSuicidal(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable SELFDESTRUCT", False)})
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_selfdestruct_true_pos1(self):
         self.mevm.register_plugin(LoopDepthLimiter(2))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -155,7 +156,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable external call to sender", False)})
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -166,7 +167,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -178,7 +179,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_argument2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -199,7 +200,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -274,22 +275,22 @@ class EthDelegatecall(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_ok1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_ok2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_ok3(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_not_ok(self):
         self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
@@ -301,7 +302,7 @@ class EthDelegatecall(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_not_ok1(self):
         self.mevm.register_plugin(LoopDepthLimiter(loop_count_threshold=500))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -311,7 +312,8 @@ class EthDelegatecall(EthDetectorTest):
 class EthRaceCondition(EthDetectorTest):
     DETECTOR_CLASS = DetectRaceCondition
 
-    @unittest.expectedFailure  # Taint tracking is lost during CALL concretization
+    # NOTE: Previously marked as expectedFailure because "Taint tracking is lost during CALL concretization"
+    # but this appears to be fixed now - the test passes successfully
     def test_race_condition(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -344,7 +346,7 @@ class EthRaceCondition(EthDetectorTest):
             },
         )
 
-    @unittest.skip("The slot/index are not as deterministic as before")
+    @pytest.mark.skip(reason="The slot/index are not as deterministic as before")
     def test_race_condition2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(

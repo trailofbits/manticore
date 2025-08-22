@@ -7,7 +7,11 @@ import re
 import sys
 import argparse
 import logging
-import pkg_resources
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    # Python < 3.8
+    from importlib_metadata import version, PackageNotFoundError
 from itertools import chain
 from manticore.ethereum import ManticoreEVM
 from manticore.ethereum.detectors import DetectIntegerOverflow
@@ -384,7 +388,10 @@ def main():
         help=("A folder name for temporaries and results.(default mcore_?????)"),
     )
 
-    current_version = pkg_resources.get_distribution("manticore").version
+    try:
+        current_version = version("manticore")
+    except PackageNotFoundError:
+        current_version = "unknown"
     parser.add_argument(
         "--version",
         action="version",

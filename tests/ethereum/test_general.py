@@ -1,7 +1,11 @@
 import binascii
 import unittest
 import subprocess
-import pkg_resources
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    # Python < 3.8
+    from importlib_metadata import version, PackageNotFoundError
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -102,7 +106,11 @@ class EthVerifierIntegrationTest(unittest.TestCase):
         cli_version = cli_version.split(
             "Manticore is only supported on Linux. Proceed at your own risk!\n"
         )[-1]
-        py_version = f"Manticore {pkg_resources.get_distribution('manticore').version}\n"
+        try:
+            manticore_version = version('manticore')
+        except PackageNotFoundError:
+            manticore_version = "unknown"
+        py_version = f"Manticore {manticore_version}\n"
         self.assertEqual(cli_version, py_version)
 
 

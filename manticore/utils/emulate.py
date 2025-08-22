@@ -116,8 +116,9 @@ class ConcreteUnicornEmulator:
         self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE, self._hook_write_mem)
         self._emu.hook_add(UC_HOOK_INTR, self._interrupt)
-        self._emu.hook_add(UC_HOOK_INSN, self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
-        self._emu.hook_add(UC_HOOK_INSN, self._hook_cpuid, arg1=UC_X86_INS_CPUID)
+        # Unicorn 2.x changed the API - arg1 is now a positional argument
+        self._emu.hook_add(UC_HOOK_INSN, self._hook_syscall, None, UC_X86_INS_SYSCALL)
+        self._emu.hook_add(UC_HOOK_INSN, self._hook_cpuid, None, UC_X86_INS_CPUID)
 
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
