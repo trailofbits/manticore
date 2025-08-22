@@ -30,9 +30,10 @@
 */
 
 #include<stdio.h>
+#include<unistd.h>
 #define M 6
 
-main(){
+int main(){
 int i,count;
 unsigned char buffer[M];
 read(0, buffer, M);

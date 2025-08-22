@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 
 /**
  * Example code for the state state_control.py and introduce_symbolic_bytes.py
