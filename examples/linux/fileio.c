@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int main(int argc, const char **argv) {
@@ -17,19 +18,27 @@ int main(int argc, const char **argv) {
         return 2;
     }
 
-    char *line;
-    size_t line_size;
+    char *line = NULL;
+    size_t line_size = 0;
     ssize_t nread = getline(&line, &line_size, infile);
     if (nread == -1) {
         fprintf(stderr, "Error reading from %s: %s\n", fname, strerror(errno));
+        free(line);
         return 3;
+    }
+
+    // Remove newline if present
+    if (nread > 0 && line[nread-1] == '\n') {
+        line[nread-1] = '\0';
     }
 
     if (strcmp("open sesame", line) == 0) {
         fprintf(stdout, "Welcome!\n");
+        free(line);
         return 0;
     } else {
         fprintf(stdout, "Access denied.\n");
+        free(line);
         return 4;
     }
 }
