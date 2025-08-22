@@ -1,9 +1,3 @@
-# :warning: Project is in Maintenance Mode :warning:
-
-This project is no longer internally developed and maintained. However, we are happy to review and accept small, well-written pull requests by the community. We will only consider bug fixes and minor enhancements.
-
-Any new or currently open issues and discussions shall be answered and supported by the community.
-
 # Manticore
 <p align="center">
   <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
@@ -23,6 +17,19 @@ Any new or currently open issues and discussions shall be answered and supported
 
 Manticore is a symbolic execution tool for the analysis of smart contracts and binaries.
 
+## Project Status
+
+Manticore is **actively maintained** and has been modernized for contemporary development environments. We welcome contributions from the community and are committed to keeping the project compatible with current systems.
+
+## 🎉 Recent Updates (2024)
+
+Manticore has been modernized to work on current systems:
+- **Python 3.9-3.13 support** with updated dependencies
+- **Apple Silicon (M1/M2/M3) compatibility** for smart contract analysis
+- **ARM64 Linux support** with QEMU integration for Solidity compilation
+- **Improved developer experience** with better error messages and setup tools
+- **Modern packaging** with pyproject.toml and updated build system
+
 ## Features
 
 - **Program Exploration**: Manticore can execute a program with symbolic inputs and explore all the possible states it can reach
@@ -37,12 +44,24 @@ Manticore can analyze the following types of programs:
 - Linux ELF binaries (x86, x86_64, aarch64, and ARMv7)
 - WASM Modules
 
+## Platform Support
+
+| Platform | Binary Analysis | Smart Contracts | WASM |
+|----------|----------------|-----------------|------|
+| Linux x86_64 | ✅ Full | ✅ Full | ✅ Full |
+| Linux ARM64 | ✅ Full | ✅ Full* | ✅ Full |
+| macOS x86_64 | ⚠️ Limited | ✅ Full | ✅ Full |
+| macOS ARM64 (M1/M2/M3) | ⚠️ Limited | ✅ Full | ✅ Full |
+| Windows | ⚠️ Experimental | ⚠️ Experimental | ⚠️ Experimental |
+
+\* *Requires QEMU for x86_64 Solidity compiler binaries on ARM64*
+
 ## Installation
 
 > Note: We recommend installing Manticore in a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-virtualenv)
  to prevent conflicts with other projects or packages
 > 
-> **Requirements**: Python >= 3.8, pip >= 21.3 (for PEP 517 support)
+> **Requirements**: Python >= 3.9, pip >= 21.3 (for PEP 517 support)
 
 Option 1: Installing from PyPI:
 
@@ -78,7 +97,10 @@ docker pull trailofbits/manticore
 
 Once installed, the `manticore` CLI tool and Python API will be available.
 
-For a development installation, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
+For a development installation, see our [Developer Guide](DEVELOPER.md) or run our automated setup:
+```bash
+python scripts/dev_setup.py
+```
 
 ## Usage
 
