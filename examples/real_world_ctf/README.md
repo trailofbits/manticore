@@ -1,94 +1,121 @@
-# Real-World CTF Challenges Solved with Manticore
+# Real World CTF Challenge Solutions
 
-This directory contains solutions to actual Capture The Flag (CTF) challenges that were solved using Manticore. These examples demonstrate the practical application of symbolic execution to solve real security challenges.
+This directory contains Manticore-based solutions to real CTF (Capture The Flag) challenges and educational binary exploitation problems. These examples demonstrate practical applications of symbolic execution for solving security challenges.
 
-## Why These Examples Matter
+## Overview
 
-These aren't just theoretical demonstrations - they are actual solutions to challenges from security competitions and bug bounty programs. They show:
+These examples showcase how Manticore can be used to:
+- Automatically solve reverse engineering challenges
+- Find valid inputs for complex validation logic
+- Generate exploits from crashes
+- Analyze both Linux binaries and Ethereum smart contracts
 
-1. **Real Problem Solving**: How security researchers use Manticore in practice
-2. **Technique Demonstration**: Various symbolic execution techniques and strategies
-3. **API Usage**: Real-world usage patterns of Manticore's API
-4. **Success Stories**: Proof that Manticore can solve complex challenges
+## Challenges Included
 
-## Available Challenges
+### Binary Challenges
 
-### 🔷 Ethereum/Smart Contract Challenges
+#### 1. **ais3_crackme** - AIS3 Crackme Challenge
+- Simple password cracking using symbolic execution
+- Expected flag: `ais3{I_tak3_g00d_n0t3s}`
 
-#### [PolySwarm Challenge](./polyswarm_challenge/)
-- **Type**: Smart Contract Reverse Engineering
-- **Difficulty**: Medium
-- **Techniques**: Symbolic buffer analysis, EVM bytecode analysis
-- **Description**: Find the magic input bytes that satisfy a smart contract's checks
-- **Key Learning**: How to use symbolic execution to reverse engineer smart contract logic
+#### 2. **google2016_unbreakable** - Google CTF 2016
+- Complex binary with multiple validation stages
+- Demonstrates path exploration without manual RE
+- Expected flag: `CTF{0The1Quick2Brown3Fox4Jumps5Over6The7Lazy8Fox9}`
 
-### 🖥️ Binary Reverse Engineering Challenges
+#### 3. **hxp2018_angrme** - HXP CTF 2018
+- PIE-enabled binary requiring ASLR handling
+- Expected flag: `hxp{4nd_n0w_f0r_s0m3_r3al_ch4ll3ng3}`
 
-#### [Google CTF 2016: Unbreakable](./google2016_unbreakable/)
-- **Type**: Binary Reverse Engineering
-- **Platform**: Linux x86_64
-- **Difficulty**: Medium-Hard
-- **Techniques**: Symbolic execution, constraint solving, execution hooks
-- **Description**: Find the product activation key that passes complex validation
-- **Key Learning**: Bypassing complex algorithms without manual reverse engineering
+#### 4. **internetwache15_re60** - Internetwache CTF 2015
+- File format validation challenge
+- Expected flag: `IW{FILE_CHeCKa}`
 
-## How to Use These Examples
+#### 5. **manticore_challenge** - Custom Manticore Challenge
+- Demonstrates basic symbolic execution
+- Expected flag: `=MANTICORE=`
+
+#### 6. **pwnable_collision** - Pwnable.kr Collision
+- Hash collision challenge
+- Finds 20-byte input causing integer overflow
+
+#### 7. **exploit_generation** - Automated Exploit Generation
+- Converts crashes into working exploits
+- Demonstrates hybrid concrete/symbolic execution
+
+#### 8. **rpisec_mbe** - RPISEC MBE Labs
+- Educational labs from Modern Binary Exploitation course
+- Serial validation and switch case analysis
+
+### Ethereum Challenges
+
+#### 1. **polyswarm_challenge** - PolySwarm Smart Contract
+- Ethereum contract reverse engineering
+- Finds input to match specific hash: `b"dogecointothemoonlambosoondudes!"`
+
+## Usage
 
 Each challenge directory contains:
-- The original challenge files (binaries, contracts, etc.)
-- A Python script showing the Manticore solution
-- Documentation explaining the approach
-- Comments highlighting key techniques
+- The original binary/contract
+- Python solution script using Manticore
+- README with detailed explanation
 
-### Running an Example
-
+To run any challenge:
 ```bash
-# Navigate to a challenge directory
-cd polyswarm_challenge
-
-# Run the solution
-python polyswarm_challenge.py
+cd [challenge_directory]
+python [challenge_name].py
 ```
 
-### As Test Cases
+## Educational Value
 
-These examples also serve as integration tests:
+These examples teach:
+- **Symbolic Execution**: Core concepts and practical applications
+- **Binary Analysis**: x86/x64 reverse engineering automation
+- **Smart Contract Security**: EVM bytecode analysis
+- **Exploit Development**: Converting crashes to exploits
+- **CTF Techniques**: Common patterns in security challenges
 
-```bash
-# Run all CTF examples as tests
-python -m pytest test_real_world_ctf.py -v
+## Requirements
+
+- Manticore symbolic execution framework
+- Python 3.6+
+- For binary challenges: Linux environment (or VM)
+- For Ethereum challenges: solc compiler
+
+## Directory Structure
+
 ```
-
-## Learning Path
-
-If you're new to Manticore, we recommend studying these examples in this order:
-
-1. **Google CTF 2016: Unbreakable** - Start here for binary symbolic execution basics
-2. **PolySwarm Challenge** - Move to smart contract analysis
-3. (More challenges will be added)
+real_world_ctf/
+├── README.md                    # This file
+├── ais3_crackme/               # AIS3 CTF challenge
+├── google2016_unbreakable/     # Google CTF 2016
+├── hxp2018_angrme/            # HXP CTF 2018
+├── internetwache15_re60/       # Internetwache CTF 2015
+├── manticore_challenge/        # Custom challenge
+├── pwnable_collision/          # Pwnable.kr challenge
+├── polyswarm_challenge/        # Ethereum CTF
+├── exploit_generation/         # Exploit automation
+└── rpisec_mbe/                # RPISEC course labs
+```
 
 ## Contributing
 
-Have you solved a CTF challenge using Manticore? We'd love to include it here! 
+These examples were imported from the community-maintained manticore-examples repository. They demonstrate real-world usage of Manticore for solving security challenges.
 
-Requirements for contributions:
-1. The challenge should be publicly available or have permission to share
-2. Include the original challenge files
-3. Provide a well-commented solution script
-4. Add documentation explaining your approach
-5. Ensure the solution works with current Manticore
+## Notes
 
-## Resources
+- Some challenges may require specific architecture (x86 vs x64)
+- PIE/ASLR challenges may need address adjustments
+- Execution time varies based on challenge complexity
+- These are educational examples for learning symbolic execution
 
-- [Manticore Documentation](https://github.com/trailofbits/manticore)
-- [Trail of Bits Blog](https://blog.trailofbits.com/) - Often features Manticore techniques
-- [CTF Writeups](https://github.com/ctfs) - More CTF challenges to practice with
+## Credits
 
-## Note on Ethics
-
-These solutions are provided for educational purposes. If you're participating in an active CTF:
-- Don't use these solutions to cheat in ongoing competitions
-- Learn the techniques and apply them yourself
-- Give credit if you adapt these approaches
-
-Remember: The goal is to learn symbolic execution techniques, not to copy solutions!
+Challenges sourced from various CTF competitions and educational materials:
+- Google CTF
+- HXP CTF
+- Internetwache CTF
+- AIS3 CTF
+- Pwnable.kr
+- PolySwarm
+- RPISEC MBE Course
