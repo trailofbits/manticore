@@ -1,3 +1,4 @@
+#!/bin/bash
 # Launches all examples; this assumes PWD is examples/script
 launch_examples() {
     # concolic assumes presence of ../linux/simpleassert
@@ -185,6 +186,10 @@ case $TEST_TYPE in
     wasm)
         make_wasm_tests
         run_tests_from_dir $TEST_TYPE
+        ;;
+    aarch64)
+        echo "Running AArch64 tests"
+        uv run pytest --durations=100 --cov=manticore -n auto tests/native/test_aarch64*.py
         ;;
     wasm_sym)
         make_wasm_sym_tests ;&  # Fallthrough

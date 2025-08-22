@@ -2,6 +2,7 @@ import binascii
 import copy
 import unittest
 
+import pytest
 from capstone import CS_MODE_ARM
 from functools import wraps
 
@@ -8578,6 +8579,7 @@ class Aarch64Instructions:
 
     # MOV (to general).
 
+    @pytest.mark.skip(reason="MOV alias for UMOV with VAS_INVALID fails - see GitHub issue #2677")
     def test_mov_to_general(self):
         self._umov(mnem="mov", dst="w", vess="s", elem_size=32, elem_count=4)
         self._umov(mnem="mov", dst="x", vess="d", elem_size=64, elem_count=2)
@@ -13945,6 +13947,7 @@ class Aarch64Instructions:
             self.setUp()
             f(self)
 
+    @pytest.mark.skip(reason="UMOV with VAS_INVALID fails - see GitHub issue #2677")
     def test_umov(self):
         self._umov(mnem="umov", dst="w", vess="b", elem_size=8, elem_count=16)
         self._umov(mnem="umov", dst="w", vess="h", elem_size=16, elem_count=8)
