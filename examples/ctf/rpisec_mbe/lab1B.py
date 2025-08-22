@@ -17,19 +17,19 @@ from manticore.utils import log
 
 def solve_lab1B():
     """Solve RPISEC MBE Lab 1B - find correct password case."""
-    
+
     # Get binary path
     script_dir = os.path.dirname(os.path.abspath(__file__))
     binary_path = os.path.join(script_dir, "lab1B")
-    
+
     print("=" * 60)
     print("RPISEC MBE - Lab 1B")
     print("=" * 60)
-    
+
     # Initialize Manticore
     m = Manticore(binary_path)
     log.set_verbosity(1)  # verbosity method is deprecated
-    
+
     # This lab has 21 unique cases equivalent to:
     # switch(0x1337d00d - input):
     #     case(1):
@@ -42,7 +42,7 @@ def solve_lab1B():
     #
     # By setting our input to 0x1337d00d - 1, we ensure we will hit the first case
     m.context["password"] = 0x1337D00D - 1
-    
+
     @m.hook(0x8048A55)
     def bad_password(state):
         """
@@ -52,10 +52,10 @@ def solve_lab1B():
         """
         with m.locked_context() as context:
             print("[-] Invalid password - trying next case")
-            
+
             context["password"] -= 1
             state.cpu.EIP = 0x8048BF6
-    
+
     @m.hook(0x8048A4E)
     def success(state):
         """
@@ -68,7 +68,7 @@ def solve_lab1B():
             print(f"[+] Decimal: {context['password']}")
             print("\n✅ Lab 1B solved!")
             m.terminate()
-    
+
     @m.hook(0x8048BF6)
     def inject_data(state):
         """
@@ -80,10 +80,10 @@ def solve_lab1B():
         with m.locked_context() as context:
             # Skip ahead several instructions to jump over puts/fgets/scanf
             state.cpu.EIP = 0x8048C52
-            
+
             print(f"[*] Injecting password: 0x{context['password']:x}")
             state.cpu.EAX = context["password"]
-    
+
     # Run symbolic execution
     print("\n[*] Starting symbolic execution...")
     print("[*] Testing switch cases to find correct password")
