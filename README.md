@@ -8,27 +8,11 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore/ci.yml?branch=master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/trailofbits/manticore/badge.svg)](https://coveralls.io/github/trailofbits/manticore)
 [![PyPI Version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
-[![Slack Status](https://slack.empirehacking.nyc/badge.svg)](https://slack.empirehacking.nyc)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
-[![Example Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore-examples/ci.yml?branch=master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
-[![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/manticore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/manticore/alerts/)
 
 
 
 Manticore is a symbolic execution tool for the analysis of smart contracts and binaries.
-
-## Project Status
-
-Manticore is **actively maintained** and has been modernized for contemporary development environments. We welcome contributions from the community and are committed to keeping the project compatible with current systems.
-
-## 🎉 Recent Updates (2024)
-
-Manticore has been modernized to work on current systems:
-- **Python 3.9-3.13 support** with updated dependencies
-- **Apple Silicon (M1/M2/M3) compatibility** for smart contract analysis
-- **ARM64 Linux support** with QEMU integration for Solidity compilation
-- **Improved developer experience** with better error messages and setup tools
-- **Modern packaging** with pyproject.toml and updated build system
 
 ## Features
 
@@ -50,57 +34,89 @@ Manticore can analyze the following types of programs:
 |----------|----------------|-----------------|------|
 | Linux x86_64 | ✅ Full | ✅ Full | ✅ Full |
 | Linux ARM64 | ✅ Full | ✅ Full* | ✅ Full |
-| macOS x86_64 | ⚠️ Limited | ✅ Full | ✅ Full |
-| macOS ARM64 (M1/M2/M3) | ⚠️ Limited | ✅ Full | ✅ Full |
+| macOS x86_64 | ⚠️ Limited** | ✅ Full | ✅ Full |
+| macOS ARM64 (M1/M2/M3) | ⚠️ Limited** | ✅ Full | ✅ Full |
 | Windows | ⚠️ Experimental | ⚠️ Experimental | ⚠️ Experimental |
 
 \* *Requires QEMU for x86_64 Solidity compiler binaries on ARM64*
 
+\*\* *Binary analysis on macOS uses threading instead of multiprocessing, which is slower but more stable*
+
 ## Installation
 
-> Note: We recommend installing Manticore in a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-virtualenv)
- to prevent conflicts with other projects or packages
-> 
-> **Requirements**: Python >= 3.9, pip >= 21.3 (for PEP 517 support)
+> **Requirements**: Python >= 3.9
 
-Option 1: Installing from PyPI:
+### Quick Install with uv (Recommended)
 
-```bash
-pip install manticore
-```
-
-Option 2: Installing from PyPI, with extra dependencies needed to execute native binaries:
+[uv](https://github.com/astral-sh/uv) is a fast Python package and project manager that handles virtual environments automatically:
 
 ```bash
-pip install "manticore[native]"
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install Manticore with all dependencies for binary analysis
+uv pip install --system "manticore[native]"
 ```
 
-Option 3: Installing a nightly development build:
+### Developer Installation (Recommended for Contributors)
 
-```bash
-pip install --pre "manticore[native]"
-```
-
-Option 4: Installing from the `master` branch:
+For development work, we provide automated setup scripts that handle everything:
 
 ```bash
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
-pip install -e ".[native]"
+
+# Option 1: Automated setup with uv (recommended)
+python scripts/dev_setup.py
+
+# Option 2: Manual setup with uv
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -e ".[native,dev]"
 ```
 
-Option 5: Install via Docker:
+The automated setup script will:
+- Install uv if not present
+- Create and activate a virtual environment
+- Install Manticore in editable mode with all dependencies
+- Install pre-commit hooks for code quality
+- Detect platform-specific requirements (solc, QEMU, etc.)
+
+### Alternative Installation Methods
+
+<details>
+<summary>Using pip (traditional method)</summary>
+
+```bash
+# From PyPI
+pip install "manticore[native]"
+
+# Development install
+git clone https://github.com/trailofbits/manticore.git
+cd manticore
+pip install -e ".[native,dev]"
+```
+</details>
+
+<details>
+<summary>Using Docker</summary>
 
 ```bash
 docker pull trailofbits/manticore
+
+# Run with increased stack size
+docker run --rm -it --ulimit stack=100000000:100000000 trailofbits/manticore
 ```
+</details>
 
-Once installed, the `manticore` CLI tool and Python API will be available.
+<details>
+<summary>Nightly builds</summary>
 
-For a development installation, see our [Developer Guide](DEVELOPER.md) or run our automated setup:
 ```bash
-python scripts/dev_setup.py
+# Install pre-release version
+uv pip install --system --pre "manticore[native]"
 ```
+</details>
 
 ## Usage
 
@@ -109,7 +125,7 @@ python scripts/dev_setup.py
 Manticore has a command line interface which can perform a basic symbolic analysis of a binary or smart contract. 
 Analysis results will be placed into a workspace directory beginning with `mcore_`. For information about the workspace, see the [wiki](https://github.com/trailofbits/manticore/wiki/What's-in-the-workspace%3F).
 
-#### EVM
+#### Smart Contracts (EVM)
 Manticore CLI automatically detects you are trying to test a contract if (for ex.)
  the contract has a `.sol` or a `.vy` extension. See a [demo](https://asciinema.org/a/154012).
 <details>
@@ -139,7 +155,7 @@ allows writing properties methods in the same high-level language the contract u
 Checkout manticore-verifier [documentation](http://manticore.readthedocs.io/en/latest/verifier.html).
 See a [demo](https://asciinema.org/a/xd0XYe6EqHCibae0RP6c7sJVE)
 
-#### Native
+#### Native Binaries
 <details>
   <summary>Click to expand:</summary>
   
@@ -158,7 +174,7 @@ $ manticore examples/linux/basic
 
 Manticore provides a Python programming interface which can be used to implement powerful custom analyses.
 
-#### EVM
+#### Smart Contracts (EVM)
 For Ethereum smart contracts, the API can be used for detailed verification of arbitrary contract properties. Users can set the starting conditions, 
 execute symbolic transactions, and then review discovered states to ensure invariants for a contract hold.
 <details>
@@ -191,7 +207,7 @@ for state in m.ready_states:
 ```
 </details>
 
-#### Native
+#### Native Binaries
 It is also possible to use the API to create custom analysis tools for Linux binaries. Tailoring the initial state helps avoid state explosion
 problems that commonly occur when using the CLI. 
 
@@ -248,35 +264,87 @@ for idx, val_list in enumerate(m.collect_returns()):
 ```
 </details>
 
-## Requirements
-* Manticore requires Python 3.7 or greater 
-* Manticore officially supports the latest LTS version of Ubuntu provided by Github Actions
-  * Manticore has experimental support for EVM and WASM (but not native Linux binaries) on MacOS 
-* We recommend running with increased stack size. This can be done by running `ulimit -s 100000` or by passing `--ulimit stack=100000000:100000000` to `docker run`
+## Examples
 
-### Compiling Smart Contracts
-* Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
-* Manticore uses [crytic-compile](https://github.com/crytic/crytic-compile) to build smart contracts. If you're having compilation issues, consider running 
-`crytic-compile` on your code directly to make it easier to identify any issues. 
-* We're still in the process of implementing full support for the EVM Istanbul instruction semantics, so certain opcodes may not be supported.
-In a pinch, you can try compiling with Solidity 0.4.x to avoid generating those instructions. 
+Manticore comes with a variety of examples to demonstrate its capabilities:
 
-## Using a different solver (Yices, Z3, CVC4)
-Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via command-line or configuration settings.
-If Yices is available, Manticore will use it by default. If not, it will fall back to Z3 or CVC4. If you want to manually choose which solver to use, you can do so like this:
-```manticore --smt.solver Z3```
-### Installing CVC4
-For more details go to https://cvc4.github.io/. Otherwise, just get the binary and use it.
+### Built-in Examples
+The [`examples/`](examples/) directory contains simple scripts that showcase various features:
+- [`linux/`](examples/linux/): Binary analysis examples
+- [`evm/`](examples/evm/): Smart contract examples  
+- [`wasm/`](examples/wasm/): WebAssembly examples
 
-        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
-        sudo chmod +x /usr/bin/cvc4
+### Real-World CTF Challenges
+The [`examples/real_world_ctf/`](examples/real_world_ctf/) directory contains solutions to actual CTF challenges:
+- Binary exploitation challenges (pwnable, crackmes, etc.)
+- Smart contract security challenges
+- Automated exploit generation
+- See the [CTF examples README](examples/real_world_ctf/README.md) for the full list
 
-### Installing Yices
-Yices is incredibly fast. More details here https://yices.csl.sri.com/
+### External Repository
+For more complex examples, visit the [manticore-examples](https://github.com/trailofbits/manticore-examples) repository.
 
-        sudo add-apt-repository ppa:sri-csl/formal-methods
-        sudo apt-get update
-        sudo apt-get install yices2
+## Requirements & Dependencies
+
+### Core Requirements
+* Python 3.9 or greater
+* Increased stack size for symbolic execution:
+  - Linux/macOS: `ulimit -s 100000`
+  - Docker: `--ulimit stack=100000000:100000000`
+
+### Platform-Specific Notes
+
+#### Linux (Recommended Platform)
+- Full support for all features
+- Best performance with native multiprocessing
+
+#### macOS
+- Binary analysis uses threading (slower than Linux)
+- EVM and WASM fully supported
+- Install Command Line Tools: `xcode-select --install`
+
+#### Windows
+- Experimental support via WSL2 or Docker
+- Native Windows support is limited
+
+### Smart Contract Analysis
+- Requires [`solc`](https://github.com/ethereum/solidity) in your `$PATH`
+- Uses [crytic-compile](https://github.com/crytic/crytic-compile) for compilation
+- For compilation issues, try running `crytic-compile` directly
+
+### Optional: Alternative SMT Solvers
+
+Manticore uses Z3 by default but supports other solvers for better performance:
+
+<details>
+<summary>Installing Yices (fastest)</summary>
+
+```bash
+# Ubuntu
+sudo add-apt-repository ppa:sri-csl/formal-methods
+sudo apt-get update
+sudo apt-get install yices2
+
+# macOS
+brew install SRI-CSL/sri-csl/yices2
+```
+</details>
+
+<details>
+<summary>Installing CVC4</summary>
+
+```bash
+# Linux
+sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
+sudo chmod +x /usr/bin/cvc4
+
+# macOS
+brew tap cvc4/cvc4
+brew install cvc4
+```
+</details>
+
+Select solver via: `manticore --smt.solver yices`
 
 ## Getting Help
 
@@ -288,9 +356,9 @@ Documentation is available in several places:
 
   * The [API reference](http://manticore.readthedocs.io/en/latest/) has more thorough and in-depth documentation on our API
     
-  * The [examples](examples) directory has some small examples that showcase API features
+  * The [examples](examples) directory has small examples that showcase API features
 
-  * The [manticore-examples](https://github.com/trailofbits/manticore-examples) repository has some more involved examples, including some real CTF problems
+  * The [manticore-examples](https://github.com/trailofbits/manticore-examples) repository has more involved examples
 
 If you'd like to file a bug report or feature request, please use our [issues](https://github.com/trailofbits/manticore/issues/choose) page. 
 
