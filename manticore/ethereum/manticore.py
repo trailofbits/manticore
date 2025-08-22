@@ -363,7 +363,7 @@ class ManticoreEVM(ManticoreBase):
                 error_msg += "\n  - Or update the contract to modern Solidity syntax"
             elif "SPDX license identifier" in error_msg:
                 error_msg += "\n\nHint: Add 'pragma solidity ^0.4.24;' and optionally '// SPDX-License-Identifier: MIT' to your contract"
-            
+
             raise EthereumError(
                 f"Solidity compilation failed:\n{error_msg}\n\nCheck if all abstract functions are implemented."
             )

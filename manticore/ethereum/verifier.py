@@ -7,6 +7,7 @@ import re
 import sys
 import argparse
 import logging
+
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ImportError:

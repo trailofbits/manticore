@@ -115,6 +115,21 @@ def setup_venv():
         print(output)
         return False
     
+    # Install and setup pre-commit hooks
+    print("\n🔧 Setting up pre-commit hooks...")
+    success, output = run_command(f"{venv_python} -m pip install pre-commit")
+    if success:
+        print("✅ Pre-commit installed")
+        # Install the git hooks
+        success, output = run_command(f"{venv_python} -m pre_commit install")
+        if success:
+            print("✅ Pre-commit hooks installed")
+            print("   Your code will be automatically formatted before commits")
+        else:
+            print("⚠️  Failed to install pre-commit hooks (non-critical)")
+    else:
+        print("⚠️  Failed to install pre-commit (non-critical)")
+    
     return True
 
 
@@ -162,6 +177,9 @@ def print_next_steps():
     print("   solc-select list                 # List installed solc versions")
     print("   solc-select use 0.5.11           # Switch solc version")
     print("   pytest --markers                 # Show available test markers")
+    print("   pre-commit run --all-files       # Run pre-commit on all files")
+    print("   ruff format .                    # Format all Python files")
+    print("   ruff check . --fix               # Auto-fix linting issues")
     
     print("\n4. For macOS users:")
     print("   - Native binary analysis has limited support")

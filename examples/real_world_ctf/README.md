@@ -71,42 +71,12 @@ cd [challenge_directory]
 python [challenge_name].py
 ```
 
-## Educational Value
-
-These examples teach:
-- **Symbolic Execution**: Core concepts and practical applications
-- **Binary Analysis**: x86/x64 reverse engineering automation
-- **Smart Contract Security**: EVM bytecode analysis
-- **Exploit Development**: Converting crashes to exploits
-- **CTF Techniques**: Common patterns in security challenges
-
 ## Requirements
 
 - Manticore symbolic execution framework
 - Python 3.6+
 - For binary challenges: Linux environment (or VM)
 - For Ethereum challenges: solc compiler
-
-## Directory Structure
-
-```
-real_world_ctf/
-├── README.md                    # This file
-├── ais3_crackme/               # AIS3 CTF challenge
-├── bugsbunny2017_rev150/       # BugsBunny CTF 2017
-├── google2016_unbreakable/     # Google CTF 2016
-├── hxp2018_angrme/            # HXP CTF 2018
-├── internetwache15_re60/       # Internetwache CTF 2015
-├── manticore_challenge/        # Custom challenge
-├── pwnable_collision/          # Pwnable.kr challenge
-├── polyswarm_challenge/        # Ethereum CTF
-├── exploit_generation/         # Exploit automation
-└── rpisec_mbe/                # RPISEC course labs
-```
-
-## Contributing
-
-These examples were imported from the community-maintained manticore-examples repository. They demonstrate real-world usage of Manticore for solving security challenges.
 
 ## Notes
 

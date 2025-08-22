@@ -59,29 +59,57 @@ Some pull request guidelines:
   "Fixes #123" is a good comment to add to the description, but makes for an
   unclear title on its own.
 
-### Development Environment
+## Development Environment
 
-Instructions for installing a development version of Manticore can be found in
-our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore#developer-installation).
+### Quick Setup
 
-#### Quick Start
+Run the automated setup script:
+```bash
+python scripts/dev_setup.py
+```
+
+This will:
+- Check prerequisites (Python 3.9+, solc, z3)
+- Create a virtual environment
+- Install all dependencies
+- Setup pre-commit hooks for automatic formatting
+- Optionally setup solc-select for managing Solidity versions
+
+### Manual Setup
 
 ```bash
 # Install development dependencies
 pip install -e ".[dev]"
 
-# Run linters
-ruff check .       # Fast linting (replaces flake8)
-ruff format --check .  # Check formatting (replaces black)
-mypy .            # Type checking
-
-# Run tests
-pytest tests/                                    # Run all tests
-pytest -m "not slow_test and not generated_test" # Skip slow/generated tests for quick feedback
-pytest -m ethereum_test                          # Run component-specific tests
+# Setup pre-commit hooks
+pre-commit install
 ```
 
-#### Code Quality Tools
+### Running Tests
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run all tests
+pytest tests/
+
+# Skip slow tests (recommended for development)
+pytest tests/ -m "not slow"
+
+# Run specific test suites
+pytest tests/ethereum/      # Ethereum/smart contract tests
+pytest tests/native/        # Native binary tests
+pytest tests/wasm/          # WebAssembly tests
+
+# Run with timeout to catch hanging tests
+pytest tests/ --timeout=30
+
+# Run in parallel for speed
+pytest tests/ -n auto
+```
+
+### Code Quality
 
 We use several tools to maintain code quality, all configured in `pyproject.toml`:
 
@@ -89,27 +117,70 @@ We use several tools to maintain code quality, all configured in `pyproject.toml
 - **mypy**: Static type checker
 - **pytest**: Test framework with markers for test categorization
 
-#### SMT Solver Configuration
+```bash
+# Run linters
+ruff check .       # Fast linting
+ruff format .      # Format code
+mypy .            # Type checking
 
-Manticore uses SMT solvers for symbolic execution. Z3 is installed by default via pip, but other solvers can improve performance:
+# Pre-commit will run these automatically before commits
+```
 
+### Platform Support
+
+| Platform | Support Level | Notes |
+|----------|--------------|-------|
+| Linux x86_64 | ✅ Full | All features supported |
+| Linux ARM64 | ✅ Full* | Requires QEMU for x86_64 solc binaries |
+| macOS x86_64 | ⚠️ Partial | Limited native binary analysis |
+| macOS ARM64 | ⚠️ Partial | Limited native binary analysis |
+| Windows | ⚠️ Experimental | Basic functionality only |
+
+### Common Issues and Solutions
+
+#### Solidity Version Errors
+
+**Problem**: Tests fail with "No visibility specified" or similar errors.
+
+**Solution**: You likely have a newer Solidity version. Use solc-select:
+```bash
+pip install solc-select
+solc-select install 0.4.24
+solc-select use 0.4.24
+```
+
+#### macOS Performance
+
+**Problem**: Slow execution on macOS due to threading limitations.
+
+**Solution**: Enable multiprocessing mode:
+```bash
+manticore --core.mprocessing=multiprocessing your_file
+```
+
+#### Z3 Solver Not Found
+
+**Problem**: Tests fail with "No Solver not found" errors.
+
+**Solution**: Install Z3:
 ```bash
 # macOS
-brew install SRI-CSL/sri-csl/yices2
+brew install z3
 
-# Ubuntu/Debian  
-sudo add-apt-repository ppa:sri-csl/formal-methods
-sudo apt-get update
-sudo apt-get install yices2
+# Linux
+sudo apt install z3
 ```
 
-Configure your preferred solver in `.manticore.yml`:
-```yaml
-smt:
-  solver: z3  # or yices, cvc4, boolector, portfolio
-```
+#### ARM64/M1 Mac Issues
 
-#### Docker Testing Environment
+**Problem**: Solc binaries don't work on ARM64.
+
+**Solution**: 
+1. Use Docker with x86_64 emulation
+2. Use a Linux VM (Multipass, UTM, etc.)
+3. Use rosetta/QEMU emulation (experimental)
+
+### Docker Testing Environment
 
 For consistent Linux-based testing (recommended for macOS users):
 
@@ -123,3 +194,31 @@ docker run --rm -v $(pwd):/manticore manticore-test pytest tests/
 # Interactive shell
 docker run --rm -it -v $(pwd):/manticore manticore-test bash
 ```
+
+### Test Markers
+
+Tests are marked for better organization:
+
+| Marker | Description | Usage |
+|--------|-------------|-------|
+| `slow` | Tests that take >1 minute | `pytest -m "not slow"` |
+| `ethereum` | Ethereum/smart contract tests | `pytest -m ethereum` |
+| `native` | Native binary analysis tests | `pytest -m native` |
+| `wasm` | WebAssembly tests | `pytest -m wasm` |
+| `linux` | Linux-only tests | `pytest -m linux` |
+
+### Development Workflow
+
+1. **Create a branch** for your feature/fix
+2. **Run relevant tests** before committing
+3. **Pre-commit hooks** will automatically format your code
+4. **Run the test suite**: `pytest tests/ -m "not slow"`
+5. **Update documentation** if needed
+
+### Tips for Faster Development
+
+- Use `pytest-xdist` for parallel testing: `pytest -n auto`
+- Skip slow tests during development: `pytest -m "not slow"`
+- Use `pytest --lf` to run only last failed tests
+- Use `pytest --timeout=30` to catch hanging tests
+- Keep multiple solc versions with solc-select

@@ -22,14 +22,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Install solc via npm (uses WASM, works on ARM64)
-RUN npm install -g solc@0.8.19
-
-# Create a wrapper script that calls solc-js
-RUN echo '#!/bin/bash' > /usr/local/bin/solc && \
-    echo 'exec solcjs "$@"' >> /usr/local/bin/solc
-
-RUN chmod +x /usr/local/bin/solc
+# Install solc via npm (uses WASM, works on ARM64) - use 0.4.25 for compatibility with tests
+RUN npm install -g solc@0.4.25
 
 # Download and install pre-built yices2 binary (x86_64 only for now)
 RUN ARCH=$(uname -m) && \
@@ -57,7 +51,7 @@ COPY scripts ./scripts
 # Install Manticore and dependencies
 RUN pip install --no-cache-dir -e .[native,dev]
 
-# Override solc-select's solc with our Python wrapper that translates to solcjs
+# Override solc-select's solc with our Python wrapper that handles --combined-json
 RUN cp scripts/solc_wrapper.py /usr/local/bin/solc && \
     chmod +x /usr/local/bin/solc
 

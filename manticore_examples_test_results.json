@@ -1,0 +1,46 @@
+{
+  "test_google2016_unbreakable/test_google2016_unbreakable.py": {
+    "status": "SUCCESS",
+    "message": "Found flag or success indicator"
+  },
+  "test_ais3_crackme/test_ais3_crackme.py": {
+    "status": "ASSERT",
+    "message": "Assertion failed - logic issue"
+  },
+  "test_manticore_challenge/test_manticore_challenge.py": {
+    "status": "ASSERT",
+    "message": "Assertion failed - logic issue"
+  },
+  "test_internetwache15-re60/test_internetwache15-re60.py": {
+    "status": "ASSERT",
+    "message": "Assertion failed - logic issue"
+  },
+  "test_hxp2018_angrme/test_hxp2018_angrme.py": {
+    "status": "ASSERT",
+    "message": "Assertion failed - logic issue"
+  },
+  "test_pwnable_collision/test_pwnable_collision.py": {
+    "status": "ASSERT",
+    "message": "Assertion failed - logic issue"
+  },
+  "test_polyswarm_challenge/test_polyswarm_challenge.py": {
+    "status": "API",
+    "message": "API compatibility issue"
+  },
+  "test_exploit_generation_example/test_crash_analysis.py": {
+    "status": "UNKNOWN",
+    "message": "Return code 1"
+  },
+  "test_exploit_generation_example/test_record.py": {
+    "status": "UNKNOWN",
+    "message": "Return code 1"
+  },
+  "RPISEC_MBE/lab1A.py": {
+    "status": "ASSERT",
+    "message": "Assertion failed - logic issue"
+  },
+  "RPISEC_MBE/lab1B.py": {
+    "status": "ASSERT",
+    "message": "Assertion failed - logic issue"
+  }
+}

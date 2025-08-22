@@ -57,24 +57,28 @@ consts.add(
 )
 
 # Default processing mode based on platform
-proc_type = MProcessingType.multiprocessing if sys.platform == "linux" else MProcessingType.threading
+proc_type = (
+    MProcessingType.multiprocessing if sys.platform == "linux" else MProcessingType.threading
+)
 
 # Set multiprocessing start method for macOS/Windows
 if sys.platform == "darwin" and proc_type == MProcessingType.multiprocessing:
     # Use 'spawn' method on macOS to avoid fork safety issues
     # This is slower than fork but more reliable and still faster than threading
     try:
-        multiprocessing.set_start_method('spawn', force=True)
+        multiprocessing.set_start_method("spawn", force=True)
     except RuntimeError:
         # Already set, that's fine
         pass
 
 if sys.platform != "linux":
     # Only show warning once per session using a module-level flag
-    if not getattr(logger, '_macos_warning_shown', False):
-        logger.info("Note: Running on %s. Linux is recommended for best performance. "
-                   "You can try 'multiprocessing' mode with: --core.mprocessing=multiprocessing", 
-                   sys.platform)
+    if not getattr(logger, "_macos_warning_shown", False):
+        logger.info(
+            "Note: Running on %s. Linux is recommended for best performance. "
+            "You can try 'multiprocessing' mode with: --core.mprocessing=multiprocessing",
+            sys.platform,
+        )
         logger._macos_warning_shown = True
 
 consts.add(
@@ -138,13 +142,13 @@ class ManticoreBase(Eventful):
         # This is the global manager that will handle all shared memory access
         # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
         self._manager = SyncManager()
-        
+
         # Ensure spawn method is set for macOS
         if sys.platform == "darwin":
             try:
                 current_method = multiprocessing.get_start_method()
-                if current_method != 'spawn':
-                    multiprocessing.set_start_method('spawn', force=True)
+                if current_method != "spawn":
+                    multiprocessing.set_start_method("spawn", force=True)
                     logger.debug("Set multiprocessing start method to 'spawn' for macOS")
             except RuntimeError:
                 pass  # Already set
@@ -154,6 +158,7 @@ class ManticoreBase(Eventful):
             # For fork method on Linux, use the signal handler
             def raise_signal():
                 signal.signal(signal.SIGINT, signal.SIG_IGN)
+
             self._manager.start(raise_signal)
         # The main manticore lock. Acquire this for accessing shared objects
         # THINKME: we use the same lock to access states lists and shared contexts
