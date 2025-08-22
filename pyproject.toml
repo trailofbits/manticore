@@ -57,7 +57,7 @@ native = [
 redis = ["redis"]
 lint = [
     "mypy~=1.0",
-    "ruff>=0.1.0",
+    "ruff>=0.12.10",
 ]
 dev-noks = [
     "build",
