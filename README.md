@@ -28,14 +28,14 @@ Manticore uses symbolic execution to explore all possible states of a program an
 
 ## Quick Start
 
-### 1. Install Manticore
+### 1. Install Manticore CLI
 
 ```bash
 # Install uv (Python package manager)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install Manticore
-uv pip install --system "manticore[native]"
+uv tool install "manticore[native]"
 ```
 
 ### 2. Analyze a Program
