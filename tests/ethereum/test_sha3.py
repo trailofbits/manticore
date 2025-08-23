@@ -413,9 +413,9 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract I_Choose_Not_To_Run {
             event Log(string);
             function foo(bytes memory x) public {
-                // Reduced from 10 to 5 levels of keccak for performance
-                if(keccak256(keccak256(keccak256(keccak256(keccak256("tob"))))) == 
-                   keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)))))))
+                // Testing with 6 levels of nested keccak256 - good balance of complexity and performance
+                if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob")))))) == 
+                   keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x))))))))
                 {
                     emit Log("bug");
                 }
