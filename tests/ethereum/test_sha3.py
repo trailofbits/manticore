@@ -32,22 +32,24 @@ def requires_solc(version):
     Decorator that ensures a specific Solidity version is active for a test.
     Modifies the test instance to use specific solc version via compile_args.
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             import os
+
             try:
                 import solcx
             except ImportError:
                 # If solcx not available, just run the test
                 return func(self, *args, **kwargs)
-            
+
             try:
                 # Install version if needed
                 if version not in [str(v) for v in solcx.get_installed_solc_versions()]:
                     print(f"Installing Solidity {version}...")
                     solcx.install_solc(version)
-                
+
                 # Get path to specific solc version
                 solc_path = solcx.get_solcx_install_folder() / f"solc-v{version}"
                 if solc_path.exists():
@@ -57,16 +59,17 @@ def requires_solc(version):
                 else:
                     print(f"Warning: Solidity {version} binary not found at {solc_path}")
                     self._test_solc_path = None
-                
+
                 # Run the test
                 return func(self, *args, **kwargs)
-                
+
             finally:
                 # Clean up
-                if hasattr(self, '_test_solc_path'):
-                    delattr(self, '_test_solc_path')
-        
+                if hasattr(self, "_test_solc_path"):
+                    delattr(self, "_test_solc_path")
+
         return wrapper
+
     return decorator
 
 
@@ -390,8 +393,14 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         m = self.ManticoreEVM()
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
+        compile_args = (
+            {"solc": self._test_solc_path}
+            if hasattr(self, "_test_solc_path") and self._test_solc_path
+            else None
+        )
+        contract = m.solidity_create_contract(
+            source_code, owner=owner, name="contract", compile_args=compile_args
+        )
 
         x = m.make_symbolic_buffer(3)
         contract.foo(x)
@@ -426,8 +435,14 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         m = self.ManticoreEVM()
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
+        compile_args = (
+            {"solc": self._test_solc_path}
+            if hasattr(self, "_test_solc_path") and self._test_solc_path
+            else None
+        )
+        contract = m.solidity_create_contract(
+            source_code, owner=owner, name="contract", compile_args=compile_args
+        )
 
         x = m.make_symbolic_buffer(3)
         contract.foo(x)
@@ -466,8 +481,14 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         m.register_plugin(KeepOnlyIfStorageChanges())
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
+        compile_args = (
+            {"solc": self._test_solc_path}
+            if hasattr(self, "_test_solc_path") and self._test_solc_path
+            else None
+        )
+        contract = m.solidity_create_contract(
+            source_code, owner=owner, name="contract", compile_args=compile_args
+        )
 
         x1 = m.make_symbolic_value()
         contract.foo(x1)
@@ -579,8 +600,14 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
         m.register_plugin(KeepOnlyIfStorageChanges())
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
+        compile_args = (
+            {"solc": self._test_solc_path}
+            if hasattr(self, "_test_solc_path") and self._test_solc_path
+            else None
+        )
+        contract = m.solidity_create_contract(
+            source_code, owner=owner, name="contract", compile_args=compile_args
+        )
 
         x1 = m.make_symbolic_value()
         contract.foo(x1)

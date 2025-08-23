@@ -351,7 +351,17 @@ class ManticoreEVM(ManticoreBase):
                         source_code = f.read()
 
                     warnings = ""
-                    return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+                    return (
+                        name,
+                        source_code,
+                        bytecode,
+                        runtime,
+                        srcmap,
+                        srcmap_runtime,
+                        hashes,
+                        abi,
+                        warnings,
+                    )
 
             # If we get here, contract was not found in any source unit
             raise ValueError(f"Contract {contract_name} not found in any source unit")
