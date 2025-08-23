@@ -157,6 +157,8 @@ run_tests_from_dir() {
 run_examples() {
     pushd examples/linux
     make
+    # Note: 'basic' example is excluded from EXAMPLES list due to compatibility issues
+    # See: https://github.com/trailofbits/manticore/issues/2679
     for example in $(make list); do
         ./$example < /dev/zero > /dev/null
     done
