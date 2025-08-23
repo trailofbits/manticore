@@ -30,59 +30,41 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 def requires_solc(version):
     """
     Decorator that ensures a specific Solidity version is active for a test.
-    Skips test if version cannot be switched.
+    Modifies the test instance to use specific solc version via compile_args.
     """
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(self, *args, **kwargs):
+            import os
             try:
-                # Get current version
-                result = subprocess.run(
-                    ['solc', '--version'],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                current_version = None
-                for line in result.stdout.split('\n'):
-                    if 'Version:' in line:
-                        current_version = line.split()[1].split('+')[0]
-                        break
+                import solcx
+            except ImportError:
+                # If solcx not available, just run the test
+                return func(self, *args, **kwargs)
+            
+            try:
+                # Install version if needed
+                if version not in [str(v) for v in solcx.get_installed_solc_versions()]:
+                    print(f"Installing Solidity {version}...")
+                    solcx.install_solc(version)
                 
-                # If already on correct version, just run
-                if current_version == version:
-                    return func(*args, **kwargs)
+                # Get path to specific solc version
+                solc_path = solcx.get_solcx_install_folder() / f"solc-v{version}"
+                if solc_path.exists():
+                    # Store the solc path in the test instance for use in solidity_create_contract
+                    self._test_solc_path = str(solc_path)
+                    print(f"Using Solidity {version} at {solc_path}")
+                else:
+                    print(f"Warning: Solidity {version} binary not found at {solc_path}")
+                    self._test_solc_path = None
                 
-                # Try to switch versions
-                result = subprocess.run(
-                    ['solc-select', 'use', version],
-                    capture_output=True,
-                    text=True,
-                    check=False
-                )
+                # Run the test
+                return func(self, *args, **kwargs)
                 
-                if result.returncode != 0:
-                    # Can't switch, skip test if version doesn't match
-                    if version not in current_version:
-                        pytest.skip(f"Test requires Solidity {version}, but have {current_version} and cannot switch")
-                    return func(*args, **kwargs)
-                
-                try:
-                    # Run the test with new version
-                    test_result = func(*args, **kwargs)
-                finally:
-                    # Switch back
-                    subprocess.run(
-                        ['solc-select', 'use', current_version],
-                        capture_output=True,
-                        check=False
-                    )
-                
-                return test_result
-                    
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                # If we can't determine version, just run the test
-                return func(*args, **kwargs)
+            finally:
+                # Clean up
+                if hasattr(self, '_test_solc_path'):
+                    delattr(self, '_test_solc_path')
         
         return wrapper
     return decorator
@@ -390,14 +372,15 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         # x!=y
         self.assertEqual(m.count_all_states(), 3)
 
+    @requires_solc("0.5.0")
     def test_essence1(self):
         source_code = """
-        pragma solidity ^0.4.24;
+        pragma solidity ^0.5.0;
         contract I_Choose_Not_To_Run {
             event Log(string);
             function foo(bytes memory x) public {
-                // x1 keccak - keep at 0.4.24 for simplicity
-                if (keccak256("tob") == keccak256(x)){
+                // x1 keccak - using 0.5.0 syntax for version diversity
+                if (keccak256(bytes("tob")) == keccak256(x)){
                     emit Log("bug");
                 }
             }
@@ -407,7 +390,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         m = self.ManticoreEVM()
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
+        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
+        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
 
         x = m.make_symbolic_buffer(3)
         contract.foo(x)
@@ -422,6 +406,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         self.assertEqual(found, 1)  # log is reachable
         self.assertEqual(m.count_all_states(), 2)
 
+    @requires_solc("0.4.24")
     def test_essence2(self):
         source_code = """
         pragma solidity ^0.4.24;
@@ -441,7 +426,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         m = self.ManticoreEVM()
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
+        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
+        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
 
         x = m.make_symbolic_buffer(3)
         contract.foo(x)
@@ -456,6 +442,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         self.assertEqual(found, 1)  # log is reachable
         self.assertEqual(m.count_all_states(), 2)
 
+    @requires_solc("0.4.24")
     def test_essence3(self):
         source_code = """pragma solidity ^0.4.24;
         contract Sha3_Multiple_tx{
@@ -479,7 +466,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         m.register_plugin(KeepOnlyIfStorageChanges())
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
+        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
+        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
 
         x1 = m.make_symbolic_value()
         contract.foo(x1)
@@ -567,6 +555,7 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
     def test_example1(self):
         pass
 
+    @requires_solc("0.4.24")
     def test_essence3(self):
         source_code = """pragma solidity ^0.4.24;
         contract Sha3_Multiple_tx{
@@ -590,7 +579,8 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
         m.register_plugin(KeepOnlyIfStorageChanges())
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
-        contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
+        compile_args = {"solc": self._test_solc_path} if hasattr(self, '_test_solc_path') and self._test_solc_path else None
+        contract = m.solidity_create_contract(source_code, owner=owner, name="contract", compile_args=compile_args)
 
         x1 = m.make_symbolic_value()
         contract.foo(x1)
