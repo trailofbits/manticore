@@ -49,62 +49,6 @@ jobs:
         mypy --version
         mypy
 
-  # Fast tests for quick feedback on PRs (skip slow and generated tests)
-  fast-tests:
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    - name: Cache uv packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/uv
-        key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-uv-
-    - name: Cache Solidity Compilers
-      uses: actions/cache@v4
-      with:
-        path: ~/.solcx
-        key: ${{ runner.os }}-solc-0.4.24-0.5.11
-    - name: Install dependencies and Solidity compilers
-      run: |
-        # Install uv for faster package management
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        source $HOME/.cargo/env
-        uv pip install --system -e ".[dev-noks]"
-        # Install Solidity compilers via py-solc-x
-        python -c "import solcx; [solcx.install_solc(v) for v in ('0.4.24','0.5.11')]; print('Installed solc versions:', solcx.get_installed_solc_versions())"
-        # Point default solc to 0.4.24 for non-decorated tests
-        mkdir -p "$HOME/.local/bin"
-        SOLC_0424=$(python -c "import solcx; import sys; print(str(solcx.get_solcx_install_folder() / 'solc-v0.4.24'))")
-        ln -sf "$SOLC_0424" "$HOME/.local/bin/solc"
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-    - name: Run fast tests
-      run: |
-        # Run only smoke-fast tests marked with @pytest.mark.fast
-        pytest -xvs tests/ -m "fast" --durations=10 --no-cov -n auto
-
-  cancel-on-fast-failure:
-    runs-on: ubuntu-22.04
-    needs: [fast-tests]
-    if: ${{ github.event_name == 'pull_request' && needs.fast-tests.result == 'failure' }}
-    permissions:
-      actions: write
-    steps:
-      - name: Cancel workflow due to fast-tests failure
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.actions.cancelWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId
-            });
 
   tests:
     runs-on: ubuntu-22.04
@@ -269,6 +213,22 @@ jobs:
           just init
           source venv/bin/activate
           just lint
+
+      - name: 'Prepare solc 0.4.24 in server venv'
+        working-directory: server
+        run: |
+          set -euo pipefail
+          # Activate server venv
+          source venv/bin/activate
+          # Ensure py-solc-x available in venv
+          python -m pip install -U pip wheel setuptools
+          python -m pip install py-solc-x
+          # Install solc 0.4.24 if not already present
+          python -c "import solcx; print('installed before:', solcx.get_installed_solc_versions()); solcx.install_solc('0.4.24'); print('installed after:', solcx.get_installed_solc_versions())"
+          # Symlink venv-local solc to 0.4.24 to satisfy server tests
+          ln -sf "$HOME/.solcx/solc-v0.4.24" venv/bin/solc
+          # Verify version
+          venv/bin/solc --version
 
       - name: 'Test MUI Server'
         working-directory: server
