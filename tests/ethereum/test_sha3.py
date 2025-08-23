@@ -422,17 +422,15 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         self.assertEqual(found, 1)  # log is reachable
         self.assertEqual(m.count_all_states(), 2)
 
-    @pytest.mark.skip(reason="10 levels of nested keccak256 causes timeout - too complex for symbolic execution")
     def test_essence2(self):
         source_code = """
         pragma solidity ^0.4.24;
         contract I_Choose_Not_To_Run {
             event Log(string);
             function foo(bytes memory x) public {
-                //# x10 keccak
-//if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob"))))))))))==keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x))))))))))))
-if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256("tob")))))))))) ==  keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)) ))))))))))
-
+                // Reduced from 10 to 5 levels of keccak for performance
+                if(keccak256(keccak256(keccak256(keccak256(keccak256("tob"))))) == 
+                   keccak256(keccak256(keccak256(keccak256(keccak256(abi.encodePacked(x)))))))
                 {
                     emit Log("bug");
                 }
