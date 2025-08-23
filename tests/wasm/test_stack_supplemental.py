@@ -56,7 +56,6 @@ class TestStack(unittest.TestCase):
 
         self.assertEqual(push_pop_seq, "+-" * 892)
 
-    @pytest.mark.fast
     def test_has_at_least(self):
         s = Stack()
         s.push(I32(1))

@@ -14,7 +14,6 @@ ms_file = str(
 
 
 class TestResume(unittest.TestCase):
-    @pytest.mark.fast
     def test_resume(self):
         m = Manticore(ms_file, stdin_size=17)
 

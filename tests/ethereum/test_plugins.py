@@ -27,7 +27,6 @@ class EthPluginsTests(unittest.TestCase):
         del self.mevm
         shutil.rmtree(ws)
 
-    @pytest.mark.fast
     def test_ignore_states(self):
         m = self.mevm
         m.register_plugin(KeepOnlyIfStorageChanges())

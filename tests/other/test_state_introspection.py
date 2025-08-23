@@ -23,7 +23,6 @@ class TestDaemonThread(unittest.TestCase):
             self.fired = True
             sleep(1)
 
-    @pytest.mark.fast
     def test_daemon(self):
         self.fired = False
         m = Manticore(ms_file, stdin_size=17)

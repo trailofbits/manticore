@@ -28,7 +28,6 @@ import pytest
 # Test markers for categorization
 pytestmark = [pytest.mark.native, pytest.mark.integration, pytest.mark.linux]
 
-@pytest.mark.fast
 def test_symbolic_syscall_arg() -> None:
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
     tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
@@ -50,7 +49,6 @@ def test_symbolic_syscall_arg() -> None:
     assert found_win_msg, f'Did not find win message in {outs_glob}: "{win_msg}"'
 
 
-@pytest.mark.fast
 def test_symbolic_length_recv() -> None:
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_length_recv")
     tmp_dir = tempfile.TemporaryDirectory(prefix="mcore_test_")
