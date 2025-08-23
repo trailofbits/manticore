@@ -5,7 +5,6 @@ PYTHON=python3
 
 EXAMPLES=        \
   arguments      \
-  basic          \
   crackme        \
   fclose         \
   fileio         \
@@ -19,6 +18,10 @@ EXAMPLES=        \
   simple_copy    \
   sindex         \
   strncmp        \
+
+# basic is temporarily disabled due to compatibility issues with modern toolchains
+# See: https://github.com/trailofbits/manticore/issues/2679
+DISABLED_EXAMPLES = basic
 
 OTHER_EXAMPLES=nostdlib
 
@@ -36,6 +39,13 @@ clean:
 
 % : %.c
 	$(CC) $(CFLAGS) $< -o $@
+
+# basic is disabled due to compatibility issues
+basic: basic.c
+	@echo "WARNING: 'basic' example has compatibility issues with Manticore"
+	@echo "See: https://github.com/trailofbits/manticore/issues/2679"
+	@echo "Building anyway for manual testing..."
+	$(CC) -O0 -fno-stack-protector -fno-pie -no-pie $< -o $@
 
 nostdlib: nostdlib.c
 	$(CC) -m32 $(NOSTDLIBFLAGS) $< -o $@

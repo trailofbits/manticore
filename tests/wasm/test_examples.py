@@ -8,7 +8,13 @@ from pathlib import Path
 from collections import namedtuple
 import glob
 import os
+from tests.markers import wasm_test
 
+
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.wasm, pytest.mark.integration]
 
 def getchar(state, addr):
     res = state.new_symbolic_value(32, "getchar_res")
@@ -40,6 +46,7 @@ if_check_file = str(
 )
 
 
+@wasm_test
 class TestCollatz(unittest.TestCase):
     def test_getchar(self):
         m = ManticoreWASM(collatz_file, env={"getchar": getchar})
@@ -137,6 +144,7 @@ def getchar2(state):
     return [res]
 
 
+@wasm_test
 class TestIfCheck(unittest.TestCase):
     def test_getchar(self):
         m = ManticoreWASM(if_check_file, env={"getchar": getchar2})

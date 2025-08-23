@@ -15,6 +15,12 @@ from manticore.core.smtlib import BitVecVariable, issymbolic, ConstraintSet
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.utils.helpers import pickle_dumps
+from tests.markers import linux_only, native_test
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.integration, pytest.mark.linux]
+
 from manticore.platforms.linux import (
     EnvironmentError,
     logger as linux_logger,
@@ -24,6 +30,8 @@ from manticore.platforms.linux import (
 )
 
 
+@native_test
+@linux_only
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "basic_linux_amd64")

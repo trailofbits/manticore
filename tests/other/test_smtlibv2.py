@@ -3,6 +3,11 @@ import os
 import sys
 from typing import Set, Type
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.unit
+
 from manticore.core.smtlib import (
     ConstraintSet,
     Version,

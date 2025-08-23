@@ -5,6 +5,12 @@ import os
 from manticore.native import Manticore
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.integration
+
 class RustTest(unittest.TestCase):
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "hello_world")
 

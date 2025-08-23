@@ -5,6 +5,11 @@ import tempfile
 from glob import glob
 import re
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.unit]
+
 from manticore.core.smtlib import (
     ConstraintSet,
     Operators,
@@ -47,17 +52,23 @@ class ModelMiscTest(unittest.TestCase):
 
 class ModelTest(unittest.TestCase):
     dirname = os.path.dirname(__file__)
-    l = linux.SLinux(os.path.join(dirname, "binaries", "basic_linux_amd64"))
-    state = State(ConstraintSet(), l)
-    stack_top = state.cpu.RSP
+    
+    def setUp(self):
+        import sys
+        if sys.platform != "linux":
+            self.skipTest("Native models tests require Linux platform")
+        self.l = linux.SLinux(os.path.join(self.dirname, "binaries", "basic_linux_amd64"))
+        self.state = State(ConstraintSet(), self.l)
+        self.stack_top = self.state.cpu.RSP
 
     def _clear_constraints(self):
         self.state.context["migration_map"] = None
         self.state._constraints = ConstraintSet()
 
     def tearDown(self):
-        self._clear_constraints()
-        self.state.cpu.RSP = self.stack_top
+        if hasattr(self, 'state'):
+            self._clear_constraints()
+            self.state.cpu.RSP = self.stack_top
 
     def _push_string(self, s):
         cpu = self.state.cpu

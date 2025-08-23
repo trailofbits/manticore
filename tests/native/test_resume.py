@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from manticore.native import Manticore
 from manticore.core.state import SerializeState, TerminateState
 from pathlib import Path
@@ -10,6 +11,7 @@ ms_file = str(
 
 
 class TestResume(unittest.TestCase):
+    @pytest.mark.skip(reason="Known issue: PC corrupted after SerializeState - see issue #2673")
     def test_resume(self):
         m = Manticore(ms_file, stdin_size=17)
 

@@ -24,7 +24,6 @@ except ImportError:
 
 
 import time
-import os
 import errno
 import threading
 from ..utils import config
@@ -99,9 +98,9 @@ class Store:
         raise NotImplementedError(f"Storage type '{type_}' not supported.")
 
     def __init__(self, uri: Optional[str], state_serialization_method: str = "pickle"):
-        assert (
-            self.__class__ != Store
-        ), "The Store class can not be instantiated (create a subclass)"
+        assert self.__class__ != Store, (
+            "The Store class can not be instantiated (create a subclass)"
+        )
 
         self.uri = uri
         self._sub: List = []

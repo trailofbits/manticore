@@ -113,12 +113,15 @@ class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
         logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unknown>")
         try:
-            pickle_dump(
-                state,
-                GzipFile(fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL)
-                if consts.compress_states
-                else f,
-            )
+            if consts.compress_states:
+                # Ensure we flush data properly for Python 3.12 compatibility
+                with GzipFile(
+                    fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL
+                ) as gz:
+                    pickle_dump(state, gz)
+                    gz.flush()  # Explicitly flush for Python 3.12
+            else:
+                pickle_dump(state, f)
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
@@ -131,7 +134,11 @@ class PickleSerializer(StateSerializer):
 
     def deserialize(self, f):
         logger.info("Deserializing %s", f.name if hasattr(f, "name") else "<unknown>")
-        return pickle.load(GzipFile(fileobj=f, mode="rb") if consts.compress_states else f)
+        if consts.compress_states:
+            with GzipFile(fileobj=f, mode="rb") as gz:
+                return pickle.load(gz)
+        else:
+            return pickle.load(f)
 
 
 def pickle_dumps(obj: Any) -> bytes:

@@ -1,12 +1,18 @@
 """
 $python manticore-verifier.py property.sol TestToken
 """
+
 import os
 import re
 import sys
 import argparse
 import logging
-import pkg_resources
+
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    # Python < 3.8
+    from importlib_metadata import version, PackageNotFoundError
 from itertools import chain
 from manticore.ethereum import ManticoreEVM
 from manticore.ethereum.detectors import DetectIntegerOverflow
@@ -179,7 +185,7 @@ def manticore_verifier(
 
     print(f"# Found {len(properties)} properties: {', '.join(properties.keys())}")
     if not properties:
-        print("I am sorry I had to run the init bytecode for this.\n" "Good Bye.")
+        print("I am sorry I had to run the init bytecode for this.\nGood Bye.")
         return
     MAXFAIL = len(properties) if MAXFAIL is None else MAXFAIL
     tx_num = 0  # transactions count
@@ -225,7 +231,7 @@ def manticore_verifier(
 
             # check if we have made coverage progress in the last transaction
             if current_coverage == new_coverage:
-                print(f"No coverage progress. Stopping exploration.")
+                print("No coverage progress. Stopping exploration.")
                 break
             current_coverage = new_coverage
 
@@ -317,7 +323,7 @@ def manticore_verifier(
                         if tx.result != "REVERT":
                             testcase = m.generate_testcase(
                                 state,
-                                f"Some property is broken did not reverted.(MUST REVERTED)",
+                                "Some property is broken did not reverted.(MUST REVERTED)",
                                 only_if=tx.data[:4] == func_id,
                             )
                             if testcase:
@@ -380,10 +386,13 @@ def main():
         "--workspace",
         type=str,
         default=None,
-        help=("A folder name for temporaries and results." "(default mcore_?????)"),
+        help=("A folder name for temporaries and results.(default mcore_?????)"),
     )
 
-    current_version = pkg_resources.get_distribution("manticore").version
+    try:
+        current_version = version("manticore")
+    except PackageNotFoundError:
+        current_version = "unknown"
     parser.add_argument(
         "--version",
         action="version",

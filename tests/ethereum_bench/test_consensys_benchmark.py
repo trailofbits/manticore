@@ -1,5 +1,6 @@
 import inspect
 import unittest
+import pytest
 import os
 import shutil
 from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChanges
@@ -169,7 +170,8 @@ class EthBenchmark(unittest.TestCase):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(247, "Reentrancy multi-million ether bug", False)})
 
-    @unittest.skip("too slow")  # FIXME #TODO
+    @pytest.mark.slow  # FIXME #TODO
+    @pytest.mark.skip(reason="False positive from DetectReentrancyAdvanced treating 2300-gas transfer as reentrancy-capable; see issue to track fix")
     def test_eth_tx_order_dependence_multitx_1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())

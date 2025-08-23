@@ -1,5 +1,6 @@
 import glob
 import os
+import subprocess
 import threading
 import time
 import unittest
@@ -22,7 +23,24 @@ class ManticoreServerEVMTest(unittest.TestCase):
         self.contract_path = str(self.dirname / Path("contracts") / Path("adder.sol"))
         self.test_event = threading.Event()
         self.servicer = manticore_server.ManticoreServicer(self.test_event)
+        # Try to find solc 0.4.24 specifically
         self.solc_path = which("solc")
+        if self.solc_path:
+            try:
+                # Check if this is the right version
+                result = subprocess.run(
+                    [self.solc_path, "--version"], capture_output=True, text=True
+                )
+                if "0.4.24" not in result.stdout:
+                    # Try to find solc-select's 0.4.24
+                    home = os.path.expanduser("~")
+                    solc_select_path = os.path.join(
+                        home, ".solc-select", "artifacts", "solc-0.4.24", "solc-0.4.24"
+                    )
+                    if os.path.exists(solc_select_path):
+                        self.solc_path = solc_select_path
+            except:
+                pass
         self.context = MockContext()
 
     def tearDown(self):
@@ -169,7 +187,15 @@ class ManticoreServerEVMTest(unittest.TestCase):
         while mwrapper.manticore_object._log_queue.empty() and time.time() - stime < 5:
             time.sleep(1)
             if not mwrapper.manticore_object._log_queue.empty():
-                deque_messages = list(mwrapper.manticore_object._log_queue)
+                # Collect messages from the queue
+                deque_messages = []
+                q = mwrapper.manticore_object._log_queue
+                while not q.empty():
+                    deque_messages.append(q.get())
+                # Put messages back for GetMessageList to retrieve
+                for msg in deque_messages:
+                    q.put(msg)
+
                 messages = self.servicer.GetMessageList(
                     mcore_instance, self.context
                 ).messages
@@ -197,7 +223,15 @@ class ManticoreServerEVMTest(unittest.TestCase):
         while mwrapper.manticore_object._log_queue.empty() and time.time() - stime < 5:
             time.sleep(1)
             if not mwrapper.manticore_object._log_queue.empty():
-                deque_messages = list(mwrapper.manticore_object._log_queue)
+                # Collect messages from the queue
+                deque_messages = []
+                q = mwrapper.manticore_object._log_queue
+                while not q.empty():
+                    deque_messages.append(q.get())
+                # Put messages back for GetMessageList to retrieve
+                for msg in deque_messages:
+                    q.put(msg)
+
                 messages = self.servicer.GetMessageList(
                     mcore_instance, self.context
                 ).messages

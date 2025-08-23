@@ -5,7 +5,13 @@ from manticore.core.plugin import Plugin
 from manticore.wasm.structure import Stack, AtomicStack
 
 from pathlib import Path
+from tests.markers import wasm_test
 
+
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.wasm, pytest.mark.unit]
 
 class StackTrackerPlugin(Plugin):
     def will_pop_item_callback(self, state, depth):
@@ -22,6 +28,7 @@ wasm_file = str(
 )
 
 
+@wasm_test
 class TestStack(unittest.TestCase):
     def test_trace(self):
         """

@@ -1,0 +1,51 @@
+# Pre-commit hooks for code quality
+# See https://pre-commit.com for more information
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.10
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix]
+      # Run the formatter
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: debug-statements
+        language_version: python3
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        files: ^manticore/
+        exclude: ^(server/|tests/|scripts/)
+        args: [--config-file=pyproject.toml]
+        additional_dependencies: [types-pyyaml, types-protobuf]
+        language_version: python3
+
+# Configuration
+default_language_version:
+  python: python3
+
+exclude: |
+  (?x)^(
+    manticore/ethereum/parsetab\.py|
+    manticore/core/state_pb2\.py|
+    .*\.egg-info/.*|
+    mcore_.*/.*|
+    server/.*|
+    tests/.*|
+    examples/.*|
+    scripts/.*|
+    docs/.*
+  )$

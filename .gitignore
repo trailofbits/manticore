@@ -99,3 +99,14 @@ venvpy27/
 
 # mypy cache
 .mypy_cache/
+
+# uv lock file
+uv.lock
+
+# Manticore test outputs
+mcore_*/
+ethereum_test_results.txt
+
+# Build artifacts that shouldn't be committed
+*.egg-info/
+dist/

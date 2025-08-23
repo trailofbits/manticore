@@ -12,6 +12,11 @@ from manticore.core.state_pb2 import StateList, State, MessageList
 from pathlib import Path
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.unit
+
 PYTHON_BIN: str = sys.executable
 
 HOST = "localhost"

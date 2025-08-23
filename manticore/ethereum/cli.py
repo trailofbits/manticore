@@ -125,7 +125,7 @@ def ethereum_main(args, logger):
             m.register_plugin(filter_nohuman_constants)
 
         if m.plugins:
-            logger.info(f'Registered plugins: {", ".join(d.name for d in m.plugins.values())}')
+            logger.info(f"Registered plugins: {', '.join(d.name for d in m.plugins.values())}")
 
         logger.info("Beginning analysis")
 

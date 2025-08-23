@@ -268,7 +268,7 @@ class Decree(Platform):
         start_code = 0xFFFFFFFF
         end_code = start_data = end_data = 0
 
-        for (vaddr, memsz, perms, name, offset, filesz) in cgc.maps():
+        for vaddr, memsz, perms, name, offset, filesz in cgc.maps():
             if vaddr < start_code:
                 start_code = vaddr
             if start_data < vaddr:
@@ -570,7 +570,6 @@ class Decree(Platform):
         """
         data = []
         if count != 0:
-
             if not self._is_open(fd):
                 logger.error("TRANSMIT: Not valid file descriptor. Returning EBADFD %d", fd)
                 return Decree.CGC_EBADF
@@ -1094,7 +1093,6 @@ class SDecree(Decree):
 
 
 class DecreeEmu:
-
     RANDOM = 0
 
     @staticmethod

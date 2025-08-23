@@ -36,6 +36,7 @@ from .worker import (
 )
 
 from multiprocessing.managers import SyncManager
+import multiprocessing
 import threading
 import ctypes
 import signal
@@ -55,15 +56,35 @@ consts.add(
     description="Number of parallel processes to spawn in order to run every task, including solvers",
 )
 
-proc_type = MProcessingType.threading
+# Default processing mode based on platform
+proc_type = (
+    MProcessingType.multiprocessing if sys.platform == "linux" else MProcessingType.threading
+)
+
+# Set multiprocessing start method for macOS/Windows
+if sys.platform == "darwin" and proc_type == MProcessingType.multiprocessing:
+    # Use 'spawn' method on macOS to avoid fork safety issues
+    # This is slower than fork but more reliable and still faster than threading
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        # Already set, that's fine
+        pass
+
 if sys.platform != "linux":
-    logger.warning("Manticore is only supported on Linux. Proceed at your own risk!")
-    proc_type = MProcessingType.threading
+    # Only show warning once per session using a module-level flag
+    if not getattr(logger, "_macos_warning_shown", False):
+        logger.info(
+            "Note: Running on %s. Linux is recommended for best performance. "
+            "You can try 'multiprocessing' mode with: --core.mprocessing=multiprocessing",
+            sys.platform,
+        )
+        logger._macos_warning_shown = True  # type: ignore[attr-defined]
 
 consts.add(
     "mprocessing",
     default=proc_type,
-    description="single: No multiprocessing at all. Single process.\n threading: use threads\n multiprocessing: use forked processes",
+    description="single: No multiprocessing at all. Single process.\n threading: use threads\n multiprocessing: use forked processes (spawn on macOS)",
 )
 consts.add(
     "seed",
@@ -116,14 +137,29 @@ class ManticoreBase(Eventful):
         self._shared_context = {}
 
     def _manticore_multiprocessing(self):
-        def raise_signal():
-            signal.signal(signal.SIGINT, signal.SIG_IGN)
-
+        # Move function outside to make it pickleable
         self._worker_type = WorkerProcess
         # This is the global manager that will handle all shared memory access
         # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
         self._manager = SyncManager()
-        self._manager.start(raise_signal)
+
+        # Ensure spawn method is set for macOS
+        if sys.platform == "darwin":
+            try:
+                current_method = multiprocessing.get_start_method()
+                if current_method != "spawn":
+                    multiprocessing.set_start_method("spawn", force=True)
+                    logger.debug("Set multiprocessing start method to 'spawn' for macOS")
+            except RuntimeError:
+                pass  # Already set
+            # For spawn method, we can't use the raise_signal initializer
+            self._manager.start()
+        else:
+            # For fork method on Linux, use the signal handler
+            def raise_signal():
+                signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+            self._manager.start(raise_signal)
         # The main manticore lock. Acquire this for accessing shared objects
         # THINKME: we use the same lock to access states lists and shared contexts
         self._lock = self._manager.Condition()
@@ -374,9 +410,9 @@ class ManticoreBase(Eventful):
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
         self.plugins: typing.Dict[str, Plugin] = {}
-        assert issubclass(
-            introspection_plugin_type, IntrospectionAPIPlugin
-        ), "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
+        assert issubclass(introspection_plugin_type, IntrospectionAPIPlugin), (
+            "Introspection plugin must be a subclass of IntrospectionAPIPlugin"
+        )
         self.register_plugin(introspection_plugin_type())
 
         # Set initial root state

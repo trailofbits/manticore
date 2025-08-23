@@ -4,12 +4,13 @@ File name is purposefully not test_* to run this test separately.
 
 import inspect
 import unittest
+import pytest
 
 import os
 import shutil
 from manticore.platforms.evm import EVMWorld
 
-from manticore.core.smtlib import operators, ConstraintSet, SolverType
+from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import (
     DetectDelegatecall,
     DetectEnvInstruction,
@@ -28,12 +29,14 @@ from manticore.ethereum.plugins import LoopDepthLimiter, KeepOnlyIfStorageChange
 from manticore.utils import config, log
 
 from typing import Tuple, Type
+from tests.markers import ethereum_test
 
 consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
 
+# Don't hardcode solver type - let configuration decide
+# If tests need portfolio solver, they should set it in test setup
 consts = config.get_group("smt")
-consts.solver = SolverType.portfolio
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,6 +47,7 @@ def make_mock_evm_state():
     return fakestate
 
 
+@ethereum_test
 class EthDetectorTest(unittest.TestCase):
     # Subclasses must assign this class variable to the class for the detector
     DETECTOR_CLASS: Type[Detector]
@@ -118,7 +122,7 @@ class EthSuicidal(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable SELFDESTRUCT", False)})
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_selfdestruct_true_pos1(self):
         self.mevm.register_plugin(LoopDepthLimiter(2))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -152,7 +156,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable external call to sender", False)})
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -163,7 +167,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -175,7 +179,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_argument2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -196,7 +200,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -271,22 +275,22 @@ class EthDelegatecall(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_ok1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_ok2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_ok3(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_not_ok(self):
         self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
@@ -298,7 +302,7 @@ class EthDelegatecall(EthDetectorTest):
             },
         )
 
-    @unittest.skip("Too slow for these modern times")
+    @pytest.mark.slow
     def test_delegatecall_not_ok1(self):
         self.mevm.register_plugin(LoopDepthLimiter(loop_count_threshold=500))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -308,6 +312,8 @@ class EthDelegatecall(EthDetectorTest):
 class EthRaceCondition(EthDetectorTest):
     DETECTOR_CLASS = DetectRaceCondition
 
+    # NOTE: Previously marked as expectedFailure because "Taint tracking is lost during CALL concretization"
+    # but this appears to be fixed now - the test passes successfully
     def test_race_condition(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -340,7 +346,7 @@ class EthRaceCondition(EthDetectorTest):
             },
         )
 
-    @unittest.skip("The slot/index are not as deterministic as before")
+    @pytest.mark.skip(reason="The slot/index are not as deterministic as before")
     def test_race_condition2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(

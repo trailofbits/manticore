@@ -598,7 +598,9 @@ class IntrospectionAPIPlugin(Plugin):
             return
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
-                logger.warning(
+                # This can happen when the plugin is registered after states are created
+                # It's not a critical issue, just means we won't have complete profiling data
+                logger.debug(
                     "Caught will_solve in state %s, but failed to capture its initialization",
                     state.id,
                 )
@@ -621,7 +623,8 @@ class IntrospectionAPIPlugin(Plugin):
             return
         with self.locked_context("manticore_state", dict) as context:
             if state.id not in context:
-                logger.warning(
+                # This can happen when the plugin is registered after states are created
+                logger.debug(
                     "Caught did_solve in state %s, but failed to capture its initialization",
                     state.id,
                 )

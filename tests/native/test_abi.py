@@ -3,6 +3,11 @@
 
 import unittest
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.unit]
+
 from manticore.native.cpu.abstractcpu import (
     ConcretizeArgument,
     ConcretizeRegister,

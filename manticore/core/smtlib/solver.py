@@ -111,7 +111,7 @@ class SingletonMixin(object):
     def instance(cls):
         tid = threading.get_ident()
         pid = os.getpid()
-        if not (pid, tid) in cls.__singleton_instances:
+        if (pid, tid) not in cls.__singleton_instances:
             cls.__singleton_instances[(pid, tid)] = cls()
         return cls.__singleton_instances[(pid, tid)]
 
@@ -350,7 +350,6 @@ class SMTLIBSolver(Solver):
         multiple_check: bool = True,
         debug: bool = False,
     ):
-
         """
         Build a smtlib solver instance.
         This is implemented using an external solver (via a subprocess).
@@ -857,7 +856,8 @@ class Z3Solver(SMTLIBSolver):
             )
             m = Z3VERSION.match(received_version.decode("utf-8"))
             major, minor, patch = map(
-                int, (m.group("major"), m.group("minor"), m.group("patch"))  # type: ignore
+                int,
+                (m.group("major"), m.group("minor"), m.group("patch")),  # type: ignore
             )
             parsed_version = Version(major, minor, patch)
         except (ValueError, TypeError) as e:
@@ -983,7 +983,6 @@ class SmtlibPortfolio:
         while True:
             shuffle(inds)
             for i in inds:
-
                 solver = self._solvers[i]
                 proc = self._procs[solver]
 
@@ -992,7 +991,6 @@ class SmtlibPortfolio:
 
                 buf = proc.recv(wait=False)
                 if buf is not None:
-
                     for osolver in self._solvers:  # iterate on all the solvers
                         if osolver != solver:  # check for the other ones
                             self._procs[osolver].stop()  # stop them
@@ -1027,9 +1025,9 @@ class PortfolioSolver(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
-        # not sure we want z3 here, since it tends to be slower
-        # if shutil.which(consts.z3_bin):
-        #    solvers.append(consts.solver.z3.name)
+        # z3 can be slower but it's better than no solver at all
+        if shutil.which(consts.z3_bin):
+            solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
         if shutil.which(consts.boolector_bin):

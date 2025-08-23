@@ -4,6 +4,12 @@ import os
 
 from manticore.binary import Elf, CGCElf
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.integration
+
 DIRPATH = os.path.dirname(__file__)
 
 

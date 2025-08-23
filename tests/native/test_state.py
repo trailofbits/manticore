@@ -15,6 +15,12 @@ from manticore.utils import config
 from manticore.utils.helpers import pickle_dumps
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 class FakeMemory:
     def __init__(self):
         self._constraints = None

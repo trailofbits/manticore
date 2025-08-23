@@ -6,18 +6,18 @@ on:
 
 jobs:
   tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.8
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: "3.10"
     - name: Install NPM
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '16.x'
     - name: Install dependencies
@@ -28,7 +28,7 @@ jobs:
         pip install coveralls
         pip install -e ".[dev-noks]"
         #install cvc4
-        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
+        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4-archived/releases/download/1.8/cvc4-1.8-x86_64-linux-opt
         sudo chmod +x /usr/bin/cvc4
         #install yices
         sudo add-apt-repository ppa:sri-csl/formal-methods
@@ -60,14 +60,14 @@ jobs:
         ./run_tests.sh
 
   upload:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: tests
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.8
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: "3.10"
     - name: Build Dist
       run: |
         python3 -m pip install wheel

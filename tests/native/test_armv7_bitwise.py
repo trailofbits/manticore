@@ -3,6 +3,11 @@ import unittest
 from manticore.native.cpu import bitwise
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.unit]
+
 class BitwiseTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

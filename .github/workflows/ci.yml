@@ -9,92 +9,126 @@ on:
     # run CI every day even if no PRs/merges occur
     - cron:  '0 12 * * *'
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # needs to run only on pull_request
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.8', '3.10']
+        python: ['3.11']  # Simplified to single Python version
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
+    - name: Cache uv packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
     - name: Lint
       if: github.event_name == 'pull_request'
-      env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
       run: |
-        pip install -e .[lint]
-        black --version
-        git fetch --depth=1 origin $BASE_SHA
-        echo "Files Changed:"
-        git diff --name-only $BASE_SHA... | tee .diff_names.txt
-        NAMES=$(cat .diff_names.txt | python scripts/pyfile_exists.py)
-        if test -z $NAMES
-        then
-          black --diff --check .
-        else
-          echo $NAMES | xargs black --diff --check
-        fi
+        # Install uv for faster package management
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $HOME/.cargo/env
+        uv pip install --system -e .[lint]
+        # Run ruff for fast linting (respects exclude in pyproject.toml)
+        ruff --version
+        ruff check .
+        # Check formatting with ruff format (respects exclude in pyproject.toml)
+        ruff format --check .
+        # Type checking with mypy
         mypy --version
         mypy
+
+
   tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
-        python: ['3.8', '3.10']
-        type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
+        python: ['3.11']
+        type: ["ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "aarch64", "wasm", "wasm_sym", "other", "ethereum_truffle"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
-    - name: Install NPM
-      uses: actions/setup-node@v3
+    - name: Cache uv packages
+      uses: actions/cache@v4
       with:
-        node-version: '16.x'
-    - name: Install dependencies
+        path: ~/.cache/uv
+        key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
+    - name: Install NPM
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    - name: Cache SMT Solvers
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/bin/cvc4
+          /usr/local/bin/yices
+          /usr/local/bin/yices-smt2
+          /usr/local/bin/yices-sat
+          /usr/local/bin/yices-smt
+          /usr/local/lib/libyices.so*
+        key: ${{ runner.os }}-smt-solvers-cvc4-1.8-yices-2.6.2
+    - name: Cache Solidity Compilers
+      uses: actions/cache@v4
+      with:
+        path: ~/.solcx
+        key: ${{ runner.os }}-solc-0.4.24-0.5.11
+    - name: Install dependencies and Solidity compilers
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
+        # Install uv for faster package management
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $HOME/.cargo/env
         #install utils
-        pip install coveralls
-        pip install -e ".[dev-noks]"
+        uv pip install --system coveralls
+        uv pip install --system -e ".[dev-noks]"
         # Get version info
-        pip freeze
+        uv pip freeze
         z3 --version
         #install cvc4
-        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
-        sudo chmod +x /usr/bin/cvc4
+        if [ ! -f /usr/bin/cvc4 ]; then
+          echo "Installing CVC4..."
+          sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4-archived/releases/download/1.8/cvc4-1.8-x86_64-linux-opt
+          sudo chmod +x /usr/bin/cvc4
+        fi
         cvc4 --version
         #install yices
-        sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
-        sudo tar -xzf yices.tar.gz
-        cd yices-2.6.2
-        sudo ./install-yices
+        if [ ! -f /usr/local/bin/yices ]; then
+          echo "Installing Yices..."
+          sudo wget -O yices.tar.gz https://yices.csl.sri.com/releases/2.6.2/yices-2.6.2-x86_64-pc-linux-gnu-static-gmp.tar.gz
+          sudo tar -xzf yices.tar.gz
+          cd yices-2.6.2
+          sudo ./install-yices
+          cd ..
+        fi
         yices --version
-        #install boolector
-        mkdir -p /tmp/build
-        cd /tmp/build
-        git clone https://github.com/boolector/boolector.git
-        cd boolector
-        # Version 3.2.1
-        git checkout "f61c0dcf4a76e2f7766a6358bfb9c16ca8217224"
-        git log -1 --oneline > ../boolector.commit
-        ./contrib/setup-lingeling.sh
-        ./contrib/setup-btor2tools.sh
-        ./configure.sh
-        cd build
-        make -j4
-        mkdir -p /tmp/boolector
-        sudo make DESTDIR=/usr install
-        # Install solc unconditionally because it only takes a second or two
-        sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
-        sudo chmod +x /usr/bin/solc
+        # Note: Boolector removed - it's archived/unmaintained upstream
+        # Consider using Bitwuzla (its successor) in the future
+        # Install Solidity compilers via py-solc-x
+        python -c "import solcx; [solcx.install_solc(v) for v in ('0.4.24','0.5.11')]; print('Installed solc versions:', solcx.get_installed_solc_versions())"
+        # Point default solc to 0.4.24 for non-decorated tests
+        mkdir -p "$HOME/.local/bin"
+        SOLC_0424=$(python -c "import solcx; import sys; print(str(solcx.get_solcx_install_folder() / 'solc-v0.4.24'))")
+        ln -sf "$SOLC_0424" "$HOME/.local/bin/solc"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
@@ -121,23 +155,57 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   manticore-server:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.8', '3.10']
+        python: ['3.11']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
-      - name: 'Install tools'
+      - name: Cache uv packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Cache SMT Solvers
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/bin/cvc4
+            /usr/local/bin/yices
+            /usr/local/bin/yices-smt2
+            /usr/local/bin/yices-sat
+            /usr/local/bin/yices-smt
+            /usr/local/lib/libyices.so*
+          key: ${{ runner.os }}-smt-solvers-cvc4-1.8-yices-2.6.2
+
+      - name: Cache Solidity Compilers
+        uses: actions/cache@v4
+        with:
+          path: ~/.solcx
+          key: ${{ runner.os }}-solc-0.4.24-0.5.11
+
+      - name: 'Install tools and Solidity compilers'
         run: |
+          # Install uv for faster package management
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
           # just command runner https://github.com/casey/just#pre-built-binaries
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
-          sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.24/solc-static-linux
-          sudo chmod +x /usr/bin/solc
+          # Install py-solc-x and compilers
+          uv pip install --system py-solc-x
+          python -c "import solcx; [solcx.install_solc(v) for v in ('0.4.24','0.5.11')]; print('Installed solc versions:', solcx.get_installed_solc_versions())"
+          mkdir -p "$HOME/.local/bin"
+          SOLC_0424=$(python -c "import solcx; import sys; print(str(solcx.get_solcx_install_folder() / 'solc-v0.4.24'))")
+          ln -sf "$SOLC_0424" "$HOME/.local/bin/solc"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: 'Lint MUI Server'
         working-directory: server
@@ -145,6 +213,22 @@ jobs:
           just init
           source venv/bin/activate
           just lint
+
+      - name: 'Prepare solc 0.4.24 in server venv'
+        working-directory: server
+        run: |
+          set -euo pipefail
+          # Activate server venv
+          source venv/bin/activate
+          # Ensure py-solc-x available in venv
+          python -m pip install -U pip wheel setuptools
+          python -m pip install py-solc-x
+          # Install solc 0.4.24 if not already present
+          python -c "import solcx; print('installed before:', solcx.get_installed_solc_versions()); solcx.install_solc('0.4.24'); print('installed after:', solcx.get_installed_solc_versions())"
+          # Symlink venv-local solc to 0.4.24 to satisfy server tests
+          ln -sf "$HOME/.solcx/solc-v0.4.24" venv/bin/solc
+          # Verify version
+          venv/bin/solc --version
 
       - name: 'Test MUI Server'
         working-directory: server
@@ -155,31 +239,10 @@ jobs:
   # Send notification when all tests have finished to combine coverage results
   coverage-finish:
     needs: tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Coveralls Finished
-      uses: coverallsapp/github-action@v2.1.0
+      uses: coverallsapp/github-action@v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
-  upload:
-    runs-on: ubuntu-20.04
-    if: github.event_name == 'schedule'
-    needs: tests
-    strategy:
-      matrix:
-        python: ['3.8', '3.10']
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Build Dist
-      run: |
-        python3 -m pip install wheel
-        python3 setup.py --dev_release sdist bdist_wheel
-    - name: Upload to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.6.4
-      with:
-        password: ${{ secrets.PYPI_UPLOAD }}

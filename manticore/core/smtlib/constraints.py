@@ -329,9 +329,9 @@ class ConstraintSet:
             if foreign_var.name in name_migration_map:
                 migrated_name = name_migration_map[foreign_var.name]
                 native_var = self.get_variable(migrated_name)
-                assert (
-                    native_var is not None
-                ), "name_migration_map contains a variable that does not exist in this ConstraintSet"
+                assert native_var is not None, (
+                    "name_migration_map contains a variable that does not exist in this ConstraintSet"
+                )
                 object_migration_map[foreign_var] = native_var
             else:
                 # foreign_var was not found in the local declared variables nor

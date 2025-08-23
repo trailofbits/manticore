@@ -7,10 +7,17 @@ import shutil
 from manticore.ethereum.plugins import VerboseTrace, KeepOnlyIfStorageChanges
 
 from manticore.ethereum import ManticoreEVM
+from tests.markers import ethereum_test
+
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.ethereum, pytest.mark.unit]
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+@ethereum_test
 class EthPluginsTests(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()

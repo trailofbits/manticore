@@ -28,7 +28,7 @@ class SolidityMetadata:
                 assert len(t) == 5 or t[5] == "["
                 t = SolidityMetadata.tuple_signature_for_components(c["components"]) + t[5:]
             ts.append(t)
-        return f'({",".join(ts)})'
+        return f"({','.join(ts)})"
 
     def __init__(
         self,
@@ -79,9 +79,9 @@ class SolidityMetadata:
                 assert not self._constructor_abi_item, "A constructor cannot be overloaded"
                 self._constructor_abi_item = item
             elif type == "fallback":
-                assert (
-                    not self._fallback_function_abi_item
-                ), "There can only be one fallback function"
+                assert not self._fallback_function_abi_item, (
+                    "There can only be one fallback function"
+                )
                 self._fallback_function_abi_item = item
         self._function_abi_items_by_signature = function_items
         self._event_abi_items_by_signature = event_items

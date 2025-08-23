@@ -1,0 +1,80 @@
+FROM python:3.11
+
+LABEL name=Manticore-Test
+LABEL src="https://github.com/trailofbits/manticore"
+LABEL purpose="Run Manticore tests in Linux environment"
+
+ENV LANG=C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies and z3 from apt
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    wget \
+    curl \
+    cmake \
+    z3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js for solc-js (works on all architectures via WASM)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install solc via npm (uses WASM, works on ARM64) - use 0.4.25 for compatibility with tests
+RUN npm install -g solc@0.4.25
+
+# Download and install pre-built yices2 binary (x86_64 only for now)
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        cd /tmp && \
+        wget -q https://github.com/SRI-CSL/yices2/releases/download/Yices-2.6.4/yices-2.6.4-x86_64-pc-linux-gnu.tar.gz && \
+        tar xzf yices-2.6.4-x86_64-pc-linux-gnu.tar.gz && \
+        cd yices-2.6.4 && \
+        ./install-yices /usr/local && \
+        cd / && \
+        rm -rf /tmp/yices*; \
+    else \
+        echo "Yices binary not available for $ARCH, skipping"; \
+    fi
+
+# Set working directory
+WORKDIR /manticore
+
+# Copy only necessary files (avoid .venv)
+COPY pyproject.toml README.md ./
+COPY manticore ./manticore
+COPY tests ./tests
+COPY scripts ./scripts
+
+# Install Manticore and dependencies
+RUN pip install --no-cache-dir -e .[native,dev]
+
+# Override solc-select's solc with our Python wrapper that handles --combined-json
+RUN cp scripts/solc_wrapper.py /usr/local/bin/solc && \
+    chmod +x /usr/local/bin/solc
+
+# Make solver configuration script executable
+RUN chmod +x scripts/configure_solver.py
+
+# Accept solver choice as build argument
+ARG MANTICORE_SOLVER=z3
+
+# Default to z3 solver but allow override
+ENV MANTICORE_SOLVER=${MANTICORE_SOLVER}
+
+# Check available solvers and create config
+RUN python scripts/configure_solver.py --check && \
+    python scripts/configure_solver.py --solver ${MANTICORE_SOLVER}
+
+# Verify installations
+RUN echo "=== Build Summary ===" && \
+    echo "Architecture: $(uname -m)" && \
+    echo "SMT Solvers:" && \
+    python scripts/configure_solver.py --check && \
+    echo "Solidity Compiler:" && \
+    (which solc && solc --version || echo "  solc wrapper installed (using solcjs)")
+
+# Run tests by default
+CMD ["python", "-m", "pytest", "tests/"]

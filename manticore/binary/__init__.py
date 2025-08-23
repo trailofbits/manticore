@@ -1,4 +1,4 @@
-""" Common binary formats interface
+"""Common binary formats interface
 Ideally you should be able to do something like
 
         from binary import Binary

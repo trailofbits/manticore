@@ -2,6 +2,12 @@ import unittest
 
 from manticore.native.cpu.aarch64 import Aarch64RegisterFile as RF
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 MAX_128 = 2**128 - 1
 MAX_64 = 2**64 - 1
 MAX_32 = 2**32 - 1

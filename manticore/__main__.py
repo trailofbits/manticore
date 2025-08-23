@@ -1,11 +1,12 @@
 """
 This is the Manticore's CLI `manticore` script.
 """
+
 import argparse
 import logging
 import sys
 
-import pkg_resources
+from importlib.metadata import version, PackageNotFoundError
 
 from crytic_compile import is_supported, cryticparser
 from .core.manticore import ManticoreBase, set_verbosity
@@ -99,10 +100,13 @@ def parse_arguments() -> argparse.Namespace:
         "--workspace",
         type=str,
         default=None,
-        help=("A folder name for temporaries and results." "(default mcore_?????)"),
+        help=("A folder name for temporaries and results.(default mcore_?????)"),
     )
 
-    current_version = pkg_resources.get_distribution("manticore").version
+    try:
+        current_version = version("manticore")
+    except PackageNotFoundError:
+        current_version = "unknown"
     parser.add_argument(
         "--version",
         action="version",

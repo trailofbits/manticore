@@ -1,4 +1,5 @@
 """Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf"""
+
 import uuid
 import binascii
 import random
@@ -31,12 +32,14 @@ from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..utils.helpers import printable_bytes
 from ..utils import config
-from ..core.smtlib.visitors import simplify
 from ..exceptions import EthereumError
 import pyevmasm as EVMAsm
 import logging
 from collections import namedtuple
-import sha3
+
+from Crypto.Hash import keccak
+
+
 import rlp
 
 logger = logging.getLogger(__name__)
@@ -60,7 +63,9 @@ DEFAULT_FORK = "istanbul"
 def globalsha3(data):
     if issymbolic(data):
         return None
-    return int(sha3.keccak_256(data).hexdigest(), 16)
+    digest = keccak.new(digest_bits=256)
+    digest.update(data)
+    return int(digest.hexdigest(), 16)
 
 
 def globalfakesha3(data):
@@ -291,7 +296,6 @@ class Transaction:
         metadata = mevm.get_metadata(self.address)
         if self.sort == "CREATE":
             if metadata is not None:
-
                 conc_args_data = conc_tx.data[len(metadata._init_bytecode) :]
                 arguments = ABI.deserialize(metadata.get_constructor_arguments(), conc_args_data)
 
@@ -475,7 +479,6 @@ class ConcretizeFee(EVMException):
 
 
 class ConcretizeGas(EVMException):
-
     """
     Raised when a symbolic gas needs to be concretized.
     """
@@ -2511,7 +2514,9 @@ class EVMWorld(Platform):
             self._publish("will_solve", self.constraints, data, "get_value")
             data_c = SelectedSolver.instance().get_value(self.constraints, data)
             self._publish("did_solve", self.constraints, data, "get_value", data_c)
-            return int(sha3.keccak_256(data_c).hexdigest(), 16)
+            digest = keccak.new(digest_bits=256)
+            digest.update(data_c)
+            return int(digest.hexdigest(), 16)
 
     @property
     def PC(self):
@@ -3040,7 +3045,9 @@ class EVMWorld(Platform):
 
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
-        value = sha3.keccak_256((repr(block_number) + "NONCE").encode()).hexdigest()
+        digest = keccak.new(digest_bits=256)
+        digest.update((repr(block_number) + "NONCE").encode())
+        value = digest.hexdigest()
         value = int(value, 16)
 
         if force_recent:
@@ -3095,7 +3102,9 @@ class EVMWorld(Platform):
             if nonce is None:
                 # assume that the sender is a contract account, which is initialized with a nonce of 1
                 nonce = 1
-            new_address = int(sha3.keccak_256(rlp.encode([sender, nonce])).hexdigest()[24:], 16)
+            digest = keccak.new(digest_bits=256)
+            digest.update(rlp.encode([sender, nonce]))
+            new_address = int(digest.hexdigest()[24:], 16)
         return new_address
 
     def execute(self):
@@ -3173,7 +3182,9 @@ class EVMWorld(Platform):
 
         # adds hash of new address
         data = binascii.unhexlify("{:064x}{:064x}".format(address, 0))
-        value = sha3.keccak_256(data).hexdigest()
+        digest = keccak.new(digest_bits=256)
+        digest.update(data)
+        value = digest.hexdigest()
         value = int(value, 16)
         self._publish("on_concrete_sha3", data, value)
 

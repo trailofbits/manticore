@@ -116,8 +116,9 @@ class ConcreteUnicornEmulator:
         self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE, self._hook_write_mem)
         self._emu.hook_add(UC_HOOK_INTR, self._interrupt)
-        self._emu.hook_add(UC_HOOK_INSN, self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
-        self._emu.hook_add(UC_HOOK_INSN, self._hook_cpuid, arg1=UC_X86_INS_CPUID)
+        # Unicorn 2.x changed the API - aux1 must be a keyword argument
+        self._emu.hook_add(UC_HOOK_INSN, self._hook_syscall, aux1=UC_X86_INS_SYSCALL)
+        self._emu.hook_add(UC_HOOK_INSN, self._hook_cpuid, aux1=UC_X86_INS_CPUID)
 
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
@@ -246,19 +247,19 @@ class ConcreteUnicornEmulator:
                 size = ((size >> 12) + 1) << 12
                 logger.warning("Forcing unmap size to align to a page")
 
-            logger.info(f"Unmapping memory from {start:#x} to {start+size:#x}")
+            logger.info(f"Unmapping memory from {start:#x} to {start + size:#x}")
 
             self._emu.mem_unmap(start, size)
             self.already_mapped.remove_overlap(start, start + size)
         else:
             logger.debug(
-                f"Not unmapping because bounds ({start:#x} - {start+size:#x}) are enveloped in existing map:"
+                f"Not unmapping because bounds ({start:#x} - {start + size:#x}) are enveloped in existing map:"
             )
             logger.debug(f"\tParent map(s) {parent_map}")
 
     def protect_memory_callback(self, start, size, perms):
         """Set memory protections in Unicorn correctly"""
-        logger.debug(f"Changing permissions on {start:#x}:{start+size:#x} to '{perms}'")
+        logger.debug(f"Changing permissions on {start:#x}:{start + size:#x} to '{perms}'")
         self._emu.mem_protect(start, size, convert_permissions(perms))
 
     def get_unicorn_pc(self):
@@ -325,7 +326,7 @@ class ConcreteUnicornEmulator:
             m = self._cpu.memory.map_containing(address)
             self.copy_memory(m.start, m.end - m.start)
         except MemoryException as e:
-            logger.error(f"Failed to map memory {address:#x}-{address+size:#x}, ({access}): {e}")
+            logger.error(f"Failed to map memory {address:#x}-{address + size:#x}, ({access}): {e}")
             self._to_raise = e
             self._should_try_again = False
             return False
@@ -367,7 +368,6 @@ class ConcreteUnicornEmulator:
         # The emulation might restart if Unicorn needs to bring in a memory map
         # or bring a value from Manticore state.
         while True:
-
             # Try emulation
             self._should_try_again = False
             self._to_raise = None

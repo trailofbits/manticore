@@ -1,18 +1,18 @@
 init:
   test -d venv || python3 -m venv venv
-  . venv/bin/activate; pip install -U setuptools pip wheel; pip install -e .[dev]
+  . venv/bin/activate; pip install -U setuptools pip wheel; pip install -e ..[native]; pip install -e .[dev]
 
 format:
-  black .
-  isort .
+  ruff format .
+  ruff check --fix .
 
 lint:
-  black --check .
-  isort --check .
+  ruff format --check .
+  ruff check .
   mypy
 
 generate:
-  python3 setup.py generate
+  python3 generate.py
 
 build: generate
   #!/usr/bin/env bash

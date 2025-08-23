@@ -2,7 +2,13 @@ import unittest
 from manticore.wasm import ManticoreWASM
 from manticore.wasm.types import Value_t
 from pathlib import Path
+from tests.markers import wasm_test
 
+
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.wasm, pytest.mark.unit]
 
 test_if_file = str(Path(__file__).parent.joinpath("inputs", "if.wasm"))
 test_br_if_file = str(Path(__file__).parent.joinpath("inputs", "br_if.wasm"))
@@ -10,6 +16,7 @@ test_br_table_file = str(Path(__file__).parent.joinpath("inputs", "br_table.wasm
 test_call_indirect_file = str(Path(__file__).parent.joinpath("inputs", "call_indirect.wasm"))
 
 
+@wasm_test
 class TestSymbolicBranch(unittest.TestCase):
     def can_terminate_with(self, val, state):
         # Check if execution trapped. This should be easier...

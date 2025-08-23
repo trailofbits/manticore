@@ -1,7 +1,17 @@
 import binascii
 import unittest
 import subprocess
-import pkg_resources
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.ethereum
+pytestmark = pytest.mark.integration
+
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    # Python < 3.8
+    from importlib_metadata import version, PackageNotFoundError
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -14,7 +24,7 @@ import tempfile
 
 from manticore import ManticoreError
 from manticore.core.plugin import Plugin
-from manticore.core.smtlib import ConstraintSet, operators, PortfolioSolver, SolverType
+from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec, BitVecVariable
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
@@ -40,9 +50,12 @@ import io
 import contextlib
 
 
-solver = PortfolioSolver.instance()
-consts = config.get_group("smt")
-consts.solver = SolverType.portfolio
+# Get solver instance based on configuration
+# This respects user configuration and doesn't hardcode any specific solver
+from manticore.utils.solver_utils import get_solver_instance
+from tests.markers import slow_test, ethereum_test
+
+solver = get_solver_instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -56,6 +69,8 @@ def disposable_mevm(*args, **kwargs):
         shutil.rmtree(mevm.workspace)
 
 
+@ethereum_test
+@slow_test
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
         mevm = ManticoreEVM()
@@ -70,6 +85,8 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn("Unsigned integer overflow at MUL instruction", all_findings)
 
 
+@ethereum_test
+@slow_test
 class EthVerifierIntegrationTest(unittest.TestCase):
     def test_propverif(self):
         smtcfg = config.get_group("smt")
@@ -95,10 +112,16 @@ class EthVerifierIntegrationTest(unittest.TestCase):
         cli_version = cli_version.split(
             "Manticore is only supported on Linux. Proceed at your own risk!\n"
         )[-1]
-        py_version = f"Manticore {pkg_resources.get_distribution('manticore').version}\n"
+        try:
+            manticore_version = version('manticore')
+        except PackageNotFoundError:
+            manticore_version = "unknown"
+        py_version = f"Manticore {manticore_version}\n"
         self.assertEqual(cli_version, py_version)
 
 
+@ethereum_test
+@slow_test
 class EthAbiTests(unittest.TestCase):
     _multiprocess_can_split = True
 
@@ -401,6 +424,8 @@ class EthAbiTests(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, ret[64 : 64 + 32] == buf + bytearray(b"\x00" * 15)))
 
 
+@ethereum_test
+@slow_test
 class EthInstructionTests(unittest.TestCase):
     def _make(self):
         # Make the constraint store
@@ -476,6 +501,8 @@ class EthInstructionTests(unittest.TestCase):
         )
 
 
+@ethereum_test
+@slow_test
 class EthTests(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()
@@ -1383,6 +1410,8 @@ class EthTests(unittest.TestCase):
         self.assertEqual(aplug.context.get("xcount", 0), 112)
 
 
+@ethereum_test
+@slow_test
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVecVariable(size=256, name="BVV")
@@ -1456,6 +1485,8 @@ class EthHelpersTest(unittest.TestCase):
         self.assertFalse(world.account_exists(default))
 
 
+@ethereum_test
+@slow_test
 class EthSolidityMetadataTests(unittest.TestCase):
     def test_tuple_signature_for_components(self):
         self.assertEqual(SolidityMetadata.tuple_signature_for_components([]), "()")
@@ -1626,6 +1657,8 @@ class EthSolidityMetadataTests(unittest.TestCase):
             )
 
 
+@ethereum_test
+@slow_test
 class EthSpecificTxIntructionTests(unittest.TestCase):
     def test_jmpdest_check(self):
         """
@@ -1941,6 +1974,8 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             self.assertEqual(txs[-1].used_gas, GSDSTATIC + GNEWACCOUNT - RSELFDESTRUCT)
 
 
+@ethereum_test
+@slow_test
 class EthPluginTests(unittest.TestCase):
     def test_FilterFunctions_fallback_function_matching(self):
         """

@@ -1,4 +1,5 @@
 //http://2015.hackitoergosum.org/slides/HES2015-10-29%20Cracking%20Sendmail%20crackaddr.pdf
+#include <unistd.h>
 #define BUFFERSIZE 200
 #define TRUE 1
 #define FALSE 0 

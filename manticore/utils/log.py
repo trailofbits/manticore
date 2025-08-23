@@ -11,7 +11,9 @@ formatter = logging.Formatter(logfmt)
 
 
 def get_manticore_logger_names() -> List[str]:
-    return [name for name in logging.root.manager.loggerDict if name.split(".", 1)[0] == "manticore"]  # type: ignore
+    return [
+        name for name in logging.root.manager.loggerDict if name.split(".", 1)[0] == "manticore"
+    ]  # type: ignore
 
 
 class CallbackStream(io.StringIO):

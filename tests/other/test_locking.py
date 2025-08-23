@@ -3,6 +3,11 @@ from manticore.native import Manticore
 from pathlib import Path
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.unit
+
 ms_file = str(
     Path(__file__).parent.parent.parent.joinpath("examples", "linux", "binaries", "multiple-styles")
 )

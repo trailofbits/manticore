@@ -34,12 +34,11 @@ more documentation, look [here](https://guides.github.com/activities/forking/).
 
 Some pull request guidelines:
 
-- We use the [`black`](https://black.readthedocs.io/en/stable/index.html)
-  auto-formatter to enforce style conventions in Manticore. To ensure your code
-  is properly formatted, run `black .` in the Manticore directory before
-  committing. Although unlikely, if you are still having trouble with getting
-  your code to pass formatting, check that you have the same version of `black`
-  installed as what is used in the CI.
+- We use [`ruff`](https://docs.astral.sh/ruff/) for both linting and formatting
+  to enforce style conventions in Manticore. To ensure your code is properly
+  formatted and linted, run `ruff check .` and `ruff format .` in the Manticore
+  directory before committing. Ruff is significantly faster than traditional
+  Python linters and formatters.
 - We use the [`mypy`](https://github.com/python/mypy) static typing tool to
   catch inconsistencies in the code base. At the time of this writing, we
   only check the [manticore](./manticore) directory for inconsistencies and do
@@ -60,7 +59,166 @@ Some pull request guidelines:
   "Fixes #123" is a good comment to add to the description, but makes for an
   unclear title on its own.
 
-### Development Environment
+## Development Environment
 
-Instructions for installing a development version of Manticore can be found in
-our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore#developer-installation).
+### Quick Setup
+
+Run the automated setup script:
+```bash
+python scripts/dev_setup.py
+```
+
+This will:
+- Check prerequisites (Python 3.9+, solc, z3)
+- Create a virtual environment
+- Install all dependencies
+- Setup pre-commit hooks for automatic formatting
+- Optionally setup solc-select for managing Solidity versions
+
+### Manual Setup
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Setup pre-commit hooks
+pre-commit install
+```
+
+### Running Tests
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run all tests
+pytest tests/
+
+# Skip slow tests (recommended for development)
+pytest tests/ -m "not slow"
+
+# Run specific test suites
+pytest tests/ethereum/      # Ethereum/smart contract tests
+pytest tests/native/        # Native binary tests
+pytest tests/wasm/          # WebAssembly tests
+
+# Run with timeout to catch hanging tests
+pytest tests/ --timeout=30
+
+# Run in parallel for speed
+pytest tests/ -n auto
+```
+
+### Code Quality
+
+We use several tools to maintain code quality, all configured in `pyproject.toml`:
+
+- **ruff**: Fast Python linter and formatter (replaces flake8 and black)
+- **mypy**: Static type checker
+- **pytest**: Test framework with markers for test categorization
+
+```bash
+# Run linters
+ruff check .       # Fast linting
+ruff format .      # Format code
+mypy .            # Type checking
+
+# Pre-commit will run these automatically before commits
+```
+
+### Platform Support
+
+| Platform | Support Level | Notes |
+|----------|--------------|-------|
+| Linux x86_64 | ✅ Full | All features supported |
+| Linux ARM64 | ✅ Full* | Requires QEMU for x86_64 solc binaries |
+| macOS x86_64 | ⚠️ Partial | Limited native binary analysis |
+| macOS ARM64 | ⚠️ Partial | Limited native binary analysis |
+| Windows | ⚠️ Experimental | Basic functionality only |
+
+### Common Issues and Solutions
+
+#### Solidity Version Errors
+
+**Problem**: Tests fail with "No visibility specified" or similar errors.
+
+**Solution**: You likely have a newer Solidity version. Use solc-select:
+```bash
+pip install solc-select
+solc-select install 0.4.24
+solc-select use 0.4.24
+```
+
+#### macOS Performance
+
+**Problem**: Slow execution on macOS due to threading limitations.
+
+**Solution**: Enable multiprocessing mode:
+```bash
+manticore --core.mprocessing=multiprocessing your_file
+```
+
+#### Z3 Solver Not Found
+
+**Problem**: Tests fail with "No Solver not found" errors.
+
+**Solution**: Install Z3:
+```bash
+# macOS
+brew install z3
+
+# Linux
+sudo apt install z3
+```
+
+#### ARM64/M1 Mac Issues
+
+**Problem**: Solc binaries don't work on ARM64.
+
+**Solution**: 
+1. Use Docker with x86_64 emulation
+2. Use a Linux VM (Multipass, UTM, etc.)
+3. Use rosetta/QEMU emulation (experimental)
+
+### Docker Testing Environment
+
+For consistent Linux-based testing (recommended for macOS users):
+
+```bash
+# Build test image
+docker build -t manticore-test -f Dockerfile.test .
+
+# Run tests in Docker
+docker run --rm -v $(pwd):/manticore manticore-test pytest tests/
+
+# Interactive shell
+docker run --rm -it -v $(pwd):/manticore manticore-test bash
+```
+
+### Test Markers
+
+Tests are marked for better organization:
+
+| Marker | Description | Usage |
+|--------|-------------|-------|
+| `slow` | Tests that take >1 minute | `pytest -m "not slow"` |
+| `ethereum` | Ethereum/smart contract tests | `pytest -m ethereum` |
+| `native` | Native binary analysis tests | `pytest -m native` |
+| `wasm` | WebAssembly tests | `pytest -m wasm` |
+| `linux` | Linux-only tests | `pytest -m linux` |
+
+### Development Workflow
+
+1. **Create a branch** for your feature/fix
+2. **Run relevant tests** before committing
+3. **Pre-commit hooks** will automatically format your code
+4. **Run the test suite**: `pytest tests/ -m "not slow"`
+5. **Update documentation** if needed
+
+### Tips for Faster Development
+
+- Use `pytest-xdist` for parallel testing: `pytest -n auto`
+- Skip slow tests during development: `pytest -m "not slow"`
+- Use `pytest --lf` to run only last failed tests
+- Use `pytest --timeout=30` to catch hanging tests
+- Keep multiple solc versions with solc-select

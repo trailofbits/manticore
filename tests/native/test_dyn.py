@@ -4,10 +4,19 @@ from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 from manticore.core.smtlib.solver import Z3Solver
+from tests.markers import slow_test, native_test
+
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.integration
 
 solver = Z3Solver.instance()
 
 
+@native_test
+@slow_test
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

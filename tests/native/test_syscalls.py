@@ -20,7 +20,13 @@ from manticore.native.plugins import SyscallCounter
 from manticore.platforms import linux, linux_syscall_stubs
 from manticore.platforms.linux import SymbolicSocket, logger as linux_logger
 from manticore.platforms.platform import SyscallNotImplemented, logger as platform_logger
+from tests.markers import linux_only, native_test
 
+
+import pytest
+
+# Test markers for categorization
+pytestmark = [pytest.mark.native, pytest.mark.integration, pytest.mark.linux]
 
 def test_symbolic_syscall_arg() -> None:
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "symbolic_read_count")
@@ -64,6 +70,8 @@ def test_symbolic_length_recv() -> None:
     assert found_msg, f'Did not find our message in {outs_glob}: "{less_len_msg}"'
 
 
+@native_test
+@linux_only
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     BIN_PATH = os.path.join(os.path.dirname(__file__), "binaries", "basic_linux_amd64")

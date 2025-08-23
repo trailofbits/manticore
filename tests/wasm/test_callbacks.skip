@@ -3,6 +3,7 @@ from pathlib import Path
 from manticore.wasm import ManticoreWASM
 from manticore.core.plugin import Plugin
 from manticore.wasm.types import I32, I64
+from tests.markers import wasm_test
 
 
 class EverythingPlugin(Plugin):
@@ -114,6 +115,7 @@ def getchar(state, addr):
     return [res]
 
 
+@wasm_test
 class TestCallbacksFire(unittest.TestCase):
     """ Makes sure that the callbacks are firing correctly, since it's easy to screw up and drop them """
 

@@ -22,7 +22,7 @@ def unimplemented(wrapped: Callable[..., T]) -> Callable[..., T]:
         cpu = getattr(getattr(self, "parent", None), "current", None)
         pc_str = "<unknown PC>" if cpu is None else hex(cpu.read_register("PC"))
         logger.warning(
-            f"Unimplemented system call: %s: %s(%s)",
+            "Unimplemented system call: %s: %s(%s)",
             pc_str,
             wrapped.__name__,
             ", ".join(hex(a) if isinstance(a, int) else str(a) for a in args),

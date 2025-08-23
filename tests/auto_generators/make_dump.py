@@ -22,6 +22,7 @@ flags_maks = {
 
 count = 0
 
+
 # log = file('gdb.log','a')
 class Gdb(subprocess.Popen):
     def __init__(self, prg, prompt="(gdb) "):

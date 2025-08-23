@@ -857,7 +857,7 @@ class Memory(object, metaclass=ABCMeta):
     def __str__(self) -> str:
         return "\n".join(
             [
-                f'{start:016x}-{end:016x} {p:>4s} {offset:08x} {name or ""}'
+                f"{start:016x}-{end:016x} {p:>4s} {offset:08x} {name or ''}"
                 for start, end, p, offset, name in self.mappings()
             ]
         )
@@ -1278,7 +1278,6 @@ class SMemory(Memory):
         """
         size = len(value)
         if issymbolic(address):
-
             solutions = self._try_get_solutions(address, size, "w", force=force)
 
             for offset in range(size):
@@ -1286,7 +1285,6 @@ class SMemory(Memory):
                     condition = base == address
                     self._symbols.setdefault(base + offset, []).append((condition, value[offset]))
         else:
-
             # Symbolic writes are stored in self._symbols and concrete writes are offloaded to super().write(...)
             #
             # Symbolic values are written one by one and concrete are written in chunks
@@ -1495,7 +1493,6 @@ class LazySMemory(SMemory):
         return Operators.NOT(self.valid_ptr(address))
 
     def read(self, address, size, force=False):
-
         access_min, access_max = self._reachable_range(address, size)
 
         if issymbolic(address):
@@ -1505,7 +1502,6 @@ class LazySMemory(SMemory):
         # Not range() because `address` can be symbolic.
         addrs_to_access = [address + i for i in range(size)]
         for addr in addrs_to_access:
-
             # If the deref is symbolic, or it's backed by a symbolic store on a page
             # that is writeable, go from backing_array. (if page is r-- or r-x, it would
             # not have had symbolic data written to it.)
@@ -1527,7 +1523,6 @@ class LazySMemory(SMemory):
         return retvals
 
     def write(self, address, value, force=False):
-
         size = len(value)
 
         addrs_to_access = [address + i for i in range(size)]

@@ -296,9 +296,9 @@ class Module:
         self.globals: typing.List[Global] = []
         self.elem: typing.List[Elem] = []
         self.data: typing.List[Data] = []
-        self.start: typing.Optional[
-            FuncIdx
-        ] = None  #: https://www.w3.org/TR/wasm-core-1/#start-function%E2%91%A0
+        self.start: typing.Optional[FuncIdx] = (
+            None  #: https://www.w3.org/TR/wasm-core-1/#start-function%E2%91%A0
+        )
         self.imports: typing.List[Import] = []
         self.exports: typing.List[Export] = []
         self.function_names: typing.Dict[FuncAddr, str] = {}
@@ -489,9 +489,9 @@ class Module:
                             func_idx = func.index
                             for n in func.local_map.names:
                                 ty = n.get_decoder_meta()["types"]["name_str"]
-                                m.local_names.setdefault(FuncAddr(func_idx), {})[
-                                    n.index
-                                ] = strip_quotes(ty.to_string(n.name_str))
+                                m.local_names.setdefault(FuncAddr(func_idx), {})[n.index] = (
+                                    strip_quotes(ty.to_string(n.name_str))
+                                )
                 else:
                     logger.info("Encountered unknown section")
                     # TODO - other custom sections (https://www.w3.org/TR/wasm-core-1/#custom-section%E2%91%A0)
@@ -543,7 +543,9 @@ class MemInst(Eventful):
 
     _pages: typing.Dict[int, typing.List[int]]
     max: typing.Optional[U32]  #: Optional maximum number of pages the memory can contain
-    _current_size: int  # Tracks the theoretical size of the memory instance, including unmapped pages
+    _current_size: (
+        int  # Tracks the theoretical size of the memory instance, including unmapped pages
+    )
 
     def __init__(self, starting_data, max=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -885,9 +887,9 @@ class ModuleInstance(Eventful):
         #     assert isinstance(ext, ExternType.__args__)
 
         # #3 Assert the same number of imports and external values
-        assert len(module.imports) == len(
-            extern_vals
-        ), f"Expected {len(module.imports)} imports, got {len(extern_vals)}"
+        assert len(module.imports) == len(extern_vals), (
+            f"Expected {len(module.imports)} imports, got {len(extern_vals)}"
+        )
 
         # #4 TODO
 
@@ -1045,9 +1047,9 @@ class ModuleInstance(Eventful):
         assert funcaddr in range(len(store.funcs))
         funcinst = store.funcs[funcaddr]
         ty = funcinst.type
-        assert len(ty.param_types) == len(
-            argv
-        ), f"Function {funcaddr} expects {len(ty.param_types)} arguments"
+        assert len(ty.param_types) == len(argv), (
+            f"Function {funcaddr} expects {len(ty.param_types)} arguments"
+        )
         # for t, v in zip(ty.param_types, argv):
         #     assert type(v) == type(t)
 
@@ -1189,9 +1191,9 @@ class ModuleInstance(Eventful):
                 self._block_depths[-1],
                 vals,
             )
-            assert isinstance(
-                stack.peek(), Activation
-            ), f"Stack should have an activation on top, instead has {type(stack.peek())}"
+            assert isinstance(stack.peek(), Activation), (
+                f"Stack should have an activation on top, instead has {type(stack.peek())}"
+            )
 
             # Discard call frame
             self._block_depths.pop()
@@ -1715,7 +1717,9 @@ class Activation:
 
     arity: int  #: The expected number of return values from the function call associated with the underlying frame
     frame: Frame  #: The nested frame
-    expected_block_depth: int  #: Internal helper used to track the expected block depth when we exit this label
+    expected_block_depth: (
+        int  #: Internal helper used to track the expected block depth when we exit this label
+    )
 
     def __init__(self, arity, frame, expected_block_depth=0):
         self.arity = arity
@@ -1802,9 +1806,9 @@ class Stack(Eventful):
         :return: True
         """
         for i in range(1, n + 1):
-            assert isinstance(
-                self.data[i * -1], (t, BitVec)
-            ), f"{type(self.data[i * -1])} is not an {t}!"
+            assert isinstance(self.data[i * -1], (t, BitVec)), (
+                f"{type(self.data[i * -1])} is not an {t}!"
+            )
         return True
 
     def find_type(self, t: type) -> typing.Optional[int]:
@@ -1944,7 +1948,9 @@ class HostFunc(ProtoFuncInst):
     Instance type for native functions that have been provided via import
     """
 
-    hostcode: types.FunctionType  #: the native function. Should accept ConstraintSet as the first argument
+    hostcode: (
+        types.FunctionType
+    )  #: the native function. Should accept ConstraintSet as the first argument
 
     def allocate(
         self, store: Store, functype: FunctionType, host_func: types.FunctionType

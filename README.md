@@ -1,292 +1,249 @@
-# :warning: Project is in Maintenance Mode :warning:
-
-This project is no longer internally developed and maintained. However, we are happy to review and accept small, well-written pull requests by the community. We will only consider bug fixes and minor enhancements.
-
-Any new or currently open issues and discussions shall be answered and supported by the community.
-
 # Manticore
-<p align="center">
-  <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
-</p>
-<br />
-
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore/ci.yml?branch=master)](https://github.com/trailofbits/manticore/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/trailofbits/manticore/badge.svg)](https://coveralls.io/github/trailofbits/manticore)
 [![PyPI Version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
-[![Slack Status](https://slack.empirehacking.nyc/badge.svg)](https://slack.empirehacking.nyc)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
-[![Example Status](https://img.shields.io/github/actions/workflow/status/trailofbits/manticore-examples/ci.yml?branch=master)](https://github.com/trailofbits/manticore-examples/actions?query=workflow%3ACI)
-[![LGTM Total Alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/manticore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/manticore/alerts/)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/trailofbits/manticore/master/docs/images/manticore.png" width="256" title="Manticore">
+</p>
 
+Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
 
-Manticore is a symbolic execution tool for the analysis of smart contracts and binaries.
+## What is Manticore?
 
-## Features
+Manticore uses symbolic execution to explore all possible states of a program and automatically generate inputs that trigger unique code paths. It can analyze:
 
-- **Program Exploration**: Manticore can execute a program with symbolic inputs and explore all the possible states it can reach
-- **Input Generation**: Manticore can automatically produce concrete inputs that result in a given program state
-- **Error Discovery**: Manticore can detect crashes and other failure cases in binaries and smart contracts
-- **Instrumentation**: Manticore provides fine-grained control of state exploration via event callbacks and instruction hooks
-- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
+- **Ethereum smart contracts** (EVM bytecode)
+- **Linux binaries** (x86, x86_64, aarch64, ARMv7)
+- **WebAssembly modules**
 
-Manticore can analyze the following types of programs:
+### Key Features
 
-- Ethereum smart contracts (EVM bytecode)
-- Linux ELF binaries (x86, x86_64, aarch64, and ARMv7)
-- WASM Modules
+- **Program Exploration**: Discover all reachable states with symbolic inputs
+- **Input Generation**: Automatically produce inputs for specific program states
+- **Error Discovery**: Detect crashes and failure cases
+- **Fine-grained Control**: Use hooks and callbacks to customize analysis
 
-## Installation
+## Quick Start
 
-> Note: We recommend installing Manticore in a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-virtualenv)
- to prevent conflicts with other projects or packages
-
-Option 1: Installing from PyPI:
+### 1. Install Manticore
 
 ```bash
-pip install manticore
+# Install uv (Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install Manticore
+uv pip install --system "manticore[native]"
 ```
 
-Option 2: Installing from PyPI, with extra dependencies needed to execute native binaries:
+### 2. Analyze a Program
+
+**Smart Contract:**
+```bash
+$ manticore example.sol
+# Analyzes for vulnerabilities like reentrancy, uninitialized memory, integer overflow
+```
+
+**Linux Binary:**
+```bash
+$ manticore ./binary
+# Explores execution paths and generates test cases
+```
+
+**Python Script:**
+```python
+from manticore.native import Manticore
+
+m = Manticore.linux('./program')
+m.run()
+# Results in mcore_* directory
+```
+
+### 3. Check Results
+
+Results are saved in a `mcore_*` workspace directory with:
+- Test cases that reach different program states
+- Inputs that trigger crashes or vulnerabilities
+- Execution traces and coverage information
+
+## Installation Options
+
+### Quick Install (Recommended)
+
+Using [uv](https://github.com/astral-sh/uv) (fast, modern Python package manager):
 
 ```bash
-pip install "manticore[native]"
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install Manticore with binary analysis support
+uv pip install --system "manticore[native]"
 ```
 
-Option 3: Installing a nightly development build:
+### Docker
 
 ```bash
-pip install --pre "manticore[native]"
+docker pull trailofbits/manticore
+docker run --rm -it --ulimit stack=100000000:100000000 trailofbits/manticore
 ```
 
-Option 4: Installing from the `master` branch:
+### Developer Setup
+
+For contributing to Manticore:
 
 ```bash
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
-pip install -e ".[native]"
+python scripts/dev_setup.py  # Automated setup with uv
 ```
 
-Option 5: Install via Docker:
+The setup script handles:
+- Virtual environment creation
+- Development dependencies
+- Pre-commit hooks
+- Platform-specific requirements (solc, QEMU, etc.)
+
+### Alternative Installation Methods
+
+If you can't use `uv`, you can install with pip:
 
 ```bash
-docker pull trailofbits/manticore
+# Using pip (slower than uv)
+pip install "manticore[native]"
+
+# From source (for development)
+git clone https://github.com/trailofbits/manticore.git
+cd manticore
+pip install -e ".[native,dev]"
 ```
 
-Once installed, the `manticore` CLI tool and Python API will be available.
+## Examples & Documentation
 
-For a development installation, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
+### Learn by Example
 
-## Usage
+- **[Built-in Examples](examples/)**: Simple scripts demonstrating core features
+  - [Binary analysis](examples/linux/) - Linux ELF analysis (run `make` in this directory first)
+  - [Smart contracts](examples/evm/) - Ethereum contract analysis
+  - [WebAssembly](examples/wasm/) - WASM module analysis
 
-### CLI
+  **Note:** Linux examples need to be compiled first:
+  ```bash
+  cd examples/linux && make
+  ```
 
-Manticore has a command line interface which can perform a basic symbolic analysis of a binary or smart contract. 
-Analysis results will be placed into a workspace directory beginning with `mcore_`. For information about the workspace, see the [wiki](https://github.com/trailofbits/manticore/wiki/What's-in-the-workspace%3F).
+- **[Real CTF Solutions](examples/ctf/)**: Actual security challenges solved with Manticore
+  - pwnable challenges
+  - Smart contract exploits
+  - Automated vulnerability discovery
 
-#### EVM
-Manticore CLI automatically detects you are trying to test a contract if (for ex.)
- the contract has a `.sol` or a `.vy` extension. See a [demo](https://asciinema.org/a/154012).
-<details>
-  <summary>Click to expand:</summary>
-  
-```bash
-$ manticore examples/evm/umd_example.sol 
- [9921] m.main:INFO: Registered plugins: DetectUninitializedMemory, DetectReentrancySimple, DetectExternalCallAndLeak, ...
- [9921] m.e.manticore:INFO: Starting symbolic create contract
- [9921] m.e.manticore:INFO: Starting symbolic transaction: 0
- [9921] m.e.manticore:INFO: 4 alive states, 6 terminated states
- [9921] m.e.manticore:INFO: Starting symbolic transaction: 1
- [9921] m.e.manticore:INFO: 16 alive states, 22 terminated states
-[13761] m.c.manticore:INFO: Generated testcase No. 0 - STOP(3 txs)
-[13754] m.c.manticore:INFO: Generated testcase No. 1 - STOP(3 txs)
-...
-[13743] m.c.manticore:INFO: Generated testcase No. 36 - THROW(3 txs)
-[13740] m.c.manticore:INFO: Generated testcase No. 37 - THROW(3 txs)
-[9921] m.c.manticore:INFO: Results in ~/manticore/mcore_gsncmlgx
-```
-</details>
+- **[External Examples](https://github.com/trailofbits/manticore-examples)**: More complex real-world usage
 
-##### Manticore-verifier
+### Documentation
 
-An alternative CLI tool is provided that simplifies contract testing and 
-allows writing properties methods in the same high-level language the contract uses.
-Checkout manticore-verifier [documentation](http://manticore.readthedocs.io/en/latest/verifier.html).
-See a [demo](https://asciinema.org/a/xd0XYe6EqHCibae0RP6c7sJVE)
+- **[API Reference](http://manticore.readthedocs.io/en/latest/)** - Complete API documentation
+- **[Wiki](https://github.com/trailofbits/manticore/wiki)** - Tutorials and guides
+- **[Blog Posts](https://blog.trailofbits.com/tag/manticore/)** - Technical deep-dives
 
-#### Native
-<details>
-  <summary>Click to expand:</summary>
-  
-```bash
-$ manticore examples/linux/basic
-[9507] m.n.manticore:INFO: Loading program examples/linux/basic
-[9507] m.c.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0
-[9507] m.c.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0
-[9507] m.c.manticore:INFO: Results in ~/manticore/mcore_7u7hgfay
-[9507] m.n.manticore:INFO: Total time: 2.8029580116271973
-```
-</details>
+### Using the API
 
+Manticore's Python API provides fine-grained control over symbolic execution:
 
-### API
-
-Manticore provides a Python programming interface which can be used to implement powerful custom analyses.
-
-#### EVM
-For Ethereum smart contracts, the API can be used for detailed verification of arbitrary contract properties. Users can set the starting conditions, 
-execute symbolic transactions, and then review discovered states to ensure invariants for a contract hold.
-<details>
-  <summary>Click to expand:</summary>
-  
 ```python
-from manticore.ethereum import ManticoreEVM
-contract_src="""
-contract Adder {
-    function incremented(uint value) public returns (uint){
-        if (value == 1)
-            revert();
-        return value + 1;
-    }
-}
-"""
-m = ManticoreEVM()
-
-user_account = m.create_account(balance=10000000)
-contract_account = m.solidity_create_contract(contract_src,
-                                              owner=user_account,
-                                              balance=0)
-value = m.make_symbolic_value()
-
-contract_account.incremented(value)
-
-for state in m.ready_states:
-    print("can value be 1? {}".format(state.can_be_true(value == 1)))
-    print("can value be 200? {}".format(state.can_be_true(value == 200)))
-```
-</details>
-
-#### Native
-It is also possible to use the API to create custom analysis tools for Linux binaries. Tailoring the initial state helps avoid state explosion
-problems that commonly occur when using the CLI. 
-
-<details>
-  <summary>Click to expand:</summary>
-  
-```python
-# example Manticore script
 from manticore.native import Manticore
 
-m = Manticore.linux('./example')
+# Hook a specific address
+m = Manticore.linux('./binary')
 
 @m.hook(0x400ca0)
 def hook(state):
-  cpu = state.cpu
-  print('eax', cpu.EAX)
-  print(cpu.read_int(cpu.ESP))
-
-  m.kill()  # tell Manticore to stop
+    print(f"Hit address 0x400ca0")
+    # Modify state, add constraints, etc.
 
 m.run()
 ```
-</details>
 
+For smart contracts:
 
-#### WASM
-Manticore can also evaluate WebAssembly functions over symbolic inputs for property validation or general analysis. 
-
-<details>
-  <summary>Click to expand:</summary>
-  
 ```python
-from manticore.wasm import ManticoreWASM
+from manticore.ethereum import ManticoreEVM
 
-m = ManticoreWASM("collatz.wasm")
-
-def arg_gen(state):
-    # Generate a symbolic argument to pass to the collatz function.
-    # Possible values: 4, 6, 8
-    arg = state.new_symbolic_value(32, "collatz_arg")
-    state.constrain(arg > 3)
-    state.constrain(arg < 9)
-    state.constrain(arg % 2 == 0)
-    return [arg]
-
-
-# Run the collatz function with the given argument generator.
-m.collatz(arg_gen)
-
-# Manually collect return values
-# Prints 2, 3, 8
-for idx, val_list in enumerate(m.collect_returns()):
-    print("State", idx, "::", val_list[0])
+m = ManticoreEVM()
+contract = m.solidity_create_contract(source_code)
+# Explore transactions symbolically
 ```
-</details>
 
-## Requirements
-* Manticore requires Python 3.7 or greater 
-* Manticore officially supports the latest LTS version of Ubuntu provided by Github Actions
-  * Manticore has experimental support for EVM and WASM (but not native Linux binaries) on MacOS 
-* We recommend running with increased stack size. This can be done by running `ulimit -s 100000` or by passing `--ulimit stack=100000000:100000000` to `docker run`
+## Platform Support & Requirements
 
-### Compiling Smart Contracts
-* Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
-* Manticore uses [crytic-compile](https://github.com/crytic/crytic-compile) to build smart contracts. If you're having compilation issues, consider running 
-`crytic-compile` on your code directly to make it easier to identify any issues. 
-* We're still in the process of implementing full support for the EVM Istanbul instruction semantics, so certain opcodes may not be supported.
-In a pinch, you can try compiling with Solidity 0.4.x to avoid generating those instructions. 
+### Platform Compatibility
 
-## Using a different solver (Yices, Z3, CVC4)
-Manticore relies on an external solver supporting smtlib2. Currently Z3, Yices and CVC4 are supported and can be selected via command-line or configuration settings.
-If Yices is available, Manticore will use it by default. If not, it will fall back to Z3 or CVC4. If you want to manually choose which solver to use, you can do so like this:
-```manticore --smt.solver Z3```
-### Installing CVC4
-For more details go to https://cvc4.github.io/. Otherwise, just get the binary and use it.
+| Platform | Binary Analysis | Smart Contracts | WASM |
+|----------|----------------|-----------------|------|
+| **Linux x86_64** | ✅ Full | ✅ Full | ✅ Full |
+| **Linux ARM64** | ✅ Full | ✅ Full* | ✅ Full |
+| **macOS x86_64** | ⚠️ Limited** | ✅ Full | ✅ Full |
+| **macOS ARM64** | ⚠️ Limited** | ✅ Full | ✅ Full |
+| **Windows** | ⚠️ WSL2/Docker | ⚠️ WSL2/Docker | ⚠️ WSL2/Docker |
 
-        sudo wget -O /usr/bin/cvc4 https://github.com/CVC4/CVC4/releases/download/1.7/cvc4-1.7-x86_64-linux-opt
-        sudo chmod +x /usr/bin/cvc4
+\* *Requires QEMU for x86_64 solc on ARM64*
+\*\* *macOS binary analysis uses threading (slower than Linux multiprocessing)*
 
-### Installing Yices
-Yices is incredibly fast. More details here https://yices.csl.sri.com/
+### System Requirements
 
-        sudo add-apt-repository ppa:sri-csl/formal-methods
-        sudo apt-get update
-        sudo apt-get install yices2
+- **Python**: 3.9 or greater
+- **Memory**: 8GB RAM minimum (16GB+ recommended)
+- **Stack Size**: Increase for symbolic execution
+  - Linux/macOS: `ulimit -s 100000`
+  - Docker: `--ulimit stack=100000000:100000000`
+
+### Additional Dependencies
+
+**For Smart Contract Analysis:**
+- `solc` (Solidity compiler) in PATH
+- Or use [crytic-compile](https://github.com/crytic/crytic-compile) for automatic compilation
+
+**For macOS:**
+- Install Xcode Command Line Tools: `xcode-select --install`
+
+**Optional SMT Solvers** (for better performance):
+- **Yices** (fastest): `brew install SRI-CSL/sri-csl/yices2`
+- **CVC4**: `brew install cvc4/cvc4/cvc4`
+- **Z3**: Included by default
 
 ## Getting Help
 
-Feel free to stop by our #manticore slack channel in [Empire Hacking](https://slack.empirehacking.nyc/) for help using or extending Manticore.
+### Community
 
-Documentation is available in several places:
+- **Chat**: [#manticore on Empire Hacking Slack](https://slack.empirehacking.nyc/)
+- **Q&A**: [GitHub Discussions](https://github.com/trailofbits/manticore/discussions)
+- **Bugs**: [GitHub Issues](https://github.com/trailofbits/manticore/issues)
 
-  * The [wiki](https://github.com/trailofbits/manticore/wiki) contains information about getting started with Manticore and contributing
+### Commercial Support
 
-  * The [API reference](http://manticore.readthedocs.io/en/latest/) has more thorough and in-depth documentation on our API
-    
-  * The [examples](examples) directory has some small examples that showcase API features
+- [Trail of Bits](https://www.trailofbits.com/contact) offers consulting and training
+- Custom feature development available
 
-  * The [manticore-examples](https://github.com/trailofbits/manticore-examples) repository has some more involved examples, including some real CTF problems
+## Learn More
 
-If you'd like to file a bug report or feature request, please use our [issues](https://github.com/trailofbits/manticore/issues/choose) page. 
+### Publications & Talks
 
-For questions and clarifications, please visit the [discussion](https://github.com/trailofbits/manticore/discussions) page.
+- [Manticore: Symbolic Execution for Humans](https://blog.trailofbits.com/2017/04/27/manticore-symbolic-execution-for-humans/) - Introductory blog post
+- [Academic Paper (ASE 2019)](https://arxiv.org/abs/1907.03890) - Formal presentation
+- [Demo Video](https://youtu.be/o6pmBJZpKAc) - Tool demonstration
+
+### Integrations
+
+- **[manticore-verifier](http://manticore.readthedocs.io/en/latest/verifier.html)** - Property-based testing for smart contracts
+- **[MATE](https://github.com/GaloisInc/MATE)** - Binary analysis platform integration
+  - [MantiServe](https://galoisinc.github.io/MATE/mantiserve.html) - REST API for running Manticore analyses
+  - [DwarfCore](https://galoisinc.github.io/MATE/dwarfcore.html) - Enhanced program exploration using DWARF debug info
+  - [Under-constrained Manticore](https://github.com/GaloisInc/MATE/blob/main/doc/under-constrained-manticore.rst) - Analyze individual functions without full program context
+
+### Research
+
+Using Manticore in academic work? Consider applying for the [Crytic $10k Research Prize](https://blog.trailofbits.com/2019/11/13/announcing-the-crytic-10k-research-prize/).
 
 ## License
 
-Manticore is licensed and distributed under the AGPLv3 license. [Contact us](mailto:opensource@trailofbits.com) if you're looking for an exception to the terms.
-
-## Publications
-- [Manticore: A User-Friendly Symbolic Execution Framework for Binaries and Smart Contracts](https://arxiv.org/abs/1907.03890), Mark Mossberg, Felipe Manzano, Eric Hennenfent, Alex Groce, Gustavo Grieco, Josselin Feist, Trent Brunson, Artem Dinaburg - ASE 19
-
-If you are using Manticore in academic work, consider applying to the [Crytic $10k Research Prize](https://blog.trailofbits.com/2019/11/13/announcing-the-crytic-10k-research-prize/).
-
-## Demo Video from ASE 2019
-[![Brief Manticore demo video](https://img.youtube.com/vi/o6pmBJZpKAc/1.jpg)](https://youtu.be/o6pmBJZpKAc)
-
-## Tool Integrations 
-
-- [MATE: Merged Analysis To prevent Exploits](https://github.com/GaloisInc/MATE)
-  * [Mantiserve:](https://galoisinc.github.io/MATE/mantiserve.html) REST API interaction with Manticore to start, kill, and check Manticore instance
-  * [Dwarfcore:](https://galoisinc.github.io/MATE/dwarfcore.html) Plugins and detectors for use within Mantiserve engine during exploration 
-  * [Under-constrained symbolic execution](https://github.com/GaloisInc/MATE/blob/main/doc/under-constrained-manticore.rst) Interface for symbolically exploring single functions with Manticore
+Manticore is licensed under AGPLv3. [Contact us](mailto:opensource@trailofbits.com) for commercial licensing options.

@@ -12,6 +12,12 @@ from functools import reduce
 
 from typing import List
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 solver = Z3Solver.instance()
 
 

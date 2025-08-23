@@ -1,9 +1,228 @@
-[tool.black]
-target-version = ['py36']
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "manticore"
+version = "0.3.7"
+description = "Manticore is a symbolic execution tool for analysis of binaries and smart contracts."
+readme = "README.md"
+license = "AGPL-3.0-only"
+authors = [
+    { name = "Trail of Bits", email = "opensource@trailofbits.com" }
+]
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+]
+dependencies = [
+    "pyyaml",
+    "pycryptodome>=3.15.0",
+    "protobuf>=3.20,<5",
+    "prettytable",
+    "ply",
+    "rlp",
+    "intervaltree",
+    "crytic-compile>=0.3.0",
+    "wasm-tob @ git+https://github.com/trailofbits/wasm-tob.git",
+    "pyevmasm>=0.2.3",
+    "z3-solver",
+]
+requires-python = ">=3.11"
+
+[project.urls]
+Homepage = "https://github.com/trailofbits/manticore"
+Documentation = "https://github.com/trailofbits/manticore"
+Issues = "https://github.com/trailofbits/manticore/issues"
+Source = "https://github.com/trailofbits/manticore"
+
+[project.scripts]
+manticore = "manticore.__main__:main"
+manticore-verifier = "manticore.ethereum.verifier:main"
+
+[project.optional-dependencies]
+native = [
+    "capstone==5.0.6",
+    "pyelftools",
+    "unicorn~=2.0",
+]
+redis = ["redis"]
+lint = [
+    "mypy~=1.0",
+    "ruff>=0.12.10",
+]
+dev-noks = [
+    "build",
+    "manticore[native,lint]",
+    "coverage",
+    "py-solc-x",
+    "py-evm",
+    "Sphinx",
+    "pytest>=5.3.0",
+    "pytest-xdist>=1.30.0",
+    "pytest-cov>=2.8.1",
+    "pytest-timeout>=2.1.0",
+    "jinja2"
+]
+dev = [
+    "manticore[dev-noks]",
+    "keystone-engine",
+]
+docs = [
+    "Sphinx>=4.3.0,<7",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["manticore"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/manticore",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
+
+[tool.hatch.build]
+include = [
+    "manticore/**/*.py",
+    "manticore/**/*.proto",
+]
+exclude = [
+    "tests",
+]
+
+# Tool configurations consolidated from separate files
+
+[tool.mypy]
+python_version = "3.11"
+files = ["manticore"]
+exclude = ["server/"]
+ignore_missing_imports = true
+no_implicit_optional = false
+check_untyped_defs = false
+warn_return_any = false
+warn_unused_ignores = false
+
+# Generated files and modules with issues
+[[tool.mypy.overrides]]
+module = [
+    "manticore.ethereum.parsetab",
+    "manticore.core.state_pb2",
+    "manticore.core.worker",
+    "manticore.platforms.linux",
+    "manticore.platforms.evm",
+    "manticore.ethereum.abi",
+    "manticore.wasm.*",
+    "manticore.native.cpu.abstractcpu",
+    "manticore.native.manticore",
+    "manticore.utils.config",
+    "manticore.core.smtlib.solver",
+    "manticore.ethereum.verifier"
+]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+minversion = "5.3.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "--durations=10"
+# To skip slow tests, run: pytest -m "not slow"
+# To run only slow tests: pytest -m slow
+markers = [
+    "unit: Unit tests - test individual components",
+    "integration: Integration tests - test multiple components",
+    "slow: Slow tests that take significant time",
+    "fast: Fast tests that run quickly",
+    "linux: Tests that only run on Linux",
+    "network: Tests that require network access",
+    "ethereum: Ethereum/smart contract tests",
+    "native: Native binary analysis tests",
+    "wasm: WebAssembly tests",
+    "generated: Auto-generated tests (do not edit)",
+    "benchmark: Performance benchmark tests",
+]
+
+[tool.coverage.run]
+source = ["manticore"]
+omit = [
+    "*__init__.py",
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__main__.py",
+    "*/parsetab.py",
+    "*_pb2.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "@abstractmethod",
+    "logger.info",
+    "logger.debug",
+    "raise NotImplementedError",
+    "raise AssertionError",
+    "raise Aarch64InvalidInstruction",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
 line-length = 100
-extend-exclude = '''
-(
-  venv
-  | server # Has its own formatting
-)
-'''
+exclude = [
+    ".tox",
+    "*.egg",
+    ".git",
+    "docs/",
+    "examples/",
+    "scripts/",
+    "tests/",
+    "iterpickle.py",
+    "venv/",
+    "server/",
+]
+
+[tool.ruff.format]
+# Use single quotes for strings (like black's default)
+quote-style = "double"
+# Indent with spaces
+indent-style = "space"
+# Unix-style line endings
+line-ending = "auto"
+
+[tool.ruff.lint]
+# Converted from flake8 ignore rules in tox.ini
+ignore = [
+    "E265",  # Block comment should start with '# '
+    "E501",  # Line too long (handled by line-length)
+    "F403",  # 'from module import *' used; unable to detect undefined names
+    "F405",  # Name may be undefined, or defined from star imports
+    "E266",  # Too many leading '#' for block comment
+    "E712",  # Comparison to True/False should be with is/is not
+    "F841",  # Local variable is assigned to but never used
+    "E741",  # Ambiguous variable name
+    "E722",  # Do not use bare except
+    "E731",  # Do not assign a lambda expression, use a def
+    "F401",  # Unused imports (common in __init__.py)
+    "E402",  # Module import not at top of file
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Unused imports in __init__ files are OK
+"manticore/ethereum/parsetab.py" = ["ALL"]  # Generated file
+"manticore/core/state_pb2.py" = ["ALL"]  # Generated file

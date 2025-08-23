@@ -3,6 +3,12 @@ import unittest
 from manticore.native.cpu.arm import Armv7RegisterFile as RF
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 class Armv7RFTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

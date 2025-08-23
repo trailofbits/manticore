@@ -16,6 +16,7 @@ m.concrete_data = "infiltrate miami!"
 # let's use the m.context dict to keep our solution in
 m.context["solution"] = ""
 
+
 # Now we want to hook that compare instruction that controls the main loop.
 # Where is it again?
 @m.hook(fixme())

@@ -9,6 +9,12 @@ from manticore.core.smtlib import BitVecVariable
 from manticore.native import Manticore
 
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.integration
+
 class ManticoreDriverTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

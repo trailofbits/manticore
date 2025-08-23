@@ -634,7 +634,7 @@ class Armv7Cpu(Cpu):
         assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
 
         if self._mode != new_mode:
-            logger.debug(f'swapping into {"ARM" if new_mode == cs.CS_MODE_ARM else "THUMB"} mode')
+            logger.debug(f"swapping into {'ARM' if new_mode == cs.CS_MODE_ARM else 'THUMB'} mode")
 
         self._mode = new_mode
         self.disasm.disasm.mode = new_mode
@@ -1381,7 +1381,6 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def CLZ(cpu, dest, src):
-
         # Check if the |pos| bit is 1, pos being the offset from the MSB
         value = src.read()
         msb = cpu.address_bit_size - 1

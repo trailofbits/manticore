@@ -194,7 +194,7 @@ def setup_detectors_flags(
 
     if m.plugins:
         logger.info(
-            f'Registered plugins: {", ".join(d.name for d in m.plugins.values())}'
+            f"Registered plugins: {', '.join(d.name for d in m.plugins.values())}"
         )
 
     return args

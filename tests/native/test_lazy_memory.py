@@ -14,6 +14,12 @@ from manticore.core.smtlib import Z3Solver, Operators, issymbolic
 from manticore.core.smtlib.expression import *
 from manticore.core.smtlib.visitors import *
 
+import pytest
+
+# Test markers for categorization
+pytestmark = pytest.mark.native
+pytestmark = pytest.mark.unit
+
 solver = Z3Solver.instance()
 
 
