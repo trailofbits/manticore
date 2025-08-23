@@ -3,21 +3,7 @@ import logging
 import uuid
 
 import re
-
-try:
-    # Older Python versions use pysha3
-    import sha3
-except ImportError:
-    # Python 3.11+ doesn't have pysha3, use pycryptodome as sha3
-    from Crypto.Hash import keccak
-
-    class sha3:
-        @staticmethod
-        def keccak_256(data=b""):
-            k = keccak.new(digest_bits=256)
-            if data:
-                k.update(data)
-            return k
+from Crypto.Hash import keccak
 
 
 from . import abitypes
@@ -213,7 +199,7 @@ class ABI:
         """
         Makes a function hash id from a method signature
         """
-        s = sha3.keccak_256()
+        s = keccak.new(digest_bits=256)
         s.update(method_name_and_signature.encode())
         return bytes(s.digest()[:4])
 

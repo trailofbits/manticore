@@ -9,8 +9,6 @@ File name is purposefully not test_* to run this test separately.
 
 import inspect
 import unittest
-import subprocess
-import functools
 
 import os
 import shutil
@@ -25,67 +23,6 @@ consts = config.get_group("core")
 consts.mprocessing = consts.mprocessing.single
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-def requires_solc(version):
-    """
-    Decorator that ensures a specific Solidity version is active for a test.
-    Skips test if version cannot be switched.
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                # Get current version
-                result = subprocess.run(
-                    ['solc', '--version'],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                current_version = None
-                for line in result.stdout.split('\n'):
-                    if 'Version:' in line:
-                        current_version = line.split()[1].split('+')[0]
-                        break
-                
-                # If already on correct version, just run
-                if current_version == version:
-                    return func(*args, **kwargs)
-                
-                # Try to switch versions
-                result = subprocess.run(
-                    ['solc-select', 'use', version],
-                    capture_output=True,
-                    text=True,
-                    check=False
-                )
-                
-                if result.returncode != 0:
-                    # Can't switch, skip test if version doesn't match
-                    if version not in current_version:
-                        pytest.skip(f"Test requires Solidity {version}, but have {current_version} and cannot switch")
-                    return func(*args, **kwargs)
-                
-                try:
-                    # Run the test with new version
-                    test_result = func(*args, **kwargs)
-                finally:
-                    # Switch back
-                    subprocess.run(
-                        ['solc-select', 'use', current_version],
-                        capture_output=True,
-                        check=False
-                    )
-                
-                return test_result
-                    
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                # If we can't determine version, just run the test
-                return func(*args, **kwargs)
-        
-        return wrapper
-    return decorator
 
 
 @ethereum_test
@@ -396,8 +333,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         contract I_Choose_Not_To_Run {
             event Log(string);
             function foo(bytes memory x) public {
-                // x1 keccak - keep at 0.4.24 for simplicity
-                if (keccak256("tob") == keccak256(x)){
+                // x1 keccak
+                if (keccak256("tob") == keccak256(abi.encodePacked(x))){
                     emit Log("bug");
                 }
             }
@@ -422,7 +359,6 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         self.assertEqual(found, 1)  # log is reachable
         self.assertEqual(m.count_all_states(), 2)
 
-    @pytest.mark.skip(reason="10 levels of nested keccak256 causes timeout - too complex for symbolic execution")
     def test_essence2(self):
         source_code = """
         pragma solidity ^0.4.24;
@@ -459,7 +395,7 @@ if(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak256(keccak2
         self.assertEqual(m.count_all_states(), 2)
 
     def test_essence3(self):
-        source_code = """pragma solidity ^0.4.24;
+        source_code = """pragma solidity ^0.5.0;
         contract Sha3_Multiple_tx{
             event Log(string);
             bytes32 val;
@@ -570,7 +506,7 @@ class EthSha3TestFake(EthSha3TestSymbolicate):
         pass
 
     def test_essence3(self):
-        source_code = """pragma solidity ^0.4.24;
+        source_code = """pragma solidity ^0.5.0;
         contract Sha3_Multiple_tx{
             event Log(string);
             bytes32 val;

@@ -1025,9 +1025,9 @@ class PortfolioSolver(SMTLIBSolver):
         solvers = []
         if shutil.which(consts.yices_bin):
             solvers.append(consts.solver.yices.name)
-        # not sure we want z3 here, since it tends to be slower
-        # if shutil.which(consts.z3_bin):
-        #    solvers.append(consts.solver.z3.name)
+        # z3 can be slower but it's better than no solver at all
+        if shutil.which(consts.z3_bin):
+            solvers.append(consts.solver.z3.name)
         if shutil.which(consts.cvc4_bin):
             solvers.append(consts.solver.cvc4.name)
         if shutil.which(consts.boolector_bin):

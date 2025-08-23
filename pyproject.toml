@@ -25,14 +25,13 @@ classifiers = [
 ]
 dependencies = [
     "pyyaml",
-    "pysha3; python_version < '3.11'",
-    "pycryptodome>=3.15.0; python_version >= '3.11'",
+    "pycryptodome>=3.15.0",
     "protobuf>=3.20,<5",
     "prettytable",
     "ply",
     "rlp",
     "intervaltree",
-    "crytic-compile>=0.2.2",
+    "crytic-compile>=0.3.0",
     "wasm-tob @ git+https://github.com/trailofbits/wasm-tob.git",
     "pyevmasm>=0.2.3",
     "z3-solver",

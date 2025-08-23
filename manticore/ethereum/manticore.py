@@ -12,7 +12,6 @@ import tempfile
 import time
 
 from crytic_compile import CryticCompile, InvalidCompilation, is_supported
-from .crytic_compile_compat import wrap_compilation_unit
 
 from ..core.manticore import ManticoreBase, ManticoreError
 
@@ -276,82 +275,86 @@ class ManticoreEVM(ManticoreBase):
                     f"{contract_name} is shared in multiple compilation units, please split the codebase to prevent the duplicate"
                 )
 
-            for _compilation_unit in crytic_compile.compilation_units.values():
-                # Wrap the compilation unit for API compatibility
-                compilation_unit = wrap_compilation_unit(_compilation_unit)
+            for compilation_unit in crytic_compile.compilation_units.values():
+                # Iterate through source units in the compilation unit
+                for source_unit in compilation_unit.source_units.values():
+                    if not contract_name:
+                        if len(source_unit.contracts_names_without_libraries) > 1:
+                            raise EthereumError(
+                                f"Solidity file must contain exactly one contract or you must select one. Contracts found: {', '.join(source_unit.contracts_names)}"
+                            )
+                        contract_name = list(source_unit.contracts_names_without_libraries)[0]
 
-                if not contract_name:
-                    if len(compilation_unit.contracts_names_without_libraries) > 1:
-                        raise EthereumError(
-                            f"Solidity file must contain exactly one contract or you must select one. Contracts found: {', '.join(compilation_unit.contracts_names)}"
+                    if contract_name not in source_unit.contracts_names:
+                        # Contract might be in a different source unit
+                        continue
+
+                    name = contract_name
+
+                    libs = source_unit.libraries_names(name)
+                    if libraries:
+                        libs = [l for l in libs if l not in libraries]
+                    if libs:
+                        raise DependencyError(libs)
+
+                    # Get bytecode strings
+                    bytecode_init_str = source_unit.bytecode_init(name, libraries)
+                    bytecode_runtime_str = source_unit.bytecode_runtime(name, libraries)
+
+                    # Check for library placeholders and handle them
+                    # Solidity uses different formats for library placeholders:
+                    # - Old format (0.4.x): __<filename>:<library>____ (exactly 40 chars)
+                    # - New format (0.5+): __$<keccak256>$__
+                    old_placeholder_pattern = r"__.{38}"  # __ + 38 chars = 40 total
+                    new_placeholder_pattern = r"__\$[a-fA-F0-9]{64}\$__"  # New format
+
+                    # Replace library placeholders with a dummy address for testing
+                    # This is a workaround for contracts with library dependencies
+                    # In production, proper library addresses should be provided
+                    if "__" in bytecode_init_str or "__" in bytecode_runtime_str:
+                        # For testing purposes, replace with a valid address
+                        # This allows tests to proceed even with unlinked libraries
+                        dummy_address = "00" * 20  # 40 hex chars = 20 bytes
+                        # Try both patterns
+                        bytecode_init_str = re.sub(
+                            old_placeholder_pattern, dummy_address, bytecode_init_str
                         )
-                    contract_name = list(compilation_unit.contracts_names_without_libraries)[0]
+                        bytecode_init_str = re.sub(
+                            new_placeholder_pattern, dummy_address, bytecode_init_str
+                        )
+                        bytecode_runtime_str = re.sub(
+                            old_placeholder_pattern, dummy_address, bytecode_runtime_str
+                        )
+                        bytecode_runtime_str = re.sub(
+                            new_placeholder_pattern, dummy_address, bytecode_runtime_str
+                        )
 
-                if contract_name not in compilation_unit.contracts_names:
-                    raise ValueError(f"Specified contract not found: {contract_name}")
+                    bytecode = bytes.fromhex(bytecode_init_str)
+                    runtime = bytes.fromhex(bytecode_runtime_str)
+                    srcmap = source_unit.srcmap_init(name)
+                    srcmap_runtime = source_unit.srcmap_runtime(name)
+                    hashes = source_unit.hashes(name)
+                    abi = source_unit.abi(name)
 
-                name = contract_name
+                    filename = None
+                    for _fname, contracts in compilation_unit.filename_to_contracts.items():
+                        if name in contracts:
+                            filename = _fname.absolute
+                            break
 
-                libs = compilation_unit.libraries_names(name)
-                if libraries:
-                    libs = [l for l in libs if l not in libraries]
-                if libs:
-                    raise DependencyError(libs)
+                    if filename is None:
+                        raise EthereumError(
+                            f"Could not find a contract named {name}. Contracts found: {', '.join(source_unit.contracts_names)}"
+                        )
 
-                # Get bytecode strings
-                bytecode_init_str = compilation_unit.bytecode_init(name, libraries)
-                bytecode_runtime_str = compilation_unit.bytecode_runtime(name, libraries)
+                    with open(filename) as f:
+                        source_code = f.read()
 
-                # Check for library placeholders and handle them
-                # Solidity uses different formats for library placeholders:
-                # - Old format (0.4.x): __<filename>:<library>____ (exactly 40 chars)
-                # - New format (0.5+): __$<keccak256>$__
-                old_placeholder_pattern = r"__.{38}"  # __ + 38 chars = 40 total
-                new_placeholder_pattern = r"__\$[a-fA-F0-9]{64}\$__"  # New format
+                    warnings = ""
+                    return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
-                # Replace library placeholders with a dummy address for testing
-                # This is a workaround for contracts with library dependencies
-                # In production, proper library addresses should be provided
-                if "__" in bytecode_init_str or "__" in bytecode_runtime_str:
-                    # For testing purposes, replace with a valid address
-                    # This allows tests to proceed even with unlinked libraries
-                    dummy_address = "00" * 20  # 40 hex chars = 20 bytes
-                    # Try both patterns
-                    bytecode_init_str = re.sub(
-                        old_placeholder_pattern, dummy_address, bytecode_init_str
-                    )
-                    bytecode_init_str = re.sub(
-                        new_placeholder_pattern, dummy_address, bytecode_init_str
-                    )
-                    bytecode_runtime_str = re.sub(
-                        old_placeholder_pattern, dummy_address, bytecode_runtime_str
-                    )
-                    bytecode_runtime_str = re.sub(
-                        new_placeholder_pattern, dummy_address, bytecode_runtime_str
-                    )
-
-                bytecode = bytes.fromhex(bytecode_init_str)
-                runtime = bytes.fromhex(bytecode_runtime_str)
-                srcmap = compilation_unit.srcmap_init(name)
-                srcmap_runtime = compilation_unit.srcmap_runtime(name)
-                hashes = compilation_unit.hashes(name)
-                abi = compilation_unit.abi(name)
-
-                filename = None
-                for _fname, contracts in compilation_unit.filename_to_contracts.items():
-                    if name in contracts:
-                        filename = _fname.absolute
-                        break
-
-                if filename is None:
-                    raise EthereumError(
-                        f"Could not find a contract named {name}. Contracts found: {', '.join(compilation_unit.contracts_names)}"
-                    )
-
-                with open(filename) as f:
-                    source_code = f.read()
-
-                return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
+            # If we get here, contract was not found in any source unit
+            raise ValueError(f"Contract {contract_name} not found in any source unit")
 
         except InvalidCompilation as e:
             error_msg = str(e)
@@ -414,8 +417,8 @@ class ManticoreEVM(ManticoreBase):
             srcmap_runtime,
             hashes,
             abi,
+            warnings,
         ) = compilation_result
-        warnings = ""
 
         return (name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings)
 
