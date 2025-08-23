@@ -16,7 +16,7 @@ Manticore is a symbolic execution tool for analysis of smart contracts and binar
 Manticore uses symbolic execution to explore all possible states of a program and automatically generate inputs that trigger unique code paths. It can analyze:
 
 - **Ethereum smart contracts** (EVM bytecode)
-- **Linux binaries** (x86, x86_64, aarch64, ARMv7)  
+- **Linux binaries** (x86, x86_64, aarch64, ARMv7)
 - **WebAssembly modules**
 
 ### Key Features
@@ -105,19 +105,33 @@ The setup script handles:
 - Pre-commit hooks
 - Platform-specific requirements (solc, QEMU, etc.)
 
-### Other Options
+### Alternative Installation Methods
 
-- **pip**: `pip install "manticore[native]"`
-- **From source**: `pip install -e ".[native,dev]"`
+If you can't use `uv`, you can install with pip:
+
+```bash
+# Using pip (slower than uv)
+pip install "manticore[native]"
+
+# From source (for development)
+git clone https://github.com/trailofbits/manticore.git
+cd manticore
+pip install -e ".[native,dev]"
+```
 
 ## Examples & Documentation
 
 ### Learn by Example
 
 - **[Built-in Examples](examples/)**: Simple scripts demonstrating core features
-  - [Binary analysis](examples/linux/) - Linux ELF analysis
-  - [Smart contracts](examples/evm/) - Ethereum contract analysis  
+  - [Binary analysis](examples/linux/) - Linux ELF analysis (run `make` in this directory first)
+  - [Smart contracts](examples/evm/) - Ethereum contract analysis
   - [WebAssembly](examples/wasm/) - WASM module analysis
+
+  **Note:** Linux examples need to be compiled first:
+  ```bash
+  cd examples/linux && make
+  ```
 
 - **[Real CTF Solutions](examples/ctf/)**: Actual security challenges solved with Manticore
   - pwnable challenges
@@ -172,7 +186,7 @@ contract = m.solidity_create_contract(source_code)
 | **macOS ARM64** | ⚠️ Limited** | ✅ Full | ✅ Full |
 | **Windows** | ⚠️ WSL2/Docker | ⚠️ WSL2/Docker | ⚠️ WSL2/Docker |
 
-\* *Requires QEMU for x86_64 solc on ARM64*  
+\* *Requires QEMU for x86_64 solc on ARM64*
 \*\* *macOS binary analysis uses threading (slower than Linux multiprocessing)*
 
 ### System Requirements

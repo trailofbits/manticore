@@ -114,10 +114,12 @@ class PickleSerializer(StateSerializer):
         logger.info("Serializing %s", f.name if hasattr(f, "name") else "<unknown>")
         try:
             if consts.compress_states:
+                # Ensure we flush data properly for Python 3.12 compatibility
                 with GzipFile(
                     fileobj=f, mode="wb", compresslevel=PickleSerializer.COMPRESSION_LEVEL
                 ) as gz:
-                    (pickle_dump(state, gz),)
+                    pickle_dump(state, gz)
+                    gz.flush()  # Explicitly flush for Python 3.12
             else:
                 pickle_dump(state, f)
         except RuntimeError:
