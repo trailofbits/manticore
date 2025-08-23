@@ -286,6 +286,7 @@ class EthAbiTests(unittest.TestCase):
             b"\0" * 31 + b"\x10" + b"\0" * 31 + b"\x20" + b"\0" * 31 + b"\x30",
         )
 
+    @pytest.mark.fast
     def test_serialize_basic_types_int(self):
         self.assertEqual(ABI.serialize("int256", 0x10), b"\0" * 31 + b"\x10")
         self.assertEqual(ABI.deserialize("int256", b"\0" * 31 + b"\x10"), 0x10)
@@ -369,6 +370,7 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(name, b"\x00\x00\x00\x00")
         self.assertEqual(args, tuple())
 
+    @pytest.mark.fast
     def test_function_type(self):
         # setup ABI for function with one function param
         spec = "func(function)"

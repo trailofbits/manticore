@@ -98,10 +98,12 @@ class EthRetVal(EthDetectorTest):
 
     DETECTOR_CLASS = DetectUnusedRetVal
 
+    @pytest.mark.fast
     def test_retval_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
+    @pytest.mark.fast
     def test_retval_not_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Returned value at CALL instruction is not used", False)})
@@ -118,6 +120,7 @@ class EthRetVal(EthDetectorTest):
 class EthSuicidal(EthDetectorTest):
     DETECTOR_CLASS = DetectSuicidal
 
+    @pytest.mark.fast
     def test_selfdestruct_true_pos(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable SELFDESTRUCT", False)})
@@ -128,6 +131,7 @@ class EthSuicidal(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable SELFDESTRUCT", False)})
 
+    @pytest.mark.fast
     def test_selfdestruct_true_neg(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
@@ -140,6 +144,7 @@ class EthSuicidal(EthDetectorTest):
 class EthExternalCallAndLeak(EthDetectorTest):
     DETECTOR_CLASS = DetectExternalCallAndLeak
 
+    @pytest.mark.fast
     def test_etherleak_true_neg(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
@@ -190,6 +195,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
             },
         )
 
+    @pytest.mark.fast
     def test_etherleak_true_pos_msgsender(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -218,6 +224,7 @@ class EthIntegerOverflow(unittest.TestCase):
         self.io = DetectIntegerOverflow()
         self.state = make_mock_evm_state()
 
+    @pytest.mark.fast
     def test_mul_no_overflow(self):
         """
         Regression test added for issue 714, where we were using the ADD ovf check for MUL
@@ -229,6 +236,7 @@ class EthIntegerOverflow(unittest.TestCase):
         check = self.state.can_be_true(cond)
         self.assertFalse(check)
 
+    @pytest.mark.fast
     def test_mul_overflow0(self):
         arguments = [1 << 249, self.state.new_symbolic_value(256)]
         self.state.constrain(operators.ULT(arguments[1], 256))
@@ -237,6 +245,7 @@ class EthIntegerOverflow(unittest.TestCase):
         check = self.state.can_be_true(cond)
         self.assertTrue(check)
 
+    @pytest.mark.fast
     def test_mul_overflow1(self):
         arguments = [1 << 255, self.state.new_symbolic_value(256)]
 
@@ -248,6 +257,7 @@ class EthIntegerOverflow(unittest.TestCase):
 class EthEnvInstruction(EthDetectorTest):
     DETECTOR_CLASS = DetectEnvInstruction
 
+    @pytest.mark.fast
     def test_predictable_not_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(
@@ -271,6 +281,7 @@ class EthDelegatecall(EthDetectorTest):
 
     DETECTOR_CLASS = DetectDelegatecall
 
+    @pytest.mark.fast
     def test_delegatecall_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())

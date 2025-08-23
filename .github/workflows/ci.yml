@@ -9,6 +9,10 @@ on:
     # run CI every day even if no PRs/merges occur
     - cron:  '0 12 * * *'
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # needs to run only on pull_request
   lint:
@@ -44,7 +48,7 @@ jobs:
         # Type checking with mypy
         mypy --version
         mypy
-  
+
   # Fast tests for quick feedback on PRs (skip slow and generated tests)
   fast-tests:
     runs-on: ubuntu-22.04
@@ -67,40 +71,45 @@ jobs:
       with:
         path: ~/.solcx
         key: ${{ runner.os }}-solc-0.4.24-0.5.11
-    - name: Install dependencies
+    - name: Install dependencies and Solidity compilers
       run: |
         # Install uv for faster package management
         curl -LsSf https://astral.sh/uv/install.sh | sh
         source $HOME/.cargo/env
         uv pip install --system -e ".[dev-noks]"
-        # Install multiple Solidity versions
-        # 0.4.24 for legacy tests, 0.5.11 for modern syntax tests
-        solc-select install 0.4.24
-        solc-select install 0.5.11
-        # Use 0.4.24 as default (most tests use this version)
-        solc-select use 0.4.24
-        # Verify the versions are available
-        solc-select versions
+        # Install Solidity compilers via py-solc-x
+        python -c "import solcx; [solcx.install_solc(v) for v in ('0.4.24','0.5.11')]; print('Installed solc versions:', solcx.get_installed_solc_versions())"
+        # Point default solc to 0.4.24 for non-decorated tests
+        mkdir -p "$HOME/.local/bin"
+        SOLC_0424=$(python -c "import solcx; import sys; print(str(solcx.get_solcx_install_folder() / 'solc-v0.4.24'))")
+        ln -sf "$SOLC_0424" "$HOME/.local/bin/solc"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
     - name: Run fast tests
       run: |
-        # Most tests need Solidity 0.4.24
-        solc-select use 0.4.24
-        # Skip slow and generated tests for quick PR feedback
-        # No coverage collection - this is for quick feedback only
-        # Exclude SHA3 tests that need Solidity 0.5+
-        # Exclude native tests since they have their own matrix job
-        pytest -xvs tests/ -m "not slow and not generated" --durations=10 --no-cov \
-          --ignore=tests/ethereum/test_sha3.py \
-          --ignore=tests/native/ \
-          -n auto
-        
-        # Now run SHA3 tests with Solidity 0.5.11
-        solc-select use 0.5.11
-        pytest -xvs tests/ethereum/test_sha3.py -m "not slow and not generated" --durations=10 --no-cov -n auto
-        
+        # Run only smoke-fast tests marked with @pytest.mark.fast
+        pytest -xvs tests/ -m "fast" --durations=10 --no-cov -n auto
+
+  cancel-on-fast-failure:
+    runs-on: ubuntu-22.04
+    needs: [fast-tests]
+    if: ${{ github.event_name == 'pull_request' && needs.fast-tests.result == 'failure' }}
+    permissions:
+      actions: write
+    steps:
+      - name: Cancel workflow due to fast-tests failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.cancelWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId
+            });
+
   tests:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         python: ['3.11']
         type: ["ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "aarch64", "wasm", "wasm_sym", "other", "ethereum_truffle"]
@@ -137,7 +146,7 @@ jobs:
       with:
         path: ~/.solcx
         key: ${{ runner.os }}-solc-0.4.24-0.5.11
-    - name: Install dependencies
+    - name: Install dependencies and Solidity compilers
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
@@ -169,13 +178,13 @@ jobs:
         yices --version
         # Note: Boolector removed - it's archived/unmaintained upstream
         # Consider using Bitwuzla (its successor) in the future
-        # Install multiple Solidity versions
-        solc-select install 0.4.24
-        solc-select install 0.5.11
-        # Use 0.4.24 as default (most tests use this version)
-        solc-select use 0.4.24
-        # Verify the versions are available
-        solc-select versions
+        # Install Solidity compilers via py-solc-x
+        python -c "import solcx; [solcx.install_solc(v) for v in ('0.4.24','0.5.11')]; print('Installed solc versions:', solcx.get_installed_solc_versions())"
+        # Point default solc to 0.4.24 for non-decorated tests
+        mkdir -p "$HOME/.local/bin"
+        SOLC_0424=$(python -c "import solcx; import sys; print(str(solcx.get_solcx_install_folder() / 'solc-v0.4.24'))")
+        ln -sf "$SOLC_0424" "$HOME/.local/bin/solc"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
     - name: Run Tests
       env:
         TEST_TYPE: ${{ matrix.type }}
@@ -239,20 +248,20 @@ jobs:
           path: ~/.solcx
           key: ${{ runner.os }}-solc-0.4.24-0.5.11
 
-      - name: 'Install tools'
+      - name: 'Install tools and Solidity compilers'
         run: |
           # Install uv for faster package management
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env
           # just command runner https://github.com/casey/just#pre-built-binaries
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
-          # Install solc-select first
-          uv pip install --system solc-select
-          # Install multiple Solidity versions for server tests
-          solc-select install 0.4.24
-          solc-select install 0.5.11
-          # Use 0.4.24 as default for server tests (most contracts use 0.4.24)
-          solc-select use 0.4.24
+          # Install py-solc-x and compilers
+          uv pip install --system py-solc-x
+          python -c "import solcx; [solcx.install_solc(v) for v in ('0.4.24','0.5.11')]; print('Installed solc versions:', solcx.get_installed_solc_versions())"
+          mkdir -p "$HOME/.local/bin"
+          SOLC_0424=$(python -c "import solcx; import sys; print(str(solcx.get_solcx_install_folder() / 'solc-v0.4.24'))")
+          ln -sf "$SOLC_0424" "$HOME/.local/bin/solc"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: 'Lint MUI Server'
         working-directory: server

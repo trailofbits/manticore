@@ -63,6 +63,7 @@ dev-noks = [
     "build",
     "manticore[native,lint]",
     "coverage",
+    "py-solc-x",
     "py-evm",
     "Sphinx",
     "pytest>=5.3.0",

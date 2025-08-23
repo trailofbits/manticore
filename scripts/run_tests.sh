@@ -107,8 +107,25 @@ run_truffle_tests(){
     cd truffle_tests
     truffle unbox metacoin
     
-    # Use a newer Solidity version for truffle MetaCoin contract
-    solc-select use 0.5.11 || solc-select use 0.4.24
+    # Ensure solc is available; prefer 0.5.11 for MetaCoin, fallback to 0.4.24
+    mkdir -p "$HOME/.local/bin"
+    SOLC_0511=$(python - <<'PY'
+import solcx
+p = solcx.get_solcx_install_folder() / 'solc-v0.5.11'
+print(str(p))
+PY
+)
+    if [ -x "$SOLC_0511" ]; then
+        ln -sf "$SOLC_0511" "$HOME/.local/bin/solc"
+    else
+        SOLC_0424=$(python - <<'PY'
+import solcx
+print(str(solcx.get_solcx_install_folder() / 'solc-v0.4.24'))
+PY
+)
+        ln -sf "$SOLC_0424" "$HOME/.local/bin/solc"
+    fi
+    echo "$HOME/.local/bin" >> "$GITHUB_PATH" 2>/dev/null || true
     
     coverage run -m manticore . --contract MetaCoin --workspace output --exclude-all --thorough-mode --evm.oog ignore --evm.txfail optimistic --smt.solver portfolio
     # Truffle smoke test. We test if manticore is able to generate states
@@ -131,25 +148,10 @@ run_tests_from_dir() {
     DIR=$1
     echo "Running only the tests from 'tests/$DIR' directory"
     
-    # Special handling for ethereum tests - SHA3 tests need Solidity 0.5+
-    if [ "$DIR" = "ethereum" ]; then
-        # Run most ethereum tests with Solidity 0.4.24
-        solc-select use 0.4.24
-        echo "Running ethereum tests (excluding SHA3) with Solidity 0.4.24"
-        pytest --durations=100 --cov=manticore -n auto "tests/$DIR" --ignore="tests/$DIR/test_sha3.py"
-        RESULT=$?
-        
-        # Run SHA3 tests with Solidity 0.5.11
-        if [ $RESULT -eq 0 ]; then
-            solc-select use 0.5.11
-            echo "Running SHA3 tests with Solidity 0.5.11"
-            pytest --durations=100 --cov=manticore -n auto "tests/$DIR/test_sha3.py"
-            RESULT=$?
-        fi
-    else
-        pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
-        RESULT=$?
-    fi
+    # Default behavior: run the whole directory in one pass.
+    # Solidity compiler version is managed in CI via py-solc-x.
+    pytest --durations=100 --cov=manticore -n auto "tests/$DIR"
+    RESULT=$?
     
     return $RESULT
 }

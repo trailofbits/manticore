@@ -30,6 +30,7 @@ class TestSymbolicBranch(unittest.TestCase):
         input_arg = state.context["arg"]
         return state.can_be_true(result == val)
 
+    @pytest.mark.fast
     def test_if(self):
         m = ManticoreWASM(test_if_file)
 

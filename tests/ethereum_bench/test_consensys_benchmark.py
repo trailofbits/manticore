@@ -60,6 +60,7 @@ class EthBenchmark(unittest.TestCase):
     def test_assert_minimal(self):
         self._test("assert_minimal", {(95, "INVALID instruction", False)})
 
+    @pytest.mark.fast
     def test_assert_constructor(self):
         self._test("assert_constructor", {(23, "INVALID instruction", True)})
 
