@@ -14,7 +14,7 @@ jobs:
   lint:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
@@ -44,7 +44,7 @@ jobs:
       matrix:
         type: ["ethereum_truffle", "ethereum_bench", "examples", "ethereum", "ethereum_vm", "native", "wasm", "wasm_sym", "other"]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
@@ -119,7 +119,7 @@ jobs:
   manticore-server:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v4
         with:
@@ -160,7 +160,7 @@ jobs:
     if: github.event_name == 'schedule'
     needs: tests
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
