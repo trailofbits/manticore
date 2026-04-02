@@ -1,3 +1,5 @@
+import sys
+
 from .manticore import ManticoreWASM
 
 from ..core.plugin import Profiler
@@ -29,5 +31,8 @@ def wasm_main(args, _logger):
         m.run()
 
     m.finalize()
+
+    if m.had_error:
+        sys.exit(1)
 
     return m

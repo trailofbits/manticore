@@ -96,6 +96,7 @@ class ManticoreBase(Eventful):
         self._lock = FakeLock()
         self._killed = ctypes.c_bool(False)
         self._running = ctypes.c_bool(False)
+        self._had_error = ctypes.c_bool(False)
         self._ready_states = []
         self._terminated_states = []
         self._busy_states = []
@@ -108,6 +109,7 @@ class ManticoreBase(Eventful):
         self._lock = threading.Condition()
         self._killed = ctypes.c_bool(False)
         self._running = ctypes.c_bool(False)
+        self._had_error = ctypes.c_bool(False)
         self._ready_states = []
         self._terminated_states = []
         self._busy_states = []
@@ -129,6 +131,7 @@ class ManticoreBase(Eventful):
         self._lock = self._manager.Condition()
         self._killed = self._manager.Value(bool, False)
         self._running = self._manager.Value(bool, False)
+        self._had_error = self._manager.Value(bool, False)
         # List of state ids of States on storage
         self._ready_states = self._manager.list()
         self._terminated_states = self._manager.list()
@@ -340,6 +343,7 @@ class ManticoreBase(Eventful):
                 "_lock",
                 "_running",
                 "_killed",
+                "_had_error",
                 "_ready_states",
                 "_terminated_states",
                 "_killed_states",
@@ -1098,6 +1102,11 @@ class ManticoreBase(Eventful):
         # was not yet answered
         # We know that BUSY states can only decrease after a kill is requested
         return self._killed.value
+
+    @sync
+    def had_error(self):
+        """True if any worker encountered an unrecoverable exception during analysis"""
+        return self._had_error.value
 
     @property
     def workspace(self):
