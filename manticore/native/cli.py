@@ -1,3 +1,5 @@
+import sys
+
 from .manticore import Manticore
 from ..core.plugin import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
 
@@ -37,3 +39,6 @@ def native_main(args, _logger):
         m.run()
 
     m.finalize()
+
+    if m.had_error:
+        sys.exit(1)

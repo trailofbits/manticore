@@ -181,6 +181,8 @@ class Worker:
                     formatted = traceback.format_exc()
                     logger.error("Exception in state %r: %r\n%s ", self.id, exc, formatted)
                     # Internal Exception
+                    # Mark that an unrecoverable error occurred so the process can exit non-zero
+                    m._had_error.value = True
                     # Add the state to the terminated state list
                     if current_state is not None:
                         # Drop any work on this state in case it is inconsistent
