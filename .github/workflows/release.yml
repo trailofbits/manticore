@@ -62,6 +62,8 @@ jobs:
   upload:
     runs-on: ubuntu-20.04
     needs: tests
+    permissions:
+      id-token: write
     steps:
     - uses: actions/checkout@v6
     - name: Set up Python 3.7
@@ -72,7 +74,12 @@ jobs:
       run: |
         python3 -m pip install wheel
         python3 setup.py sdist bdist_wheel
+    - name: Sign the distribution files
+      uses: sigstore/gh-action-sigstore-python@v3.2.0
+      with:
+        inputs: >-
+          ./dist/*.tar.gz
+          ./dist/*.whl
+        release-signing-artifacts: true
     - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@v1.13.0
-      with:
-        password: ${{ secrets.PYPI_UPLOAD }}
