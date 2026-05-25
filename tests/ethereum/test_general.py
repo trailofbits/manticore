@@ -2037,6 +2037,34 @@ class EthPluginTests(unittest.TestCase):
 
         m.clear_snapshot()  # We can double clear it
 
+    def test_save_and_resume_evm_state(self):
+        asm_store_one = """ PUSH1 0x1
+                            PUSH1 0x0
+                            SSTORE
+                            STOP
+                        """
+        fd, state_path = tempfile.mkstemp(suffix=".pkl")
+        os.close(fd)
+
+        with disposable_mevm() as m:
+            caller = m.create_account(balance=10**18)
+            contract = m.create_account(code=EVMAsm.assemble(asm_store_one))
+            m.save_state(state_path)
+
+        try:
+            resumed = ManticoreEVM.from_saved_state(state_path)
+            try:
+                self.assertEqual(resumed.count_ready_states(), 1)
+                resumed.transaction(caller=caller, address=contract, data=b"", value=0, gas=100000)
+
+                self.assertEqual(resumed.count_ready_states(), 1)
+                state = next(resumed.ready_states)
+                self.assertEqual(state.platform.get_storage_data(contract, 0), 1)
+            finally:
+                shutil.rmtree(resumed.workspace)
+        finally:
+            os.remove(state_path)
+
     def test_is_main(self):
         # test enable/disable plugin and sync vs contextmanager
         source_code = """

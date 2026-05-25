@@ -433,6 +433,41 @@ class ManticoreEVM(ManticoreBase):
         self.detectors: Dict[str, Detector] = {}
         self.metadata: Dict[int, SolidityMetadata] = {}
 
+    def save_state(self, filename, state_id=None):
+        """
+        Serialize a ready EVM state so it can be resumed with
+        :meth:`ManticoreEVM.from_saved_state`.
+
+        If ``state_id`` is omitted, there must be exactly one ready state.
+        """
+        if state_id is None:
+            if len(self._ready_states) != 1:
+                raise EthereumError(
+                    "state_id is required when there is not exactly one ready state"
+                )
+            state_id = self._ready_states[0]
+
+        state = self._load(state_id)
+        with open(filename, "wb") as statef:
+            self._serializer.serialize(state, statef)
+
+    @classmethod
+    def from_saved_state(cls, filename, plugins=None, **kwargs):
+        """
+        Create a ManticoreEVM object from a state serialized with
+        :meth:`ManticoreEVM.save_state` or ``SerializeState``.
+        """
+        with open(filename, "rb") as statef:
+            state = PickleSerializer().deserialize(statef)
+
+        if not isinstance(state, State):
+            raise TypeError(f"Invalid saved state type: {type(state).__name__}")
+
+        m = cls(plugins=plugins, **kwargs)
+        m.clear_ready_states()
+        m._put_state(state)
+        return m
+
     @property
     def world(self):
         """The world instance or None if there is more than one state"""
