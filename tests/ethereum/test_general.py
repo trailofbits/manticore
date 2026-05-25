@@ -263,6 +263,29 @@ class EthAbiTests(unittest.TestCase):
             b"\0" * 31 + b"\x10" + b"\0" * 31 + b"\x20" + b"\0" * 31 + b"\x30",
         )
 
+    def test_static_array_encoding_is_inline(self):
+        encoded_array = ABI.serialize("uint[1]", [123])
+        self.assertEqual(encoded_array, self._pack_int_to_32(123))
+        self.assertEqual(ABI.deserialize("uint[1]", encoded_array), [123])
+
+        encoded_tuple = ABI.serialize("(uint[1],uint)", [123], 456)
+        self.assertEqual(encoded_tuple, self._pack_int_to_32(123) + self._pack_int_to_32(456))
+        self.assertEqual(ABI.deserialize("(uint[1],uint)", encoded_tuple), ([123], 456))
+
+    def test_nested_dynamic_tuple_encoding_uses_offset(self):
+        encoded = ABI.serialize("(uint,(uint,string),uint)", 1, (2, b"hi"), 3)
+        expected = (
+            self._pack_int_to_32(1)
+            + self._pack_int_to_32(96)
+            + self._pack_int_to_32(3)
+            + self._pack_int_to_32(2)
+            + self._pack_int_to_32(64)
+            + self._pack_int_to_32(2)
+            + b"hi".ljust(32, b"\0")
+        )
+        self.assertEqual(encoded, expected)
+        self.assertEqual(ABI.deserialize("(uint,(uint,string),uint)", encoded), (1, (2, b"hi"), 3))
+
     def test_serialize_basic_types_int(self):
         self.assertEqual(ABI.serialize("int256", 0x10), b"\0" * 31 + b"\x10")
         self.assertEqual(ABI.deserialize("int256", b"\0" * 31 + b"\x10"), 0x10)

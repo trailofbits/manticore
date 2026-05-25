@@ -30,22 +30,36 @@ class ABI:
     """
 
     @staticmethod
+    def _is_dynamic_type(ty):
+        """Return True if ty is dynamic according to the Solidity ABI spec."""
+        if ty[0] in ("bytes", "string"):
+            return True
+        if ty[0] == "array":
+            rep = ty[1]
+            base_type = ty[2]
+            return rep is None or ABI._is_dynamic_type(base_type)
+        if ty[0] == "tuple":
+            return any(ABI._is_dynamic_type(ty_i) for ty_i in ty[1])
+        return False
+
+    @staticmethod
     def _type_size(ty):
-        """Calculate `static` type size"""
+        """Calculate the size occupied by ty in an ABI head."""
+        if ABI._is_dynamic_type(ty):
+            return 32
         if ty[0] in ("int", "uint", "bytesM", "function"):
             return 32
-        elif ty[0] in ("tuple"):
+        elif ty[0] == "tuple":
             result = 0
             for ty_i in ty[1]:
                 result += ABI._type_size(ty_i)
             return result
-        elif ty[0] in ("array"):
+        elif ty[0] == "array":
             rep = ty[1]
-            result = 32  # offset link
-            return result
-        elif ty[0] in ("bytes", "string"):
-            result = 32  # offset link
-            return result
+            base_type = ty[2]
+            if rep is None:
+                return 32
+            return rep * ABI._type_size(base_type)
         raise ValueError
 
     @staticmethod
@@ -102,18 +116,27 @@ class ABI:
             # allow python strs also to be used for Solidity bytesM/string types
             values = tuple(val.encode() if isinstance(val, str) else val for val in values)
 
-        result, dyn_result = ABI._serialize(parsed_ty, values)
+        result, dyn_result = ABI._serialize(
+            parsed_ty, values, include_dynamic_offset=parsed_ty[0] != "tuple"
+        )
         return result + dyn_result
 
     @staticmethod
-    def _serialize(ty, value, dyn_offset=None):
+    def _serialize(ty, value, dyn_offset=None, include_dynamic_offset=True):
         if dyn_offset is None:
             dyn_offset = ABI._type_size(ty)
 
         result = bytearray()
         dyn_result = bytearray()
 
-        if ty[0] == "int":
+        if ABI._is_dynamic_type(ty):
+            dyn_result = ABI._serialize_dynamic_type(ty, value)
+            if include_dynamic_offset:
+                result += ABI._serialize_uint(dyn_offset)
+            else:
+                result += dyn_result
+                dyn_result = bytearray()
+        elif ty[0] == "int":
             result += ABI._serialize_int(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
         elif ty[0] == "uint":
             result += ABI._serialize_uint(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
@@ -124,26 +147,19 @@ class ABI:
                     "bytesM: value length exceeds size of bytes{} type".format(nbytes)
                 )
             result += ABI._serialize_bytes(value)
-        elif ty[0] in ("bytes", "string"):
-            result += ABI._serialize_uint(dyn_offset)
-            dyn_result += ABI._serialize_uint(len(value))
-            dyn_result += ABI._serialize_bytes(value)
         elif ty[0] == "function":
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray("\0" * 8)
             assert len(result) == 32
         elif ty[0] == "tuple":
-            sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
-            result += sub_result
-            dyn_result += sub_dyn_result
+            result += ABI._serialize_sequence(ty[1], value)
         elif ty[0] == "array":
             rep = ty[1]
             base_type = ty[2]
-            sub_result, sub_dyn_result = ABI._serialize_array(rep, base_type, value, dyn_offset)
-            result += sub_result
-            dyn_result += sub_dyn_result
+            result += ABI._serialize_static_array(rep, base_type, value)
 
-        assert len(result) == ABI._type_size(ty)
+        if include_dynamic_offset or not ABI._is_dynamic_type(ty):
+            assert len(result) == ABI._type_size(ty)
         return result, dyn_result
 
     @staticmethod
@@ -154,44 +170,56 @@ class ABI:
         :param value:
         :type value: str or bytearray or Array
         """
-        return value + bytearray(b"\x00" * (32 - len(value)))
+        padding = (32 - (len(value) % 32)) % 32
+        return value + bytearray(b"\x00" * padding)
 
     @staticmethod
-    def _serialize_tuple(types, value, dyn_offset=None):
+    def _serialize_sequence(types, value):
         result = bytearray()
         dyn_result = bytearray()
         if len(types) != len(value):
             raise ValueError(
                 f"The number of values to serialize is {'less' if len(value) < len(types) else 'greater'} than the number of types"
             )
+        dyn_offset = sum(ABI._type_size(ty_i) for ty_i in types)
         for ty_i, value_i in zip(types, value):
             result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
             result += result_i
             dyn_result += dyn_result_i
-        return result, dyn_result
+        return result + dyn_result
 
     @staticmethod
-    def _serialize_array(rep, base_type, value, dyn_offset=None):
-        result = ABI._serialize_uint(dyn_offset)
-        dyn_result = bytearray()
+    def _serialize_dynamic_type(ty, value):
+        if ty[0] in ("bytes", "string"):
+            return ABI._serialize_uint(len(value)) + ABI._serialize_bytes(value)
+        if ty[0] == "tuple":
+            return ABI._serialize_sequence(ty[1], value)
+        if ty[0] == "array":
+            rep = ty[1]
+            base_type = ty[2]
 
-        sub_result = bytearray()
-        sub_dyn_result = bytearray()
+            if rep is not None and len(value) != rep:
+                raise ValueError("More reps than values")
 
-        if rep is not None and len(value) != rep:
+            types = tuple(base_type for _ in range(len(value)))
+            encoded_elements = ABI._serialize_sequence(types, value)
+            if rep is None:
+                return ABI._serialize_uint(len(value)) + encoded_elements
+            return encoded_elements
+        raise ValueError
+
+    @staticmethod
+    def _serialize_static_array(rep, base_type, value):
+        if rep is None:
+            raise ValueError("Cannot serialize a dynamic array as static")
+        if len(value) != rep:
             raise ValueError("More reps than values")
-        sub_result += ABI._serialize_uint(len(value))
 
+        result = bytearray()
         for value_i in value:
-            result_i, dyn_result_i = ABI._serialize(
-                base_type, value_i, dyn_offset + len(dyn_result)
-            )
-            sub_result += result_i
-            sub_dyn_result += dyn_result_i
-
-        dyn_result += sub_result
-        dyn_result += sub_dyn_result
-        return result, dyn_result
+            result_i, dyn_result_i = ABI._serialize(base_type, value_i)
+            result += result_i + dyn_result_i
+        return result
 
     @staticmethod
     def function_selector(method_name_and_signature):
@@ -218,18 +246,32 @@ class ABI:
                 # func_id = ABI.function_selector(type_spec)
                 result = (data[:4],)
                 ty = m.group("type")
-                result += (ABI._deserialize(abitypes.parse(ty), data[4:]),)
+                result += (ABI._deserialize(abitypes.parse(ty), data[4:], follow_offset=False),)
             else:
                 # No function name, just types
                 ty = type_spec
-                result = ABI._deserialize(abitypes.parse(ty), data)
+                parsed_ty = abitypes.parse(ty)
+                result = ABI._deserialize(parsed_ty, data, follow_offset=parsed_ty[0] != "tuple")
             return result
         except Exception as e:
             raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
 
     @staticmethod
-    def _deserialize(ty, buf: typing.Union[bytearray, bytes, Array], offset=0):
+    def _deserialize(
+        ty, buf: typing.Union[bytearray, bytes, Array], offset=0, base_offset=0, follow_offset=True
+    ):
         assert isinstance(buf, (bytearray, bytes, Array))
+        if ABI._is_dynamic_type(ty) and follow_offset:
+            dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
+            dyn_offset = to_constant(dyn_offset)
+            return ABI._deserialize(
+                ty,
+                buf,
+                base_offset + dyn_offset,
+                base_offset + dyn_offset,
+                follow_offset=False,
+            )
+
         result = None
         if ty[0] == "int":
             result = ABI._deserialize_int(buf[offset : offset + 32], nbytes=ty[1] // 8)
@@ -242,30 +284,41 @@ class ABI:
             func_id = buf[offset + 20 : offset + 24]
             result = (address, func_id)
         elif ty[0] in ("bytes", "string"):
-            dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
-            dyn_offset = to_constant(dyn_offset)
-            size = ABI._deserialize_int(buf[dyn_offset : dyn_offset + 32])
-            result = buf[dyn_offset + 32 : dyn_offset + 32 + size]
-        elif ty[0] in ("tuple"):
-            result = ()
-            for ty_i in ty[1]:
-                result += (ABI._deserialize(ty_i, buf, offset),)
-                offset += ABI._type_size(ty_i)
-        elif ty[0] in ("array"):
-            result = []
-            dyn_offset = ABI._deserialize_int(buf[offset : offset + 32])
-            dyn_offset = to_constant(dyn_offset)
-            rep = ty[1]
-            ty_size = ABI._type_size(ty[2])
-            if rep is None:
-                rep = ABI._deserialize_int(buf[dyn_offset : dyn_offset + 32])
-                dyn_offset += 32
-            for _ in range(rep):
-                result.append(ABI._deserialize(ty[2], buf, dyn_offset))
-                dyn_offset += ty_size
+            size = ABI._deserialize_int(buf[offset : offset + 32])
+            result = buf[offset + 32 : offset + 32 + size]
+        elif ty[0] == "tuple":
+            result = ABI._deserialize_sequence(ty[1], buf, offset)
+        elif ty[0] == "array":
+            result = ABI._deserialize_array(ty[1], ty[2], buf, offset)
         else:
             raise NotImplementedError(f"Could not deserialize type: {ty[0]}")
 
+        return result
+
+    @staticmethod
+    def _deserialize_sequence(types, buf: typing.Union[bytearray, bytes, Array], offset=0):
+        result = ()
+        base_offset = offset
+        current_offset = offset
+        for ty_i in types:
+            result += (ABI._deserialize(ty_i, buf, current_offset, base_offset),)
+            current_offset += ABI._type_size(ty_i)
+        return result
+
+    @staticmethod
+    def _deserialize_array(rep, base_type, buf: typing.Union[bytearray, bytes, Array], offset=0):
+        result = []
+        if rep is None:
+            rep = ABI._deserialize_int(buf[offset : offset + 32])
+            rep = to_constant(rep)
+            offset += 32
+
+        base_offset = offset
+        current_offset = offset
+        ty_size = ABI._type_size(base_type)
+        for _ in range(rep):
+            result.append(ABI._deserialize(base_type, buf, current_offset, base_offset))
+            current_offset += ty_size
         return result
 
     @staticmethod
