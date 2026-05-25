@@ -1940,6 +1940,43 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
             # new account gas charged and full refund returned
             self.assertEqual(txs[-1].used_gas, GSDSTATIC + GNEWACCOUNT - RSELFDESTRUCT)
 
+    def test_revert_discards_storage_refund(self):
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints)
+
+        caller = 0x2222222222222222222222222222222222222222
+        contract = 0x1111111111111111111111111111111111111111
+        gas_price = 3
+        caller_balance = 10**18
+
+        asm_revert_after_clear = """ PUSH1 0x0
+                                     PUSH1 0x0
+                                     SSTORE
+                                     PUSH1 0x0
+                                     PUSH1 0x0
+                                     REVERT
+                                 """
+
+        world.create_account(address=caller, balance=caller_balance)
+        world.create_account(
+            address=contract,
+            code=EVMAsm.assemble(asm_revert_after_clear),
+            storage={0: 1},
+        )
+        world.transaction(contract, caller=caller, gas=50000000, price=gas_price)
+
+        try:
+            while True:
+                world.execute()
+        except TerminateState as e:
+            result = str(e)
+
+        expected_gas = 21000 + 4 * 3 + 5000
+        self.assertEqual(result, "REVERT")
+        self.assertEqual(world.transactions[-1].used_gas, expected_gas)
+        self.assertEqual(world.get_storage_data(contract, 0), 1)
+        self.assertEqual(world.get_balance(caller), caller_balance - expected_gas * gas_price)
+
 
 class EthPluginTests(unittest.TestCase):
     def test_FilterFunctions_fallback_function_matching(self):

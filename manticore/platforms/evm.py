@@ -2702,12 +2702,12 @@ class EVMWorld(Platform):
             self._deleted_accounts = deleted_accounts
         self.increase_nonce(tx.caller)
 
-        if result in {"THROW"}:
+        if result in {"THROW", "TXERROR"}:
             unused_gas = 0
             refund = 0
         else:
             unused_gas = vm._gas
-            refund = vm._refund
+            refund = 0 if rollback else vm._refund
 
         used_gas = Operators.ZEXTEND(tx.gas, 512) - unused_gas
         refund = Operators.ITEBV(512, Operators.UGE(refund, used_gas // 2), used_gas // 2, refund)
